@@ -1,0 +1,16 @@
+# Xcode
+DerivedData/
+build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+# SwiftPM
+.swiftpm/
+# User-specific
+.DS_Store
+# Fastlane (si lo usas luego)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+# Logs
+*.log
