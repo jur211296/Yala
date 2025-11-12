@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import SwiftData
 import UniformTypeIdentifiers
+import Charts
 #if canImport(TabularData)
 import TabularData
 #endif
@@ -17,12 +18,137 @@ struct ContentView: View {
     @State private var categoryName: String = "General"
     @State private var showCSVImporter = false
     @State private var importError: String? = nil
-    
+
+    // MARK: - Filtros / Resumen / Gráfica
+    struct YearMonth: Hashable, Identifiable, Comparable {
+        let year: Int
+        let month: Int
+        var id: String { "\(year)-\(month)" }
+        init(date: Date, calendar: Calendar = .current) {
+            let comps = calendar.dateComponents([.year, .month], from: date)
+            self.year = comps.year ?? 2000
+            self.month = comps.month ?? 1
+        }
+        static func < (lhs: YearMonth, rhs: YearMonth) -> Bool {
+            if lhs.year != rhs.year { return lhs.year < rhs.year }
+            return lhs.month < rhs.month
+        }
+        func displayName(calendar: Calendar = .current, locale: Locale = .current) -> String {
+            var comps = DateComponents(); comps.year = year; comps.month = month; comps.day = 1
+            let d = calendar.date(from: comps) ?? .now
+            return d.formatted(.dateTime.locale(locale).month(.wide).year(.defaultDigits))
+        }
+    }
+
+    @State private var selectedMonth: YearMonth? = nil
+    @State private var selectedCategory: String = "Todas"
+
+    private var monthOptions: [YearMonth] {
+        let set = Set(itemsRaw.map { YearMonth(date: $0.date) })
+        return set.sorted(by: >)
+    }
+    private var categoryOptions: [String] {
+        let names = itemsRaw.map { $0.category?.name ?? "Sin categoría" }
+        return ["Todas"] + Array(Set(names)).sorted()
+    }
+
     private var items: [TransactionItem] { itemsRaw.sorted { $0.date > $1.date } }
+    private var filteredItems: [TransactionItem] {
+        items.filter { it in
+            let mOk = selectedMonth.map { YearMonth(date: it.date) == $0 } ?? true
+            let catName = it.category?.name ?? "Sin categoría"
+            let cOk = (selectedCategory == "Todas") || (catName == selectedCategory)
+            return mOk && cOk
+        }
+    }
+
+    private var totalIncome: Decimal { filteredItems.reduce(0) { $0 + ($1.amount > 0 ? $1.amount : 0) } }
+    private var totalExpense: Decimal { filteredItems.reduce(0) { $0 + ($1.amount < 0 ? -$1.amount : 0) } }
+    private var net: Decimal { totalIncome - totalExpense }
+    private var summaryCurrencyCode: String { filteredItems.first?.currencyCode ?? "PEN" }
+
+    struct CategoryTotal: Identifiable { var id: String { name }; let name: String; let total: Double }
+    private var categoryTotals: [CategoryTotal] {
+        var acc: [String: Decimal] = [:]
+        for it in filteredItems where it.amount < 0 {
+            let name = it.category?.name ?? "Sin categoría"
+            acc[name, default: 0] += (-it.amount)
+        }
+        return acc.map { CategoryTotal(name: $0.key, total: NSDecimalNumber(decimal: $0.value).doubleValue) }
+                 .sorted { $0.total > $1.total }
+    }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
+                // Filtros
+                GroupBox("Filtros") {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Mes").font(.caption).foregroundStyle(.secondary)
+                            Picker("Mes", selection: $selectedMonth) {
+                                Text("Todos").tag(YearMonth?.none)
+                                ForEach(monthOptions) { m in
+                                    Text(m.displayName()).tag(YearMonth?.some(m))
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+                        Spacer(minLength: 24)
+                        VStack(alignment: .leading) {
+                            Text("Categoría").font(.caption).foregroundStyle(.secondary)
+                            Picker("Categoría", selection: $selectedCategory) {
+                                ForEach(categoryOptions, id: \.self) { name in
+                                    Text(name).tag(name)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+
+                // Resumen
+                GroupBox("Resumen") {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Ingresos").font(.caption).foregroundStyle(.secondary)
+                            Text(currencyString(totalIncome, code: summaryCurrencyCode))
+                                .font(.headline).foregroundStyle(.green)
+                        }
+                        Spacer()
+                        VStack(alignment: .leading) {
+                            Text("Gastos").font(.caption).foregroundStyle(.secondary)
+                            Text(currencyString(totalExpense, code: summaryCurrencyCode))
+                                .font(.headline).foregroundStyle(.red)
+                        }
+                        Spacer()
+                        VStack(alignment: .leading) {
+                            Text("Neto").font(.caption).foregroundStyle(.secondary)
+                            Text(currencyString(net, code: summaryCurrencyCode))
+                                .font(.headline)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+
+                // Gráfica por categoría (gasto)
+                GroupBox("Gasto por categoría") {
+                    if categoryTotals.isEmpty {
+                        Text("Sin datos para graficar").foregroundStyle(.secondary)
+                    } else {
+                        Chart(categoryTotals) { bar in
+                            BarMark(
+                                x: .value("Gasto", bar.total),
+                                y: .value("Categoría", bar.name)
+                            )
+                        }
+                        .frame(height: 220)
+                    }
+                }
+                .padding(.horizontal)
+
+                // Formulario de alta rápida
                 GroupBox("Registrar movimiento") {
                     HStack {
                         TextField("Monto", text: $amount).keyboardType(.decimalPad)
@@ -36,9 +162,10 @@ struct ContentView: View {
                         .disabled(!canSubmit)
                 }
                 .padding(.horizontal)
-                
+
+                // Lista (filtrada)
                 List {
-                    ForEach(items) { item in
+                    ForEach(filteredItems) { item in
                         HStack {
                             Text(item.date, format: .dateTime.year().month().day())
                             Spacer()
@@ -51,7 +178,7 @@ struct ContentView: View {
                         }
                     }
                     .onDelete { idx in
-                        for i in idx { ctx.delete(items[i]) }
+                        for i in idx { ctx.delete(filteredItems[i]) }
                         try? ctx.save()
                     }
                 }
