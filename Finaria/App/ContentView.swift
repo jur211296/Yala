@@ -56,6 +56,58 @@ func currencyInfo(for currency: CurrencyCode) -> (name: String, code: String, fl
     }
 }
 
+// Paleta de colores estándar para cuentas a partir de su hex
+func colorForHex(_ hex: String) -> Color {
+    switch hex {
+    case "#FF9F0A":
+        return Color.orange
+    case "#30D158":
+        return Color.green
+    case "#FF375F":
+        return Color.red
+    case "#0A84FF":
+        return Color.blue
+    case "#5E5CE6":
+        return Color.purple
+    case "#FFD60A":
+        return Color.yellow
+    case "#1C3556":
+        return Color(red: 0.11, green: 0.21, blue: 0.34)
+    default:
+        return .gray
+    }
+}
+
+// Ícono estándar sugerido según el tipo de cuenta
+func iconName(for accountType: AccountType) -> String {
+    switch accountType {
+    case .general:
+        return "creditcard"
+    case .cash:
+        return "banknote.fill"
+    case .checking:
+        return "building.columns.fill"
+    case .savings:
+        return "banknote"
+    }
+}
+
+// Ícono efectivo para mostrar según los datos actuales de la cuenta
+func displayIconName(for account: Account) -> String {
+    // Si ya hay un icono personalizado distinto del default antiguo, úsalo
+    if !account.iconName.isEmpty && account.iconName != "building.columns.fill" {
+        return account.iconName
+    }
+
+    // Si no, derivamos el icono a partir del tipo de cuenta
+    if let type = AccountType(rawValue: account.type) {
+        return iconName(for: type)
+    }
+
+    // Fallback seguro
+    return "building.columns.fill"
+}
+
 // MARK: - ContentView
 
 struct ContentView: View {
@@ -98,14 +150,44 @@ struct PanelView: View {
     @State private var isPresentingAccountForm = false
     @State private var isPresentingSettings = false
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
+    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
 
     private var defaultCurrency: CurrencyCode {
         CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
     }
 
+    private var accountsSortOrderNames: [String] {
+        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
+    }
+    
+    private var activeAccounts: [Account] {
+        accounts.filter { !$0.isArchived }
+    }
+    
+    private var orderedActiveAccounts: [Account] {
+        let order = accountsSortOrderNames
+        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        
+        return activeAccounts.sorted { a, b in
+            let ia = indexByName[a.name]
+            let ib = indexByName[b.name]
+            
+            switch (ia, ib) {
+            case let (x?, y?):
+                return x < y
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            default:
+                return a.name < b.name
+            }
+        }
+    }
+
     // Saldo total en la moneda predeterminada de la app
     private var totalBalanceInDefaultCurrency: Double {
-        accounts.reduce(0) { partial, account in
+        activeAccounts.reduce(0) { partial, account in
             let original = Decimal(account.initialBalance)
             let converted = convert(original, from: account.currencyCode, to: defaultCurrency.rawValue)
             let convertedDouble = (converted as NSDecimalNumber).doubleValue
@@ -166,7 +248,7 @@ struct PanelView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    ForEach(accounts) { account in
+                    ForEach(orderedActiveAccounts) { account in
                         AccountCardView(account: account)
                     }
                     
@@ -218,8 +300,9 @@ struct SettingsRootView: View {
                 }
             }
             .navigationTitle("Ajustes")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button {
                         dismiss()
                     } label: {
@@ -252,7 +335,7 @@ struct SettingsRootView: View {
         SectionBox(title: "Registros") {
             VStack(spacing: 0) {
                 NavigationLink {
-                    SettingsPlaceholderView(title: "Cuentas")
+                    AccountsSettingsListView()
                 } label: {
                     settingsRow(title: "Cuentas", systemImage: "creditcard")
                 }
@@ -526,6 +609,206 @@ struct SettingsPlaceholderView: View {
     }
 }
 
+// MARK: - Lista de cuentas desde Ajustes (FIN-42 - versión inicial sin reordenamiento persistente)
+
+// MARK: - Lista de cuentas desde Ajustes (FIN-42 con diseño y orden)
+
+struct AccountsSettingsListView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    
+    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
+    
+    @State private var isPresentingCreateAccount = false
+    @State private var accountToEdit: Account?
+    
+    // Solo cuentas no archivadas para esta vista
+    private var activeAccounts: [Account] {
+        accounts.filter { !$0.isArchived }
+    }
+    
+    // Orden persistente por nombre
+    private var accountsSortOrderNames: [String] {
+        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
+    }
+    
+    private var orderedActiveAccounts: [Account] {
+        let order = accountsSortOrderNames
+        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        
+        return activeAccounts.sorted { a, b in
+            let ia = indexByName[a.name]
+            let ib = indexByName[b.name]
+            
+            switch (ia, ib) {
+            case let (x?, y?):
+                return x < y
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            default:
+                return a.name < b.name
+            }
+        }
+    }
+    
+    // Cuentas archivadas (sin reordenamiento)
+    private var archivedAccounts: [Account] {
+        accounts.filter { $0.isArchived }
+    }
+    
+    var body: some View {
+        ZStack {
+            PanelBackgroundView()
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    if !orderedActiveAccounts.isEmpty {
+                        accountsSection(title: "Activas", accounts: orderedActiveAccounts)
+                    }
+                    
+                    if !archivedAccounts.isEmpty {
+                        accountsSection(title: "Archivadas", accounts: archivedAccounts)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 32)
+            }
+        }
+        .navigationTitle("Cuentas")
+        .navigationBarTitleDisplayMode(.inline)    // título reducido y centrado
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isPresentingCreateAccount = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        // Alta de nueva cuenta desde Ajustes (reutiliza el formulario existente)
+        .sheet(isPresented: $isPresentingCreateAccount) {
+            AccountFormView(
+                existingNames: accounts.map { $0.name }
+            )
+        }
+        // Edición de cuenta existente reutilizando el mismo formulario
+        .sheet(item: $accountToEdit) { account in
+            AccountFormView(
+                existingNames: accounts.map { $0.name }.filter { $0 != account.name },
+                accountToEdit: account
+            )
+        }
+    }
+    // Caja blanca de sección (similar a Suscripciones de Apple)
+    @ViewBuilder
+    private func accountsSection(title: String, accounts: [Account]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(Color.primary.opacity(0.6)) // gris un poco más fuerte
+                .padding(.leading, 6)
+            
+            VStack(spacing: 0) {
+                ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+                    Button {
+                        accountToEdit = account
+                    } label: {
+                        accountRow(account)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    if index < accounts.count - 1 {
+                        SubsectionDivider()
+                    }
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.white.opacity(0.96))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+        }
+    }
+    
+    // MARK: - Presentación de filas
+    
+    private func accountTypeText(for account: Account) -> String {
+        account.type.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+    
+    private func formattedBalance(for account: Account) -> String {
+        let normalizedCode = normalizeCurrencyCode(account.currencyCode)
+        let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
+        let info = currencyInfo(for: currency)
+        
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        
+        let formattedAmount = formatter.string(from: NSNumber(value: account.initialBalance)) ?? "0.00"
+        return "\(info.code) \(formattedAmount)"
+    }
+    
+    @ViewBuilder
+    private func accountRow(_ account: Account) -> some View {
+        let normalizedCode = normalizeCurrencyCode(account.currencyCode)
+        let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
+        let currencyInfoTuple = currencyInfo(for: currency)
+        
+        // Línea principal: número de cuenta si existe, si no el nombre
+        let primaryText = (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
+        
+        HStack(spacing: 12) {
+            // Ícono de la cuenta con color de fondo según configuración
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(colorForHex(account.colorHex))
+                .frame(width: 44, height: 44)
+                .overlay(
+                    Image(systemName: displayIconName(for: account))
+                        .foregroundStyle(.white)
+                )
+            
+            // Texto central (3 líneas)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(primaryText)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                
+                Text(accountTypeText(for: account))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                Text(currencyInfoTuple.name.capitalized)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            // Monto + chevron a la derecha
+            HStack(spacing: 4) {
+                Text(formattedBalance(for: account))
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                
+                Image(systemName: "chevron.right")
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+    
+}
+
 // MARK: - Placeholders Planificación y Estadísticas
 
 struct PlanningView: View {
@@ -610,11 +893,7 @@ struct AccountCardView: View {
     }
     
     private var iconForAccount: String {
-        if !account.iconName.isEmpty {
-            return account.iconName
-        } else {
-            return "building.columns.fill"
-        }
+        displayIconName(for: account)
     }
     
     private func formattedAmount(_ value: Double) -> String {
@@ -668,35 +947,89 @@ struct AccountFormView: View {
     @Environment(\.modelContext) private var modelContext
     
     let existingNames: [String]
+    let accountToEdit: Account?
+    
+    private var isEditing: Bool {
+        accountToEdit != nil
+    }
     
     // General
-    @State private var name: String = ""
-    @State private var selectedType: AccountType = .general
-    @State private var accountNumber: String = ""
+    @State private var name: String
+    @State private var selectedType: AccountType
+    @State private var accountNumber: String
     
     // Saldo actual
-    @State private var isPositive: Bool = true
-    @State private var balanceText: String = ""
+    @State private var isPositive: Bool
+    @State private var balanceText: String
     
     // Moneda
-    @State private var selectedCurrency: CurrencyCode = .pen
+    @State private var selectedCurrency: CurrencyCode
     
     // Ajuste
-    @State private var selectedAdjustmentMode: AdjustmentMode = .byEntry
+    @State private var selectedAdjustmentMode: AdjustmentMode
     
     // Color
-    @State private var selectedColorHex: String = "#1C3556"
-    @State private var customColor: Color = Color(red: 0.11, green: 0.21, blue: 0.34)
-    @State private var isPresentingColorPicker: Bool = false
+    @State private var selectedColorHex: String
+    @State private var customColor: Color
+    @State private var isPresentingColorPicker: Bool
     
     // Acciones
-    @State private var excludeFromStatistics: Bool = false
-    @State private var isArchived: Bool = false
+    @State private var excludeFromStatistics: Bool
+    @State private var isArchived: Bool
     
     // Navegación interna (reservado para futuros flows)
-    @State private var showTypeSelector = false
-    @State private var showCurrencySelector = false
-    @State private var showAdjustmentSelector = false
+    @State private var showTypeSelector: Bool
+    @State private var showCurrencySelector: Bool
+    @State private var showAdjustmentSelector: Bool
+    
+    // Alertas de eliminación
+    @State private var isShowingDeleteError: Bool = false
+    @State private var deleteErrorMessage: String = ""
+    
+    init(existingNames: [String], accountToEdit: Account? = nil) {
+        self.existingNames = existingNames
+        self.accountToEdit = accountToEdit
+        
+        if let account = accountToEdit {
+            _name = State(initialValue: account.name)
+            _selectedType = State(initialValue: AccountType(rawValue: account.type) ?? .general)
+            _accountNumber = State(initialValue: account.accountNumber ?? "")
+            
+            let balance = account.initialBalance
+            _isPositive = State(initialValue: balance >= 0)
+            _balanceText = State(initialValue: String(format: "%.2f", abs(balance)))
+            
+            _selectedCurrency = State(initialValue: CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode)) ?? .pen)
+            _selectedAdjustmentMode = State(initialValue: AdjustmentMode(rawValue: account.adjustmentMode) ?? .byEntry)
+            
+            _selectedColorHex = State(initialValue: account.colorHex)
+            _customColor = State(initialValue: colorForHex(account.colorHex))
+            
+            _excludeFromStatistics = State(initialValue: account.excludeFromStatistics)
+            _isArchived = State(initialValue: account.isArchived)
+        } else {
+            _name = State(initialValue: "")
+            _selectedType = State(initialValue: .general)
+            _accountNumber = State(initialValue: "")
+            
+            _isPositive = State(initialValue: true)
+            _balanceText = State(initialValue: "")
+            
+            _selectedCurrency = State(initialValue: .pen)
+            _selectedAdjustmentMode = State(initialValue: .byEntry)
+            
+            _selectedColorHex = State(initialValue: "#1C3556")
+            _customColor = State(initialValue: Color(red: 0.11, green: 0.21, blue: 0.34))
+            
+            _excludeFromStatistics = State(initialValue: false)
+            _isArchived = State(initialValue: false)
+        }
+        
+        _isPresentingColorPicker = State(initialValue: false)
+        _showTypeSelector = State(initialValue: false)
+        _showCurrencySelector = State(initialValue: false)
+        _showAdjustmentSelector = State(initialValue: false)
+    }
     
     // MARK: Validaciones
     
@@ -799,6 +1132,16 @@ struct AccountFormView: View {
                 }
             }
         }
+        .alert(
+            "No se puede eliminar esta cuenta",
+            isPresented: $isShowingDeleteError,
+            actions: {
+                Button("Entendido", role: .cancel) { }
+            },
+            message: {
+                Text(deleteErrorMessage)
+            }
+        )
     }
     
     // MARK: Secciones de la vista
@@ -991,6 +1334,21 @@ struct AccountFormView: View {
                     Text("Archivar cuenta")
                 }
                 .padding()
+                
+                if isEditing {
+                    SubsectionDivider()
+                    
+                    Button(role: .destructive) {
+                        handleDeleteTapped()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Eliminar cuenta")
+                            Spacer()
+                        }
+                    }
+                    .padding()
+                }
             }
         }
     }
@@ -999,27 +1357,6 @@ struct AccountFormView: View {
     
     private var colorOptions: [String] {
         ["#FF9F0A", "#30D158", "#FF375F", "#0A84FF", "#5E5CE6", "#FFD60A", "#1C3556"]
-    }
-    
-    private func colorForHex(_ hex: String) -> Color {
-        switch hex {
-        case "#FF9F0A":
-            return Color.orange
-        case "#30D158":
-            return Color.green
-        case "#FF375F":
-            return Color.red
-        case "#0A84FF":
-            return Color.blue
-        case "#5E5CE6":
-            return Color.purple
-        case "#FFD60A":
-            return Color.yellow
-        case "#1C3556":
-            return Color(red: 0.11, green: 0.21, blue: 0.34)
-        default:
-            return .gray
-        }
     }
     
     private func hexString(from color: Color) -> String {
@@ -1047,20 +1384,54 @@ struct AccountFormView: View {
         let finalAmount = isPositive ? amount : -amount
         let trimmedAccountNumber = accountNumber.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        let newAccount = Account(
-            name: trimmedName,
-            currencyCode: normalizeCurrencyCode(selectedCurrency.rawValue),
-            colorHex: selectedColorHex,
-            iconName: "building.columns.fill",
-            type: selectedType.rawValue,
-            accountNumber: trimmedAccountNumber.isEmpty ? nil : trimmedAccountNumber,
-            initialBalance: finalAmount,
-            adjustmentMode: selectedAdjustmentMode.rawValue,
-            excludeFromStatistics: excludeFromStatistics,
-            isArchived: isArchived
-        )
+        if let account = accountToEdit {
+            // Edición de cuenta existente
+            account.name = trimmedName
+            account.currencyCode = normalizeCurrencyCode(selectedCurrency.rawValue)
+            account.colorHex = selectedColorHex
+            account.iconName = iconName(for: selectedType)
+            account.type = selectedType.rawValue
+            account.accountNumber = trimmedAccountNumber.isEmpty ? nil : trimmedAccountNumber
+            account.initialBalance = finalAmount
+            account.adjustmentMode = selectedAdjustmentMode.rawValue
+            account.excludeFromStatistics = excludeFromStatistics
+            account.isArchived = isArchived
+        } else {
+            // Creación de nueva cuenta
+            let newAccount = Account(
+                name: trimmedName,
+                currencyCode: normalizeCurrencyCode(selectedCurrency.rawValue),
+                colorHex: selectedColorHex,
+                iconName: iconName(for: selectedType),
+                type: selectedType.rawValue,
+                accountNumber: trimmedAccountNumber.isEmpty ? nil : trimmedAccountNumber,
+                initialBalance: finalAmount,
+                adjustmentMode: selectedAdjustmentMode.rawValue,
+                excludeFromStatistics: excludeFromStatistics,
+                isArchived: isArchived
+            )
+            
+            modelContext.insert(newAccount)
+        }
         
-        modelContext.insert(newAccount)
+        dismiss()
+    }
+
+    // MARK: - Eliminación de cuenta
+    
+    private func handleDeleteTapped() {
+        guard let account = accountToEdit else { return }
+        
+        // Regla mínima: no permitir eliminar cuentas con saldo distinto de 0.
+        // Más adelante, cuando exista el modelo de transacciones, se deberá
+        // ampliar esta validación para comprobar también que no tenga movimientos.
+        if account.initialBalance != 0 {
+            deleteErrorMessage = "No puedes eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla."
+            isShowingDeleteError = true
+            return
+        }
+        
+        modelContext.delete(account)
         dismiss()
     }
 }
