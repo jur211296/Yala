@@ -238,6 +238,18 @@ struct PanelView: View {
                 SettingsRootView()
             }
         }
+        // -----------------------------------------------------------------
+        // FIN-18: Semilla de categorías por defecto
+        //
+        // Esta llamada inicializa las categorías y subcategorías SOLO si
+        // todavía no existe ninguna categoría en la base de datos.
+        //
+        // NO eliminar ni modificar esta llamada sin revisar el impacto en
+        // la experiencia de onboarding y sin aprobación explícita del PO.
+        // -----------------------------------------------------------------
+        .onAppear {
+            seedCategoriesIfNeeded(in: modelContext)
+        }
     }
     
     // Sección de tarjetas de cuentas (incluye tarjeta "Agregar cuenta")
@@ -343,7 +355,7 @@ struct SettingsRootView: View {
                 SubsectionDivider()
                 
                 NavigationLink {
-                    SettingsPlaceholderView(title: "Categorías")
+                    CategoriesSettingsListView()
                 } label: {
                     settingsRow(title: "Categorías", systemImage: "tag")
                 }
@@ -612,6 +624,753 @@ struct SettingsPlaceholderView: View {
 // MARK: - Lista de cuentas desde Ajustes (FIN-42 - versión inicial sin reordenamiento persistente)
 
 // MARK: - Lista de cuentas desde Ajustes (FIN-42 con diseño y orden)
+// MARK: - Categorías en Ajustes (FIN-45)
+
+/// Naturaleza de subcategoría para FIN-45
+enum SubcategoryNature: String, CaseIterable, Identifiable {
+    case essential = "esencial"
+    case priority = "prioritaria"
+    case optional = "opcional"
+    case unclassified = "sin_clasificacion"
+    
+    var id: String { rawValue }
+    
+    /// Nombre visible en la UI
+    var displayName: String {
+        switch self {
+        case .essential: return "Esencial"
+        case .priority: return "Prioritaria"
+        case .optional: return "Opcional"
+        case .unclassified: return "Sin clasificación"
+        }
+    }
+    
+    /// Descripción corta para ayudar al usuario
+    var description: String {
+        switch self {
+        case .essential:
+            return "Gastos imprescindibles, difíciles de recortar."
+        case .priority:
+            return "Importantes pero con algo de flexibilidad."
+        case .optional:
+            return "Gastos discrecionales o de ocio."
+        case .unclassified:
+            return "Sin etiqueta de naturaleza específica."
+        }
+    }
+}
+
+/// Acceso cómodo a la naturaleza desde el modelo SwiftData
+extension Subcategory {
+    var nature: SubcategoryNature {
+        get {
+            SubcategoryNature(rawValue: natureRawValue ?? "") ?? .unclassified
+        }
+        set {
+            natureRawValue = newValue.rawValue
+        }
+    }
+}
+
+/// Lista principal de categorías dentro de Ajustes → Registros
+struct CategoriesSettingsListView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Category.name, order: .forward) private var categories: [Category]
+    
+    // Solo categorías padre (en Finaria v1 todas las Category son padre)
+    private var orderedCategories: [Category] {
+        categories.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private var activeCategories: [Category] {
+        orderedCategories.filter { $0.isVisible }
+    }
+
+    private var hiddenCategories: [Category] {
+        orderedCategories.filter { !$0.isVisible }
+    }
+
+    @State private var isNavigatingToNewCategory: Bool = false
+    @State private var newCategory: Category?
+
+    private func createAndOpenNewCategory() {
+        let nextSortOrder = (categories.map { $0.sortOrder }.max() ?? 0) + 1
+        
+        let category = Category(
+            name: "",
+            colorHex: "#1C3556",
+            isIncome: false,
+            isDefaultSeed: false,
+            isVisible: true,
+            sortOrder: nextSortOrder,
+            subcategories: []
+        )
+        modelContext.insert(category)
+        
+        newCategory = category
+        isNavigatingToNewCategory = true
+    }
+
+    var body: some View {
+        ZStack {
+            PanelBackgroundView()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    if !activeCategories.isEmpty {
+                        SectionBox(title: "Activas") {
+                            VStack(spacing: 0) {
+                                ForEach(Array(activeCategories.enumerated()), id: \.element.id) { index, category in
+                                    NavigationLink {
+                                        CategoryDetailView(category: category)
+                                    } label: {
+                                        categoryRow(category)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if index < activeCategories.count - 1 {
+                                        SubsectionDivider()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if !hiddenCategories.isEmpty {
+                        SectionBox(title: "Ocultas") {
+                            VStack(spacing: 0) {
+                                ForEach(Array(hiddenCategories.enumerated()), id: \.element.id) { index, category in
+                                    NavigationLink {
+                                        CategoryDetailView(category: category)
+                                    } label: {
+                                        categoryRow(category)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if index < hiddenCategories.count - 1 {
+                                        SubsectionDivider()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 32)
+            }
+        }
+        .navigationTitle("Categorías")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    createAndOpenNewCategory()
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .navigationDestination(isPresented: $isNavigatingToNewCategory) {
+            if let newCategory {
+                CategoryDetailView(category: newCategory, isNewCategory: true)
+            } else {
+                EmptyView()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func categoryRow(_ category: Category) -> some View {
+        HStack(spacing: 12) {
+            // Círculo con color e icono estándar de etiqueta
+            Circle()
+                .fill(colorForHex(category.colorHex))
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Image(systemName: "tag")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(category.name)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.footnote)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14) // un poco más alta la fila
+    }
+}
+
+/// Detalle de categoría: permite editar nombre, visibilidad y gestionar subcategorías
+struct CategoryDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    
+    let category: Category
+    let isNewCategory: Bool
+    
+    @State private var name: String
+    @State private var isVisible: Bool
+    @State private var showVisibilityInfo: Bool = false
+    @State private var showDiscardDialog: Bool = false
+    @State private var showMissingSubcategoriesAlert: Bool = false
+
+    private let initialName: String
+    private let initialIsVisible: Bool
+
+    @Query(sort: \Subcategory.sortOrder, order: .forward) private var allSubcategories: [Subcategory]
+
+    init(category: Category, isNewCategory: Bool = false) {
+        self.category = category
+        self.isNewCategory = isNewCategory
+        self.initialName = category.name
+        self.initialIsVisible = category.isVisible
+        _name = State(initialValue: category.name)
+        _isVisible = State(initialValue: category.isVisible)
+    }
+    
+    /// Subcategorías filtradas solo para esta categoría, ordenadas por sortOrder y nombre.
+    private var subcategories: [Subcategory] {
+        allSubcategories
+            .filter { $0.category == category }
+            .sorted { lhs, rhs in
+                if lhs.sortOrder != rhs.sortOrder {
+                    return lhs.sortOrder < rhs.sortOrder
+                }
+                return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
+    }
+
+    private var hasUnsavedChanges: Bool {
+        let trimmedCurrentName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedInitialName = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedCurrentName != trimmedInitialName || isVisible != initialIsVisible
+    }
+
+    private func handleBack() {
+        if isNewCategory {
+            if hasUnsavedChanges {
+                showDiscardDialog = true
+            } else {
+                // Categoría nueva sin cambios: descartamos directamente
+                modelContext.delete(category)
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("FIN-45: Error al descartar categoría nueva sin cambios: \(error)")
+                }
+                dismiss()
+            }
+        } else {
+            if hasUnsavedChanges {
+                showDiscardDialog = true
+            } else {
+                dismiss()
+            }
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            PanelBackgroundView()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    header
+                    detailsSection
+                    subcategoriesSection
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 24)
+            }
+        }
+        .navigationTitle("Editar categoría")
+        .navigationBarBackButtonHidden(true)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    handleBack()
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Guardar") {
+                    saveCategory()
+                }
+                .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .alert("Categoría oculta", isPresented: $showVisibilityInfo) {
+            Button("Entendido", role: .cancel) { }
+        } message: {
+            Text("La categoría y sus subcategorías dejarán de aparecer en los selectores, pero no se perderán datos históricos.")
+        }
+        .alert("Añade al menos una subcategoría", isPresented: $showMissingSubcategoriesAlert) {
+            Button("Entendido", role: .cancel) { }
+        } message: {
+            Text("Para crear una nueva categoría, debes añadir al menos una subcategoría.")
+        }
+        .alert("Hay cambios sin guardar", isPresented: $showDiscardDialog) {
+            Button("Salir sin guardar", role: .destructive) {
+                if isNewCategory {
+                    modelContext.delete(category)
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        print("FIN-45: Error al descartar categoría nueva: \(error)")
+                    }
+                }
+                dismiss()
+            }
+            Button("Cancelar", role: .cancel) {
+                // El usuario decide seguir editando; no hacemos nada.
+            }
+        } message: {
+            Text("Si sales ahora, se perderán los cambios realizados en esta categoría.")
+        }
+    }
+    
+    // Encabezado con círculo de color e icono
+    private var header: some View {
+        VStack(spacing: 12) {
+            Circle()
+                .fill(colorForHex(category.colorHex))
+                .frame(width: 70, height: 70)
+                .overlay(
+                    Image(systemName: "tag")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                )
+            
+            Text(category.name)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    // Sección de nombre y visibilidad
+    private var detailsSection: some View {
+        SectionBox(title: "Detalles") {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "textformat")
+                        .foregroundStyle(.secondary)
+                    TextField("Nombre de la categoría", text: $name)
+                        .textContentType(.name)
+                }
+                .padding()
+                
+                SubsectionDivider()
+                
+                Toggle(isOn: $isVisible) {
+                    Text("Mostrar")
+                }
+                .padding()
+                .onChange(of: isVisible) { _, newValue in
+                    if newValue == false {
+                        showVisibilityInfo = true
+                    }
+                }
+            }
+        }
+    }
+    
+    // Sección de subcategorías
+    private var subcategoriesSection: some View {
+        let visibles = subcategories.filter { $0.isVisible }
+        let ocultas = subcategories.filter { !$0.isVisible }
+        
+        return VStack(spacing: 16) {
+            SectionBox(title: "Subcategorías activas") {
+                VStack(spacing: 0) {
+                    if visibles.isEmpty && ocultas.isEmpty {
+                        Text("Esta categoría aún no tiene subcategorías.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding()
+                    } else {
+                        ForEach(Array(visibles.enumerated()), id: \.element.id) { index, subcategory in
+                            NavigationLink {
+                                SubcategoryDetailView(parentCategory: category, subcategoryToEdit: subcategory)
+                            } label: {
+                                subcategoryRow(subcategory)
+                            }
+                            .buttonStyle(.plain)
+
+                            if index < visibles.count - 1 {
+                                SubsectionDivider()
+                            }
+                        }
+                    }
+
+                    SubsectionDivider()
+
+                    NavigationLink {
+                        SubcategoryDetailView(parentCategory: category)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(.tint)
+                            Text("Añadir subcategoría")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                    }
+                }
+            }
+            
+            if !ocultas.isEmpty {
+                SectionBox(title: "Subcategorías ocultas") {
+                    VStack(spacing: 0) {
+                        ForEach(Array(ocultas.enumerated()), id: \.element.id) { index, subcategory in
+                            NavigationLink {
+                                SubcategoryDetailView(parentCategory: category, subcategoryToEdit: subcategory)
+                            } label: {
+                                subcategoryRow(subcategory)
+                            }
+                            .buttonStyle(.plain)
+
+                            if index < ocultas.count - 1 {
+                                SubsectionDivider()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func subcategoryRow(_ subcategory: Subcategory) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(colorForHex(subcategory.colorHex ?? category.colorHex))
+                .frame(width: 32, height: 32)
+                .overlay(
+                    Image(systemName: "tag")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                )
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(subcategory.name)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.footnote)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+    
+    private func saveCategory() {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+        
+        if isNewCategory && subcategories.isEmpty {
+            showMissingSubcategoriesAlert = true
+            return
+        }
+        
+        category.name = trimmedName
+        category.isVisible = isVisible
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("FIN-45: Error al guardar categoría: \(error)")
+        }
+        
+        dismiss()
+    }
+}
+
+/// Formulario de creación/edición de subcategoría
+struct SubcategoryDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    
+    let parentCategory: Category
+    let subcategoryToEdit: Subcategory?
+    
+    private var isEditing: Bool { subcategoryToEdit != nil }
+    
+    @State private var name: String
+    @State private var selectedNature: SubcategoryNature
+    @State private var isVisible: Bool
+    @State private var selectedColorHex: String
+    
+    @State private var isPresentingNatureSelector: Bool = false
+    
+    @State private var showDiscardDialog: Bool = false
+
+    private let initialName: String
+    private let initialNature: SubcategoryNature
+    private let initialIsVisible: Bool
+    private let initialColorHex: String
+
+    init(parentCategory: Category, subcategoryToEdit: Subcategory? = nil) {
+        self.parentCategory = parentCategory
+        self.subcategoryToEdit = subcategoryToEdit
+
+        if let sub = subcategoryToEdit {
+            self.initialName = sub.name
+            self.initialNature = sub.nature
+            self.initialIsVisible = sub.isVisible
+            self.initialColorHex = sub.colorHex ?? parentCategory.colorHex
+            _name = State(initialValue: sub.name)
+            _selectedNature = State(initialValue: sub.nature)
+            _isVisible = State(initialValue: sub.isVisible)
+            _selectedColorHex = State(initialValue: sub.colorHex ?? parentCategory.colorHex)
+        } else {
+            self.initialName = ""
+            self.initialNature = .unclassified
+            self.initialIsVisible = true
+            self.initialColorHex = parentCategory.colorHex
+            _name = State(initialValue: "")
+            _selectedNature = State(initialValue: .unclassified)
+            _isVisible = State(initialValue: true)
+            _selectedColorHex = State(initialValue: parentCategory.colorHex)
+        }
+    }
+
+    private var hasUnsavedChanges: Bool {
+        let trimmedCurrentName = trimmedName
+        let trimmedInitialName = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedCurrentName != trimmedInitialName ||
+            selectedNature != initialNature ||
+            isVisible != initialIsVisible ||
+            selectedColorHex != initialColorHex
+    }
+
+    private func handleBack() {
+        if hasUnsavedChanges {
+            showDiscardDialog = true
+        } else {
+            dismiss()
+        }
+    }
+    
+    private var trimmedName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    private var canSave: Bool {
+        !trimmedName.isEmpty
+    }
+    
+    var body: some View {
+        ZStack {
+            PanelBackgroundView()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    header
+                    detailsSection
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 24)
+            }
+        }
+        .navigationTitle(isEditing ? "Editar subcategoría" : "Nueva subcategoría")
+        .navigationBarBackButtonHidden(true)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    handleBack()
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Guardar") {
+                    saveSubcategory()
+                }
+                .disabled(!canSave)
+            }
+        }
+        .sheet(isPresented: $isPresentingNatureSelector) {
+            NavigationStack {
+                SubcategoryNatureSelectorView(selectedNature: $selectedNature)
+            }
+        }
+        .confirmationDialog(
+            "Hay cambios sin guardar",
+            isPresented: $showDiscardDialog,
+            titleVisibility: .visible
+        ) {
+            Button("Salir sin guardar", role: .destructive) {
+                dismiss()
+            }
+            Button("Cancelar", role: .cancel) { }
+        } message: {
+            Text("Si sales ahora, se perderán los cambios realizados en esta subcategoría.")
+        }
+    }
+    
+    // Encabezado con círculo de color e icono
+    private var header: some View {
+        VStack(spacing: 12) {
+            Circle()
+                .fill(colorForHex(selectedColorHex))
+                .frame(width: 70, height: 70)
+                .overlay(
+                    Image(systemName: "tag")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                )
+            
+            Text(parentCategory.name)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    // Sección de nombre, naturaleza y visibilidad
+    private var detailsSection: some View {
+        SectionBox(title: "Detalles de la subcategoría") {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "textformat")
+                        .foregroundStyle(.secondary)
+                    TextField("Nombre de la subcategoría", text: $name)
+                        .textContentType(.name)
+                }
+                .padding()
+                
+                SubsectionDivider()
+                
+                Button {
+                    isPresentingNatureSelector = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "circle.lefthalf.filled")
+                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Naturaleza")
+                                .foregroundStyle(.primary)
+                            Text(selectedNature.displayName)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding()
+                }
+                .buttonStyle(.plain)
+                
+                SubsectionDivider()
+                
+                Toggle(isOn: $isVisible) {
+                    Text("Mostrar")
+                }
+                .padding()
+            }
+        }
+    }
+    
+    private func saveSubcategory() {
+        let finalName = trimmedName
+        guard !finalName.isEmpty else { return }
+        
+        if let sub = subcategoryToEdit {
+            // Edición
+            sub.name = finalName
+            sub.isVisible = isVisible
+            sub.nature = selectedNature
+            sub.colorHex = selectedColorHex
+        } else {
+            // Creación
+            let sortOrder: Int
+            do {
+                let descriptor = FetchDescriptor<Subcategory>()
+                let allSubcategories = try modelContext.fetch(descriptor)
+                let existing = allSubcategories.filter { $0.category == parentCategory }
+                let maxOrder = existing.map { $0.sortOrder }.max() ?? -1
+                sortOrder = maxOrder + 1
+            } catch {
+                print("FIN-45: Error calculando sortOrder de subcategorías: \(error)")
+                sortOrder = 0
+            }
+            
+            let newSubcategory = Subcategory(
+                name: finalName,
+                colorHex: selectedColorHex,
+                isDefaultSeed: false,
+                isVisible: isVisible,
+                sortOrder: sortOrder,
+                natureRawValue: selectedNature.rawValue,
+                category: parentCategory
+            )
+            
+            modelContext.insert(newSubcategory)
+        }
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("FIN-45: Error al guardar subcategoría: \(error)")
+        }
+        
+        dismiss()
+    }
+}
+
+/// Selector de naturaleza de subcategoría (Esencial, Prioritaria, Opcional, Sin clasificación)
+struct SubcategoryNatureSelectorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedNature: SubcategoryNature
+    
+    var body: some View {
+        List {
+            ForEach(SubcategoryNature.allCases) { nature in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(nature.displayName)
+                        Spacer()
+                        if nature == selectedNature {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.tint)
+                        }
+                    }
+                    Text(nature.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedNature = nature
+                    dismiss()
+                }
+            }
+        }
+        .navigationTitle("Naturaleza")
+    }
+}
 
 struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
