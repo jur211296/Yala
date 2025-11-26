@@ -9,6 +9,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import UniformTypeIdentifiers
 
 // MARK: - Enums de apoyo
 
@@ -159,6 +160,9 @@ struct PanelView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    // FIN-46: Transacciones usadas para calcular saldos actuales por cuenta
+    @Query(sort: \TransactionItem.date, order: .reverse)
+    private var transactions: [TransactionItem]
     
     @State private var isPresentingAccountForm = false
     @State private var isPresentingSettings = false
@@ -197,14 +201,111 @@ struct PanelView: View {
             }
         }
     }
+    
+    // FIN-46: Saldo actual en moneda nativa de la cuenta
+    // No modificar esta función sin revisar el impacto en todas las vistas
+    // que muestran saldos por cuenta.
+    private func currentBalance(for account: Account) -> Double {
+        let currentDecimal = AccountBalanceCalculator.currentBalance(
+            for: account,
+            allTransactions: transactions
+        )
+        let nsNumber = currentDecimal as NSDecimalNumber
+        return nsNumber.doubleValue
+    }
 
-    // Saldo total en la moneda predeterminada de la app
+    // Saldo total en la divisa preferida configurada en Ajustes (FIN-47)
     private var totalBalanceInDefaultCurrency: Double {
-        activeAccounts.reduce(0) { partial, account in
-            let original = Decimal(account.initialBalance)
-            let converted = convert(original, from: account.currencyCode, to: defaultCurrency.rawValue)
-            let convertedDouble = (converted as NSDecimalNumber).doubleValue
-            return partial + convertedDouble
+        // Divisa preferida desde Ajustes (AppStorage)
+        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
+
+        // Solo cuentas incluidas en estadísticas y no archivadas
+        let eligibleAccounts = accounts.filter { account in
+            !account.isArchived && !account.excludeFromStatistics
+        }
+
+        // Acumulamos el saldo actual de cada cuenta, convertido a la divisa preferida.
+        let totalDecimal: Decimal = eligibleAccounts.reduce(0) { partial, account in
+            // Saldo actual de la cuenta en su propia moneda (FIN-46)
+            let currentBalance = AccountBalanceCalculator.currentBalance(
+                for: account,
+                allTransactions: transactions
+            )
+
+            // Código de moneda de la cuenta normalizado a CurrencyCode
+            let sourceCurrency = CurrencyCode(
+                rawValue: normalizeCurrencyCode(account.currencyCode)
+            ) ?? preferredCurrency
+
+            // Convertimos el saldo de la cuenta a la divisa preferida
+            let converted = convertToPreferredCurrency(
+                amount: currentBalance,
+                from: sourceCurrency,
+                to: preferredCurrency
+            )
+
+            return partial + converted
+        }
+
+        let nsNumber = totalDecimal as NSDecimalNumber
+        return nsNumber.doubleValue
+    }
+    
+    // FIN-47: Conversión básica entre divisas hacia la divisa preferida.
+    // En esta versión utilizamos un esquema simple con tasas por defecto cuando
+    // no haya lógica de tipos de cambio más avanzada disponible.
+    //
+    // Tasas por defecto (ejemplo de FIN-47):
+    // 1 USD = 3.54 PEN
+    // 1 EUR = 3.89 PEN
+    //
+    // Estrategia:
+    // - Convertimos primero el monto a PEN.
+    // - Luego, si la divisa preferida no es PEN, convertimos de PEN a la divisa objetivo.
+    private func convertToPreferredCurrency(
+        amount: Decimal,
+        from source: CurrencyCode,
+        to target: CurrencyCode
+    ) -> Decimal {
+        // Si la divisa ya es la preferida, devolvemos el monto tal cual.
+        if source == target {
+            return amount
+        }
+
+        // Tasas de ejemplo tomadas como referencia para PEN (FIN-47).
+        let usdToPen = Decimal(string: "3.54") ?? Decimal(3.54)
+        let eurToPen = Decimal(string: "3.89") ?? Decimal(3.89)
+
+        // Helpers internos para convertir PEN a otras divisas
+        func penToUsd(_ pen: Decimal) -> Decimal {
+            guard usdToPen != 0 else { return pen }
+            return pen / usdToPen
+        }
+
+        func penToEur(_ pen: Decimal) -> Decimal {
+            guard eurToPen != 0 else { return pen }
+            return pen / eurToPen
+        }
+
+        // Paso 1: convertir a PEN
+        let amountInPen: Decimal
+        switch source {
+        case .pen:
+            amountInPen = amount
+        case .usd:
+            amountInPen = amount * usdToPen
+        case .eur:
+            amountInPen = amount * eurToPen
+        }
+
+        // Paso 2: convertir de PEN a la divisa destino
+        switch target {
+        case .pen:
+            return amountInPen
+        case .usd:
+            return penToUsd(amountInPen)
+        case .eur:
+            return penToEur(amountInPen)
         }
     }
 
@@ -274,7 +375,10 @@ struct PanelView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
                     ForEach(orderedActiveAccounts) { account in
-                        AccountCardView(account: account)
+                        AccountCardView(
+                            account: account,
+                            currentBalance: currentBalance(for: account)
+                        )
                     }
                     
                     AddAccountCardView {
@@ -292,7 +396,9 @@ struct PanelView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
-            Text("\(currencyInfo(for: defaultCurrency).code) \(formattedTotalBalance)")
+            let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
+            let preferredInfo = currencyInfo(for: preferredCurrency)
+            Text("\(preferredInfo.code) \(formattedTotalBalance)")
                 .font(.title3.weight(.semibold))
         }
         .padding(.top, 8)
@@ -304,6 +410,8 @@ struct PanelView: View {
 struct SettingsRootView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
+    
+    @State private var isPresentingImportIntro: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -337,6 +445,12 @@ struct SettingsRootView: View {
             }
         }
         .tint(.black)
+        .sheet(isPresented: $isPresentingImportIntro) {
+            ImportIntroSheet(onImportCompleted: {
+                // Cerramos también la pantalla de Ajustes para volver al Panel
+                dismiss()
+            })
+        }
     }
     
     // MARK: - Moneda predeterminada de la app
@@ -452,17 +566,18 @@ struct SettingsRootView: View {
                 } label: {
                     settingsRow(title: "Estado de sincronización iCloud", systemImage: "icloud")
                 }
-                
+
                 SubsectionDivider()
-                
-                NavigationLink {
-                    SettingsPlaceholderView(title: "Importar archivo")
+
+                Button {
+                    isPresentingImportIntro = true
                 } label: {
                     settingsRow(title: "Importar archivo", systemImage: "tray.and.arrow.down")
                 }
-                
+                .buttonStyle(.plain)
+
                 SubsectionDivider()
-                
+
                 NavigationLink {
                     SettingsPlaceholderView(title: "Exportar datos")
                 } label: {
@@ -472,7 +587,10 @@ struct SettingsRootView: View {
                 SubsectionDivider()
                 
                 NavigationLink {
-                    UserDataResetView()
+                    UserDataResetView(onUserDataWiped: {
+                        // Cerramos la hoja de Ajustes para volver al Panel
+                        dismiss()
+                    })
                 } label: {
                     settingsRow(title: "Vaciar datos", systemImage: "trash")
                 }
@@ -634,6 +752,385 @@ struct SettingsPlaceholderView: View {
     }
 }
 
+// MARK: - Flujo de importación de archivo (FIN-24)
+
+/// Hoja principal de introducción y configuración de importación
+struct ImportIntroSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    
+    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    
+    @State private var allowCreatingNewCategories: Bool = false
+    @State private var isShowingAccountPicker: Bool = false
+    @State private var isShowingFileImporter: Bool = false
+    @State private var selectedAccount: Account?
+    @State private var isImporting: Bool = false
+    
+    @State private var alertTitle: String = ""
+    @State private var alertMessage: String?
+    @State private var isShowingAlert: Bool = false
+    @State private var shouldDismissAfterAlert: Bool = false
+    
+    /// Callback opcional para notificar al presentador que la importación
+    /// se completó correctamente. En Ajustes se usa para volver al Panel.
+    let onImportCompleted: (() -> Void)?
+    
+    init(onImportCompleted: (() -> Void)? = nil) {
+        self.onImportCompleted = onImportCompleted
+    }
+    
+    private var activeAccounts: [Account] {
+        accounts.filter { !$0.isArchived }
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+                
+                VStack(spacing: 24) {
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            introSection
+                            templateSection
+                            toggleSection
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 24)
+                        .padding(.bottom, 8)
+                    }
+                    
+                    VStack(spacing: 12) {
+                        if isImporting {
+                            ProgressView("Importando...")
+                                .progressViewStyle(.circular)
+                                .padding(.vertical, 4)
+                        }
+                        
+                        Button {
+                            startAccountSelection()
+                        } label: {
+                            Text("Importar archivo CSV")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isImporting)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationTitle("Importar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingAccountPicker) {
+            ImportAccountPickerSheet(
+                accounts: activeAccounts,
+                selectedAccount: $selectedAccount
+            ) { account in
+                selectedAccount = account
+                isShowingAccountPicker = false
+                isShowingFileImporter = true
+            }
+        }
+        .fileImporter(
+            isPresented: $isShowingFileImporter,
+            allowedContentTypes: [UTType.commaSeparatedText],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImportResult(result)
+        }
+        .alert(alertTitle, isPresented: $isShowingAlert) {
+            Button("Aceptar", role: .cancel) {
+                if shouldDismissAfterAlert {
+                    // Cerramos esta hoja de importación
+                    dismiss()
+                    // Notificamos al presentador (Ajustes) para que también se cierre
+                    onImportCompleted?()
+                }
+            }
+        } message: {
+            Text(alertMessage ?? "")
+        }
+    }
+    
+    // MARK: - Secciones de contenido
+    
+    private var introSection: some View {
+        SectionBox(title: "Cómo funciona") {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
+                    Image(systemName: "tray.and.arrow.down.fill")
+                        .font(.system(size: 32, weight: .regular))
+                        .foregroundStyle(.primary)
+                        .padding(10)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.9))
+                        )
+                    
+                    Text("Importa tus movimientos desde un archivo CSV siguiendo unos pasos simples.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    stepRow("Descarga la plantilla de ejemplo.")
+                    stepRow("Ábrela en tu editor de hojas de cálculo.")
+                    stepRow("Completa tus transacciones siguiendo el formato indicado.")
+                    stepRow("Guarda el archivo como CSV.")
+                    stepRow("Asegúrate de tener el archivo disponible en la app Archivos.")
+                    stepRow("Selecciona la cuenta destino e importa el archivo desde aquí.")
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
+        }
+    }
+    
+    private var templateSection: some View {
+        SectionBox(title: "Plantilla de ejemplo") {
+            VStack(alignment: .leading, spacing: 8) {
+                Button {
+                    // Fuera de alcance en FIN-24:
+                    // la descarga real de la plantilla se implementará en otra historia.
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.down.circle")
+                        Text("Descargar plantilla")
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.bordered)
+                .disabled(true)
+                
+                Text("Pronto podrás descargar una plantilla lista para usar. Por ahora, puedes seguir las instrucciones de formato indicadas arriba.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+            }
+        }
+    }
+    
+    private var toggleSection: some View {
+        SectionBox(title: "Categorías") {
+            VStack(spacing: 0) {
+                Toggle(isOn: $allowCreatingNewCategories) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Crear nuevas categorías y subcategorías")
+                            .font(.body)
+                        Text("Si el archivo incluye categorías que no existen, se crearán automáticamente cuando esta opción esté activada.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(16)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func stepRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("•")
+                .font(.body)
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+    
+    // MARK: - Lógica de flujo
+    
+    private func startAccountSelection() {
+        guard !isImporting else { return }
+        
+        guard !activeAccounts.isEmpty else {
+            alertTitle = "No hay cuentas disponibles"
+            alertMessage = "Para importar transacciones, primero crea al menos una cuenta en Finaria."
+            isShowingAlert = true
+            return
+        }
+        
+        isShowingAccountPicker = true
+    }
+    
+    private func handleFileImportResult(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            alertTitle = "No se pudo leer el archivo"
+            alertMessage = error.localizedDescription
+            isShowingAlert = true
+        case .success(let urls):
+            guard let url = urls.first else {
+                alertTitle = "Archivo no válido"
+                alertMessage = "No se pudo obtener la URL del archivo seleccionado."
+                isShowingAlert = true
+                return
+            }
+            
+            guard let account = selectedAccount else {
+                // Si por alguna razón no tenemos cuenta, simplemente salimos.
+                return
+            }
+            
+            performImport(from: url, into: account)
+        }
+    }
+    
+    private func performImport(from url: URL, into account: Account) {
+        isImporting = true
+        
+        Task {
+            do {
+                // FIN-24: el flag allowCreatingNewCategories controla
+                // si se crean nuevas categorías/subcategorías durante la importación.
+                let result = try TransactionCSVImportService.importCSV(
+                    from: url,
+                    into: account,
+                    in: modelContext,
+                    allowCreatingNewCategories: allowCreatingNewCategories
+                )
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    // Si la persistencia falla, mostramos un error genérico.
+                    alertTitle = "Error al guardar"
+                    alertMessage = error.localizedDescription
+                    shouldDismissAfterAlert = false
+                    isShowingAlert = true
+                    isImporting = false
+                    return
+                }
+                
+                alertTitle = "Importación completada"
+                alertMessage = "Importación completada: \(result.createdCount) registros cargados."
+                shouldDismissAfterAlert = true
+                isShowingAlert = true
+            } catch {
+                alertTitle = "Error al importar"
+                alertMessage = error.localizedDescription
+                shouldDismissAfterAlert = false
+                isShowingAlert = true
+            }
+            
+            isImporting = false
+        }
+    }
+}
+
+/// Hoja de selección de cuenta destino para la importación
+struct ImportAccountPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    let accounts: [Account]
+    @Binding var selectedAccount: Account?
+    let onContinue: (Account) -> Void
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+                
+                if accounts.isEmpty {
+                    VStack(spacing: 12) {
+                        Text("No hay cuentas disponibles")
+                            .font(.headline)
+                        Text("Crea al menos una cuenta antes de importar movimientos.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                } else {
+                    List {
+                        ForEach(accounts) { account in
+                            Button {
+                                selectedAccount = account
+                            } label: {
+                                accountRow(for: account)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .scrollContentBackground(.hidden)
+                }
+            }
+            .navigationTitle("Selecciona una cuenta")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancelar") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Continuar") {
+                        if let account = selectedAccount {
+                            onContinue(account)
+                        }
+                    }
+                    .disabled(selectedAccount == nil)
+                }
+            }
+        }
+    }
+    
+    // Fila de cuenta reutilizable para el selector
+    @ViewBuilder
+    private func accountRow(for account: Account) -> some View {
+        let normalizedCode = normalizeCurrencyCode(account.currencyCode)
+        let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
+        let info = currencyInfo(for: currency)
+        
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(colorForHex(account.colorHex))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: displayIconName(for: account))
+                        .foregroundStyle(.white)
+                )
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account.name)
+                    .font(.body.weight(.semibold))
+                Text(info.name.capitalized)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            if selectedAccount == account {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.tint)
+            } else {
+                Image(systemName: "circle")
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
 // MARK: - Vaciar datos del usuario (FIN-25)
 
 struct UserDataResetView: View {
@@ -643,6 +1140,14 @@ struct UserDataResetView: View {
     @State private var isShowingConfirmationAlert = false
     @State private var isProcessing = false
     @State private var errorMessage: String?
+    
+    /// Callback opcional para notificar que el borrado completo de datos
+    /// se ha realizado y permitir cerrar también la hoja de Ajustes.
+    let onUserDataWiped: (() -> Void)?
+    
+    init(onUserDataWiped: (() -> Void)? = nil) {
+        self.onUserDataWiped = onUserDataWiped
+    }
     
     var body: some View {
         ZStack {
@@ -742,6 +1247,12 @@ struct UserDataResetView: View {
             )
             
             isProcessing = false
+            
+            // Notificamos al presentador (Ajustes) para que cierre la hoja
+            // y el usuario vuelva al Panel de inicio.
+            onUserDataWiped?()
+            
+            // Cerramos también esta vista de confirmación si sigue visible.
             dismiss()
         } catch {
             isProcessing = false
@@ -1505,6 +2016,10 @@ struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     
+    // FIN-46: Transacciones usadas para calcular saldos actuales en Ajustes
+    @Query(sort: \TransactionItem.date, order: .reverse)
+    private var transactions: [TransactionItem]
+    
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
     
     @State private var isPresentingCreateAccount = false
@@ -1630,17 +2145,26 @@ struct AccountsSettingsListView: View {
         account.type.replacingOccurrences(of: "_", with: " ").capitalized
     }
     
+    // FIN-46: Saldo actual mostrado en la lista de cuentas de Ajustes
     private func formattedBalance(for account: Account) -> String {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let info = currencyInfo(for: currency)
+        
+        // Calculamos el saldo actual en Decimal usando el servicio central.
+        let currentDecimal = AccountBalanceCalculator.currentBalance(
+            for: account,
+            allTransactions: transactions
+        )
+        let nsNumber = currentDecimal as NSDecimalNumber
+        let amountDouble = nsNumber.doubleValue
         
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         
-        let formattedAmount = formatter.string(from: NSNumber(value: account.initialBalance)) ?? "0.00"
+        let formattedAmount = formatter.string(from: NSNumber(value: amountDouble)) ?? "0.00"
         return "\(info.code) \(formattedAmount)"
     }
     
@@ -1745,9 +2269,14 @@ struct PanelBackgroundView: View {
 
 // MARK: - Tarjeta de cuenta
 
+// FIN-46: Tarjeta de cuenta mostrando el saldo actual
+// No modificar sin aprobación explícita, ya que se reutiliza
+// para validar visualmente el comportamiento de FIN-46.
 struct AccountCardView: View {
     
     let account: Account
+    /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
+    let currentBalance: Double
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1764,7 +2293,7 @@ struct AccountCardView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             
-            Text("\(normalizeCurrencyCode(account.currencyCode)) \(formattedAmount(account.initialBalance))")
+            Text("\(normalizeCurrencyCode(account.currencyCode)) \(formattedAmount(currentBalance))")
                 .font(.title3.weight(.bold))
         }
         .padding(16)
