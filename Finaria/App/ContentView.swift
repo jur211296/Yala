@@ -766,6 +766,7 @@ struct ImportIntroSheet: View {
     @State private var isShowingFileImporter: Bool = false
     @State private var selectedAccount: Account?
     @State private var isImporting: Bool = false
+    @State private var templateFile: TemplateFile?
     
     @State private var alertTitle: String = ""
     @State private var alertMessage: String?
@@ -851,6 +852,19 @@ struct ImportIntroSheet: View {
         ) { result in
             handleFileImportResult(result)
         }
+        .sheet(item: $templateFile, onDismiss: {
+            templateFile = nil
+        }) { file in
+            ActivityView(activityItems: [file.url]) { completed in
+                // Solo mostramos la confirmación si el usuario completó
+                // alguna acción de guardado/compartido en el share sheet.
+                if completed {
+                    alertTitle = "Plantilla generada"
+                    alertMessage = "La plantilla CSV se generó correctamente. Ahora puedes editarla y volver a esta pantalla para importarla."
+                    isShowingAlert = true
+                }
+            }
+        }
         .alert(alertTitle, isPresented: $isShowingAlert) {
             Button("Aceptar", role: .cancel) {
                 if shouldDismissAfterAlert {
@@ -905,8 +919,7 @@ struct ImportIntroSheet: View {
         SectionBox(title: "Plantilla de ejemplo") {
             VStack(alignment: .leading, spacing: 8) {
                 Button {
-                    // Fuera de alcance en FIN-24:
-                    // la descarga real de la plantilla se implementará en otra historia.
+                    generateTemplateCSV()
                 } label: {
                     HStack {
                         Image(systemName: "arrow.down.circle")
@@ -917,9 +930,8 @@ struct ImportIntroSheet: View {
                     .padding(.vertical, 12)
                 }
                 .buttonStyle(.bordered)
-                .disabled(true)
                 
-                Text("Pronto podrás descargar una plantilla lista para usar. Por ahora, puedes seguir las instrucciones de formato indicadas arriba.")
+                Text("Descarga una plantilla CSV oficial de Finaria con el encabezado correcto y un ejemplo de fila. Luego podrás rellenarla y volver a esta pantalla para importarla.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 16)
@@ -958,6 +970,37 @@ struct ImportIntroSheet: View {
     }
     
     // MARK: - Lógica de flujo
+    
+    private func generateTemplateCSV() {
+        // FIN-35: Plantilla oficial de importación CSV de Finaria
+        // Encabezado compatible con TransactionCSVImportService
+        // Formato: date,amount,currency,category,subcategory,note
+        let header = "date,amount,currency,category,subcategory,note\n"
+        
+        // Fila de ejemplo bien formada, alineada con los criterios de FIN-35
+        let exampleRow = "2024-01-15,-120.50,PEN,Alimentación,Supermercados y bodegas,Compra semanal\n"
+        
+        let csvString = header + exampleRow
+        
+        guard let data = csvString.data(using: .utf8) else {
+            alertTitle = "No se pudo generar la plantilla"
+            alertMessage = "Ocurrió un problema al crear el archivo CSV. Inténtalo nuevamente."
+            isShowingAlert = true
+            return
+        }
+        
+        let tempDirectory = FileManager.default.temporaryDirectory
+        let fileURL = tempDirectory.appendingPathComponent("Finaria_Plantilla_Importacion.csv")
+        
+        do {
+            try data.write(to: fileURL, options: .atomic)
+            templateFile = TemplateFile(url: fileURL)
+        } catch {
+            alertTitle = "No se pudo generar la plantilla"
+            alertMessage = error.localizedDescription
+            isShowingAlert = true
+        }
+    }
     
     private func startAccountSelection() {
         guard !isImporting else { return }
@@ -2249,6 +2292,34 @@ struct StatisticsView: View {
             .navigationTitle("Estadísticas")
         }
     }
+}
+
+struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+    /// completion(true) cuando el usuario completa una acción (guardar/compartir),
+    /// completion(false) cuando simplemente cierra el share sheet.
+    var completion: ((Bool) -> Void)? = nil
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: applicationActivities
+        )
+        controller.completionWithItemsHandler = { _, completed, _, _ in
+            completion?(completed)
+        }
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {
+        // No se necesita actualizar nada dinámicamente
+    }
+}
+
+struct TemplateFile: Identifiable {
+    let id = UUID()
+    let url: URL
 }
 
 // MARK: - Fondo general tipo Liquid Glass claro
