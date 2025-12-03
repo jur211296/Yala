@@ -37,7 +37,7 @@ struct ExportFiltersStepView: View {
     @State private var expandedCategories: Set<Category> = []
 
     // Etiquetas
-    @State private var selectedTags: Set<Tag> = []
+    @State private var selectedTags: Set<PersistentIdentifier> = []
 
     // Moneda
     @State private var selectedCurrencies: Set<CurrencyCode> = Set(CurrencyCode.allCases)
@@ -93,14 +93,24 @@ struct ExportFiltersStepView: View {
         // Combinar categorías seleccionadas explícitamente con las de las subcategorías
         let categoriesFromSub = Set(selectedSubcategories.map { $0.category })
         let finalCategories = selectedCategoriesState.union(categoriesFromSub)
+        
+        let selectedTagObjects = allTags.filter { selectedTags.contains($0.persistentModelID) }
 
+        let selectedTagNames: [String]
+        if !allTags.isEmpty && selectedTagObjects.count == allTags.count {
+            // Interpretar "todas seleccionadas" como "sin filtro por etiquetas"
+            selectedTagNames = []
+        } else {
+            selectedTagNames = selectedTagObjects.map { $0.name }
+        }
+        
         return ExportFilters(
             selectedAccounts: allAccounts.filter {
                 selectedAccounts.contains($0.persistentModelID)
             },
             selectedCategories: Array(finalCategories),
             selectedSubcategories: Array(selectedSubcategories),
-            selectedTagNames: selectedTags.map { $0.name },
+            selectedTagNames: selectedTagNames,
             selectedCurrencies: Array(selectedCurrencies),
             amountCondition: amountCondition,
             period: period,
@@ -445,12 +455,40 @@ struct ExportFiltersStepView: View {
 
     private var tagsSheetView: some View {
         NavigationStack {
-            MultiSelectionList(
-                title: "Seleccionar etiquetas",
-                items: allTags,
-                selection: $selectedTags,
-                label: { $0.name }
-            )
+            List {
+                ForEach(allTags) { tag in
+                    Button {
+                        if selectedTags.contains(tag.persistentModelID) {
+                            selectedTags.remove(tag.persistentModelID)
+                        } else {
+                            selectedTags.insert(tag.persistentModelID)
+                        }
+                    } label: {
+                        HStack {
+                            Text(tag.name)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if selectedTags.contains(tag.persistentModelID) {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                }
+            }
+            .navigationTitle("Seleccionar etiquetas")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showTagsSheet = false
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
         }
     }
 
@@ -578,7 +616,19 @@ struct ExportFiltersStepView: View {
     }
 
     private var selectedTagsText: String {
-        selectedTags.isEmpty ? "Todas las etiquetas" : "\(selectedTags.count) seleccionadas"
+        if allTags.isEmpty {
+            return "Sin etiquetas"
+        }
+        if selectedTags.isEmpty || selectedTags.count == allTags.count {
+            return "Todas las etiquetas"
+        }
+        return "\(selectedTags.count) seleccionadas"
+    }
+    
+    private func syncTagsSelection() {
+        if selectedTags.isEmpty && !allTags.isEmpty {
+            selectedTags = Set(allTags.map { $0.persistentModelID })
+        }
     }
 
     private var selectedCurrenciesText: String {
@@ -659,6 +709,9 @@ struct ExportFiltersStepView: View {
             if !allTags.isEmpty {
                 showTagsSheet = true
             }
+        }
+        .onAppear {
+            syncTagsSelection()
         }
         .opacity(allTags.isEmpty ? 0.5 : 1.0)
     }

@@ -80,15 +80,18 @@ struct ExportSummaryStepView: View {
         }
         .sheet(isPresented: $showShareSheet) {
             if let url = exportedFileURL {
-                ShareSheet(activityItems: [url])
-                    .presentationDetents([.medium, .large])
-                    .onDisappear {
-                        // Al cerrar el share sheet, asumimos éxito y preguntamos si quiere cerrar
-                        // Opcional: podríamos validar si realmente se compartió, pero UIActivityViewController
-                        // no da feedback fácil en SwiftUI sin delegados complejos.
-                        // Simplemente mostramos éxito al volver.
-                        showSuccessAlert = true
+                ShareSheet(
+                    activityItems: [url],
+                    onComplete: { completed in
+                        // Solo mostramos el mensaje de éxito si realmente se completó
+                        // alguna acción (guardar/compartir). Si el usuario cierra con la X,
+                        // `completed` será false y no mostraremos la confirmación.
+                        if completed {
+                            showSuccessAlert = true
+                        }
                     }
+                )
+                .presentationDetents([.medium, .large])
             }
         }
     }
@@ -130,6 +133,13 @@ struct ExportSummaryStepView: View {
                 summaryRow(
                     label: "Categorías",
                     value: categoriesSummaryText
+                )
+
+                Divider()
+
+                summaryRow(
+                    label: "Etiquetas",
+                    value: tagsSummaryText
                 )
 
                 Divider()
@@ -246,6 +256,13 @@ struct ExportSummaryStepView: View {
         return "\(subCount) subcategorías seleccionadas"
     }
 
+    private var tagsSummaryText: String {
+        if exportFilters.selectedTagNames.isEmpty {
+            return "Todas las etiquetas"
+        }
+        return "\(exportFilters.selectedTagNames.count) seleccionadas"
+    }
+
     private var currenciesSummaryText: String {
         if exportFilters.selectedCurrencies.isEmpty {
             return "Todas"
@@ -307,12 +324,21 @@ struct ExportSummaryStepView: View {
 struct ShareSheet: UIViewControllerRepresentable {
     var activityItems: [Any]
     var applicationActivities: [UIActivity]? = nil
+    /// Callback opcional que indica si la actividad se completó (`true`)
+    /// o si el usuario canceló (`false`).
+    var onComplete: ((Bool) -> Void)? = nil
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
         let controller = UIActivityViewController(
             activityItems: activityItems,
             applicationActivities: applicationActivities
         )
+
+        controller.completionWithItemsHandler = { _, completed, _, _ in
+            // Notificamos al contenedor si la actividad se completó o no.
+            onComplete?(completed)
+        }
+
         return controller
     }
 

@@ -241,12 +241,14 @@ struct ImportIntroSheet: View {
     private func generateTemplateCSV() {
         // FIN-35: Plantilla oficial de importación CSV de Finaria
         // Encabezado compatible con TransactionCSVImportService
-        // Formato: date,amount,currency,category,subcategory,note
-        let header = "date,amount,currency,category,subcategory,note\n"
+        // Formato: date,amount,currency,category,subcategory,tags,note
+        // La columna `tags` debe contener los nombres de etiquetas separados por punto y coma (;)
+        // por ejemplo: "Fiesta".
+        let header = "date,amount,currency,category,subcategory,tags,note\n"
 
         // Fila de ejemplo bien formada, alineada con los criterios de FIN-35
         let exampleRow =
-            "2024-01-15,-120.50,PEN,Alimentación,Supermercados y bodegas,Compra semanal\n"
+            "2024-01-15,-120.50,PEN,Alimentación,Supermercados y bodegas,Fiesta,Compra semanal\n"
 
         let csvString = header + exampleRow
 

@@ -25,6 +25,7 @@ enum CSVImportColumn: String {
     case currency
     case category
     case subcategory
+    case tags
     case note
 }
 
@@ -85,6 +86,7 @@ struct ParsedTransactionDraft {
     let category: Category
     let subcategory: Subcategory
     let note: String?
+    let tags: [Tag]
 }
 
 /// Resultado de una importación exitosa.
@@ -138,7 +140,7 @@ enum TransactionCSVImportService {
                 category: draft.category,
                 subcategory: draft.subcategory,
                 account: account,
-                tags: []
+                tags: draft.tags
             )
             
             context.insert(transaction)
@@ -190,20 +192,38 @@ enum TransactionCSVImportService {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
         
         // Encabezados esperados:
-        // - sin nota: date,amount,currency,category,subcategory
+        // - sin nota ni etiquetas: date,amount,currency,category,subcategory
         // - con nota: date,amount,currency,category,subcategory,note
-        let expectedWithoutNote = ["date", "amount", "currency", "category", "subcategory"]
-        let expectedWithNote = ["date", "amount", "currency", "category", "subcategory", "note"]
+        // - con etiquetas y nota: date,amount,currency,category,subcategory,tags,note
+        // - con etiquetas sin nota (opcional): date,amount,currency,category,subcategory,tags
+        let expectedBase = ["date", "amount", "currency", "category", "subcategory"]
+        let expectedWithNote = expectedBase + ["note"]
+        let expectedWithTagsAndNote = expectedBase + ["tags", "note"]
+        let expectedWithTagsOnly = expectedBase + ["tags"]
         
-        let headerMatchesWithoutNote = headerColumns == expectedWithoutNote
+        let headerMatchesBase = headerColumns == expectedBase
         let headerMatchesWithNote = headerColumns == expectedWithNote
+        let headerMatchesWithTagsAndNote = headerColumns == expectedWithTagsAndNote
+        let headerMatchesWithTagsOnly = headerColumns == expectedWithTagsOnly
         
-        guard headerMatchesWithoutNote || headerMatchesWithNote else {
+        guard headerMatchesBase || headerMatchesWithNote || headerMatchesWithTagsAndNote || headerMatchesWithTagsOnly else {
             throw CSVImportError.invalidHeader(found: headerLine)
         }
         
-        let hasNoteColumn = headerMatchesWithNote
-        let expectedColumnCount = hasNoteColumn ? 6 : 5
+        let hasTagsColumn = headerMatchesWithTagsAndNote || headerMatchesWithTagsOnly
+        let hasNoteColumn = headerMatchesWithNote || headerMatchesWithTagsAndNote
+        
+        let expectedColumnCount: Int
+        switch (hasTagsColumn, hasNoteColumn) {
+        case (false, false):
+            expectedColumnCount = 5
+        case (false, true):
+            expectedColumnCount = 6
+        case (true, false):
+            expectedColumnCount = 6
+        case (true, true):
+            expectedColumnCount = 7
+        }
         
         // 5. Primera pasada: parsear y validar todas las filas a drafts
         
@@ -230,8 +250,10 @@ enum TransactionCSVImportService {
             // asumimos que los delimitadores extra pertenecen a la nota
             // y los recombinamos.
             if hasNoteColumn && columns.count > expectedColumnCount {
-                let fixedPrefix = Array(columns.prefix(5))
-                let noteParts = columns.suffix(from: 5)
+                // Índice de la columna note según si hay tags o no
+                let noteIndex = hasTagsColumn ? 6 : 5
+                let fixedPrefix = Array(columns.prefix(noteIndex))
+                let noteParts = columns.suffix(from: noteIndex)
                 let mergedNote = noteParts.joined(separator: String(delimiter))
                 columns = fixedPrefix + [mergedNote]
             }
@@ -250,14 +272,20 @@ enum TransactionCSVImportService {
             // 2: currency
             // 3: category
             // 4: subcategory
-            // 5: note (opcional)
+            // 5: tags (opcional, si existe)
+            // 6: note (opcional, si existe)
             
             let dateString = columns[0]
             let amountString = columns[1]
             let currencyString = columns[2]
             let categoryName = columns[3]
             let subcategoryName = columns[4]
-            let noteString = hasNoteColumn ? columns[5] : nil
+            
+            let tagsIndex = hasTagsColumn ? 5 : nil
+            let noteIndex = hasNoteColumn ? (hasTagsColumn ? 6 : 5) : nil
+            
+            let tagsString = tagsIndex != nil ? columns[tagsIndex!] : nil
+            let noteString = noteIndex != nil ? columns[noteIndex!] : nil
             
             // 5.1 Validar fecha
             guard let parsedDate = parseCSVDate(dateString) else {
@@ -367,14 +395,21 @@ enum TransactionCSVImportService {
                 subcategory = existingSubcategory
             }
             
-            // 5.7 Construimos el draft
+            // 5.7 Resolver etiquetas (tags) a partir de la columna opcional
+            let resolvedTags = try resolveTags(
+                from: tagsString,
+                in: context,
+                allowCreatingNewTags: allowCreatingNewCategories
+            )
+            // 5.8 Construimos el draft
             let draft = ParsedTransactionDraft(
                 date: parsedDate,
                 amount: decimalAmount,
                 normalizedCurrencyCode: normalizedFileCurrency,
                 category: category,
                 subcategory: subcategory,
-                note: noteString?.isEmpty == true ? nil : noteString
+                note: noteString?.isEmpty == true ? nil : noteString,
+                tags: resolvedTags
             )
             
             drafts.append(draft)
@@ -389,6 +424,58 @@ enum TransactionCSVImportService {
             createdCount: drafts.count,
             drafts: drafts
         )
+    }
+    
+    // MARK: - Helpers de Tags
+    /// Resuelve la lista de etiquetas a partir de una cadena opcional con nombres
+    /// separados por punto y coma (;). Si `allowCreatingNewTags` es true, se crean
+    /// etiquetas nuevas cuando no existan. Si es false, se ignoran las etiquetas
+    /// inexistentes (no se aborta la importación).
+    private static func resolveTags(
+        from rawTags: String?,
+        in context: ModelContext,
+        allowCreatingNewTags: Bool
+    ) throws -> [Tag] {
+        guard let raw = rawTags,
+              !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return []
+        }
+        
+        let names = raw
+            .split(separator: ";")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        
+        if names.isEmpty {
+            return []
+        }
+        
+        var resolved: [Tag] = []
+        resolved.reserveCapacity(names.count)
+        
+        for name in names {
+            let descriptor = FetchDescriptor<Tag>(
+                predicate: #Predicate { tag in
+                    tag.name == name && tag.isActive
+                }
+            )
+            
+            let existing = try context.fetch(descriptor)
+            
+            if let found = existing.first {
+                resolved.append(found)
+            } else if allowCreatingNewTags {
+                let newTag = Tag(name: name)
+                context.insert(newTag)
+                resolved.append(newTag)
+            } else {
+                // Si no se permite crear nuevas etiquetas, simplemente ignoramos
+                // los nombres que no encontremos para no bloquear la importación.
+                continue
+            }
+        }
+        
+        return resolved
     }
     
     // MARK: - Parseo de fechas

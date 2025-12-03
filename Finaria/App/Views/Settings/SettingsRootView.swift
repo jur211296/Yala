@@ -100,7 +100,7 @@ struct SettingsRootView: View {
                 SubsectionDivider()
 
                 NavigationLink {
-                    SettingsPlaceholderView(title: "Etiquetas")
+                    TagsSettingsListView()
                 } label: {
                     settingsRow(title: "Etiquetas", systemImage: "number")
                 }
