@@ -19,22 +19,22 @@ func normalizeCurrencyCode(_ raw: String) -> String {
     if trimmed.isEmpty {
         return "PEN"
     }
-    
+
     let upper = trimmed.uppercased()
-    
+
     switch upper {
     // Sol peruano
     case "PEN", "SOL", "SOLES", "S/", "S/.", "S/. ":
         return "PEN"
-        
+
     // Dólar estadounidense
     case "USD", "US$", "US DOLLAR", "$", "$USD", "USD$":
         return "USD"
-        
+
     // Euro
     case "EUR", "€", "EURO":
         return "EUR"
-        
+
     default:
         // Intento de normalización genérica: tomar solo letras y quedarnos con 3
         let letters = upper.filter { $0.isLetter }
@@ -58,7 +58,7 @@ func normalizeCurrencyCode(_ raw: String) -> String {
 ///   - 1 EUR = 3.89 PEN
 func rateToPEN(_ rawCode: String) -> Decimal {
     let code = normalizeCurrencyCode(rawCode)
-    
+
     switch code {
     case "PEN":
         return 1.0
@@ -78,30 +78,49 @@ func rateToPEN(_ rawCode: String) -> Decimal {
 func convert(_ amount: Decimal, from rawFrom: String, to rawTo: String) -> Decimal {
     let fromCode = normalizeCurrencyCode(rawFrom)
     let toCode = normalizeCurrencyCode(rawTo)
-    
+
     // Si es la misma moneda, no hay nada que hacer
     if fromCode == toCode {
         return amount
     }
-    
+
     // Cantidad en PEN
     let fromRate = rateToPEN(fromCode)
     if fromRate == 0 {
         return amount
     }
-    
+
     let amountInPEN = amount * fromRate
-    
+
     // Si el destino es PEN, devolvemos directamente
     if toCode == "PEN" {
         return amountInPEN
     }
-    
+
     // Convertir de PEN a la moneda objetivo
     let toRate = rateToPEN(toCode)
     if toRate == 0 {
         return amount
     }
-    
+
     return amountInPEN / toRate
+}
+
+enum CurrencyCode: String, CaseIterable, Identifiable {
+    case pen = "PEN"
+    case usd = "USD"
+    case eur = "EUR"
+
+    var id: String { rawValue }
+}
+
+func currencyInfo(for currency: CurrencyCode) -> (name: String, code: String, flag: String) {
+    switch currency {
+    case .pen:
+        return ("sol peruano", "PEN", "🇵🇪")
+    case .usd:
+        return ("dólar estadounidense", "USD", "🇺🇸")
+    case .eur:
+        return ("euro", "EUR", "🇪🇺")
+    }
 }
