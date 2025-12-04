@@ -36,6 +36,11 @@ struct PanelView: View {
 
     @State private var isPresentingAccountForm = false
     @State private var isPresentingSettings = false
+    // FIN-57: Estado para la hoja de periodo personalizado y sus borradores
+    @State private var isPresentingCustomPeriodSheet = false
+    @State private var customPeriodStartDraft = Date()
+    @State private var customPeriodEndDraft = Date()
+    @State private var customPeriodErrorMessage: String?
 
     /// FIN-56: Cuenta actualmente seleccionada en el carrusel de cuentas del Panel.
     @State private var selectedAccountID: PersistentIdentifier?
@@ -53,6 +58,10 @@ struct PanelView: View {
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
         .rawValue
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
+    // FIN-57: Persistencia del filtro de periodo seleccionado en el Panel
+    @AppStorage("panelPeriodType") private var panelPeriodTypeRaw: String = PanelPeriodType.thisMonth.rawValue
+    @AppStorage("panelPeriodCustomStartISO") private var panelPeriodCustomStartISO: String = ""
+    @AppStorage("panelPeriodCustomEndISO") private var panelPeriodCustomEndISO: String = ""
 
     private var defaultCurrency: CurrencyCode {
         CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
@@ -60,6 +69,27 @@ struct PanelView: View {
 
     private var accountsSortOrderNames: [String] {
         accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
+    }
+
+    /// FIN-57: Filtro de periodo global del Panel reconstruido a partir de @AppStorage.
+    private var panelPeriodFilter: PanelPeriodFilter {
+        let periodType = PanelPeriodType(rawValue: panelPeriodTypeRaw) ?? .thisMonth
+
+        let isoFormatter = ISO8601DateFormatter()
+        let startDate = isoFormatter.date(from: panelPeriodCustomStartISO)
+        let endDate = isoFormatter.date(from: panelPeriodCustomEndISO)
+
+        return PanelPeriodFilter(
+            type: periodType,
+            customStartDate: startDate,
+            customEndDate: endDate
+        )
+    }
+
+    /// FIN-57: Intervalo de fechas efectivo que el Panel expone para sus tarjetas hijas.
+    /// Esta propiedad se utilizará en historias posteriores para filtrar estadísticas por rango.
+    private var panelDateInterval: DateInterval {
+        panelPeriodFilter.dateInterval()
     }
 
     private var activeAccounts: [Account] {
@@ -245,8 +275,9 @@ struct PanelView: View {
                 PanelBackgroundView()
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 10) {
                         accountsSection
+                        periodFilterSection
                         totalBalanceSection
                     }
                     .padding(.horizontal, 16)
@@ -287,6 +318,10 @@ struct PanelView: View {
             .sheet(isPresented: $isPresentingSettings) {
                 SettingsRootView()
             }
+            .sheet(isPresented: $isPresentingCustomPeriodSheet) {
+                customPeriodSheetContent
+                    .presentationDetents([.height(230)])
+            }
         }
         // -----------------------------------------------------------------
         // FIN-18: Semilla de categorías por defecto
@@ -320,7 +355,7 @@ struct PanelView: View {
     // y selección visual por color de cuenta. No modificar sin aprobación explícita
     // del usuario, ya que es la base del nuevo diseño de cuentas en Panel.
     private var accountsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Cuentas")
                 .font(.title2.weight(.semibold))
 
@@ -374,7 +409,7 @@ struct PanelView: View {
             return max(0, min(pageCount - 1, rawIndex))
         }()
 
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             GeometryReader { geo in
                 let totalWidth = geo.size.width
                 let spacing: CGFloat = 12
@@ -574,6 +609,221 @@ struct PanelView: View {
                 .font(.title3.weight(.semibold))
         }
         .padding(.top, 8)
+    }
+}
+
+// MARK: - FIN-57: Period Filter Section and Helpers
+
+// FIN-57: Control segmentado de periodo flotante bajo las cajas de cuentas.
+private extension PanelView {
+    private var periodFilterSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ZStack {
+                // Fondo gris claro tipo “segmented control” iOS
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color(uiColor: .systemGray5))
+
+                HStack(spacing: 0) {
+                    periodSegmentButton(title: "Esta semana", type: .thisWeek)
+                    periodSegmentButton(title: "Este mes", type: .thisMonth)
+                    periodSegmentButton(title: "Este año", type: .thisYear)
+                    periodCustomSegmentButton()
+                }
+                .padding(2)
+            }
+            .frame(height: 32)
+        }
+    }
+
+    /// FIN-57: Botón genérico para los segmentos estándar del filtro de periodo.
+    private func periodSegmentButton(
+        title: String,
+        type: PanelPeriodType
+    ) -> some View {
+        let isSelected = panelPeriodFilter.type == type
+
+        return Button {
+            panelPeriodTypeRaw = type.rawValue
+        } label: {
+            Text(title)
+                .font(.footnote)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .lineLimit(1)
+                .minimumScaleFactor(0.9)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(
+            Group {
+                if isSelected {
+                    // Solo el segmento seleccionado tiene “pastilla” blanca
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color.white)
+                } else {
+                    Color.clear
+                }
+            }
+        )
+        .foregroundStyle(isSelected ? Color.black : Color.primary)
+    }
+
+    /// FIN-57: Segmento "Personalizado" que abre la hoja de selección de fechas.
+    private func periodCustomSegmentButton() -> some View {
+        let isSelected = panelPeriodFilter.type == .custom
+
+        return Button {
+            prepareCustomPeriodDraft()
+            isPresentingCustomPeriodSheet = true
+        } label: {
+            Text("Personalizado")
+                .font(.footnote)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .lineLimit(1)
+                .minimumScaleFactor(0.9)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(
+            Group {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color.white)
+                } else {
+                    Color.clear
+                }
+            }
+        )
+        .foregroundStyle(isSelected ? Color.black : Color.primary)
+    }
+
+    /// FIN-57: Inicializa los borradores del rango personalizado manteniendo el periodo previo.
+    private func prepareCustomPeriodDraft() {
+        customPeriodErrorMessage = nil
+
+        let isoFormatter = ISO8601DateFormatter()
+        if let savedStart = isoFormatter.date(from: panelPeriodCustomStartISO),
+           let savedEnd = isoFormatter.date(from: panelPeriodCustomEndISO),
+           savedStart <= savedEnd {
+            customPeriodStartDraft = savedStart
+            customPeriodEndDraft = savedEnd
+            return
+        }
+
+        let interval = panelDateInterval
+        customPeriodStartDraft = interval.start
+        customPeriodEndDraft = interval.end
+    }
+
+    /// FIN-57: Hoja modal para seleccionar el periodo personalizado (Desde / Hasta) con diseño simple.
+    private var customPeriodSheetContent: some View {
+        NavigationStack {
+            ZStack {
+                // Fondo tipo "liquid glass" suave que respeta el contenido del Panel.
+                Color.clear
+                    .background(.ultraThinMaterial)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 12) {
+                    // Título único, sin subtítulos adicionales para mantenerlo simple.
+                    Text("Periodo personalizado")
+                        .font(.headline)
+                        .padding(.top, 12)
+
+                    // Contenido principal: solo dos campos de fecha, sin tarjeta extra.
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Desde")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            DatePicker(
+                                "",
+                                selection: $customPeriodStartDraft,
+                                displayedComponents: .date
+                            )
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Hasta")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            DatePicker(
+                                "",
+                                selection: $customPeriodEndDraft,
+                                in: customPeriodStartDraft...,
+                                displayedComponents: .date
+                            )
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                        }
+                    }
+                    .padding(.horizontal, 4)
+
+                    if let error = customPeriodErrorMessage {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(Color.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                    }
+
+                    // Zona de acciones: misma jerarquía visual que el resto de Finaria.
+                    HStack(spacing: 12) {
+                        Button {
+                            // FIN-57: Cancelar mantiene el periodo previamente activo.
+                            isPresentingCustomPeriodSheet = false
+                        } label: {
+                            Text("Cancelar")
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Color.secondary)
+
+                        Button {
+                            applyCustomPeriod()
+                        } label: {
+                            Text("Aplicar")
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.black)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    /// FIN-57: Aplica el rango personalizado validando que la fecha de fin no sea anterior al inicio.
+    private func applyCustomPeriod() {
+        customPeriodErrorMessage = nil
+
+        let start = customPeriodStartDraft
+        let end = customPeriodEndDraft
+
+        if end < start {
+            customPeriodErrorMessage = "La fecha de fin no puede ser anterior a la fecha de inicio."
+            return
+        }
+
+        let isoFormatter = ISO8601DateFormatter()
+        panelPeriodCustomStartISO = isoFormatter.string(from: start)
+        panelPeriodCustomEndISO = isoFormatter.string(from: end)
+        panelPeriodTypeRaw = PanelPeriodType.custom.rawValue
+
+        isPresentingCustomPeriodSheet = false
     }
 }
 
