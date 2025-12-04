@@ -45,13 +45,15 @@ struct AccountCardView: View {
         // Estado visual:
         // - Gris claro cuando no está seleccionada.
         // - Fondo con el color de la cuenta cuando está seleccionada.
-        let backgroundColor = isSelected
-            ? colorFromHex(account.colorHex)
+        let backgroundColor =
+            isSelected
+            ? Color(hex: account.colorHex)
             : Color.white.opacity(0.95)
 
         let foregroundColor: Color = isSelected ? .white : .primary
         let secondaryForeground: Color = isSelected ? Color.white.opacity(0.85) : .secondary
-        let iconBackground = isSelected
+        let iconBackground =
+            isSelected
             ? Color.white.opacity(0.18)
             : Color.black.opacity(0.05)
 
@@ -123,31 +125,6 @@ struct AccountCardView: View {
         return formatter.string(from: NSNumber(value: value)) ?? "0.00"
     }
 
-    /// Convierte un string en formato hex (por ejemplo "#1C3556") a `Color`.
-    /// Implementación local para FIN-56 para no depender de otras extensiones.
-    private func colorFromHex(_ hex: String) -> Color {
-        var cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        if cleaned.hasPrefix("#") {
-            cleaned.removeFirst()
-        }
-
-        var int: UInt64 = 0
-        Scanner(string: cleaned).scanHexInt64(&int)
-
-        let r, g, b: Double
-        switch cleaned.count {
-        case 6:
-            r = Double((int & 0xFF0000) >> 16) / 255.0
-            g = Double((int & 0x00FF00) >> 8) / 255.0
-            b = Double(int & 0x0000FF) / 255.0
-        default:
-            r = 0.0
-            g = 0.0
-            b = 0.0
-        }
-
-        return Color(red: r, green: g, blue: b)
-    }
 }
 
 // MARK: - Tarjeta para agregar cuenta
