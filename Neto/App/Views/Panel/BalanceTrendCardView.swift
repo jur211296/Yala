@@ -18,8 +18,10 @@ struct BalanceTrendCardView: View {
     let historicalThreshold: Double
     let grouping: TrendGrouping
     let interval: DateInterval
+    let period: PanelViewModel.TrendPeriod
     @Binding var trendType: TrendType
     @Binding var focusedDate: Date?
+    var isLocked: Bool = false
 
     /// Callback when user taps "Ver más detalle"
     let onViewDetail: ((TrendType) -> Void)?
@@ -35,6 +37,8 @@ struct BalanceTrendCardView: View {
         interval: DateInterval,
         trendType: Binding<TrendType>,
         focusedDate: Binding<Date?>,
+        period: PanelViewModel.TrendPeriod,
+        isLocked: Bool = false,
         onViewDetail: ((TrendType) -> Void)? = nil
     ) {
         self.currentBalance = currentBalance
@@ -47,6 +51,8 @@ struct BalanceTrendCardView: View {
         self.interval = interval
         self._trendType = trendType
         self._focusedDate = focusedDate
+        self.period = period
+        self.isLocked = isLocked
         self.onViewDetail = onViewDetail
     }
 
@@ -54,25 +60,6 @@ struct BalanceTrendCardView: View {
         VStack(alignment: .leading, spacing: 20) {
             headerSection
             chartSection
-
-            // "Ver más detalle" link
-            if onViewDetail != nil {
-                HStack {
-                    Spacer()
-                    Button {
-                        onViewDetail?(trendType)
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("Ver más detalle")
-                                .font(.footnote.weight(.medium))
-                            Image(systemName: "chevron.right")
-                                .font(.caption2.weight(.semibold))
-                        }
-                        .foregroundStyle(
-                            trendType == .balance ? Color.brandPrimary : Color.expenseGraph)
-                    }
-                }
-            }
         }
         .padding(.top, 16)
         .padding(.horizontal, 16)
@@ -92,7 +79,21 @@ struct BalanceTrendCardView: View {
         HStack(alignment: .top) {
             titleAndAmount
             Spacer()
-            trendModeSelector
+            HStack(spacing: 8) {
+                trendModeSelector
+
+                // Chevron for Detail View
+                if onViewDetail != nil {
+                    Button {
+                        onViewDetail?(trendType)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundStyle(.secondary.opacity(0.7))
+                            .padding(.leading, 4)
+                    }
+                }
+            }
         }
     }
 
@@ -143,6 +144,8 @@ struct BalanceTrendCardView: View {
                 .foregroundStyle(trendType == type ? Color.white : Color.secondary)
                 .background(buttonBackground(for: type))
         }
+        .disabled(isLocked)
+        .opacity(isLocked ? 0.6 : 1.0)
     }
 
     @ViewBuilder
@@ -170,7 +173,8 @@ struct BalanceTrendCardView: View {
             interval: interval,
             currencyCode: currencyCode,
             trendType: trendType,
-            focusedDate: $focusedDate
+            focusedDate: $focusedDate,
+            period: period
         )
         .padding(.top, 10)
     }

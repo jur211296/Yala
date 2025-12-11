@@ -43,6 +43,9 @@ struct PanelView: View {
     @State private var showTrendDetail = false
     @State private var trendDetailType: TrendType = .balance
 
+    /// Widget Preferences Sheet
+    @State private var showWidgetPreferences = false
+
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
         .rawValue
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
@@ -81,6 +84,10 @@ struct PanelView: View {
                 }
                 .sheet(isPresented: $isPresentingSettings) {
                     SettingsRootView()
+                }
+                .sheet(isPresented: $showWidgetPreferences) {
+                    WidgetPreferencesView(viewModel: viewModel)
+                        .presentationDragIndicator(.visible)
                 }
             // .sheet(isPresented: $viewModel.isPresentingCustomPeriodSheet) (Removed)
 
@@ -215,16 +222,28 @@ struct PanelView: View {
 
     private var totalBalanceSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Tendencias")
-                .font(.title2.weight(.semibold))
-
-            let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
+            Picker("Periodo", selection: $viewModel.selectedPeriod) {
+                ForEach(PanelViewModel.TrendPeriod.allCases) { period in
+                    Text(period.rawValue).tag(period)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.bottom, 8)
+            .onChange(of: viewModel.selectedPeriod) {
+                viewModel.calculateTrendData(
+                    accounts: accounts,
+                    transactions: transactions,
+                    defaultCurrencyCode: defaultCurrencyCodeRaw
+                )
+            }
 
             // Filter chips (side by side)
             let hasAccountFilter = viewModel.selectedAccountID != nil
             let hasDateFilter = viewModel.focusedDate != nil
+            // FIN-18: New Category Filter
+            let hasCategoryFilter = viewModel.selectedCategoryID != nil
 
-            if hasAccountFilter || hasDateFilter {
+            if hasAccountFilter || hasDateFilter || hasCategoryFilter {
                 HStack(spacing: 8) {
                     if let selectedID = viewModel.selectedAccountID,
                         let account = accounts.first(where: { $0.persistentModelID == selectedID })
@@ -272,44 +291,141 @@ struct PanelView: View {
                         }
                     }
 
+                    // Category Chip
+                    if let categoryID = viewModel.selectedCategoryID,
+                        let category = viewModel.topSpendingCategories.first(where: {
+                            $0.category.persistentModelID == categoryID
+                        })?.category
+                    {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color(hex: category.colorHex))
+                                .frame(width: 8, height: 8)
+
+                            Text(category.name)
+                                .font(.caption)
+
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                        .foregroundStyle(.primary)
+                        .onTapGesture {
+                            viewModel.selectedCategoryID = nil
+                        }
+                    }
+
+                    // Subcategory Chip
+                    if let subcategoryID = viewModel.selectedSubcategoryID {
+                        HStack(spacing: 6) {
+                            Image(systemName: "list.bullet.indent")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+
+                            Text(subcategoryID)
+                                .font(.caption)
+
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                        .foregroundStyle(.primary)
+                        .onTapGesture {
+                            // Clear ONLY subcategory filter
+                            withAnimation {
+                                viewModel.selectedSubcategoryID = nil
+                            }
+                        }
+                    }
+
                     Spacer()
                 }
                 .padding(.bottom, 4)
             }
 
-            let balance = viewModel.displayedBalanceInDefaultCurrency(
-                accounts: accounts,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw
-            )
+            HStack {
+                Text("Tendencias")
+                    .font(.title2.weight(.semibold))
 
-            // FIN-XX: Nueva tarjeta de tendencia
-            BalanceTrendCardView(
-                currentBalance: balance,
-                totalExpense: viewModel.totalExpenseInDefaultCurrency(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: defaultCurrencyCodeRaw
-                ),
-                currencyCode: preferredCurrency.rawValue,
+                Spacer()
 
-                transactions: viewModel.chartTransactions,
-                balanceStatus: viewModel.balanceStatus,
-                historicalThreshold: viewModel.historicalThreshold,
-                grouping: viewModel.trendGrouping,
-                interval: viewModel.panelDateInterval,
-                trendType: $viewModel.trendType,
-                focusedDate: $viewModel.focusedDate,
-                onViewDetail: { selectedType in
-                    trendDetailType = selectedType
-                    showTrendDetail = true
+                Button {
+                    showWidgetPreferences = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .frame(width: 36, height: 36)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                 }
-            )
+            }
+            .padding(.trailing, 4)  // Align with card edges if needed, or remove if parent has padding
 
-            // Hidden NavigationLink for programmatic navigation
+            // Custom Grid Layout (VStack of Rows)
+            // LazyVGrid was failing to respect column spans, so we compute rows manually.
+            VStack(spacing: 16) {
+                let rows = computeLayoutRows(widgets: viewModel.activeWidgets())
+
+                ForEach(rows) { row in
+                    switch row.type {
+                    case .fullWidth(let config):
+                        widgetView(for: config)
+                    case .halfWidthPair(let left, let right):
+                        HStack(spacing: 16) {
+                            widgetView(for: left)
+                                .frame(maxWidth: .infinity)
+                                // Force Square aspect ratio for Small widgets
+                                .aspectRatio(1, contentMode: .fit)
+
+                            if let right = right {
+                                widgetView(for: right)
+                                    .frame(maxWidth: .infinity)
+                                    .aspectRatio(1, contentMode: .fit)
+                            } else {
+                                // Spacer for empty slot
+                                Color.clear
+                                    .frame(maxWidth: .infinity)
+                                    .aspectRatio(1, contentMode: .fit)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ... hidden navigation link
             EmptyView()
                 .navigationDestination(isPresented: $showTrendDetail) {
                     TrendDetailView(trendType: trendDetailType)
+                }
+                .onChange(of: viewModel.selectedCategoryID) {
+                    // Recalculate when selected category changes
+                    viewModel.calculateTrendData(
+                        accounts: accounts,
+                        transactions: transactions,
+                        defaultCurrencyCode: defaultCurrencyCodeRaw
+                    )
+                }
+                .onChange(of: viewModel.focusedDate) {
+                    // Recalculate when focused date (chart filter) changes
+                    viewModel.calculateTrendData(
+                        accounts: accounts,
+                        transactions: transactions,
+                        defaultCurrencyCode: defaultCurrencyCodeRaw
+                    )
                 }
         }
 
@@ -328,6 +444,158 @@ struct PanelView: View {
         formatter.locale = Locale(identifier: "es")  // Enforce Spanish
         formatter.dateFormat = "d MMM"
         return formatter.string(from: date)
+    }
+
+    // MARK: - Widget Helpers
+
+    @ViewBuilder
+    private func widgetView(for config: WidgetConfig) -> some View {
+        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
+        let balance = viewModel.displayedBalanceInDefaultCurrency(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCodeRaw
+        )
+
+        if config.type == .trend {
+            BalanceTrendCardView(
+                currentBalance: balance,
+                totalExpense: viewModel.totalExpenseInDefaultCurrency(
+                    accounts: accounts,
+                    transactions: transactions,
+                    defaultCurrencyCode: defaultCurrencyCodeRaw
+                ),
+                currencyCode: preferredCurrency.rawValue,
+
+                transactions: viewModel.chartTransactions,
+                balanceStatus: viewModel.balanceStatus,
+                historicalThreshold: viewModel.historicalThreshold,
+                grouping: viewModel.trendGrouping,
+                interval: viewModel.panelDateInterval,
+                trendType: $viewModel.trendType,
+                focusedDate: $viewModel.focusedDate,
+                period: viewModel.selectedPeriod,
+                isLocked: viewModel.isTrendLockedToExpense,
+                onViewDetail: { selectedType in
+                    trendDetailType = selectedType
+                    showTrendDetail = true
+                }
+            )
+            .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
+                // Trigger recalculation when local widget filter changes
+                viewModel.calculateTrendData(
+                    accounts: accounts,
+                    transactions: transactions,
+                    defaultCurrencyCode: preferredCurrency.rawValue
+                )
+            }
+            .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
+                // Trigger recalculation when submodule selection changes
+                viewModel.calculateTrendData(
+                    accounts: accounts,
+                    transactions: transactions,
+                    defaultCurrencyCode: preferredCurrency.rawValue
+                )
+            }
+        } else if config.type == .topSpending {
+            TopSpendingCardView(
+                categories: viewModel.topSpendingCategories,
+                currencyCode: preferredCurrency.rawValue,
+                selectedCategoryID: viewModel.selectedCategoryID,
+                onSelectCategory: { id in
+                    withAnimation {
+                        viewModel.toggleCategoryFilter(id)
+                    }
+                },
+                onShowMore: {
+                    // TODO: Detail View
+                },
+                size: mapWidgetSize(config.size)
+            )
+        } else if config.type == .topSubcategories {
+            TopSubcategoriesCardView(
+                subcategories: viewModel.topSubcategories,
+                currencyCode: preferredCurrency.rawValue,
+                // If subcategory is selected, don't lock the header to Category (maintain "Browsing Context")
+                globalCategoryFilterID: viewModel.selectedCategoryID,
+                localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
+                onSelectSubcategory: { name in
+                    withAnimation {
+                        viewModel.toggleSubcategoryFilter(
+                            name,
+                            transactions: transactions,
+                            accounts: accounts,
+                            defaultCurrencyCode: preferredCurrency.rawValue
+                        )
+                    }
+                },
+                selectedSubcategoryID: viewModel.selectedSubcategoryID,
+                size: mapWidgetSize(config.size)
+            )
+        }
+    }
+
+    private func mapWidgetSize(_ size: WidgetSize) -> TopSpendingCardView.CardSize {
+        switch size {
+        case .small: return .small
+        case .medium: return .medium
+        case .large: return .large
+        }
+    }
+
+    // MARK: - Manual Grid Utils
+
+    enum WidgetRowType {
+        case fullWidth(WidgetConfig)
+        case halfWidthPair(left: WidgetConfig, right: WidgetConfig?)
+    }
+
+    struct WidgetRow: Identifiable {
+        let id: UUID
+        let type: WidgetRowType
+    }
+
+    private func computeLayoutRows(widgets: [WidgetConfig]) -> [WidgetRow] {
+        var rows: [WidgetRow] = []
+        var index = 0
+
+        while index < widgets.count {
+            let current = widgets[index]
+
+            // Logic:
+            // Trend -> Full Width
+            // Large/Medium -> Full Width
+            // Small -> Check next
+
+            if current.type == .trend || current.size != .small {
+                rows.append(WidgetRow(id: UUID(), type: .fullWidth(current)))
+                index += 1
+            } else {
+                // Current is Small
+                let nextIndex = index + 1
+                if nextIndex < widgets.count {
+                    let next = widgets[nextIndex]
+                    if next.type != .trend && next.size == .small {
+                        // Pair found
+                        rows.append(
+                            WidgetRow(id: UUID(), type: .halfWidthPair(left: current, right: next)))
+                        index += 2
+                    } else {
+                        // Next is not small or is Trend -> Current is orphan
+                        rows.append(
+                            WidgetRow(id: UUID(), type: .halfWidthPair(left: current, right: nil)))
+                        index += 1
+                    }
+                } else {
+                    // Last item
+                    rows.append(
+                        WidgetRow(id: UUID(), type: .halfWidthPair(left: current, right: nil)))
+                    index += 1
+                }
+            }
+        }
+
+        return rows
     }
 
     // MARK: - Helpers

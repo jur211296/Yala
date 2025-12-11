@@ -1,6 +1,7 @@
 import Charts
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct TrendChartView: View {
     let transactions: [ChartTransaction]
@@ -10,6 +11,8 @@ struct TrendChartView: View {
     let currencyCode: String
     let trendType: TrendType
     @Binding var focusedDate: Date?
+
+    let period: PanelViewModel.TrendPeriod
 
     @State private var hoveredIndex: Int? = nil
     @State private var draggingDate: Date?  // For transient drag state
@@ -50,22 +53,48 @@ struct TrendChartView: View {
                 calendar.compare($0.date, to: today, toGranularity: .day) != .orderedAscending
             }
 
+            let yDomain = yAxisSmoothedDomain
+            let yMin = yDomain.lowerBound
+            let yMax = yDomain.upperBound
+            // Clamp base to domain (0 if inside, otherwise edge)
+            let yBase = min(max(yMin, 0), yMax)
+
+            // Interpolation Logic:
+            // User requested "Smoothed" line (no corners) but with "Natural" (Raw) data.
+            // .catmullRom provides the requested smoothness.
+            let interpolation: InterpolationMethod = .catmullRom
+
             // Past & Today: Solid Line & Area
             ForEach(pastPoints, id: \.date) { point in
                 AreaMark(
                     x: .value("Fecha", point.date),
-                    y: .value("Monto", point.value)
+                    yStart: .value("Base", yBase),
+                    yEnd: .value("Monto", point.value)
                 )
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(interpolation)
                 .foregroundStyle(areaGradient.opacity(dimOpacity))
 
                 LineMark(
                     x: .value("Fecha", point.date),
                     y: .value("Monto", point.value)
                 )
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: 2))
                 .foregroundStyle(primaryLineColor.opacity(dimOpacity))
+
+                // DATA ANNOTATIONS FOR WEEK VIEW
+                if period == .week {
+                    PointMark(
+                        x: .value("Fecha", point.date),
+                        y: .value("Monto", point.value)
+                    )
+                    .symbolSize(0)  // Invisible point just for annotation context
+                    .annotation(position: .top, spacing: 4) {
+                        Text(formattedAmountShort(point.value))
+                            .font(.caption2.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             // Future: Dashed Line (Overlaps at Today to connect)
@@ -74,7 +103,7 @@ struct TrendChartView: View {
                     x: .value("Fecha", point.date),
                     y: .value("Monto", point.value)
                 )
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                 .foregroundStyle(Color.gray)  // Explicit Gray for distinction
             }
@@ -165,23 +194,39 @@ struct TrendChartView: View {
         }
         // Y-Axis Scale (Tight Top Padding) - BASED ON SMOOTHED DATA
         .chartYScale(domain: yAxisSmoothedDomain)
-        // X-Axis: Monthly Segments for Year View
-        // X-Axis: Monthly Segments for Year View
-        // Fix: Pad the domain slightly at the start? Or rely on aligned marks.
-        .chartXScale(domain: interval.start...interval.end)
+        // X-Axis Scale with PADDING
+        .chartXScale(domain: paddedXDomain)
         .chartXAxis {
-            AxisMarks(values: .stride(by: .month)) { value in
-                // Visible Vertical Grid Lines at start of month
-                AxisGridLine()
-                    .foregroundStyle(Color.gray.opacity(0.1))
+            if period == .year {
+                // For Year: Show Months (even if data is daily)
+                AxisMarks(values: .stride(by: .month)) { value in
+                    AxisGridLine()
+                        .foregroundStyle(Color.gray.opacity(0.1))
 
-                if let date = value.as(Date.self) {
-                    AxisValueLabel(anchor: .topLeading) {  // Anchor TopLeading ensures first label hugs the start
-                        // Month Abbreviated (ene, feb, etc.) Lowercase
-                        Text(date, format: .dateTime.month(.abbreviated).locale(axisLocale))
-                            .font(.caption2.bold())
-                            .foregroundStyle(.secondary)
-                            .textCase(.lowercase)  // Explicitly lowercase
+                    if let date = value.as(Date.self) {
+                        AxisValueLabel(anchor: .topLeading) {
+                            Text(date, format: .dateTime.month(.abbreviated).locale(axisLocale))
+                                .font(.caption2.bold())
+                                .foregroundStyle(.secondary)
+                                .textCase(.lowercase)
+                        }
+                    }
+                }
+            } else {
+                // For Week/Month: Show Days
+                // Dynamic Stride: If Week, show all. If Month, show every 5 days to avoid overlap.
+                let strideCount = (period == .month) ? 5 : 1
+
+                AxisMarks(values: .stride(by: .day, count: strideCount)) { value in
+                    if let date = value.as(Date.self) {
+                        AxisGridLine()
+                            .foregroundStyle(Color.gray.opacity(0.1))
+
+                        AxisValueLabel(anchor: .top) {
+                            Text(date, format: .dateTime.day().locale(axisLocale))
+                                .font(.caption2.bold())
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
@@ -215,17 +260,62 @@ struct TrendChartView: View {
                                 }
                             }
                     )
+                    .simultaneousGesture(
+                        TapGesture()
+                            .onEnded {
+                                withAnimation {
+                                    focusedDate = nil
+                                }
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
+                            }
+                    )
             }
         }
         .frame(height: 220)
     }
 
+    // Padded X Domain Logic
+    private var paddedXDomain: ClosedRange<Date> {
+        let span = interval.end.timeIntervalSince(interval.start)
+        // Add 5% padding on each side
+        let padding = span * 0.05
+        let start = interval.start.addingTimeInterval(-padding)
+        let end = interval.end.addingTimeInterval(padding)
+        return start...end
+    }
+
+    private func formattedAmountShort(_ value: Double) -> String {
+        // User requested full values for "This Week" labels, no "K".
+        // Also respecting trendType sign logic implicitly via standard formatter?
+        // No, standard formatter doesn't do sign usually immediately.
+        // Let's format as integer (or 2 decimals? usually int fits better).
+        // And handles sign manually if needed.
+
+        let absValue = abs(value)
+        let formattedNumber = absValue.formatted(.number.precision(.fractionLength(0)))
+
+        if value < 0 {
+            return "-\(formattedNumber)"
+        } else if value > 0 && trendType == .balance {
+            return "+\(formattedNumber)"
+        } else {
+            return formattedNumber
+        }
+    }
+
     // Helper for "K" format (e.g. -15K, +15K)
     private func formatK(_ value: Double) -> String {
         let absValue = abs(value)
-        // Sign logic: explicit '+' for positive, '-' for negative, nothing for zero
+        // Sign logic: explicit '+' for positive ONLY if balance, '-' for negative always
         let sign: String
-        if value > 0 { sign = "+" } else if value < 0 { sign = "-" } else { sign = "" }
+        if value < 0 {
+            sign = "-"
+        } else if value > 0 && trendType == .balance {
+            sign = "+"
+        } else {
+            sign = ""
+        }
 
         if absValue >= 1000 {
             let kValue = absValue / 1000.0
@@ -264,11 +354,18 @@ struct TrendChartView: View {
     }
 
     private var allSmoothedData: [BarPoint] {
-        let smoothWindow = (trendType == .expense) ? 14 : 7
-        return movingAverage(for: barData, window: smoothWindow)
+        // Only apply Moving Average for "This Year" (long term trend) AND if we have enough data (>30 days).
+        // For short views (Week/Month) or sparse data, show raw values ("Natural").
+        if period == .year && barData.count > 30 {
+            // Use 14-day window for Expense/Income trends to smooth out daily volatility
+            let smoothWindow = 14
+            return movingAverage(for: barData, window: smoothWindow)
+        }
+
+        return barData
     }
 
-    // 7-Day Rolling Average
+    // 7-Day Rolling Average (Kept for reference or future use if needed, but unused now)
     private func movingAverage(for data: [BarPoint], window: Int) -> [BarPoint] {
         guard !data.isEmpty else { return [] }
         var result: [BarPoint] = []

@@ -83,7 +83,7 @@ struct AccountCardView: View {
                 Text(
                     "\(normalizeCurrencyCode(account.currencyCode)) \(formattedAmount(currentBalance))"
                 )
-                .font(.title3.weight(.bold))
+                .font(.headline.weight(.bold))
                 .foregroundStyle(foregroundColor)
             }
             .padding(12)
@@ -114,7 +114,7 @@ struct AccountCardView: View {
     }
 
     private var iconForAccount: String {
-        displayIconName(for: account)
+        account.iconName
     }
 
     private func formattedAmount(_ value: Double) -> String {
@@ -123,6 +123,20 @@ struct AccountCardView: View {
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         return formatter.string(from: NSNumber(value: value)) ?? "0.00"
+    }
+
+    // Helpers locally defined to resolve scope issues
+    private func normalizeCurrencyCode(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "PEN" }
+
+        let upper = trimmed.uppercased()
+        switch upper {
+        case "PEN", "SOL", "SOLES", "S/", "S/.", "S/. ": return "PEN"
+        case "USD", "US$", "US DOLLAR", "$", "$USD", "USD$": return "USD"
+        case "EUR", "€", "EURO": return "EUR"
+        default: return "PEN"
+        }
     }
 
 }

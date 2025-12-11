@@ -10,21 +10,141 @@ final class PanelViewModel {
     var selectedAccountID: PersistentIdentifier?
     var leadingColumnIndex: Int? = 0
 
-    // Period Filter State (Removed - forced to This Year Tight Range)
-    // var panelPeriodType... removed
-    // var customPeriodStart... removed
+    // Period Filter State
+    var selectedPeriod: TrendPeriod = .year
 
-    // Draft state (Removed)
+    // Widget State
+    var widgetConfigs: [WidgetConfig] = []
 
-    // Trend State
+    // Persistence Key
+    private let widgetConfigsKey = "panel_widget_configs_v1"
+    // Use a direct UserDefaults access helper or just load on init.
+    // Since this is a ViewModel, loading on init is fine.
+
+    var topSpendingCategories: [CategorySpendingSummary] = []
     var chartTransactions: [ChartTransaction] = []
-    var balanceStatus: BalanceStatus = .unknown
-    var historicalThreshold: Double = 0
-    var trendGrouping: TrendGrouping = .day
-    var trendType: TrendType = .balance
-    var focusedDate: Date? = nil  // Global Focus State
+
+    // Subcategory Widget State
+    var topSubcategories: [SubcategorySpendingSummary] = []
+    var selectedSubcategoryID: String? {
+        didSet {
+            enforceTrendLock()
+        }
+    }
+    var subcategoriesWidgetFilter: PersistentIdentifier?
+
+    enum TrendPeriod: String, CaseIterable, Identifiable {
+        case week = "Esta semana"
+        case month = "Este mes"
+        case year = "Este año"
+
+        var id: String { rawValue }
+    }
+
+    // Trend Locking Logic
+    var isTrendLockedToExpense: Bool {
+        selectedCategoryID != nil || selectedSubcategoryID != nil
+    }
+
+    private func enforceTrendLock() {
+        if isTrendLockedToExpense {
+            trendType = .expense
+        }
+    }
 
     // MARK: - Dependencies / Configuration
+
+    init() {
+        loadWidgetConfigs()
+    }
+
+    // MARK: - Widget Logic
+
+    func loadWidgetConfigs() {
+        if let data = UserDefaults.standard.data(forKey: widgetConfigsKey),
+            var decoded = try? JSONDecoder().decode([WidgetConfig].self, from: data)
+        {
+            // Enforce Locked Properties (Healing Logic)
+            for index in decoded.indices {
+                if decoded[index].isLocked {
+                    decoded[index].isVisible = true
+                    decoded[index].size = .large
+                }
+            }
+
+            // Migration: Add missing new widgets
+            let defaults = WidgetConfig.defaultConfigs()
+            let existingTypes = Set(decoded.map { $0.type })
+
+            for config in defaults {
+                if !existingTypes.contains(config.type) {
+                    decoded.append(config)
+                }
+            }
+
+            self.widgetConfigs = decoded
+        } else {
+            // Default
+            self.widgetConfigs = WidgetConfig.defaultConfigs()
+        }
+    }
+
+    func saveWidgetConfigs() {
+        if let encoded = try? JSONEncoder().encode(widgetConfigs) {
+            UserDefaults.standard.set(encoded, forKey: widgetConfigsKey)
+        }
+    }
+
+    func resetWidgetConfigs() {
+        self.widgetConfigs = WidgetConfig.defaultConfigs()
+        saveWidgetConfigs()
+    }
+
+    func activeWidgets() -> [WidgetConfig] {
+        return widgetConfigs.filter { $0.isVisible }
+    }
+
+    func toggleWidgetVisibility(id: UUID) {
+        if let index = widgetConfigs.firstIndex(where: { $0.id == id }) {
+            // Trend is always visible
+            if widgetConfigs[index].isLocked { return }
+
+            widgetConfigs[index].isVisible.toggle()
+            saveWidgetConfigs()
+        }
+    }
+
+    func updateWidgetSize(id: UUID, newSize: WidgetSize) {
+        if let index = widgetConfigs.firstIndex(where: { $0.id == id }) {
+            // Trend size is fixed
+            if widgetConfigs[index].isLocked { return }
+
+            widgetConfigs[index].size = newSize
+            saveWidgetConfigs()
+        }
+    }
+
+    func moveWidget(from source: IndexSet, to destination: Int) {
+        // Prevent moving the locked first item
+        // Detailed reorder logic might be needed if user tries to move item 0
+        // But the View should disable reordering for item 0.
+        // Swift reorder:
+        var newConfigs = widgetConfigs
+        newConfigs.move(fromOffsets: source, toOffset: destination)
+
+        // Enforce Trend is always first
+        if let trendIndex = newConfigs.firstIndex(where: { $0.type == .trend }), trendIndex != 0 {
+            let trend = newConfigs.remove(at: trendIndex)
+            newConfigs.insert(trend, at: 0)
+        } else if !newConfigs.contains(where: { $0.type == .trend }) {
+            // Fallback if somehow lost
+            newConfigs.insert(
+                WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .large), at: 0)
+        }
+
+        self.widgetConfigs = newConfigs
+        saveWidgetConfigs()
+    }
 
     // We keep these as simple properties or computed ones based on what the View passes
     // or we can load them if we want to move AppStorage here (requires a wrapper or passing values).
@@ -231,176 +351,274 @@ final class PanelViewModel {
 
     // MARK: - Trend Logic (Year Only - Tight Range)
 
-    /// Intervalo de fecha calculado:
-    /// - Desde: La primera transacción del año actual (o 1 de Enero si vacío)
-    /// - Hasta: La última transacción del año actual (o Hoy / 31 Dic si vacío)
+    // MARK: - Trend Logic (Dynamic Period)
+
+    /// Intervalo de fecha calculado basado en el periodo seleccionado:
     var panelDateInterval: DateInterval {
         let calendar = Calendar.current
         let now = Date()
-        let startOfYear = calendar.dateInterval(of: .year, for: now)?.start ?? now
-        let endOfYear = calendar.dateInterval(of: .year, for: now)?.end ?? now
 
-        // 1. Filter transactions to current year
-        let yearTransactions = chartTransactions.filter {
-            $0.date >= startOfYear && $0.date < endOfYear
+        let interval: DateInterval
+        switch selectedPeriod {
+        case .week:
+            interval =
+                calendar.dateInterval(of: .weekOfYear, for: now)
+                ?? DateInterval(start: now, end: now)
+        case .month:
+            interval =
+                calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: now, end: now)
+        case .year:
+            interval =
+                calendar.dateInterval(of: .year, for: now) ?? DateInterval(start: now, end: now)
         }
 
-        // 2. Find min and max
-        guard let minDate = yearTransactions.map(\.date).min(),
-            let maxDate = yearTransactions.map(\.date).max()
-        else {
-            // Fallback: Start of Year to Now (or End of Year?)
-            // If no data, just show Year To Date? or the whole empty year?
-            // "que no haya vacio a los lados" implies purely data driven.
-            // If no data, maybe just Today?
-            return DateInterval(start: startOfYear, end: now)
-        }
-
-        // 3. Return tight range
-        // Add a small buffer? User said "limite inferior y superior las fechas minima y maxima".
-        // So EXACT match.
-        return DateInterval(start: minDate, end: maxDate)
+        // 2. Find min and max for tight range if needed, OR return full interval
+        // User asked for "Esta semana", "Este mes". Usually implies showing the whole X-axis for that period.
+        // Let's return the full calendar interval to ensure the X-axis covers the whole week/month/year.
+        return interval
     }
 
     // MARK: - Trend & Balance Status Logic
 
-    /// Calculates trend data and status based on the current period and selected account.
-    /// Calculates trend data and status based on the current period and selected account.
+    var selectedCategoryID: PersistentIdentifier? {
+        didSet {
+            enforceTrendLock()
+        }
+    }
+
+    // Trend State
+
+    // Restored Properties
+    var balanceStatus: BalanceStatus = .unknown
+    var historicalThreshold: Double = 0
+    var trendGrouping: TrendGrouping = .day
+    var trendType: TrendType = .balance
+    var focusedDate: Date? = nil  // Global Focus State
+
+    /// Calculates trend data and status based on the current period, selected account, and selected category.
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) {
-        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
 
-        // For the chart, we want ALL transactions relative to the computed tight interval?
-        // Actually, we usually calculate trend data for the *visible* interval.
-        // But `panelDateInterval` now depends on `chartTransactions`. Circular dependency?
-        // Ah, `panelDateInterval` is computed property based on `chartTransactions`.
-        // So here we must first prepare ALL transactions, then let the view or a second pass determine the interval?
-        //
-        // Strategy:
-        // 1. Calculate balances for ALL TIME (or at least this year).
-        // 2. Store them in `chartTransactions`.
-        // 3. `panelDateInterval` then reads `chartTransactions` to find min/max.
-
-        // Let's modify filterTransactionsForPanel logic inline since we deleted the helper.
-        // We want all transactions for the *current year* to be processed.
         let calendar = Calendar.current
         let now = Date()
-        let yearInterval =
-            calendar.dateInterval(of: .year, for: now) ?? DateInterval(start: now, end: now)
 
-        // 1. Determine Eligible Accounts
-        // We must calculate trend based on active, non-excluded accounts that matched the selection (if any).
+        // 1. Determine Period Interval
+        let interval: DateInterval
+        switch selectedPeriod {
+        case .week:
+            interval =
+                calendar.dateInterval(of: .weekOfYear, for: now)
+                ?? DateInterval(start: now, end: now)
+        case .month:
+            interval =
+                calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: now, end: now)
+        case .year:
+            interval =
+                calendar.dateInterval(of: .year, for: now) ?? DateInterval(start: now, end: now)
+        }
+
+        // Update Trend Grouping based on Period
+        switch selectedPeriod {
+        case .week, .month, .year:
+            trendGrouping = .day
+        }
+
+        // 2. Determine Eligible Accounts
         let eligibleAccounts = accounts.filter { account in
             !account.isArchived && !account.excludeFromStatistics
                 && (selectedAccountID == nil || account.persistentModelID == selectedAccountID)
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
 
-        // 2. Filter Transactions
-        // Must be in the Year AND belong to an eligible account
-        let filteredTransactions = transactions.filter { tx in
+        // 3. Filter Transactions (Base Filter: Account + Period)
+        // This set is used for Top Spending calculation (unaffected by category filter)
+        let baseFilteredTransactions = transactions.filter { tx in
             // Filter by Account Eligibility
             guard let account = tx.account, eligibleAccountIDs.contains(account.persistentModelID)
             else {
                 return false
             }
-            // Filter by Year
-            return yearInterval.contains(tx.date)
+            // Filter by Period
+            return interval.contains(tx.date)
         }
 
-        let interval = yearInterval
-
-        // 4. Transform to ChartTransactions (Balance Trend Series)
-        // We want a continuous line of the user's balance over time.
-        // Logic:
-        // 1. Calculate Initial Balance (before interval).
-        // 2. Iterate each day in interval.
-        // 3. Apply transactions for that day.
-        // 4. Store [Date: Balance].
-
-        var processedTransactions: [ChartTransaction] = []
-        var runningBalance = initialBalanceForTrend(
-            accounts: eligibleAccounts,
-            transactions: transactions,
-            before: interval.start,
-            preferredCurrency: preferredCurrency
+        // 4. Calculate Top Spending (Base Context)
+        self.topSpendingCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
+            transactions: baseFilteredTransactions,
+            interval: interval,
+            currencyCode: defaultCurrencyCode
         )
 
-        // Group filtered transactions by Day for easier lookup
-        // Note: 'calendar' is already defined above as Calendar.current
-        let transactionsByDay = Dictionary(grouping: filteredTransactions) { tx in
-            calendar.startOfDay(for: tx.date)
-        }
+        // 0. Filter transactions by Account + Date + Global Filters
+        let filtered = transactions.filter { transaction in
+            // Basic Account Filter
+            guard let account = transaction.account else { return false }
 
-        // Iterate day by day through the full interval
-        var currentDate = interval.start
+            // Check if account is active (not hidden/archived) - this logic usually handled by `activeAccounts` pass
+            // but we double check persistent ID match against eligible accounts (Which respects selectedAccountID)
+            if !eligibleAccountIDs.contains(account.persistentModelID) {
+                return false
+            }
 
-        // Aux vars for status (still calculated based on period totals vs historical)
-        // Note: Total Income/Expense logic is slightly independent of balance trend
-        // but required for side-stats if needed.
+            // Period Filter
+            if !panelDateInterval.contains(transaction.date) {
+                return false
+            }
 
-        // Optimization: Pre-calculate end date to avoid infinite loops
-
-        while currentDate < interval.end {
-            let startOfDay = calendar.startOfDay(for: currentDate)
-            let dailyTransactions = transactionsByDay[startOfDay] ?? []
-
-            var dailyIncome: Double = 0
-            var dailyExpense: Double = 0
-
-            for tx in dailyTransactions {
-                // Ensure currency normalization
-                let normalizedCode = normalizeCurrencyCode(tx.currencyCode)
-
-                let amount = convertToPreferredCurrency(
-                    amount: Decimal(tx.amount),
-                    from: CurrencyCode(rawValue: normalizedCode) ?? preferredCurrency,
-                    to: preferredCurrency
-                )
-                let amountDouble = (amount as NSDecimalNumber).doubleValue
-
-                // Determine direction based on category or value
-                let isIncome = tx.category?.isIncome ?? (amountDouble >= 0)
-
-                if isIncome {
-                    dailyIncome += abs(amountDouble)
-                    runningBalance += abs(amountDouble)
-                } else {
-                    dailyExpense += abs(amountDouble)
-                    runningBalance -= abs(amountDouble)
+            // Focused Date Filter (from Chart Tap)
+            // If focusedDate is set, restrict to that specific day/period unit
+            if let focus = focusedDate {
+                // Determine granularity based on period
+                let calendar = Calendar.current
+                if !calendar.isDate(transaction.date, inSameDayAs: focus) {
+                    return false
                 }
             }
 
-            // Append point for this day with the End-of-Day balance
-            processedTransactions.append(
-                ChartTransaction(
-                    id: UUID(),
-                    date: startOfDay,
-                    income: dailyIncome,
-                    expense: dailyExpense,
-                    balance: runningBalance
-                )
-            )
-
-            guard let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) else {
-                break
+            // Category Filter (Triggered by Top Spending Widget)
+            if let catID = selectedCategoryID {
+                if transaction.category?.persistentModelID != catID {
+                    return false
+                }
             }
-            currentDate = nextDate
+
+            // Subcategory Filter (Triggered by Top Subcategories Widget)
+            if let subName = selectedSubcategoryID {
+                // Check if transaction matches this subcategory name
+                // Since ID is name-based for subcategories in summary:
+                if let sub = transaction.subcategory {
+                    if sub.name != subName { return false }
+                } else {
+                    // Check for "Sin subcategoría"
+                    if subName == "Sin subcategoría" {
+                        if transaction.subcategory != nil { return false }
+                    } else {
+                        return false
+                    }
+                }
+            }
+
+            return true
         }
 
-        self.chartTransactions = processedTransactions
+        // 1. Chart Data
+        self.chartTransactions = BalanceTrendCalculator.calculateTrend(
+            transactions: filtered,
+            grouping: self.trendGrouping,
+            interval: self.panelDateInterval,
+            currencyCode: defaultCurrencyCode
+        )
 
-        // 5. Calculate Historical Threshold & Status
-        // Use the final runningBalance
-        calculateStatus(
-            accounts: eligibleAccounts,
+        // 2. Top Spending Categories
+        // We reuse the filtered context logic from before (Time + Account Only)
+        // because Top Spending usually GIVES context, doesn't just reflect it (unless drilled down).
+
+        let contextTransactions = transactions.filter { txn in
+            guard let acct = txn.account, eligibleAccountIDs.contains(acct.persistentModelID)
+            else { return false }
+            return panelDateInterval.contains(txn.date)
+        }
+
+        let finalContextTransactions: [TransactionItem]
+        if let focus = focusedDate {
+            finalContextTransactions = contextTransactions.filter {
+                Calendar.current.isDate($0.date, inSameDayAs: focus)
+            }
+        } else {
+            finalContextTransactions = contextTransactions
+        }
+
+        // Apply Subcategory Filter locally for Category Calculation
+        // If a subcategory is selected, the Category widget should only show the parent category
+        // and the value should be filtered to that subcategory.
+        let finalCategoryTransactions: [TransactionItem]
+        if let subID = selectedSubcategoryID {
+            finalCategoryTransactions = finalContextTransactions.filter {
+                $0.subcategory?.name == subID
+            }
+        } else {
+            finalCategoryTransactions = finalContextTransactions
+        }
+
+        self.topSpendingCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
+            transactions: finalCategoryTransactions,
+            interval: panelDateInterval,
+            currencyCode: defaultCurrencyCode
+        )
+
+        // 3. Top Subcategories
+        // Always prioritize the active 'selectedCategoryID' (whether Explicit or Implicit)
+        // This ensures that if we are in "Shopping" context, picking a subcategory keeps us in "Shopping" list.
+        // Fallback to 'subcategoriesWidgetFilter' only if there's no global context (e.g. browsing "All" -> Local Filter)
+        let effectiveCategoryFilter = selectedCategoryID ?? subcategoriesWidgetFilter
+
+        self.topSubcategories = TopSubcategoriesCalculator.calculateTopSubcategories(
+            transactions: finalContextTransactions,  // Base set (Time + Account)
+            interval: panelDateInterval,
+            currencyCode: defaultCurrencyCode,
+            categoryFilter: effectiveCategoryFilter  // Pass the effective filter
+        )
+    }
+
+    // State for Filter Logic
+    var isCategorySelectionImplicit: Bool = false
+
+    // Helper to toggle Category explicitly (from Widget)
+    func toggleCategoryFilter(_ id: PersistentIdentifier) {
+        if selectedCategoryID == id {
+            selectedCategoryID = nil
+            isCategorySelectionImplicit = false
+        } else {
+            selectedCategoryID = id
+            isCategorySelectionImplicit = false
+        }
+    }
+
+    // Helper to toggle subcategory
+    func toggleSubcategoryFilter(
+        _ id: String,
+        transactions: [TransactionItem],
+        accounts: [Account],
+        defaultCurrencyCode: String
+    ) {
+        if selectedSubcategoryID == id {
+            // Deselect Subcategory
+            selectedSubcategoryID = nil
+
+            if isCategorySelectionImplicit {
+                // If category was auto-selected (Scenario 1), clear it too -> "All"
+                selectedCategoryID = nil
+                isCategorySelectionImplicit = false
+            }
+            // If category was explicitly selected (Scenario 2), KEEP it -> "Category X"
+        } else {
+            // Select New Subcategory
+            selectedSubcategoryID = id
+
+            // Find parent category for this subcategory
+            if let summary = topSubcategories.first(where: { $0.id == id }),
+                let cat = summary.category
+            {
+
+                if selectedCategoryID == cat.persistentModelID {
+                    // We are already in this category.
+                    // Keep implicit state as is (if explicit, it stays explicit. matches "Scenario 2")
+                } else {
+                    // Switching to a NEW category context (Scenario 3 / 1)
+                    self.selectedCategoryID = cat.persistentModelID
+                    self.isCategorySelectionImplicit = true
+                }
+            }
+        }
+
+        // Recalculate immediately to ensure UI is in sync
+        calculateTrendData(
+            accounts: accounts,
             transactions: transactions,
-            currentBalance: runningBalance,
-            preferredCurrency: preferredCurrency,
-            currentInterval: interval
+            defaultCurrencyCode: defaultCurrencyCode
         )
     }
 
@@ -408,7 +626,8 @@ final class PanelViewModel {
         accounts: [Account],
         transactions: [TransactionItem],
         before date: Date,
-        preferredCurrency: CurrencyCode
+        preferredCurrency: CurrencyCode,
+        categoryFilter: PersistentIdentifier? = nil
     ) -> Double {
         // Calculate balance of all eligible accounts up to 'date'
         // This is expensive if done naively.
@@ -458,6 +677,14 @@ final class PanelViewModel {
             // Let's check `Category.isIncome`.
 
             let isIncome = tx.category?.isIncome ?? (tx.amount >= 0)
+
+            // Apply Category Filter if present
+            if let categoryID = categoryFilter {
+                if tx.category?.persistentModelID != categoryID {
+                    continue
+                }
+            }
+
             if isIncome {
                 total += abs(amount)
             } else {
