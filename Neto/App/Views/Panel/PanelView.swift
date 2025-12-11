@@ -532,6 +532,21 @@ struct PanelView: View {
                 selectedSubcategoryID: viewModel.selectedSubcategoryID,
                 size: mapWidgetSize(config.size)
             )
+        } else if config.type == .cashFlow {
+            if let summary = viewModel.cashFlowSummary {
+                CashFlowCardView(
+                    summary: summary,
+                    size: config.size,
+                    period: viewModel.selectedPeriod.rawValue,
+                    grouping: viewModel.cashFlowGrouping,
+                    onShowDetail: {
+                        // Detail View Placeholder
+                    }
+                )
+            } else {
+                // Empty / Loading logic
+                EmptyView()
+            }
         }
     }
 

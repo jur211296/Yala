@@ -33,6 +33,9 @@ final class PanelViewModel {
     }
     var subcategoriesWidgetFilter: PersistentIdentifier?
 
+    // Cash Flow State
+    var cashFlowSummary: CashFlowSummary?
+
     enum TrendPeriod: String, CaseIterable, Identifiable {
         case week = "Esta semana"
         case month = "Este mes"
@@ -392,6 +395,7 @@ final class PanelViewModel {
     var balanceStatus: BalanceStatus = .unknown
     var historicalThreshold: Double = 0
     var trendGrouping: TrendGrouping = .day
+    var cashFlowGrouping: TrendGrouping = .day  // Explicit grouping for Cash Flow widget
     var trendType: TrendType = .balance
     var focusedDate: Date? = nil  // Global Focus State
 
@@ -422,8 +426,21 @@ final class PanelViewModel {
 
         // Update Trend Grouping based on Period
         switch selectedPeriod {
-        case .week, .month, .year:
+        case .week:
             trendGrouping = .day
+        case .month:
+            trendGrouping = .day  // Detailed daily view for Month
+        case .year:
+            trendGrouping = .month  // Monthly view for Year
+        }
+
+        // Cash Flow Specific Grouping Logic
+        // User Requirement: "This Month" -> Weeks.
+        switch selectedPeriod {
+        case .month:
+            cashFlowGrouping = .week
+        default:
+            cashFlowGrouping = trendGrouping
         }
 
         // 2. Determine Eligible Accounts
@@ -560,6 +577,34 @@ final class PanelViewModel {
             interval: panelDateInterval,
             currencyCode: defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter  // Pass the effective filter
+        )
+
+        // 4. Cash Flow
+        // Use global context (filtered by Category/Subcategory if present)
+        // Similar to chartTransactions context but including Category/Subcategory filtering?
+        // User requirements: "Respect global filters (Account, Period, Category, Subcategory)".
+        // So we use `finalCategoryTransactions` which has Subcategory filter applied IF active,
+        // OR `finalContextTransactions` filtered by `selectedCategoryID`.
+
+        // Actually, `finalContextTransactions` filters: Account, Period, Focus.
+        // `finalCategoryTransactions` further filters by Subcategory IF selected.
+        // What about `selectedCategoryID`?
+        // `finalContextTransactions` does NOT seem to filter by category ID in lines 519-532.
+        // Wait, line 482 filters `filtered` by category/subcategory.
+        // `chartTransactions` uses `filtered` (line 508). `filtered` includes ALL filters.
+        // `topSpendingCategories` uses `finalCategoryTransactions`.
+
+        // `chartsTransactions` (Balance Trend) respects ALL filters.
+        // The prompt says Cash Flow respects "Category / subcategory ... if active".
+        // so we should use `filtered` (the one with ALL filters applied).
+        // Let's verify `filtered` variable availability. It is defined at line 456.
+        // Yes, `filtered` is available in scope.
+
+        self.cashFlowSummary = CashFlowCalculator.calculateCashFlow(
+            transactions: filtered,
+            interval: panelDateInterval,
+            grouping: cashFlowGrouping,
+            currencyCode: defaultCurrencyCode
         )
     }
 
