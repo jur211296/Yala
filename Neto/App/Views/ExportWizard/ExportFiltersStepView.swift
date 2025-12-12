@@ -93,7 +93,7 @@ struct ExportFiltersStepView: View {
         // Combinar categorías seleccionadas explícitamente con las de las subcategorías
         let categoriesFromSub = Set(selectedSubcategories.map { $0.category })
         let finalCategories = selectedCategoriesState.union(categoriesFromSub)
-        
+
         let selectedTagObjects = allTags.filter { selectedTags.contains($0.persistentModelID) }
 
         let selectedTagNames: [String]
@@ -103,7 +103,7 @@ struct ExportFiltersStepView: View {
         } else {
             selectedTagNames = selectedTagObjects.map { $0.name }
         }
-        
+
         return ExportFilters(
             selectedAccounts: allAccounts.filter {
                 selectedAccounts.contains($0.persistentModelID)
@@ -172,7 +172,7 @@ struct ExportFiltersStepView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancelar") {
+                    SheetTopButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
@@ -211,7 +211,7 @@ struct ExportFiltersStepView: View {
                             Spacer()
                             if selectedAccounts.contains(account.persistentModelID) {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(Color.brandPrimary)
                             }
                         }
                     }
@@ -221,12 +221,8 @@ struct ExportFiltersStepView: View {
             .navigationTitle("Seleccionar cuentas")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    SheetTopButton(systemName: "chevron.left") {
                         showAccountsSheet = false
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
                     }
                 }
             }
@@ -267,8 +263,8 @@ struct ExportFiltersStepView: View {
                                         )
                                         .foregroundStyle(
                                             isEverythingSelected
-                                                ? Color.blue
-                                                : Color.gray.opacity(0.4)
+                                                ? Color.brandPrimary
+                                                : Color.netoSecondaryText.opacity(0.4)
                                         )
                                     }
                                     .padding(.horizontal, 16)
@@ -314,8 +310,8 @@ struct ExportFiltersStepView: View {
                                                 Image(systemName: selectionIconName(for: state))
                                                     .foregroundStyle(
                                                         state == .none
-                                                            ? Color.gray.opacity(0.4)
-                                                            : Color.blue
+                                                            ? Color.netoSecondaryText.opacity(0.4)
+                                                            : Color.brandPrimary
                                                     )
                                             }
                                             .buttonStyle(.plain)
@@ -403,8 +399,9 @@ struct ExportFiltersStepView: View {
                                                         )
                                                         .foregroundStyle(
                                                             isSelected
-                                                                ? Color.blue
-                                                                : Color.gray.opacity(0.4)
+                                                                ? Color.brandPrimary
+                                                                : Color.netoSecondaryText.opacity(
+                                                                    0.4)
                                                         )
                                                     }
                                                     .padding(.horizontal, 16)
@@ -434,12 +431,8 @@ struct ExportFiltersStepView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    SheetTopButton(systemName: "chevron.left") {
                         showCategoriesSheet = false
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
                     }
                 }
             }
@@ -470,7 +463,7 @@ struct ExportFiltersStepView: View {
                             Spacer()
                             if selectedTags.contains(tag.persistentModelID) {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(Color.brandPrimary)
                             }
                         }
                     }
@@ -480,12 +473,8 @@ struct ExportFiltersStepView: View {
             .navigationTitle("Seleccionar etiquetas")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    SheetTopButton(systemName: "chevron.left") {
                         showTagsSheet = false
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
                     }
                 }
             }
@@ -502,12 +491,8 @@ struct ExportFiltersStepView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    SheetTopButton(systemName: "chevron.left") {
                         showCurrencySheet = false
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
                     }
                 }
             }
@@ -624,7 +609,7 @@ struct ExportFiltersStepView: View {
         }
         return "\(selectedTags.count) seleccionadas"
     }
-    
+
     private func syncTagsSelection() {
         if selectedTags.isEmpty && !allTags.isEmpty {
             selectedTags = Set(allTags.map { $0.persistentModelID })

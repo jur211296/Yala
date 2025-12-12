@@ -14,7 +14,7 @@ struct PlanningView: View {
                 PanelBackgroundView()
                 Text("Planificación")
                     .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.netoSecondaryText)
             }
             .navigationTitle("Planificación")
         }

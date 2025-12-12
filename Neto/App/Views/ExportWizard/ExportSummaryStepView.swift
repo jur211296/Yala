@@ -181,7 +181,7 @@ struct ExportSummaryStepView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color.black)
+            .background(Color.brandPrimary)
             .foregroundStyle(.white)
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }

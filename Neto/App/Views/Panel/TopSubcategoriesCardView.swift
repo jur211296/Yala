@@ -41,12 +41,13 @@ struct TopSubcategoriesCardView: View {
                 contentForSize
             }
         }
-        .padding(size == .small ? 16 : 20)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(size == .small ? DesignSystem.Spacing.large : DesignSystem.Spacing.xLarge)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
     }
@@ -279,23 +280,33 @@ struct TopSubcategoriesCardView: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Image(systemName: "list.bullet.rectangle.portrait")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, 4)
-
             if size == .small {
-                Text("Sin datos")
+                Spacer()  // Push down
+                Image(systemName: "list.bullet.rectangle.portrait")
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary.opacity(0.5))
+                Text("Sin gastos")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Spacer()  // Push up
             } else {
-                Text("Aún no hay gastos en este periodo para mostrar subcategorías.")
+                Image(systemName: "list.bullet.rectangle.portrait")
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary.opacity(0.5))
+                    .padding(.bottom, 4)
+
+                Text("Aún no tienes gastos en este periodo.")
+                    .font(.subheadline.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+
+                Text("Cuando registres movimientos, verás aquí tus categorías principales.")
                     .font(.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)  // Fill available space
         .padding(.vertical, size == .small ? 0 : 24)
     }
 

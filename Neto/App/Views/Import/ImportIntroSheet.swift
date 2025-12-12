@@ -85,10 +85,8 @@ struct ImportIntroSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    SheetTopButton(systemName: "xmark") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
                     }
                 }
             }
@@ -149,11 +147,11 @@ struct ImportIntroSheet: View {
                 HStack(spacing: 12) {
                     Image(systemName: "tray.and.arrow.down.fill")
                         .font(.system(size: 32, weight: .regular))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.brandPrimary)
                         .padding(10)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.9))
+                                .fill(Color.brandPrimary.opacity(0.1))
                         )
 
                     Text(

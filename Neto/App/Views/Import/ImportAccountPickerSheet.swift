@@ -47,17 +47,20 @@ struct ImportAccountPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancelar") {
+                    SheetTopButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Continuar") {
-                        if let account = selectedAccount {
-                            onContinue(account)
-                        }
-                    }
-                    .disabled(selectedAccount == nil)
+                    SheetPrimaryButton(
+                        title: "Continuar",
+                        action: {
+                            if let account = selectedAccount {
+                                onContinue(account)
+                            }
+                        },
+                        isDisabled: selectedAccount == nil
+                    )
                 }
             }
         }
@@ -91,7 +94,7 @@ struct ImportAccountPickerSheet: View {
 
             if selectedAccount == account {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(Color.brandPrimary)
             } else {
                 Image(systemName: "circle")
                     .foregroundStyle(.tertiary)

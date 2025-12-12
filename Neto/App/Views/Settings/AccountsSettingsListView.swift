@@ -12,6 +12,7 @@ import SwiftUI
 
 struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
 
     // FIN-46: Transacciones usadas para calcular saldos actuales en Ajustes
@@ -79,12 +80,17 @@ struct AccountsSettingsListView: View {
         }
         .navigationTitle("Cuentas")
         .navigationBarTitleDisplayMode(.inline)  // título reducido y centrado
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                SheetTopButton(systemName: "chevron.left") {
+                    // Logic to pop? usually dismiss works for sheets, but for stack navigation we need environment dismiss
+                    dismiss()
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
+                SheetTopButton(systemName: "plus") {
                     isPresentingCreateAccount = true
-                } label: {
-                    Image(systemName: "plus")
                 }
             }
         }

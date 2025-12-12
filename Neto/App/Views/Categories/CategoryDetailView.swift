@@ -97,17 +97,16 @@ struct CategoryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button {
+                SheetTopButton(systemName: "chevron.left") {
                     handleBack()
-                } label: {
-                    Image(systemName: "chevron.left")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Guardar") {
-                    saveCategory()
-                }
-                .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                SheetPrimaryButton(
+                    title: "Guardar",
+                    action: { saveCategory() },
+                    isDisabled: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                )
             }
         }
         .alert("Categoría oculta", isPresented: $showVisibilityInfo) {
@@ -225,7 +224,7 @@ struct CategoryDetailView: View {
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(.tint)
+                                .foregroundStyle(Color.brandPrimary)
                             Text("Añadir subcategoría")
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -262,14 +261,16 @@ struct CategoryDetailView: View {
 
     @ViewBuilder
     private func subcategoryRow(_ subcategory: Subcategory) -> some View {
+        let backgroundColor = colorForHex(subcategory.colorHex ?? category.colorHex)
+
         HStack(spacing: 12) {
             Circle()
-                .fill(colorForHex(subcategory.colorHex ?? category.colorHex))
+                .fill(backgroundColor)
                 .frame(width: 32, height: 32)
                 .overlay(
                     Image(systemName: "tag")
                         .font(.subheadline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.contrastingText(for: backgroundColor))
                 )
 
             VStack(alignment: .leading, spacing: 2) {

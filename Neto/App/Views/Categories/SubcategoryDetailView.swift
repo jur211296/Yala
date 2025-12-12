@@ -98,17 +98,16 @@ struct SubcategoryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button {
+                SheetTopButton(systemName: "chevron.left") {
                     handleBack()
-                } label: {
-                    Image(systemName: "chevron.left")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Guardar") {
-                    saveSubcategory()
-                }
-                .disabled(!canSave)
+                SheetPrimaryButton(
+                    title: "Guardar",
+                    action: { saveSubcategory() },
+                    isDisabled: !canSave
+                )
             }
         }
         .sheet(isPresented: $isPresentingNatureSelector) {

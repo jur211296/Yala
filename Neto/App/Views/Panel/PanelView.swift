@@ -66,13 +66,8 @@ struct PanelView: View {
                             isPresentingSettings = true
                         } label: {
                             Image(systemName: "gearshape.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Color.electricIndigo)
-                                .frame(width: 34, height: 34)
-                                .background(
-                                    Circle()
-                                        .fill(Color.white)
-                                )
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(Color.primary)  // Adapts to Light/Dark mode
                         }
                     }
                 }
@@ -365,22 +360,16 @@ struct PanelView: View {
                     showWidgetPreferences = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.black)
-                        .frame(width: 36, height: 36)
-                        .background(Color.white)
-                        .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color.primary)  // Adapts to Light/Dark mode
                 }
             }
             .padding(.trailing, 4)  // Align with card edges if needed, or remove if parent has padding
 
             // Custom Grid Layout (VStack of Rows)
-            // LazyVGrid was failing to respect column spans, so we compute rows manually.
+            // LazyVGrid was failing to respect column spans, so we compute rows manually in ViewModel.
             VStack(spacing: 16) {
-                let rows = computeLayoutRows(widgets: viewModel.activeWidgets())
-
-                ForEach(rows) { row in
+                ForEach(viewModel.layoutRows) { row in
                     switch row.type {
                     case .fullWidth(let config):
                         widgetView(for: config)
@@ -466,10 +455,9 @@ struct PanelView: View {
                     defaultCurrencyCode: defaultCurrencyCodeRaw
                 ),
                 currencyCode: preferredCurrency.rawValue,
-
-                transactions: viewModel.chartTransactions,
+                trendPoints: viewModel.processedTrendPoints,
+                yDomain: viewModel.processedYDomain,
                 balanceStatus: viewModel.balanceStatus,
-                historicalThreshold: viewModel.historicalThreshold,
                 grouping: viewModel.trendGrouping,
                 interval: viewModel.panelDateInterval,
                 trendType: $viewModel.trendType,
@@ -556,61 +544,6 @@ struct PanelView: View {
         case .medium: return .medium
         case .large: return .large
         }
-    }
-
-    // MARK: - Manual Grid Utils
-
-    enum WidgetRowType {
-        case fullWidth(WidgetConfig)
-        case halfWidthPair(left: WidgetConfig, right: WidgetConfig?)
-    }
-
-    struct WidgetRow: Identifiable {
-        let id: UUID
-        let type: WidgetRowType
-    }
-
-    private func computeLayoutRows(widgets: [WidgetConfig]) -> [WidgetRow] {
-        var rows: [WidgetRow] = []
-        var index = 0
-
-        while index < widgets.count {
-            let current = widgets[index]
-
-            // Logic:
-            // Trend -> Full Width
-            // Large/Medium -> Full Width
-            // Small -> Check next
-
-            if current.type == .trend || current.size != .small {
-                rows.append(WidgetRow(id: UUID(), type: .fullWidth(current)))
-                index += 1
-            } else {
-                // Current is Small
-                let nextIndex = index + 1
-                if nextIndex < widgets.count {
-                    let next = widgets[nextIndex]
-                    if next.type != .trend && next.size == .small {
-                        // Pair found
-                        rows.append(
-                            WidgetRow(id: UUID(), type: .halfWidthPair(left: current, right: next)))
-                        index += 2
-                    } else {
-                        // Next is not small or is Trend -> Current is orphan
-                        rows.append(
-                            WidgetRow(id: UUID(), type: .halfWidthPair(left: current, right: nil)))
-                        index += 1
-                    }
-                } else {
-                    // Last item
-                    rows.append(
-                        WidgetRow(id: UUID(), type: .halfWidthPair(left: current, right: nil)))
-                    index += 1
-                }
-            }
-        }
-
-        return rows
     }
 
     // MARK: - Helpers

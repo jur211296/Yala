@@ -14,7 +14,27 @@ final class PanelViewModel {
     var selectedPeriod: TrendPeriod = .year
 
     // Widget State
-    var widgetConfigs: [WidgetConfig] = []
+    var widgetConfigs: [WidgetConfig] = [] {
+        didSet {
+            // Recalculate layout rows whenever configs change
+            self.layoutRows = computeLayoutRows(widgets: activeWidgets())
+        }
+    }
+
+    // Layout State (Output for View)
+    var layoutRows: [WidgetRow] = []
+
+    // MARK: - Layout Structures
+
+    enum WidgetRowType {
+        case fullWidth(WidgetConfig)
+        case halfWidthPair(left: WidgetConfig, right: WidgetConfig?)
+    }
+
+    struct WidgetRow: Identifiable {
+        let id: UUID
+        let type: WidgetRowType
+    }
 
     // Persistence Key
     private let widgetConfigsKey = "panel_widget_configs_v1"
@@ -43,6 +63,16 @@ final class PanelViewModel {
 
         var id: String { rawValue }
     }
+
+    // MARK: - Processed Chart Data
+    struct BarPoint: Identifiable, Equatable {
+        let id = UUID()
+        let date: Date
+        let value: Double
+    }
+
+    var processedTrendPoints: [BarPoint] = []
+    var processedYDomain: ClosedRange<Double> = 0...100
 
     // Trend Locking Logic
     var isTrendLockedToExpense: Bool {
@@ -90,6 +120,8 @@ final class PanelViewModel {
             // Default
             self.widgetConfigs = WidgetConfig.defaultConfigs()
         }
+        // Force layout update on initial load
+        self.layoutRows = computeLayoutRows(widgets: activeWidgets())
     }
 
     func saveWidgetConfigs() {
@@ -284,6 +316,45 @@ final class PanelViewModel {
         return allTransactions.filter {
             calendar.isDate($0.date, inSameDayAs: focusedDate)
         }
+    }
+
+    // MARK: - Layout Logic
+
+    /// Computes the layout rows based on widget sizes.
+    /// Rules:
+    /// - Large: Full Width (2x height visually, but row handles width)
+    /// - Medium: Full Width
+    /// - Small: Half Width. Two adjacent Smalls form a pair. Isolated Small is left-aligned.
+    func computeLayoutRows(widgets: [WidgetConfig]) -> [WidgetRow] {
+        var rows: [WidgetRow] = []
+        var currentIndex = 0
+
+        while currentIndex < widgets.count {
+            let config = widgets[currentIndex]
+
+            if config.size == .large || config.size == .medium {
+                // Large & Medium -> Full Width Row
+                rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
+                currentIndex += 1
+            } else {
+                // Small - Check for neighbor
+                let nextIndex = currentIndex + 1
+                if nextIndex < widgets.count && widgets[nextIndex].size == .small {
+                    // Found a pair of Smalls
+                    rows.append(
+                        WidgetRow(
+                            id: UUID(),
+                            type: .halfWidthPair(left: config, right: widgets[nextIndex])))
+                    currentIndex += 2
+                } else {
+                    // Isolated Small (next is Large/Medium/None)
+                    rows.append(
+                        WidgetRow(id: UUID(), type: .halfWidthPair(left: config, right: nil)))
+                    currentIndex += 1
+                }
+            }
+        }
+        return rows
     }
 
     // MARK: - Helpers
@@ -606,6 +677,56 @@ final class PanelViewModel {
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode
         )
+
+        // 5. Process Trend Data for View (Smoothing & Domain)
+        updateProcessedTrendData()
+    }
+
+    private func updateProcessedTrendData() {
+        // Convert ChartTransaction to BarPoint
+        let rawPoints = chartTransactions.map { tx in
+            let val = (trendType == .balance) ? tx.balance : tx.expense
+            return BarPoint(date: tx.date, value: val)
+        }
+
+        // Apply Smoothing if needed
+        let smoothedPoints: [BarPoint]
+        if selectedPeriod == .year && rawPoints.count > 30 {
+            smoothedPoints = movingAverage(for: rawPoints, window: 14)
+        } else {
+            smoothedPoints = rawPoints
+        }
+
+        self.processedTrendPoints = smoothedPoints
+
+        // Calculate Domain
+        let values = smoothedPoints.map(\.value)
+        let maxVal = values.max() ?? 0
+        let minVal = values.min() ?? 0
+
+        let topBuffer = max(abs(maxVal) * 0.05, 100)
+
+        if trendType == .expense {
+            self.processedYDomain = 0...(maxVal + topBuffer)
+        } else {
+            let bottomBuffer = (minVal < 0) ? abs(minVal) * 0.05 : 0
+            self.processedYDomain = (minVal - bottomBuffer)...(maxVal + topBuffer)
+        }
+    }
+
+    private func movingAverage(for data: [BarPoint], window: Int) -> [BarPoint] {
+        guard !data.isEmpty else { return [] }
+        var result: [BarPoint] = []
+        let sorted = data.sorted { $0.date < $1.date }
+
+        for i in 0..<sorted.count {
+            let start = max(0, i - window + 1)
+            let chunk = sorted[start...i]
+            let sum = chunk.map(\.value).reduce(0, +)
+            let avg = sum / Double(chunk.count)
+            result.append(BarPoint(date: sorted[i].date, value: avg))
+        }
+        return result
     }
 
     // State for Filter Logic

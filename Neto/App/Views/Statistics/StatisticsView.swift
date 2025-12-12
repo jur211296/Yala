@@ -14,7 +14,7 @@ struct StatisticsView: View {
                 PanelBackgroundView()
                 Text("Estadísticas")
                     .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.netoSecondaryText)
             }
             .navigationTitle("Estadísticas")
         }

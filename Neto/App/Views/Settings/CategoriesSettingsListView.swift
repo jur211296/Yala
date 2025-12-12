@@ -13,6 +13,7 @@ import SwiftUI
 /// Lista principal de categorías dentro de Ajustes → Registros
 struct CategoriesSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \Category.name, order: .forward) private var categories: [Category]
 
     // Solo categorías padre (en Neto v1 todas las Category son padre)
@@ -101,12 +102,16 @@ struct CategoriesSettingsListView: View {
         }
         .navigationTitle("Categorías")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                SheetTopButton(systemName: "chevron.left") {
+                    dismiss()  // Uses environment dismiss
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
+                SheetTopButton(systemName: "plus") {
                     createAndOpenNewCategory()
-                } label: {
-                    Image(systemName: "plus")
                 }
             }
         }

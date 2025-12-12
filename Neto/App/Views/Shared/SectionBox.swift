@@ -17,21 +17,21 @@ struct SectionBox<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.secondary)
-                .padding(.leading, 6)
+                .foregroundStyle(Color.netoSecondaryText)
+                .padding(.leading, DesignSystem.Spacing.standard)
 
             VStack(spacing: 0) {
                 content()
             }
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.96))
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                    .fill(Color.netoCard)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         }
     }
 }

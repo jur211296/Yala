@@ -47,7 +47,13 @@ struct ExportColumnsStepView: View {
         .navigationTitle("Seleccionar columnas")
         .navigationBarTitleDisplayMode(.inline)
         // Botón "Atrás" estándar del NavigationStack
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                SheetTopButton(systemName: "chevron.left") {
+                    dismiss()
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
                     ExportSummaryStepView(
@@ -118,7 +124,7 @@ struct ExportColumnsStepView: View {
             }
             .padding(.vertical, 12)
         }
-        .toggleStyle(SwitchToggleStyle(tint: .black))
+        .toggleStyle(SwitchToggleStyle(tint: Color.brandPrimary))
         .padding(.horizontal, 16)
     }
 }

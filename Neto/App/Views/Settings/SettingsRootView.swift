@@ -10,6 +10,12 @@ import SwiftUI
 
 // MARK: - Ajustes (pantalla principal)
 
+/// Vista principal de Ajustes y Configuración de la aplicación Neto.
+///
+/// Esta vista gestiona la navegación hacia todas las sub-secciones de configuración,
+/// incluyendo gestión de datos, personalización y soporte.
+///
+/// Utiliza `NavigationStack` para una gestión moderna de la pila de navegación (iOS 16+).
 struct SettingsRootView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
@@ -23,11 +29,11 @@ struct SettingsRootView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Fondo consistente con el estilo Liquid Glass de Neto
+                // Background consistent with Neto's Liquid Glass style
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DesignSystem.Spacing.xxLarge) {
                         registrosSection
                         personalizacionSection
                         datosSection
@@ -35,29 +41,28 @@ struct SettingsRootView: View {
                         soporteSection
                         legalSection
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DesignSystem.Spacing.large)
+                    .padding(.vertical, DesignSystem.Spacing.xxLarge)
                 }
             }
             .navigationTitle("Ajustes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    SheetTopButton(systemName: "xmark") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
                     }
                 }
             }
         }
-        .tint(.black)
+        .tint(Color.brandPrimary)
         .sheet(isPresented: $isPresentingImportIntro) {
             ImportIntroSheet(onImportCompleted: {
-                // Cerramos también la pantalla de Ajustes para volver al Panel
+                // Also close the Settings screen to return to the Panel
                 dismiss()
             })
         }
+
         .sheet(isPresented: $isPresentingExportWizard) {
             ExportFiltersStepView()
         }
@@ -136,7 +141,7 @@ struct SettingsRootView: View {
         SectionBox(title: "Personalización") {
             VStack(spacing: 0) {
                 NavigationLink {
-                    SettingsPlaceholderView(title: "Temas")
+                    ThemeSettingsView()
                 } label: {
                     settingsRow(title: "Temas", systemImage: "paintpalette")
                 }
@@ -289,42 +294,46 @@ struct SettingsRootView: View {
 
     // MARK: - Filas estándar de ajustes
 
+    /// ViewBuilder para crear una fila de ajustes consistente.
+    /// - Parameters:
+    ///   - title: Título de la opción.
+    ///   - systemImage: Nombre del ícono SF Symbol.
     @ViewBuilder
     private func settingsRow(title: String, systemImage: String) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DesignSystem.Spacing.medium) {
             Image(systemName: systemImage)
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.netoPrimaryText)
 
             Text(title)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.netoPrimaryText)
 
             Spacer()
 
             Image(systemName: "chevron.right")
                 .font(.footnote)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.netoSecondaryText)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding(.horizontal, DesignSystem.Spacing.large)
+        .padding(.vertical, DesignSystem.Spacing.large)
     }
 
     private var preferredCurrencyRow: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DesignSystem.Spacing.medium) {
             Text(currencyInfo(for: defaultCurrency).flag)
                 .font(.title3)
 
             Text("Divisa preferida")
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.netoPrimaryText)
 
             Spacer()
 
             Text(currencyInfo(for: defaultCurrency).name.capitalized)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.netoSecondaryText)
 
             Image(systemName: "chevron.right")
                 .font(.footnote)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.netoSecondaryText)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)

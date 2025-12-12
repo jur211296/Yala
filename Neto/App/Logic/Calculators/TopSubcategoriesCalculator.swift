@@ -88,7 +88,8 @@ struct TopSubcategoriesCalculator {
                 if let sub = transaction.subcategory {
                     groupingMetadata[key] = (
                         name: sub.name,
-                        color: sub.colorHex ?? category.colorHex,  // Fallback to category color
+                        color: (sub.colorHex?.isEmpty == false ? sub.colorHex : nil)
+                            ?? category.colorHex,  // Fallback to category color if nil or empty
                         sub: sub,
                         cat: category
                     )

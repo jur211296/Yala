@@ -36,7 +36,7 @@ struct MainTabView: View {
                     Label("Estadísticas", systemImage: "chart.bar.fill")
                 }
         }
-        .tint(.black)  // Color de acento para la tab seleccionada
+        .tint(Color.netoPrimaryText)
     }
 }
 

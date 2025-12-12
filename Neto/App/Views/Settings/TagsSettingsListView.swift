@@ -10,6 +10,7 @@ import SwiftUI
 
 struct TagsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
 
     @State private var isPresentingCreateTag = false
@@ -47,12 +48,16 @@ struct TagsSettingsListView: View {
         }
         .navigationTitle("Etiquetas")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                SheetTopButton(systemName: "chevron.left") {
+                    dismiss()  // Works for NavigationStack pop too
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
+                SheetTopButton(systemName: "plus") {
                     isPresentingCreateTag = true
-                } label: {
-                    Image(systemName: "plus")
                 }
             }
         }

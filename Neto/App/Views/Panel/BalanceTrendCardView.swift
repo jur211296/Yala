@@ -13,9 +13,9 @@ struct BalanceTrendCardView: View {
     let currentBalance: Double
     let totalExpense: Double
     let currencyCode: String
-    let transactions: [ChartTransaction]
+    let trendPoints: [PanelViewModel.BarPoint]
+    let yDomain: ClosedRange<Double>
     let balanceStatus: BalanceStatus
-    let historicalThreshold: Double
     let grouping: TrendGrouping
     let interval: DateInterval
     let period: PanelViewModel.TrendPeriod
@@ -30,9 +30,9 @@ struct BalanceTrendCardView: View {
         currentBalance: Double,
         totalExpense: Double,
         currencyCode: String,
-        transactions: [ChartTransaction],
+        trendPoints: [PanelViewModel.BarPoint],
+        yDomain: ClosedRange<Double>,
         balanceStatus: BalanceStatus,
-        historicalThreshold: Double,
         grouping: TrendGrouping,
         interval: DateInterval,
         trendType: Binding<TrendType>,
@@ -44,9 +44,9 @@ struct BalanceTrendCardView: View {
         self.currentBalance = currentBalance
         self.totalExpense = totalExpense
         self.currencyCode = currencyCode
-        self.transactions = transactions
+        self.trendPoints = trendPoints
+        self.yDomain = yDomain
         self.balanceStatus = balanceStatus
-        self.historicalThreshold = historicalThreshold
         self.grouping = grouping
         self.interval = interval
         self._trendType = trendType
@@ -57,18 +57,18 @@ struct BalanceTrendCardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xLarge) {
             headerSection
             chartSection
         }
-        .padding(.top, 16)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 24)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.top, DesignSystem.Spacing.large)
+        .padding(.horizontal, DesignSystem.Spacing.large)
+        .padding(.bottom, DesignSystem.Spacing.xxLarge)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
     }
@@ -79,7 +79,7 @@ struct BalanceTrendCardView: View {
         HStack(alignment: .top) {
             titleAndAmount
             Spacer()
-            HStack(spacing: 8) {
+            HStack(spacing: DesignSystem.Spacing.standard) {
                 trendModeSelector
 
                 // Chevron for Detail View
@@ -89,7 +89,7 @@ struct BalanceTrendCardView: View {
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(.headline)
-                            .foregroundStyle(.secondary.opacity(0.7))
+                            .foregroundStyle(Color.netoSecondaryText.opacity(0.7))
                             .padding(.leading, 4)
                     }
                 }
@@ -101,11 +101,11 @@ struct BalanceTrendCardView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(titleText)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.netoSecondaryText)
 
             Text(amountText)
                 .font(.title2.weight(.bold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.netoPrimaryText)
         }
     }
 
@@ -127,7 +127,7 @@ struct BalanceTrendCardView: View {
             }
         }
         .padding(4)
-        .background(Color.gray.opacity(0.1))
+        .background(Color.netoSecondaryText.opacity(0.1))
         .clipShape(Capsule())
     }
 
@@ -141,7 +141,7 @@ struct BalanceTrendCardView: View {
                 .font(.caption.bold())
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .foregroundStyle(trendType == type ? Color.white : Color.secondary)
+                .foregroundStyle(trendType == type ? Color.white : Color.netoSecondaryText)
                 .background(buttonBackground(for: type))
         }
         .disabled(isLocked)
@@ -167,8 +167,8 @@ struct BalanceTrendCardView: View {
 
     private var chartSection: some View {
         TrendChartView(
-            transactions: transactions,
-            historicalThreshold: historicalThreshold,
+            trendPoints: trendPoints,
+            yDomain: yDomain,
             grouping: grouping,
             interval: interval,
             currencyCode: currencyCode,

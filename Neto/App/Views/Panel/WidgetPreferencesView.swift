@@ -38,7 +38,7 @@ struct WidgetPreferencesView: View {
                             }
                         )
                         .listRowSeparator(.hidden)
-                        .listRowBackground(Color.white.opacity(0.8))
+                        .listRowBackground(Color.netoCard)  // Adapts to Light/Dark mode
                     }
                     .onMove { source, destination in
                         viewModel.moveWidget(from: source, to: destination)
@@ -57,6 +57,7 @@ struct WidgetPreferencesView: View {
                         Text("Restablecer disposición original")
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
+                    .listRowBackground(Color.netoCard)  // Adapts to Light/Dark mode
                 }
             }
             .listStyle(.insetGrouped)
@@ -64,15 +65,15 @@ struct WidgetPreferencesView: View {
             .navigationTitle("Preferencias del panel")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Hecho") {
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.electricIndigo)
+                ToolbarItem(placement: .topBarTrailing) {
+                    SheetPrimaryButton(
+                        title: "Hecho",
+                        action: { dismiss() }
+                    )
                 }
             }
-            .background(Color.deepSlate.opacity(0.05).ignoresSafeArea())
+            .scrollContentBackground(.hidden)
+            .background(Color.netoBackground.ignoresSafeArea())  // Uses app's adaptive background
         }
     }
 }

@@ -17,18 +17,20 @@ struct CashFlowCardView: View {
 
     @Environment(\.colorScheme) var colorScheme
 
+    // ... (imports)
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack(alignment: .center) {
-                HStack(spacing: 6) {
+                HStack(spacing: DesignSystem.Spacing.standard) {
                     Image(systemName: "arrow.up.arrow.down")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.electricIndigo)  // Branding
+                        .foregroundStyle(Color.brandPrimary)
 
                     Text("Flujo de efectivo")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.netoPrimaryText)
                 }
 
                 Spacer()
@@ -36,27 +38,26 @@ struct CashFlowCardView: View {
                 Button(action: onShowDetail) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.netoSecondaryText)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                                .stroke(Color.netoSecondaryText.opacity(0.2), lineWidth: 1)
                         )
                 }
             }
-            .padding([.horizontal, .top], 16)
-            .padding(.bottom, 12)
+            .padding([.horizontal, .top], DesignSystem.Spacing.large)
+            .padding(.bottom, DesignSystem.Spacing.medium)
 
-            contentView  // Call the new contentView
+            contentView
         }
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(cardBackgroundColor)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge)
+                .fill(Color.netoCard)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(colorScheme == .dark ? 0.08 : 0.4), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
-        // Apply shadow consistent with other widgets if needed, but styling seems flat/glassy.
     }
 
     @State private var selectedDate: Date?
@@ -65,20 +66,20 @@ struct CashFlowCardView: View {
     private var contentView: some View {
         if size == .large {
             // Large - Chart View
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
                 // Net Flow Header
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Flujo Neto")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.netoSecondaryText)
 
                         Text(
                             formatCurrency(
                                 summary.netFlow, code: summary.currencyCode, showSign: true)
                         )
                         .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.netoPrimaryText)
                     }
                 }
 
@@ -86,7 +87,7 @@ struct CashFlowCardView: View {
                 Chart {
                     // Zero Baseline
                     RuleMark(y: .value("Zero", 0))
-                        .foregroundStyle(Color.secondary.opacity(0.3))
+                        .foregroundStyle(Color.netoSecondaryText.opacity(0.3))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
 
                     ForEach(summary.chartData) { data in
@@ -95,7 +96,7 @@ struct CashFlowCardView: View {
                             x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                             y: .value("Income", data.income)
                         )
-                        .foregroundStyle(Color.electricIndigo.gradient)
+                        .foregroundStyle(Color.brandPrimary.gradient)
                         .cornerRadius(4)
 
                         // Expense (Down)
@@ -103,7 +104,7 @@ struct CashFlowCardView: View {
                             x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                             y: .value("Expense", -data.expense)
                         )
-                        .foregroundStyle(Color.hotPink.gradient)
+                        .foregroundStyle(Color.expenseGraph.gradient)
                         .cornerRadius(4)
 
                         // Net Flow Line
@@ -111,7 +112,7 @@ struct CashFlowCardView: View {
                             x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                             y: .value("Net", data.net)
                         )
-                        .foregroundStyle(Color.cyan)
+                        .foregroundStyle(Color.incomeGraph)
                         .lineStyle(StrokeStyle(lineWidth: 2))
                         .interpolationMethod(.catmullRom)
 
@@ -120,7 +121,7 @@ struct CashFlowCardView: View {
                             x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                             y: .value("Net", data.net)
                         )
-                        .foregroundStyle(Color.cyan)
+                        .foregroundStyle(Color.incomeGraph)
                         .symbolSize(20)
                     }
                 }  // Close Chart
@@ -143,12 +144,12 @@ struct CashFlowCardView: View {
                 .chartYAxis {
                     AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                         AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                            .foregroundStyle(Color.gray.opacity(0.2))
+                            .foregroundStyle(Color.netoSecondaryText.opacity(0.2))
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
                                 Text(formatK(doubleValue))
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.netoSecondaryText)
                             }
                         }
                     }
@@ -216,45 +217,47 @@ struct CashFlowCardView: View {
                                         }
                                     }
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.netoSecondaryText)
 
                                     VStack(alignment: .leading, spacing: 4) {
                                         HStack {
-                                            Circle().fill(Color.electricIndigo).frame(
+                                            Circle().fill(Color.brandPrimary).frame(
                                                 width: 6, height: 6)
                                             Text(
                                                 "+\(formatCurrency(selectedData.income, code: summary.currencyCode))"
                                             )
                                             .font(.caption2.bold())
-                                            .foregroundStyle(Color.electricIndigo)
+                                            .foregroundStyle(Color.brandPrimary)
                                         }
                                         HStack {
-                                            Circle().fill(Color.hotPink).frame(width: 6, height: 6)
+                                            Circle().fill(Color.expenseGraph).frame(
+                                                width: 6, height: 6)
                                             Text(
                                                 formatCurrency(
                                                     selectedData.expense, code: summary.currencyCode
                                                 )
                                             )
                                             .font(.caption2.bold())
-                                            .foregroundStyle(Color.hotPink)
+                                            .foregroundStyle(Color.expenseGraph)
                                         }
                                         Divider()
                                         HStack {
-                                            Circle().fill(Color.cyan).frame(width: 6, height: 6)
+                                            Circle().fill(Color.incomeGraph).frame(
+                                                width: 6, height: 6)
                                             Text(
                                                 formatCurrency(
                                                     selectedData.net, code: summary.currencyCode,
                                                     showSign: true)
                                             )
                                             .font(.caption2.bold())
-                                            .foregroundStyle(Color.cyan)
+                                            .foregroundStyle(Color.incomeGraph)
                                         }
                                     }
                                 }
                                 .padding(8)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color(uiColor: .systemBackground))
+                                    RoundedRectangle(cornerRadius: DesignSystem.Radius.small)
+                                        .fill(Color.netoCard)
                                         .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
                                 )
                                 .fixedSize()  // Prevent expansion
@@ -268,8 +271,8 @@ struct CashFlowCardView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.horizontal, DesignSystem.Spacing.large)
+            .padding(.bottom, DesignSystem.Spacing.large)
 
         } else {
             // Small & Medium - Summary Layout (With Bars)
@@ -279,13 +282,13 @@ struct CashFlowCardView: View {
                     Text("Flujo Neto")
                         .font(.caption2)
                         .textCase(.uppercase)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.netoSecondaryText)
 
                     Text(
                         formatCurrency(summary.netFlow, code: summary.currencyCode, showSign: true)
                     )
                     .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.netoPrimaryText)
                 }
 
                 // 2. Bars Section
@@ -298,25 +301,25 @@ struct CashFlowCardView: View {
                         HStack {
                             Text("Ingresos")
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.netoSecondaryText)
                             Spacer()
                             Text(formatCurrency(summary.totalIncome, code: summary.currencyCode))
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(Color.netoPrimaryText)
                         }
                         // Bar
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
                                 // Track
                                 Capsule()
-                                    .fill(Color.primary.opacity(0.05))
+                                    .fill(Color.netoPrimaryText.opacity(0.05))
                                     .frame(height: 8)
 
                                 // Fill
                                 let width =
                                     maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
                                 Capsule()
-                                    .fill(Color.electricIndigo)
+                                    .fill(Color.brandPrimary)
                                     .frame(width: max(width, 6), height: 8)
                             }
                         }
@@ -328,7 +331,7 @@ struct CashFlowCardView: View {
                         HStack {
                             Text("Gastos")
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.netoSecondaryText)
                             Spacer()
                             Text(formatCurrency(summary.totalExpense, code: summary.currencyCode))
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
@@ -338,7 +341,7 @@ struct CashFlowCardView: View {
                             ZStack(alignment: .leading) {
                                 // Track
                                 Capsule()
-                                    .fill(Color.primary.opacity(0.05))
+                                    .fill(Color.netoPrimaryText.opacity(0.05))
                                     .frame(height: 8)
 
                                 // Fill
@@ -346,7 +349,7 @@ struct CashFlowCardView: View {
                                     maxVal > 0
                                     ? (summary.totalExpense / maxVal) * geo.size.width : 0
                                 Capsule()
-                                    .fill(Color.hotPink)
+                                    .fill(Color.expenseGraph)
                                     .frame(width: max(width, 6), height: 8)
                             }
                         }
@@ -354,8 +357,8 @@ struct CashFlowCardView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 20)
+            .padding(.horizontal, DesignSystem.Spacing.large)
+            .padding(.bottom, DesignSystem.Spacing.xLarge)
         }
     }
 

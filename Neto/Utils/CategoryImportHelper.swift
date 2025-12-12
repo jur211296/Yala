@@ -20,9 +20,9 @@ import SwiftData
 /// - Evita duplicados por nombre dentro de la misma categoría.
 /// - Todas las categorías/subcategorías creadas desde aquí NO son semilla.
 enum CategoryImportHelper {
-    
+
     // MARK: - Categorías
-    
+
     /// Devuelve una categoría existente con ese nombre o crea una nueva.
     ///
     /// - Parameters:
@@ -35,31 +35,31 @@ enum CategoryImportHelper {
         isIncome: Bool,
         in context: ModelContext
     ) throws -> Category {
-        
+
         // Normalizamos nombre para evitar duplicados triviales por espacios.
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         // Buscamos una categoría ya existente con el mismo nombre.
         let descriptor = FetchDescriptor<Category>(
             predicate: #Predicate { category in
                 category.name == trimmedName
             }
         )
-        
+
         if let existing = (try? context.fetch(descriptor))?.first {
             // Si existe, simplemente la reutilizamos.
             return existing
         }
-        
+
         // Si no existe, creamos una nueva categoría.
-        // Color por defecto: azul profundo usado en Finanzas.
-        let defaultColorHex = "#1C3556"
-        
+        // Color por defecto: Electric Indigo (#6366F1)
+        let defaultColorHex = "#6366F1"
+
         // sortOrder se coloca al final según el máximo actual.
         let allCategoriesDescriptor = FetchDescriptor<Category>()
         let allCategories = (try? context.fetch(allCategoriesDescriptor)) ?? []
         let nextSortOrder = (allCategories.map { $0.sortOrder }.max() ?? 0) + 1
-        
+
         let newCategory = Category(
             name: trimmedName,
             colorHex: defaultColorHex,
@@ -69,13 +69,13 @@ enum CategoryImportHelper {
             sortOrder: nextSortOrder,
             subcategories: []
         )
-        
+
         context.insert(newCategory)
         return newCategory
     }
-    
+
     // MARK: - Subcategorías
-    
+
     /// Devuelve una subcategoría existente dentro de la categoría padre
     /// o crea una nueva si no existe.
     ///
@@ -91,10 +91,10 @@ enum CategoryImportHelper {
         isIncome: Bool,
         in context: ModelContext
     ) throws -> Subcategory {
-        
+
         // Nombre normalizado para evitar duplicados triviales.
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         // Buscamos subcategorías con el mismo nombre y luego filtramos
         // por categoría padre en memoria para evitar problemas con el
         // uso de relaciones dentro de #Predicate.
@@ -103,33 +103,30 @@ enum CategoryImportHelper {
                 sub.name == trimmedName
             }
         )
-        
+
         if let fetched = try? context.fetch(descriptor) {
             if let existing = fetched.first(where: { $0.category === parentCategory }) {
                 // Reutilizamos la subcategoría si ya existe en esta categoría.
                 return existing
             }
         }
-        
+
         // sortOrder dentro de la categoría padre.
         let allSubcategoriesDescriptor = FetchDescriptor<Subcategory>()
         let allSubcategories = (try? context.fetch(allSubcategoriesDescriptor)) ?? []
         let siblings = allSubcategories.filter { $0.category == parentCategory }
         let nextSortOrder = (siblings.map { $0.sortOrder }.max() ?? -1) + 1
-        
-        // Color: heredamos el color de la categoría si no se especifica otro.
-        let inheritedColorHex = parentCategory.colorHex
-        
+
         let newSubcategory = Subcategory(
             name: trimmedName,
-            colorHex: inheritedColorHex,
+            colorHex: nil,  // Hereda del padre (definido en modelo/vista)
             isDefaultSeed: false,
             isVisible: true,
             sortOrder: nextSortOrder,
-            natureRawValue: nil, // o SubcategoryNature.unclassified.rawValue si se usa la extensión
+            natureRawValue: nil,
             category: parentCategory
         )
-        
+
         context.insert(newSubcategory)
         return newSubcategory
     }

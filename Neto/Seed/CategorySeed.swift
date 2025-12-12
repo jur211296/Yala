@@ -24,140 +24,182 @@
 import Foundation
 import SwiftData
 
+/// Estructura interna para describir cada subcategoría de la semilla
+private struct SubcategorySeedDefinition {
+    let name: String
+    /// Raw value para SubcategoryNature (esencial, prioritaria, opcional, sin_clasificacion)
+    /// Si es nil, se asumirá sin_clasificacion (o lógica por defecto).
+    let natureRawValue: String?
+}
+
 /// Estructura interna para describir cada categoría de la semilla
 private struct CategorySeedDefinition {
     let name: String
     let colorHex: String
     let isIncome: Bool
-    let subcategories: [String]
+    let subcategories: [SubcategorySeedDefinition]
 }
 
 // -------------------------------------------------------------------------
-// DEFINICIÓN DE LA SEMILLA (FIN-18)
+// DEFINICIÓN DE LA SEMILLA (FIN-18 / Actualizado)
 // -------------------------------------------------------------------------
 // Ajustar únicamente si actualizamos FIN-18 y SIEMPRE bajo pedido expreso.
 //
 
 private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
+    // 1. Alimentación
     CategorySeedDefinition(
         name: "Alimentación",
-        colorHex: "#FF9F0A", // naranja asociada a comida
+        colorHex: "#22C55E",
         isIncome: false,
         subcategories: [
-            "Restaurantes",
-            "Supermercados y bodegas",
-            "Delivery",
-            "Suplementos alimenticios"
+            SubcategorySeedDefinition(name: "Supermercados y bodegas", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Restaurantes", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Delivery", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(
+                name: "Suplementos alimenticios", natureRawValue: "prioritaria"),
         ]
     ),
+    // 2. Compras
     CategorySeedDefinition(
         name: "Compras",
-        colorHex: "#5E5CE6", // morado asociado a compras/retail
+        colorHex: "#F59E0B",
         isIncome: false,
         subcategories: [
-            "Artículos del hogar",
-            "Electrónica y accesorios",
-            "Salud y belleza",
-            "Ropa y calzado",
-            "Regalos",
-            "Farmacias",
-            "Otros"
+            SubcategorySeedDefinition(name: "Hogar y decoración", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(
+                name: "Tecnología y accesorios", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(
+                name: "Cuidado personal y belleza", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Ropa y calzado", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Regalos y detalles", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Farmacia y botiquín", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Otros", natureRawValue: "opcional"),
         ]
     ),
+    // 3. Transporte
     CategorySeedDefinition(
         name: "Transporte",
-        colorHex: "#0A84FF", // azul asociado a movilidad
+        colorHex: "#0EA5E9",
         isIncome: false,
         subcategories: [
-            "Transporte público",
-            "Taxi",
-            "Movilidad ocasional"
+            SubcategorySeedDefinition(name: "Transporte público", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Taxis y apps", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Movilidad ocasional", natureRawValue: "opcional"),
         ]
     ),
+    // 4. Finanzas
     CategorySeedDefinition(
         name: "Finanzas",
-        colorHex: "#1C3556", // azul oscuro asociado a finanzas
+        colorHex: "#6366F1",
         isIncome: false,
         subcategories: [
-            "Impuestos",
-            "Seguros",
-            "Préstamos",
-            "Multas",
-            "Asesorías",
-            "Cargos y comisiones",
-            "Pensiones"
+            SubcategorySeedDefinition(name: "Impuestos", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Seguros", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Préstamos y créditos", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Comisiones y cargos", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Asesorías y trámites", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Pensiones y aportes", natureRawValue: "esencial"),
         ]
     ),
+    // 5. Hogar
     CategorySeedDefinition(
         name: "Hogar",
-        colorHex: "#FFD60A", // amarillo cálido asociado al hogar
+        colorHex: "#475569",
         isIncome: false,
         subcategories: [
-            "Alquiler",
-            "Hipoteca",
-            "Servicios",
-            "Mantenimiento y reparaciones",
-            "Seguro del hogar",
-            "Personal de apoyo",
-            "Otros"
+            SubcategorySeedDefinition(name: "Alquiler o hipoteca", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Servicios del hogar", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(
+                name: "Mantenimiento y reparaciones", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Seguro del hogar", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Personal de apoyo", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Otros", natureRawValue: "opcional"),
         ]
     ),
+    // 6. Entretenimiento
     CategorySeedDefinition(
         name: "Entretenimiento",
-        colorHex: "#FF375F", // rojo/rosado asociado a ocio
+        colorHex: "#FF0080",
         isIncome: false,
         subcategories: [
-            "Espectáculos y eventos",
-            "Deportes y recreación",
-            "Bares y salidas con amigos",
-            "Fiestas y discotecas",
-            "Salidas en pareja",
-            "Viajes y vacaciones",
-            "Streaming y suscripciones",
-            "Hobbies"
+            SubcategorySeedDefinition(name: "Espectáculos y eventos", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Deportes y recreación", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Bares y salidas sociales", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Fiestas y vida nocturna", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Salidas en pareja", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Viajes y vacaciones", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(
+                name: "Streaming y plataformas", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Hobbies y gaming", natureRawValue: "opcional"),
         ]
     ),
+    // 7. Personal
     CategorySeedDefinition(
         name: "Personal",
-        colorHex: "#30D158", // verde asociado a bienestar personal
+        colorHex: "#A855F7",
         isIncome: false,
         subcategories: [
-            "Salud y atención médica",
-            "Bienestar físico y fitness",
-            "Bienestar y estética personal",
-            "Educación y desarrollo personal",
-            "Suscripciones de utilidad",
-            "Comunicaciones y telefonía"
+            SubcategorySeedDefinition(name: "Salud y atención médica", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(
+                name: "Fitness y actividad física", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(name: "Belleza y estética", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(
+                name: "Educación y desarrollo", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(
+                name: "Suscripciones de utilidad", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(
+                name: "Telefonía y comunicaciones", natureRawValue: "esencial"),
         ]
     ),
+    // 8. Mascotas y animales (Nueva)
+    CategorySeedDefinition(
+        name: "Mascotas y animales",
+        colorHex: "#84CC16",
+        isIncome: false,
+        subcategories: [
+            SubcategorySeedDefinition(name: "Alimentación de mascotas", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Salud veterinaria", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Accesorios y juguetes", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(name: "Servicios y cuidados", natureRawValue: "prioritaria"),
+        ]
+    ),
+    // 9. Vehículo
     CategorySeedDefinition(
         name: "Vehículo",
-        colorHex: "#64D2FF", // celeste asociado a vehículo/movilidad
+        colorHex: "#64748B",
         isIncome: false,
         subcategories: [
-            "Combustible",
-            "Estacionamiento",
-            "Mantenimiento",
-            "Préstamos",
-            "Seguro del vehículo",
-            "Leasing"
+            SubcategorySeedDefinition(name: "Combustible", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Estacionamientos", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(
+                name: "Mantenimiento del vehículo", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Préstamo vehicular", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Seguro vehicular", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Leasing", natureRawValue: "esencial"),
         ]
     ),
+    // 10. Ingresos
     CategorySeedDefinition(
         name: "Ingresos",
-        colorHex: "#32D74B", // verde brillante asociado a ingresos/dinero
+        colorHex: "#00F3FF",
         isIncome: true,
         subcategories: [
-            "Salario",
-            "Facturación y freelance",
-            "Intereses y dividendos",
-            "Ventas",
-            "Alquileres recibidos",
-            "Ayudas y subvenciones",
-            "Reembolsos",
-            "Regalos y otros ingresos"
+            SubcategorySeedDefinition(name: "Salario", natureRawValue: "sin_clasificacion"),
+            SubcategorySeedDefinition(
+                name: "Facturación y freelance", natureRawValue: "sin_clasificacion"),
+            SubcategorySeedDefinition(
+                name: "Intereses y dividendos", natureRawValue: "sin_clasificacion"),
+            SubcategorySeedDefinition(name: "Ventas", natureRawValue: "sin_clasificacion"),
+            SubcategorySeedDefinition(
+                name: "Alquileres recibidos", natureRawValue: "sin_clasificacion"),
+            SubcategorySeedDefinition(
+                name: "Ayudas y subvenciones", natureRawValue: "sin_clasificacion"),
+            SubcategorySeedDefinition(name: "Reembolsos", natureRawValue: "sin_clasificacion"),
+            SubcategorySeedDefinition(
+                name: "Regalos y otros ingresos", natureRawValue: "sin_clasificacion"),
         ]
-    )
+    ),
 ]
 
 /// FIN-18
@@ -169,7 +211,7 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
 /// - No borra ni modifica categorías existentes.
 /// - No debe llamarse manualmente desde otros puntos sin revisar impacto.
 func seedCategoriesIfNeeded(in modelContext: ModelContext) {
-    
+
     // 1. Comprobar si ya existen categorías
     let existingCategoriesCount: Int
     do {
@@ -182,18 +224,18 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
         print("FIN-18: Error leyendo categorías existentes: \(error)")
         return
     }
-    
+
     guard existingCategoriesCount == 0 else {
         // Ya hay categorías, no ejecutamos semilla otra vez.
         print("FIN-18: Semilla NO ejecutada (ya existen categorías).")
         return
     }
-    
+
     // 2. Ejecutar semilla completa de categorías y subcategorías
     print("FIN-18: Ejecutando semilla inicial de categorías por defecto...")
-    
+
     for (categoryIndex, definition) in defaultCategorySeedDefinitions.enumerated() {
-        
+
         // Crear categoría raíz
         let category = Category(
             name: definition.name,
@@ -204,22 +246,22 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
             sortOrder: categoryIndex
         )
         modelContext.insert(category)
-        
+
         // Crear subcategorías asociadas
-        for (subIndex, subName) in definition.subcategories.enumerated() {
+        for (subIndex, subDef) in definition.subcategories.enumerated() {
             let subcategory = Subcategory(
-                name: subName,
+                name: subDef.name,
                 colorHex: nil,
                 isDefaultSeed: true,
                 isVisible: true,
                 sortOrder: subIndex,
-                natureRawValue: nil,
+                natureRawValue: subDef.natureRawValue,
                 category: category
             )
             modelContext.insert(subcategory)
         }
     }
-    
+
     // 3. Guardar cambios (por seguridad, aunque SwiftData suele autoguardar)
     do {
         try modelContext.save()

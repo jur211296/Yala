@@ -4,8 +4,8 @@ import SwiftUI
 import UIKit
 
 struct TrendChartView: View {
-    let transactions: [ChartTransaction]
-    let historicalThreshold: Double
+    let trendPoints: [PanelViewModel.BarPoint]
+    let yDomain: ClosedRange<Double>
     let grouping: TrendGrouping
     let interval: DateInterval
     let currencyCode: String
@@ -26,7 +26,7 @@ struct TrendChartView: View {
 
     private var liquidTrendChart: some View {
         Chart {
-            // Colors based on TrendType
+            // Colors based on TrendType (Using Semantic Colors)
             let primaryLineColor: Color = (trendType == .balance) ? .brandPrimary : .expenseGraph
             let areaStartColor = primaryLineColor.opacity(0.1)
             let areaEndColor = primaryLineColor.opacity(0.05)
@@ -43,8 +43,9 @@ struct TrendChartView: View {
             let today = Calendar.current.startOfDay(for: Date())
             let calendar = Calendar.current
 
-            // --- SMOOTHED DATA ---
-            let data = allSmoothedData
+            // --- USE PROCESSED DATA ---
+            let data = trendPoints
+
             // Split into Past and Future with overlapping connection at 'today'
             let pastPoints = data.filter {
                 calendar.compare($0.date, to: today, toGranularity: .day) != .orderedDescending
@@ -53,15 +54,9 @@ struct TrendChartView: View {
                 calendar.compare($0.date, to: today, toGranularity: .day) != .orderedAscending
             }
 
-            let yDomain = yAxisSmoothedDomain
-            let yMin = yDomain.lowerBound
-            let yMax = yDomain.upperBound
-            // Clamp base to domain (0 if inside, otherwise edge)
-            let yBase = min(max(yMin, 0), yMax)
+            let yBase = min(max(yDomain.lowerBound, 0), yDomain.upperBound)
 
             // Interpolation Logic:
-            // User requested "Smoothed" line (no corners) but with "Natural" (Raw) data.
-            // .catmullRom provides the requested smoothness.
             let interpolation: InterpolationMethod = .catmullRom
 
             // Past & Today: Solid Line & Area
@@ -92,7 +87,7 @@ struct TrendChartView: View {
                     .annotation(position: .top, spacing: 4) {
                         Text(formattedAmountShort(point.value))
                             .font(.caption2.bold())
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.netoSecondaryText)
                     }
                 }
             }
@@ -105,34 +100,32 @@ struct TrendChartView: View {
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
-                .foregroundStyle(Color.gray)  // Explicit Gray for distinction
+                .foregroundStyle(Color.netoSecondaryText)  // Explicit Gray for distinction
             }
 
             // Marker for "Today"
             RuleMark(x: .value("Hoy", today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
-                .foregroundStyle(Color.gray.opacity(0.5))
+                .foregroundStyle(Color.netoSecondaryText.opacity(0.5))
                 .annotation(position: .top, alignment: .center) {
                     Text("Hoy")
                         .font(.caption2.bold())
-                        .foregroundStyle(Color.black)
+                        .foregroundStyle(Color.netoPrimaryText)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 4)
-                        .background(Color.white, in: RoundedRectangle(cornerRadius: 4))
+                        .background(Color.netoCard, in: RoundedRectangle(cornerRadius: 4))
                         .shadow(radius: 1)
                 }
 
             // Interaction: Scrubbing Rule Mark
             if let activeDate = draggingDate ?? focusedDate,
-                let selectedPoint = data.first(where: {
-                    Calendar.current.isDate($0.date, inSameDayAs: activeDate)
-                }),
-                let rawValue = value(for: activeDate)  // Detailed Raw Value for text
+                let selectedPoint = closestPoint(to: activeDate, in: data),
+                let rawValue = value(for: activeDate, in: data)
             {
 
                 RuleMark(x: .value("Selected Date", activeDate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                    .foregroundStyle(Color.gray)
+                    .foregroundStyle(Color.netoSecondaryText)
 
                 // Ring Border (Background) at SMOOTHED position
                 PointMark(
@@ -148,7 +141,7 @@ struct TrendChartView: View {
                     y: .value("Selected Value", selectedPoint.value)
                 )
                 .symbolSize(100)
-                .foregroundStyle(Color.white)
+                .foregroundStyle(Color.netoCard)
 
                 // Tooltip
                 .annotation(
@@ -162,16 +155,16 @@ struct TrendChartView: View {
                     VStack(alignment: .center, spacing: 4) {
                         Text(periodLabel(for: activeDate))
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.netoSecondaryText)
                         Text("\(formattedAmount(rawValue)) \(currencyCode)")
                             .font(.caption.bold())
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.netoPrimaryText)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(0.9))
+                        RoundedRectangle(cornerRadius: DesignSystem.Radius.small)
+                            .fill(Color.netoCard.opacity(0.95))
                             .shadow(radius: 2)
                     )
                     .offset(y: -10)
@@ -182,50 +175,49 @@ struct TrendChartView: View {
         .chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                    .foregroundStyle(Color.gray.opacity(0.2))
+                    .foregroundStyle(Color.netoSecondaryText.opacity(0.2))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatK(doubleValue))
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.netoSecondaryText)
                     }
                 }
             }
         }
-        // Y-Axis Scale (Tight Top Padding) - BASED ON SMOOTHED DATA
-        .chartYScale(domain: yAxisSmoothedDomain)
-        // X-Axis Scale with PADDING
+        // Y-Axis Scale from ViewModel
+        .chartYScale(domain: yDomain)
+        // X-Axis Scale from Interval
         .chartXScale(domain: paddedXDomain)
         .chartXAxis {
             if period == .year {
-                // For Year: Show Months (even if data is daily)
+                // For Year: Show Months
                 AxisMarks(values: .stride(by: .month)) { value in
                     AxisGridLine()
-                        .foregroundStyle(Color.gray.opacity(0.1))
+                        .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
 
                     if let date = value.as(Date.self) {
                         AxisValueLabel(anchor: .topLeading) {
                             Text(date, format: .dateTime.month(.abbreviated).locale(axisLocale))
                                 .font(.caption2.bold())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.netoSecondaryText)
                                 .textCase(.lowercase)
                         }
                     }
                 }
             } else {
                 // For Week/Month: Show Days
-                // Dynamic Stride: If Week, show all. If Month, show every 5 days to avoid overlap.
                 let strideCount = (period == .month) ? 5 : 1
 
                 AxisMarks(values: .stride(by: .day, count: strideCount)) { value in
                     if let date = value.as(Date.self) {
                         AxisGridLine()
-                            .foregroundStyle(Color.gray.opacity(0.1))
+                            .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
 
                         AxisValueLabel(anchor: .top) {
                             Text(date, format: .dateTime.day().locale(axisLocale))
                                 .font(.caption2.bold())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.netoSecondaryText)
                         }
                     }
                 }
@@ -239,9 +231,9 @@ struct TrendChartView: View {
                             .onChanged { value in
                                 let x = value.location.x - geo[proxy.plotFrame!].origin.x
                                 if let date: Date = proxy.value(atX: x),
-                                    let closest = closestDate(to: date)
+                                    let closest = closestPoint(to: date, in: trendPoints)
                                 {
-                                    draggingDate = closest
+                                    draggingDate = closest.date
                                 }
                             }
                             .onEnded { _ in
@@ -278,7 +270,6 @@ struct TrendChartView: View {
     // Padded X Domain Logic
     private var paddedXDomain: ClosedRange<Date> {
         let span = interval.end.timeIntervalSince(interval.start)
-        // Add 5% padding on each side
         let padding = span * 0.05
         let start = interval.start.addingTimeInterval(-padding)
         let end = interval.end.addingTimeInterval(padding)
@@ -286,12 +277,6 @@ struct TrendChartView: View {
     }
 
     private func formattedAmountShort(_ value: Double) -> String {
-        // User requested full values for "This Week" labels, no "K".
-        // Also respecting trendType sign logic implicitly via standard formatter?
-        // No, standard formatter doesn't do sign usually immediately.
-        // Let's format as integer (or 2 decimals? usually int fits better).
-        // And handles sign manually if needed.
-
         let absValue = abs(value)
         let formattedNumber = absValue.formatted(.number.precision(.fractionLength(0)))
 
@@ -304,10 +289,8 @@ struct TrendChartView: View {
         }
     }
 
-    // Helper for "K" format (e.g. -15K, +15K)
     private func formatK(_ value: Double) -> String {
         let absValue = abs(value)
-        // Sign logic: explicit '+' for positive ONLY if balance, '-' for negative always
         let sign: String
         if value < 0 {
             sign = "-"
@@ -325,76 +308,22 @@ struct TrendChartView: View {
         }
     }
 
-    private func value(for date: Date) -> Double? {
-        barData.first(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })?.value
+    private func value(for date: Date, in data: [PanelViewModel.BarPoint]) -> Double? {
+        data.first(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })?.value
     }
 
-    private func closestDate(to date: Date) -> Date? {
-        return barData.min(by: {
+    private func closestPoint(to date: Date, in data: [PanelViewModel.BarPoint]) -> PanelViewModel
+        .BarPoint?
+    {
+        return data.min(by: {
             abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
-        })?.date
+        })
     }
 
     // MARK: - Utilidades de escala
 
     private var axisLocale: Locale {
         return Locale(identifier: "es")
-    }
-
-    private struct BarPoint {
-        let date: Date
-        let value: Double
-    }
-
-    private var barData: [BarPoint] {
-        return transactions.map { tx in
-            let val = (trendType == .balance) ? tx.balance : tx.expense
-            return BarPoint(date: tx.date, value: val)
-        }
-    }
-
-    private var allSmoothedData: [BarPoint] {
-        // Only apply Moving Average for "This Year" (long term trend) AND if we have enough data (>30 days).
-        // For short views (Week/Month) or sparse data, show raw values ("Natural").
-        if period == .year && barData.count > 30 {
-            // Use 14-day window for Expense/Income trends to smooth out daily volatility
-            let smoothWindow = 14
-            return movingAverage(for: barData, window: smoothWindow)
-        }
-
-        return barData
-    }
-
-    // 7-Day Rolling Average (Kept for reference or future use if needed, but unused now)
-    private func movingAverage(for data: [BarPoint], window: Int) -> [BarPoint] {
-        guard !data.isEmpty else { return [] }
-        var result: [BarPoint] = []
-        let sorted = data.sorted { $0.date < $1.date }
-
-        for i in 0..<sorted.count {
-            let start = max(0, i - window + 1)
-            let chunk = sorted[start...i]
-            let sum = chunk.map(\.value).reduce(0, +)
-            let avg = sum / Double(chunk.count)
-            result.append(BarPoint(date: sorted[i].date, value: avg))
-        }
-        return result
-    }
-
-    private var yAxisSmoothedDomain: ClosedRange<Double> {
-        // Calculate domain based on SMOOTHED data to avoid outlier flattening
-        let values = allSmoothedData.map(\.value)
-        let maxVal = values.max() ?? 0
-        let minVal = values.min() ?? 0
-
-        let topBuffer = max(abs(maxVal) * 0.05, 100)
-
-        if trendType == .expense {
-            return 0...(maxVal + topBuffer)
-        } else {
-            let bottomBuffer = (minVal < 0) ? abs(minVal) * 0.05 : 0
-            return (minVal - bottomBuffer)...(maxVal + topBuffer)
-        }
     }
 
     private func periodLabel(for date: Date) -> String {

@@ -64,8 +64,8 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
         return [
             WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .large),
             WidgetConfig(id: UUID(), type: .cashFlow, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .topSpending, isVisible: true, size: .large),
-            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .topSpending, isVisible: true, size: .small),
+            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: true, size: .small),
         ]
     }
 }

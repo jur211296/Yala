@@ -5,12 +5,12 @@
 //  Punto de entrada principal de la aplicación.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct NetoApp: App {
-    
+
     /// ModelContainer compartido para toda la app.
     /// Incluye todas las entidades base definidas en FIN-17.
     var sharedModelContainer: ModelContainer = {
@@ -21,12 +21,12 @@ struct NetoApp: App {
             Account.self,
             TransactionItem.self,
             Budget.self,
-            ExchangeRate.self
+            ExchangeRate.self,
         ])
-        
+
         // Nombre lógico del contenedor / base de datos
         let configuration = ModelConfiguration("NetoModel")
-        
+
         do {
             return try ModelContainer(
                 for: schema,
@@ -37,10 +37,13 @@ struct NetoApp: App {
             fatalError("Error al inicializar ModelContainer de Neto: \(error)")
         }
     }()
-    
+
+    @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
         }
         // Adjunta el contenedor de modelos a la escena principal.
         .modelContainer(sharedModelContainer)

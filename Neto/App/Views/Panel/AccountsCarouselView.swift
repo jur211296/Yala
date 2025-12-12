@@ -22,14 +22,14 @@ struct AccountsCarouselView: View {
             return max(0, min(pageCount - 1, rawIndex))
         }()
 
-        VStack(spacing: 8) {
+        VStack(spacing: DesignSystem.Spacing.standard) {
             GeometryReader { geo in
                 let totalWidth = geo.size.width
-                let spacing: CGFloat = 12
+                let spacing: CGFloat = DesignSystem.Spacing.medium
                 let cardWidth = (totalWidth - spacing) / 2
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: spacing) {
+                    LazyHStack(alignment: .top, spacing: spacing) {
                         ForEach(0..<totalCards, id: \.self) { index in
                             cardView(at: index, accounts: allCards)
                                 .frame(width: cardWidth)
@@ -50,8 +50,8 @@ struct AccountsCarouselView: View {
                         Circle()
                             .fill(
                                 page == currentPage
-                                    ? Color.gray.opacity(0.9)
-                                    : Color.gray.opacity(0.3)
+                                    ? Color.netoPrimaryText.opacity(0.3)
+                                    : Color.netoSecondaryText.opacity(0.2)
                             )
                             .frame(width: 6, height: 6)
                     }

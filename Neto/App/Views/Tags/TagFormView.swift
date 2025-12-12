@@ -103,15 +103,16 @@ struct TagFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancelar") {
+                    SheetTopButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Guardar") {
-                        saveTag()
-                    }
-                    .disabled(!canSave)
+                    SheetPrimaryButton(
+                        title: "Guardar",
+                        action: { saveTag() },
+                        isDisabled: !canSave
+                    )
                 }
             }
             .sheet(isPresented: $isPresentingColorPicker) {
