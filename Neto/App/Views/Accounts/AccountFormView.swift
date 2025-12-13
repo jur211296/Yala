@@ -86,6 +86,7 @@ struct AccountFormView: View {
                 }
             }
         }
+        .tint(Color.electricIndigo)
         .alert(
             "No se puede eliminar esta cuenta",
             isPresented: $viewModel.isShowingDeleteError,
@@ -118,6 +119,7 @@ struct AccountFormView: View {
                 } label: {
                     HStack {
                         Text("Tipo")
+                            .foregroundStyle(.primary)
                         Spacer()
                         Text(viewModel.selectedType.rawValue)
                             .foregroundStyle(.secondary)
@@ -127,6 +129,7 @@ struct AccountFormView: View {
                     }
                     .padding()
                 }
+                .buttonStyle(.plain)
 
                 SubsectionDivider()
 
@@ -145,6 +148,7 @@ struct AccountFormView: View {
         SectionBox(title: "Moneda") {
             NavigationLink {
                 CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
+                    .navigationBarBackButtonHidden(true)
             } label: {
                 HStack(spacing: 12) {
                     Text(currencyInfo(for: viewModel.selectedCurrency).flag)
@@ -152,6 +156,7 @@ struct AccountFormView: View {
 
                     Text("Moneda")
                         .font(.body)
+                        .foregroundStyle(.primary)
 
                     Spacer()
 
@@ -164,6 +169,7 @@ struct AccountFormView: View {
                 }
                 .padding()
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -210,6 +216,7 @@ struct AccountFormView: View {
                 } label: {
                     HStack {
                         Text("Ajuste")
+                            .foregroundStyle(.primary)
                         Spacer()
                         Text(viewModel.selectedAdjustmentMode.rawValue)
                             .foregroundStyle(.secondary)
@@ -220,6 +227,7 @@ struct AccountFormView: View {
                     }
                     .padding()
                 }
+                .buttonStyle(.plain)
 
                 SubsectionDivider()
 
@@ -283,6 +291,7 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text("Excluir de las estadísticas")
                 }
+                .tint(Color.electricIndigo)
                 .padding()
 
                 SubsectionDivider()
@@ -290,6 +299,7 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.isArchived) {
                     Text("Archivar cuenta")
                 }
+                .tint(Color.electricIndigo)
                 .padding()
 
                 if viewModel.isEditing {

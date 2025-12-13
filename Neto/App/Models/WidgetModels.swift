@@ -54,18 +54,15 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
     var isVisible: Bool
     var size: WidgetSize
 
-    // Helper for locking properties
-    var isLocked: Bool {
-        return type == .trend
-    }
+    var isLocked: Bool = false
 
     // Default configs generator
     static func defaultConfigs() -> [WidgetConfig] {
         return [
-            WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .large),
+            WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .large),  // Locked, always large
             WidgetConfig(id: UUID(), type: .cashFlow, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .topSpending, isVisible: true, size: .small),
-            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: true, size: .small),
+            WidgetConfig(id: UUID(), type: .topSpending, isVisible: true, size: .medium),
+            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: true, size: .medium),
         ]
     }
 }

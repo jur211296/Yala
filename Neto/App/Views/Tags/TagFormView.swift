@@ -218,6 +218,7 @@ struct TagFormView: View {
             Toggle(isOn: $isActive) {
                 Text("Activa")
             }
+            .tint(Color.electricIndigo)
             .padding()
         }
     }

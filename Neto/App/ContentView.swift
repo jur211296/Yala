@@ -36,7 +36,7 @@ struct MainTabView: View {
                     Label("Estadísticas", systemImage: "chart.bar.fill")
                 }
         }
-        .tint(Color.netoPrimaryText)
+        .tint(Color.electricIndigo)
     }
 }
 

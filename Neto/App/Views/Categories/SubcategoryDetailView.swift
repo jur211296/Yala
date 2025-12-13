@@ -189,6 +189,7 @@ struct SubcategoryDetailView: View {
                 Toggle(isOn: $isVisible) {
                     Text("Mostrar")
                 }
+                .tint(Color.electricIndigo)
                 .padding()
             }
         }

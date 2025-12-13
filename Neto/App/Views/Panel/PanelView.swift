@@ -46,6 +46,7 @@ struct PanelView: View {
     /// Widget Preferences Sheet
     @State private var showWidgetPreferences = false
 
+    @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
         .rawValue
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
@@ -58,16 +59,16 @@ struct PanelView: View {
     var body: some View {
         NavigationStack {
             mainContent
-                .navigationTitle("Habla neto, Usuario")
+                .navigationTitle("Habla neto, \(userName)")
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button {
                             isPresentingSettings = true
                         } label: {
-                            Image(systemName: "gearshape.fill")
+                            Image(systemName: "person.fill")
                                 .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(Color.primary)  // Adapts to Light/Dark mode
+                                .foregroundStyle(Color.electricIndigo)
                         }
                     }
                 }
@@ -78,7 +79,7 @@ struct PanelView: View {
                     )
                 }
                 .sheet(isPresented: $isPresentingSettings) {
-                    SettingsRootView()
+                    ProfileView()
                 }
                 .sheet(isPresented: $showWidgetPreferences) {
                     WidgetPreferencesView(viewModel: viewModel)
@@ -464,6 +465,7 @@ struct PanelView: View {
                 focusedDate: $viewModel.focusedDate,
                 period: viewModel.selectedPeriod,
                 isLocked: viewModel.isTrendLockedToExpense,
+                size: config.size,
                 onViewDetail: { selectedType in
                     trendDetailType = selectedType
                     showTrendDetail = true
@@ -479,6 +481,14 @@ struct PanelView: View {
             }
             .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
                 // Trigger recalculation when submodule selection changes
+                viewModel.calculateTrendData(
+                    accounts: accounts,
+                    transactions: transactions,
+                    defaultCurrencyCode: preferredCurrency.rawValue
+                )
+            }
+            .onChange(of: viewModel.trendType) { _, _ in
+                // Trigger recalculation when trend type (Saldo/Gasto) toggle changes
                 viewModel.calculateTrendData(
                     accounts: accounts,
                     transactions: transactions,

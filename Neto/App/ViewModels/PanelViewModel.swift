@@ -97,13 +97,13 @@ final class PanelViewModel {
         if let data = UserDefaults.standard.data(forKey: widgetConfigsKey),
             var decoded = try? JSONDecoder().decode([WidgetConfig].self, from: data)
         {
-            // Enforce Locked Properties (Healing Logic)
-            for index in decoded.indices {
-                if decoded[index].isLocked {
-                    decoded[index].isVisible = true
-                    decoded[index].size = .large
-                }
-            }
+            // Enforce Locked Properties (Healing Logic) - REMOVED for Trend Unlock
+            // for index in decoded.indices {
+            //     if decoded[index].isLocked {
+            //         decoded[index].isVisible = true
+            //         decoded[index].size = .large
+            //     }
+            // }
 
             // Migration: Add missing new widgets
             let defaults = WidgetConfig.defaultConfigs()
@@ -166,16 +166,6 @@ final class PanelViewModel {
         // Swift reorder:
         var newConfigs = widgetConfigs
         newConfigs.move(fromOffsets: source, toOffset: destination)
-
-        // Enforce Trend is always first
-        if let trendIndex = newConfigs.firstIndex(where: { $0.type == .trend }), trendIndex != 0 {
-            let trend = newConfigs.remove(at: trendIndex)
-            newConfigs.insert(trend, at: 0)
-        } else if !newConfigs.contains(where: { $0.type == .trend }) {
-            // Fallback if somehow lost
-            newConfigs.insert(
-                WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .large), at: 0)
-        }
 
         self.widgetConfigs = newConfigs
         saveWidgetConfigs()

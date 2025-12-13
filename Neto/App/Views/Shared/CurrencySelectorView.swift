@@ -12,35 +12,71 @@ struct CurrencySelectorView: View {
     @Binding var selectedCurrency: CurrencyCode
 
     var body: some View {
-        List {
-            ForEach(CurrencyCode.allCases) { currency in
-                HStack(spacing: 12) {
-                    let info = currencyInfo(for: currency)
+        ZStack {
+            PanelBackgroundView()
 
-                    Text(info.flag)
-                        .font(.title3)
+            ScrollView {
+                VStack(spacing: 24) {
+                    SectionBox(title: "") {
+                        VStack(spacing: 0) {
+                            ForEach(Array(CurrencyCode.allCases.enumerated()), id: \.element) {
+                                index, currency in
+                                if index > 0 {
+                                    SubsectionDivider()
+                                }
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(info.name)
-                        Text(info.code)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    if currency == selectedCurrency {
-                        Image(systemName: "checkmark")
-                            .foregroundStyle(.tint)
+                                currencyRow(currency: currency)
+                            }
+                        }
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    selectedCurrency = currency
+                .padding(.horizontal, 16)
+                .padding(.vertical, 24)
+            }
+        }
+        .navigationTitle("Divisa preferida")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                SheetTopButton(systemName: "chevron.left") {
                     dismiss()
                 }
             }
         }
-        .navigationTitle("Moneda")
+    }
+
+    @ViewBuilder
+    private func currencyRow(currency: CurrencyCode) -> some View {
+        let info = currencyInfo(for: currency)
+
+        Button {
+            selectedCurrency = currency
+            dismiss()
+        } label: {
+            HStack(spacing: 12) {
+                Text(info.flag)
+                    .font(.title3)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(info.name)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                    Text(info.code)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                if currency == selectedCurrency {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Color.electricIndigo)
+                        .font(.body.weight(.semibold))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
     }
 }

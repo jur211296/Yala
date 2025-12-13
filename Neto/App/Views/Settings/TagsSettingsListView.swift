@@ -15,9 +15,35 @@ struct TagsSettingsListView: View {
 
     @State private var isPresentingCreateTag = false
     @State private var tagToEdit: Tag?
+    @State private var isEditMode = false
 
-    private var activeTags: [Tag] {
-        tags.filter { $0.isActive }
+    // Persisted order for tags
+    @AppStorage("tagsSortOrderNames") private var tagsSortOrderNamesRaw: String = ""
+
+    private var tagsSortOrderNames: [String] {
+        tagsSortOrderNamesRaw.split(separator: "|").map(String.init)
+    }
+
+    private var orderedActiveTags: [Tag] {
+        let active = tags.filter { $0.isActive }
+        let order = tagsSortOrderNames
+        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+
+        return active.sorted { a, b in
+            let ia = indexByName[a.name]
+            let ib = indexByName[b.name]
+
+            switch (ia, ib) {
+            case (let x?, let y?):
+                return x < y
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            default:
+                return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+            }
+        }
     }
 
     private var inactiveTags: [Tag] {
@@ -33,12 +59,12 @@ struct TagsSettingsListView: View {
                     if tags.isEmpty {
                         emptyState
                     } else {
-                        if !activeTags.isEmpty {
-                            tagsSection(title: "Activas", tags: activeTags)
+                        if !orderedActiveTags.isEmpty {
+                            activeTagsSection
                         }
 
                         if !inactiveTags.isEmpty {
-                            tagsSection(title: "Inactivas", tags: inactiveTags)
+                            inactiveTagsSection
                         }
                     }
                 }
@@ -52,12 +78,20 @@ struct TagsSettingsListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 SheetTopButton(systemName: "chevron.left") {
-                    dismiss()  // Works for NavigationStack pop too
+                    dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                SheetTopButton(systemName: "plus") {
-                    isPresentingCreateTag = true
+                HStack(spacing: 12) {
+                    SheetTopButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down") {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isEditMode.toggle()
+                        }
+                    }
+
+                    SheetTopButton(systemName: "plus") {
+                        isPresentingCreateTag = true
+                    }
                 }
             }
         }
@@ -88,32 +122,84 @@ struct TagsSettingsListView: View {
         .padding(.top, 64)
     }
 
-    @ViewBuilder
-    private func tagsSection(title: String, tags: [Tag]) -> some View {
+    // MARK: - Active Tags Section (List with Drag and Drop)
+
+    private var activeTagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text("Activas")
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
-            VStack(spacing: 0) {
-                ForEach(Array(tags.enumerated()), id: \.element.id) { index, tag in
+            List {
+                ForEach(Array(orderedActiveTags.enumerated()), id: \.element.id) { index, tag in
+                    Button {
+                        if !isEditMode {
+                            tagToEdit = tag
+                        }
+                    } label: {
+                        tagRow(tag)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .listRowBackground(Color.netoCard)
+                    .listRowSeparator(
+                        index == 0 || index == orderedActiveTags.count - 1 ? .hidden : .visible,
+                        edges: index == 0 ? .top : .bottom)
+                }
+                .onMove(perform: moveTag)
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(orderedActiveTags.count) * 52)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.netoCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .environment(\.editMode, .constant(isEditMode ? .active : .inactive))
+        }
+    }
+
+    // MARK: - Inactive Tags Section (No reordering)
+
+    private var inactiveTagsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Inactivas")
+                .font(.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, 6)
+
+            List {
+                ForEach(Array(inactiveTags.enumerated()), id: \.element.id) { index, tag in
                     Button {
                         tagToEdit = tag
                     } label: {
                         tagRow(tag)
                     }
                     .buttonStyle(.plain)
-
-                    if index < tags.count - 1 {
-                        SubsectionDivider()
-                    }
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .listRowBackground(Color.netoCard)
+                    .listRowSeparator(
+                        index == 0 || index == inactiveTags.count - 1 ? .hidden : .visible,
+                        edges: index == 0 ? .top : .bottom)
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(inactiveTags.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.96))
+                    .fill(Color.netoCard)
             )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
@@ -121,6 +207,8 @@ struct TagsSettingsListView: View {
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
         }
     }
+
+    // MARK: - Tag Row
 
     @ViewBuilder
     private func tagRow(_ tag: Tag) -> some View {
@@ -135,11 +223,19 @@ struct TagsSettingsListView: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
+            if !isEditMode {
+                Image(systemName: "chevron.right")
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+    }
+
+    // MARK: - Reorder Logic
+
+    private func moveTag(from source: IndexSet, to destination: Int) {
+        var currentOrder = orderedActiveTags.map { $0.name }
+        currentOrder.move(fromOffsets: source, toOffset: destination)
+        tagsSortOrderNamesRaw = currentOrder.joined(separator: "|")
     }
 }

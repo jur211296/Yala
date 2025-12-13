@@ -62,12 +62,15 @@ struct ThemeSettingsView: View {
                 }
             }
         }
+        .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
     }
 
     @ViewBuilder
     private func themeRow(for theme: AppTheme) -> some View {
         Button {
-            userThemeRaw = theme.rawValue
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {
+                userThemeRaw = theme.rawValue
+            }
         } label: {
             HStack {
                 Text(theme.label)

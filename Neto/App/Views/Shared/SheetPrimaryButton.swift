@@ -19,10 +19,9 @@ struct SheetPrimaryButton: View {
         Button(action: action) {
             Text(title)
                 .fontWeight(.semibold)
-                .foregroundStyle(.white)  // Explicitly force white text
         }
         .buttonStyle(.borderedProminent)
-        .tint(Color.brandPrimary)
+        .tint(Color.electricIndigo)
         .disabled(isDisabled)
     }
 }

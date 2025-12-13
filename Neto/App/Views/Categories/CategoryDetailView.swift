@@ -177,6 +177,7 @@ struct CategoryDetailView: View {
                 Toggle(isOn: $isVisible) {
                     Text("Mostrar")
                 }
+                .tint(Color.electricIndigo)
                 .padding()
                 .onChange(of: isVisible) { _, newValue in
                     if newValue == false {

@@ -23,6 +23,7 @@ struct AccountsSettingsListView: View {
 
     @State private var isPresentingCreateAccount = false
     @State private var accountToEdit: Account?
+    @State private var isEditMode = false
 
     // Solo cuentas no archivadas para esta vista
     private var activeAccounts: [Account] {
@@ -66,12 +67,16 @@ struct AccountsSettingsListView: View {
 
             ScrollView {
                 VStack(spacing: 24) {
-                    if !orderedActiveAccounts.isEmpty {
-                        accountsSection(title: "Activas", accounts: orderedActiveAccounts)
-                    }
+                    if accounts.isEmpty {
+                        emptyState
+                    } else {
+                        if !orderedActiveAccounts.isEmpty {
+                            listBasedSection
+                        }
 
-                    if !archivedAccounts.isEmpty {
-                        accountsSection(title: "Archivadas", accounts: archivedAccounts)
+                        if !archivedAccounts.isEmpty {
+                            accountsSection(title: "Archivadas", accounts: archivedAccounts)
+                        }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -89,8 +94,16 @@ struct AccountsSettingsListView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                SheetTopButton(systemName: "plus") {
-                    isPresentingCreateAccount = true
+                HStack(spacing: 12) {
+                    SheetTopButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down") {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isEditMode.toggle()
+                        }
+                    }
+
+                    SheetTopButton(systemName: "plus") {
+                        isPresentingCreateAccount = true
+                    }
                 }
             }
         }
@@ -108,13 +121,33 @@ struct AccountsSettingsListView: View {
             )
         }
     }
-    // Caja blanca de sección (similar a Suscripciones de Apple)
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "creditcard")
+                .font(.system(size: 48))
+                .foregroundStyle(.tertiary)
+
+            Text("No tienes cuentas")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+
+            Text("Crea cuentas para organizar tus finanzas por banco, efectivo u otros.")
+                .font(.subheadline)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+        .padding(.top, 64)
+    }
+
+    // Caja blanca de sección para cuentas archivadas
     @ViewBuilder
     private func accountsSection(title: String, accounts: [Account]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(Color.primary.opacity(0.6))  // gris un poco más fuerte
+                .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
             VStack(spacing: 0) {
@@ -133,7 +166,7 @@ struct AccountsSettingsListView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.96))
+                    .fill(Color.netoCard)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -141,6 +174,107 @@ struct AccountsSettingsListView: View {
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
         }
+    }
+
+    // MARK: - Active Accounts Section (List with Drag and Drop)
+
+    private var listBasedSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Activas")
+                .font(.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, 6)
+
+            List {
+                ForEach(Array(orderedActiveAccounts.enumerated()), id: \.element.id) {
+                    index, account in
+                    Button {
+                        if !isEditMode {
+                            accountToEdit = account
+                        }
+                    } label: {
+                        listAccountRow(account)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .listRowBackground(Color.netoCard)
+                    .listRowSeparator(
+                        index == 0 || index == orderedActiveAccounts.count - 1 ? .hidden : .visible,
+                        edges: index == 0 ? .top : .bottom)
+                }
+                .onMove(perform: moveAccountList)
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(orderedActiveAccounts.count) * 84)  // Tight fit
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.netoCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .environment(\.editMode, .constant(isEditMode ? .active : .inactive))
+        }
+    }
+
+    private func listAccountRow(_ account: Account) -> some View {
+        let normalizedCode = normalizeCurrencyCode(account.currencyCode)
+        let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
+        let currencyInfoData = currencyInfo(for: currency)
+        let primaryText =
+            (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
+
+        return HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(colorForHex(account.colorHex))
+                .frame(width: 44, height: 44)
+                .overlay(
+                    Image(systemName: displayIconName(for: account))
+                        .foregroundStyle(.white)
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(primaryText)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text(accountTypeText(for: account))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Text(currencyInfoData.name.capitalized)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+
+            Spacer()
+
+            HStack(spacing: 4) {
+                Text(formattedBalance(for: account))
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                // Chevron only in normal mode
+                if !isEditMode {
+                    Image(systemName: "chevron.right")
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+    }
+
+    private func moveAccountList(from source: IndexSet, to destination: Int) {
+        var currentOrder = orderedActiveAccounts.map { $0.name }
+        currentOrder.move(fromOffsets: source, toOffset: destination)
+        accountsSortOrderNamesRaw = currentOrder.joined(separator: "|")
     }
 
     // MARK: - Presentación de filas

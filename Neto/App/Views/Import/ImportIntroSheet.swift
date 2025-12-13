@@ -15,6 +15,7 @@ import UniformTypeIdentifiers
 struct ImportIntroSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
 
     @Query private var accounts: [Account]
     @Query private var categories: [Category]
@@ -73,8 +74,10 @@ struct ImportIntroSheet: View {
                             Text("Importar archivo CSV")
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
+                                .frame(height: 50)  // Taller button
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.electricIndigo)  // App primary color
                         .disabled(isImporting)
                     }
                     .padding(.horizontal, 16)
@@ -163,16 +166,14 @@ struct ImportIntroSheet: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    stepRow("Descarga la plantilla de ejemplo.")
-                    stepRow("Ábrela en tu editor de hojas de cálculo.")
-                    stepRow("Completa tus transacciones siguiendo el formato indicado.")
-                    stepRow("Guarda el archivo como CSV.")
-                    stepRow("Asegúrate de tener el archivo disponible en la app Archivos.")
-                    stepRow("Selecciona la cuenta destino e importa el archivo desde aquí.")
+                VStack(alignment: .leading, spacing: 6) {
+                    stepRow("Descarga y completa la plantilla CSV.")
+                    stepRow("Guarda el archivo en la app Archivos.")
+                    stepRow("Selecciona la cuenta destino.")
+                    stepRow("Importa el archivo desde aquí.")
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .padding(.bottom, 12)
             }
         }
     }
@@ -192,6 +193,7 @@ struct ImportIntroSheet: View {
                     .padding(.vertical, 12)
                 }
                 .buttonStyle(.bordered)
+                .tint(colorScheme == .dark ? Color.neonCyan : Color.electricIndigo)
 
                 Text(
                     "Descarga la plantilla oficial de Neto con el encabezado correcto y las categorías disponibles por defecto en la aplicación."
@@ -218,6 +220,7 @@ struct ImportIntroSheet: View {
                         .foregroundStyle(.secondary)
                     }
                 }
+                .tint(Color.electricIndigo)  // App primary color for toggles
                 .padding(16)
             }
         }

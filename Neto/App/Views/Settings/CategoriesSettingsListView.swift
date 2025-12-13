@@ -37,7 +37,7 @@ struct CategoriesSettingsListView: View {
 
         let category = Category(
             name: "",
-            colorHex: "#1C3556",
+            colorHex: "#6366F1",
             isIncome: false,
             isDefaultSeed: false,
             isVisible: true,
@@ -56,43 +56,15 @@ struct CategoriesSettingsListView: View {
 
             ScrollView {
                 VStack(spacing: 24) {
-                    if !activeCategories.isEmpty {
-                        SectionBox(title: "Activas") {
-                            VStack(spacing: 0) {
-                                ForEach(Array(activeCategories.enumerated()), id: \.element.id) {
-                                    index, category in
-                                    NavigationLink {
-                                        CategoryDetailView(category: category)
-                                    } label: {
-                                        categoryRow(category)
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    if index < activeCategories.count - 1 {
-                                        SubsectionDivider()
-                                    }
-                                }
-                            }
+                    if categories.isEmpty {
+                        emptyState
+                    } else {
+                        if !activeCategories.isEmpty {
+                            activeCategoriesSection
                         }
-                    }
 
-                    if !hiddenCategories.isEmpty {
-                        SectionBox(title: "Ocultas") {
-                            VStack(spacing: 0) {
-                                ForEach(Array(hiddenCategories.enumerated()), id: \.element.id) {
-                                    index, category in
-                                    NavigationLink {
-                                        CategoryDetailView(category: category)
-                                    } label: {
-                                        categoryRow(category)
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    if index < hiddenCategories.count - 1 {
-                                        SubsectionDivider()
-                                    }
-                                }
-                            }
+                        if !hiddenCategories.isEmpty {
+                            hiddenCategoriesSection
                         }
                     }
                 }
@@ -106,7 +78,7 @@ struct CategoriesSettingsListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 SheetTopButton(systemName: "chevron.left") {
-                    dismiss()  // Uses environment dismiss
+                    dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -124,6 +96,107 @@ struct CategoriesSettingsListView: View {
         }
     }
 
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "tag")
+                .font(.system(size: 48))
+                .foregroundStyle(.tertiary)
+
+            Text("No tienes categorías")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+
+            Text("Crea categorías para clasificar tus ingresos y gastos.")
+                .font(.subheadline)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+        .padding(.top, 64)
+    }
+
+    // MARK: - Active Categories Section
+
+    private var activeCategoriesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Activas")
+                .font(.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, 6)
+
+            List {
+                ForEach(Array(activeCategories.enumerated()), id: \.element.id) { index, category in
+                    NavigationLink {
+                        CategoryDetailView(category: category)
+                    } label: {
+                        categoryRow(category)
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.netoCard)
+                    .listRowSeparator(
+                        index < activeCategories.count - 1 ? .visible : .hidden, edges: .bottom)
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(activeCategories.count) * 52)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.netoCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+        }
+    }
+
+    // MARK: - Hidden Categories Section
+
+    private var hiddenCategoriesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Ocultas")
+                .font(.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, 6)
+
+            List {
+                ForEach(Array(hiddenCategories.enumerated()), id: \.element.id) { index, category in
+                    NavigationLink {
+                        CategoryDetailView(category: category)
+                    } label: {
+                        categoryRow(category)
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.netoCard)
+                    .listRowSeparator(
+                        index < hiddenCategories.count - 1 ? .visible : .hidden, edges: .bottom)
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(hiddenCategories.count) * 52)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.netoCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+        }
+    }
+
+    // MARK: - Category Row
+
     @ViewBuilder
     private func categoryRow(_ category: Category) -> some View {
         HStack(spacing: 12) {
@@ -137,19 +210,11 @@ struct CategoriesSettingsListView: View {
                         .foregroundStyle(.white)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(category.name)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-            }
+            Text(category.name)
+                .font(.body)
+                .foregroundStyle(.primary)
 
             Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)  // un poco más alta la fila
     }
 }

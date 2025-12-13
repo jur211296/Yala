@@ -13,6 +13,7 @@ struct TrendChartView: View {
     @Binding var focusedDate: Date?
 
     let period: PanelViewModel.TrendPeriod
+    var chartHeight: CGFloat = 220
 
     @State private var hoveredIndex: Int? = nil
     @State private var draggingDate: Date?  // For transient drag state
@@ -264,7 +265,8 @@ struct TrendChartView: View {
                     )
             }
         }
-        .frame(height: 220)
+        .frame(height: chartHeight)
+        .animation(.easeInOut(duration: 0.3), value: trendPoints)
     }
 
     // Padded X Domain Logic

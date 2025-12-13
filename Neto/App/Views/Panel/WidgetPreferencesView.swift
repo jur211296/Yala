@@ -146,7 +146,7 @@ private struct WidgetRow: View {
                         set: { onSizeChange($0) }
                     )
                 ) {
-                    ForEach(WidgetSize.allCases) { size in
+                    ForEach(availableSizes(for: config.type)) { size in
                         Text(size.rawValue).tag(size)
                     }
                 }
@@ -155,5 +155,12 @@ private struct WidgetRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private func availableSizes(for type: WidgetType) -> [WidgetSize] {
+        if type == .trend {
+            return [.medium, .large]
+        }
+        return WidgetSize.allCases
     }
 }

@@ -23,6 +23,9 @@ struct BalanceTrendCardView: View {
     @Binding var focusedDate: Date?
     var isLocked: Bool = false
 
+    // Size Layout
+    let size: WidgetSize
+
     /// Callback when user taps "Ver más detalle"
     let onViewDetail: ((TrendType) -> Void)?
 
@@ -39,6 +42,7 @@ struct BalanceTrendCardView: View {
         focusedDate: Binding<Date?>,
         period: PanelViewModel.TrendPeriod,
         isLocked: Bool = false,
+        size: WidgetSize = .large,
         onViewDetail: ((TrendType) -> Void)? = nil
     ) {
         self.currentBalance = currentBalance
@@ -53,17 +57,30 @@ struct BalanceTrendCardView: View {
         self._focusedDate = focusedDate
         self.period = period
         self.isLocked = isLocked
+        self.size = size
         self.onViewDetail = onViewDetail
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xLarge) {
+        VStack(
+            alignment: .leading,
+            spacing: size == .medium ? DesignSystem.Spacing.large : DesignSystem.Spacing.xLarge
+        ) {
             headerSection
-            chartSection
+
+            // For medium size, use geometry reader to ensure it fits or fixed height
+            if size == .medium {
+                chartSection
+                    .padding(.top, 4)
+            } else {
+                chartSection
+            }
         }
-        .padding(.top, DesignSystem.Spacing.large)
+        .padding(.top, size == .medium ? DesignSystem.Spacing.medium : DesignSystem.Spacing.large)
         .padding(.horizontal, DesignSystem.Spacing.large)
-        .padding(.bottom, DesignSystem.Spacing.xxLarge)
+        .padding(
+            .bottom, size == .medium ? DesignSystem.Spacing.large : DesignSystem.Spacing.xxLarge
+        )
         .background(Color.netoCard)
         .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
         .overlay(
@@ -102,10 +119,12 @@ struct BalanceTrendCardView: View {
             Text(titleText)
                 .font(.subheadline)
                 .foregroundStyle(Color.netoSecondaryText)
+            // Removed animation here
 
             Text(amountText)
                 .font(.title2.weight(.bold))
                 .foregroundStyle(Color.netoPrimaryText)
+            // Removed animation here
         }
     }
 
@@ -133,7 +152,7 @@ struct BalanceTrendCardView: View {
 
     private func trendButton(for type: TrendType) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation {
                 trendType = type
             }
         } label: {
@@ -174,9 +193,11 @@ struct BalanceTrendCardView: View {
             currencyCode: currencyCode,
             trendType: trendType,
             focusedDate: $focusedDate,
-            period: period
+            period: period,
+            chartHeight: size == .medium ? 100 : 220
         )
         .padding(.top, 10)
+        .animation(nil, value: trendType)
     }
 
     // MARK: - Helpers
