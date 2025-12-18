@@ -110,14 +110,10 @@ private struct WidgetRow: View {
                         Text("Oculto")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                    } else {
-                        Text(
-                            config.size == .small
-                                ? "Tamaño: Pequeño"
-                                : config.size == .medium ? "Tamaño: Mediano" : "Tamaño: Grande"
-                        )
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    } else if let sizeName = config.type.displaySizeName(for: config.size) {
+                        Text("Tamaño: \(sizeName)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -138,7 +134,8 @@ private struct WidgetRow: View {
             }
 
             // Size Controls (Only if visible and not locked)
-            if config.isVisible && !config.isLocked {
+            // Custom condition: Hide size picker if only 1 size is supported
+            if config.isVisible && !config.isLocked && availableSizes(for: config.type).count > 1 {
                 Picker(
                     "Tamaño",
                     selection: Binding(
@@ -147,7 +144,7 @@ private struct WidgetRow: View {
                     )
                 ) {
                     ForEach(availableSizes(for: config.type)) { size in
-                        Text(size.rawValue).tag(size)
+                        Text(config.type.displaySizeName(for: size) ?? size.rawValue).tag(size)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -158,9 +155,6 @@ private struct WidgetRow: View {
     }
 
     private func availableSizes(for type: WidgetType) -> [WidgetSize] {
-        if type == .trend {
-            return [.medium, .large]
-        }
-        return WidgetSize.allCases
+        return type.supportedSizes
     }
 }

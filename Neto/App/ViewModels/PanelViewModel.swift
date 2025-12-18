@@ -53,8 +53,21 @@ final class PanelViewModel {
     }
     var subcategoriesWidgetFilter: PersistentIdentifier?
 
+    // Nature filter state
+    var selectedNature: SubcategoryNature? {
+        didSet {
+            enforceTrendLock()
+        }
+    }
+
+    // Nature Widget State
+    var natureTrendPoints: [NatureTrendPoint] = []
+
     // Cash Flow State
     var cashFlowSummary: CashFlowSummary?
+
+    // Latest Records State
+    var latestRecords: [TransactionItem] = []
 
     enum TrendPeriod: String, CaseIterable, Identifiable {
         case week = "Esta semana"
@@ -76,7 +89,7 @@ final class PanelViewModel {
 
     // Trend Locking Logic
     var isTrendLockedToExpense: Bool {
-        selectedCategoryID != nil || selectedSubcategoryID != nil
+        selectedCategoryID != nil || selectedSubcategoryID != nil || selectedNature != nil
     }
 
     private func enforceTrendLock() {
@@ -312,37 +325,14 @@ final class PanelViewModel {
 
     /// Computes the layout rows based on widget sizes.
     /// Rules:
-    /// - Large: Full Width (2x height visually, but row handles width)
+    /// - Large: Full Width
     /// - Medium: Full Width
-    /// - Small: Half Width. Two adjacent Smalls form a pair. Isolated Small is left-aligned.
     func computeLayoutRows(widgets: [WidgetConfig]) -> [WidgetRow] {
         var rows: [WidgetRow] = []
-        var currentIndex = 0
 
-        while currentIndex < widgets.count {
-            let config = widgets[currentIndex]
-
-            if config.size == .large || config.size == .medium {
-                // Large & Medium -> Full Width Row
-                rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
-                currentIndex += 1
-            } else {
-                // Small - Check for neighbor
-                let nextIndex = currentIndex + 1
-                if nextIndex < widgets.count && widgets[nextIndex].size == .small {
-                    // Found a pair of Smalls
-                    rows.append(
-                        WidgetRow(
-                            id: UUID(),
-                            type: .halfWidthPair(left: config, right: widgets[nextIndex])))
-                    currentIndex += 2
-                } else {
-                    // Isolated Small (next is Large/Medium/None)
-                    rows.append(
-                        WidgetRow(id: UUID(), type: .halfWidthPair(left: config, right: nil)))
-                    currentIndex += 1
-                }
-            }
+        for config in widgets {
+            // All widgets (Medium & Large) are Full Width
+            rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
         }
         return rows
     }
@@ -457,6 +447,7 @@ final class PanelViewModel {
     var historicalThreshold: Double = 0
     var trendGrouping: TrendGrouping = .day
     var cashFlowGrouping: TrendGrouping = .day  // Explicit grouping for Cash Flow widget
+    var natureGrouping: TrendGrouping = .day  // Explicit grouping for Nature widget
     var trendType: TrendType = .balance
     var focusedDate: Date? = nil  // Global Focus State
 
@@ -500,8 +491,10 @@ final class PanelViewModel {
         switch selectedPeriod {
         case .month:
             cashFlowGrouping = .week
+            natureGrouping = .week
         default:
             cashFlowGrouping = trendGrouping
+            natureGrouping = trendGrouping
         }
 
         // 2. Determine Eligible Accounts
@@ -579,6 +572,28 @@ final class PanelViewModel {
                 }
             }
 
+            // Nature Filter
+            if let nature = selectedNature {
+                // If transaction subcategory matches nature
+                if let sub = transaction.subcategory {
+                    if sub.nature != nature { return false }
+                } else {
+                    // Unclassified logic: No subcategory OR subcategory with unclassified nature (though enum default handles it?)
+                    // If filter is .unclassified, accept tx with NO subcategory or nil nature (if that existed).
+                    if nature == .unclassified {
+                        // Accept if no subcategory
+                        if transaction.subcategory != nil
+                            && transaction.subcategory!.nature != .unclassified
+                        {
+                            return false
+                        }
+                    } else {
+                        // Filter is specific nature (e.g. Essential), but tx has no subcategory -> reject
+                        return false
+                    }
+                }
+            }
+
             return true
         }
 
@@ -609,16 +624,31 @@ final class PanelViewModel {
             finalContextTransactions = contextTransactions
         }
 
+        // Apply Nature Filter to context transactions (for category/subcategory widgets)
+        let natureFilteredContextTransactions: [TransactionItem]
+        if let nature = selectedNature {
+            natureFilteredContextTransactions = finalContextTransactions.filter { txn in
+                if let sub = txn.subcategory {
+                    return sub.nature == nature
+                } else {
+                    // Transaction has no subcategory -> treat as unclassified
+                    return nature == .unclassified
+                }
+            }
+        } else {
+            natureFilteredContextTransactions = finalContextTransactions
+        }
+
         // Apply Subcategory Filter locally for Category Calculation
         // If a subcategory is selected, the Category widget should only show the parent category
         // and the value should be filtered to that subcategory.
         let finalCategoryTransactions: [TransactionItem]
         if let subID = selectedSubcategoryID {
-            finalCategoryTransactions = finalContextTransactions.filter {
+            finalCategoryTransactions = natureFilteredContextTransactions.filter {
                 $0.subcategory?.name == subID
             }
         } else {
-            finalCategoryTransactions = finalContextTransactions
+            finalCategoryTransactions = natureFilteredContextTransactions
         }
 
         self.topSpendingCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
@@ -634,7 +664,7 @@ final class PanelViewModel {
         let effectiveCategoryFilter = selectedCategoryID ?? subcategoriesWidgetFilter
 
         self.topSubcategories = TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: finalContextTransactions,  // Base set (Time + Account)
+            transactions: natureFilteredContextTransactions,  // Base set (Time + Account + Nature)
             interval: panelDateInterval,
             currencyCode: defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter  // Pass the effective filter
@@ -668,7 +698,48 @@ final class PanelViewModel {
             currencyCode: defaultCurrencyCode
         )
 
-        // 5. Process Trend Data for View (Smoothing & Domain)
+        // 6. Latest Records (sorted by date, most recent first)
+        self.latestRecords = Array(
+            filtered.sorted { $0.date > $1.date }.prefix(5)
+        )
+
+        // 6. Latest Records (sorted by date, most recent first)
+        self.latestRecords = Array(
+            filtered.sorted { $0.date > $1.date }.prefix(5)
+        )
+
+        // 7. Calculate Nature Trend (using 'filtered' might be too restrictive if we want to show distribution even when filtered?)
+        // Requirement: "Panel filters... Nature (when filtered)".
+        // If Nature is filtered, the chart should show only that nature?
+        // Usually "Expenses by Nature" widget shows distribution.
+        // If I filter by "Essential", the widget should probably show only Essential bars? Or allow unfiltering?
+        // Behavior defined: "Si ya hay naturaleza filtrada = N... se elimina el filtro".
+        // Use 'finalContextTransactions' (Time + Account + Focus) to calculate distribution always,
+        // UNLESS we explicitly want to show only the selected one.
+        // Standard Panel practice: Widget reflects global context.
+        // BUT if I filter by "Food", I might want to see Nature OF Food.
+        // So use 'filtered' context (which includes Category/Subcategory).
+        // Does 'filtered' include 'selectedNature'? Yes.
+        // If I filter by "Essential", 'filtered' only has Essential. So Chart is single color. This is consistent.
+        // But for the Widget Content calculation, we usually want to show the breakdown of the CURRENT context.
+        // If Nature IS filtered, we might want to show all natures to allow switching?
+        // The spec says: "Chevron... respects ALL filters".
+        // The Widget itself: "Tap... applies filter".
+        // If I am filtered by Essential, and I see only Essential bar, I can tap it to unfilter.
+        // If I want to see others, I unfilter first.
+        // So strict filtering is fine.
+
+        self.natureTrendPoints = calculateNatureTrend(
+            transactions: filtered,  // Includes Category, Subcategory, Date, Account filters. What about Nature filter?
+            // If selectedNature is set, 'filtered' only contains that nature.
+            // If we want the widget to still show other natures (disabled/dimmed or just 0?) or just the one?
+            // "Si solo hay 1 o 2 naturalezas presentes, las restantes se muestran en cero".
+            // So relying on filtered data is correct behavior.
+            grouping: self.natureGrouping,
+            interval: self.panelDateInterval
+        )
+
+        // 8. Process Trend Data for View (Smoothing & Domain)
         updateProcessedTrendData()
     }
 
@@ -776,6 +847,88 @@ final class PanelViewModel {
             transactions: transactions,
             defaultCurrencyCode: defaultCurrencyCode
         )
+    }
+
+    func toggleNatureFilter(_ nature: SubcategoryNature) {
+        if selectedNature == nature {
+            selectedNature = nil
+        } else {
+            selectedNature = nature
+        }
+    }
+
+    private func calculateNatureTrend(
+        transactions: [TransactionItem],
+        grouping: TrendGrouping,
+        interval: DateInterval
+    ) -> [NatureTrendPoint] {
+        // Group transactions by Date bucket
+        var grouped: [Date: [TransactionItem]] = [:]
+        let calendar = Calendar.current
+
+        for tx in transactions {
+            // Only consider Expenses for Nature
+            if tx.amount >= 0 { continue }  // Income is positive, Expense is negative (usually).
+            // Wait, Neto convention: Expense is usually negative.
+            // But let's check TrendChartView usage. 'expense' is usually positive magnitude or negative?
+            // ChartTransaction.expense is Double.
+            // Let's check 'BalanceTrendCalculator'.
+            // Usually in Neto: Income +, Expense -.
+            // We want positive values for the bar chart height.
+
+            let dateKey: Date
+            switch grouping {
+            case .day:
+                dateKey = calendar.startOfDay(for: tx.date)
+            case .week:
+                // Start of week
+                let components = calendar.dateComponents(
+                    [.yearForWeekOfYear, .weekOfYear], from: tx.date)
+                dateKey = calendar.date(from: components) ?? tx.date
+            case .month:
+                // Start of month
+                let components = calendar.dateComponents([.year, .month], from: tx.date)
+                dateKey = calendar.date(from: components) ?? tx.date
+            }
+
+            grouped[dateKey, default: []].append(tx)
+        }
+
+        // Create points filling the interval? Or just present ones?
+        // Widget usually cleaner if it shows continuous headers or just present?
+        // Trend chart shows continuous. Let's try to match existing keys or fill gaps if necessary.
+        // For simplicity first pass: just present keys.
+
+        var points: [NatureTrendPoint] = []
+        for (date, txs) in grouped {
+            var essential: Double = 0
+            var priority: Double = 0
+            var optional: Double = 0
+            var unclassified: Double = 0
+
+            for tx in txs {
+                let amount = abs(tx.amount)
+                let nature = tx.subcategory?.nature ?? .unclassified
+
+                switch nature {
+                case .essential: essential += amount
+                case .priority: priority += amount
+                case .optional: optional += amount
+                case .unclassified: unclassified += amount
+                }
+            }
+
+            points.append(
+                NatureTrendPoint(
+                    date: date,
+                    essential: essential,
+                    priority: priority,
+                    optional: optional,
+                    unclassified: unclassified
+                ))
+        }
+
+        return points.sorted { $0.date < $1.date }
     }
 
     private func initialBalanceForTrend(

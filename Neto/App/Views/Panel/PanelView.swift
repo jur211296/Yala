@@ -238,8 +238,9 @@ struct PanelView: View {
             let hasDateFilter = viewModel.focusedDate != nil
             // FIN-18: New Category Filter
             let hasCategoryFilter = viewModel.selectedCategoryID != nil
+            let hasNatureFilter = viewModel.selectedNature != nil
 
-            if hasAccountFilter || hasDateFilter || hasCategoryFilter {
+            if hasAccountFilter || hasDateFilter || hasCategoryFilter || hasNatureFilter {
                 HStack(spacing: 8) {
                     if let selectedID = viewModel.selectedAccountID,
                         let account = accounts.first(where: { $0.persistentModelID == selectedID })
@@ -346,13 +347,41 @@ struct PanelView: View {
                         }
                     }
 
+                    // Nature Chip
+                    if let nature = viewModel.selectedNature {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(nature.color)
+                                .frame(width: 8, height: 8)
+
+                            Text(nature.displayName)
+                                .font(.caption)
+
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                        .foregroundStyle(.primary)
+                        .onTapGesture {
+                            withAnimation {
+                                viewModel.selectedNature = nil
+                            }
+                        }
+                    }
+
                     Spacer()
                 }
                 .padding(.bottom, 4)
             }
 
             HStack {
-                Text("Tendencias")
+                Text("Widgets")
                     .font(.title2.weight(.semibold))
 
                 Spacer()
@@ -411,6 +440,14 @@ struct PanelView: View {
                 }
                 .onChange(of: viewModel.focusedDate) {
                     // Recalculate when focused date (chart filter) changes
+                    viewModel.calculateTrendData(
+                        accounts: accounts,
+                        transactions: transactions,
+                        defaultCurrencyCode: defaultCurrencyCodeRaw
+                    )
+                }
+                .onChange(of: viewModel.selectedNature) {
+                    // Recalculate when nature filter changes
                     viewModel.calculateTrendData(
                         accounts: accounts,
                         transactions: transactions,
@@ -530,6 +567,36 @@ struct PanelView: View {
                 selectedSubcategoryID: viewModel.selectedSubcategoryID,
                 size: mapWidgetSize(config.size)
             )
+        } else if config.type == .categoriesPie {
+            CategoriesPieChartCardView(
+                categories: viewModel.topSpendingCategories,
+                currencyCode: preferredCurrency.rawValue,
+                selectedCategoryID: viewModel.selectedCategoryID,
+                onSelectCategory: { id in
+                    withAnimation {
+                        viewModel.toggleCategoryFilter(id)
+                    }
+                },
+                size: config.size
+            )
+        } else if config.type == .subcategoriesPie {
+            SubcategoriesPieChartCardView(
+                subcategories: viewModel.topSubcategories,
+                currencyCode: preferredCurrency.rawValue,
+                selectedCategoryID: viewModel.selectedCategoryID,
+                selectedSubcategoryID: viewModel.selectedSubcategoryID,
+                onSelectSubcategory: { name in
+                    withAnimation {
+                        viewModel.toggleSubcategoryFilter(
+                            name,
+                            transactions: transactions,
+                            accounts: accounts,
+                            defaultCurrencyCode: preferredCurrency.rawValue
+                        )
+                    }
+                },
+                size: config.size
+            )
         } else if config.type == .cashFlow {
             if let summary = viewModel.cashFlowSummary {
                 CashFlowCardView(
@@ -545,12 +612,31 @@ struct PanelView: View {
                 // Empty / Loading logic
                 EmptyView()
             }
+        } else if config.type == .latestRecords {
+            LatestRecordsCardView(
+                records: viewModel.latestRecords,
+                currencyCode: preferredCurrency.rawValue,
+                onShowMore: {
+                    // TODO: Navigate to full history
+                }
+            )
+        } else if config.type == .expensesByNature {
+            NatureSpendingCardView(
+                trendPoints: viewModel.natureTrendPoints,
+                selectedNature: viewModel.selectedNature,
+                size: mapWidgetSize(config.size),
+                grouping: viewModel.natureGrouping,
+                onSelectNature: { nature in
+                    withAnimation {
+                        viewModel.toggleNatureFilter(nature)
+                    }
+                }
+            )
         }
     }
 
     private func mapWidgetSize(_ size: WidgetSize) -> TopSpendingCardView.CardSize {
         switch size {
-        case .small: return .small
         case .medium: return .medium
         case .large: return .large
         }

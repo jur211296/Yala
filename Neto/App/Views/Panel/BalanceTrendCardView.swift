@@ -106,29 +106,32 @@ struct BalanceTrendCardView: View {
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(.headline)
-                            .foregroundStyle(Color.netoSecondaryText.opacity(0.7))
-                            .padding(.leading, 4)
+                            .foregroundStyle(Color.gray.opacity(0.7))
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
     private var titleAndAmount: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(titleText)
-                .font(.subheadline)
-                .foregroundStyle(Color.netoSecondaryText)
-            // Removed animation here
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Tendencia de saldo y gasto")
+                .font(.headline)
+                .foregroundStyle(Color.netoPrimaryText)
+                .padding(.bottom, 2)
+
+            Text(subtitleText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             Text(amountText)
-                .font(.title2.weight(.bold))
+                .font(.title3.weight(.bold))
                 .foregroundStyle(Color.netoPrimaryText)
-            // Removed animation here
         }
     }
 
-    private var titleText: String {
+    private var subtitleText: String {
         trendType == .balance ? "Saldo total" : "Gasto total"
     }
 

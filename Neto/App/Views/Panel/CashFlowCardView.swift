@@ -21,29 +21,34 @@ struct CashFlowCardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(alignment: .center) {
-                HStack(spacing: DesignSystem.Spacing.standard) {
-                    Image(systemName: "arrow.up.arrow.down")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.brandPrimary)
-
+            // Header with title, subtitle and value
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("Flujo de efectivo")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.netoPrimaryText)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .padding(.bottom, 2)
+
+                    Text("Flujo Neto")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text(
+                        formatCurrency(
+                            summary.netFlow, code: summary.currencyCode, showSign: true)
+                    )
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.primary)
                 }
 
                 Spacer()
 
                 Button(action: onShowDetail) {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color.netoSecondaryText)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
-                                .stroke(Color.netoSecondaryText.opacity(0.2), lineWidth: 1)
-                        )
+                        .font(.headline)
+                        .foregroundStyle(Color.gray.opacity(0.7))
                 }
+                .buttonStyle(.plain)
             }
             .padding([.horizontal, .top], DesignSystem.Spacing.large)
             .padding(.bottom, DesignSystem.Spacing.medium)
@@ -67,22 +72,6 @@ struct CashFlowCardView: View {
         if size == .large {
             // Large - Chart View
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-                // Net Flow Header
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Flujo Neto")
-                            .font(.caption)
-                            .foregroundStyle(Color.netoSecondaryText)
-
-                        Text(
-                            formatCurrency(
-                                summary.netFlow, code: summary.currencyCode, showSign: true)
-                        )
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.netoPrimaryText)
-                    }
-                }
-
                 // Chart
                 Chart {
                     // Zero Baseline
@@ -277,21 +266,7 @@ struct CashFlowCardView: View {
         } else {
             // Small & Medium - Summary Layout (With Bars)
             VStack(alignment: .leading, spacing: 16) {
-                // 1. Net Flow Highlight
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Flujo Neto")
-                        .font(.caption2)
-                        .textCase(.uppercase)
-                        .foregroundStyle(Color.netoSecondaryText)
-
-                    Text(
-                        formatCurrency(summary.netFlow, code: summary.currencyCode, showSign: true)
-                    )
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.netoPrimaryText)
-                }
-
-                // 2. Bars Section
+                // Bars Section
                 // Calculate max value for normalization
                 let maxVal = max(summary.totalIncome, summary.totalExpense)
 
@@ -374,19 +349,20 @@ struct CashFlowCardView: View {
     // Helpers
     private func formatCurrency(_ value: Double, code: String, showSign: Bool = false) -> String {
         let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = code
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
 
-        // Custom formatting to handle signs with spaces as seen in user requirements
-        let str = formatter.string(from: NSNumber(value: abs(value))) ?? "\(abs(value))"
+        let absString =
+            formatter.string(from: NSNumber(value: abs(value)))
+            ?? String(format: "%.2f", abs(value))
 
         if value < 0 {
-            return "- " + str
+            return "- \(code) \(absString)"
         } else if showSign && value > 0 {
-            return "+ " + str
+            return "+ \(code) \(absString)"
         }
-        return (formatter.string(from: NSNumber(value: value)) ?? "\(value)")
+        return "\(code) \(absString)"
     }
 
     private func formatK(_ value: Double) -> String {

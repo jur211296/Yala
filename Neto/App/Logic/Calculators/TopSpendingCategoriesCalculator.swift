@@ -56,8 +56,11 @@ struct TopSpendingCategoriesCalculator {
         let totalExpense = categoryTotals.values.reduce(0, +)
 
         // 4. Sort and Pick Top 5
+        // 4. Sort (All categories)
         let sortedCategories = categoryTotals.sorted { $0.value > $1.value }
-        let topCategories = sortedCategories.prefix(5)
+
+        // Return all categories (Consumers like TopSpendingCardView can prefix(5) themselves)
+        let topCategories = sortedCategories
 
         // 5. Create Summaries
         return topCategories.compactMap { (id, amount) -> CategorySpendingSummary? in

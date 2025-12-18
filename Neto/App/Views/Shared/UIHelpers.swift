@@ -165,6 +165,9 @@ extension Color {
     /// Deep Slate: El lienzo infinito (Principal Dark Mode).
     static let deepSlate = Color(hex: "0F172A")
 
+    /// Priority Nature: Softer Cyan for "Priority" expenses.
+    static let priorityNature = Color(hex: "00C2CB")
+
     // MARK: - Semantic Colors (Adaptive)
 
     /// Color de fondo principal de la aplicación.

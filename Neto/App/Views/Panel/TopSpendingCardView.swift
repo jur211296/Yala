@@ -82,9 +82,10 @@ struct TopSpendingCardView: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(.headline)
-                        .foregroundStyle(.secondary.opacity(0.7))
+                        .foregroundStyle(Color.gray.opacity(0.7))
                         .padding(.leading, 4)
                 }
+                .buttonStyle(.plain)
             }
         }
     }
