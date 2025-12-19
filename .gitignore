@@ -14,3 +14,6 @@ fastlane/Preview.html
 fastlane/screenshots
 # Logs
 *.log
+
+# Secrets (API keys)
+Secrets.xcconfig

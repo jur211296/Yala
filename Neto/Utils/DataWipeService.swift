@@ -58,8 +58,12 @@ final class DataWipeService {
         // Guardar el contexto tras el borrado masivo
         try context.save()
 
-        // 2. Reset widget configuration to defaults (stored in UserDefaults)
+        // 2. Reset UserDefaults for widget configuration and exchange rates
         UserDefaults.standard.removeObject(forKey: "widgetConfigs")
+
+        // Reset exchange rate service state so it fetches fresh data
+        UserDefaults.standard.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
+        UserDefaults.standard.removeObject(forKey: "exchangeRate_lastTodayUpdate")
 
         // 3. Reseed de datos iniciales si corresponde
         if reseedInitialData {

@@ -259,6 +259,15 @@ enum TransactionCSVImportService {
                 continue
             }
 
+            // Si la línea solo contiene delimitadores y espacios, la ignoramos
+            let contentWithoutDelimiters = trimmedLine.replacingOccurrences(
+                of: String(delimiter), with: ""
+            )
+            .trimmingCharacters(in: .whitespaces)
+            if contentWithoutDelimiters.isEmpty {
+                continue
+            }
+
             let rawColumns = trimmedLine.split(
                 separator: delimiter, omittingEmptySubsequences: false)
             var columns = rawColumns.map {

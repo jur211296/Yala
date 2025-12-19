@@ -107,7 +107,8 @@ struct PanelView: View {
             viewModel.calculateTrendData(
                 accounts: accounts,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw
+                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                context: modelContext
             )
         }
         .onChange(of: accounts) {
@@ -132,7 +133,8 @@ struct PanelView: View {
             viewModel.calculateTrendData(
                 accounts: accounts,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw
+                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                context: modelContext
             )
         }
         .onChange(of: transactions) {
@@ -140,7 +142,17 @@ struct PanelView: View {
             viewModel.calculateTrendData(
                 accounts: accounts,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw
+                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                context: modelContext
+            )
+        }
+        .onChange(of: defaultCurrencyCodeRaw) {
+            // Recalculate when preferred currency changes
+            viewModel.calculateTrendData(
+                accounts: accounts,
+                transactions: transactions,
+                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                context: modelContext
             )
         }
     }
@@ -229,7 +241,8 @@ struct PanelView: View {
                 viewModel.calculateTrendData(
                     accounts: accounts,
                     transactions: transactions,
-                    defaultCurrencyCode: defaultCurrencyCodeRaw
+                    defaultCurrencyCode: defaultCurrencyCodeRaw,
+                    context: modelContext
                 )
             }
 
@@ -435,7 +448,8 @@ struct PanelView: View {
                     viewModel.calculateTrendData(
                         accounts: accounts,
                         transactions: transactions,
-                        defaultCurrencyCode: defaultCurrencyCodeRaw
+                        defaultCurrencyCode: defaultCurrencyCodeRaw,
+                        context: modelContext
                     )
                 }
                 .onChange(of: viewModel.focusedDate) {
@@ -443,7 +457,8 @@ struct PanelView: View {
                     viewModel.calculateTrendData(
                         accounts: accounts,
                         transactions: transactions,
-                        defaultCurrencyCode: defaultCurrencyCodeRaw
+                        defaultCurrencyCode: defaultCurrencyCodeRaw,
+                        context: modelContext
                     )
                 }
                 .onChange(of: viewModel.selectedNature) {
@@ -451,7 +466,8 @@ struct PanelView: View {
                     viewModel.calculateTrendData(
                         accounts: accounts,
                         transactions: transactions,
-                        defaultCurrencyCode: defaultCurrencyCodeRaw
+                        defaultCurrencyCode: defaultCurrencyCodeRaw,
+                        context: modelContext
                     )
                 }
         }
@@ -481,7 +497,8 @@ struct PanelView: View {
         let balance = viewModel.displayedBalanceInDefaultCurrency(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCodeRaw
+            defaultCurrencyCode: defaultCurrencyCodeRaw,
+            context: modelContext
         )
 
         if config.type == .trend {
@@ -513,7 +530,8 @@ struct PanelView: View {
                 viewModel.calculateTrendData(
                     accounts: accounts,
                     transactions: transactions,
-                    defaultCurrencyCode: preferredCurrency.rawValue
+                    defaultCurrencyCode: preferredCurrency.rawValue,
+                    context: modelContext
                 )
             }
             .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
@@ -521,7 +539,8 @@ struct PanelView: View {
                 viewModel.calculateTrendData(
                     accounts: accounts,
                     transactions: transactions,
-                    defaultCurrencyCode: preferredCurrency.rawValue
+                    defaultCurrencyCode: preferredCurrency.rawValue,
+                    context: modelContext
                 )
             }
             .onChange(of: viewModel.trendType) { _, _ in
@@ -529,7 +548,8 @@ struct PanelView: View {
                 viewModel.calculateTrendData(
                     accounts: accounts,
                     transactions: transactions,
-                    defaultCurrencyCode: preferredCurrency.rawValue
+                    defaultCurrencyCode: preferredCurrency.rawValue,
+                    context: modelContext
                 )
             }
         } else if config.type == .topSpending {
@@ -560,7 +580,8 @@ struct PanelView: View {
                             name,
                             transactions: transactions,
                             accounts: accounts,
-                            defaultCurrencyCode: preferredCurrency.rawValue
+                            defaultCurrencyCode: preferredCurrency.rawValue,
+                            context: modelContext
                         )
                     }
                 },
@@ -591,7 +612,8 @@ struct PanelView: View {
                             name,
                             transactions: transactions,
                             accounts: accounts,
-                            defaultCurrencyCode: preferredCurrency.rawValue
+                            defaultCurrencyCode: preferredCurrency.rawValue,
+                            context: modelContext
                         )
                     }
                 },
@@ -630,6 +652,16 @@ struct PanelView: View {
                     withAnimation {
                         viewModel.toggleNatureFilter(nature)
                     }
+                }
+            )
+        } else if config.type == .exchangeRate {
+            ExchangeRateCardView(
+                data: viewModel.exchangeRateWidgetData,
+                preferredCurrency: preferredCurrency.rawValue,
+                selectedCurrencies: $viewModel.selectedComparisonCurrencies,
+                grouping: viewModel.exchangeRateGrouping,
+                onShowDetail: {
+                    // Future: Navigate to detail view
                 }
             )
         }

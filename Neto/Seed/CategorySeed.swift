@@ -98,7 +98,6 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
             SubcategorySeedDefinition(name: "Seguros", natureRawValue: "esencial"),
             SubcategorySeedDefinition(name: "Préstamos y créditos", natureRawValue: "esencial"),
             SubcategorySeedDefinition(name: "Comisiones y cargos", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Asesorías y trámites", natureRawValue: "prioritaria"),
             SubcategorySeedDefinition(name: "Pensiones y aportes", natureRawValue: "esencial"),
         ]
     ),
@@ -150,6 +149,7 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
                 name: "Suscripciones de utilidad", natureRawValue: "prioritaria"),
             SubcategorySeedDefinition(
                 name: "Telefonía y comunicaciones", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(name: "Asesorías y trámites", natureRawValue: "prioritaria"),
         ]
     ),
     // 8. Mascotas y animales (Nueva)

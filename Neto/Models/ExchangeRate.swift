@@ -12,27 +12,32 @@ import SwiftData
 
 @Model
 final class ExchangeRate {
-    var dateKey: String
+    @Attribute(.unique) var dateKey: String
     var base: String
     var rates: Data
+    /// Unix timestamp from the API response (when the rate was recorded)
+    var timestamp: Date?
 
     init(
         dateKey: String,
         base: String,
-        rates: Data
+        rates: Data,
+        timestamp: Date? = nil
     ) {
         self.dateKey = dateKey
         self.base = base
         self.rates = rates
+        self.timestamp = timestamp
     }
 
     convenience init(
         dateKey: String,
         base: String,
-        ratesDictionary: [String: Double]
+        ratesDictionary: [String: Double],
+        timestamp: Date? = nil
     ) throws {
         let data = try JSONEncoder().encode(ratesDictionary)
-        self.init(dateKey: dateKey, base: base, rates: data)
+        self.init(dateKey: dateKey, base: base, rates: data, timestamp: timestamp)
     }
 
     func decodedRates() -> [String: Double] {

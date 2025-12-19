@@ -111,8 +111,7 @@ struct ProfileView: View {
                 case .themes:
                     ThemeSettingsView()
                 case .currency:
-                    // Using placeholder for now as per previous Settings implementation
-                    SettingsPlaceholderView(title: "Divisa preferida")
+                    CurrencySettingsView()
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:

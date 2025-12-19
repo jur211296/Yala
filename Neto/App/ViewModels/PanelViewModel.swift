@@ -69,6 +69,18 @@ final class PanelViewModel {
     // Latest Records State
     var latestRecords: [TransactionItem] = []
 
+    // MARK: - Exchange Rate Widget State
+    var exchangeRateWidgetData: ExchangeRateWidgetData?
+    var exchangeRateGrouping: TrendGrouping = .day
+    private let exchangeRateCurrencySelectionKey = "panel_exchange_rate_currencies_v1"
+
+    /// Selected currencies to compare against the preferred currency (max 2).
+    var selectedComparisonCurrencies: [CurrencyCode] = [] {
+        didSet {
+            saveExchangeRateCurrencySelection()
+        }
+    }
+
     enum TrendPeriod: String, CaseIterable, Identifiable {
         case week = "Esta semana"
         case month = "Este mes"
@@ -102,6 +114,7 @@ final class PanelViewModel {
 
     init() {
         loadWidgetConfigs()
+        loadExchangeRateCurrencySelection()
     }
 
     // MARK: - Widget Logic
@@ -219,10 +232,12 @@ final class PanelViewModel {
     }
 
     /// Calculates the total balance in the default currency.
+    /// Uses date-specific exchange rates for each transaction for accuracy.
     func totalBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        context: ModelContext
     ) -> Double {
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
 
@@ -230,36 +245,56 @@ final class PanelViewModel {
             !account.isArchived && !account.excludeFromStatistics
         }
 
-        // Optimized: Calculate all balances in one pass
-        let balances = AccountBalanceCalculator.batchCalculateBalances(
-            accounts: eligibleAccounts,
-            transactions: transactions
-        )
+        let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
 
-        let totalDecimal: Decimal = eligibleAccounts.reduce(0) { partial, account in
-            let currentBalance = balances[account.persistentModelID] ?? 0
+        var totalDecimal: Decimal = 0
 
+        // 1. Sum initial balances (converted at today's rate since they don't have a date)
+        for account in eligibleAccounts {
             let sourceCurrency =
                 CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode))
                 ?? preferredCurrency
 
-            let converted = convertToPreferredCurrency(
-                amount: currentBalance,
-                from: sourceCurrency,
-                to: preferredCurrency
+            let initialConverted = CurrencyConverter.shared.convertWithLatestRate(
+                Decimal(account.initialBalance),
+                from: sourceCurrency.rawValue,
+                to: preferredCurrency.rawValue,
+                context: context
+            )
+            totalDecimal += initialConverted
+        }
+
+        // 2. Sum each transaction converted at its specific date's rate
+        for tx in transactions {
+            guard let account = tx.account,
+                eligibleAccountIDs.contains(account.persistentModelID)
+            else { continue }
+
+            let sourceCurrency =
+                CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
+                ?? preferredCurrency
+
+            let converted = CurrencyConverter.shared.convert(
+                Decimal(tx.amount),
+                from: sourceCurrency.rawValue,
+                to: preferredCurrency.rawValue,
+                on: tx.date,
+                context: context
             )
 
-            return partial + converted
+            totalDecimal += converted
         }
 
         return (totalDecimal as NSDecimalNumber).doubleValue
     }
 
     /// Calculates the displayed balance (either total or selected account).
+    /// Uses date-specific exchange rates for each transaction for accuracy.
     func displayedBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        context: ModelContext
     ) -> Double {
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
 
@@ -268,28 +303,46 @@ final class PanelViewModel {
             !account.isArchived,
             !account.excludeFromStatistics
         {
-            let currentBalanceDecimal = AccountBalanceCalculator.currentBalance(
-                for: account,
-                allTransactions: transactions
-            )
-
+            // Use date-specific rates for single account balance
             let sourceCurrency =
                 CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode))
                 ?? preferredCurrency
 
-            let converted = convertToPreferredCurrency(
-                amount: currentBalanceDecimal,
-                from: sourceCurrency,
-                to: preferredCurrency
+            // 1. Initial balance at today's rate (no specific date)
+            var totalDecimal = CurrencyConverter.shared.convertWithLatestRate(
+                Decimal(account.initialBalance),
+                from: sourceCurrency.rawValue,
+                to: preferredCurrency.rawValue,
+                context: context
             )
 
-            return (converted as NSDecimalNumber).doubleValue
+            // 2. Each transaction at its date-specific rate
+            let accountTransactions = transactions.filter {
+                $0.account?.persistentModelID == selectedID
+            }
+            for tx in accountTransactions {
+                let txSourceCurrency =
+                    CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
+                    ?? preferredCurrency
+
+                let converted = CurrencyConverter.shared.convert(
+                    Decimal(tx.amount),
+                    from: txSourceCurrency.rawValue,
+                    to: preferredCurrency.rawValue,
+                    on: tx.date,
+                    context: context
+                )
+                totalDecimal += converted
+            }
+
+            return (totalDecimal as NSDecimalNumber).doubleValue
         }
 
         return totalBalanceInDefaultCurrency(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            context: context
         )
     }
 
@@ -363,44 +416,20 @@ final class PanelViewModel {
     private func convertToPreferredCurrency(
         amount: Decimal,
         from source: CurrencyCode,
-        to target: CurrencyCode
+        to target: CurrencyCode,
+        context: ModelContext
     ) -> Decimal {
         if source == target {
             return amount
         }
 
-        // Tasas de ejemplo (mismas que en PanelView original)
-        let usdToPen = Decimal(string: "3.54") ?? Decimal(3.54)
-        let eurToPen = Decimal(string: "3.89") ?? Decimal(3.89)
-
-        func penToUsd(_ pen: Decimal) -> Decimal {
-            guard usdToPen != 0 else { return pen }
-            return pen / usdToPen
-        }
-
-        func penToEur(_ pen: Decimal) -> Decimal {
-            guard eurToPen != 0 else { return pen }
-            return pen / eurToPen
-        }
-
-        let amountInPen: Decimal
-        switch source {
-        case .pen:
-            amountInPen = amount
-        case .usd:
-            amountInPen = amount * usdToPen
-        case .eur:
-            amountInPen = amount * eurToPen
-        }
-
-        switch target {
-        case .pen:
-            return amountInPen
-        case .usd:
-            return penToUsd(amountInPen)
-        case .eur:
-            return penToEur(amountInPen)
-        }
+        // Use CurrencyConverter with API rates for consistency with chart calculations
+        return CurrencyConverter.shared.convertWithLatestRate(
+            amount,
+            from: source.rawValue,
+            to: target.rawValue,
+            context: context
+        )
     }
 
     // MARK: - Trend Logic (Year Only - Tight Range)
@@ -455,7 +484,8 @@ final class PanelViewModel {
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        context: ModelContext
     ) {
 
         let calendar = Calendar.current
@@ -520,7 +550,8 @@ final class PanelViewModel {
         self.topSpendingCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: baseFilteredTransactions,
             interval: interval,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            context: context
         )
 
         // 0. Filter transactions by Account + Date + Global Filters
@@ -602,7 +633,8 @@ final class PanelViewModel {
             transactions: filtered,
             grouping: self.trendGrouping,
             interval: self.panelDateInterval,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            context: context
         )
 
         // 2. Top Spending Categories
@@ -654,7 +686,8 @@ final class PanelViewModel {
         self.topSpendingCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: finalCategoryTransactions,
             interval: panelDateInterval,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            context: context
         )
 
         // 3. Top Subcategories
@@ -667,7 +700,8 @@ final class PanelViewModel {
             transactions: natureFilteredContextTransactions,  // Base set (Time + Account + Nature)
             interval: panelDateInterval,
             currencyCode: defaultCurrencyCode,
-            categoryFilter: effectiveCategoryFilter  // Pass the effective filter
+            categoryFilter: effectiveCategoryFilter,  // Pass the effective filter
+            context: context
         )
 
         // 4. Cash Flow
@@ -695,7 +729,8 @@ final class PanelViewModel {
             transactions: filtered,
             interval: panelDateInterval,
             grouping: cashFlowGrouping,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            context: context
         )
 
         // 6. Latest Records (sorted by date, most recent first)
@@ -739,7 +774,13 @@ final class PanelViewModel {
             interval: self.panelDateInterval
         )
 
-        // 8. Process Trend Data for View (Smoothing & Domain)
+        // 8. Calculate Exchange Rate Widget Data
+        calculateExchangeRateData(
+            preferredCurrencyCode: defaultCurrencyCode,
+            context: context
+        )
+
+        // 9. Process Trend Data for View (Smoothing & Domain)
         updateProcessedTrendData()
     }
 
@@ -809,7 +850,8 @@ final class PanelViewModel {
         _ id: String,
         transactions: [TransactionItem],
         accounts: [Account],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        context: ModelContext
     ) {
         if selectedSubcategoryID == id {
             // Deselect Subcategory
@@ -845,7 +887,8 @@ final class PanelViewModel {
         calculateTrendData(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            context: context
         )
     }
 
@@ -936,7 +979,8 @@ final class PanelViewModel {
         transactions: [TransactionItem],
         before date: Date,
         preferredCurrency: CurrencyCode,
-        categoryFilter: PersistentIdentifier? = nil
+        categoryFilter: PersistentIdentifier? = nil,
+        context: ModelContext
     ) -> Double {
         // Calculate balance of all eligible accounts up to 'date'
         // This is expensive if done naively.
@@ -959,7 +1003,8 @@ final class PanelViewModel {
             let initial = convertToPreferredCurrency(
                 amount: Decimal(account.initialBalance),
                 from: sourceCurrency,
-                to: preferredCurrency
+                to: preferredCurrency,
+                context: context
             )
             total += initial
         }
@@ -973,10 +1018,12 @@ final class PanelViewModel {
 
             let sourceCurrency =
                 CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode)) ?? preferredCurrency
-            let amount = convertToPreferredCurrency(
-                amount: Decimal(tx.amount),
-                from: sourceCurrency,
-                to: preferredCurrency
+            let amount = CurrencyConverter.shared.convert(
+                Decimal(tx.amount),
+                from: sourceCurrency.rawValue,
+                to: preferredCurrency.rawValue,
+                on: tx.date,
+                context: context
             )
 
             // Logic: Income adds, Expense subtracts.
@@ -1009,17 +1056,17 @@ final class PanelViewModel {
         transactions: [TransactionItem],
         currentBalance: Double,
         preferredCurrency: CurrencyCode,
-        currentInterval: DateInterval
+        currentInterval: DateInterval,
+        context: ModelContext
     ) {
         // Historical Threshold: Average balance of the PREVIOUS period of same duration.
 
         let previousEnd = currentInterval.start
 
         // We need the average daily balance of that period? Or the End Balance?
-        // Requirement says: "umbral de gasto promedio en periodos inmediatamente pasados"
-        // (average spending threshold in immediately past periods) OR "saldo actual ... respecto a un umbral histórico"
+        // For simplicity: Let's compute the total balance at the END of the historical period.
+        // "previousEnd" is the START of current period = END of previous period.
 
-        // Let's interpret "Historical Threshold" as the Average End-of-Period Balance of the last 3 periods?
         // Or simply the Balance at the end of the previous period?
 
         // Let's try: Average Daily Balance of the previous period.
@@ -1030,7 +1077,8 @@ final class PanelViewModel {
             accounts: accounts,
             transactions: transactions,
             before: previousEnd,
-            preferredCurrency: preferredCurrency
+            preferredCurrency: preferredCurrency,
+            context: context
         )
 
         self.historicalThreshold = balanceOnePeriodAgo
@@ -1050,5 +1098,269 @@ final class PanelViewModel {
         } else {
             balanceStatus = .normal
         }
+    }
+
+    // MARK: - Exchange Rate Widget Logic
+
+    /// Loads persisted currency selection or sets defaults based on preferred currency.
+    private func loadExchangeRateCurrencySelection() {
+        if let data = UserDefaults.standard.data(forKey: exchangeRateCurrencySelectionKey),
+            let decoded = try? JSONDecoder().decode([String].self, from: data)
+        {
+            // Convert string codes back to CurrencyCode enum (case-insensitive)
+            var currencies = decoded.compactMap { code -> CurrencyCode? in
+                CurrencyCode(rawValue: code.uppercased())
+            }
+
+            // Remove duplicates while preserving order
+            var seen = Set<CurrencyCode>()
+            currencies = currencies.filter { seen.insert($0).inserted }
+
+            // Limit to max 2
+            selectedComparisonCurrencies = Array(currencies.prefix(2))
+        }
+        // Note: Defaults are set when calculating data if selection is empty
+    }
+
+    /// Saves the current currency selection.
+    private func saveExchangeRateCurrencySelection() {
+        let codes = selectedComparisonCurrencies.map { $0.rawValue }
+        if let encoded = try? JSONEncoder().encode(codes) {
+            UserDefaults.standard.set(encoded, forKey: exchangeRateCurrencySelectionKey)
+        }
+    }
+
+    /// Sets default comparison currencies based on preferred currency.
+    func setDefaultComparisonCurrencies(preferredCurrency: CurrencyCode) {
+        guard selectedComparisonCurrencies.isEmpty else { return }
+
+        switch preferredCurrency {
+        case .pen:
+            selectedComparisonCurrencies = [.usd, .eur]
+        case .usd:
+            selectedComparisonCurrencies = [.pen, .eur]
+        case .eur:
+            selectedComparisonCurrencies = [.usd, .pen]
+        }
+    }
+
+    /// Calculates exchange rate data for the widget.
+    func calculateExchangeRateData(
+        preferredCurrencyCode: String,
+        context: ModelContext
+    ) {
+        let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
+
+        // Ensure defaults are set
+        setDefaultComparisonCurrencies(preferredCurrency: preferredCurrency)
+
+        // Calculate rates for ALL possible comparison currencies (so selection changes are instant)
+        let allCurrencies: [CurrencyCode] = [.pen, .usd, .eur]
+        let allComparisonCurrencies = allCurrencies.filter { $0 != preferredCurrency }
+
+        // Determine grouping based on period
+        switch selectedPeriod {
+        case .week:
+            exchangeRateGrouping = .day
+        case .month:
+            exchangeRateGrouping = .week
+        case .year:
+            exchangeRateGrouping = .month
+        }
+
+        let interval = panelDateInterval
+
+        // Get the latest rate for current display
+        let latestRate = ExchangeRateService.shared.getLatestRate(context: context)
+
+        guard let latestRate = latestRate else {
+            // No data available
+            exchangeRateWidgetData = ExchangeRateWidgetData(
+                preferredCurrency: preferredCurrencyCode,
+                errorMessage:
+                    "No se pudo cargar el tipo de cambio para este periodo. Inténtalo más tarde."
+            )
+            return
+        }
+
+        // Calculate current rates for ALL comparison currencies
+        let currentRates = calculateRatesFromPreferred(
+            preferredCurrency: preferredCurrencyCode,
+            targetCurrencies: allComparisonCurrencies.map { $0.rawValue },
+            exchangeRate: latestRate
+        )
+
+        // Use API timestamp if available, otherwise fall back to parsing dateKey
+        let currentRatesDate: Date =
+            latestRate.timestamp
+            ?? {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                dateFormatter.timeZone = TimeZone(identifier: "UTC")
+                return dateFormatter.date(from: latestRate.dateKey) ?? Date()
+            }()
+
+        // Build chart points for ALL comparison currencies
+        let chartPoints = buildExchangeRateChartPoints(
+            interval: interval,
+            grouping: exchangeRateGrouping,
+            preferredCurrency: preferredCurrencyCode,
+            targetCurrencies: allComparisonCurrencies.map { $0.rawValue },
+            context: context
+        )
+
+        exchangeRateWidgetData = ExchangeRateWidgetData(
+            preferredCurrency: preferredCurrencyCode,
+            currentRates: currentRates,
+            currentRatesDate: currentRatesDate,
+            chartPoints: chartPoints
+        )
+    }
+
+    /// Converts exchange rates so they're expressed as: 1 targetCurrency = X preferredCurrency
+    /// Example: If preferred is PEN, returns "1 USD = 3.72 PEN"
+    private func calculateRatesFromPreferred(
+        preferredCurrency: String,
+        targetCurrencies: [String],
+        exchangeRate: ExchangeRate
+    ) -> [String: Double] {
+        let rates = exchangeRate.decodedRates()
+
+        // The stored rates are based on USD (e.g., USD=1, PEN=3.72, EUR=0.95)
+        // This means: 1 USD = 3.72 PEN, 1 USD = 0.95 EUR
+        // We need to express as: 1 targetCurrency = X preferredCurrency
+
+        // Get the rate of the preferred currency (relative to USD)
+        let preferredRate = rates[preferredCurrency] ?? (preferredCurrency == "USD" ? 1.0 : 0)
+
+        guard preferredRate > 0 else { return [:] }
+
+        var result: [String: Double] = [:]
+        for currency in targetCurrencies where currency != preferredCurrency {
+            // Get the target currency rate (relative to USD)
+            let targetRate = rates[currency] ?? (currency == "USD" ? 1.0 : 0)
+
+            guard targetRate > 0 else { continue }
+
+            // Formula: 1 target = (preferredRate / targetRate) preferred
+            // Example with preferred=PEN, target=USD:
+            //   preferredRate = 3.72 (1 USD = 3.72 PEN)
+            //   targetRate = 1.0 (1 USD = 1 USD)
+            //   So: 1 USD = 3.72/1.0 = 3.72 PEN ✓
+            // Example with preferred=PEN, target=EUR:
+            //   preferredRate = 3.72
+            //   targetRate = 0.95 (1 USD = 0.95 EUR)
+            //   So: 1 EUR = 3.72/0.95 = 3.92 PEN ✓
+            result[currency] = preferredRate / targetRate
+        }
+        return result
+    }
+
+    /// Builds chart points for the exchange rate trend.
+    private func buildExchangeRateChartPoints(
+        interval: DateInterval,
+        grouping: TrendGrouping,
+        preferredCurrency: String,
+        targetCurrencies: [String],
+        context: ModelContext
+    ) -> [ExchangeRateChartPoint] {
+        let calendar = Calendar.current
+        var points: [ExchangeRateChartPoint] = []
+
+        // Generate date buckets based on grouping
+        var currentDate = interval.start
+
+        while currentDate <= interval.end {
+            let bucketEnd: Date
+            switch grouping {
+            case .day:
+                bucketEnd = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
+            case .week:
+                bucketEnd =
+                    calendar.date(byAdding: .weekOfYear, value: 1, to: currentDate) ?? currentDate
+            case .month:
+                bucketEnd =
+                    calendar.date(byAdding: .month, value: 1, to: currentDate) ?? currentDate
+            }
+
+            // Get rates for this bucket (average if multiple days)
+            let bucketRates = getAverageRatesForBucket(
+                start: currentDate,
+                end: min(bucketEnd, interval.end),
+                preferredCurrency: preferredCurrency,
+                targetCurrencies: targetCurrencies,
+                context: context
+            )
+
+            if !bucketRates.isEmpty {
+                points.append(ExchangeRateChartPoint(date: currentDate, rates: bucketRates))
+            }
+
+            currentDate = bucketEnd
+        }
+
+        return points
+    }
+
+    /// Gets average exchange rates for a date bucket.
+    private func getAverageRatesForBucket(
+        start: Date,
+        end: Date,
+        preferredCurrency: String,
+        targetCurrencies: [String],
+        context: ModelContext
+    ) -> [String: Double] {
+        let calendar = Calendar.current
+        var allRates: [[String: Double]] = []
+
+        var currentDate = start
+        while currentDate < end {
+            // Try to get rate for this specific date
+            if let rate = ExchangeRateService.shared.getRate(for: currentDate, context: context) {
+                let convertedRates = calculateRatesFromPreferred(
+                    preferredCurrency: preferredCurrency,
+                    targetCurrencies: targetCurrencies,
+                    exchangeRate: rate
+                )
+                if !convertedRates.isEmpty {
+                    allRates.append(convertedRates)
+                }
+            } else if let fallbackRate = ExchangeRateService.shared.getMostRecentRate(
+                onOrBefore: currentDate, context: context)
+            {
+                // Use fallback rate
+                let convertedRates = calculateRatesFromPreferred(
+                    preferredCurrency: preferredCurrency,
+                    targetCurrencies: targetCurrencies,
+                    exchangeRate: fallbackRate
+                )
+                if !convertedRates.isEmpty {
+                    allRates.append(convertedRates)
+                }
+            }
+
+            currentDate =
+                calendar.date(byAdding: .day, value: 1, to: currentDate)
+                ?? currentDate.addingTimeInterval(86400)
+        }
+
+        // Calculate averages
+        guard !allRates.isEmpty else { return [:] }
+
+        var averages: [String: Double] = [:]
+        for currency in targetCurrencies {
+            let values = allRates.compactMap { $0[currency] }
+            if !values.isEmpty {
+                averages[currency] = values.reduce(0, +) / Double(values.count)
+            }
+        }
+
+        return averages
+    }
+
+    /// Updates the selected comparison currencies.
+    func updateComparisonCurrencies(_ currencies: [CurrencyCode]) {
+        // Limit to max 2
+        selectedComparisonCurrencies = Array(currencies.prefix(2))
     }
 }

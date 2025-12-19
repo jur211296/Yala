@@ -384,6 +384,17 @@ struct ImportIntroSheet: View {
                     return
                 }
 
+                // After successful import, fetch exchange rates for imported transactions
+                // This ensures accurate currency conversion for historical data
+                if !result.drafts.isEmpty {
+                    let dates = result.drafts.map { $0.date }
+                    if let minDate = dates.min(), let maxDate = dates.max() {
+                        let dateRange = DateInterval(start: minDate, end: maxDate)
+                        await ExchangeRateService.shared.ensureRates(
+                            for: dateRange, context: modelContext)
+                    }
+                }
+
                 alertTitle = "Importación completada"
                 alertMessage = "Importación completada: \(result.createdCount) registros cargados."
                 shouldDismissAfterAlert = true

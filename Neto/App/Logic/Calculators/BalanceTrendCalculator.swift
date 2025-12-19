@@ -16,7 +16,8 @@ struct BalanceTrendCalculator {
         transactions: [TransactionItem],
         grouping: TrendGrouping,
         interval: DateInterval,
-        currencyCode: String
+        currencyCode: String,
+        context: ModelContext
     ) -> [ChartTransaction] {
 
         let calendar = Calendar.current
@@ -85,8 +86,14 @@ struct BalanceTrendCalculator {
                 let absAmt = abs(tx.amount)
                 let decimalAmt = Decimal(absAmt)
 
-                // Convert
-                let converted = convert(decimalAmt, from: tx.currencyCode, to: currencyCode)
+                // Convert using the transaction's date for accurate historical rate
+                let converted = CurrencyConverter.shared.convert(
+                    decimalAmt,
+                    from: tx.currencyCode,
+                    to: currencyCode,
+                    on: tx.date,
+                    context: context
+                )
                 let val = NSDecimalNumber(decimal: converted).doubleValue
 
                 // Determine type
@@ -115,50 +122,5 @@ struct BalanceTrendCalculator {
         }
 
         return points
-    }
-
-    // MARK: - Private Helpers (Self-Contained)
-
-    private static func normalizeCurrencyCode(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "PEN" }
-
-        let upper = trimmed.uppercased()
-        switch upper {
-        case "PEN", "SOL", "SOLES", "S/", "S/.", "S/. ": return "PEN"
-        case "USD", "US$", "US DOLLAR", "$", "$USD", "USD$": return "USD"
-        case "EUR", "€", "EURO": return "EUR"
-        default: return "PEN"
-        }
-    }
-
-    private static func rateToPEN(_ rawCode: String) -> Decimal {
-        let code = normalizeCurrencyCode(rawCode)
-        switch code {
-        case "PEN": return 1.0
-        case "USD": return 3.54
-        case "EUR": return 3.89
-        default: return 1.0
-        }
-    }
-
-    private static func convert(_ amount: Decimal, from rawFrom: String, to rawTo: String)
-        -> Decimal
-    {
-        let fromCode = normalizeCurrencyCode(rawFrom)
-        let toCode = normalizeCurrencyCode(rawTo)
-
-        if fromCode == toCode { return amount }
-
-        let fromRate = rateToPEN(fromCode)
-        let toRate = rateToPEN(toCode)
-
-        if fromRate == 0 || toRate == 0 { return amount }
-
-        let amountInPEN = amount * fromRate
-
-        if toCode == "PEN" { return amountInPEN }
-
-        return amountInPEN / toRate
     }
 }

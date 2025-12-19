@@ -44,6 +44,16 @@ struct NetoApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
+                .task {
+                    // Update exchange rates on app launch
+                    let context = sharedModelContainer.mainContext
+
+                    // First get today's rate
+                    await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
+
+                    // Then preload historical data if needed (first launch or after data wipe)
+                    await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
+                }
         }
         // Adjunta el contenedor de modelos a la escena principal.
         .modelContainer(sharedModelContainer)

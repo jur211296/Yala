@@ -2,13 +2,14 @@
 //  CurrencyUtils.swift
 //  Neto
 //
-//  Utilidades para normalizar códigos de moneda
-//  y convertir montos usando PEN como pivote.
+//  Utilidades para normalizar códigos de moneda y convertir montos.
 //
 
 import Foundation
 
-/// Normaliza un código de moneda “sucio” a un código estándar de 3 letras.
+// MARK: - Currency Code Normalization
+
+/// Normaliza un código de moneda "sucio" a un código estándar de 3 letras.
 /// Ejemplos:
 /// - "S/", "s/.", "SOL", "soles" → "PEN"
 /// - "$", "US$", "usd" → "USD"
@@ -51,68 +52,46 @@ func normalizeCurrencyCode(_ raw: String) -> String {
     }
 }
 
+// MARK: - Currency Conversion (Using CurrencyConverter)
+
+/// Convierte un monto entre dos monedas.
+/// Esta función mantiene retrocompatibilidad con el código existente.
+/// Usa tasas de fallback estáticas cuando no hay contexto SwiftData disponible.
+/// - Para conversiones con tasas actualizadas por fecha, usar CurrencyConverter.shared directamente.
+func convert(_ amount: Decimal, from rawFrom: String, to rawTo: String) -> Decimal {
+    return CurrencyConverter.shared.convertWithFallback(amount, from: rawFrom, to: rawTo)
+}
+
 /// Devuelve la tasa de conversión de una moneda a PEN.
-/// - Importante: para FIN-21 las tasas son fijas:
-///   - 1 PEN = 1.0
-///   - 1 USD = 3.54 PEN
-///   - 1 EUR = 3.89 PEN
+/// @deprecated Usar CurrencyConverter.shared para tasas actualizadas.
+/// Esta función mantiene retrocompatibilidad con tasas aproximadas.
 func rateToPEN(_ rawCode: String) -> Decimal {
     let code = normalizeCurrencyCode(rawCode)
 
+    // Fallback rates (approximate, for backward compatibility)
     switch code {
     case "PEN":
         return 1.0
     case "USD":
-        return 3.54
+        return 3.72  // Updated approximate rate
     case "EUR":
-        return 3.89
+        return 3.95  // Updated approximate rate
     default:
-        // Moneda desconocida, asumimos 1 a 1 con PEN
         return 1.0
     }
 }
 
-/// Convierte un monto entre dos monedas usando PEN como pivote.
-/// - Si from y to son iguales, se devuelve el monto original.
-/// - Si from, to o la tasa no son válidos, se mantiene el valor original.
-func convert(_ amount: Decimal, from rawFrom: String, to rawTo: String) -> Decimal {
-    let fromCode = normalizeCurrencyCode(rawFrom)
-    let toCode = normalizeCurrencyCode(rawTo)
+// MARK: - Currency Code Enum
 
-    // Si es la misma moneda, no hay nada que hacer
-    if fromCode == toCode {
-        return amount
-    }
-
-    // Cantidad en PEN
-    let fromRate = rateToPEN(fromCode)
-    if fromRate == 0 {
-        return amount
-    }
-
-    let amountInPEN = amount * fromRate
-
-    // Si el destino es PEN, devolvemos directamente
-    if toCode == "PEN" {
-        return amountInPEN
-    }
-
-    // Convertir de PEN a la moneda objetivo
-    let toRate = rateToPEN(toCode)
-    if toRate == 0 {
-        return amount
-    }
-
-    return amountInPEN / toRate
-}
-
-enum CurrencyCode: String, CaseIterable, Identifiable {
+enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
     case pen = "PEN"
     case usd = "USD"
     case eur = "EUR"
 
     var id: String { rawValue }
 }
+
+// MARK: - Currency Info
 
 func currencyInfo(for currency: CurrencyCode) -> (name: String, code: String, flag: String) {
     switch currency {
