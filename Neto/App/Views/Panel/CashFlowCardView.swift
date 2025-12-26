@@ -34,8 +34,9 @@ struct CashFlowCardView: View {
                         .foregroundStyle(.secondary)
 
                     Text(
-                        formatCurrency(
-                            summary.netFlow, code: summary.currencyCode, showSign: true)
+                        NetoFormatter.currency(
+                            value: summary.netFlow, currencyCode: summary.currencyCode,
+                            forceSign: true)
                     )
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.primary)
@@ -213,7 +214,10 @@ struct CashFlowCardView: View {
                                             Circle().fill(Color.brandPrimary).frame(
                                                 width: 6, height: 6)
                                             Text(
-                                                "+\(formatCurrency(selectedData.income, code: summary.currencyCode))"
+                                                NetoFormatter.currency(
+                                                    value: selectedData.income,
+                                                    currencyCode: summary.currencyCode,
+                                                    forceSign: true)
                                             )
                                             .font(.caption2.bold())
                                             .foregroundStyle(Color.brandPrimary)
@@ -222,8 +226,9 @@ struct CashFlowCardView: View {
                                             Circle().fill(Color.expenseGraph).frame(
                                                 width: 6, height: 6)
                                             Text(
-                                                formatCurrency(
-                                                    selectedData.expense, code: summary.currencyCode
+                                                NetoFormatter.currency(
+                                                    value: selectedData.expense,
+                                                    currencyCode: summary.currencyCode
                                                 )
                                             )
                                             .font(.caption2.bold())
@@ -234,9 +239,10 @@ struct CashFlowCardView: View {
                                             Circle().fill(Color.incomeGraph).frame(
                                                 width: 6, height: 6)
                                             Text(
-                                                formatCurrency(
-                                                    selectedData.net, code: summary.currencyCode,
-                                                    showSign: true)
+                                                NetoFormatter.currency(
+                                                    value: selectedData.net,
+                                                    currencyCode: summary.currencyCode,
+                                                    forceSign: true)
                                             )
                                             .font(.caption2.bold())
                                             .foregroundStyle(Color.incomeGraph)
@@ -278,9 +284,12 @@ struct CashFlowCardView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(Color.netoSecondaryText)
                             Spacer()
-                            Text(formatCurrency(summary.totalIncome, code: summary.currencyCode))
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(Color.netoPrimaryText)
+                            Text(
+                                NetoFormatter.currency(
+                                    value: summary.totalIncome, currencyCode: summary.currencyCode)
+                            )
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Color.netoPrimaryText)
                         }
                         // Bar
                         GeometryReader { geo in
@@ -308,8 +317,11 @@ struct CashFlowCardView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(Color.netoSecondaryText)
                             Spacer()
-                            Text(formatCurrency(summary.totalExpense, code: summary.currencyCode))
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            Text(
+                                NetoFormatter.currency(
+                                    value: summary.totalExpense, currencyCode: summary.currencyCode)
+                            )
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                         }
                         // Bar
                         GeometryReader { geo in
@@ -347,24 +359,6 @@ struct CashFlowCardView: View {
     }
 
     // Helpers
-    private func formatCurrency(_ value: Double, code: String, showSign: Bool = false) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-
-        let absString =
-            formatter.string(from: NSNumber(value: abs(value)))
-            ?? String(format: "%.2f", abs(value))
-
-        if value < 0 {
-            return "- \(code) \(absString)"
-        } else if showSign && value > 0 {
-            return "+ \(code) \(absString)"
-        }
-        return "\(code) \(absString)"
-    }
-
     private func formatK(_ value: Double) -> String {
         let absValue = abs(value)
         let sign = value < 0 ? "-" : (value > 0 ? "" : "")  // Only negative sign for Y axis usually

@@ -219,12 +219,14 @@ struct ExportSummaryStepView: View {
 
     private var periodSummaryText: String {
         switch exportFilters.period {
+        case .today: return "Hoy"
         case .thisYear: return "Este año"
         case .thisMonth: return "Este mes"
         case .thisWeek: return "Esta semana"
         case .last7Days: return "Últimos 7 días"
         case .last30Days: return "Últimos 30 días"
         case .last90Days: return "Últimos 90 días"
+        case .last180Days: return "Últimos 180 días"
         case .custom:
             guard let from = exportFilters.customDateFrom, let to = exportFilters.customDateTo
             else {

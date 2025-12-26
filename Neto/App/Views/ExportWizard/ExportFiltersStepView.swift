@@ -729,14 +729,156 @@ struct ExportFiltersStepView: View {
         )
     }
 
+    // MARK: - Period Selection State
+    @State private var selectedPeriodCategory: ExportPeriodCategory = .rolling
+
     private var dateSection: some View {
         SectionBox(title: "Seleccione el período a exportar") {
-            DateFilterView(
-                period: $period,
-                customDateFrom: $customDateFrom,
-                customDateTo: $customDateTo
-            )
+            VStack(alignment: .leading, spacing: 16) {
+                // Category Picker: Dropdown menu style
+                Menu {
+                    ForEach(ExportPeriodCategory.allCases) { category in
+                        Button(category.displayName) {
+                            selectedPeriodCategory = category
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(selectedPeriodCategory.displayName)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .padding(.horizontal, 16)
+
+                // Show options based on selected category
+                switch selectedPeriodCategory {
+                case .current:
+                    currentPeriodPicker
+                case .rolling:
+                    rollingPeriodPicker
+                case .custom:
+                    customDatePickers
+                }
+            }
+            .padding(.bottom, 12)
         }
+        .onChange(of: selectedPeriodCategory) { _, newCategory in
+            // When changing category, set a default period for that category
+            switch newCategory {
+            case .current:
+                if period.category != .current {
+                    period = .thisMonth
+                }
+            case .rolling:
+                if period.category != .rolling {
+                    period = .last30Days
+                }
+            case .custom:
+                period = .custom
+            }
+        }
+        .onAppear {
+            // Sync category from period
+            selectedPeriodCategory = period.category
+        }
+    }
+
+    private var currentPeriodPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("Periodo", selection: $period) {
+                ForEach(ExportPeriod.currentPeriods) { p in
+                    Text(p.displayName).tag(p)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+
+            if let subtitle = periodSubtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private var rollingPeriodPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("Periodo", selection: $period) {
+                ForEach(ExportPeriod.rollingPeriods) { p in
+                    Text(p.displayName).tag(p)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+
+            if let subtitle = periodSubtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private var customDatePickers: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("Desde")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { customDateFrom ?? Date() },
+                        set: { customDateFrom = $0 }
+                    ), displayedComponents: .date
+                )
+                .labelsHidden()
+            }
+            .padding(.horizontal, 16)
+
+            HStack {
+                Text("Hasta")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { customDateTo ?? Date() },
+                        set: { customDateTo = $0 }
+                    ), displayedComponents: .date
+                )
+                .labelsHidden()
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private var periodSubtitle: String? {
+        guard period != .custom else { return nil }
+        guard let interval = period.standardDateInterval() else { return nil }
+
+        let calendar = Calendar.current
+        let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_ES")
+        formatter.dateFormat = "d MMM yyyy"
+
+        return "\(formatter.string(from: interval.start)) - \(formatter.string(from: displayEnd))"
     }
 
     private var noteContent: some View {

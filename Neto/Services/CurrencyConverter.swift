@@ -110,6 +110,7 @@ final class CurrencyConverter {
     func getDisplayRate(
         from: String,
         to: String,
+        date: Date = Date(),
         context: ModelContext
     ) -> Double? {
         let fromCode = normalizeCurrencyCode(from)
@@ -119,7 +120,7 @@ final class CurrencyConverter {
             return 1.0
         }
 
-        let rates = getRatesForDate(Date(), context: context)
+        let rates = getRatesForDate(date, context: context)
 
         guard let fromRate = rates[fromCode], let toRate = rates[toCode] else {
             return nil

@@ -84,15 +84,22 @@ struct LatestRecordsCardView: View {
             // Icon
             subcategoryIcon(for: record, size: 36)
 
-            // Lines
+            // Lines - reordered: Note, Subcategory, Account
             VStack(alignment: .leading, spacing: 2) {
-                // Line 1: Subcategory name
-                Text(record.subcategory?.name ?? record.category?.name ?? "Sin categoría")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                // Line 1: Note (primary) or Subcategory as fallback
+                if let note = record.note, !note.isEmpty {
+                    Text(note)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                } else {
+                    Text(record.subcategory?.name ?? record.category?.name ?? "Sin categoría")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
 
-                // Line 2: Account + tags or note
+                // Line 2: Subcategory · Account (when note exists, show subcategory)
                 Text(secondaryLine(for: record))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -103,7 +110,7 @@ struct LatestRecordsCardView: View {
 
             // Right Column: Amount + Date
             VStack(alignment: .trailing, spacing: 2) {
-                Text(formattedAmount(record.amount, currencyCode: currencyCode))
+                Text(formattedAmount(record.amount, currencyCode: record.currencyCode))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(amountColor(for: record))
 
@@ -138,15 +145,18 @@ struct LatestRecordsCardView: View {
     private func secondaryLine(for record: TransactionItem) -> String {
         var parts: [String] = []
 
-        if let account = record.account {
-            parts.append(account.name)
+        // If note exists, show subcategory first
+        if record.note != nil && !(record.note?.isEmpty ?? true) {
+            if let subcategory = record.subcategory {
+                parts.append(subcategory.name)
+            } else if let category = record.category {
+                parts.append(category.name)
+            }
         }
 
-        if !record.tags.isEmpty {
-            let tagNames = record.tags.prefix(2).map { $0.name }.joined(separator: ", ")
-            parts.append(tagNames)
-        } else if let note = record.note, !note.isEmpty {
-            parts.append(String(note.prefix(20)))
+        // Then account
+        if let account = record.account {
+            parts.append(account.name)
         }
 
         return parts.joined(separator: " · ")
@@ -158,14 +168,7 @@ struct LatestRecordsCardView: View {
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-
-        let sign = value >= 0 ? "+" : ""
-        let formatted = formatter.string(from: NSNumber(value: abs(value))) ?? "0.00"
-        return "\(sign)\(currencyCode) \(formatted)"
+        NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     private func shortDateTime(_ date: Date) -> String {

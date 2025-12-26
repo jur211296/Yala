@@ -46,6 +46,15 @@ struct PanelView: View {
     /// Widget Preferences Sheet
     @State private var showWidgetPreferences = false
 
+    /// New Transaction Sheet
+    @State private var showNewTransaction = false
+
+    /// Records List Navigation
+    @State private var showRecordsList = false
+
+    /// Task for debouncing data recalculations
+    @State private var calculationTask: Task<Void, Never>?
+
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
         .rawValue
@@ -85,6 +94,27 @@ struct PanelView: View {
                     WidgetPreferencesView(viewModel: viewModel)
                         .presentationDragIndicator(.visible)
                 }
+                .sheet(isPresented: $showNewTransaction) {
+                    NewTransactionView(
+                        prefillAccountID: viewModel.selectedAccountID,
+                        prefillCategoryID: viewModel.selectedCategoryID,
+                        prefillSubcategoryName: viewModel.selectedSubcategoryID
+                    )
+                }
+                .navigationDestination(isPresented: $showTrendDetail) {
+                    TrendDetailView(trendType: trendDetailType)
+                }
+                .navigationDestination(isPresented: $showRecordsList) {
+                    RecordsListView(
+                        context: RecordsFilterContext(
+                            accountID: viewModel.selectedAccountID,
+                            categoryID: viewModel.selectedCategoryID,
+                            subcategoryName: viewModel.selectedSubcategoryID,
+                            nature: viewModel.selectedNature,
+                            period: mapPanelPeriodToRecordsPeriod(viewModel.selectedPeriod)
+                        )
+                    )
+                }
             // .sheet(isPresented: $viewModel.isPresentingCustomPeriodSheet) (Removed)
 
         }
@@ -103,13 +133,15 @@ struct PanelView: View {
                 accountsSortOrderNamesRaw = newOrder
             }
 
-            // Initial Trend Calculation
-            viewModel.calculateTrendData(
-                accounts: accounts,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
-                context: modelContext
-            )
+            // Initial Trend Calculation (async to avoid blocking UI)
+            Task {
+                viewModel.calculateTrendData(
+                    accounts: accounts,
+                    transactions: transactions,
+                    defaultCurrencyCode: defaultCurrencyCodeRaw,
+                    context: modelContext
+                )
+            }
         }
         .onChange(of: accounts) {
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
@@ -130,30 +162,15 @@ struct PanelView: View {
 
         .onChange(of: viewModel.selectedAccountID) {
             // Recalculate when selected account changes
-            viewModel.calculateTrendData(
-                accounts: accounts,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
-                context: modelContext
-            )
+            recalculateData()
         }
         .onChange(of: transactions) {
             // Recalculate when transactions change
-            viewModel.calculateTrendData(
-                accounts: accounts,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
-                context: modelContext
-            )
+            recalculateData()
         }
         .onChange(of: defaultCurrencyCodeRaw) {
             // Recalculate when preferred currency changes
-            viewModel.calculateTrendData(
-                accounts: accounts,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
-                context: modelContext
-            )
+            recalculateData()
         }
     }
 
@@ -181,7 +198,7 @@ struct PanelView: View {
                 HStack {
                     Spacer()
                     Button {
-                        // TODO: Implement new record flow
+                        showNewTransaction = true
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 22, weight: .bold))
@@ -238,12 +255,7 @@ struct PanelView: View {
             .pickerStyle(.segmented)
             .padding(.bottom, 8)
             .onChange(of: viewModel.selectedPeriod) {
-                viewModel.calculateTrendData(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: defaultCurrencyCodeRaw,
-                    context: modelContext
-                )
+                recalculateData()
             }
 
             // Filter chips (side by side)
@@ -438,37 +450,19 @@ struct PanelView: View {
                 }
             }
 
-            // ... hidden navigation link
+            // ... onChange handlers
             EmptyView()
-                .navigationDestination(isPresented: $showTrendDetail) {
-                    TrendDetailView(trendType: trendDetailType)
-                }
                 .onChange(of: viewModel.selectedCategoryID) {
                     // Recalculate when selected category changes
-                    viewModel.calculateTrendData(
-                        accounts: accounts,
-                        transactions: transactions,
-                        defaultCurrencyCode: defaultCurrencyCodeRaw,
-                        context: modelContext
-                    )
+                    recalculateData()
                 }
                 .onChange(of: viewModel.focusedDate) {
                     // Recalculate when focused date (chart filter) changes
-                    viewModel.calculateTrendData(
-                        accounts: accounts,
-                        transactions: transactions,
-                        defaultCurrencyCode: defaultCurrencyCodeRaw,
-                        context: modelContext
-                    )
+                    recalculateData()
                 }
                 .onChange(of: viewModel.selectedNature) {
                     // Recalculate when nature filter changes
-                    viewModel.calculateTrendData(
-                        accounts: accounts,
-                        transactions: transactions,
-                        defaultCurrencyCode: defaultCurrencyCodeRaw,
-                        context: modelContext
-                    )
+                    recalculateData()
                 }
         }
 
@@ -487,6 +481,30 @@ struct PanelView: View {
         formatter.locale = Locale(identifier: "es")  // Enforce Spanish
         formatter.dateFormat = "d MMM"
         return formatter.string(from: date)
+    }
+
+    /// Recalculate trend data with debouncing and smooth animation
+    /// Cancels any pending calculation and adds a small delay to batch rapid changes
+    private func recalculateData() {
+        // Cancel any pending calculation
+        calculationTask?.cancel()
+
+        calculationTask = Task {
+            // Small delay for debouncing - allows rapid changes to batch
+            try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms
+
+            guard !Task.isCancelled else { return }
+
+            // Smooth animation - all data is synchronized in batch update
+            withAnimation(.easeInOut(duration: 0.25)) {
+                viewModel.calculateTrendData(
+                    accounts: accounts,
+                    transactions: transactions,
+                    defaultCurrencyCode: defaultCurrencyCodeRaw,
+                    context: modelContext
+                )
+            }
+        }
     }
 
     // MARK: - Widget Helpers
@@ -514,10 +532,10 @@ struct PanelView: View {
                 yDomain: viewModel.processedYDomain,
                 balanceStatus: viewModel.balanceStatus,
                 grouping: viewModel.trendGrouping,
-                interval: viewModel.panelDateInterval,
+                interval: viewModel.currentInterval,
                 trendType: $viewModel.trendType,
                 focusedDate: $viewModel.focusedDate,
-                period: viewModel.selectedPeriod,
+                period: viewModel.currentPeriod,
                 isLocked: viewModel.isTrendLockedToExpense,
                 size: config.size,
                 onViewDetail: { selectedType in
@@ -527,30 +545,15 @@ struct PanelView: View {
             )
             .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
                 // Trigger recalculation when local widget filter changes
-                viewModel.calculateTrendData(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: preferredCurrency.rawValue,
-                    context: modelContext
-                )
+                recalculateData()
             }
             .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
                 // Trigger recalculation when submodule selection changes
-                viewModel.calculateTrendData(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: preferredCurrency.rawValue,
-                    context: modelContext
-                )
+                recalculateData()
             }
             .onChange(of: viewModel.trendType) { _, _ in
                 // Trigger recalculation when trend type (Saldo/Gasto) toggle changes
-                viewModel.calculateTrendData(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: preferredCurrency.rawValue,
-                    context: modelContext
-                )
+                recalculateData()
             }
         } else if config.type == .topSpending {
             TopSpendingCardView(
@@ -639,13 +642,14 @@ struct PanelView: View {
                 records: viewModel.latestRecords,
                 currencyCode: preferredCurrency.rawValue,
                 onShowMore: {
-                    // TODO: Navigate to full history
+                    showRecordsList = true
                 }
             )
         } else if config.type == .expensesByNature {
             NatureSpendingCardView(
                 trendPoints: viewModel.natureTrendPoints,
                 selectedNature: viewModel.selectedNature,
+                currencyCode: preferredCurrency.rawValue,
                 size: mapWidgetSize(config.size),
                 grouping: viewModel.natureGrouping,
                 onSelectNature: { nature in
@@ -684,6 +688,20 @@ struct PanelView: View {
             accounts
             .filter { $0.persistentModelID != editingAccount.persistentModelID }
             .map { $0.name }
+    }
+
+    /// Maps Panel TrendPeriod to RecordsPeriod for context passing
+    private func mapPanelPeriodToRecordsPeriod(_ period: PanelViewModel.TrendPeriod)
+        -> RecordsPeriod
+    {
+        switch period {
+        case .week:
+            return .thisWeek
+        case .month:
+            return .thisMonth
+        case .year:
+            return .thisYear
+        }
     }
 }
 

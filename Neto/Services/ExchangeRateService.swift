@@ -104,19 +104,6 @@ final class ExchangeRateService {
             return
         }
 
-        // Check if we already tried today (avoid repeated calls)
-        if let lastUpdate = UserDefaults.standard.object(forKey: lastTodayUpdateKey) as? Date {
-            let calendar = Calendar.current
-            if calendar.isDateInToday(lastUpdate) {
-                // Don't retry more than once per hour
-                let hoursSinceUpdate =
-                    calendar.dateComponents([.hour], from: lastUpdate, to: Date()).hour ?? 0
-                if hoursSinceUpdate < 1 {
-                    return
-                }
-            }
-        }
-
         do {
             let result = try await provider.fetchLatest(
                 base: baseCurrency, symbols: supportedSymbols)

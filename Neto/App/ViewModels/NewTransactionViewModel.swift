@@ -1,0 +1,628 @@
+//
+//  NewTransactionViewModel.swift
+//  Neto
+//
+//  Created by Neto - New Transaction Form.
+//
+
+import Foundation
+import SwiftData
+import SwiftUI
+
+// MARK: - New Transaction ViewModel
+
+/// ViewModel para el formulario de nuevo registro de transacción
+@Observable
+final class NewTransactionViewModel {
+
+    // MARK: - Form State
+
+    /// Tipo de transacción seleccionado
+    var transactionType: TransactionType = .expense
+
+    /// Modo de captura (solo Manual disponible por ahora)
+    var captureMode: CaptureMode = .manual
+
+    /// Monto como string para el teclado numérico
+    var amountString: String = "0.00" {
+        didSet {
+            // Update destination amount if we have a valid transfer context
+            if needsExchangeRate {
+                updateDestinationAmount()
+            }
+        }
+    }
+
+    /// Cuenta seleccionada (obligatoria para gasto/ingreso)
+    var selectedAccount: Account?
+
+    /// Cuenta origen (solo para transferencias)
+    var sourceAccount: Account?
+
+    /// Cuenta destino (solo para transferencias)
+    var destinationAccount: Account?
+
+    /// Subcategoría seleccionada (obligatoria)
+    var selectedSubcategory: Subcategory?
+
+    /// Fecha de la transacción
+    var transactionDate: Date = Date()
+
+    /// Etiquetas seleccionadas
+    var selectedTags: [Tag] = []
+
+    /// Nota libre
+    var note: String = ""
+
+    /// Código de divisa para el registro
+    var currencyCode: String = CurrencyDefaults.defaultCode
+
+    // MARK: - Transfer Exchange Rate
+
+    /// Tipo de cambio para transferencias entre divisas
+    var exchangeRate: Double = 1.0
+
+    /// Monto en divisa destino (calculado o editado manualmente)
+    var destinationAmount: Double = 0.0
+
+    /// Indica si el tipo de cambio fue editado manualmente
+    var isExchangeRateManual: Bool = false
+
+    // MARK: - Sheet States
+
+    var showAccountSelector: Bool = false
+    var showSourceAccountSelector: Bool = false
+    var showDestinationAccountSelector: Bool = false
+    var showSubcategorySelector: Bool = false
+    var showTagSelector: Bool = false
+    var showFavoritesSheet: Bool = false
+    var showDatePicker: Bool = false
+
+    // MARK: - Validation State
+
+    var showValidationErrors: Bool = false
+    var isSaving: Bool = false
+
+    // MARK: - Computed Properties
+
+    /// Monto como Double
+    var amount: Double {
+        Double(amountString) ?? 0.0
+    }
+
+    /// Monto formateado para display
+    var formattedAmount: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: amount)) ?? "0.00"
+    }
+
+    /// Color del monto según el tipo de transacción
+    var amountColor: Color {
+        transactionType.color
+    }
+
+    /// Indica si es una transferencia
+    var isTransfer: Bool {
+        transactionType == .transfer
+    }
+
+    /// Indica si las divisas son diferentes (requiere tipo de cambio)
+    var needsExchangeRate: Bool {
+        guard isTransfer,
+            let source = sourceAccount,
+            let dest = destinationAccount
+        else {
+            return false
+        }
+        return source.currencyCode != dest.currencyCode
+    }
+
+    /// Cuenta efectiva para mostrar (según tipo de transacción)
+    var effectiveAccount: Account? {
+        isTransfer ? sourceAccount : selectedAccount
+    }
+
+    /// Código de divisa efectivo
+    var effectiveCurrencyCode: String {
+        if let account = effectiveAccount {
+            return account.currencyCode
+        }
+        return currencyCode
+    }
+
+    // MARK: - Validation
+
+    var isAmountValid: Bool {
+        amount > 0
+    }
+
+    var isAccountValid: Bool {
+        if isTransfer {
+            return sourceAccount != nil && destinationAccount != nil
+        }
+        return selectedAccount != nil
+    }
+
+    var isTransferAccountsValid: Bool {
+        guard isTransfer else { return true }
+        guard let source = sourceAccount, let dest = destinationAccount else {
+            return false
+        }
+        return source.persistentModelID != dest.persistentModelID
+    }
+
+    /// Prepara el estado para una transferencia, seleccionando cuentas por defecto si es necesario
+    func prepareForTransfer(allAccounts: [Account]) {
+        // Ensure source account is set (use selected if available)
+        if sourceAccount == nil {
+            sourceAccount = selectedAccount
+        }
+
+        // If still nil, try to pick first account
+        if sourceAccount == nil {
+            sourceAccount = allAccounts.first
+        }
+
+        // Auto-select destination if nil
+        if destinationAccount == nil, let source = sourceAccount {
+            // Pick first account that is not source
+            destinationAccount = allAccounts.first {
+                $0.persistentModelID != source.persistentModelID
+            }
+        }
+    }
+
+    var isSubcategoryValid: Bool {
+        // Para transferencias, subcategoría es opcional
+        if isTransfer {
+            return true
+        }
+        return selectedSubcategory != nil
+    }
+
+    var canSave: Bool {
+        isAmountValid && isAccountValid && isTransferAccountsValid && isSubcategoryValid
+    }
+
+    // MARK: - Field Validation States
+
+    var amountValidation: FieldValidationState {
+        if !showValidationErrors { return .empty }
+        return isAmountValid ? .valid : .invalid(message: "Ingresa un monto mayor a 0")
+    }
+
+    var accountValidation: FieldValidationState {
+        if !showValidationErrors { return .empty }
+        if isTransfer {
+            if sourceAccount == nil {
+                return .invalid(message: "Selecciona una cuenta origen")
+            }
+            if destinationAccount == nil {
+                return .invalid(message: "Selecciona una cuenta destino")
+            }
+            if !isTransferAccountsValid {
+                return .invalid(message: "Las cuentas deben ser diferentes")
+            }
+            return .valid
+        }
+        return selectedAccount != nil ? .valid : .invalid(message: "Selecciona una cuenta")
+    }
+
+    var subcategoryValidation: FieldValidationState {
+        if !showValidationErrors { return .empty }
+        if isTransfer { return .valid }
+        return selectedSubcategory != nil
+            ? .valid : .invalid(message: "Selecciona una subcategoría")
+    }
+
+    // MARK: - Prefill
+
+    /// Pre-rellena el formulario desde contexto externo
+    func prefill(
+        accountID: PersistentIdentifier?,
+        categoryID: PersistentIdentifier?,
+        subcategoryName: String?,
+        accounts: [Account],
+        subcategories: [Subcategory]
+    ) {
+        // Pre-rellenar cuenta
+        if let accountID = accountID,
+            let account = accounts.first(where: { $0.persistentModelID == accountID })
+        {
+            selectedAccount = account
+            sourceAccount = account
+            currencyCode = account.currencyCode
+        }
+
+        // Pre-rellenar subcategoría
+        if let subcategoryName = subcategoryName,
+            let subcategory = subcategories.first(where: { $0.name == subcategoryName })
+        {
+            selectedSubcategory = subcategory
+            // Ajustar tipo según la categoría
+            if subcategory.category.isIncome {
+                transactionType = .income
+            } else {
+                transactionType = .expense
+            }
+        }
+    }
+
+    // MARK: - Numeric Keypad
+
+    /// Añade un dígito al monto
+    func appendDigit(_ digit: String) {
+        if amountString == "0" && digit != "." {
+            amountString = digit
+        } else if digit == "." {
+            if !amountString.contains(".") {
+                amountString += digit
+            }
+        } else {
+            // Limitar decimales a 2
+            if let dotIndex = amountString.firstIndex(of: ".") {
+                let decimalPart = amountString[amountString.index(after: dotIndex)...]
+                if decimalPart.count >= 2 {
+                    return
+                }
+            }
+            amountString += digit
+        }
+        updateDestinationAmount()
+    }
+
+    /// Borra el último dígito
+    func deleteLastDigit() {
+        if amountString.count > 1 {
+            amountString.removeLast()
+        } else {
+            amountString = "0"
+        }
+        updateDestinationAmount()
+    }
+
+    /// Limpia el monto
+    func clearAmount() {
+        amountString = "0"
+        updateDestinationAmount()
+    }
+
+    // MARK: - Exchange Rate
+
+    /// Actualiza el monto destino basado en el tipo de cambio
+    func updateDestinationAmount() {
+        if needsExchangeRate {
+            destinationAmount = amount * exchangeRate
+        }
+    }
+
+    /// Actualiza el tipo de cambio cuando se edita el monto destino
+    func updateExchangeRateFromDestination() {
+        guard amount > 0 else { return }
+        exchangeRate = destinationAmount / amount
+        isExchangeRateManual = true
+    }
+
+    /// Carga el tipo de cambio del servicio
+    /// Carga el tipo de cambio del servicio
+    func loadExchangeRate(context: ModelContext) async {
+        guard needsExchangeRate,
+            let source = sourceAccount,
+            let dest = destinationAccount
+        else {
+            exchangeRate = 1.0
+            return
+        }
+
+        // Ensure we have rates for the transaction date
+        let dateInterval = DateInterval(start: transactionDate, duration: 0)
+
+        // If date is today, fetch latest rates specifically (timeseries might lag)
+        if Calendar.current.isDateInToday(transactionDate) {
+            await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
+        }
+
+        await ExchangeRateService.shared.ensureRates(for: dateInterval, context: context)
+
+        if let rate = CurrencyConverter.shared.getDisplayRate(
+            from: source.currencyCode,
+            to: dest.currencyCode,
+            date: transactionDate,
+            context: context
+        ) {
+            exchangeRate = rate
+            isExchangeRateManual = false
+            updateDestinationAmount()
+        }
+    }
+
+    // MARK: - Editing State
+
+    /// Transaction being edited (if any)
+    var editingTransaction: TransactionItem?
+
+    /// Transfer pair being edited (outflow, inflow)
+    var editingTransferPair: (out: TransactionItem, in: TransactionItem)?
+
+    // ... (rest of the class)
+
+    // MARK: - Save
+
+    /// Guarda la transacción en el contexto
+    /// - Returns: The created or updated transactions (useful for tracking IDs)
+    func save(context: ModelContext) -> [TransactionItem]? {
+        showValidationErrors = true
+
+        guard canSave else {
+            return nil
+        }
+
+        isSaving = true
+
+        do {
+            var result: [TransactionItem] = []
+            if isTransfer {
+                let (outTx, inTx) = try saveTransfer(context: context)
+                editingTransferPair = (outTx, inTx)
+                result = [outTx, inTx]
+            } else {
+                let tx = try saveNormalTransaction(context: context)
+                editingTransaction = tx
+                result = [tx]
+            }
+            try context.save()
+            isSaving = false
+            return result
+        } catch {
+            print("Error saving transaction: \(error)")
+            isSaving = false
+            return nil
+        }
+    }
+
+    private func saveNormalTransaction(context: ModelContext) throws -> TransactionItem {
+        guard let account = selectedAccount,
+            let subcategory = selectedSubcategory
+        else {
+            throw TransactionSaveError.missingRequiredFields
+        }
+
+        let finalAmount = transactionType.isNegative ? -amount : amount
+        let preferredCode = CurrencyDefaults.currentPreferred
+
+        let amountInPreferred = CurrencyConverter.shared.convert(
+            Decimal(finalAmount),
+            from: account.currencyCode,
+            to: preferredCode,
+            on: transactionDate,
+            context: context
+        )
+
+        let effectiveRate: Double
+        if abs(finalAmount) > 0.0001 {
+            effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / finalAmount
+        } else {
+            effectiveRate = 1.0
+        }
+
+        let transaction: TransactionItem
+        if let existing = editingTransaction {
+            transaction = existing
+            transaction.date = transactionDate
+            transaction.amount = finalAmount
+            transaction.currencyCode = account.currencyCode
+            transaction.note = note.isEmpty ? nil : note
+            transaction.category = subcategory.category
+            transaction.subcategory = subcategory
+            transaction.account = account
+            transaction.tags = selectedTags
+            transaction.exchangeRate = abs(effectiveRate)
+            transaction.amountInPreferredCurrency =
+                (amountInPreferred as NSDecimalNumber).doubleValue
+            transaction.preferredCurrencyCode = preferredCode
+        } else {
+            transaction = TransactionItem(
+                date: transactionDate,
+                amount: finalAmount,
+                currencyCode: account.currencyCode,
+                note: note.isEmpty ? nil : note,
+                category: subcategory.category,
+                subcategory: subcategory,
+                account: account,
+                tags: selectedTags,
+                exchangeRate: abs(effectiveRate),
+                amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
+                preferredCurrencyCode: preferredCode
+            )
+            context.insert(transaction)
+        }
+
+        return transaction
+    }
+
+    private func saveTransfer(context: ModelContext) throws -> (TransactionItem, TransactionItem) {
+        guard let source = sourceAccount,
+            let dest = destinationAccount
+        else {
+            throw TransactionSaveError.missingRequiredFields
+        }
+
+        let transferSubcategory = try ensureTransferCategory(context: context)
+        let preferredCode = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "PEN"
+
+        // --- OUTFLOW (Source) ---
+        let outAmount = -amount
+        let outAmountInPreferred = CurrencyConverter.shared.convert(
+            Decimal(outAmount),
+            from: source.currencyCode,
+            to: preferredCode,
+            on: transactionDate,
+            context: context
+        )
+        let outRate =
+            abs(outAmount) > 0.0001
+            ? (outAmountInPreferred as NSDecimalNumber).doubleValue / outAmount : 1.0
+
+        // --- INFLOW (Dest) ---
+        let inAmount = needsExchangeRate ? destinationAmount : amount
+        let inAmountInPreferred = CurrencyConverter.shared.convert(
+            Decimal(inAmount),
+            from: dest.currencyCode,
+            to: preferredCode,
+            on: transactionDate,
+            context: context
+        )
+        let inRate =
+            abs(inAmount) > 0.0001
+            ? (inAmountInPreferred as NSDecimalNumber).doubleValue / inAmount : 1.0
+
+        // Retrieve or Create
+        let outTransaction: TransactionItem
+        let inTransaction: TransactionItem
+
+        if let pair = editingTransferPair {
+            outTransaction = pair.out
+            inTransaction = pair.in
+
+            // Update Out
+            outTransaction.date = transactionDate
+            outTransaction.amount = outAmount
+            outTransaction.currencyCode = source.currencyCode
+            outTransaction.note = note.isEmpty ? "Transferencia a \(dest.name)" : note
+            outTransaction.category = transferSubcategory.category
+            outTransaction.subcategory = transferSubcategory
+            outTransaction.account = source
+            outTransaction.tags = selectedTags
+            outTransaction.exchangeRate = abs(outRate)
+            outTransaction.amountInPreferredCurrency =
+                (outAmountInPreferred as NSDecimalNumber).doubleValue
+            outTransaction.preferredCurrencyCode = preferredCode
+
+            // Update In
+            inTransaction.date = transactionDate
+            inTransaction.amount = inAmount
+            inTransaction.currencyCode = dest.currencyCode
+            inTransaction.note = note.isEmpty ? "Transferencia de \(source.name)" : note
+            inTransaction.category = transferSubcategory.category
+            inTransaction.subcategory = transferSubcategory
+            inTransaction.account = dest
+            inTransaction.tags = selectedTags
+            inTransaction.exchangeRate = abs(inRate)
+            inTransaction.amountInPreferredCurrency =
+                (inAmountInPreferred as NSDecimalNumber).doubleValue
+            inTransaction.preferredCurrencyCode = preferredCode
+
+        } else {
+            outTransaction = TransactionItem(
+                date: transactionDate,
+                amount: outAmount,
+                currencyCode: source.currencyCode,
+                note: note.isEmpty ? "Transferencia a \(dest.name)" : note,
+                category: transferSubcategory.category,
+                subcategory: transferSubcategory,
+                account: source,
+                tags: selectedTags,
+                exchangeRate: abs(outRate),
+                amountInPreferredCurrency: (outAmountInPreferred as NSDecimalNumber).doubleValue,
+                preferredCurrencyCode: preferredCode
+            )
+
+            inTransaction = TransactionItem(
+                date: transactionDate,
+                amount: inAmount,
+                currencyCode: dest.currencyCode,
+                note: note.isEmpty ? "Transferencia de \(source.name)" : note,
+                category: transferSubcategory.category,
+                subcategory: transferSubcategory,
+                account: dest,
+                tags: selectedTags,
+                exchangeRate: abs(inRate),
+                amountInPreferredCurrency: (inAmountInPreferred as NSDecimalNumber).doubleValue,
+                preferredCurrencyCode: preferredCode
+            )
+
+            context.insert(outTransaction)
+            context.insert(inTransaction)
+        }
+
+        return (outTransaction, inTransaction)
+    }
+
+    private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
+        let categoryName = "Transferencia entre cuentas"
+        let subcategoryName = "Transferencia entre cuentas"
+
+        // Check if exists
+        let descriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == categoryName }
+        )
+
+        if let existing = try? context.fetch(descriptor).first {
+            return existing
+        }
+
+        // Check if Parent Category exists
+        let catDescriptor = FetchDescriptor<Category>(
+            predicate: #Predicate { $0.name == categoryName }
+        )
+
+        let category: Category
+        if let existingCat = try? context.fetch(catDescriptor).first {
+            category = existingCat
+        } else {
+            // Create Category
+            // Note: Category init(name, colorHex, isIncome, ...)
+            category = Category(
+                name: categoryName,
+                colorHex: "8E8E93",  // Gray, neutral
+                isIncome: false
+            )
+            context.insert(category)
+        }
+
+        // Create Subcategory
+        // Note: Subcategory init(name, colorHex?, ..., natureRawValue?, category)
+        let subcategory = Subcategory(
+            name: subcategoryName,
+            colorHex: nil,
+            natureRawValue: SubcategoryNature.unclassified.rawValue,
+            category: category
+        )
+        context.insert(subcategory)
+
+        // Save to ensure ID stability if needed immediately
+        try? context.save()
+
+        return subcategory
+    }
+
+    // MARK: - Reset
+
+    /// Resetea el formulario a valores iniciales
+    func reset() {
+        transactionType = .expense
+        amountString = "0"
+        selectedAccount = nil
+        sourceAccount = nil
+        destinationAccount = nil
+        selectedSubcategory = nil
+        transactionDate = Date()
+        selectedTags = []
+        note = ""
+        exchangeRate = 1.0
+        destinationAmount = 0.0
+        isExchangeRateManual = false
+        showValidationErrors = false
+        isSaving = false
+    }
+}
+
+// MARK: - Errors
+
+enum TransactionSaveError: Error {
+    case missingRequiredFields
+    case saveFailed
+}

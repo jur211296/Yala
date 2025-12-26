@@ -25,16 +25,7 @@ struct BalanceTrendCalculator {
 
         // Group by Date component based on grouping
         let grouped = Dictionary(grouping: transactions) { tx -> Date in
-            switch grouping {
-            case .day:
-                return calendar.startOfDay(for: tx.date)
-            case .week:
-                return calendar.dateInterval(of: .weekOfYear, for: tx.date)?.start
-                    ?? calendar.startOfDay(for: tx.date)
-            case .month:
-                return calendar.dateInterval(of: .month, for: tx.date)?.start
-                    ?? calendar.startOfDay(for: tx.date)
-            }
+            return grouping.dateKey(for: tx.date, calendar: calendar)
         }
 
         // Accumulator for "Running Balance" during this period
@@ -43,14 +34,7 @@ struct BalanceTrendCalculator {
         var runningBalance: Double = 0
 
         // Generate date stride
-        // Determine step
-        let component: Calendar.Component = {
-            switch grouping {
-            case .day: return .day
-            case .week: return .weekOfYear
-            case .month: return .month
-            }
-        }()
+        let component = grouping.calendarComponent
 
         var currentDate = interval.start
         // Align start date to grouping if needed?
@@ -66,16 +50,7 @@ struct BalanceTrendCalculator {
             // Need robust date key matching.
 
             // Allow for some slack or normalize currentDate to same start logic
-            let keyDate: Date = {
-                switch grouping {
-                case .day: return calendar.startOfDay(for: currentDate)
-                case .week:
-                    return calendar.dateInterval(of: .weekOfYear, for: currentDate)?.start
-                        ?? currentDate
-                case .month:
-                    return calendar.dateInterval(of: .month, for: currentDate)?.start ?? currentDate
-                }
-            }()
+            let keyDate = grouping.dateKey(for: currentDate, calendar: calendar)
 
             let txs = grouped[keyDate] ?? []
 
@@ -83,29 +58,37 @@ struct BalanceTrendCalculator {
             var expense: Double = 0
 
             for tx in txs {
+                // Strict Filter:
+                // Must have a category (excludes Transfers)
+                guard let category = tx.category else { continue }
+
                 let absAmt = abs(tx.amount)
                 let decimalAmt = Decimal(absAmt)
 
                 // Convert using the transaction's date for accurate historical rate
-                let converted = CurrencyConverter.shared.convert(
-                    decimalAmt,
-                    from: tx.currencyCode,
-                    to: currencyCode,
-                    on: tx.date,
-                    context: context
-                )
-                let val = NSDecimalNumber(decimal: converted).doubleValue
+                let val: Double
+                if tx.preferredCurrencyCode == currencyCode {
+                    // Use signed amount
+                    val = tx.amountInPreferredCurrency
+                } else {
+                    let converted = CurrencyConverter.shared.convert(
+                        decimalAmt,
+                        from: tx.currencyCode,
+                        to: currencyCode,
+                        on: tx.date,
+                        context: context
+                    )
+                    // Restore sign from original amount
+                    let magnitude = NSDecimalNumber(decimal: converted).doubleValue
+                    val = (tx.amount < 0) ? -magnitude : magnitude
+                }
 
-                // Determine type
-                // isIncome logic: (cat.isIncome) OR (amount >= 0 if no cat? usually strict expense/income in Neto)
-                let isIncome = tx.category?.isIncome ?? (tx.amount >= 0)
-
-                if isIncome {
+                if category.isIncome {
                     income += val
                     runningBalance += val
                 } else {
                     expense += val
-                    runningBalance -= val
+                    runningBalance += val  // Expense is negative, so adding it reduces balance
                 }
             }
 
@@ -113,9 +96,9 @@ struct BalanceTrendCalculator {
                 ChartTransaction(
                     id: UUID(),
                     date: currentDate,
-                    income: income,
-                    expense: expense,
-                    balance: runningBalance
+                    income: abs(income),  // Positive magnitude for chart bar
+                    expense: abs(expense),  // Positive magnitude for chart bar
+                    balance: runningBalance  // Net balance (can be negative)
                 ))
 
             currentDate = nextDate

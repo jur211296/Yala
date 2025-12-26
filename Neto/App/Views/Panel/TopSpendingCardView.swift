@@ -149,7 +149,7 @@ struct TopSpendingCardView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
-                        Text("\(currencyCode) \(formattedAmount(topCategory.amount))")
+                        Text(formattedAmount(topCategory.amount))
                             .font(.title3.weight(.bold))
                             .foregroundStyle(.primary)
                             .minimumScaleFactor(0.8)
@@ -210,11 +210,7 @@ struct TopSpendingCardView: View {
 
     // Helpers (moved inside View to be accessible)
     private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
+        NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {
@@ -254,7 +250,7 @@ private struct CategoryRow: View {
 
                     Spacer()
 
-                    Text("\(currencyCode) \(formattedAmount(summary.amount))")
+                    Text(NetoFormatter.currency(value: summary.amount, currencyCode: currencyCode))
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(.primary)
                 }
@@ -285,14 +281,6 @@ private struct CategoryRow: View {
                 }
             }
         }
-    }
-
-    private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
     }
 
     private func formattedPercentage(_ value: Double) -> String {

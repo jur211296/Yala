@@ -24,10 +24,14 @@ struct CurrencySettingsView: View {
         CurrencyCode.allCases.filter { $0 != preferredCurrency }
     }
 
+    @State private var isUpdating: Bool = false
+    @State private var updateProgress: Double = 0.0
+
     var body: some View {
         ZStack {
             PanelBackgroundView()
 
+            // Main Content
             ScrollView {
                 VStack(spacing: 24) {
                     preferredCurrencySection
@@ -36,9 +40,35 @@ struct CurrencySettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 24)
             }
+            .blur(radius: isUpdating ? 3 : 0)
+            .disabled(isUpdating)
+
+            // Progress Overlay
+            if isUpdating {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    ProgressView(value: updateProgress, total: 1.0)
+                        .progressViewStyle(.linear)
+                        .frame(width: 200)
+
+                    Text("Actualizando registros...")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    Text("Recalculando conversiones históricas")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .padding(24)
+                .background(.ultraThinMaterial)
+                .cornerRadius(16)
+            }
         }
         .navigationTitle("Divisa y cambio")
         .navigationBarTitleDisplayMode(.inline)
+        .interactiveDismissDisabled(isUpdating)
     }
 
     // MARK: - Preferred Currency Section
@@ -62,7 +92,7 @@ struct CurrencySettingsView: View {
         let info = currencyInfo(for: currency)
 
         Button {
-            defaultCurrencyCode = currency.rawValue
+            updatePreferredCurrency(to: currency)
         } label: {
             HStack(spacing: 12) {
                 Text(info.flag)
@@ -89,6 +119,35 @@ struct CurrencySettingsView: View {
             .padding(.vertical, 14)
         }
         .buttonStyle(.plain)
+    }
+
+    private func updatePreferredCurrency(to newCurrency: CurrencyCode) {
+        guard newCurrency != preferredCurrency else { return }
+
+        isUpdating = true
+        updateProgress = 0.0
+
+        Task {
+            do {
+                // Run the batch update
+                try await CurrencyChangeService.shared.updateAllTransactions(
+                    to: newCurrency.rawValue,
+                    context: modelContext,
+                    onProgress: { progress in
+                        updateProgress = progress
+                    }
+                )
+
+                // Only update the AppStorage setting AFTER successful migration
+                defaultCurrencyCode = newCurrency.rawValue
+
+            } catch {
+                print("Error updating transactions: \(error)")
+                // Optionally show an alert here?
+            }
+
+            isUpdating = false
+        }
     }
 
     // MARK: - Exchange Rates Section

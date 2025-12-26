@@ -365,7 +365,7 @@ struct ImportIntroSheet: View {
             do {
                 // FIN-24: el flag allowCreatingNewCategories controla
                 // si se crean nuevas categorías/subcategorías durante la importación.
-                let result = try TransactionCSVImportService.importCSV(
+                let result = try await TransactionCSVImportService.importCSV(
                     from: url,
                     into: account,
                     in: modelContext,

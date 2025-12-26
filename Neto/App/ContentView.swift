@@ -27,7 +27,7 @@ struct MainTabView: View {
                 }
 
             PlanningView()
-                .tabItem {
+                .tabItem { 
                     Label("Planificación", systemImage: "calendar")
                 }
 

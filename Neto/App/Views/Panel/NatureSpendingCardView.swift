@@ -11,6 +11,7 @@ import SwiftUI
 struct NatureSpendingCardView: View {
     let trendPoints: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
+    let currencyCode: String
     let size: TopSpendingCardView.CardSize  // Reusing comparable size enum or WidgetSize
     let grouping: TrendGrouping
     let onSelectNature: (SubcategoryNature) -> Void
@@ -30,9 +31,12 @@ struct NatureSpendingCardView: View {
                     // Total amount summary or Period subtitle
                     // "Este mes", etc. logic is usually outside, but here we can sum
                     let total = trendPoints.reduce(0) { $0 + $1.total }
-                    Text(formattedAmount(total))
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(Color.netoPrimaryText)
+                    Text(
+                        NetoFormatter.currency(
+                            value: total, currencyCode: currencyCode)
+                    )
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.netoPrimaryText)
                 }
 
                 Spacer()
@@ -80,7 +84,8 @@ struct NatureSpendingCardView: View {
             // Large: Chart + Legend (legend handles filtering)
             VStack(spacing: 16) {
                 NatureTrendChartView(
-                    points: trendPoints, selectedNature: selectedNature, grouping: grouping,
+                    points: trendPoints, selectedNature: selectedNature, currencyCode: currencyCode,
+                    grouping: grouping,
                     onSelectNature: nil  // Legend handles it
                 )
                 .frame(height: 200)
@@ -92,7 +97,8 @@ struct NatureSpendingCardView: View {
             // Medium: Compact Chart + Mini Legend (bars handle filtering)
             VStack(spacing: 8) {
                 NatureTrendChartView(
-                    points: trendPoints, selectedNature: selectedNature, grouping: grouping,
+                    points: trendPoints, selectedNature: selectedNature, currencyCode: currencyCode,
+                    grouping: grouping,
                     onSelectNature: onSelectNature  // Chart bars handle it
                 )
 
@@ -102,18 +108,14 @@ struct NatureSpendingCardView: View {
         }
     }
 
-    private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencySymbol = "S/"  // Simplified for now, should use ViewModel currency
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? ""
-    }
+    // formattedAmount removed
+
 }
 
 struct NatureTrendChartView: View {
     let points: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
+    let currencyCode: String
     let grouping: TrendGrouping
     let onSelectNature: ((SubcategoryNature) -> Void)?
     @State private var selectedDate: Date?
@@ -331,17 +333,24 @@ struct NatureTrendChartView: View {
 
                             VStack(alignment: .leading, spacing: 4) {
                                 if selectedData.essential > 0 {
-                                    TooltipRow(nature: .essential, amount: selectedData.essential)
+                                    TooltipRow(
+                                        nature: .essential, amount: selectedData.essential,
+                                        currencyCode: currencyCode)
                                 }
                                 if selectedData.priority > 0 {
-                                    TooltipRow(nature: .priority, amount: selectedData.priority)
+                                    TooltipRow(
+                                        nature: .priority, amount: selectedData.priority,
+                                        currencyCode: currencyCode)
                                 }
                                 if selectedData.optional > 0 {
-                                    TooltipRow(nature: .optional, amount: selectedData.optional)
+                                    TooltipRow(
+                                        nature: .optional, amount: selectedData.optional,
+                                        currencyCode: currencyCode)
                                 }
                                 if selectedData.unclassified > 0 {
                                     TooltipRow(
-                                        nature: .unclassified, amount: selectedData.unclassified)
+                                        nature: .unclassified, amount: selectedData.unclassified,
+                                        currencyCode: currencyCode)
                                 }
                                 Divider()
                                 HStack {
@@ -386,6 +395,7 @@ struct NatureTrendChartView: View {
     struct TooltipRow: View {
         let nature: SubcategoryNature
         let amount: Double
+        let currencyCode: String
 
         var body: some View {
             HStack {
@@ -395,7 +405,7 @@ struct NatureTrendChartView: View {
                     .foregroundStyle(Color.primary)
                 Spacer()
                 // Simple formatting for tooltip
-                Text(amount.formatted(.currency(code: "PEN").precision(.fractionLength(0))))
+                Text(NetoFormatter.currency(value: amount, currencyCode: currencyCode, decimals: 0))
                     .font(.caption2.bold())
                     .foregroundStyle(Color.primary)
             }

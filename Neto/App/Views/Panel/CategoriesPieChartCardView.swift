@@ -532,20 +532,11 @@ struct CategoriesPieChartCardView: View {
     // MARK: - Helpers
 
     private func formattedAmountCompact(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        let numStr = formatter.string(from: NSNumber(value: value)) ?? String(format: "%.0f", value)
-        return "\(currencyCode) \(numStr)"
+        NetoFormatter.currency(value: value, currencyCode: currencyCode, decimals: 0)
     }
 
     private func formattedCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        let numStr = formatter.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
-        return "\(currencyCode) \(numStr)"
+        NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {

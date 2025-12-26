@@ -247,7 +247,7 @@ struct TopSubcategoriesCardView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
-                        Text("\(currencyCode) \(formattedAmount(top.amount))")
+                        Text(formattedAmount(top.amount))
                             .font(.title3.weight(.bold))
                             .foregroundStyle(.primary)
                             .minimumScaleFactor(0.8)
@@ -313,11 +313,7 @@ struct TopSubcategoriesCardView: View {
     // MARK: - Formatters
 
     private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
+        NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {
@@ -357,9 +353,12 @@ private struct SubcategoryRow: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
                             Spacer()
-                            Text("\(currencyCode) \(formattedAmount(summary.amount))")
-                                .font(.subheadline.weight(.bold))
-                                .foregroundStyle(.primary)
+                            Text(
+                                NetoFormatter.currency(
+                                    value: summary.amount, currencyCode: currencyCode)
+                            )
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.primary)
                         }
 
                         // Percentages logic
@@ -395,14 +394,6 @@ private struct SubcategoryRow: View {
             }
         }
 
-    }
-
-    private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
     }
 
     private func formattedPercentage(_ value: Double) -> String {

@@ -119,22 +119,43 @@ enum TransactionCSVImportService {
     ///   - context: ModelContext de SwiftData.
     ///
     /// - Returns: CSVImportResult con el número de registros creados.
+    @MainActor
     static func importCSV(
         from url: URL,
         into account: Account,
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true
-    ) throws -> CSVImportResult {
+    ) async throws -> CSVImportResult {
+
+        // Resolve preferred currency once
+        let preferredCode = CurrencyDefaults.currentPreferred
 
         // Reutilizamos la versión genérica basada en drafts y closure,
         // pero aquí concretamos la creación de `TransactionItem`.
-        return try importCSV(
+        return try await importCSV(
             from: url,
             into: account,
             in: context,
             allowCreatingNewCategories: allowCreatingNewCategories
         ) { draft, context in
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
+
+            // Calculate Preferred Currency Amount
+            let amountInPreferred = CurrencyConverter.shared.convert(
+                draft.amount,
+                from: draft.normalizedCurrencyCode,
+                to: preferredCode,
+                on: draft.date,
+                context: context
+            )
+
+            // Derive Rate
+            let effectiveRate: Double
+            if abs(amountDouble) > 0.0001 {
+                effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / amountDouble
+            } else {
+                effectiveRate = 1.0
+            }
 
             let transaction = TransactionItem(
                 date: draft.date,
@@ -144,7 +165,10 @@ enum TransactionCSVImportService {
                 category: draft.category,
                 subcategory: draft.subcategory,
                 account: account,
-                tags: draft.tags
+                tags: draft.tags,
+                exchangeRate: abs(effectiveRate),
+                amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
+                preferredCurrencyCode: preferredCode
             )
 
             context.insert(transaction)
@@ -157,13 +181,14 @@ enum TransactionCSVImportService {
     /// a partir de cada `ParsedTransactionDraft`.
     ///
     /// Útil para tests o para otros modelos que no sean `TransactionItem`.
+    @MainActor
     static func importCSV(
         from url: URL,
         into account: Account,
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
         createTransaction: (ParsedTransactionDraft, ModelContext) throws -> Void
-    ) throws -> CSVImportResult {
+    ) async throws -> CSVImportResult {
 
         // 1. Validar extensión
         guard url.pathExtension.lowercased() == "csv" else {
@@ -428,10 +453,11 @@ enum TransactionCSVImportService {
             }
 
             // 5.7 Resolver etiquetas (tags) a partir de la columna opcional
+            // NOTA: Tags siempre se crean si no existen, independiente del toggle de categorías
             let resolvedTags = try resolveTags(
                 from: tagsString,
                 in: context,
-                allowCreatingNewTags: allowCreatingNewCategories
+                allowCreatingNewTags: true  // Tags always get created
             )
             // 5.8 Construimos el draft
             let draft = ParsedTransactionDraft(
@@ -445,6 +471,19 @@ enum TransactionCSVImportService {
             )
 
             drafts.append(draft)
+        }
+
+        // 5.9 Preload Exchange Rates for the entire batch
+        // This ensures the data is available for accurate conversion in step 6
+        if !drafts.isEmpty {
+            let dates = drafts.map { $0.date }
+            if let minDate = dates.min(), let maxDate = dates.max() {
+                let dateRange = DateInterval(start: minDate, end: maxDate)
+                await ExchangeRateService.shared.ensureRates(
+                    for: dateRange,
+                    context: context
+                )
+            }
         }
 
         // 6. Segunda pasada: solo si TODO es válido, creamos las transacciones reales

@@ -165,8 +165,36 @@ extension Color {
     /// Deep Slate: El lienzo infinito (Principal Dark Mode).
     static let deepSlate = Color(hex: "0F172A")
 
-    /// Priority Nature: Softer Cyan for "Priority" expenses.
+    /// Priority Nature: Softer Cyan for „Priority" expenses.
     static let priorityNature = Color(hex: "00C2CB")
+
+    /// Tag Chip Color: Darker teal in light mode for visibility, bright cyan in dark mode.
+    static var tagChipColor: Color {
+        #if canImport(UIKit)
+            return Color(
+                UIColor { traitCollection in
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(Color.neonCyan)
+                        : UIColor(Color(hex: "0891B2"))  // Darker teal for light mode
+                })
+        #else
+            return Color.neonCyan
+        #endif
+    }
+
+    /// Transfer Color: Dark gray that works in both light and dark mode.
+    static var transferColor: Color {
+        #if canImport(UIKit)
+            return Color(
+                UIColor { traitCollection in
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(Color(hex: "64748B"))  // Slate gray for dark mode
+                        : UIColor.label  // Black for light mode
+                })
+        #else
+            return Color.primary
+        #endif
+    }
 
     // MARK: - Semantic Colors (Adaptive)
 
@@ -241,5 +269,31 @@ extension Color {
         #else
             return .white  // Fallback
         #endif
+    }
+
+}
+// MARK: - Formatters
+
+struct NetoFormatter {
+    static func currency(
+        value: Double, currencyCode: String, forceSign: Bool = false, decimals: Int = 2
+    ) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = decimals
+        formatter.maximumFractionDigits = decimals
+
+        let absoluteValue = abs(value)
+        let formattedNumber = formatter.string(from: NSNumber(value: absoluteValue)) ?? "0.00"
+
+        var sign = ""
+        if value < 0 {
+            sign = "- "
+        } else if forceSign {
+            sign = "+ "
+        }
+
+        // Format: "PEN - 1000.00"
+        return "\(currencyCode) \(sign)\(formattedNumber)"
     }
 }

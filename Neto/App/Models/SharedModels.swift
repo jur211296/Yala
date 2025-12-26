@@ -61,6 +61,29 @@ enum TrendGrouping: String, CaseIterable, Identifiable {
     case month = "Mes"
 
     var id: String { rawValue }
+
+    /// Returns the calendar component for date stride operations
+    var calendarComponent: Calendar.Component {
+        switch self {
+        case .day: return .day
+        case .week: return .weekOfYear
+        case .month: return .month
+        }
+    }
+
+    /// Returns the start date of the bucket containing the given date
+    func dateKey(for date: Date, calendar: Calendar = .current) -> Date {
+        switch self {
+        case .day:
+            return calendar.startOfDay(for: date)
+        case .week:
+            return calendar.dateInterval(of: .weekOfYear, for: date)?.start
+                ?? calendar.startOfDay(for: date)
+        case .month:
+            return calendar.dateInterval(of: .month, for: date)?.start
+                ?? calendar.startOfDay(for: date)
+        }
+    }
 }
 
 struct ChartTransaction: Identifiable {

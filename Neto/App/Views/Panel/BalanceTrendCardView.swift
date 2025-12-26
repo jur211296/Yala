@@ -137,7 +137,7 @@ struct BalanceTrendCardView: View {
 
     private var amountText: String {
         let value = trendType == .balance ? currentBalance : totalExpense
-        return "\(currencyCode) \(formattedAmount(value))"
+        return NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     // MARK: - Trend Mode Selector
@@ -201,15 +201,5 @@ struct BalanceTrendCardView: View {
         )
         .padding(.top, 10)
         .animation(nil, value: trendType)
-    }
-
-    // MARK: - Helpers
-
-    private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
     }
 }

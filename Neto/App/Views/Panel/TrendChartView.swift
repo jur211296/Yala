@@ -20,7 +20,10 @@ struct TrendChartView: View {
 
     var body: some View {
         // Liquid Line Chart with Balance Trend
+        // Using .id(period) forces complete re-render when period changes,
+        // avoiding weird intermediate chart states during animation
         liquidTrendChart
+            .id(period)
     }
 
     // MARK: - Gráfico Trend (Financial Grid Style)
@@ -266,7 +269,6 @@ struct TrendChartView: View {
             }
         }
         .frame(height: chartHeight)
-        .animation(.easeInOut(duration: 0.3), value: trendPoints)
     }
 
     // Padded X Domain Logic

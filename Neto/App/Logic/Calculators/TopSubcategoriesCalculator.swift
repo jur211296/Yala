@@ -72,14 +72,24 @@ struct TopSubcategoriesCalculator {
             let decimalAmount = Decimal(absAmount)
 
             // Convert using the transaction's date for accurate historical rate
-            let convertedAmount = CurrencyConverter.shared.convert(
-                decimalAmount,
-                from: transaction.currencyCode,
-                to: currencyCode,
-                on: transaction.date,
-                context: context
-            )
-            let doubleVal = NSDecimalNumber(decimal: convertedAmount).doubleValue
+            // Convert using the transaction's date for accurate historical rate
+            // Convert using the transaction's date for accurate historical rate
+            let doubleVal: Double
+            if transaction.preferredCurrencyCode == currencyCode {
+                // Use signed amount (expenses are negative)
+                doubleVal = transaction.amountInPreferredCurrency
+            } else {
+                let convertedAmount = CurrencyConverter.shared.convert(
+                    decimalAmount,
+                    from: transaction.currencyCode,
+                    to: currencyCode,
+                    on: transaction.date,
+                    context: context
+                )
+                // Restore sign from original amount for correct refund handling
+                let magnitude = NSDecimalNumber(decimal: convertedAmount).doubleValue
+                doubleVal = (transaction.amount < 0) ? -magnitude : magnitude
+            }
 
             // Global aggregates
             totalExpenseAll += doubleVal
@@ -116,18 +126,23 @@ struct TopSubcategoriesCalculator {
         // 3. Build Summaries
         var summaries: [SubcategorySpendingSummary] = []
 
+        // Use absolute totals for percentage calculation (net negative expense -> positive magnitude)
+        let absTotalAll = abs(totalExpenseAll)
+
         for (key, amount) in groupingTotals {
             guard let meta = groupingMetadata[key] else { continue }
 
-            let catTotal = totalExpensePerCategory[key.categoryID] ?? amount  // Should exist
+            let catTotal = totalExpensePerCategory[key.categoryID] ?? amount
+            let absCatTotal = abs(catTotal)
+            let absAmount = abs(amount)
 
-            let pctTotal = totalExpenseAll > 0 ? (amount / totalExpenseAll) * 100 : 0
-            let pctCat = catTotal > 0 ? (amount / catTotal) * 100 : 0
+            let pctTotal = absTotalAll > 0 ? (absAmount / absTotalAll) * 100 : 0
+            let pctCat = absCatTotal > 0 ? (absAmount / absCatTotal) * 100 : 0
 
             let summary = SubcategorySpendingSummary(
                 subcategoryName: meta.name,
                 colorHex: meta.color,
-                amount: amount,
+                amount: absAmount,
                 percentageOfTotal: pctTotal,
                 percentageOfCategory: pctCat,
                 subcategory: meta.sub,

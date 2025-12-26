@@ -42,35 +42,34 @@ struct CashFlowCalculator {
 
         // 1. Process Transactions and Accumulate
         for tx in transactions {
-            let absAmt = abs(tx.amount)
-            let decimalAmt = Decimal(absAmt)
+            // Strict Filter:
+            // Must have a category (excludes Transfers)
+            guard let category = tx.category else { continue }
+
+            let decimalAmt = Decimal(abs(tx.amount))
 
             // Convert using the transaction's date for accurate historical rate
-            let converted = CurrencyConverter.shared.convert(
-                decimalAmt,
-                from: tx.currencyCode,
-                to: currencyCode,
-                on: tx.date,
-                context: context
-            )
-            let val = NSDecimalNumber(decimal: converted).doubleValue
+            let val: Double
+            if tx.preferredCurrencyCode == currencyCode {
+                // Use signed amount
+                val = tx.amountInPreferredCurrency
+            } else {
+                let converted = CurrencyConverter.shared.convert(
+                    decimalAmt,
+                    from: tx.currencyCode,
+                    to: currencyCode,
+                    on: tx.date,
+                    context: context
+                )
+                // Restore sign from original amount
+                let magnitude = NSDecimalNumber(decimal: converted).doubleValue
+                val = (tx.amount < 0) ? -magnitude : magnitude
+            }
 
-            let isIncome = tx.category?.isIncome ?? (tx.amount >= 0)
+            let isIncome = category.isIncome
 
             // Date Grouping key
-            let dateKey: Date
-            switch grouping {
-            case .day:
-                dateKey = calendar.startOfDay(for: tx.date)
-            case .week:
-                dateKey =
-                    calendar.dateInterval(of: .weekOfYear, for: tx.date)?.start
-                    ?? calendar.startOfDay(for: tx.date)
-            case .month:
-                dateKey =
-                    calendar.dateInterval(of: .month, for: tx.date)?.start
-                    ?? calendar.startOfDay(for: tx.date)
-            }
+            let dateKey = grouping.dateKey(for: tx.date, calendar: calendar)
 
             // Accumulate in Group
             var current = groupedData[dateKey] ?? (0.0, 0.0)
@@ -78,8 +77,12 @@ struct CashFlowCalculator {
                 current.income += val
                 totalIncome += val
             } else {
-                current.expense += val
-                totalExpense += val
+                // Expenses are negative signed values.
+                // We want positive magnitude for the "Expense" bar/total.
+                // Subtracting a negative value adds to the magnitude.
+                // Subtracting a positive value (refund) reduces the magnitude.
+                current.expense -= val
+                totalExpense -= val
             }
             groupedData[dateKey] = current
         }
@@ -88,25 +91,10 @@ struct CashFlowCalculator {
         var chartData: [CashFlowData] = []
         var currentDate = interval.start
 
-        let component: Calendar.Component = {
-            switch grouping {
-            case .day: return .day
-            case .week: return .weekOfYear
-            case .month: return .month
-            }
-        }()
+        let component = grouping.calendarComponent
 
         while currentDate < interval.end {
-            let keyDate: Date = {
-                switch grouping {
-                case .day: return calendar.startOfDay(for: currentDate)
-                case .week:
-                    return calendar.dateInterval(of: .weekOfYear, for: currentDate)?.start
-                        ?? currentDate
-                case .month:
-                    return calendar.dateInterval(of: .month, for: currentDate)?.start ?? currentDate
-                }
-            }()
+            let keyDate = grouping.dateKey(for: currentDate, calendar: calendar)
 
             let values = groupedData[keyDate] ?? (0.0, 0.0)
             let net = values.income - values.expense

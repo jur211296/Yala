@@ -91,6 +91,23 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
     var id: String { rawValue }
 }
 
+// MARK: - Currency Defaults
+
+/// Centralized default currency settings.
+/// Use these constants instead of hardcoding "PEN" throughout the codebase.
+enum CurrencyDefaults {
+    /// The default currency code when none is specified (PEN - Peruvian Sol)
+    static let defaultCode = "PEN"
+
+    /// UserDefaults key for storing the user's preferred currency
+    static let preferredCurrencyKey = "defaultCurrencyCode"
+
+    /// Returns the user's current preferred currency code, or the default if not set
+    static var currentPreferred: String {
+        UserDefaults.standard.string(forKey: preferredCurrencyKey) ?? defaultCode
+    }
+}
+
 // MARK: - Currency Info
 
 func currencyInfo(for currency: CurrencyCode) -> (name: String, code: String, flag: String) {

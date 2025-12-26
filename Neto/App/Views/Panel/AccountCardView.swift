@@ -80,7 +80,7 @@ struct AccountCardView: View {
                 Spacer(minLength: 0)
 
                 Text(
-                    "\(normalizeCurrencyCode(account.currencyCode)) \(formattedAmount(currentBalance))"
+                    formattedAmount(currentBalance)
                 )
                 .font(.headline.weight(.bold))
                 .foregroundStyle(foregroundColor)
@@ -117,11 +117,8 @@ struct AccountCardView: View {
     }
 
     private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
+        NetoFormatter.currency(
+            value: value, currencyCode: normalizeCurrencyCode(account.currencyCode))
     }
 
     // Helpers locally defined to resolve scope issues

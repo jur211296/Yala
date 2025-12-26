@@ -67,20 +67,59 @@ enum AmountFilterCondition: Equatable {
 /// - thisYear:       Año calendario actual.
 /// - thisMonth:      Mes calendario actual.
 /// - thisWeek:       Semana actual (según calendario del usuario).
+/// - today:          Solo el día de hoy.
+/// - thisYear:       Año en curso.
+/// - thisMonth:      Mes en curso.
+/// - thisWeek:       Semana en curso (inicia lunes).
 /// - last7Days:      Últimos 7 días incluyendo hoy.
 /// - last30Days:     Últimos 30 días incluyendo hoy.
 /// - last90Days:     Últimos 90 días incluyendo hoy.
+/// - last180Days:    Últimos 180 días incluyendo hoy.
 /// - custom:         Periodo personalizado controlado por fechas `from` / `to` en `ExportFilters`.
 enum ExportPeriod: String, CaseIterable, Identifiable {
-    case thisYear
-    case thisMonth
+    // Periodo actual (Current Period)
+    case today
     case thisWeek
+    case thisMonth
+    case thisYear
+
+    // Periodo móvil (Rolling Period)
     case last7Days
     case last30Days
     case last90Days
+    case last180Days
+
+    // Rango personalizado
     case custom
 
     var id: String { rawValue }
+
+    /// Category this period belongs to
+    var category: ExportPeriodCategory {
+        switch self {
+        case .today, .thisWeek, .thisMonth, .thisYear:
+            return .current
+        case .last7Days, .last30Days, .last90Days, .last180Days:
+            return .rolling
+        case .custom:
+            return .custom
+        }
+    }
+
+    /// Display name for UI
+    var displayName: String {
+        switch self {
+        case .today: return "Hoy"
+        case .thisWeek: return "Esta semana"
+        case .thisMonth: return "Este mes"
+        case .thisYear: return "Este año"
+        case .last7Days: return "7 días"
+        case .last30Days: return "30 días"
+        case .last90Days: return "90 días"
+        case .last180Days: return "180 días"
+        case .custom: return "Personalizado"
+        }
+    }
 
     /// Devuelve un `DateInterval` estándar para los periodos no personalizados
     /// usando la fecha "hoy" como referencia.
@@ -98,6 +137,9 @@ enum ExportPeriod: String, CaseIterable, Identifiable {
         let startOfToday = calendar.startOfDay(for: today)
 
         switch self {
+        case .today:
+            return calendar.dateInterval(of: .day, for: today)
+
         case .thisYear:
             guard let yearInterval = calendar.dateInterval(of: .year, for: today) else {
                 return nil
@@ -149,6 +191,15 @@ enum ExportPeriod: String, CaseIterable, Identifiable {
             let start = calendar.date(byAdding: .day, value: -89, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: end)
 
+        case .last180Days:
+            let end =
+                calendar.date(
+                    byAdding: DateComponents(day: 1, second: -1),
+                    to: startOfToday
+                ) ?? today
+            let start = calendar.date(byAdding: .day, value: -179, to: startOfToday) ?? startOfToday
+            return DateInterval(start: start, end: end)
+
         case .custom:
             return nil
         }
@@ -158,6 +209,32 @@ enum ExportPeriod: String, CaseIterable, Identifiable {
     /// Se alinea con lo descrito en FIN-48: un estado razonable es "Últimos 30 días".
     static var defaultPeriod: ExportPeriod {
         .last30Days
+    }
+
+    /// All periods in the current category
+    static var currentPeriods: [ExportPeriod] {
+        [.today, .thisWeek, .thisMonth, .thisYear]
+    }
+
+    static var rollingPeriods: [ExportPeriod] {
+        [.last7Days, .last30Days, .last90Days, .last180Days]
+    }
+}
+
+/// Category for export period options
+enum ExportPeriodCategory: String, CaseIterable, Identifiable {
+    case current
+    case rolling
+    case custom
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .current: return "Periodo actual"
+        case .rolling: return "Periodo móvil"
+        case .custom: return "Rango personalizado"
+        }
     }
 }
 
