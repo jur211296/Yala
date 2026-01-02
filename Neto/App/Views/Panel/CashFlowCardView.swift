@@ -13,7 +13,24 @@ struct CashFlowCardView: View {
     let size: WidgetSize
     let period: String
     let grouping: TrendGrouping
-    let onShowDetail: () -> Void
+    let interval: DateInterval
+    let onShowDetail: (() -> Void)?
+
+    init(
+        summary: CashFlowSummary,
+        size: WidgetSize,
+        period: String,
+        grouping: TrendGrouping,
+        interval: DateInterval,
+        onShowDetail: (() -> Void)? = nil
+    ) {
+        self.summary = summary
+        self.size = size
+        self.period = period
+        self.grouping = grouping
+        self.interval = interval
+        self.onShowDetail = onShowDetail
+    }
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -24,7 +41,7 @@ struct CashFlowCardView: View {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Flujo de efectivo")
+                    Text(L10n.CashFlow.title)
                         .font(.headline)
                         .foregroundStyle(.primary)
                         .padding(.bottom, 2)
@@ -44,12 +61,14 @@ struct CashFlowCardView: View {
 
                 Spacer()
 
-                Button(action: onShowDetail) {
-                    Image(systemName: "chevron.right")
-                        .font(.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                if onShowDetail != nil {
+                    Button(action: { onShowDetail?() }) {
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundStyle(Color.gray.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding([.horizontal, .top], DesignSystem.Spacing.large)
             .padding(.bottom, DesignSystem.Spacing.medium)
@@ -115,6 +134,7 @@ struct CashFlowCardView: View {
                         .symbolSize(20)
                     }
                 }  // Close Chart
+                .chartXScale(domain: interval.start...interval.end)
                 .chartXAxis {
                     AxisMarks(values: .stride(by: calendarUnit(for: grouping))) { value in
                         AxisGridLine().foregroundStyle(.clear)  // Explicitly hide gridlines
@@ -280,7 +300,7 @@ struct CashFlowCardView: View {
                     // Income Group
                     VStack(spacing: 6) {
                         HStack {
-                            Text("Ingresos")
+                            Text(L10n.CashFlow.income)
                                 .font(.subheadline)
                                 .foregroundStyle(Color.netoSecondaryText)
                             Spacer()

@@ -16,6 +16,7 @@ struct CategoriesPieChartCardView: View {
     // Filter State
     var selectedCategoryID: PersistentIdentifier?
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
+    var onShowDetail: (() -> Void)? = nil
 
     var size: WidgetSize = .medium
 
@@ -439,9 +440,16 @@ struct CategoriesPieChartCardView: View {
                     .padding(.vertical, 4)
                     .background(.ultraThinMaterial, in: Capsule())
 
-                Image(systemName: "chevron.right")
-                    .font(.headline)
-                    .foregroundStyle(Color.gray.opacity(0.7))
+                if onShowDetail != nil {
+                    Button {
+                        onShowDetail?()
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundStyle(Color.gray.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }

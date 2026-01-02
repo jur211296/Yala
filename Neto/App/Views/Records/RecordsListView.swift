@@ -38,7 +38,10 @@ struct RecordsListView: View {
 
     // MARK: - Initialization
 
-    init(context: RecordsFilterContext = .empty) {
+    private let isEmbedded: Bool
+
+    init(context: RecordsFilterContext = .empty, isEmbedded: Bool = false) {
+        self.isEmbedded = isEmbedded
         _viewModel = State(initialValue: RecordsViewModel(context: context))
     }
 
@@ -46,7 +49,10 @@ struct RecordsListView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
+
+            if !isEmbedded {
+                PanelBackgroundView()
+            }
 
             VStack(spacing: 0) {
                 // Active filter chips
@@ -70,13 +76,15 @@ struct RecordsListView: View {
                 selectionActionBar
             }
         }
-        .navigationTitle(viewModel.isSelectionMode ? "" : "Registros")
+        .navigationTitle(isEmbedded ? "" : (viewModel.isSelectionMode ? "" : "Registros"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if viewModel.isSelectionMode {
-                selectionModeToolbar
-            } else {
-                normalModeToolbar
+            if !isEmbedded || viewModel.isSelectionMode {
+                if viewModel.isSelectionMode {
+                    selectionModeToolbar
+                } else {
+                    normalModeToolbar
+                }
             }
         }
         .navigationBarBackButtonHidden(viewModel.isSelectionMode)

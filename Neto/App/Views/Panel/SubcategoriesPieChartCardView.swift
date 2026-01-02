@@ -17,6 +17,7 @@ struct SubcategoriesPieChartCardView: View {
     var selectedCategoryID: PersistentIdentifier?
     var selectedSubcategoryID: String?
     var onSelectSubcategory: ((String) -> Void)?
+    var onShowDetail: (() -> Void)? = nil
 
     var size: WidgetSize = .medium
 
@@ -442,9 +443,16 @@ struct SubcategoriesPieChartCardView: View {
                     .padding(.vertical, 4)
                     .background(.ultraThinMaterial, in: Capsule())
 
-                Image(systemName: "chevron.right")
-                    .font(.headline)
-                    .foregroundStyle(Color.gray.opacity(0.7))
+                if onShowDetail != nil {
+                    Button {
+                        onShowDetail?()
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundStyle(Color.gray.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }

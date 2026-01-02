@@ -296,4 +296,8 @@ struct NetoFormatter {
         // Format: "PEN - 1000.00"
         return "\(currencyCode) \(sign)\(formattedNumber)"
     }
+
+    static func compactCurrency(value: Double) -> String {
+        value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
+    }
 }

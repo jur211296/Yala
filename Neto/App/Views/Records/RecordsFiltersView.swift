@@ -78,8 +78,6 @@ struct RecordsFiltersView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        dateSection
-
                         SectionBox(title: "Opciones de filtrado") {
                             VStack(spacing: 0) {
                                 accountsContent
@@ -87,6 +85,8 @@ struct RecordsFiltersView: View {
                                 categoriesContent
                                 Divider().padding(.leading, 16)
                                 tagsContent
+                                Divider().padding(.leading, 16)
+                                naturesContent
                                 Divider().padding(.leading, 16)
                                 currencyContent
                                 Divider().padding(.leading, 16)
@@ -104,8 +104,12 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.headline)
+                            .foregroundStyle(.black)
                     }
                 }
 
@@ -113,188 +117,25 @@ struct RecordsFiltersView: View {
                     Button("Aplicar") {
                         dismiss()
                     }
-                    .fontWeight(.semibold)
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.brandPrimary)
                 }
             }
         }
-    }
-
-    // MARK: - Date Section
-
-    @State private var selectedPeriodCategory: PeriodCategory = .current
-
-    private var dateSection: some View {
-        SectionBox(title: "Seleccione el período") {
-            VStack(alignment: .leading, spacing: 16) {
-                // Category Picker: Dropdown menu style
-                Menu {
-                    ForEach(PeriodCategory.allCases) { category in
-                        Button(category.displayName) {
-                            selectedPeriodCategory = category
-                        }
-                    }
-                } label: {
-                    HStack {
-                        Text(selectedPeriodCategory.displayName)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-
-                Divider()
-                    .padding(.horizontal, 16)
-
-                // Show options based on selected category
-                switch selectedPeriodCategory {
-                case .current:
-                    currentPeriodPicker
-                case .rolling:
-                    rollingPeriodPicker
-                case .custom:
-                    customDatePickers
-                }
-            }
-            .padding(.bottom, 12)
-        }
-        .onChange(of: selectedPeriodCategory) { _, newCategory in
-            // When changing category, set a default period for that category
-            switch newCategory {
-            case .current:
-                if viewModel.period.category != .current {
-                    viewModel.period = .thisMonth
-                }
-            case .rolling:
-                if viewModel.period.category != .rolling {
-                    viewModel.period = .last30Days
-                }
-            case .custom:
-                viewModel.period = .custom
-            }
-        }
-        .onAppear {
-            // Sync category from viewModel.period
-            selectedPeriodCategory = viewModel.period.category
-        }
-    }
-
-    private var currentPeriodPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Segmented control for current periods
-            Picker("Periodo", selection: $viewModel.period) {
-                ForEach(RecordsPeriod.currentPeriods) { period in
-                    Text(period.displayName).tag(period)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-
-            // Show date range subtitle
-            if let subtitle = periodSubtitle {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 16)
-            }
-        }
-    }
-
-    private var rollingPeriodPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Segmented control for rolling periods
-            Picker("Periodo", selection: $viewModel.period) {
-                ForEach(RecordsPeriod.rollingPeriods) { period in
-                    Text(period.displayName).tag(period)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-
-            // Show date range subtitle
-            if let subtitle = periodSubtitle {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 16)
-            }
-        }
-    }
-
-    private var customDatePickers: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text("Desde")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                DatePicker("", selection: $viewModel.customStartDate, displayedComponents: .date)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 16)
-
-            HStack {
-                Text("Hasta")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                DatePicker("", selection: $viewModel.customEndDate, displayedComponents: .date)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 16)
-        }
-    }
-
-    private var periodSubtitle: String? {
-        guard viewModel.period != .custom else { return nil }
-        guard let interval = viewModel.period.dateInterval() else { return nil }
-
-        let calendar = Calendar.current
-        let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "d MMM yyyy"
-
-        return "\(formatter.string(from: interval.start)) - \(formatter.string(from: displayEnd))"
     }
 
     // MARK: - Filter Content Rows
+    // Note: Period selection is handled by the control bar, not this filters sheet
 
     private var accountsContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Header with icon
-            HStack(spacing: 12) {
-                Image(systemName: "creditcard")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .frame(width: 24)
-
-                Text("Cuentas")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-
-                Text("(\(selectedAccountsText))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-
-            // Chips - aligned after icon (16 padding + 24 icon + 12 spacing = 52)
-            FlowLayout(spacing: 8) {
-                ForEach(activeAccounts) { account in
-                    accountChip(account)
-                }
-            }
-            .padding(.leading, 52)
-            .padding(.trailing, 16)
-            .padding(.bottom, 12)
+        FilterChipsSection(
+            icon: "creditcard",
+            title: "Cuentas",
+            status: selectedAccountsText,
+            items: activeAccounts,
+            showEmptyPlaceholder: false
+        ) { account in
+            accountChip(account)
         }
         .onAppear {
             syncAccountsSelection()
@@ -334,7 +175,7 @@ struct RecordsFiltersView: View {
 
     private var selectedAccountsText: String {
         if viewModel.selectedAccounts.isEmpty {
-            return "Sin filtro"
+            return "Todas"
         }
         if viewModel.selectedAccounts.count == activeAccounts.count {
             return "Todas"
@@ -343,11 +184,22 @@ struct RecordsFiltersView: View {
     }
 
     private var categoriesContent: some View {
-        FilterSelectionRow(
-            title: "Categorías",
-            subtitle: selectedCategoriesText,
-            icon: "tag"
-        )
+        HStack(spacing: 0) {
+            FilterSectionHeader(
+                icon: "tag",
+                title: "Categorías",
+                status: selectedCategoriesText
+            )
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.footnote)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
         .onTapGesture {
             showCategoriesSheet = true
         }
@@ -365,55 +217,42 @@ struct RecordsFiltersView: View {
         let subCount = viewModel.selectedSubcategories.count
 
         if subCount == 0 {
-            return "Sin filtro"
+            return "Todas"
         }
 
         // Count unique categories from selected subcategories
         let selectedSubs = allSubcategories.filter {
             viewModel.selectedSubcategories.contains($0.persistentModelID)
         }
-        let uniqueCategories = Set(selectedSubs.compactMap { $0.category })
-        let catCount = uniqueCategories.count
+        if selectedSubs.isEmpty {
+            return "Todas"
+        }
 
-        return "\(catCount) categorías, \(subCount) subcategorías"
+        if let firstSub = selectedSubs.first {
+            let remainingCount = selectedSubs.count - 1
+            if remainingCount > 0 {
+                return "\(firstSub.name) +\(remainingCount)"
+            } else {
+                return firstSub.name
+            }
+        }
+
+        return "Todas"
     }
 
     private var tagsContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Header with icon
-            HStack(spacing: 12) {
-                Image(systemName: "number")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .frame(width: 24)
-
-                Text("Etiquetas")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-
-                Text("(\(selectedTagsText))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-
-            // Chips - aligned after icon
-            if !activeTags.isEmpty {
-                FlowLayout(spacing: 8) {
-                    ForEach(activeTags) { tag in
-                        tagChip(tag)
-                    }
-                }
-                .padding(.leading, 52)
-                .padding(.trailing, 16)
-                .padding(.bottom, 12)
-            }
+        FilterChipsSection(
+            icon: "number",
+            title: "Etiquetas",
+            status: selectedTagsText,
+            items: activeTags,
+            showEmptyPlaceholder: true
+        ) { tag in
+            tagChip(tag)
         }
         .onAppear {
             syncTagsSelection()
         }
-        .opacity(allTags.isEmpty ? 0.5 : 1.0)
     }
 
     private func tagChip(_ tag: Tag) -> some View {
@@ -452,11 +291,8 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTagsText: String {
-        if allTags.isEmpty {
-            return "Sin etiquetas"
-        }
         if viewModel.selectedTags.isEmpty {
-            return "Sin filtro"
+            return "Todas"
         }
         if viewModel.selectedTags.count == activeTags.count {
             return "Todas"
@@ -464,23 +300,70 @@ struct RecordsFiltersView: View {
         return "\(viewModel.selectedTags.count)/\(activeTags.count)"
     }
 
+    // MARK: - Natures Content
+
+    private var naturesContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header
+            FilterSectionHeader(
+                icon: "leaf.fill",
+                title: "Naturaleza",
+                status: selectedNaturesText
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+
+            // Chips
+            FlowLayout(spacing: 8) {
+                ForEach(SubcategoryNature.allCases, id: \.self) { nature in
+                    natureChip(nature)
+                }
+            }
+            .padding(.leading, 52)
+            .padding(.trailing, 16)
+            .padding(.bottom, 12)
+        }
+    }
+
+    private func natureChip(_ nature: SubcategoryNature) -> some View {
+        let isSelected = viewModel.selectedNatures.contains(nature)
+
+        return Button {
+            if isSelected {
+                viewModel.selectedNatures.remove(nature)
+            } else {
+                viewModel.selectedNatures.insert(nature)
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(nature.displayName)
+                    .font(.subheadline)
+                    .foregroundStyle(isSelected ? .white : .primary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var selectedNaturesText: String {
+        if viewModel.selectedNatures.isEmpty { return "Todas" }
+        return "\(viewModel.selectedNatures.count)"
+    }
+
     private var currencyContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Header with icon
-            HStack(spacing: 12) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .frame(width: 24)
-
-                Text("Moneda")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-
-                Text("(\(selectedCurrenciesText))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            // Header
+            FilterSectionHeader(
+                icon: "arrow.triangle.2.circlepath",
+                title: "Moneda",
+                status: selectedCurrenciesText
+            )
             .padding(.horizontal, 16)
             .padding(.top, 12)
 
@@ -530,7 +413,7 @@ struct RecordsFiltersView: View {
 
     private var selectedCurrenciesText: String {
         if viewModel.selectedCurrencies.isEmpty {
-            return "Sin filtro"
+            return "Todas"
         }
         if viewModel.selectedCurrencies.count == CurrencyCode.allCases.count {
             return "Todas"

@@ -1,0 +1,104 @@
+/* 
+  Localizable.strings (English)
+  Neto
+  
+  English translations for localization support.
+*/
+
+// MARK: - Date Formats
+
+"date.weekOf %@" = "Week of %@";
+"date.today" = "Today";
+"date.yesterday" = "Yesterday";
+
+// MARK: - Panel
+
+"panel.accounts" = "Accounts";
+"panel.widgets" = "Widgets";
+"panel.totalBalance" = "Total Balance";
+
+// MARK: - Trend Widget
+
+"trend.balance.title" = "Balance Trend";
+"trend.income.title" = "Income Trend";
+"trend.expense.title" = "Expense Trend";
+
+// MARK: - Periods
+
+"period.thisMonth" = "This Month";
+"period.lastMonth" = "Last Month";
+"period.last30Days" = "Last 30 Days";
+"period.thisYear" = "This Year";
+"period.lastYear" = "Last Year";
+"period.allTime" = "All Time";
+
+// MARK: - Trend Types
+
+"trendType.balance" = "Balance";
+"trendType.income" = "Income";
+"trendType.expense" = "Expense";
+
+// MARK: - Groupings
+
+"grouping.day" = "Day";
+"grouping.week" = "Week";
+"grouping.month" = "Month";
+
+// MARK: - Cash Flow
+
+"cashFlow.title" = "Cash Flow";
+"cashFlow.income" = "Income";
+"cashFlow.expense" = "Expenses";
+"cashFlow.net" = "Net";
+
+// MARK: - Categories
+
+"categories.title" = "Categories";
+"categories.topSpending" = "Top Categories";
+"categories.others" = "Others";
+"categories.noCategory" = "Uncategorized";
+
+// MARK: - Subcategories
+
+"subcategories.title" = "Subcategories";
+"subcategories.noSubcategory" = "No subcategory";
+
+// MARK: - Nature
+
+"nature.expensesByNature" = "Expenses by Nature";
+"nature.title" = "Nature";
+"nature.essential" = "Essential";
+"nature.discretionary" = "Discretionary";
+"nature.unclassified" = "Unclassified";
+
+// MARK: - Records
+
+"records.title" = "Records";
+"records.latest" = "Latest Records";
+"records.noRecords" = "No records";
+
+// MARK: - Filters
+
+"filters.all" = "All";
+"filters.allAccounts" = "All Accounts";
+"filters.allCategories" = "All Categories";
+"filters.clearFilters" = "Clear Filters";
+
+// MARK: - Actions
+
+"action.cancel" = "Cancel";
+"action.done" = "Done";
+"action.save" = "Save";
+"action.delete" = "Delete";
+"action.edit" = "Edit";
+"action.add" = "Add";
+
+// MARK: - Exchange Rate
+
+"exchangeRate.title" = "Exchange Rate";
+"exchangeRate.updated" = "Updated";
+
+// MARK: - Empty States
+
+"empty.noData" = "No data";
+"empty.noTransactions" = "No transactions";

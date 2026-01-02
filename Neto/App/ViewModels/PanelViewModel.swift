@@ -11,7 +11,7 @@ final class PanelViewModel {
     var leadingColumnIndex: Int? = 0
 
     // Period Filter State
-    var selectedPeriod: TrendPeriod = .year
+    var selectedPeriod: DetailPeriod = .thisYear
 
     // Widget State
     var widgetConfigs: [WidgetConfig] = [] {
@@ -78,14 +78,6 @@ final class PanelViewModel {
         }
     }
 
-    enum TrendPeriod: String, CaseIterable, Identifiable {
-        case week = "Esta semana"
-        case month = "Este mes"
-        case year = "Este año"
-
-        var id: String { rawValue }
-    }
-
     // MARK: - Processed Chart Data
     typealias BarPoint = Neto.BarPoint
 
@@ -96,7 +88,7 @@ final class PanelViewModel {
     var currentInterval: DateInterval = DateInterval(start: Date(), end: Date())
 
     // Stored period - updated in batch with chart data to stay in sync
-    var currentPeriod: TrendPeriod = .year
+    var currentPeriod: DetailPeriod = .thisYear
 
     // Loading State - tracks when heavy calculations are in progress
     var isCalculating: Bool = false
@@ -109,6 +101,56 @@ final class PanelViewModel {
     private func enforceTrendLock() {
         if isTrendLockedToExpense {
             trendType = .expense
+        }
+    }
+
+    // MARK: - SessionState Synchronization
+
+    /// Sync local filters FROM SessionState (call on appear/resume)
+    func syncFromSessionState(_ sessionState: SessionState) {
+        // Period
+        self.selectedPeriod = sessionState.selectedPeriod
+
+        // Account (single-select from SessionState's set)
+        self.selectedAccountID = sessionState.selectedAccountIDs.first
+
+        // Category (single-select)
+        self.selectedCategoryID = sessionState.selectedCategoryIDs.first
+
+        // Subcategory (single-select)
+        self.selectedSubcategoryID = sessionState.selectedSubcategoryNames.first
+
+        // Nature (single-select)
+        self.selectedNature = sessionState.selectedNatures.first
+    }
+
+    /// Sync local filters TO SessionState (call after filter changes)
+    func syncToSessionState(_ sessionState: SessionState) {
+        // Period
+        sessionState.selectedPeriod = self.selectedPeriod
+
+        // Account
+        sessionState.selectedAccountIDs.removeAll()
+        if let accountID = self.selectedAccountID {
+            sessionState.selectedAccountIDs.insert(accountID)
+        }
+
+        // Category
+        sessionState.selectedCategoryIDs.removeAll()
+        if let categoryID = self.selectedCategoryID {
+            sessionState.selectedCategoryIDs.insert(categoryID)
+        }
+
+        // Subcategory
+        sessionState.selectedSubcategoryNames.removeAll()
+        if let subcategoryName = self.selectedSubcategoryID {
+            sessionState.selectedSubcategoryNames.insert(subcategoryName)
+        }
+
+        // Nature
+        sessionState.selectedNatures.removeAll()
+        if let nature = self.selectedNature {
+            sessionState.selectedNatures.insert(nature)
         }
     }
 
@@ -360,27 +402,8 @@ final class PanelViewModel {
 
     /// Intervalo de fecha calculado basado en el periodo seleccionado:
     var panelDateInterval: DateInterval {
-        let calendar = Calendar.current
-        let now = Date()
-
-        let interval: DateInterval
-        switch selectedPeriod {
-        case .week:
-            interval =
-                calendar.dateInterval(of: .weekOfYear, for: now)
-                ?? DateInterval(start: now, end: now)
-        case .month:
-            interval =
-                calendar.dateInterval(of: .month, for: now) ?? DateInterval(start: now, end: now)
-        case .year:
-            interval =
-                calendar.dateInterval(of: .year, for: now) ?? DateInterval(start: now, end: now)
-        }
-
-        // 2. Find min and max for tight range if needed, OR return full interval
-        // User asked for "Esta semana", "Este mes". Usually implies showing the whole X-axis for that period.
-        // Let's return the full calendar interval to ensure the X-axis covers the whole week/month/year.
-        return interval
+        // Use the centralized date interval logic from DetailPeriod models
+        return selectedPeriod.dateInterval
     }
 
     // MARK: - Trend & Balance Status Logic
@@ -400,45 +423,127 @@ final class PanelViewModel {
 
     /// Calculates trend data and status based on the current period, selected account, and selected category.
     /// Refactored for smooth UX - all calculations done first, then state updated in one batch.
+    /// Optimized with lazy evaluation - only calculates visible widgets.
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String,
         context: ModelContext
     ) {
+        // 1. Build shared calculation context
+        let calcContext = buildCalculationContext(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode,
+            modelContext: context
+        )
+
+        // Determine which widget types are visible (for lazy evaluation)
+        let activeTypes = Set(activeWidgets().map { $0.type })
+
+        // 2. Calculate each widget's data (only if visible)
+
+        // Trend chart
+        let (newChartTransactions, newProcessedData):
+            ([ChartTransaction], (points: [BarPoint], yDomain: ClosedRange<Double>))
+        if activeTypes.contains(.trend) {
+            let chartTxns = calculateTrendWidget(context: calcContext)
+            let processed = processTrendPoints(chartTransactions: chartTxns, context: calcContext)
+            newChartTransactions = chartTxns
+            newProcessedData = processed
+        } else {
+            newChartTransactions = chartTransactions
+            newProcessedData = (processedTrendPoints, processedYDomain)
+        }
+
+        // Categories - used by both topSpending and categoriesPie widgets
+        let needsCategories =
+            activeTypes.contains(.topSpending) || activeTypes.contains(.categoriesPie)
+        let newTopSpendingCategories =
+            needsCategories
+            ? calculateCategoriesWidget(context: calcContext)
+            : topSpendingCategories
+
+        // Subcategories
+        let newTopSubcategories =
+            activeTypes.contains(.topSubcategories)
+            ? calculateSubcategoriesWidget(context: calcContext)
+            : topSubcategories
+
+        // Cash Flow
+        let newCashFlowSummary =
+            activeTypes.contains(.cashFlow)
+            ? calculateCashFlowWidget(context: calcContext)
+            : cashFlowSummary
+
+        // Latest Records
+        let newLatestRecords =
+            activeTypes.contains(.latestRecords)
+            ? calculateLatestRecordsWidget(context: calcContext)
+            : latestRecords
+
+        // Nature Trend
+        let newNatureTrendPoints =
+            activeTypes.contains(.expensesByNature)
+            ? calculateNatureWidget(context: calcContext)
+            : natureTrendPoints
+
+        // 3. BATCH STATE UPDATE - Single render cycle
+        enforceTrendLock()
+
+        self.trendGrouping = calcContext.trendGrouping
+        self.cashFlowGrouping = calcContext.cashFlowGrouping
+        self.natureGrouping = calcContext.natureGrouping
+        self.chartTransactions = newChartTransactions
+        self.topSpendingCategories = newTopSpendingCategories
+        self.topSubcategories = newTopSubcategories
+        self.cashFlowSummary = newCashFlowSummary
+        self.latestRecords = newLatestRecords
+        self.natureTrendPoints = newNatureTrendPoints
+        self.processedTrendPoints = newProcessedData.points
+        self.processedYDomain = newProcessedData.yDomain
+        self.currentInterval = calcContext.effectiveInterval
+        self.currentPeriod = self.selectedPeriod
+
+        // 4. Calculate Exchange Rate Widget Data (only if visible)
+        if activeTypes.contains(.exchangeRate) {
+            calculateExchangeRateData(
+                preferredCurrencyCode: defaultCurrencyCode,
+                context: context
+            )
+        }
+    }
+
+    // MARK: - Calculation Context Builder
+
+    /// Builds the shared context for all widget calculations
+    private func buildCalculationContext(
+        accounts: [Account],
+        transactions: [TransactionItem],
+        defaultCurrencyCode: String,
+        modelContext: ModelContext
+    ) -> PanelCalculationContext {
         let calendar = Calendar.current
 
-        // Determine Trend Grouping based on Period (local)
-        let newTrendGrouping: TrendGrouping
-        switch selectedPeriod {
-        case .week:
-            newTrendGrouping = .day
-        case .month:
-            newTrendGrouping = .day
-        case .year:
-            newTrendGrouping = .month
-        }
+        // Determine groupings based on period
+        let newTrendGrouping = selectedPeriod.chartGrouping
+        let (newCashFlowGrouping, newNatureGrouping): (TrendGrouping, TrendGrouping) = {
+            switch selectedPeriod {
+            case .thisMonth, .lastMonth, .last30Days:
+                return (.week, .week)
+            default:
+                return (newTrendGrouping, newTrendGrouping)
+            }
+        }()
 
-        // Cash Flow Specific Grouping Logic (local)
-        let newCashFlowGrouping: TrendGrouping
-        let newNatureGrouping: TrendGrouping
-        switch selectedPeriod {
-        case .month:
-            newCashFlowGrouping = .week
-            newNatureGrouping = .week
-        default:
-            newCashFlowGrouping = newTrendGrouping
-            newNatureGrouping = newTrendGrouping
-        }
-
-        // 2. Determine Eligible Accounts
+        // Determine eligible accounts
         let eligibleAccounts = accounts.filter { account in
             !account.isArchived && !account.excludeFromStatistics
                 && (selectedAccountID == nil || account.persistentModelID == selectedAccountID)
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
 
-        // 3. Filter Transactions by Account + Date + Global Filters
+        // Filter transactions by account + date + global filters
         let filtered = transactions.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
@@ -487,20 +592,29 @@ final class PanelViewModel {
             return true
         }
 
-        // 4. Calculate Chart Data (local)
-        let newChartTransactions = BalanceTrendCalculator.calculateTrend(
-            transactions: filtered,
-            grouping: newTrendGrouping,
-            interval: self.panelDateInterval,
-            currencyCode: defaultCurrencyCode,
-            context: context
-        )
+        // Calculate effective interval (optimized for All Time)
+        let effectiveInterval: DateInterval
+        if selectedPeriod == .allTime {
+            if let firstTxDate = filtered.map(\.date).min() {
+                let start =
+                    calendar.date(
+                        from: calendar.dateComponents([.year, .month], from: firstTxDate))
+                    ?? firstTxDate
+                effectiveInterval = DateInterval(start: start, end: Date())
+            } else {
+                let startOfYear = calendar.date(
+                    from: calendar.dateComponents([.year], from: Date()))!
+                effectiveInterval = DateInterval(start: startOfYear, end: Date())
+            }
+        } else {
+            effectiveInterval = self.panelDateInterval
+        }
 
-        // 5. Context Transactions for Category/Subcategory widgets
+        // Context transactions for category/subcategory widgets
         let contextTransactions = transactions.filter { txn in
             guard let acct = txn.account, eligibleAccountIDs.contains(acct.persistentModelID)
             else { return false }
-            return panelDateInterval.contains(txn.date)
+            return effectiveInterval.contains(txn.date)
         }
 
         let finalContextTransactions: [TransactionItem]
@@ -512,113 +626,180 @@ final class PanelViewModel {
             finalContextTransactions = contextTransactions
         }
 
+        return PanelCalculationContext(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode,
+            modelContext: modelContext,
+            eligibleAccounts: eligibleAccounts,
+            eligibleAccountIDs: eligibleAccountIDs,
+            filteredTransactions: filtered,
+            contextTransactions: finalContextTransactions,
+            period: selectedPeriod,
+            effectiveInterval: effectiveInterval,
+            trendGrouping: newTrendGrouping,
+            cashFlowGrouping: newCashFlowGrouping,
+            natureGrouping: newNatureGrouping,
+            focusedDate: focusedDate,
+            selectedCategoryID: selectedCategoryID,
+            selectedSubcategoryID: selectedSubcategoryID,
+            selectedNature: selectedNature,
+            subcategoriesWidgetFilter: subcategoriesWidgetFilter
+        )
+    }
+
+    // MARK: - Widget Calculations
+
+    /// Calculate trend chart data
+    private func calculateTrendWidget(context: PanelCalculationContext) -> [ChartTransaction] {
+        return BalanceTrendCalculator.calculateTrend(
+            transactions: context.filteredTransactions,
+            grouping: context.trendGrouping,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            context: context.modelContext
+        )
+    }
+
+    /// Process trend points for chart rendering
+    private func processTrendPoints(
+        chartTransactions: [ChartTransaction],
+        context: PanelCalculationContext
+    ) -> (points: [BarPoint], yDomain: ClosedRange<Double>) {
+        let rawTrendPoints = chartTransactions.map { tx in
+            let val: Double
+            switch self.trendType {
+            case .balance: val = tx.balance
+            case .income: val = tx.income
+            case .expense: val = tx.expense
+            }
+            return BarPoint(date: tx.date, value: val)
+        }
+
+        // For income/expense, filter out days with zero values to create a connected line
+        // This matches TrendsDetailViewModel behavior where zero-days are excluded
+        let filteredPoints: [BarPoint]
+        if trendType == TrendType.balance {
+            // Keep all points for balance (running total)
+            filteredPoints = rawTrendPoints
+        } else {
+            // For income/expense, only keep dates with actual data
+            filteredPoints = rawTrendPoints.filter { $0.value != 0 }
+        }
+
+        let processedPoints: [BarPoint]
+        // Only smooth balance metric - income/expense are discrete data points
+        let shouldSmooth =
+            (context.period == .thisYear || context.period == .lastYear
+                || context.period == .allTime)
+            && filteredPoints.count > movingAverageSmoothingThreshold
+            && trendType == TrendType.balance
+
+        if shouldSmooth {
+            processedPoints = TrendProcessingHelper.movingAverage(
+                for: filteredPoints, window: movingAverageWindowSize)
+        } else {
+            processedPoints = filteredPoints
+        }
+
+        let yDomain = TrendProcessingHelper.calculateYDomain(
+            for: processedPoints,
+            isExpense: trendType == .expense
+        )
+
+        return (processedPoints, yDomain)
+    }
+
+    /// Calculate top spending categories
+    private func calculateCategoriesWidget(context: PanelCalculationContext)
+        -> [CategorySpendingSummary]
+    {
         // Apply Nature Filter to context transactions
-        let natureFilteredContextTransactions: [TransactionItem]
-        if let nature = selectedNature {
-            natureFilteredContextTransactions = finalContextTransactions.filter { txn in
+        var natureFiltered = context.contextTransactions
+        if let nature = context.selectedNature {
+            natureFiltered = natureFiltered.filter { txn in
                 if let sub = txn.subcategory {
                     return sub.nature == nature
                 } else {
                     return nature == .unclassified
                 }
             }
-        } else {
-            natureFilteredContextTransactions = finalContextTransactions
         }
 
-        // Apply Subcategory Filter for Category Calculation
-        let finalCategoryTransactions: [TransactionItem]
-        if let subID = selectedSubcategoryID {
-            finalCategoryTransactions = natureFilteredContextTransactions.filter {
+        // Apply Subcategory Filter
+        var finalTransactions = natureFiltered
+        if let subID = context.selectedSubcategoryID {
+            finalTransactions = finalTransactions.filter {
                 $0.subcategory?.name == subID
             }
-        } else {
-            finalCategoryTransactions = natureFilteredContextTransactions
         }
 
-        // 6. Calculate Top Spending Categories (local)
-        let newTopSpendingCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
-            transactions: finalCategoryTransactions,
-            interval: panelDateInterval,
-            currencyCode: defaultCurrencyCode,
-            context: context
+        return TopSpendingCategoriesCalculator.calculateTopSpending(
+            transactions: finalTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            context: context.modelContext
         )
+    }
 
-        // 7. Calculate Top Subcategories (local)
-        let effectiveCategoryFilter = selectedCategoryID ?? subcategoriesWidgetFilter
-        let newTopSubcategories = TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: natureFilteredContextTransactions,
-            interval: panelDateInterval,
-            currencyCode: defaultCurrencyCode,
+    /// Calculate top subcategories
+    private func calculateSubcategoriesWidget(context: PanelCalculationContext)
+        -> [SubcategorySpendingSummary]
+    {
+        // Apply Nature Filter to context transactions
+        var natureFiltered = context.contextTransactions
+        if let nature = context.selectedNature {
+            natureFiltered = natureFiltered.filter { txn in
+                if let sub = txn.subcategory {
+                    return sub.nature == nature
+                } else {
+                    return nature == .unclassified
+                }
+            }
+        }
+
+        let effectiveCategoryFilter =
+            context.selectedCategoryID ?? context.subcategoriesWidgetFilter
+
+        return TopSubcategoriesCalculator.calculateTopSubcategories(
+            transactions: natureFiltered,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
-            context: context
+            context: context.modelContext
         )
+    }
 
-        // 8. Calculate Cash Flow (local)
-        let newCashFlowSummary = CashFlowCalculator.calculateCashFlow(
-            transactions: filtered,
-            interval: panelDateInterval,
-            grouping: newCashFlowGrouping,
-            currencyCode: defaultCurrencyCode,
-            context: context
+    /// Calculate cash flow summary
+    private func calculateCashFlowWidget(context: PanelCalculationContext) -> CashFlowSummary? {
+        return CashFlowCalculator.calculateCashFlow(
+            transactions: context.filteredTransactions,
+            interval: context.effectiveInterval,
+            grouping: context.cashFlowGrouping,
+            currencyCode: context.defaultCurrencyCode,
+            context: context.modelContext
         )
+    }
 
-        // 9. Latest Records (local)
-        let newLatestRecords = Array(filtered.sorted { $0.date > $1.date }.prefix(5))
-
-        // 10. Calculate Nature Trend (local)
-        let newNatureTrendPoints = NatureTrendHelper.calculateTrend(
-            transactions: filtered,
-            grouping: newNatureGrouping,
-            interval: self.panelDateInterval,
-            preferredCurrency: CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen,
-            context: context
+    /// Calculate latest records
+    private func calculateLatestRecordsWidget(context: PanelCalculationContext) -> [TransactionItem]
+    {
+        return Array(
+            context.filteredTransactions
+                .filter { context.effectiveInterval.contains($0.date) }
+                .sorted { $0.date > $1.date }
+                .prefix(5)
         )
+    }
 
-        // 11. Pre-calculate processed trend data (BEFORE batch update to avoid double render)
-        let rawTrendPoints = newChartTransactions.map { tx in
-            let val = (trendType == .balance) ? tx.balance : tx.expense
-            return BarPoint(date: tx.date, value: val)
-        }
-
-        let newProcessedTrendPoints: [BarPoint]
-        if selectedPeriod == .year && rawTrendPoints.count > movingAverageSmoothingThreshold {
-            newProcessedTrendPoints = TrendProcessingHelper.movingAverage(
-                for: rawTrendPoints, window: movingAverageWindowSize)
-        } else {
-            newProcessedTrendPoints = rawTrendPoints
-        }
-
-        let newProcessedYDomain = TrendProcessingHelper.calculateYDomain(
-            for: newProcessedTrendPoints,
-            isExpense: trendType == .expense
-        )
-
-        // ============================================
-        // BATCH STATE UPDATE - Single render cycle
-        // ============================================
-
-        // Enforce trend lock FIRST (before setting other state) to prevent cascade
-        enforceTrendLock()
-
-        self.trendGrouping = newTrendGrouping
-        self.cashFlowGrouping = newCashFlowGrouping
-        self.natureGrouping = newNatureGrouping
-        self.chartTransactions = newChartTransactions
-        self.topSpendingCategories = newTopSpendingCategories
-        self.topSubcategories = newTopSubcategories
-        self.cashFlowSummary = newCashFlowSummary
-        self.latestRecords = newLatestRecords
-        self.natureTrendPoints = newNatureTrendPoints
-        self.processedTrendPoints = newProcessedTrendPoints
-        self.processedYDomain = newProcessedYDomain
-        self.currentInterval = self.panelDateInterval  // Sync interval with data
-        self.currentPeriod = self.selectedPeriod  // Sync period with data
-
-        // 12. Calculate Exchange Rate Widget Data (already handles its own state)
-        calculateExchangeRateData(
-            preferredCurrencyCode: defaultCurrencyCode,
-            context: context
+    /// Calculate nature trend points
+    private func calculateNatureWidget(context: PanelCalculationContext) -> [NatureTrendPoint] {
+        return NatureTrendHelper.calculateTrend(
+            transactions: context.filteredTransactions,
+            grouping: context.natureGrouping,
+            interval: context.effectiveInterval,
+            preferredCurrency: CurrencyCode(rawValue: context.defaultCurrencyCode) ?? .pen,
+            context: context.modelContext
         )
     }
 
@@ -751,11 +932,11 @@ final class PanelViewModel {
 
         // Determine grouping based on period
         switch selectedPeriod {
-        case .week:
+        case .thisWeek, .last7Days:
             exchangeRateGrouping = .day
-        case .month:
+        case .thisMonth, .lastMonth, .last30Days:
             exchangeRateGrouping = .week
-        case .year:
+        default:
             exchangeRateGrouping = .month
         }
 

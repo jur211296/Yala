@@ -14,7 +14,21 @@ struct ExchangeRateCardView: View {
     let preferredCurrency: String
     @Binding var selectedCurrencies: [CurrencyCode]
     let grouping: TrendGrouping
-    let onShowDetail: () -> Void
+    let onShowDetail: (() -> Void)?
+
+    init(
+        data: ExchangeRateWidgetData?,
+        preferredCurrency: String,
+        selectedCurrencies: Binding<[CurrencyCode]>,
+        grouping: TrendGrouping,
+        onShowDetail: (() -> Void)? = nil
+    ) {
+        self.data = data
+        self.preferredCurrency = preferredCurrency
+        self._selectedCurrencies = selectedCurrencies
+        self.grouping = grouping
+        self.onShowDetail = onShowDetail
+    }
 
     @Environment(\.colorScheme) var colorScheme
     @State private var showCurrencySelector = false
@@ -58,7 +72,7 @@ struct ExchangeRateCardView: View {
     private var headerView: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Tipo de cambio")
+                Text(L10n.ExchangeRate.title)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .padding(.bottom, 2)
@@ -91,6 +105,19 @@ struct ExchangeRateCardView: View {
                     .foregroundStyle(Color.electricIndigo)
             }
             .buttonStyle(.plain)
+
+            // Optional Detail Chevron
+            if onShowDetail != nil {
+                Button {
+                    onShowDetail?()
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.headline)
+                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .padding(.leading, 8)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -141,7 +168,7 @@ struct ExchangeRateCardView: View {
     /// Formats date for subtitle: "Hoy, 15:45" or "19 dic, 15:45"
     private func formatSubtitleDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = AppLocale.current
 
         if Calendar.current.isDateInToday(date) {
             formatter.dateFormat = "'Hoy,' HH:mm"
@@ -419,7 +446,7 @@ struct ExchangeRateCardView: View {
 
     private func formatTooltipDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = AppLocale.current
 
         switch grouping {
         case .day:

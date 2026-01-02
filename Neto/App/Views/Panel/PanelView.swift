@@ -27,6 +27,7 @@ struct PanelView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     // FIN-46: Transacciones usadas para calcular saldos actuales por cuenta
     @Query(sort: \TransactionItem.date, order: .reverse)
@@ -39,8 +40,7 @@ struct PanelView: View {
     /// Sheet presentation state for account form
     @State private var accountFormSheet: AccountFormSheet?
 
-    /// Navigation to trend detail view
-    @State private var showTrendDetail = false
+    /// Trend Detail View State (To be removed/minimized as navigation is gone)
     @State private var trendDetailType: TrendType = .balance
 
     /// Widget Preferences Sheet
@@ -49,9 +49,6 @@ struct PanelView: View {
     /// New Transaction Sheet
     @State private var showNewTransaction = false
 
-    /// Records List Navigation
-    @State private var showRecordsList = false
-
     /// Task for debouncing data recalculations
     @State private var calculationTask: Task<Void, Never>?
 
@@ -59,11 +56,6 @@ struct PanelView: View {
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
         .rawValue
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
-
-    // FIN-57: Persistencia del filtro (Removed)
-    // panelPeriodTypeRaw removed
-    // panelPeriodCustomStartISO removed
-    // panelPeriodCustomEndISO removed
 
     var body: some View {
         NavigationStack {
@@ -101,28 +93,12 @@ struct PanelView: View {
                         prefillSubcategoryName: viewModel.selectedSubcategoryID
                     )
                 }
-                .navigationDestination(isPresented: $showTrendDetail) {
-                    TrendDetailView(trendType: trendDetailType)
-                }
-                .navigationDestination(isPresented: $showRecordsList) {
-                    RecordsListView(
-                        context: RecordsFilterContext(
-                            accountID: viewModel.selectedAccountID,
-                            categoryID: viewModel.selectedCategoryID,
-                            subcategoryName: viewModel.selectedSubcategoryID,
-                            nature: viewModel.selectedNature,
-                            period: mapPanelPeriodToRecordsPeriod(viewModel.selectedPeriod)
-                        )
-                    )
-                }
-            // .sheet(isPresented: $viewModel.isPresentingCustomPeriodSheet) (Removed)
-
         }
         .onAppear {
             seedCategoriesIfNeeded(in: modelContext)
 
-            // Sync AppStorage -> ViewModel
-            syncStateToViewModel()
+            // Sync all filters from SessionState -> ViewModel
+            viewModel.syncFromSessionState(sessionState)
 
             // Ensure consistency
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
@@ -134,14 +110,7 @@ struct PanelView: View {
             }
 
             // Initial Trend Calculation (async to avoid blocking UI)
-            Task {
-                viewModel.calculateTrendData(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: defaultCurrencyCodeRaw,
-                    context: modelContext
-                )
-            }
+            recalculateData()
         }
         .onChange(of: accounts) {
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
@@ -152,16 +121,24 @@ struct PanelView: View {
                 accountsSortOrderNamesRaw = newOrder
             }
         }
-        // Sync ViewModel -> AppStorage
-        // .onChange(of: viewModel.panelPeriodType)... Removed
-
-        // .onChange(of: viewModel.customPeriodStart)... Removed
-
-        // .onChange(of: viewModel.customPeriodEnd)... Removed
-        // .onChange(of: viewModel.panelPeriodType)... Removed
-
         .onChange(of: viewModel.selectedAccountID) {
-            // Recalculate when selected account changes
+            // Sync to SessionState and recalculate
+            viewModel.syncToSessionState(sessionState)
+            recalculateData()
+        }
+        .onChange(of: viewModel.selectedCategoryID) {
+            // Sync to SessionState and recalculate
+            viewModel.syncToSessionState(sessionState)
+            recalculateData()
+        }
+        .onChange(of: viewModel.selectedSubcategoryID) {
+            // Sync to SessionState and recalculate
+            viewModel.syncToSessionState(sessionState)
+            recalculateData()
+        }
+        .onChange(of: viewModel.selectedNature) {
+            // Sync to SessionState and recalculate
+            viewModel.syncToSessionState(sessionState)
             recalculateData()
         }
         .onChange(of: transactions) {
@@ -172,10 +149,24 @@ struct PanelView: View {
             // Recalculate when preferred currency changes
             recalculateData()
         }
-    }
-
-    private func syncStateToViewModel() {
-        // No filter syncing needed anymore
+        .onChange(of: sessionState.selectedPeriod) {
+            // Sync Session -> ViewModel
+            viewModel.syncFromSessionState(sessionState)
+            recalculateData()
+        }
+        // Also sync when SessionState filters change (from Statistics tab)
+        .onChange(of: sessionState.selectedAccountIDs) {
+            viewModel.syncFromSessionState(sessionState)
+            recalculateData()
+        }
+        .onChange(of: sessionState.selectedCategoryIDs) {
+            viewModel.syncFromSessionState(sessionState)
+            recalculateData()
+        }
+        .onChange(of: sessionState.selectedNatures) {
+            viewModel.syncFromSessionState(sessionState)
+            recalculateData()
+        }
     }
 
     private var mainContent: some View {
@@ -192,7 +183,7 @@ struct PanelView: View {
                 .padding(.bottom, 32)
             }
 
-            // FIN-XX: Botón flotante de nuevo registro, siempre visible
+            // Botón flotante de nuevo registro
             VStack {
                 Spacer()
                 HStack {
@@ -223,7 +214,7 @@ struct PanelView: View {
 
     private var accountsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Cuentas")
+            Text(L10n.Panel.accounts)
                 .font(.title2.weight(.semibold))
 
             AccountsCarouselView(
@@ -243,167 +234,171 @@ struct PanelView: View {
         }
     }
 
-    // private var periodFilterSection... Removed
-
     private var totalBalanceSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Periodo", selection: $viewModel.selectedPeriod) {
-                ForEach(PanelViewModel.TrendPeriod.allCases) { period in
-                    Text(period.rawValue).tag(period)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.bottom, 8)
-            .onChange(of: viewModel.selectedPeriod) {
-                recalculateData()
-            }
 
-            // Filter chips (side by side)
-            let hasAccountFilter = viewModel.selectedAccountID != nil
-            let hasDateFilter = viewModel.focusedDate != nil
-            // FIN-18: New Category Filter
-            let hasCategoryFilter = viewModel.selectedCategoryID != nil
-            let hasNatureFilter = viewModel.selectedNature != nil
-
-            if hasAccountFilter || hasDateFilter || hasCategoryFilter || hasNatureFilter {
-                HStack(spacing: 8) {
-                    if let selectedID = viewModel.selectedAccountID,
-                        let account = accounts.first(where: { $0.persistentModelID == selectedID })
-                    {
-                        HStack(spacing: 6) {
-                            Text(account.name)
-                                .font(.caption)
-
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                        .foregroundStyle(.primary)
-                        .onTapGesture {
-                            viewModel.selectedAccountID = nil
-                        }
+            // Unified Period Selector & Filters Row
+            HStack(alignment: .center, spacing: 12) {
+                TrendsPeriodMenu(
+                    selectedPeriod: sessionState.selectedPeriod,
+                    onSelect: { period in
+                        sessionState.selectedPeriod = period
                     }
+                )
 
-                    if let focusedDate = viewModel.focusedDate {
-                        HStack(spacing: 6) {
-                            Text("Fecha: \(formattedDate(focusedDate))")
-                                .font(.caption)
+                // Filter chips (Scrollable to the right)
+                let hasAccountFilter = viewModel.selectedAccountID != nil
+                let hasDateFilter = viewModel.focusedDate != nil
+                let hasCategoryFilter = viewModel.selectedCategoryID != nil
+                let hasNatureFilter = viewModel.selectedNature != nil
+                let hasSubcategoryFilter = viewModel.selectedSubcategoryID != nil
 
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                        .foregroundStyle(.primary)
-                        .onTapGesture {
-                            withAnimation {
-                                viewModel.focusedDate = nil
+                if hasAccountFilter || hasDateFilter || hasCategoryFilter || hasNatureFilter
+                    || hasSubcategoryFilter
+                {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            if let selectedID = viewModel.selectedAccountID,
+                                let account = accounts.first(where: {
+                                    $0.persistentModelID == selectedID
+                                })
+                            {
+                                HStack(spacing: 6) {
+                                    Text(account.name)
+                                        .font(.caption)
+
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                )
+                                .foregroundStyle(.primary)
+                                .onTapGesture {
+                                    viewModel.selectedAccountID = nil
+                                }
+                            }
+
+                            if let focusedDate = viewModel.focusedDate {
+                                HStack(spacing: 6) {
+                                    Text("Fecha: \(formattedDate(focusedDate))")
+                                        .font(.caption)
+
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                )
+                                .foregroundStyle(.primary)
+                                .onTapGesture {
+                                    withAnimation {
+                                        viewModel.focusedDate = nil
+                                    }
+                                }
+                            }
+
+                            // Category Chip
+                            if let categoryID = viewModel.selectedCategoryID,
+                                let category = viewModel.topSpendingCategories.first(where: {
+                                    $0.category.persistentModelID == categoryID
+                                })?.category
+                            {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(Color(hex: category.colorHex))
+                                        .frame(width: 8, height: 8)
+
+                                    Text(category.name)
+                                        .font(.caption)
+
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                )
+                                .foregroundStyle(.primary)
+                                .onTapGesture {
+                                    viewModel.selectedCategoryID = nil
+                                }
+                            }
+
+                            // Subcategory Chip
+                            if let subcategoryID = viewModel.selectedSubcategoryID {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "list.bullet.indent")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+
+                                    Text(subcategoryID)
+                                        .font(.caption)
+
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                )
+                                .foregroundStyle(.primary)
+                                .onTapGesture {
+                                    // Clear ONLY subcategory filter
+                                    withAnimation {
+                                        viewModel.selectedSubcategoryID = nil
+                                    }
+                                }
+                            }
+
+                            // Nature Chip
+                            if let nature = viewModel.selectedNature {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(nature.color)
+                                        .frame(width: 8, height: 8)
+
+                                    Text(nature.displayName)
+                                        .font(.caption)
+
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                )
+                                .foregroundStyle(.primary)
+                                .onTapGesture {
+                                    withAnimation {
+                                        viewModel.selectedNature = nil
+                                    }
+                                }
                             }
                         }
                     }
-
-                    // Category Chip
-                    if let categoryID = viewModel.selectedCategoryID,
-                        let category = viewModel.topSpendingCategories.first(where: {
-                            $0.category.persistentModelID == categoryID
-                        })?.category
-                    {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color(hex: category.colorHex))
-                                .frame(width: 8, height: 8)
-
-                            Text(category.name)
-                                .font(.caption)
-
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                        .foregroundStyle(.primary)
-                        .onTapGesture {
-                            viewModel.selectedCategoryID = nil
-                        }
-                    }
-
-                    // Subcategory Chip
-                    if let subcategoryID = viewModel.selectedSubcategoryID {
-                        HStack(spacing: 6) {
-                            Image(systemName: "list.bullet.indent")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-
-                            Text(subcategoryID)
-                                .font(.caption)
-
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                        .foregroundStyle(.primary)
-                        .onTapGesture {
-                            // Clear ONLY subcategory filter
-                            withAnimation {
-                                viewModel.selectedSubcategoryID = nil
-                            }
-                        }
-                    }
-
-                    // Nature Chip
-                    if let nature = viewModel.selectedNature {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(nature.color)
-                                .frame(width: 8, height: 8)
-
-                            Text(nature.displayName)
-                                .font(.caption)
-
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                        .foregroundStyle(.primary)
-                        .onTapGesture {
-                            withAnimation {
-                                viewModel.selectedNature = nil
-                            }
-                        }
-                    }
-
+                } else {
                     Spacer()
                 }
-                .padding(.bottom, 4)
             }
+            .padding(.bottom, 8)
 
             HStack {
                 Text("Widgets")
@@ -416,13 +411,12 @@ struct PanelView: View {
                 } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.primary)  // Adapts to Light/Dark mode
+                        .foregroundStyle(Color.primary)
                 }
             }
-            .padding(.trailing, 4)  // Align with card edges if needed, or remove if parent has padding
+            .padding(.trailing, 4)
 
             // Custom Grid Layout (VStack of Rows)
-            // LazyVGrid was failing to respect column spans, so we compute rows manually in ViewModel.
             VStack(spacing: 16) {
                 ForEach(viewModel.layoutRows) { row in
                     switch row.type {
@@ -432,7 +426,6 @@ struct PanelView: View {
                         HStack(spacing: 16) {
                             widgetView(for: left)
                                 .frame(maxWidth: .infinity)
-                                // Force Square aspect ratio for Small widgets
                                 .aspectRatio(1, contentMode: .fit)
 
                             if let right = right {
@@ -450,18 +443,14 @@ struct PanelView: View {
                 }
             }
 
-            // ... onChange handlers
             EmptyView()
                 .onChange(of: viewModel.selectedCategoryID) {
-                    // Recalculate when selected category changes
                     recalculateData()
                 }
                 .onChange(of: viewModel.focusedDate) {
-                    // Recalculate when focused date (chart filter) changes
                     recalculateData()
                 }
                 .onChange(of: viewModel.selectedNature) {
-                    // Recalculate when nature filter changes
                     recalculateData()
                 }
         }
@@ -478,31 +467,39 @@ struct PanelView: View {
 
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")  // Enforce Spanish
+        formatter.locale = AppLocale.current
         formatter.dateFormat = "d MMM"
         return formatter.string(from: date)
     }
 
     /// Recalculate trend data with debouncing and smooth animation
-    /// Cancels any pending calculation and adds a small delay to batch rapid changes
     private func recalculateData() {
         // Cancel any pending calculation
         calculationTask?.cancel()
 
         calculationTask = Task {
-            // Small delay for debouncing - allows rapid changes to batch
+            // Show skeleton for initial load only (when data is empty)
+            let showSkeleton = viewModel.chartTransactions.isEmpty
+            if showSkeleton {
+                await MainActor.run {
+                    viewModel.isCalculating = true
+                }
+            }
+
             try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms
 
             guard !Task.isCancelled else { return }
 
-            // Smooth animation - all data is synchronized in batch update
-            withAnimation(.easeInOut(duration: 0.25)) {
-                viewModel.calculateTrendData(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: defaultCurrencyCodeRaw,
-                    context: modelContext
-                )
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    viewModel.calculateTrendData(
+                        accounts: accounts,
+                        transactions: transactions,
+                        defaultCurrencyCode: defaultCurrencyCodeRaw,
+                        context: modelContext
+                    )
+                    viewModel.isCalculating = false
+                }
             }
         }
     }
@@ -511,6 +508,32 @@ struct PanelView: View {
 
     @ViewBuilder
     private func widgetView(for config: WidgetConfig) -> some View {
+        // Show skeleton during initial calculation
+        if viewModel.isCalculating {
+            skeletonView(for: config)
+        } else {
+            actualWidgetView(for: config)
+        }
+    }
+
+    @ViewBuilder
+    private func skeletonView(for config: WidgetConfig) -> some View {
+        switch config.type {
+        case .trend:
+            TrendCardSkeleton()
+        case .cashFlow:
+            CashFlowSkeleton()
+        case .latestRecords:
+            LatestRecordsSkeleton()
+        case .categoriesPie:
+            CategoriesPieSkeleton()
+        default:
+            WidgetSkeleton(height: config.size == .large ? 300 : 200)
+        }
+    }
+
+    @ViewBuilder
+    private func actualWidgetView(for config: WidgetConfig) -> some View {
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
         let balance = viewModel.displayedBalanceInDefaultCurrency(
             accounts: accounts,
@@ -519,40 +542,31 @@ struct PanelView: View {
             context: modelContext
         )
 
+        // All widgets below have 'onShowMore' or 'onViewDetail' removed (or passed as nil) to remove chevrons
+
         if config.type == .trend {
-            BalanceTrendCardView(
-                currentBalance: balance,
-                totalExpense: viewModel.totalExpenseInDefaultCurrency(
-                    accounts: accounts,
-                    transactions: transactions,
-                    defaultCurrencyCode: defaultCurrencyCodeRaw
-                ),
-                currencyCode: preferredCurrency.rawValue,
-                trendPoints: viewModel.processedTrendPoints,
-                yDomain: viewModel.processedYDomain,
-                balanceStatus: viewModel.balanceStatus,
-                grouping: viewModel.trendGrouping,
-                interval: viewModel.currentInterval,
-                trendType: $viewModel.trendType,
-                focusedDate: $viewModel.focusedDate,
-                period: viewModel.currentPeriod,
-                isLocked: viewModel.isTrendLockedToExpense,
+            TrendCardView(
+                viewModel: viewModel,
                 size: config.size,
-                onViewDetail: { selectedType in
-                    trendDetailType = selectedType
-                    showTrendDetail = true
-                }
+                currencyCode: preferredCurrency.rawValue,
+                currentBalance: balance
             )
             .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
-                // Trigger recalculation when local widget filter changes
                 recalculateData()
             }
             .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
-                // Trigger recalculation when submodule selection changes
                 recalculateData()
             }
             .onChange(of: viewModel.trendType) { _, _ in
-                // Trigger recalculation when trend type (Saldo/Gasto) toggle changes
+                recalculateData()
+            }
+            .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: viewModel.trendType) { _, _ in
                 recalculateData()
             }
         } else if config.type == .topSpending {
@@ -565,16 +579,13 @@ struct PanelView: View {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
-                onShowMore: {
-                    // TODO: Detail View
-                },
+                onShowMore: nil,  // REMOVED CHEVRON
                 size: mapWidgetSize(config.size)
             )
         } else if config.type == .topSubcategories {
             TopSubcategoriesCardView(
                 subcategories: viewModel.topSubcategories,
                 currencyCode: preferredCurrency.rawValue,
-                // If subcategory is selected, don't lock the header to Category (maintain "Browsing Context")
                 globalCategoryFilterID: viewModel.selectedCategoryID,
                 localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
                 onSelectSubcategory: { name in
@@ -589,6 +600,7 @@ struct PanelView: View {
                     }
                 },
                 selectedSubcategoryID: viewModel.selectedSubcategoryID,
+                onShowMore: nil,
                 size: mapWidgetSize(config.size)
             )
         } else if config.type == .categoriesPie {
@@ -601,6 +613,7 @@ struct PanelView: View {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
+                onShowDetail: nil,
                 size: config.size
             )
         } else if config.type == .subcategoriesPie {
@@ -620,6 +633,7 @@ struct PanelView: View {
                         )
                     }
                 },
+                onShowDetail: nil,
                 size: config.size
             )
         } else if config.type == .cashFlow {
@@ -629,21 +643,17 @@ struct PanelView: View {
                     size: config.size,
                     period: viewModel.selectedPeriod.rawValue,
                     grouping: viewModel.cashFlowGrouping,
-                    onShowDetail: {
-                        // Detail View Placeholder
-                    }
+                    interval: viewModel.currentInterval,
+                    onShowDetail: nil  // REMOVED CHEVRON
                 )
             } else {
-                // Empty / Loading logic
                 EmptyView()
             }
         } else if config.type == .latestRecords {
             LatestRecordsCardView(
                 records: viewModel.latestRecords,
                 currencyCode: preferredCurrency.rawValue,
-                onShowMore: {
-                    showRecordsList = true
-                }
+                onShowMore: nil  // REMOVED CHEVRON
             )
         } else if config.type == .expensesByNature {
             NatureSpendingCardView(
@@ -652,11 +662,13 @@ struct PanelView: View {
                 currencyCode: preferredCurrency.rawValue,
                 size: mapWidgetSize(config.size),
                 grouping: viewModel.natureGrouping,
+                interval: viewModel.currentInterval,
                 onSelectNature: { nature in
                     withAnimation {
                         viewModel.toggleNatureFilter(nature)
                     }
-                }
+                },
+                onShowDetail: nil  // Explicitly remove chevron
             )
         } else if config.type == .exchangeRate {
             ExchangeRateCardView(
@@ -664,9 +676,7 @@ struct PanelView: View {
                 preferredCurrency: preferredCurrency.rawValue,
                 selectedCurrencies: $viewModel.selectedComparisonCurrencies,
                 grouping: viewModel.exchangeRateGrouping,
-                onShowDetail: {
-                    // Future: Navigate to detail view
-                }
+                onShowDetail: nil  // REMOVED CHEVRON
             )
         }
     }
@@ -689,26 +699,11 @@ struct PanelView: View {
             .filter { $0.persistentModelID != editingAccount.persistentModelID }
             .map { $0.name }
     }
-
-    /// Maps Panel TrendPeriod to RecordsPeriod for context passing
-    private func mapPanelPeriodToRecordsPeriod(_ period: PanelViewModel.TrendPeriod)
-        -> RecordsPeriod
-    {
-        switch period {
-        case .week:
-            return .thisWeek
-        case .month:
-            return .thisMonth
-        case .year:
-            return .thisYear
-        }
-    }
 }
 
 // MARK: - Sheet Wrapper
 
 /// Wrapper to enable `.sheet(item:)` pattern for both new and edit account forms.
-/// Using a struct with unique ID ensures SwiftUI creates a fresh sheet each time.
 struct AccountFormSheet: Identifiable {
     let id = UUID()
     let account: Account?

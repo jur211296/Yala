@@ -1,7 +1,6 @@
 import Charts
 import SwiftData
 import SwiftUI
-import UIKit
 
 struct TrendChartView: View {
     let trendPoints: [PanelViewModel.BarPoint]
@@ -12,26 +11,24 @@ struct TrendChartView: View {
     let trendType: TrendType
     @Binding var focusedDate: Date?
 
-    let period: PanelViewModel.TrendPeriod
+    let period: DetailPeriod
     var chartHeight: CGFloat = 220
 
-    @State private var hoveredIndex: Int? = nil
     @State private var draggingDate: Date?  // For transient drag state
 
     var body: some View {
-        // Liquid Line Chart with Balance Trend
-        // Using .id(period) forces complete re-render when period changes,
-        // avoiding weird intermediate chart states during animation
+        // Disable animations completely to prevent interpolation between data states
+        // This fixes the visual glitch when switching between Balance/Income/Expense
         liquidTrendChart
-            .id(period)
+            .animation(nil, value: trendPoints.count)
     }
 
     // MARK: - Gráfico Trend (Financial Grid Style)
 
     private var liquidTrendChart: some View {
         Chart {
-            // Colors based on TrendType (Using Semantic Colors)
-            let primaryLineColor: Color = (trendType == .balance) ? .brandPrimary : .expenseGraph
+            // Colors based on TrendType (Using Semantic Colors from TrendType)
+            let primaryLineColor: Color = trendType.color
             let areaStartColor = primaryLineColor.opacity(0.1)
             let areaEndColor = primaryLineColor.opacity(0.05)
 
@@ -82,7 +79,7 @@ struct TrendChartView: View {
                 .foregroundStyle(primaryLineColor.opacity(dimOpacity))
 
                 // DATA ANNOTATIONS FOR WEEK VIEW
-                if period == .week {
+                if period == .thisWeek || period == .last7Days {
                     PointMark(
                         x: .value("Fecha", point.date),
                         y: .value("Monto", point.value)
@@ -147,14 +144,10 @@ struct TrendChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(Color.netoCard)
 
-                // Tooltip
+                // Tooltip - safe alignment calculation
                 .annotation(
                     position: .top,
-                    alignment: activeDate < Calendar.current.date(
-                        byAdding: .month, value: 3, to: interval.start)!
-                        ? .leading
-                        : activeDate > Calendar.current.date(
-                            byAdding: .month, value: -3, to: interval.end)! ? .trailing : .center
+                    alignment: tooltipAlignment(for: activeDate)
                 ) {
                     VStack(alignment: .center, spacing: 4) {
                         Text(periodLabel(for: activeDate))
@@ -194,76 +187,42 @@ struct TrendChartView: View {
         // X-Axis Scale from Interval
         .chartXScale(domain: paddedXDomain)
         .chartXAxis {
-            if period == .year {
-                // For Year: Show Months
-                AxisMarks(values: .stride(by: .month)) { value in
-                    AxisGridLine()
-                        .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
+            // Smart dynamic X-axis labels
+            AxisMarks(values: smartAxisDates) { value in
+                AxisGridLine()
+                    .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
 
-                    if let date = value.as(Date.self) {
-                        AxisValueLabel(anchor: .topLeading) {
-                            Text(date, format: .dateTime.month(.abbreviated).locale(axisLocale))
-                                .font(.caption2.bold())
-                                .foregroundStyle(Color.netoSecondaryText)
-                                .textCase(.lowercase)
-                        }
-                    }
-                }
-            } else {
-                // For Week/Month: Show Days
-                let strideCount = (period == .month) ? 5 : 1
+                if let date = value.as(Date.self) {
+                    // Use trailing anchor for last label to prevent truncation
+                    let isLast = date == smartAxisDates.last
+                    let isFirst = date == smartAxisDates.first
+                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
 
-                AxisMarks(values: .stride(by: .day, count: strideCount)) { value in
-                    if let date = value.as(Date.self) {
-                        AxisGridLine()
-                            .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
-
-                        AxisValueLabel(anchor: .top) {
-                            Text(date, format: .dateTime.day().locale(axisLocale))
-                                .font(.caption2.bold())
-                                .foregroundStyle(Color.netoSecondaryText)
-                        }
+                    AxisValueLabel(anchor: anchor) {
+                        Text(smartAxisLabel(for: date))
+                            .font(.caption2.bold())
+                            .foregroundStyle(Color.netoSecondaryText)
                     }
                 }
             }
         }
         .chartOverlay { proxy in
-            GeometryReader { geo in
-                Rectangle().fill(.clear).contentShape(Rectangle())
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(Color.clear)
+                    .contentShape(Rectangle())
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
-                                let x = value.location.x - geo[proxy.plotFrame!].origin.x
-                                if let date: Date = proxy.value(atX: x),
-                                    let closest = closestPoint(to: date, in: trendPoints)
-                                {
-                                    draggingDate = closest.date
+                                guard let plotFrame = proxy.plotFrame else { return }
+                                let frame = geometry[plotFrame]
+                                let x = value.location.x - frame.origin.x
+                                if let date: Date = proxy.value(atX: x) {
+                                    draggingDate = date
                                 }
                             }
                             .onEnded { _ in
                                 draggingDate = nil
-                            }
-                    )
-                    .simultaneousGesture(
-                        LongPressGesture(minimumDuration: 0.5)
-                            .onEnded { _ in
-                                if let current = draggingDate {
-                                    withAnimation {
-                                        focusedDate = current
-                                    }
-                                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                                    generator.impactOccurred()
-                                }
-                            }
-                    )
-                    .simultaneousGesture(
-                        TapGesture()
-                            .onEnded {
-                                withAnimation {
-                                    focusedDate = nil
-                                }
-                                let generator = UIImpactFeedbackGenerator(style: .light)
-                                generator.impactOccurred()
                             }
                     )
             }
@@ -271,13 +230,111 @@ struct TrendChartView: View {
         .frame(height: chartHeight)
     }
 
-    // Padded X Domain Logic
+    // Padded X Domain Logic - Use actual data range when available
     private var paddedXDomain: ClosedRange<Date> {
-        let span = interval.end.timeIntervalSince(interval.start)
-        let padding = span * 0.05
-        let start = interval.start.addingTimeInterval(-padding)
-        let end = interval.end.addingTimeInterval(padding)
-        return start...end
+        // Use actual data range if available
+        guard let firstDate = trendPoints.first?.date,
+            let lastDate = trendPoints.last?.date
+        else {
+            // Fallback to interval if no data
+            let span = interval.end.timeIntervalSince(interval.start)
+            let padding = span * 0.05
+            return interval.start.addingTimeInterval(
+                -padding)...interval.end.addingTimeInterval(padding)
+        }
+
+        let span = lastDate.timeIntervalSince(firstDate)
+        let padding = max(span * 0.05, 86400)  // At least 1 day padding
+        return firstDate.addingTimeInterval(-padding)...lastDate.addingTimeInterval(padding)
+    }
+
+    // MARK: - Smart Axis Labels
+
+    /// Maximum number of axis labels to show (to avoid crowding)
+    private let maxAxisLabels = 5
+
+    /// Calculate smart axis dates based on actual data range
+    private var smartAxisDates: [Date] {
+        guard let firstDate = trendPoints.first?.date,
+            let lastDate = trendPoints.last?.date
+        else {
+            return []
+        }
+
+        // If only one point, return just that date
+        if firstDate == lastDate {
+            return [firstDate]
+        }
+
+        let calendar = Calendar.current
+        let span = lastDate.timeIntervalSince(firstDate)
+        let days = span / 86400
+
+        // Always include first and last dates
+        var dates: [Date] = [firstDate]
+
+        // Calculate how many middle labels we can fit
+        let middleLabelsCount = maxAxisLabels - 2  // minus first and last
+
+        if middleLabelsCount > 0 && days > 1 {
+            // Calculate step based on data range
+            let step = span / Double(maxAxisLabels - 1)
+
+            for i in 1..<(maxAxisLabels - 1) {
+                let middleDate = firstDate.addingTimeInterval(step * Double(i))
+
+                // Normalize to start of day for cleaner alignment
+                let normalizedDate = calendar.startOfDay(for: middleDate)
+
+                // Avoid duplicate if too close to first or last
+                if normalizedDate > firstDate && normalizedDate < lastDate {
+                    dates.append(normalizedDate)
+                }
+            }
+        }
+
+        dates.append(lastDate)
+
+        // Sort and remove duplicates
+        return Array(Set(dates)).sorted()
+    }
+
+    /// Format axis label based on data span (include year if multiple years)
+    private func smartAxisLabel(for date: Date) -> String {
+        guard let firstDate = trendPoints.first?.date,
+            let lastDate = trendPoints.last?.date
+        else {
+            return formatDayNumber(date)
+        }
+
+        let calendar = Calendar.current
+        let span = lastDate.timeIntervalSince(firstDate)
+        let days = span / 86400
+
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+
+        // Check if data spans multiple years
+        let firstYear = calendar.component(.year, from: firstDate)
+        let lastYear = calendar.component(.year, from: lastDate)
+        let multipleYears = firstYear != lastYear
+
+        if days > 60 {
+            // Long period (> 2 months): Show month abbreviation
+            if multipleYears {
+                formatter.dateFormat = "MMM yy"  // "ene 25"
+            } else {
+                formatter.dateFormat = "MMM"  // "ene"
+            }
+        } else if days > 14 {
+            // Medium period (2 weeks - 2 months): Show day + month
+            formatter.dateFormat = "d MMM"  // "15 dic"
+        } else {
+            // Short period (< 2 weeks): Just day number
+            formatter.dateFormat = "d"  // "15"
+        }
+
+        return formatter.string(from: date).lowercased()
     }
 
     private func formattedAmountShort(_ value: Double) -> String {
@@ -326,14 +383,37 @@ struct TrendChartView: View {
 
     // MARK: - Utilidades de escala
 
-    private var axisLocale: Locale {
-        return Locale(identifier: "es")
+    /// Safe tooltip alignment based on date position in interval
+    private func tooltipAlignment(for date: Date) -> Alignment {
+
+        // Calculate position as percentage of interval
+        let intervalDuration = interval.end.timeIntervalSince(interval.start)
+        guard intervalDuration > 0 else { return .center }
+
+        let datePosition = date.timeIntervalSince(interval.start)
+        let percentage = datePosition / intervalDuration
+
+        if percentage < 0.25 {
+            return .leading
+        } else if percentage > 0.75 {
+            return .trailing
+        } else {
+            return .center
+        }
+    }
+
+    /// Format day as number only (1, 2, 3, etc.)
+    private func formatDayNumber(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d"
+        return formatter.string(from: date)
     }
 
     private func periodLabel(for date: Date) -> String {
-        return date.formatted(
-            .dateTime.day().month(.abbreviated).year(.twoDigits).locale(axisLocale)
-        )
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.dateFormat = "d MMM yy"
+        return formatter.string(from: date)
     }
 
     private func formattedAmount(_ value: Double) -> String {

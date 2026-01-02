@@ -2,21 +2,19 @@
 //  StatisticsView.swift
 //  Neto
 //
-//  Created by Neto Refactoring.
+//  Statistics tab view with PanelView-style navigation.
 //
 
 import SwiftUI
 
 struct StatisticsView: View {
+
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-                Text("Estadísticas")
-                    .font(.title3)
-                    .foregroundStyle(Color.netoSecondaryText)
-            }
-            .navigationTitle("Estadísticas")
+            // DetailContainerView manages its own content, navigation, and toolbar
+            DetailContainerView(initialTab: .trends)
+                .navigationTitle("Estadísticas")
+                .navigationBarTitleDisplayMode(.large)
         }
     }
 }

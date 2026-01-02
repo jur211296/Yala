@@ -14,7 +14,7 @@ import SwiftUI
 /// ViewModel for the Records list view
 /// Manages filter state, selection, and computed data
 @Observable
-final class RecordsViewModel {
+final class RecordsViewModel: Filterable {
 
     // MARK: - Filter State
 
@@ -39,8 +39,8 @@ final class RecordsViewModel {
     /// Amount filter condition
     var amountCondition: AmountFilterCondition = .any
 
-    /// Period filter
-    var period: RecordsPeriod = .thisMonth
+    /// Period filter (unified with Trends)
+    var period: DetailPeriod = .thisMonth
 
     /// Custom date range start
     var customStartDate: Date =
@@ -50,7 +50,7 @@ final class RecordsViewModel {
     var customEndDate: Date = Date()
 
     /// Selected currencies for filtering
-    var selectedCurrencies: Set<CurrencyCode> = Set(CurrencyCode.allCases)
+    var selectedCurrencies: Set<CurrencyCode> = []
 
     /// Search text for note filtering
     var searchText: String = ""
@@ -88,7 +88,7 @@ final class RecordsViewModel {
     var hasActiveFilters: Bool {
         !selectedAccounts.isEmpty || !selectedCategories.isEmpty || !selectedSubcategories.isEmpty
             || !selectedNatures.isEmpty || !selectedTags.isEmpty || transactionTypeFilter != .all
-            || amountCondition.isActive || period != .thisMonth
+            || amountCondition.isActive
             || !selectedCurrencies.isEmpty || !searchText.isEmpty
     }
 
@@ -101,7 +101,8 @@ final class RecordsViewModel {
         if !selectedTags.isEmpty { count += 1 }
         if transactionTypeFilter != .all { count += 1 }
         if amountCondition.isActive { count += 1 }
-        if period != .thisMonth { count += 1 }
+        // Exclude period from filters count as it's a primary control
+        // if period != .thisMonth { count += 1 }
         if !selectedCurrencies.isEmpty { count += 1 }
         return count
     }
@@ -124,6 +125,9 @@ final class RecordsViewModel {
         if let period = context.period {
             self.period = period
         }
+        if let type = context.transactionType {
+            self.transactionTypeFilter = type
+        }
     }
 
     // MARK: - Filter Application
@@ -135,111 +139,31 @@ final class RecordsViewModel {
         categories: [Category],
         tags: [Tag]
     ) {
-        let calendar = Calendar.current
+        // Build FilterCriteria from current state
+        let criteria = FilterCriteria(
+            selectedAccounts: selectedAccounts,
+            selectedCategories: selectedCategories,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNatures: selectedNatures,
+            selectedCurrencies: selectedCurrencies,
+            transactionTypeFilter: transactionTypeFilter,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            dateInterval: effectiveDateInterval()
+        )
 
-        // Get date interval for period filter
-        let dateInterval = effectiveDateInterval()
-
-        // Filter transactions
-        let filtered = transactions.filter { transaction in
-            // Date filter
-            if let interval = dateInterval {
-                guard interval.contains(transaction.date) else { return false }
-            }
-
-            // Account filter
-            if !selectedAccounts.isEmpty {
-                guard let accountID = transaction.account?.persistentModelID,
-                    selectedAccounts.contains(accountID)
-                else { return false }
-            }
-
-            // Category filter
-            if !selectedCategories.isEmpty {
-                guard let categoryID = transaction.category?.persistentModelID,
-                    selectedCategories.contains(categoryID)
-                else { return false }
-            }
-
-            // Subcategory filter
-            if !selectedSubcategories.isEmpty {
-                guard let subcategoryID = transaction.subcategory?.persistentModelID,
-                    selectedSubcategories.contains(subcategoryID)
-                else { return false }
-            }
-
-            // Nature filter
-            if !selectedNatures.isEmpty {
-                guard let subcategory = transaction.subcategory,
-                    selectedNatures.contains(subcategory.nature)
-                else { return false }
-            }
-
-            // Tags filter
-            if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
-                guard !transactionTagIDs.isDisjoint(with: selectedTags) else { return false }
-            }
-
-            // Transaction type filter
-            switch transactionTypeFilter {
-            case .all:
-                break
-            case .income:
-                guard transaction.category?.isIncome == true else { return false }
-            case .expense:
-                guard transaction.category?.isIncome == false else { return false }
-            case .transfer:
-                // Transfers are identified by having a specific note pattern or no category
-                // For now, we skip this filter type
-                break
-            }
-
-            // Amount filter
-            let amount = Decimal(transaction.amount)
-            guard amountCondition.matches(abs(amount)) else { return false }
-
-            // Currency filter
-            if selectedCurrencies.count != CurrencyCode.allCases.count {
-                guard let currencyCode = CurrencyCode(rawValue: transaction.currencyCode),
-                    selectedCurrencies.contains(currencyCode)
-                else { return false }
-            }
-
-            // Search text filter (note)
-            if !searchText.isEmpty {
-                let noteText = transaction.note ?? ""
-                guard noteText.localizedCaseInsensitiveContains(searchText) else { return false }
-            }
-
-            return true
-        }
-
-        // Group by date
-        let grouped = Dictionary(grouping: filtered) { transaction in
-            calendar.startOfDay(for: transaction.date)
-        }
-
-        // Sort groups by date (descending) and records within each group by date (descending)
-        groupedRecords =
-            grouped
-            .map { (date: $0.key, records: $0.value.sorted { $0.date > $1.date }) }
-            .sorted { $0.date > $1.date }
+        // Use FilterService for filtering and grouping
+        groupedRecords = FilterService.filterAndGroup(
+            transactions: transactions,
+            criteria: criteria
+        )
     }
 
-    /// Get effective date interval considering period and custom dates
+    /// Get effective date interval from current period
     private func effectiveDateInterval() -> DateInterval? {
-        if period == .custom {
-            let from = customStartDate
-            let to = customEndDate
-            let calendar = Calendar.current
-            let start = calendar.startOfDay(for: from)
-            let end =
-                calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: to)) ?? to
-            return DateInterval(start: start, end: end)
-        }
-
-        return period.dateInterval()
+        // DetailPeriod always has a valid dateInterval
+        return period.dateInterval
     }
 
     // MARK: - Selection Actions
@@ -310,10 +234,10 @@ final class RecordsViewModel {
         selectedTags.removeAll()
         transactionTypeFilter = .all
         amountCondition = .any
-        period = .thisMonth
+        // period = .thisMonth // Do not reset period
         customStartDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
         customEndDate = Date()
-        selectedCurrencies = Set(CurrencyCode.allCases)
+        selectedCurrencies = []
         searchText = ""
     }
 

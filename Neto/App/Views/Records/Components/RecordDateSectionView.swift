@@ -22,7 +22,7 @@ struct RecordDateSectionView: View {
             Spacer()
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
 
     /// Format: "12 de diciembre" (Spanish locale, regular case)

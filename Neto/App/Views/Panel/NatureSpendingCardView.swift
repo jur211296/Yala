@@ -14,17 +14,36 @@ struct NatureSpendingCardView: View {
     let currencyCode: String
     let size: TopSpendingCardView.CardSize  // Reusing comparable size enum or WidgetSize
     let grouping: TrendGrouping
+    let interval: DateInterval
     let onSelectNature: (SubcategoryNature) -> Void
+    let onShowDetail: (() -> Void)?
 
-    // View State
-    @State private var showingDetail = false
+    init(
+        trendPoints: [NatureTrendPoint],
+        selectedNature: SubcategoryNature?,
+        currencyCode: String,
+        size: TopSpendingCardView.CardSize,
+        grouping: TrendGrouping,
+        interval: DateInterval,
+        onSelectNature: @escaping (SubcategoryNature) -> Void,
+        onShowDetail: (() -> Void)? = nil
+    ) {
+        self.trendPoints = trendPoints
+        self.selectedNature = selectedNature
+        self.currencyCode = currencyCode
+        self.size = size
+        self.grouping = grouping
+        self.interval = interval
+        self.onSelectNature = onSelectNature
+        self.onShowDetail = onShowDetail
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Gastos por naturaleza")
+                    Text(L10n.Nature.title)
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
 
@@ -42,14 +61,16 @@ struct NatureSpendingCardView: View {
                 Spacer()
 
                 // Navigation / Detail
-                Button {
-                    showingDetail = true
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.headline)
-                        .foregroundStyle(Color.secondary.opacity(0.7))
+                if onShowDetail != nil {
+                    Button {
+                        onShowDetail?()
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundStyle(Color.secondary.opacity(0.7))
+                    }
+                    .padding(.top, 4)
                 }
-                .padding(.top, 4)
             }
 
             // Content
@@ -71,11 +92,6 @@ struct NatureSpendingCardView: View {
                 .fill(Color.netoCard)
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         )
-        // Detail Navigation
-        .navigationDestination(isPresented: $showingDetail) {
-            // Placeholder for Detail View
-            Text("Detalle de Naturaleza (Próximamente)")
-        }
     }
 
     @ViewBuilder
@@ -85,30 +101,58 @@ struct NatureSpendingCardView: View {
             VStack(spacing: 16) {
                 NatureTrendChartView(
                     points: trendPoints, selectedNature: selectedNature, currencyCode: currencyCode,
-                    grouping: grouping,
-                    onSelectNature: nil  // Legend handles it
+                    grouping: grouping, interval: interval,
+                    onSelectNature: nil  // Legend handles explicit selection
                 )
-                .frame(height: 200)
+                .frame(height: 180)
 
                 NatureLegendView(
-                    points: trendPoints, selectedNature: selectedNature, onSelect: onSelectNature)
+                    points: trendPoints,
+                    selectedNature: selectedNature,
+                    onSelect: onSelectNature
+                )
             }
         } else {
-            // Medium: Compact Chart + Mini Legend (bars handle filtering)
-            VStack(spacing: 8) {
+            // Medium: Chart Only (Compact Legend if needed or just interactive chart)
+            // For now just chart, maybe a small legend below?
+            VStack(spacing: 12) {
                 NatureTrendChartView(
                     points: trendPoints, selectedNature: selectedNature, currencyCode: currencyCode,
-                    grouping: grouping,
-                    onSelectNature: onSelectNature  // Chart bars handle it
+                    grouping: grouping, interval: interval,
+                    onSelectNature: onSelectNature  // Chart bars are interactive
                 )
+                .frame(height: 140)
 
-                // Mini Legend
-                CompactNatureLegendView(selectedNature: selectedNature, onSelect: onSelectNature)
+                // Compact Legend (just bubbles)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(SubcategoryNature.allCases) { nature in  // Show all for selection availability
+                            NatureCompactLegendItem(
+                                nature: nature,
+                                isSelected: selectedNature == nature,
+                                total: getTotal(for: nature),
+                                currencyCode: currencyCode
+                            ) {
+                                onSelectNature(nature)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
             }
         }
     }
 
-    // formattedAmount removed
+    private func getTotal(for nature: SubcategoryNature) -> Double {
+        trendPoints.reduce(0) { partialResult, point in
+            switch nature {
+            case .essential: return partialResult + point.essential
+            case .priority: return partialResult + point.priority
+            case .optional: return partialResult + point.optional
+            case .unclassified: return partialResult + point.unclassified
+            }
+        }
+    }
 
 }
 
@@ -117,6 +161,7 @@ struct NatureTrendChartView: View {
     let selectedNature: SubcategoryNature?
     let currencyCode: String
     let grouping: TrendGrouping
+    let interval: DateInterval
     let onSelectNature: ((SubcategoryNature) -> Void)?
     @State private var selectedDate: Date?
 
@@ -129,17 +174,37 @@ struct NatureTrendChartView: View {
     }
 
     var body: some View {
-        let data = flattenData(points)
         let chartUnit = mapGroupingToUnit(grouping)
 
-        Chart(data) { item in
-            BarMark(
-                x: .value("Fecha", item.date, unit: chartUnit),
-                y: .value("Monto", item.amount)
-            )
-            .foregroundStyle(item.nature.color.gradient)
-            .cornerRadius(4)
+        Chart {
+            ForEach(flattenData(points)) { item in
+                // If a nature is selected, only show that nature (or dim others)
+                // Design Choice: If filtered, show ONLY that line. If not, show ALL lines stacked?
+                // Or show all lines but highlight selected?
+                // Let's match typical behavior: If filtered, show only that ONE series.
+                // If ALL (nil), show stacked area or multiple lines.
+                // Given "Gastos por naturaleza", Stacked Bar is good for composition.
+
+                if let selected = selectedNature {
+                    if item.nature == selected {
+                        BarMark(
+                            x: .value("Fecha", item.date, unit: chartUnit),
+                            y: .value("Monto", item.amount)
+                        )
+                        .foregroundStyle(item.nature.color.gradient)
+                        .cornerRadius(4)
+                    }
+                } else {
+                    BarMark(
+                        x: .value("Fecha", item.date, unit: chartUnit),
+                        y: .value("Monto", item.amount)
+                    )
+                    .foregroundStyle(item.nature.color.gradient)
+                    .cornerRadius(4)
+                }
+            }
         }
+        .chartXScale(domain: interval.start...interval.end)
         .chartForegroundStyleScale([
             "Esencial": Color.electricIndigo,
             "Prioritaria": Color.priorityNature,
@@ -155,7 +220,7 @@ struct NatureTrendChartView: View {
                         .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
                     if value.as(Date.self) != nil {
                         AxisValueLabel(
-                            format: .dateTime.month(.abbreviated).locale(Locale(identifier: "es"))
+                            format: .dateTime.month(.abbreviated).locale(AppLocale.current)
                         )
                         .font(.caption2.bold())
                         .foregroundStyle(Color.netoSecondaryText)
@@ -383,7 +448,7 @@ struct NatureTrendChartView: View {
 
     private func formatDateFull(_ date: Date, grouping: TrendGrouping) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
+        formatter.locale = AppLocale.current
         switch grouping {
         case .day: formatter.dateFormat = "EEEE d MMM, yyyy"
         case .week: formatter.dateFormat = "'Semana del' d MMM"
@@ -422,7 +487,7 @@ struct NatureTrendChartView: View {
 
     private func formatDate(_ date: Date, grouping: TrendGrouping) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
+        formatter.locale = AppLocale.current
         switch grouping {
         case .day: formatter.dateFormat = "d"
         case .week: formatter.dateFormat = "d MMM"

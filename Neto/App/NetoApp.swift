@@ -40,6 +40,8 @@ struct NetoApp: App {
 
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
+    @State private var sessionState = SessionState()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -57,5 +59,6 @@ struct NetoApp: App {
         }
         // Adjunta el contenedor de modelos a la escena principal.
         .modelContainer(sharedModelContainer)
+        .environment(sessionState)
     }
 }

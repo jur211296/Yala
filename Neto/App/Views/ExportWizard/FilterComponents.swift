@@ -8,6 +8,31 @@
 import SwiftData
 import SwiftUI
 
+// MARK: - Generic Filter Header
+
+struct FilterSectionHeader: View {
+    let icon: String
+    let title: String
+    let status: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .frame(width: 24)
+
+            Text(title)
+                .font(.body)
+                .foregroundStyle(.primary)
+
+            Text("(\(status))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 // MARK: - Generic Selection Row
 
 struct FilterSelectionRow: View {
@@ -22,14 +47,13 @@ struct FilterSelectionRow: View {
                 .foregroundStyle(.primary)
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .foregroundStyle(.primary)
+            Text(title)
+                .font(.body)
+                .foregroundStyle(.primary)
 
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("(\(subtitle))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
             Spacer()
 

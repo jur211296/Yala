@@ -38,36 +38,38 @@ struct RecordRowView: View {
                 // Subcategory icon with category color
                 subcategoryIcon
 
-                // Text content - reordered: Note, Subcategory, Account
+                // Text content - reordered: Note, Subcategory • Account
                 VStack(alignment: .leading, spacing: 3) {
-                    // Line 1: Note (primary text)
+                    // Line 1: Note (primary text) OR Category (if no note)
                     if let note = record.note, !note.isEmpty {
                         Text(note)
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
+
+                        // Line 2: Category • Account (Compact)
+                        let categoryName =
+                            record.subcategory?.name ?? record.category?.name ?? "Sin categoría"
+                        let accountName = record.account?.name ?? ""
+
+                        Text("\(categoryName) • \(accountName)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     } else {
-                        // Fallback to subcategory if no note
+                        // Fallback: Line 1 = Category
                         Text(record.subcategory?.name ?? record.category?.name ?? "Sin categoría")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                    }
 
-                    // Line 2: Subcategory (if note exists, show subcategory here)
-                    if record.note != nil && !(record.note?.isEmpty ?? true) {
-                        Text(record.subcategory?.name ?? record.category?.name ?? "Sin categoría")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-
-                    // Line 3: Account name
-                    if let account = record.account {
-                        Text(account.name)
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
+                        // Line 2: Account name
+                        if let account = record.account {
+                            Text(account.name)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(1)
+                        }
                     }
 
                     // Line 4: Tags (if any)

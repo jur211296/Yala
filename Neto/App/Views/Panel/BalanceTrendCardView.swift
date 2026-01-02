@@ -18,7 +18,7 @@ struct BalanceTrendCardView: View {
     let balanceStatus: BalanceStatus
     let grouping: TrendGrouping
     let interval: DateInterval
-    let period: PanelViewModel.TrendPeriod
+    let period: DetailPeriod
     @Binding var trendType: TrendType
     @Binding var focusedDate: Date?
     var isLocked: Bool = false
@@ -40,7 +40,7 @@ struct BalanceTrendCardView: View {
         interval: DateInterval,
         trendType: Binding<TrendType>,
         focusedDate: Binding<Date?>,
-        period: PanelViewModel.TrendPeriod,
+        period: DetailPeriod,
         isLocked: Bool = false,
         size: WidgetSize = .large,
         onViewDetail: ((TrendType) -> Void)? = nil
@@ -159,12 +159,16 @@ struct BalanceTrendCardView: View {
                 trendType = type
             }
         } label: {
-            Text(type.rawValue)
-                .font(.caption.bold())
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .foregroundStyle(trendType == type ? Color.white : Color.netoSecondaryText)
-                .background(buttonBackground(for: type))
+            HStack(spacing: 4) {
+                Image(systemName: type.iconName)
+                    .font(.caption2.bold())
+                Text(type.rawValue)
+                    .font(.caption.bold())
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .foregroundStyle(trendType == type ? Color.white : Color.netoSecondaryText)
+            .background(buttonBackground(for: type))
         }
         .disabled(isLocked)
         .opacity(isLocked ? 0.6 : 1.0)

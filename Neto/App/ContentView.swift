@@ -26,14 +26,14 @@ struct MainTabView: View {
                     Label("Panel", systemImage: "rectangle.grid.2x2.fill")
                 }
 
-            PlanningView()
-                .tabItem { 
-                    Label("Planificación", systemImage: "calendar")
-                }
-
             StatisticsView()
                 .tabItem {
                     Label("Estadísticas", systemImage: "chart.bar.fill")
+                }
+
+            PlanningView()
+                .tabItem {
+                    Label("Planificación", systemImage: "calendar")
                 }
         }
         .tint(Color.electricIndigo)

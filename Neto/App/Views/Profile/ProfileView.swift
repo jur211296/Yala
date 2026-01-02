@@ -8,11 +8,6 @@
 import SwiftData
 import SwiftUI
 
-/// Main profile screen with user info and app settings navigation
-//
-//  ProfileView.swift
-//  Neto
-//
 //  Created by Neto Refactoring.
 //
 
@@ -133,6 +128,10 @@ struct ProfileView: View {
     // User Theme for dynamic updates
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
+    // Default Period Preference
+    @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.thisMonth
+        .rawValue
+
     // MARK: - Header
 
     private var profileHeader: some View {
@@ -195,6 +194,45 @@ struct ProfileView: View {
     private var preferenciasSection: some View {
         SectionBox(title: "Preferencias") {
             VStack(spacing: 0) {
+                // Personalización Section
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("PERSONALIZACIÓN")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+
+                    // Default Period Selector
+                    HStack(spacing: 12) {
+                        Image(systemName: "calendar")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28)
+
+                        Text("Periodo predeterminado")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        Picker("", selection: $defaultPeriodRaw) {
+                            ForEach(DetailPeriod.allCases) { period in
+                                Text(period.rawValue).tag(period.rawValue)
+                            }
+                        }
+                        .tint(.secondary)
+                        .labelsHidden()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                }
+
+                SubsectionDivider()
+
                 profileRow(icon: "paintpalette.fill", title: "Temas", destination: .themes)
                 SubsectionDivider()
                 profileRow(

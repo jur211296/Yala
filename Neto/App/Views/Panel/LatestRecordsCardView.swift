@@ -44,7 +44,7 @@ struct LatestRecordsCardView: View {
 
     private var headerSection: some View {
         HStack(alignment: .top) {
-            Text("Últimos registros")
+            Text(L10n.Records.latest)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)

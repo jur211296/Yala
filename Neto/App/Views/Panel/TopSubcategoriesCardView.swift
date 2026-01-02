@@ -25,6 +25,9 @@ struct TopSubcategoriesCardView: View {
     // Selected Subcategory ID (for dimming others)
     var selectedSubcategoryID: String?
 
+    // Navigation Action
+    var onShowMore: (() -> Void)? = nil
+
     // Size config
     var size: TopSpendingCardView.CardSize = .large
 
@@ -74,11 +77,18 @@ struct TopSubcategoriesCardView: View {
 
                 Spacer()
 
-                // Chevron
-                Image(systemName: "chevron.right")
-                    .font(.headline)
-                    .foregroundStyle(Color.gray.opacity(0.7))
-                    .padding(.leading, 4)
+                // Chevron (conditionally shown)
+                if onShowMore != nil {
+                    Button {
+                        onShowMore?()
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundStyle(Color.gray.opacity(0.7))
+                            .padding(.leading, 4)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
 
             // Row 2: Selector (Only Medium/Large)

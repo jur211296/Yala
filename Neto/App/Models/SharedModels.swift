@@ -50,9 +50,148 @@ extension Subcategory {
 
 enum TrendType: String, CaseIterable, Identifiable {
     case balance = "Saldo"
+    case income = "Ingreso"
     case expense = "Gasto"
 
     var id: String { rawValue }
+
+    var color: Color {
+        switch self {
+        case .balance: return .brandPrimary
+        case .income: return .teal
+        case .expense: return .hotPink
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .balance: return "arrow.left.arrow.right"
+        case .income: return "arrow.up.right"
+        case .expense: return "arrow.down.right"
+        }
+    }
+}
+
+/// Metric type for detailed trends view (includes Income)
+enum TrendMetric: String, CaseIterable, Identifiable {
+    case balance = "Saldo"
+    case income = "Ingreso"
+    case expense = "Gasto"
+
+    var id: String { rawValue }
+
+    var color: Color {
+        switch self {
+        case .balance: return .brandPrimary
+        case .income: return .teal
+        case .expense: return .hotPink
+        }
+    }
+
+    /// Icon for the selector (arrow style like reference images)
+    var iconName: String {
+        switch self {
+        case .balance: return "arrow.left.arrow.right"  // Double flow arrow
+        case .income: return "arrow.up.right"  // Up-right for income
+        case .expense: return "arrow.down.right"  // Down-right for expense
+        }
+    }
+}
+
+/// Period options for detail view (expanded from Panel's TrendPeriod)
+enum DetailPeriod: String, CaseIterable, Identifiable {
+    case thisWeek = "Esta semana"
+    case last7Days = "Últimos 7 días"
+    case last30Days = "Últimos 30 días"
+    case thisMonth = "Este mes"
+    case lastMonth = "Mes pasado"
+    case thisYear = "Este año"
+    case lastYear = "Año pasado"
+    case allTime = "Todo el tiempo"
+
+    var id: String { rawValue }
+
+    /// Display name for UI (same as rawValue)
+    var displayName: String { rawValue }
+
+    /// Calendar icon for the selector
+    var iconName: String { "calendar" }
+
+    /// Get the date interval for this period
+    var dateInterval: DateInterval {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
+
+        switch self {
+        case .thisWeek:
+            let startOfWeek = calendar.date(
+                from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
+            return DateInterval(start: startOfWeek, end: now)
+
+        case .last7Days:
+            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday)!
+            return DateInterval(start: start, end: now)
+
+        case .last30Days:
+            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday)!
+            return DateInterval(start: start, end: now)
+
+        case .thisMonth:
+            let startOfMonth = calendar.date(
+                from: calendar.dateComponents([.year, .month], from: now))!
+            return DateInterval(start: startOfMonth, end: now)
+
+        case .lastMonth:
+            let startOfThisMonth = calendar.date(
+                from: calendar.dateComponents([.year, .month], from: now))!
+            let startOfLastMonth = calendar.date(byAdding: .month, value: -1, to: startOfThisMonth)!
+            return DateInterval(start: startOfLastMonth, end: startOfThisMonth)
+
+        case .thisYear:
+            let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now))!
+            return DateInterval(start: startOfYear, end: now)
+
+        case .lastYear:
+            let startOfThisYear = calendar.date(from: calendar.dateComponents([.year], from: now))!
+            let startOfLastYear = calendar.date(byAdding: .year, value: -1, to: startOfThisYear)!
+            return DateInterval(start: startOfLastYear, end: startOfThisYear)
+
+        case .allTime:
+            // Return a very long interval (10 years back)
+            let start = calendar.date(byAdding: .year, value: -10, to: now)!
+            return DateInterval(start: start, end: now)
+        }
+    }
+
+    /// Grouping for chart display
+    var chartGrouping: TrendGrouping {
+        switch self {
+        case .thisWeek, .last7Days:
+            return .day
+        case .last30Days, .thisMonth, .lastMonth:
+            return .day
+        case .thisYear, .lastYear, .allTime:
+            return .day  // Use day for data, but smooth visually
+        }
+    }
+}
+
+/// Navigation tabs for detail views
+enum DetailViewTab: String, CaseIterable, Identifiable {
+    case trends = "Tendencias"
+    case categories = "Categorías"
+    case records = "Registros"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .trends: return "chart.line.uptrend.xyaxis"
+        case .categories: return "chart.pie"
+        case .records: return "list.bullet.rectangle"
+        }
+    }
 }
 
 enum TrendGrouping: String, CaseIterable, Identifiable {
