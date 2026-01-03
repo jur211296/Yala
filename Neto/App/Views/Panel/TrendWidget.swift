@@ -1,5 +1,5 @@
 //
-//  TrendCardView.swift
+//  TrendWidget.swift
 //  Neto
 //
 //  Created for Panel Refresh.
@@ -9,7 +9,7 @@ import Charts
 import SwiftData
 import SwiftUI
 
-struct TrendCardView: View {
+struct TrendWidget: View {
     @Bindable var viewModel: PanelViewModel
     var size: WidgetSize = .medium
     var currencyCode: String
@@ -23,13 +23,15 @@ struct TrendCardView: View {
             chartHeader
 
             // Chart using TrendChartView
+            // Always use dataTrendType for color to ensure data and color are always in sync
+            // This eliminates the need for loading indicators during metric transitions
             TrendChartView(
                 trendPoints: viewModel.processedTrendPoints,
                 yDomain: viewModel.processedYDomain,
                 grouping: viewModel.trendGrouping,
                 interval: viewModel.currentInterval,
                 currencyCode: currencyCode,
-                trendType: viewModel.trendType,
+                trendType: viewModel.dataTrendType,  // Use dataTrendType for guaranteed color sync
                 focusedDate: $viewModel.focusedDate,
                 period: viewModel.currentPeriod,
                 chartHeight: 220
@@ -84,14 +86,17 @@ struct TrendCardView: View {
         let isSelected = viewModel.trendType == type
 
         return Button {
-            withAnimation {
-                viewModel.trendType = type
+            // Change metric - onChange in PanelView handles recalculation
+            viewModel.trendType = type
+
+            // Apply smooth animation for UI transition
+            withAnimation(.interpolatingSpring(stiffness: 300, damping: 30)) {
+                // Triggers SwiftUI re-evaluation
             }
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: type.iconName)
                     .font(.caption.weight(.semibold))
-
                 if isSelected {
                     Text(type.rawValue)
                         .font(.caption.weight(.semibold))
@@ -132,14 +137,18 @@ struct TrendCardView: View {
         }
 
         // Otherwise logic depends on type
-        // For Balance: Show True Current Balance (not chart interactions)
-        // For Income/Expense: Show Total Sum of the period
+        // Use unified KPI values from TrendDataProcessor
         let value: Double
-        if viewModel.trendType == .balance {
+        switch viewModel.trendType {
+        case .balance:
+            // For Balance: Show True Current Balance (not chart interactions)
             value = currentBalance
-        } else {
-            // For flows (Income/Expense), show the sum of all visible points
-            value = viewModel.processedTrendPoints.reduce(0) { $0 + $1.value }
+        case .income:
+            // For Income: Show TOTAL income from TrendDataProcessor
+            value = viewModel.trendTotalIncome
+        case .expense:
+            // For Expense: Show TOTAL expense from TrendDataProcessor
+            value = viewModel.trendTotalExpense
         }
 
         return NetoFormatter.currency(value: value, currencyCode: currencyCode)

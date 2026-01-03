@@ -138,6 +138,17 @@ final class CurrencyConverter {
         }
     }
 
+    /// Checks if an exact exchange rate exists for a specific date.
+    /// Used to determine if a transaction's exchange rate is provisional (fallback) or official.
+    /// - Parameters:
+    ///   - date: The date to check
+    ///   - context: SwiftData ModelContext
+    /// - Returns: true if an exact rate exists for the date, false if using fallback
+    func hasExactRate(for date: Date, context: ModelContext) -> Bool {
+        let dateKey = dateFormatter.string(from: date)
+        return fetchExchangeRate(for: dateKey, context: context) != nil
+    }
+
     // MARK: - Private Helpers
 
     private func getRatesForDate(_ date: Date, context: ModelContext) -> [String: Double] {

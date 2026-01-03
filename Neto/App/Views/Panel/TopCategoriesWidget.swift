@@ -1,5 +1,5 @@
 //
-//  TopSpendingCardView.swift
+//  TopCategoriesWidget.swift
 //  Neto
 //
 //  Created by Neto Refactoring.
@@ -8,7 +8,7 @@
 import SwiftData
 import SwiftUI
 
-struct TopSpendingCardView: View {
+struct TopCategoriesWidget: View {
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 

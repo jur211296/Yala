@@ -1,5 +1,5 @@
 //
-//  CashFlowCardView.swift
+//  CashFlowWidget.swift
 //  Neto
 //
 //  Created by Neto Refactoring.
@@ -8,7 +8,7 @@
 import Charts
 import SwiftUI
 
-struct CashFlowCardView: View {
+struct CashFlowWidget: View {
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String

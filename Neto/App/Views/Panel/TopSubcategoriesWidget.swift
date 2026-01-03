@@ -1,5 +1,5 @@
 //
-//  TopSubcategoriesCardView.swift
+//  TopSubcategoriesWidget.swift
 //  Neto
 //
 //  Created by Neto Refactoring.
@@ -8,7 +8,7 @@
 import SwiftData
 import SwiftUI
 
-struct TopSubcategoriesCardView: View {
+struct TopSubcategoriesWidget: View {
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 
@@ -29,7 +29,7 @@ struct TopSubcategoriesCardView: View {
     var onShowMore: (() -> Void)? = nil
 
     // Size config
-    var size: TopSpendingCardView.CardSize = .large
+    var size: TopCategoriesWidget.CardSize = .large
 
     // Fetch all categories for the dropdown
     @Query(sort: \Category.name) private var allCategories: [Category]

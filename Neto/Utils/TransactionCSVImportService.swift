@@ -140,7 +140,11 @@ enum TransactionCSVImportService {
         ) { draft, context in
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
-            // Calculate Preferred Currency Amount
+            // Check if exact rate exists for this date (not using fallback)
+            let hasExactRate = CurrencyConverter.shared.hasExactRate(
+                for: draft.date, context: context)
+
+            // Calculate Preferred Currency Amount (uses fallback if exact rate not available)
             let amountInPreferred = CurrencyConverter.shared.convert(
                 draft.amount,
                 from: draft.normalizedCurrencyCode,
@@ -168,7 +172,8 @@ enum TransactionCSVImportService {
                 tags: draft.tags,
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
-                preferredCurrencyCode: preferredCode
+                preferredCurrencyCode: preferredCode,
+                isExchangeRateProvisional: !hasExactRate
             )
 
             context.insert(transaction)
@@ -195,7 +200,16 @@ enum TransactionCSVImportService {
             throw CSVImportError.invalidFileExtension
         }
 
-        // 2. Leer contenido del fichero
+        // 2. Start accessing security-scoped resource (REQUIRED for real devices)
+        // File picker URLs on iOS require explicit permission to access
+        let didStartAccessing = url.startAccessingSecurityScopedResource()
+        defer {
+            if didStartAccessing {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        // 3. Leer contenido del fichero
         let rawContents: String
         do {
             rawContents = try String(contentsOf: url, encoding: .utf8)
@@ -473,18 +487,13 @@ enum TransactionCSVImportService {
             drafts.append(draft)
         }
 
-        // 5.9 Preload Exchange Rates for the entire batch
-        // This ensures the data is available for accurate conversion in step 6
-        if !drafts.isEmpty {
-            let dates = drafts.map { $0.date }
-            if let minDate = dates.min(), let maxDate = dates.max() {
-                let dateRange = DateInterval(start: minDate, end: maxDate)
-                await ExchangeRateService.shared.ensureRates(
-                    for: dateRange,
-                    context: context
-                )
-            }
-        }
+        // NOTE: Removed ensureRates() call here.
+        // CurrencyConverter.convert() already has fallback logic that uses:
+        // 1. Exact rate for the date (if available)
+        // 2. Most recent rate before the date (fallback)
+        // 3. Static fallback rates (last resort)
+        // The ensureRates() call was causing multiple context.save() which
+        // triggered @Query updates and reset @State in ImportIntroSheet.
 
         // 6. Segunda pasada: solo si TODO es válido, creamos las transacciones reales
         for draft in drafts {

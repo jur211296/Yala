@@ -110,7 +110,7 @@ class SessionState {
 
     /// Reset to default state
     func resetToDefaults() {
-        selectedPeriod = .thisMonth
+        selectedPeriod = .allTime
         clearFilters()
         globalFilters.dateInterval = selectedPeriod.dateInterval
     }
@@ -118,13 +118,13 @@ class SessionState {
     // MARK: - Initialization
 
     init() {
-        // Load default period from AppStorage or fallback to .thisMonth
+        // Load default period from AppStorage or fallback to .allTime
         if let rawValue = UserDefaults.standard.string(forKey: "defaultPeriod"),
             let period = DetailPeriod(rawValue: rawValue)
         {
             self.selectedPeriod = period
         } else {
-            self.selectedPeriod = .thisMonth
+            self.selectedPeriod = .allTime
         }
 
         // Set initial dateInterval on globalFilters

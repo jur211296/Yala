@@ -1,5 +1,5 @@
 //
-//  SubcategoriesPieChartCardView.swift
+//  SubcategoriesPieWidget.swift
 //  Neto
 //
 //  Created by Neto Refactoring.
@@ -9,7 +9,7 @@ import Charts
 import SwiftData
 import SwiftUI
 
-struct SubcategoriesPieChartCardView: View {
+struct SubcategoriesPieWidget: View {
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 

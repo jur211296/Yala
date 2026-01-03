@@ -1,5 +1,5 @@
 //
-//  ExchangeRateCardView.swift
+//  ExchangeRateWidget.swift
 //  Neto
 //
 //  Exchange Rate Widget for the Panel.
@@ -9,7 +9,7 @@
 import Charts
 import SwiftUI
 
-struct ExchangeRateCardView: View {
+struct ExchangeRateWidget: View {
     let data: ExchangeRateWidgetData?
     let preferredCurrency: String
     @Binding var selectedCurrencies: [CurrencyCode]

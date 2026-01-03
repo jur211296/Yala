@@ -27,7 +27,7 @@ struct TrendsTabView: View {
 
     // MARK: - External Dependencies
 
-    @Bindable var trendsViewModel: TrendsDetailViewModel
+    @Bindable var trendsViewModel: StatisticsViewModel
     let defaultCurrencyCode: String
     let onNavigateToRecords: () -> Void
 
@@ -117,22 +117,18 @@ struct TrendsTabView: View {
         VStack(alignment: .leading, spacing: 16) {
             chartHeader
 
-            if trendsViewModel.isAggregatedView {
-                TrendChartView(
-                    trendPoints: trendsViewModel.trendPoints,
-                    yDomain: trendsViewModel.yDomain,
-                    grouping: .day,
-                    interval: trendsViewModel.currentInterval,
-                    currencyCode: defaultCurrencyCode,
-                    trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                    focusedDate: $trendsViewModel.focusedDate,
-                    period: trendsViewModel.detailPeriod,
-                    chartHeight: 220
-                )
-                .padding(.top, 8)
-            } else {
-                perAccountChart
-            }
+            TrendChartView(
+                trendPoints: trendsViewModel.trendPoints,
+                yDomain: trendsViewModel.yDomain,
+                grouping: .day,
+                interval: trendsViewModel.currentInterval,
+                currencyCode: defaultCurrencyCode,
+                trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
+                focusedDate: $trendsViewModel.focusedDate,
+                period: trendsViewModel.detailPeriod,
+                chartHeight: 220
+            )
+            .padding(.top, 8)
         }
         .padding(20)
         .background(Color.netoCard)
@@ -204,66 +200,6 @@ struct TrendsTabView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Per-Account Chart
-
-    private var perAccountChart: some View {
-        VStack(spacing: 8) {
-            Chart {
-                ForEach(trendsViewModel.accountSeries) { series in
-                    ForEach(series.points, id: \.date) { point in
-                        LineMark(
-                            x: .value("Fecha", point.date),
-                            y: .value("Monto", point.value)
-                        )
-                        .foregroundStyle(series.color)
-                        .interpolationMethod(.catmullRom)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                    }
-                }
-            }
-            .chartYScale(domain: trendsViewModel.yDomain)
-            .chartXScale(
-                domain: trendsViewModel.currentInterval.start...trendsViewModel.currentInterval.end
-            )
-            .chartYAxis {
-                AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { value in
-                    AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                        .foregroundStyle(Color.netoSecondaryText.opacity(0.2))
-                    if let doubleValue = value.as(Double.self) {
-                        AxisValueLabel {
-                            Text(NetoFormatter.compactCurrency(value: doubleValue))
-                                .font(.caption2)
-                                .foregroundStyle(Color.netoSecondaryText)
-                        }
-                    }
-                }
-            }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5)) { _ in
-                    AxisGridLine()
-                        .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
-                }
-            }
-            .frame(height: 180)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(trendsViewModel.accountSeries) { series in
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(series.color)
-                                .frame(width: 8, height: 8)
-                            Text(series.accountName)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: - Recent Records Section
 
     private var recentRecordsSection: some View {
@@ -320,17 +256,27 @@ struct TrendsTabView: View {
     // MARK: - Helpers
 
     private var currentKPIValue: String {
-        let value: Double
+        // When scrubbing the chart, show the hovered point value
         if let focusedDate = trendsViewModel.focusedDate,
             let point = trendsViewModel.trendPoints.first(where: {
                 Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
             })
         {
-            value = point.value
-        } else if let lastPoint = trendsViewModel.trendPoints.last {
-            value = lastPoint.value
-        } else {
-            value = 0
+            return NetoFormatter.currency(value: point.value, currencyCode: defaultCurrencyCode)
+        }
+
+        // Otherwise, show metric-specific KPI (matching TrendWidget behavior)
+        let value: Double
+        switch trendsViewModel.selectedMetric {
+        case .balance:
+            // Balance: show TRUE current balance from accounts (matches TrendWidget)
+            value = trendsViewModel.currentBalance
+        case .income:
+            // Income: show TOTAL income for the period
+            value = trendsViewModel.totalIncome
+        case .expense:
+            // Expense: show TOTAL expense for the period
+            value = trendsViewModel.totalExpense
         }
         return NetoFormatter.currency(value: value, currencyCode: defaultCurrencyCode)
     }

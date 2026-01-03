@@ -29,6 +29,8 @@ final class TransactionItem {
     var amountInPreferredCurrency: Double = 0.0
     /// Código de la moneda preferida utilizada para la conversión (snapshot)
     var preferredCurrencyCode: String = "PEN"
+    /// Indica si el tipo de cambio es provisional (fallback) o oficial (exacto para la fecha)
+    var isExchangeRateProvisional: Bool = false
 
     init(
         date: Date,
@@ -41,7 +43,8 @@ final class TransactionItem {
         tags: [Tag] = [],
         exchangeRate: Double = 1.0,
         amountInPreferredCurrency: Double = 0.0,
-        preferredCurrencyCode: String = "PEN"
+        preferredCurrencyCode: String = "PEN",
+        isExchangeRateProvisional: Bool = false
     ) {
         self.date = date
         self.amount = amount
@@ -54,5 +57,6 @@ final class TransactionItem {
         self.exchangeRate = exchangeRate
         self.amountInPreferredCurrency = amountInPreferredCurrency
         self.preferredCurrencyCode = preferredCurrencyCode
+        self.isExchangeRateProvisional = isExchangeRateProvisional
     }
 }

@@ -13,27 +13,17 @@ final class PanelViewModel {
     // Period Filter State
     var selectedPeriod: DetailPeriod = .thisYear
 
-    // Widget State
-    var widgetConfigs: [WidgetConfig] = [] {
-        didSet {
-            // Recalculate layout rows whenever configs change
-            self.layoutRows = computeLayoutRows(widgets: activeWidgets())
-        }
+    // Widget Configuration Manager (delegated)
+    let widgetConfig = WidgetConfigManager()
+
+    // Computed properties for backward compatibility with views
+    var widgetConfigs: [WidgetConfig] {
+        get { widgetConfig.configs }
+        set { widgetConfig.configs = newValue }
     }
 
-    // Layout State (Output for View)
-    var layoutRows: [WidgetRow] = []
-
-    // MARK: - Layout Structures
-
-    enum WidgetRowType {
-        case fullWidth(WidgetConfig)
-        case halfWidthPair(left: WidgetConfig, right: WidgetConfig?)
-    }
-
-    struct WidgetRow: Identifiable {
-        let id: UUID
-        let type: WidgetRowType
+    var layoutRows: [WidgetConfigManager.WidgetRow] {
+        widgetConfig.layoutRows
     }
 
     // MARK: - Constants
@@ -43,8 +33,7 @@ final class PanelViewModel {
     /// Window size for moving average calculation (14-day rolling average for yearly view)
     private let movingAverageWindowSize = 14
 
-    // Persistence Key
-    private let widgetConfigsKey = "panel_widget_configs_v1"
+    // Note: Widget config persistence now handled by WidgetConfigManager
 
     var topSpendingCategories: [CategorySpendingSummary] = []
     var chartTransactions: [ChartTransaction] = []
@@ -89,6 +78,10 @@ final class PanelViewModel {
 
     // Stored period - updated in batch with chart data to stay in sync
     var currentPeriod: DetailPeriod = .thisYear
+
+    // KPI values for trends - from TrendDataProcessor for unified calculation
+    var trendTotalIncome: Double = 0
+    var trendTotalExpense: Double = 0
 
     // Loading State - tracks when heavy calculations are in progress
     var isCalculating: Bool = false
@@ -157,88 +150,38 @@ final class PanelViewModel {
     // MARK: - Dependencies / Configuration
 
     init() {
-        loadWidgetConfigs()
+        // WidgetConfigManager loads its own configs in init
         loadExchangeRateCurrencySelection()
     }
 
-    // MARK: - Widget Logic
+    // MARK: - Widget Logic (Delegated to WidgetConfigManager)
 
     func loadWidgetConfigs() {
-        if let data = UserDefaults.standard.data(forKey: widgetConfigsKey),
-            var decoded = try? JSONDecoder().decode([WidgetConfig].self, from: data)
-        {
-            // Enforce Locked Properties (Healing Logic) - REMOVED for Trend Unlock
-            // for index in decoded.indices {
-            //     if decoded[index].isLocked {
-            //         decoded[index].isVisible = true
-            //         decoded[index].size = .large
-            //     }
-            // }
-
-            // Migration: Add missing new widgets
-            let defaults = WidgetConfig.defaultConfigs()
-            let existingTypes = Set(decoded.map { $0.type })
-
-            for config in defaults {
-                if !existingTypes.contains(config.type) {
-                    decoded.append(config)
-                }
-            }
-
-            self.widgetConfigs = decoded
-        } else {
-            // Default
-            self.widgetConfigs = WidgetConfig.defaultConfigs()
-        }
-        // Force layout update on initial load
-        self.layoutRows = computeLayoutRows(widgets: activeWidgets())
+        widgetConfig.load()
     }
 
     func saveWidgetConfigs() {
-        if let encoded = try? JSONEncoder().encode(widgetConfigs) {
-            UserDefaults.standard.set(encoded, forKey: widgetConfigsKey)
-        }
+        widgetConfig.save()
     }
 
     func resetWidgetConfigs() {
-        self.widgetConfigs = WidgetConfig.defaultConfigs()
-        saveWidgetConfigs()
+        widgetConfig.reset()
     }
 
     func activeWidgets() -> [WidgetConfig] {
-        return widgetConfigs.filter { $0.isVisible }
+        return widgetConfig.activeWidgets()
     }
 
     func toggleWidgetVisibility(id: UUID) {
-        if let index = widgetConfigs.firstIndex(where: { $0.id == id }) {
-            // Trend is always visible
-            if widgetConfigs[index].isLocked { return }
-
-            widgetConfigs[index].isVisible.toggle()
-            saveWidgetConfigs()
-        }
+        widgetConfig.toggleVisibility(id: id)
     }
 
     func updateWidgetSize(id: UUID, newSize: WidgetSize) {
-        if let index = widgetConfigs.firstIndex(where: { $0.id == id }) {
-            // Trend size is fixed
-            if widgetConfigs[index].isLocked { return }
-
-            widgetConfigs[index].size = newSize
-            saveWidgetConfigs()
-        }
+        widgetConfig.updateSize(id: id, newSize: newSize)
     }
 
     func moveWidget(from source: IndexSet, to destination: Int) {
-        // Prevent moving the locked first item
-        // Detailed reorder logic might be needed if user tries to move item 0
-        // But the View should disable reordering for item 0.
-        // Swift reorder:
-        var newConfigs = widgetConfigs
-        newConfigs.move(fromOffsets: source, toOffset: destination)
-
-        self.widgetConfigs = newConfigs
-        saveWidgetConfigs()
+        widgetConfig.move(from: source, to: destination)
     }
 
     // We keep these as simple properties or computed ones based on what the View passes
@@ -340,21 +283,7 @@ final class PanelViewModel {
 
     // MARK: - Layout Logic
 
-    /// Computes the layout rows based on widget sizes.
-    /// Rules:
-    /// - Large: Full Width
-    /// - Medium: Full Width
-    func computeLayoutRows(widgets: [WidgetConfig]) -> [WidgetRow] {
-        var rows: [WidgetRow] = []
-
-        for config in widgets {
-            // All widgets (Medium & Large) are Full Width
-            rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
-        }
-        return rows
-    }
-
-    // MARK: - Helpers
+    // Note: computeLayoutRows is now handled by WidgetConfigManager
 
     func ensureAccountsSortOrderConsistency(
         accounts: [Account],
@@ -419,6 +348,9 @@ final class PanelViewModel {
     var cashFlowGrouping: TrendGrouping = .day  // Explicit grouping for Cash Flow widget
     var natureGrouping: TrendGrouping = .day  // Explicit grouping for Nature widget
     var trendType: TrendType = .balance
+    /// Tracks the trendType for which current data was calculated.
+    /// Used to prevent rendering stale data with wrong colors during metric transitions.
+    var dataTrendType: TrendType = .balance
     var focusedDate: Date? = nil  // Global Focus State
 
     /// Calculates trend data and status based on the current period, selected account, and selected category.
@@ -443,16 +375,25 @@ final class PanelViewModel {
 
         // 2. Calculate each widget's data (only if visible)
 
-        // Trend chart
-        let (newChartTransactions, newProcessedData):
-            ([ChartTransaction], (points: [BarPoint], yDomain: ClosedRange<Double>))
+        // Trend chart - use unified TrendDataProcessor
+        let newProcessedData: (points: [BarPoint], yDomain: ClosedRange<Double>)
+        var newTrendTotalIncome = trendTotalIncome
+        var newTrendTotalExpense = trendTotalExpense
         if activeTypes.contains(.trend) {
-            let chartTxns = calculateTrendWidget(context: calcContext)
-            let processed = processTrendPoints(chartTransactions: chartTxns, context: calcContext)
-            newChartTransactions = chartTxns
-            newProcessedData = processed
+            let result = TrendDataProcessor.processTrendData(
+                transactions: calcContext.filteredTransactions,
+                accounts: calcContext.eligibleAccounts,
+                metric: trendType,
+                period: calcContext.period,
+                grouping: calcContext.trendGrouping,
+                interval: calcContext.effectiveInterval,
+                currencyCode: calcContext.defaultCurrencyCode,
+                context: calcContext.modelContext
+            )
+            newProcessedData = (result.points, result.yDomain)
+            newTrendTotalIncome = result.totalIncome
+            newTrendTotalExpense = result.totalExpense
         } else {
-            newChartTransactions = chartTransactions
             newProcessedData = (processedTrendPoints, processedYDomain)
         }
 
@@ -494,7 +435,6 @@ final class PanelViewModel {
         self.trendGrouping = calcContext.trendGrouping
         self.cashFlowGrouping = calcContext.cashFlowGrouping
         self.natureGrouping = calcContext.natureGrouping
-        self.chartTransactions = newChartTransactions
         self.topSpendingCategories = newTopSpendingCategories
         self.topSubcategories = newTopSubcategories
         self.cashFlowSummary = newCashFlowSummary
@@ -504,6 +444,10 @@ final class PanelViewModel {
         self.processedYDomain = newProcessedData.yDomain
         self.currentInterval = calcContext.effectiveInterval
         self.currentPeriod = self.selectedPeriod
+        self.trendTotalIncome = newTrendTotalIncome
+        self.trendTotalExpense = newTrendTotalExpense
+        // Track the metric for which data was calculated (prevents stale data rendering)
+        self.dataTrendType = self.trendType
 
         // 4. Calculate Exchange Rate Widget Data (only if visible)
         if activeTypes.contains(.exchangeRate) {
@@ -626,6 +570,29 @@ final class PanelViewModel {
             finalContextTransactions = contextTransactions
         }
 
+        // Pre-compute nature-filtered transactions (efficiency optimization)
+        // This avoids duplicate filtering in calculateCategoriesWidget and calculateSubcategoriesWidget
+        let natureFiltered: [TransactionItem]
+        if let nature = selectedNature {
+            natureFiltered = finalContextTransactions.filter { txn in
+                if let sub = txn.subcategory {
+                    return sub.nature == nature
+                } else {
+                    return nature == .unclassified
+                }
+            }
+        } else {
+            natureFiltered = finalContextTransactions
+        }
+
+        // Pre-compute fully-filtered transactions (nature + subcategory)
+        let fullyFiltered: [TransactionItem]
+        if let subID = selectedSubcategoryID {
+            fullyFiltered = natureFiltered.filter { $0.subcategory?.name == subID }
+        } else {
+            fullyFiltered = natureFiltered
+        }
+
         return PanelCalculationContext(
             accounts: accounts,
             transactions: transactions,
@@ -635,6 +602,8 @@ final class PanelViewModel {
             eligibleAccountIDs: eligibleAccountIDs,
             filteredTransactions: filtered,
             contextTransactions: finalContextTransactions,
+            natureFilteredTransactions: natureFiltered,
+            fullyFilteredTransactions: fullyFiltered,
             period: selectedPeriod,
             effectiveInterval: effectiveInterval,
             trendGrouping: newTrendGrouping,
@@ -677,7 +646,7 @@ final class PanelViewModel {
         }
 
         // For income/expense, filter out days with zero values to create a connected line
-        // This matches TrendsDetailViewModel behavior where zero-days are excluded
+        // This matches StatisticsViewModel behavior where zero-days are excluded
         let filteredPoints: [BarPoint]
         if trendType == TrendType.balance {
             // Keep all points for balance (running total)
@@ -714,28 +683,9 @@ final class PanelViewModel {
     private func calculateCategoriesWidget(context: PanelCalculationContext)
         -> [CategorySpendingSummary]
     {
-        // Apply Nature Filter to context transactions
-        var natureFiltered = context.contextTransactions
-        if let nature = context.selectedNature {
-            natureFiltered = natureFiltered.filter { txn in
-                if let sub = txn.subcategory {
-                    return sub.nature == nature
-                } else {
-                    return nature == .unclassified
-                }
-            }
-        }
-
-        // Apply Subcategory Filter
-        var finalTransactions = natureFiltered
-        if let subID = context.selectedSubcategoryID {
-            finalTransactions = finalTransactions.filter {
-                $0.subcategory?.name == subID
-            }
-        }
-
+        // Use pre-filtered transactions from context (nature + subcategory already applied)
         return TopSpendingCategoriesCalculator.calculateTopSpending(
-            transactions: finalTransactions,
+            transactions: context.fullyFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             context: context.modelContext
@@ -746,23 +696,12 @@ final class PanelViewModel {
     private func calculateSubcategoriesWidget(context: PanelCalculationContext)
         -> [SubcategorySpendingSummary]
     {
-        // Apply Nature Filter to context transactions
-        var natureFiltered = context.contextTransactions
-        if let nature = context.selectedNature {
-            natureFiltered = natureFiltered.filter { txn in
-                if let sub = txn.subcategory {
-                    return sub.nature == nature
-                } else {
-                    return nature == .unclassified
-                }
-            }
-        }
-
+        // Use pre-filtered transactions from context (nature already applied)
         let effectiveCategoryFilter =
             context.selectedCategoryID ?? context.subcategoriesWidgetFilter
 
         return TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: natureFiltered,
+            transactions: context.natureFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,

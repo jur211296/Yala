@@ -9,6 +9,74 @@ import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
 
+// MARK: - Import Result Model
+
+/// Result of an import operation - used to present result sheet
+struct ImportResult: Identifiable {
+    let id = UUID()
+    let isSuccess: Bool
+    let message: String
+    let count: Int
+}
+
+// MARK: - Import Result Overlay
+
+/// Overlay view for showing import results - displayed on top of content in ZStack
+/// This approach avoids the nested sheet presentation bug in SwiftUI
+struct ImportResultOverlay: View {
+    let result: ImportResult
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            // Full screen background
+            Color.black.opacity(DesignSystem.Opacity.glass)
+                .ignoresSafeArea()
+
+            // Content card
+            VStack(spacing: DesignSystem.Spacing.large) {
+                Spacer()
+
+                // Icon
+                Image(systemName: result.isSuccess ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .font(.system(size: 80))
+                    .foregroundStyle(result.isSuccess ? Color.financeGreen : Color.red)
+
+                // Title
+                Text(result.isSuccess ? "Importación completada" : "Error al importar")
+                    .font(Typography.title2)
+                    .foregroundStyle(Color.netoPrimaryText)
+
+                // Message
+                Text(result.message)
+                    .font(Typography.body)
+                    .foregroundStyle(Color.netoSecondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DesignSystem.Spacing.triple)
+
+                Spacer()
+
+                // Button
+                Button {
+                    onDismiss()
+                } label: {
+                    Text("Continuar")
+                        .font(Typography.bodyLarge)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(result.isSuccess ? Color.financeGreen : Color.brandPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.standard))
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 40)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.netoCard)
+        }
+    }
+}
+
 // MARK: - Flujo de importación de archivo (FIN-24)
 
 /// Hoja principal de introducción y configuración de importación
@@ -17,31 +85,39 @@ struct ImportIntroSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
 
-    @Query private var accounts: [Account]
-    @Query private var categories: [Category]
+    // Data passed from parent view (no @Query = no view reconstruction on save)
+    let accounts: [Account]
+    let categories: [Category]
 
     @State private var allowCreatingNewCategories: Bool = false
     @State private var isShowingAccountPicker: Bool = false
     @State private var isShowingFileImporter: Bool = false
     @State private var selectedAccount: Account?
-    @State private var isImporting: Bool = false
     @State private var templateFile: TemplateFile?
 
-    @State private var alertTitle: String = ""
-    @State private var alertMessage: String?
-    @State private var isShowingAlert: Bool = false
-    @State private var shouldDismissAfterAlert: Bool = false
+    // Import state - simple booleans and result
+    @State private var isImporting: Bool = false
 
-    /// Callback opcional para notificar al presentador que la importación
-    /// se completó correctamente. En Ajustes se usa para volver al Panel.
-    let onImportCompleted: (() -> Void)?
+    // Template alert (separate from import flow)
+    @State private var showTemplateAlert: Bool = false
 
-    init(onImportCompleted: (() -> Void)? = nil) {
+    /// Callback to notify parent with import result. Parent handles display.
+    let onImportCompleted: ((ImportResult) -> Void)?
+
+    init(
+        accounts: [Account],
+        categories: [Category],
+        onImportCompleted: ((ImportResult) -> Void)? = nil
+    ) {
+        self.accounts = accounts
+        self.categories = categories
         self.onImportCompleted = onImportCompleted
     }
 
     private var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived }
+        accounts
+            .filter { !$0.isArchived }
+            .sorted(by: { $0.name < $1.name })
     }
 
     var body: some View {
@@ -49,39 +125,45 @@ struct ImportIntroSheet: View {
             ZStack {
                 PanelBackgroundView()
 
-                VStack(spacing: 24) {
+                VStack(spacing: DesignSystem.Spacing.large) {
                     ScrollView {
-                        VStack(spacing: 24) {
+                        VStack(spacing: DesignSystem.Spacing.xxLarge) {
                             introSection
                             templateSection
                             toggleSection
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 24)
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, DesignSystem.Spacing.large)
+                        .padding(.top, DesignSystem.Spacing.large)
+                        .padding(.bottom, DesignSystem.Spacing.large)
                     }
 
-                    VStack(spacing: 12) {
-                        if isImporting {
-                            ProgressView("Importando...")
-                                .progressViewStyle(.circular)
-                                .padding(.vertical, 4)
-                        }
-
+                    // Bottom Action Button
+                    VStack {
                         Button {
                             startAccountSelection()
                         } label: {
-                            Text("Importar archivo CSV")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)  // Taller button
+                            HStack(spacing: DesignSystem.Spacing.standard) {
+                                if isImporting {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .tint(.white)
+                                    Text("Importando...")
+                                } else {
+                                    Image(systemName: "square.and.arrow.down")
+                                    Text("Importar archivo CSV")
+                                }
+                            }
+                            .font(Typography.bodyLarge)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(Color.electricIndigo)  // App primary color
+                        .tint(Color.brandPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.standard))
                         .disabled(isImporting)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
+                    .padding(.horizontal, DesignSystem.Spacing.large)
+                    .padding(.bottom, DesignSystem.Spacing.large)
                 }
             }
             .navigationTitle("Importar")
@@ -94,6 +176,8 @@ struct ImportIntroSheet: View {
                 }
             }
         }
+        .disabled(isImporting)
+        // Sheets & Alerts
         .sheet(isPresented: $isShowingAccountPicker) {
             ImportAccountPickerSheet(
                 accounts: activeAccounts,
@@ -118,296 +202,285 @@ struct ImportIntroSheet: View {
             }
         ) { file in
             ActivityView(activityItems: [file.url]) { completed in
-                // Solo mostramos la confirmación si el usuario completó
-                // alguna acción de guardado/compartido en el share sheet.
                 if completed {
-                    alertTitle = "Plantilla generada"
-                    alertMessage =
-                        "La plantilla CSV se generó correctamente. Ahora puedes editarla y volver a esta pantalla para importarla."
-                    isShowingAlert = true
+                    showTemplateAlert = true
                 }
             }
         }
-        .alert(alertTitle, isPresented: $isShowingAlert) {
-            Button("Aceptar", role: .cancel) {
-                if shouldDismissAfterAlert {
-                    // Cerramos esta hoja de importación
-                    dismiss()
-                    // Notificamos al presentador (Ajustes) para que también se cierre
-                    onImportCompleted?()
-                }
-            }
+        .alert("Plantilla generada", isPresented: $showTemplateAlert) {
+            Button("Continuar", role: .cancel) {}
         } message: {
-            Text(alertMessage ?? "")
+            Text(
+                "La plantilla CSV se generó correctamente. Ahora puedes editarla y volver a esta pantalla para importarla."
+            )
         }
     }
 
     // MARK: - Secciones de contenido
 
     private var introSection: some View {
-        SectionBox(title: "Cómo funciona") {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "tray.and.arrow.down.fill")
-                        .font(.system(size: 32, weight: .regular))
-                        .foregroundStyle(Color.brandPrimary)
-                        .padding(10)
-                        .background(
-                            Circle()
-                                .fill(Color.brandPrimary.opacity(0.1))
-                        )
+        VStack(spacing: 8) {
+            Image(systemName: "square.and.arrow.down")
+                .font(.system(size: 48))
+                .foregroundStyle(Color.brandPrimary)
+                .padding(.bottom, 8)
 
-                    Text(
-                        "Importa tus movimientos desde un archivo CSV siguiendo unos pasos simples."
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
+            Text("Importar Transacciones")
+                .font(Typography.title2)
+                .foregroundStyle(Color.netoPrimaryText)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    stepRow("Descarga y completa la plantilla CSV.")
-                    stepRow("Guarda el archivo en la app Archivos.")
-                    stepRow("Selecciona la cuenta destino.")
-                    stepRow("Importa el archivo desde aquí.")
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-            }
+            Text(
+                "Agrega tus movimientos financieros masivamente desde un archivo CSV."
+            )
+            .font(Typography.body)
+            .foregroundStyle(Color.netoSecondaryText)
+            .multilineTextAlignment(.center)
         }
+        .padding(.top, 32)
     }
 
     private var templateSection: some View {
-        SectionBox(title: "Plantilla de ejemplo") {
-            VStack(alignment: .leading, spacing: 8) {
-                Button {
-                    generateTemplateCSV()
-                } label: {
-                    HStack {
-                        Image(systemName: "arrow.down.circle")
-                        Text("Descargar plantilla")
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                }
-                .buttonStyle(.bordered)
-                .tint(colorScheme == .dark ? Color.neonCyan : Color.electricIndigo)
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                generateTemplate()
+            } label: {
+                HStack {
+                    Text("Descargar plantilla CSV")
+                        .font(Typography.bodyLarge)
+                        .foregroundStyle(Color.netoPrimaryText)
 
-                Text(
-                    "Descarga la plantilla oficial de Neto con el encabezado correcto y las categorías disponibles por defecto en la aplicación."
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                    Spacer()
+
+                    Image(systemName: "arrow.down.circle")
+                        .font(.body)
+                        .foregroundStyle(Color.brandPrimary)
+                }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .padding(.vertical, 14)
+                .background(Color.netoCard)
+                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
             }
+            .buttonStyle(.plain)
+
+            Text(
+                "Usa nuestra plantilla oficial para asegurar que el formato sea correcto."
+            )
+            .font(Typography.label)
+            .foregroundStyle(Color.netoSecondaryText)
+            .padding(.horizontal, 4)
         }
     }
 
     private var toggleSection: some View {
-        SectionBox(title: "Categorías") {
-            VStack(spacing: 0) {
-                Toggle(isOn: $allowCreatingNewCategories) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Crear nuevas categorías y subcategorías")
-                            .font(.body)
-                        Text(
-                            "Si el archivo incluye categorías que no existen, se crearán automáticamente cuando esta opción esté activada."
-                        )
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                }
-                .tint(Color.electricIndigo)  // App primary color for toggles
-                .padding(16)
+        VStack(alignment: .leading, spacing: 8) {
+
+            // Toggle Container
+            HStack {
+                Text("Crear categorías nuevas")
+                    .font(Typography.bodyLarge)
+                    .foregroundStyle(Color.netoPrimaryText)
+
+                Spacer()
+
+                Toggle("", isOn: $allowCreatingNewCategories)
+                    .labelsHidden()
+                    .tint(Color.brandPrimary)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color.netoCard)
+            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+            )
+
+            Text(
+                "Si el archivo incluye categorías que no existen, se crearán automáticamente."
+            )
+            .font(Typography.label)
+            .foregroundStyle(Color.netoSecondaryText)
+            .padding(.horizontal, 4)
         }
     }
 
-    @ViewBuilder
-    private func stepRow(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text("•")
-                .font(.body)
-            Text(text)
-                .font(.footnote)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    // MARK: - Lógica de flujo
-
-    private func generateTemplateCSV() {
-        // FIN-35: Plantilla oficial de importación CSV de Neto
-        // Encabezado compatible con TransactionCSVImportService
-        // Formato: date,amount,currency,category,subcategory,tags,note
-        // La columna `tags` debe contener los nombres de etiquetas separados por punto y coma (;)
-        // por ejemplo: "Fiesta".
-        let header = "date,amount,currency,category,subcategory,tags,note\n"
-
-        var rows: [String] = []
-
-        if categories.isEmpty {
-            // Fallback: si por alguna razón no hay categorías disponibles
-            // generamos una única fila de ejemplo genérica.
-            let fallbackRow =
-                "2024-01-15,-120.50,PEN,Alimentación,Supermercados y bodegas,Fiesta,Compra semanal\n"
-            rows.append(fallbackRow)
-        } else {
-            // Generamos una fila de ejemplo por cada combinación de categoría
-            // y subcategoría disponible actualmente en la app.
-            for category in categories {
-                let subcategories = category.subcategories
-
-                if subcategories.isEmpty {
-                    // Categoría sin subcategorías: dejamos la subcategoría vacía.
-                    let row =
-                        "2024-01-15,-10.00,PEN,\(escapeCSVField(category.name)),,Ejemplo,Ejemplo para \(escapeCSVField(category.name))\n"
-                    rows.append(row)
-                } else {
-                    for subcategory in subcategories {
-                        let row =
-                            "2024-01-15,-10.00,PEN,\(escapeCSVField(category.name)),\(escapeCSVField(subcategory.name)),Ejemplo,Ejemplo para \(escapeCSVField(category.name)) / \(escapeCSVField(subcategory.name))\n"
-                        rows.append(row)
-                    }
-                }
-            }
-        }
-
-        let csvString = header + rows.joined()
-
-        guard let data = csvString.data(using: .utf8) else {
-            alertTitle = "No se pudo generar la plantilla"
-            alertMessage = "Ocurrió un problema al crear el archivo CSV. Inténtalo nuevamente."
-            isShowingAlert = true
-            return
-        }
-
-        let tempDirectory = FileManager.default.temporaryDirectory
-        let fileURL = tempDirectory.appendingPathComponent("Neto_Plantilla_Importacion.csv")
-
-        do {
-            try data.write(to: fileURL, options: .atomic)
-            templateFile = TemplateFile(url: fileURL)
-        } catch {
-            alertTitle = "No se pudo generar la plantilla"
-            alertMessage = error.localizedDescription
-            isShowingAlert = true
-        }
-    }
-
-    /// Escapa un valor de texto para uso seguro en una celda CSV.
-    /// Si el valor contiene comas, puntos y coma, comillas o saltos de línea,
-    /// se encierra entre comillas dobles y se duplican las comillas internas.
-    private func escapeCSVField(_ value: String) -> String {
-        if value.isEmpty {
-            return ""
-        }
-
-        let needsQuoting =
-            value.contains(",")
-            || value.contains(";")
-            || value.contains("\"")
-            || value.contains("\n")
-
-        if !needsQuoting {
-            return value
-        }
-
-        let escaped = value.replacingOccurrences(of: "\"", with: "\"\"")
-        return "\"\(escaped)\""
-    }
+    // MARK: - Actions
 
     private func startAccountSelection() {
-        guard !isImporting else { return }
-
-        guard !activeAccounts.isEmpty else {
-            alertTitle = "No hay cuentas disponibles"
-            alertMessage =
-                "Para importar transacciones, primero crea al menos una cuenta en Neto."
-            isShowingAlert = true
-            return
+        if activeAccounts.isEmpty {
+            // No hay cuentas activas - dismiss and notify parent
+            let result = ImportResult(
+                isSuccess: false,
+                message: "No hay cuentas activas disponibles. Crea una cuenta primero.",
+                count: 0
+            )
+            dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.onImportCompleted?(result)
+            }
+        } else if activeAccounts.count == 1 {
+            // Solo hay una cuenta, seleccionarla automáticamente
+            selectedAccount = activeAccounts.first
+            isShowingFileImporter = true
+        } else {
+            isShowingAccountPicker = true
         }
-
-        isShowingAccountPicker = true
     }
+
+    private func generateTemplate() {
+        var rows = [[String]]()
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        // Encabezado según documentación FIN-28
+        rows.append([
+            "Fecha", "Monto", "Tipo", "Categoría", "Subcategoría", "Nota",
+        ])
+
+        // Fila de ejemplo con una categoría del catálogo (si existe)
+        let sampleCategoryName = categories.first?.name ?? "Alimentación"
+        let sampleSubcategoryName: String = {
+            if let cat = categories.first,
+                let sub = cat.subcategories.first
+            {
+                return sub.name
+            }
+            return "Supermercado"
+        }()
+
+        rows.append([
+            formatter.string(from: now),
+            "-45.50",
+            "egreso",
+            sampleCategoryName,
+            sampleSubcategoryName,
+            "Compra semanal",
+        ])
+
+        rows.append([
+            formatter.string(from: now),
+            "1500.00",
+            "ingreso",
+            categories.first(where: { $0.name.lowercased().contains("ingreso") })?.name
+                ?? "Salario",
+            "",
+            "Pago mensual",
+        ])
+
+        let csvText = rows.map { row in
+            row.map { field in
+                let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
+                return "\"\(escaped)\""
+            }.joined(separator: ",")
+        }.joined(separator: "\n")
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("plantilla_neto.csv")
+
+        do {
+            try csvText.write(to: tempURL, atomically: true, encoding: .utf8)
+            templateFile = TemplateFile(url: tempURL)
+        } catch {
+            // Template generation error - just show alert, don't dismiss
+            showTemplateAlert = false  // Error handled separately
+        }
+    }
+
+    // MARK: - Import Handling
 
     private func handleFileImportResult(_ result: Result<[URL], Error>) {
         switch result {
         case .failure(let error):
-            alertTitle = "No se pudo leer el archivo"
-            alertMessage = error.localizedDescription
-            isShowingAlert = true
+            let errorResult = ImportResult(
+                isSuccess: false,
+                message: error.localizedDescription,
+                count: 0
+            )
+            dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.onImportCompleted?(errorResult)
+            }
         case .success(let urls):
             guard let url = urls.first else {
-                alertTitle = "Archivo no válido"
-                alertMessage = "No se pudo obtener la URL del archivo seleccionado."
-                isShowingAlert = true
+                let errorResult = ImportResult(
+                    isSuccess: false,
+                    message: "No se pudo obtener la URL del archivo seleccionado.",
+                    count: 0
+                )
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.onImportCompleted?(errorResult)
+                }
                 return
             }
 
             guard let account = selectedAccount else {
-                // Si por alguna razón no tenemos cuenta, simplemente salimos.
                 return
             }
 
             performImport(from: url, into: account)
         }
     }
-
     private func performImport(from url: URL, into account: Account) {
+        print("🔵 [IMPORT] Starting import, setting isImporting = true")
         isImporting = true
+        print("🔵 [IMPORT] isImporting is now: \(isImporting)")
 
-        Task {
-            do {
-                // FIN-24: el flag allowCreatingNewCategories controla
-                // si se crean nuevas categorías/subcategorías durante la importación.
-                let result = try await TransactionCSVImportService.importCSV(
-                    from: url,
-                    into: account,
-                    in: modelContext,
-                    allowCreatingNewCategories: allowCreatingNewCategories
-                )
-
+        // Small delay to allow SwiftUI to render the button change before heavy work starts
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            Task { @MainActor in
                 do {
-                    try modelContext.save()
-                } catch {
-                    // Si la persistencia falla, mostramos un error genérico.
-                    alertTitle = "Error al guardar"
-                    alertMessage = error.localizedDescription
-                    shouldDismissAfterAlert = false
-                    isShowingAlert = true
-                    isImporting = false
-                    return
-                }
+                    print("🔵 [IMPORT] Calling TransactionCSVImportService.importCSV")
+                    let result = try await TransactionCSVImportService.importCSV(
+                        from: url,
+                        into: account,
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories
+                    )
 
-                // After successful import, fetch exchange rates for imported transactions
-                // This ensures accurate currency conversion for historical data
-                if !result.drafts.isEmpty {
-                    let dates = result.drafts.map { $0.date }
-                    if let minDate = dates.min(), let maxDate = dates.max() {
-                        let dateRange = DateInterval(start: minDate, end: maxDate)
-                        await ExchangeRateService.shared.ensureRates(
-                            for: dateRange, context: modelContext)
+                    let createdCount = result.createdCount
+                    print("🔵 [IMPORT] Import complete, count = \(createdCount)")
+
+                    // Save to persist transactions
+                    try modelContext.save()
+                    print("🔵 [IMPORT] Save complete")
+
+                    // Create result and dismiss (keep button in "Importando" state until sheet closes)
+                    let importResult = ImportResult(
+                        isSuccess: true,
+                        message: "\(createdCount) registros importados correctamente.",
+                        count: createdCount
+                    )
+                    print("🔵 [IMPORT] Dismissing sheet and notifying parent")
+
+                    // Dismiss sheet first, then notify parent
+                    dismiss()
+
+                    // Notify parent with result after small delay for sheet to close
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.onImportCompleted?(importResult)
+                    }
+
+                } catch {
+                    print("🔴 [IMPORT] ERROR: \(error.localizedDescription)")
+                    isImporting = false
+                    let errorResult = ImportResult(
+                        isSuccess: false,
+                        message: error.localizedDescription,
+                        count: 0
+                    )
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.onImportCompleted?(errorResult)
                     }
                 }
-
-                alertTitle = "Importación completada"
-                alertMessage = "Importación completada: \(result.createdCount) registros cargados."
-                shouldDismissAfterAlert = true
-                isShowingAlert = true
-            } catch {
-                alertTitle = "Error al importar"
-                alertMessage = error.localizedDescription
-                shouldDismissAfterAlert = false
-                isShowingAlert = true
             }
-
-            isImporting = false
-        }
+        }  // End DispatchQueue.asyncAfter
     }
 }
 

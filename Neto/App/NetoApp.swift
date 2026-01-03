@@ -55,6 +55,9 @@ struct NetoApp: App {
 
                     // Then preload historical data if needed (first launch or after data wipe)
                     await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
+
+                    // Update any transactions with provisional exchange rates
+                    await TransactionUpdateService.updateProvisionalTransactions(context: context)
                 }
         }
         // Adjunta el contenedor de modelos a la escena principal.

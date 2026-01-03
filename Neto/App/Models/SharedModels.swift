@@ -80,22 +80,20 @@ enum TrendMetric: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var color: Color {
+    /// Convert to TrendType for shared properties
+    var toTrendType: TrendType {
         switch self {
-        case .balance: return .brandPrimary
-        case .income: return .teal
-        case .expense: return .hotPink
+        case .balance: return .balance
+        case .income: return .income
+        case .expense: return .expense
         }
     }
 
-    /// Icon for the selector (arrow style like reference images)
-    var iconName: String {
-        switch self {
-        case .balance: return "arrow.left.arrow.right"  // Double flow arrow
-        case .income: return "arrow.up.right"  // Up-right for income
-        case .expense: return "arrow.down.right"  // Down-right for expense
-        }
-    }
+    /// Color - delegated to TrendType (single source of truth)
+    var color: Color { toTrendType.color }
+
+    /// Icon - delegated to TrendType (single source of truth)
+    var iconName: String { toTrendType.iconName }
 }
 
 /// Period options for detail view (expanded from Panel's TrendPeriod)

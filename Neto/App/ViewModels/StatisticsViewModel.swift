@@ -1,5 +1,5 @@
 //
-//  TrendsDetailViewModel.swift
+//  StatisticsViewModel.swift
 //  Neto
 //
 //  ViewModel for the Trends Detail View.
@@ -12,7 +12,7 @@ import SwiftUI
 /// ViewModel for the Trends Detail View
 /// Manages filter state, metric selection, and data calculations
 @Observable
-final class TrendsDetailViewModel: Filterable {
+final class StatisticsViewModel: Filterable {
 
     // MARK: - Navigation State
 
@@ -101,6 +101,9 @@ final class TrendsDetailViewModel: Filterable {
     /// Total expense for the current period (calculated from transactions)
     var totalExpense: Double = 0
 
+    /// Current actual balance (sum of accounts' current balance)
+    var currentBalance: Double = 0
+
     /// Maximum number of records to show
     let maxRecentRecords: Int = 10
 
@@ -131,7 +134,7 @@ final class TrendsDetailViewModel: Filterable {
 
     // MARK: - Initialization
 
-    init(context: TrendsDetailContext) {
+    init(context: StatisticsContext) {
         self.selectedMetric = context.initialMetric
         self.detailPeriod = context.period
 
@@ -256,15 +259,35 @@ final class TrendsDetailViewModel: Filterable {
             .filter { $0.amountInPreferredCurrency < 0 }
             .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
 
-        // Calculate trend points based on metric
+        // Calculate current actual balance from eligible accounts
+        // This is the TRUE balance, not a chart point value
+        currentBalance = eligibleAccounts.reduce(0.0) { total, account in
+            let initialBalance = account.initialBalance
+            let transactionSum =
+                transactions
+                .filter { $0.account?.persistentModelID == account.persistentModelID }
+                .reduce(0.0) { $0 + $1.amountInPreferredCurrency }
+            return total + initialBalance + transactionSum
+        }
+
+        // Calculate trend points based on metric using unified TrendDataProcessor
         if isAggregatedView {
-            calculateAggregatedTrend(
+            // Use unified TrendDataProcessor for identical results to TrendCardView
+            let result = TrendDataProcessor.processTrendData(
                 transactions: filtered,
                 accounts: eligibleAccounts,
+                metric: mapMetricToTrendType(selectedMetric),
+                period: detailPeriod,
+                grouping: trendGrouping,
                 interval: interval,
-                defaultCurrencyCode: defaultCurrencyCode,
+                currencyCode: defaultCurrencyCode,
                 context: context
             )
+            trendPoints = result.points
+            yDomain = result.yDomain
+            totalIncome = result.totalIncome
+            totalExpense = result.totalExpense
+            dataMetric = selectedMetric
         } else {
             calculatePerAccountTrend(
                 transactions: filtered,
@@ -288,6 +311,15 @@ final class TrendsDetailViewModel: Filterable {
         recentRecords = Array(
             metricFiltered.sorted { $0.date > $1.date }.prefix(maxRecentRecords)
         )
+    }
+
+    /// Convert TrendMetric to TrendType for TrendDataProcessor
+    private func mapMetricToTrendType(_ metric: TrendMetric) -> TrendType {
+        switch metric {
+        case .balance: return .balance
+        case .income: return .income
+        case .expense: return .expense
+        }
     }
 
     /// Calculate aggregated trend (single line)

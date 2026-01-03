@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 /// Protocol for ViewModels that support filtering transactions
-/// Used by RecordsViewModel and TrendsDetailViewModel
+/// Used by RecordsViewModel and StatisticsViewModel
 protocol Filterable: AnyObject {
 
     // MARK: - Filter Properties

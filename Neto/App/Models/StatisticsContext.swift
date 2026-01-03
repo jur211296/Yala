@@ -1,5 +1,5 @@
 //
-//  TrendsDetailContext.swift
+//  StatisticsContext.swift
 //  Neto
 //
 //  Context for passing filter state from Panel to Trends Detail View.
@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 /// Context passed from Panel to Trends Detail View with initial filter state
-struct TrendsDetailContext {
+struct StatisticsContext {
     /// Initial metric to display (Saldo, Ingreso, Gasto)
     var initialMetric: TrendMetric
 
@@ -32,8 +32,8 @@ struct TrendsDetailContext {
     var dateInterval: DateInterval?
 
     /// Create an empty context with defaults
-    static func empty(metric: TrendMetric = .balance) -> TrendsDetailContext {
-        TrendsDetailContext(
+    static func empty(metric: TrendMetric = .balance) -> StatisticsContext {
+        StatisticsContext(
             initialMetric: metric,
             period: .thisYear,
             accountID: nil,

@@ -33,9 +33,32 @@ struct CurrencySettingsView: View {
 
             // Main Content
             ScrollView {
-                VStack(spacing: 24) {
-                    preferredCurrencySection
-                    exchangeRatesSection
+                VStack(spacing: DesignSystem.Spacing.xxLarge) {
+
+                    // Header
+                    VStack(spacing: 8) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 48))
+                            .foregroundStyle(Color.brandPrimary)
+                            .padding(.bottom, 8)
+
+                        Text("Divisa y Cambio")
+                            .font(Typography.title2)
+                            .foregroundStyle(Color.netoPrimaryText)
+
+                        Text(
+                            "Elige tu moneda principal y consulta los tipos de cambio actualizados."
+                        )
+                        .font(Typography.body)
+                        .foregroundStyle(Color.netoSecondaryText)
+                        .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 32)
+
+                    VStack(spacing: 24) {
+                        preferredCurrencySection
+                        exchangeRatesSection
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 24)

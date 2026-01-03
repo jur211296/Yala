@@ -1,5 +1,5 @@
 //
-//  NatureSpendingCardView.swift
+//  NatureTrendWidget.swift
 //  Neto
 //
 //  Created by Neto Refactoring.
@@ -8,11 +8,11 @@
 import Charts
 import SwiftUI
 
-struct NatureSpendingCardView: View {
+struct NatureTrendWidget: View {
     let trendPoints: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
     let currencyCode: String
-    let size: TopSpendingCardView.CardSize  // Reusing comparable size enum or WidgetSize
+    let size: TopCategoriesWidget.CardSize  // Reusing comparable size enum or WidgetSize
     let grouping: TrendGrouping
     let interval: DateInterval
     let onSelectNature: (SubcategoryNature) -> Void
@@ -22,7 +22,7 @@ struct NatureSpendingCardView: View {
         trendPoints: [NatureTrendPoint],
         selectedNature: SubcategoryNature?,
         currencyCode: String,
-        size: TopSpendingCardView.CardSize,
+        size: TopCategoriesWidget.CardSize,
         grouping: TrendGrouping,
         interval: DateInterval,
         onSelectNature: @escaping (SubcategoryNature) -> Void,

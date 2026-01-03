@@ -2,14 +2,155 @@
 //  SkeletonView.swift
 //  Neto
 //
-//  Reusable skeleton loading component with shimmer animation.
+//  Skeleton loading views for widget placeholders.
 //
 
 import SwiftUI
 
-// MARK: - Shimmer Effect
+// MARK: - Generic Widget Skeleton
 
-/// A view modifier that adds a shimmer animation effect.
+struct WidgetSkeleton: View {
+    let height: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color.netoSecondaryText.opacity(0.1))
+            .frame(height: height)
+            .shimmer()
+    }
+}
+
+// MARK: - Trend Card Skeleton
+
+struct TrendWidgetSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.netoSecondaryText.opacity(0.15))
+                    .frame(width: 120, height: 20)
+                Spacer()
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.netoSecondaryText.opacity(0.1))
+                    .frame(width: 100, height: 28)
+            }
+
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.netoSecondaryText.opacity(0.15))
+                .frame(width: 150, height: 32)
+
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.netoSecondaryText.opacity(0.1))
+                .frame(height: 180)
+        }
+        .padding(20)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shimmer()
+    }
+}
+
+// MARK: - Cash Flow Skeleton
+
+struct CashFlowSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.netoSecondaryText.opacity(0.15))
+                .frame(width: 100, height: 18)
+
+            HStack(spacing: 16) {
+                ForEach(0..<2, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.netoSecondaryText.opacity(0.1))
+                        .frame(height: 60)
+                }
+            }
+
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.netoSecondaryText.opacity(0.1))
+                .frame(height: 120)
+        }
+        .padding(20)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shimmer()
+    }
+}
+
+// MARK: - Latest Records Skeleton
+
+struct LatestRecordsSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.netoSecondaryText.opacity(0.15))
+                .frame(width: 120, height: 18)
+
+            ForEach(0..<4, id: \.self) { _ in
+                HStack {
+                    Circle()
+                        .fill(Color.netoSecondaryText.opacity(0.1))
+                        .frame(width: 40, height: 40)
+                    VStack(alignment: .leading, spacing: 4) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.netoSecondaryText.opacity(0.15))
+                            .frame(width: 100, height: 14)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.netoSecondaryText.opacity(0.1))
+                            .frame(width: 60, height: 12)
+                    }
+                    Spacer()
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.netoSecondaryText.opacity(0.15))
+                        .frame(width: 60, height: 16)
+                }
+            }
+        }
+        .padding(20)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shimmer()
+    }
+}
+
+// MARK: - Categories Pie Skeleton
+
+struct CategoriesPieSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.netoSecondaryText.opacity(0.15))
+                .frame(width: 100, height: 18)
+
+            HStack(spacing: 20) {
+                Circle()
+                    .fill(Color.netoSecondaryText.opacity(0.1))
+                    .frame(width: 120, height: 120)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        HStack {
+                            Circle()
+                                .fill(Color.netoSecondaryText.opacity(0.15))
+                                .frame(width: 12, height: 12)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.netoSecondaryText.opacity(0.1))
+                                .frame(width: 60, height: 12)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shimmer()
+    }
+}
+
+// MARK: - Shimmer Modifier
+
 struct ShimmerModifier: ViewModifier {
     @State private var phase: CGFloat = 0
 
@@ -17,20 +158,23 @@ struct ShimmerModifier: ViewModifier {
         content
             .overlay(
                 GeometryReader { geometry in
-                    LinearGradient(
-                        colors: [
-                            .clear,
-                            Color.white.opacity(0.4),
-                            .clear,
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: geometry.size.width * 2)
-                    .offset(x: -geometry.size.width + (phase * geometry.size.width * 2))
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    .clear,
+                                    .white.opacity(0.2),
+                                    .clear,
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width * 0.5)
+                        .offset(x: phase * geometry.size.width * 1.5 - geometry.size.width * 0.25)
                 }
+                .mask(content)
             )
-            .mask(content)
             .onAppear {
                 withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                     phase = 1
@@ -40,182 +184,7 @@ struct ShimmerModifier: ViewModifier {
 }
 
 extension View {
-    /// Adds a shimmer loading effect to the view.
     func shimmer() -> some View {
         modifier(ShimmerModifier())
     }
-}
-
-// MARK: - Skeleton View
-
-/// A basic skeleton placeholder with configurable size and shape.
-struct SkeletonView: View {
-    var width: CGFloat? = nil
-    var height: CGFloat = 20
-    var cornerRadius: CGFloat = CornerRadius.sm
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(Color.netoSecondaryText.opacity(0.12))
-            .frame(width: width, height: height)
-            .shimmer()
-    }
-}
-
-// MARK: - Skeleton Shapes
-
-/// Circle skeleton for avatars/icons
-struct SkeletonCircle: View {
-    var size: CGFloat = 40
-
-    var body: some View {
-        Circle()
-            .fill(Color.netoSecondaryText.opacity(0.12))
-            .frame(width: size, height: size)
-            .shimmer()
-    }
-}
-
-// MARK: - Widget Skeleton Templates
-
-/// Skeleton for TrendCardView
-struct TrendCardSkeleton: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    SkeletonView(width: 140, height: 16)
-                    SkeletonView(width: 100, height: 28)
-                }
-                Spacer()
-                SkeletonView(width: 120, height: 32, cornerRadius: CornerRadius.full)
-            }
-
-            // Chart area
-            SkeletonView(height: 220, cornerRadius: CornerRadius.md)
-                .padding(.top, 8)
-        }
-        .padding(20)
-        .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
-    }
-}
-
-/// Skeleton for CategoriesPieChartCardView
-struct CategoriesPieSkeleton: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            // Title
-            SkeletonView(width: 120, height: 16)
-
-            // Pie chart placeholder
-            SkeletonCircle(size: 160)
-
-            // Legend items
-            VStack(spacing: 8) {
-                ForEach(0..<3, id: \.self) { _ in
-                    HStack {
-                        SkeletonCircle(size: 12)
-                        SkeletonView(width: 80, height: 14)
-                        Spacer()
-                        SkeletonView(width: 60, height: 14)
-                    }
-                }
-            }
-        }
-        .padding(20)
-        .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
-    }
-}
-
-/// Skeleton for CashFlowCardView
-struct CashFlowSkeleton: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            SkeletonView(width: 120, height: 16)
-
-            // Summary row
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    SkeletonView(width: 60, height: 12)
-                    SkeletonView(width: 80, height: 20)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    SkeletonView(width: 60, height: 12)
-                    SkeletonView(width: 80, height: 20)
-                }
-                Spacer()
-            }
-
-            // Chart
-            SkeletonView(height: 120, cornerRadius: CornerRadius.md)
-        }
-        .padding(20)
-        .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
-    }
-}
-
-/// Skeleton for LatestRecordsCardView
-struct LatestRecordsSkeleton: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
-            SkeletonView(width: 130, height: 16)
-
-            // Record items
-            ForEach(0..<3, id: \.self) { _ in
-                HStack {
-                    SkeletonCircle(size: 36)
-                    VStack(alignment: .leading, spacing: 4) {
-                        SkeletonView(width: 100, height: 14)
-                        SkeletonView(width: 70, height: 12)
-                    }
-                    Spacer()
-                    SkeletonView(width: 60, height: 16)
-                }
-            }
-        }
-        .padding(20)
-        .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
-    }
-}
-
-// MARK: - Generic Widget Skeleton
-
-/// A generic skeleton that matches widget card styling
-struct WidgetSkeleton: View {
-    var height: CGFloat = 200
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SkeletonView(width: 100, height: 16)
-            Spacer()
-            SkeletonView(height: height * 0.6, cornerRadius: CornerRadius.md)
-        }
-        .padding(20)
-        .frame(height: height)
-        .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
-    }
-}
-
-// MARK: - Preview
-
-#Preview("Skeleton Components") {
-    ScrollView {
-        VStack(spacing: 20) {
-            SkeletonView(width: 200, height: 20)
-            SkeletonCircle()
-            TrendCardSkeleton()
-            CashFlowSkeleton()
-            LatestRecordsSkeleton()
-        }
-        .padding()
-    }
-    .background(Color.netoBackground)
 }

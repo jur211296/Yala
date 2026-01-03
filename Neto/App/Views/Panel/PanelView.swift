@@ -167,6 +167,10 @@ struct PanelView: View {
             viewModel.syncFromSessionState(sessionState)
             recalculateData()
         }
+        // Recalculate when trend metric changes (Balance/Income/Expense)
+        .onChange(of: viewModel.trendType) {
+            recalculateData()
+        }
     }
 
     private var mainContent: some View {
@@ -472,35 +476,16 @@ struct PanelView: View {
         return formatter.string(from: date)
     }
 
-    /// Recalculate trend data with debouncing and smooth animation
+    /// Recalculate trend data with smooth animation
     private func recalculateData() {
-        // Cancel any pending calculation
-        calculationTask?.cancel()
-
-        calculationTask = Task {
-            // Show skeleton for initial load only (when data is empty)
-            let showSkeleton = viewModel.chartTransactions.isEmpty
-            if showSkeleton {
-                await MainActor.run {
-                    viewModel.isCalculating = true
-                }
-            }
-
-            try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms
-
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    viewModel.calculateTrendData(
-                        accounts: accounts,
-                        transactions: transactions,
-                        defaultCurrencyCode: defaultCurrencyCodeRaw,
-                        context: modelContext
-                    )
-                    viewModel.isCalculating = false
-                }
-            }
+        // Direct synchronous call for instant response
+        withAnimation(.easeOut(duration: 0.15)) {
+            viewModel.calculateTrendData(
+                accounts: accounts,
+                transactions: transactions,
+                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                context: modelContext
+            )
         }
     }
 
@@ -508,19 +493,15 @@ struct PanelView: View {
 
     @ViewBuilder
     private func widgetView(for config: WidgetConfig) -> some View {
-        // Show skeleton during initial calculation
-        if viewModel.isCalculating {
-            skeletonView(for: config)
-        } else {
-            actualWidgetView(for: config)
-        }
+        // Render actual widget directly - calculations are fast enough now
+        actualWidgetView(for: config)
     }
 
     @ViewBuilder
     private func skeletonView(for config: WidgetConfig) -> some View {
         switch config.type {
         case .trend:
-            TrendCardSkeleton()
+            TrendWidgetSkeleton()
         case .cashFlow:
             CashFlowSkeleton()
         case .latestRecords:
@@ -545,7 +526,7 @@ struct PanelView: View {
         // All widgets below have 'onShowMore' or 'onViewDetail' removed (or passed as nil) to remove chevrons
 
         if config.type == .trend {
-            TrendCardView(
+            TrendWidget(
                 viewModel: viewModel,
                 size: config.size,
                 currencyCode: preferredCurrency.rawValue,
@@ -570,7 +551,7 @@ struct PanelView: View {
                 recalculateData()
             }
         } else if config.type == .topSpending {
-            TopSpendingCardView(
+            TopCategoriesWidget(
                 categories: viewModel.topSpendingCategories,
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
@@ -583,7 +564,7 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size)
             )
         } else if config.type == .topSubcategories {
-            TopSubcategoriesCardView(
+            TopSubcategoriesWidget(
                 subcategories: viewModel.topSubcategories,
                 currencyCode: preferredCurrency.rawValue,
                 globalCategoryFilterID: viewModel.selectedCategoryID,
@@ -604,7 +585,7 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size)
             )
         } else if config.type == .categoriesPie {
-            CategoriesPieChartCardView(
+            CategoriesPieWidget(
                 categories: viewModel.topSpendingCategories,
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
@@ -617,7 +598,7 @@ struct PanelView: View {
                 size: config.size
             )
         } else if config.type == .subcategoriesPie {
-            SubcategoriesPieChartCardView(
+            SubcategoriesPieWidget(
                 subcategories: viewModel.topSubcategories,
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
@@ -638,7 +619,7 @@ struct PanelView: View {
             )
         } else if config.type == .cashFlow {
             if let summary = viewModel.cashFlowSummary {
-                CashFlowCardView(
+                CashFlowWidget(
                     summary: summary,
                     size: config.size,
                     period: viewModel.selectedPeriod.rawValue,
@@ -650,13 +631,13 @@ struct PanelView: View {
                 EmptyView()
             }
         } else if config.type == .latestRecords {
-            LatestRecordsCardView(
+            RecentRecordsWidget(
                 records: viewModel.latestRecords,
                 currencyCode: preferredCurrency.rawValue,
                 onShowMore: nil  // REMOVED CHEVRON
             )
         } else if config.type == .expensesByNature {
-            NatureSpendingCardView(
+            NatureTrendWidget(
                 trendPoints: viewModel.natureTrendPoints,
                 selectedNature: viewModel.selectedNature,
                 currencyCode: preferredCurrency.rawValue,
@@ -671,7 +652,7 @@ struct PanelView: View {
                 onShowDetail: nil  // Explicitly remove chevron
             )
         } else if config.type == .exchangeRate {
-            ExchangeRateCardView(
+            ExchangeRateWidget(
                 data: viewModel.exchangeRateWidgetData,
                 preferredCurrency: preferredCurrency.rawValue,
                 selectedCurrencies: $viewModel.selectedComparisonCurrencies,
@@ -681,7 +662,7 @@ struct PanelView: View {
         }
     }
 
-    private func mapWidgetSize(_ size: WidgetSize) -> TopSpendingCardView.CardSize {
+    private func mapWidgetSize(_ size: WidgetSize) -> TopCategoriesWidget.CardSize {
         switch size {
         case .medium: return .medium
         case .large: return .large

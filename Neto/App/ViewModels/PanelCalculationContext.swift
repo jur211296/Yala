@@ -40,6 +40,14 @@ struct PanelCalculationContext {
     /// Transactions for category/subcategory widgets (respects focus date)
     let contextTransactions: [TransactionItem]
 
+    // MARK: - Pre-Filtered Data (Efficiency Optimization)
+
+    /// Context transactions with nature filter pre-applied (avoids duplicate filtering)
+    let natureFilteredTransactions: [TransactionItem]
+
+    /// Nature-filtered transactions with subcategory filter pre-applied
+    let fullyFilteredTransactions: [TransactionItem]
+
     // MARK: - Period & Interval
 
     /// The selected display period

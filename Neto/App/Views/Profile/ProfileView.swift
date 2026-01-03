@@ -18,10 +18,16 @@ struct ProfileView: View {
     @AppStorage("userName") private var userName: String = "Usuario"
 
     @Query private var allTransactions: [TransactionItem]
+    @Query private var accounts: [Account]
+    @Query private var categories: [Category]
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
     @State private var activeSheet: ProfileSheet?
+
+    // Import result - shown as alert after ImportIntroSheet dismisses
+    @State private var importResult: ImportResult?
+    @State private var showImportResult: Bool = false
 
     enum ProfileSheet: Identifiable {
         case personalDetails
@@ -39,6 +45,7 @@ struct ProfileView: View {
         case categories
         case tags
         case themes
+        case personalization
         case currency
         case notifications
         case favorites
@@ -88,12 +95,31 @@ struct ProfileView: View {
                 case .personalDetails:
                     PersonalDetailsView()
                 case .importIntro:
-                    ImportIntroSheet(onImportCompleted: {
-                        activeSheet = nil
-                    })
+                    ImportIntroSheet(
+                        accounts: accounts,
+                        categories: categories,
+                        onImportCompleted: { result in
+                            // Store result and show alert after sheet animation completes
+                            activeSheet = nil
+                            importResult = result
+                            // Small delay to ensure sheet is fully dismissed
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                showImportResult = true
+                            }
+                        }
+                    )
                 case .exportWizard:
                     ExportFiltersStepView()
                 }
+            }
+            .alert(
+                importResult?.isSuccess == true ? "Importación completada" : "Error al importar",
+                isPresented: $showImportResult,
+                presenting: importResult
+            ) { _ in
+                Button("OK", role: .cancel) {}
+            } message: { result in
+                Text(result.message)
             }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
@@ -105,6 +131,8 @@ struct ProfileView: View {
                     TagsSettingsListView()
                 case .themes:
                     ThemeSettingsView()
+                case .personalization:
+                    PersonalizationSettingsView()
                 case .currency:
                     CurrencySettingsView()
                 case .placeholder(let title):
@@ -129,7 +157,7 @@ struct ProfileView: View {
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
     // Default Period Preference
-    @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.thisMonth
+    @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
         .rawValue
 
     // MARK: - Header
@@ -194,45 +222,10 @@ struct ProfileView: View {
     private var preferenciasSection: some View {
         SectionBox(title: "Preferencias") {
             VStack(spacing: 0) {
-                // Personalización Section
-                VStack(spacing: 0) {
-                    HStack {
-                        Text("PERSONALIZACIÓN")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 8)
-
-                    // Default Period Selector
-                    HStack(spacing: 12) {
-                        Image(systemName: "calendar")
-                            .font(.body)
-                            .foregroundStyle(.primary)
-                            .frame(width: 28)
-
-                        Text("Periodo predeterminado")
-                            .font(.body)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Picker("", selection: $defaultPeriodRaw) {
-                            ForEach(DetailPeriod.allCases) { period in
-                                Text(period.rawValue).tag(period.rawValue)
-                            }
-                        }
-                        .tint(.secondary)
-                        .labelsHidden()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                }
-
+                profileRow(
+                    icon: "slider.horizontal.3", title: "Personalización",
+                    destination: .personalization)
                 SubsectionDivider()
-
                 profileRow(icon: "paintpalette.fill", title: "Temas", destination: .themes)
                 SubsectionDivider()
                 profileRow(

@@ -1,5 +1,5 @@
 //
-//  LatestRecordsCardView.swift
+//  RecentRecordsWidget.swift
 //  Neto
 //
 //  Created by Neto Refactoring.
@@ -8,7 +8,7 @@
 import SwiftData
 import SwiftUI
 
-struct LatestRecordsCardView: View {
+struct RecentRecordsWidget: View {
     let records: [TransactionItem]
     let currencyCode: String
 
