@@ -62,10 +62,10 @@ struct SubcategoryNatureSelectorView: View {
         }
         .navigationTitle("Naturaleza")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     dismiss()
                 }
             }

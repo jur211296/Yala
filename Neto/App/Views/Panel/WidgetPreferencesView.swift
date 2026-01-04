@@ -66,10 +66,7 @@ struct WidgetPreferencesView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetPrimaryButton(
-                        title: "Hecho",
-                        action: { dismiss() }
-                    )
+                    NetoSaveButton(action: { dismiss() })
                 }
             }
             .scrollContentBackground(.hidden)

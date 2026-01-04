@@ -21,8 +21,10 @@ final class Subcategory {
     var isVisible: Bool
     /// Orden de presentación dentro de su categoría
     var sortOrder: Int
-    /// Campo reservado para futura “naturaleza” (Necesario / Deseable / etc.)
+    /// Campo reservado para futura "naturaleza" (Necesario / Deseable / etc.)
     var natureRawValue: String?
+    /// Nombre del icono SF Symbol (opcional)
+    var iconName: String?
 
     /// Relación inversa con la categoría padre
     var category: Category
@@ -34,6 +36,7 @@ final class Subcategory {
         isVisible: Bool = true,
         sortOrder: Int = 0,
         natureRawValue: String? = nil,
+        iconName: String? = nil,
         category: Category
     ) {
         self.name = name
@@ -42,6 +45,7 @@ final class Subcategory {
         self.isVisible = isVisible
         self.sortOrder = sortOrder
         self.natureRawValue = natureRawValue
+        self.iconName = iconName
         self.category = category
     }
 }

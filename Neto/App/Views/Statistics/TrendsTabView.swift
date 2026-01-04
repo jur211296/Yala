@@ -132,9 +132,9 @@ struct TrendsTabView: View {
         }
         .padding(20)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
@@ -237,7 +237,7 @@ struct TrendsTabView: View {
         }
         .padding(20)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 
     private var emptyRecordsState: some View {
@@ -352,12 +352,12 @@ struct CompactRecordRow: View {
             // Category icon
             ZStack {
                 Circle()
-                    .fill(subcategoryColor.opacity(0.15))
+                    .fill(subcategoryColor)
                     .frame(width: 40, height: 40)
 
                 Image(systemName: subcategoryIcon)
                     .font(.callout)
-                    .foregroundStyle(subcategoryColor)
+                    .foregroundStyle(.white)
             }
 
             // Details
@@ -402,8 +402,10 @@ struct CompactRecordRow: View {
     }
 
     private var subcategoryIcon: String {
-        // Use income/expense arrow as icon (matching existing RecordRowView pattern)
-        record.category?.isIncome == true ? "arrow.down" : "arrow.up"
+        // Use subcategory icon if available, fallback to category icon, then default tag
+        record.subcategory?.iconName
+            ?? record.category?.iconName
+            ?? "tag.fill"
     }
 
     private var categoryAccountText: String {

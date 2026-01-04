@@ -74,22 +74,23 @@ struct TagsSettingsListView: View {
         }
         .navigationTitle("Etiquetas")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    SheetTopButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down") {
+                    NetoToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down")
+                    {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             isEditMode.toggle()
                         }
                     }
 
-                    SheetTopButton(systemName: "plus") {
+                    NetoToolbarButton(systemName: "plus") {
                         isPresentingCreateTag = true
                     }
                 }
@@ -229,6 +230,7 @@ struct TagsSettingsListView: View {
                     .foregroundStyle(.tertiary)
             }
         }
+        .contentShape(Rectangle())
     }
 
     // MARK: - Reorder Logic

@@ -44,12 +44,12 @@ struct TopSubcategoriesWidget: View {
                 contentForSize
             }
         }
-        .padding(size == .small ? DesignSystem.Spacing.large : DesignSystem.Spacing.xLarge)
+        .padding(size == .small ? DS.Spacing.lg : DS.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
@@ -243,12 +243,15 @@ struct TopSubcategoriesWidget: View {
                     // Icon
                     ZStack {
                         Circle()
-                            .fill(Color(hex: top.colorHex ?? "#888888").opacity(0.1))
+                            .fill(Color(hex: top.colorHex ?? "#888888"))
                             .frame(width: 48, height: 48)
 
-                        Image(systemName: "list.bullet.indent")
-                            .font(.headline)
-                            .foregroundStyle(Color(hex: top.colorHex ?? "#888888"))
+                        Image(
+                            systemName: top.subcategory?.iconName ?? top.category?.iconName
+                                ?? "tag.fill"
+                        )
+                        .font(.headline)
+                        .foregroundStyle(.white)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -349,12 +352,15 @@ private struct SubcategoryRow: View {
                     // Icon (Default placeholder as requested)
                     ZStack {
                         Circle()
-                            .fill(Color(hex: summary.colorHex ?? "#888888").opacity(0.1))
+                            .fill(Color(hex: summary.colorHex ?? "#888888"))
                             .frame(width: 32, height: 32)
 
-                        Image(systemName: "tag.fill")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Color(hex: summary.colorHex ?? "#888888"))
+                        Image(
+                            systemName: summary.subcategory?.iconName ?? summary.category?.iconName
+                                ?? "tag.fill"
+                        )
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {

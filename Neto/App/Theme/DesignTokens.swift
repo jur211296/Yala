@@ -2,38 +2,186 @@
 //  DesignTokens.swift
 //  Neto
 //
-//  Formal design tokens for consistent styling across the app.
+//  Unified Design System tokens for consistent styling across the app.
+//  Single source of truth for spacing, radius, opacity, and animation values.
 //
 
 import SwiftUI
 
-// MARK: - Spacing
+// MARK: - DS (Design System)
 
-/// Consistent spacing values for padding, margins, and gaps.
-enum Spacing {
-    /// Extra small spacing: 4pt
-    static let xs: CGFloat = 4
+/// Unified Design System namespace.
+/// Usage: `DS.Spacing.lg`, `DS.Radius.xl`, `DS.Opacity.glass`
+enum DS {
 
-    /// Small spacing: 8pt
-    static let sm: CGFloat = 8
+    // MARK: - Spacing
 
-    /// Medium spacing: 16pt (default)
-    static let md: CGFloat = 16
+    /// Consistent spacing values for padding, margins, and gaps.
+    enum Spacing {
+        /// 2pt - Micro gaps, hairline spacing
+        static let xxs: CGFloat = 2
 
-    /// Large spacing: 24pt
-    static let lg: CGFloat = 24
+        /// 4pt - Tight gaps, icon padding
+        static let xs: CGFloat = 4
 
-    /// Extra large spacing: 32pt
-    static let xl: CGFloat = 32
+        /// 8pt - Standard small spacing
+        static let sm: CGFloat = 8
 
-    /// Extra extra large spacing: 48pt
-    static let xxl: CGFloat = 48
+        /// 12pt - Medium spacing
+        static let md: CGFloat = 12
+
+        /// 16pt - Standard large spacing (default)
+        static let lg: CGFloat = 16
+
+        /// 20pt - Extra large spacing
+        static let xl: CGFloat = 20
+
+        /// 24pt - Section spacing
+        static let xxl: CGFloat = 24
+
+        /// 32pt - Major section dividers
+        static let xxxl: CGFloat = 32
+
+        /// 48pt - Page margins, large gaps
+        static let xxxxl: CGFloat = 48
+    }
+
+    // MARK: - Corner Radius
+
+    /// Consistent corner radius values for rounded UI elements.
+    enum Radius {
+        /// 4pt - Tiny elements, pills
+        static let xs: CGFloat = 4
+
+        /// 8pt - Buttons, small cards, chips
+        static let sm: CGFloat = 8
+
+        /// 12pt - Cards, inputs, containers
+        static let md: CGFloat = 12
+
+        /// 16pt - Sheets, modals
+        static let lg: CGFloat = 16
+
+        /// 24pt - Large cards, hero elements
+        static let xl: CGFloat = 24
+
+        /// 9999pt - Full capsule/pill shape
+        static let full: CGFloat = 9999
+    }
+
+    // MARK: - Opacity
+
+    /// Standard opacity values for consistent transparency.
+    enum Opacity {
+        /// 0.6 - Glassmorphism backgrounds
+        static let glass: Double = 0.6
+
+        /// 0.4 - Overlays, scrims
+        static let overlay: Double = 0.4
+
+        /// 0.1 - Subtle backgrounds, hover states
+        static let subtle: Double = 0.1
+
+        /// 0.5 - Disabled states
+        static let disabled: Double = 0.5
+
+        /// 0.05 - Very subtle, borders
+        static let faint: Double = 0.05
+    }
+
+    // MARK: - Animation
+
+    /// Consistent animation durations for smooth UI transitions.
+    enum Animation {
+        /// 0.15s - Micro-interactions, button taps
+        static let fast: Double = 0.15
+
+        /// 0.25s - Standard transitions
+        static let normal: Double = 0.25
+
+        /// 0.4s - Emphasis, modals, sheets
+        static let slow: Double = 0.4
+    }
+
+    // MARK: - Shadow
+
+    /// Pre-configured shadow styles.
+    enum Shadow {
+        /// Small shadow for subtle elevation (cards)
+        static let small: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
+            .black.opacity(0.05), 10, 0, 5
+        )
+
+        /// Medium shadow for floating elements
+        static let medium: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
+            .black.opacity(0.12), 8, 0, 4
+        )
+
+        /// Large shadow for modals, FABs
+        static let large: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
+            .black.opacity(0.20), 20, 0, 10
+        )
+    }
 }
 
-// MARK: - Typography
+// MARK: - View Extensions
+
+extension View {
+    /// Apply standard card shadow (small elevation)
+    func dsCardShadow() -> some View {
+        let s = DS.Shadow.small
+        return self.shadow(color: s.color, radius: s.radius, x: s.x, y: s.y)
+    }
+
+    /// Apply floating element shadow (FAB, modals)
+    func dsFloatingShadow() -> some View {
+        let s = DS.Shadow.large
+        return self.shadow(color: s.color, radius: s.radius, x: s.x, y: s.y)
+    }
+}
+
+// MARK: - Legacy Aliases (Deprecated)
+
+// These provide backwards compatibility during migration.
+// Will be removed in a future version.
+
+/// Legacy DesignSystem namespace - use DS instead
+@available(*, deprecated, message: "Use DS instead")
+enum DesignSystem {
+
+    @available(*, deprecated, message: "Use DS.Spacing instead")
+    enum Spacing {
+        static var two: CGFloat { DS.Spacing.xxs }
+        static var four: CGFloat { DS.Spacing.xs }
+        static var standard: CGFloat { DS.Spacing.sm }
+        static var medium: CGFloat { DS.Spacing.md }
+        static var large: CGFloat { DS.Spacing.lg }
+        static var xLarge: CGFloat { DS.Spacing.xl }
+        static var xxLarge: CGFloat { DS.Spacing.xxl }
+        static var triple: CGFloat { DS.Spacing.xxxl }
+    }
+
+    @available(*, deprecated, message: "Use DS.Radius instead")
+    enum Radius {
+        static var small: CGFloat { DS.Radius.sm }
+        static var standard: CGFloat { DS.Radius.md }
+        static var large: CGFloat { DS.Radius.lg }
+        static var xLarge: CGFloat { DS.Radius.xl }
+    }
+
+    @available(*, deprecated, message: "Use DS.Opacity instead")
+    enum Opacity {
+        static var glass: Double { DS.Opacity.glass }
+        static var subtle: Double { DS.Opacity.subtle }
+    }
+}
+
+// MARK: - Legacy Typography (Keep for reference, not actively used)
 
 /// Pre-configured font styles for consistent typography.
-struct Typography {
+/// Note: Most views currently use inline .font() calls.
+/// Consider migrating to these tokens for consistency.
+enum Typography {
 
     // MARK: - Headlines
 
@@ -51,7 +199,7 @@ struct Typography {
 
     // MARK: - Body
 
-    /// Body large: Regular, for emphasized body text
+    /// Body large: Medium weight, for emphasized body text
     static let bodyLarge = Font.body.weight(.medium)
 
     /// Body: Regular, for standard content
@@ -73,74 +221,4 @@ struct Typography {
 
     /// Mono large: Monospaced for large amounts
     static let monoLarge = Font.system(.title2, design: .monospaced).weight(.semibold)
-}
-
-// MARK: - Corner Radius
-
-/// Consistent corner radius values for rounded UI elements.
-enum CornerRadius {
-    /// Small radius: 8pt (buttons, small cards)
-    static let sm: CGFloat = 8
-
-    /// Medium radius: 12pt (cards, containers)
-    static let md: CGFloat = 12
-
-    /// Large radius: 16pt (sheets, modals)
-    static let lg: CGFloat = 16
-
-    /// Extra large radius: 24pt (large cards)
-    static let xl: CGFloat = 24
-
-    /// Full radius: 999pt (pills, capsules)
-    static let full: CGFloat = 999
-}
-
-// MARK: - Animation
-
-/// Consistent animation durations for smooth UI transitions.
-enum AnimationDuration {
-    /// Fast animation: 0.15s (micro-interactions)
-    static let fast: Double = 0.15
-
-    /// Normal animation: 0.25s (standard transitions)
-    static let normal: Double = 0.25
-
-    /// Slow animation: 0.4s (emphasis, modals)
-    static let slow: Double = 0.4
-}
-
-// MARK: - Shadows
-
-/// Pre-configured shadow styles.
-enum Shadow {
-    /// Small shadow for subtle elevation
-    static func small(_ color: Color = .black) -> some View {
-        EmptyView().shadow(color: color.opacity(0.08), radius: 4, x: 0, y: 2)
-    }
-
-    /// Medium shadow for cards
-    static let medium: (Color) -> (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = {
-        color in
-        (color.opacity(0.12), 8, 0, 4)
-    }
-
-    /// Large shadow for floating elements
-    static let large: (Color) -> (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = {
-        color in
-        (color.opacity(0.20), 20, 0, 10)
-    }
-}
-
-// MARK: - View Extensions
-
-extension View {
-    /// Apply standard card shadow
-    func cardShadow(color: Color = .black) -> some View {
-        self.shadow(color: color.opacity(0.12), radius: 8, x: 0, y: 4)
-    }
-
-    /// Apply floating element shadow
-    func floatingShadow(color: Color = .black) -> some View {
-        self.shadow(color: color.opacity(0.20), radius: 20, x: 0, y: 10)
-    }
 }

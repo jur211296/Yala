@@ -38,13 +38,13 @@ struct TagSelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetPrimaryButton(title: "Listo", action: { dismiss() })
+                    NetoSaveButton(action: { dismiss() })
                 }
             }
         }

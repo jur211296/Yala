@@ -13,45 +13,10 @@ import SwiftUI
     import UIKit
 #endif
 
-// MARK: - Design System Constants
-
-/// Constantes de diseño para asegurar consistencia en Espaciado y Radios.
-struct DesignSystem {
-    enum Spacing {
-        /// 4.0
-        static let two: CGFloat = 2
-        /// 4.0
-        static let four: CGFloat = 4
-        /// 8.0
-        static let standard: CGFloat = 8
-        /// 12.0
-        static let medium: CGFloat = 12
-        /// 16.0
-        static let large: CGFloat = 16
-        /// 20.0
-        static let xLarge: CGFloat = 20
-        /// 24.0
-        static let xxLarge: CGFloat = 24
-        /// 32.0
-        static let triple: CGFloat = 32
-    }
-
-    enum Radius {
-        /// 8.0
-        static let small: CGFloat = 8
-        /// 12.0
-        static let standard: CGFloat = 12
-        /// 16.0
-        static let large: CGFloat = 16
-        /// 24.0
-        static let xLarge: CGFloat = 24
-    }
-
-    enum Opacity {
-        static let glass: Double = 0.6
-        static let subtle: Double = 0.1
-    }
-}
+// MARK: - Design System
+// Note: Design tokens (Spacing, Radius, Opacity) are now unified in:
+// App/Theme/DesignTokens.swift → Use DS.Spacing, DS.Radius, DS.Opacity
+// Legacy DesignSystem aliases remain available for backwards compatibility.
 
 // MARK: - Enums de apoyo
 

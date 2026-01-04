@@ -30,11 +30,11 @@ struct ImportResultOverlay: View {
     var body: some View {
         ZStack {
             // Full screen background
-            Color.black.opacity(DesignSystem.Opacity.glass)
+            Color.black.opacity(DS.Opacity.glass)
                 .ignoresSafeArea()
 
             // Content card
-            VStack(spacing: DesignSystem.Spacing.large) {
+            VStack(spacing: DS.Spacing.lg) {
                 Spacer()
 
                 // Icon
@@ -52,7 +52,7 @@ struct ImportResultOverlay: View {
                     .font(Typography.body)
                     .foregroundStyle(Color.netoSecondaryText)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, DesignSystem.Spacing.triple)
+                    .padding(.horizontal, DS.Spacing.xxxl)
 
                 Spacer()
 
@@ -66,7 +66,7 @@ struct ImportResultOverlay: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(result.isSuccess ? Color.financeGreen : Color.brandPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.standard))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 40)
@@ -125,16 +125,16 @@ struct ImportIntroSheet: View {
             ZStack {
                 PanelBackgroundView()
 
-                VStack(spacing: DesignSystem.Spacing.large) {
+                VStack(spacing: DS.Spacing.lg) {
                     ScrollView {
-                        VStack(spacing: DesignSystem.Spacing.xxLarge) {
+                        VStack(spacing: DS.Spacing.xxl) {
                             introSection
                             templateSection
                             toggleSection
                         }
-                        .padding(.horizontal, DesignSystem.Spacing.large)
-                        .padding(.top, DesignSystem.Spacing.large)
-                        .padding(.bottom, DesignSystem.Spacing.large)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.lg)
                     }
 
                     // Bottom Action Button
@@ -142,7 +142,7 @@ struct ImportIntroSheet: View {
                         Button {
                             startAccountSelection()
                         } label: {
-                            HStack(spacing: DesignSystem.Spacing.standard) {
+                            HStack(spacing: DS.Spacing.sm) {
                                 if isImporting {
                                     ProgressView()
                                         .progressViewStyle(.circular)
@@ -159,18 +159,18 @@ struct ImportIntroSheet: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(Color.brandPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.standard))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .disabled(isImporting)
                     }
-                    .padding(.horizontal, DesignSystem.Spacing.large)
-                    .padding(.bottom, DesignSystem.Spacing.large)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.lg)
                 }
             }
             .navigationTitle("Importar")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
@@ -258,9 +258,9 @@ struct ImportIntroSheet: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(Color.netoCard)
-                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
                         .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -293,9 +293,9 @@ struct ImportIntroSheet: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .background(Color.netoCard)
-            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
 

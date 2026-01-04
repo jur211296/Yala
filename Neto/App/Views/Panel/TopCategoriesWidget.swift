@@ -39,12 +39,12 @@ struct TopCategoriesWidget: View {
                 contentForSize
             }
         }
-        .padding(size == .small ? DesignSystem.Spacing.large : DesignSystem.Spacing.xLarge)
+        .padding(size == .small ? DS.Spacing.lg : DS.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
@@ -135,12 +135,12 @@ struct TopCategoriesWidget: View {
                     // Large Icon
                     ZStack {
                         Circle()
-                            .fill(Color(hex: topCategory.category.colorHex).opacity(0.1))
+                            .fill(Color(hex: topCategory.category.colorHex))
                             .frame(width: 48, height: 48)  // Slightly smaller for dense layout
 
-                        Image(systemName: "tag.fill")
+                        Image(systemName: topCategory.category.iconName ?? "tag.fill")
                             .font(.headline)
-                            .foregroundStyle(Color(hex: topCategory.category.colorHex))
+                            .foregroundStyle(.white)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -233,12 +233,12 @@ private struct CategoryRow: View {
             // Icon Circle
             ZStack {
                 Circle()
-                    .fill(Color(hex: summary.category.colorHex).opacity(0.1))
+                    .fill(Color(hex: summary.category.colorHex))
                     .frame(width: 40, height: 40)
 
-                Image(systemName: "tag.fill")  // Default icon
+                Image(systemName: summary.category.iconName ?? "tag.fill")  // Use actual category icon
                     .font(.subheadline)
-                    .foregroundStyle(Color(hex: summary.category.colorHex))
+                    .foregroundStyle(.white)
             }
 
             VStack(alignment: .leading, spacing: 4) {

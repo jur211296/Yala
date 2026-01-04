@@ -22,10 +22,10 @@ struct AccountsCarouselView: View {
             return max(0, min(pageCount - 1, rawIndex))
         }()
 
-        VStack(spacing: DesignSystem.Spacing.standard) {
+        VStack(spacing: DS.Spacing.sm) {
             GeometryReader { geo in
                 let totalWidth = geo.size.width
-                let spacing: CGFloat = DesignSystem.Spacing.medium
+                let spacing: CGFloat = DS.Spacing.md
                 let cardWidth = (totalWidth - spacing) / 2
 
                 ScrollView(.horizontal, showsIndicators: false) {

@@ -63,9 +63,9 @@ struct SubcategoriesPieWidget: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .frame(height: size == .large ? 320 : (size == .medium ? 220 : nil))
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
@@ -158,7 +158,7 @@ struct SubcategoriesPieWidget: View {
                     .frame(width: 140)
             }
         }
-        .padding(.top, DesignSystem.Spacing.large)
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Simple Legend List for Large Layout
@@ -257,7 +257,7 @@ struct SubcategoriesPieWidget: View {
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
                     .frame(width: iconSize, height: iconSize)
 
-                Image(systemName: "tag.fill")
+                Image(systemName: item.iconName)
                     .font(.system(size: fontSize, weight: .bold))
                     .foregroundStyle(.white)
             }
@@ -479,7 +479,7 @@ struct SubcategoriesPieWidget: View {
                                 .frame(maxWidth: safeWidth)
 
                             // Icon
-                            Image(systemName: "tag.fill")
+                            Image(systemName: centerItem.iconName)
                                 .font(.caption2)
                                 .foregroundStyle(Color(hex: centerItem.colorHex))
 
@@ -624,7 +624,7 @@ struct SubcategoriesPieWidget: View {
                 PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
-                    iconName: "tag.fill",
+                    iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
                     colorHex: $0.colorHex ?? "#8E8E93"
@@ -638,7 +638,7 @@ struct SubcategoriesPieWidget: View {
                 PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
-                    iconName: "tag.fill",
+                    iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
                     colorHex: $0.colorHex ?? "#8E8E93"

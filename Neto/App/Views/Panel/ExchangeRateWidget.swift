@@ -42,18 +42,18 @@ struct ExchangeRateWidget: View {
         VStack(spacing: 0) {
             // Header
             headerView
-                .padding([.horizontal, .top], DesignSystem.Spacing.large)
-                .padding(.bottom, DesignSystem.Spacing.medium)
+                .padding([.horizontal, .top], DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.md)
 
             // Content
             contentView
         }
         .background(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge)
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
                 .fill(Color.netoCard)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge)
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .sheet(isPresented: $showCurrencySelector) {
@@ -293,8 +293,8 @@ struct ExchangeRateWidget: View {
             }
         }
         .frame(height: 140)
-        .padding(.horizontal, DesignSystem.Spacing.large)
-        .padding(.bottom, DesignSystem.Spacing.large)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.lg)
     }
 
     // MARK: - Y Domain Calculation
@@ -384,7 +384,7 @@ struct ExchangeRateWidget: View {
         }
         .padding(8)
         .background(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.small)
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoCard)
                 .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
         )
@@ -403,8 +403,8 @@ struct ExchangeRateWidget: View {
         }
         .frame(height: 120)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, DesignSystem.Spacing.large)
-        .padding(.bottom, DesignSystem.Spacing.large)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.lg)
     }
 
     private var emptyChartView: some View {
@@ -418,8 +418,8 @@ struct ExchangeRateWidget: View {
         }
         .frame(height: 120)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, DesignSystem.Spacing.large)
-        .padding(.bottom, DesignSystem.Spacing.large)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.lg)
     }
 
     private func errorView(message: String) -> some View {
@@ -434,8 +434,8 @@ struct ExchangeRateWidget: View {
         }
         .frame(height: 120)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, DesignSystem.Spacing.large)
-        .padding(.bottom, DesignSystem.Spacing.large)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.lg)
     }
 
     // MARK: - Helpers
@@ -554,11 +554,11 @@ struct CurrencySelectorSheet: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.standard)
+                RoundedRectangle(cornerRadius: DS.Radius.md)
                     .fill(isSelected ? Color.electricIndigo.opacity(0.1) : Color.netoCard)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.standard)
+                RoundedRectangle(cornerRadius: DS.Radius.md)
                     .stroke(
                         isSelected ? Color.electricIndigo.opacity(0.3) : Color.clear, lineWidth: 1)
             )

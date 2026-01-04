@@ -74,15 +74,15 @@ struct CategoriesSettingsListView: View {
         }
         .navigationTitle("Categorías")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                SheetTopButton(systemName: "plus") {
+                NetoToolbarButton(systemName: "plus") {
                     createAndOpenNewCategory()
                 }
             }
@@ -205,7 +205,7 @@ struct CategoriesSettingsListView: View {
                 .fill(colorForHex(category.colorHex))
                 .frame(width: 36, height: 36)
                 .overlay(
-                    Image(systemName: "tag")
+                    Image(systemName: category.iconName ?? "tag")
                         .font(.subheadline)
                         .foregroundStyle(.white)
                 )
@@ -216,5 +216,6 @@ struct CategoriesSettingsListView: View {
 
             Spacer()
         }
+        .contentShape(Rectangle())
     }
 }

@@ -18,12 +18,17 @@ struct CategoryDetailView: View {
 
     @State private var name: String
     @State private var isVisible: Bool
+    @State private var iconName: String
+    @State private var colorHex: String
     @State private var showVisibilityInfo: Bool = false
     @State private var showDiscardDialog: Bool = false
     @State private var showMissingSubcategoriesAlert: Bool = false
+    @State private var showIconColorPicker: Bool = false
 
     private let initialName: String
     private let initialIsVisible: Bool
+    private let initialIconName: String
+    private let initialColorHex: String
 
     @Query(sort: \Subcategory.sortOrder, order: .forward) private var allSubcategories:
         [Subcategory]
@@ -33,8 +38,12 @@ struct CategoryDetailView: View {
         self.isNewCategory = isNewCategory
         self.initialName = category.name
         self.initialIsVisible = category.isVisible
+        self.initialIconName = category.iconName ?? "tag"
+        self.initialColorHex = category.colorHex
         _name = State(initialValue: category.name)
         _isVisible = State(initialValue: category.isVisible)
+        _iconName = State(initialValue: category.iconName ?? "tag")
+        _colorHex = State(initialValue: category.colorHex)
     }
 
     /// Subcategorías filtradas solo para esta categoría, ordenadas por sortOrder y nombre.
@@ -52,7 +61,10 @@ struct CategoryDetailView: View {
     private var hasUnsavedChanges: Bool {
         let trimmedCurrentName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedInitialName = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedCurrentName != trimmedInitialName || isVisible != initialIsVisible
+        return trimmedCurrentName != trimmedInitialName
+            || isVisible != initialIsVisible
+            || iconName != initialIconName
+            || colorHex != initialColorHex
     }
 
     private func handleBack() {
@@ -93,19 +105,18 @@ struct CategoryDetailView: View {
             }
         }
         .navigationTitle("Editar categoría")
-        .navigationBarBackButtonHidden(true)
-        .navigationBarTitleDisplayMode(.inline)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     handleBack()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                SheetPrimaryButton(
-                    title: "Guardar",
+                NetoSaveButton(
                     action: { saveCategory() },
                     isDisabled: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        || !hasUnsavedChanges
                 )
             }
         }
@@ -121,8 +132,12 @@ struct CategoryDetailView: View {
         } message: {
             Text("Para crear una nueva categoría, debes añadir al menos una subcategoría.")
         }
-        .alert("Hay cambios sin guardar", isPresented: $showDiscardDialog) {
-            Button("Salir sin guardar", role: .destructive) {
+        .confirmationDialog(
+            "¿Descartar cambios?",
+            isPresented: $showDiscardDialog,
+            titleVisibility: .visible
+        ) {
+            Button("Descartar cambios", role: .destructive) {
                 if isNewCategory {
                     modelContext.delete(category)
                     do {
@@ -133,31 +148,62 @@ struct CategoryDetailView: View {
                 }
                 dismiss()
             }
-            Button("Cancelar", role: .cancel) {
+            Button("Seguir editando", role: .cancel) {
                 // El usuario decide seguir editando; no hacemos nada.
             }
         } message: {
-            Text("Si sales ahora, se perderán los cambios realizados en esta categoría.")
+            Text("Si sales ahora, se perderán los cambios realizados.")
         }
     }
 
-    // Encabezado con círculo de color e icono
+    // Encabezado con círculo de color e icono (tappable para editar)
     private var header: some View {
         VStack(spacing: 12) {
-            Circle()
-                .fill(colorForHex(category.colorHex))
-                .frame(width: 70, height: 70)
-                .overlay(
-                    Image(systemName: "tag")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                )
+            Button {
+                showIconColorPicker = true
+            } label: {
+                ZStack(alignment: .bottomTrailing) {
+                    Circle()
+                        .fill(Color(hex: colorHex))
+                        .frame(width: 70, height: 70)
+                        .overlay(
+                            Image(systemName: iconName)
+                                .font(.title2)
+                                .foregroundStyle(.white)
+                        )
+                        .shadow(color: Color(hex: colorHex).opacity(0.3), radius: 6, x: 0, y: 3)
 
-            Text(category.name)
+                    // Pencil edit indicator
+                    Circle()
+                        .fill(Color.netoCard)
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Image(systemName: "pencil")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.electricIndigo)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(Color.netoBackground, lineWidth: 2)
+                        )
+                        .offset(x: 4, y: 4)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Text(name.isEmpty ? "Nueva categoría" : name)
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .sheet(isPresented: $showIconColorPicker) {
+            IconColorPickerSheet(
+                selectedIconName: $iconName,
+                selectedColorHex: $colorHex
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     // Sección de nombre y visibilidad
@@ -262,16 +308,16 @@ struct CategoryDetailView: View {
 
     @ViewBuilder
     private func subcategoryRow(_ subcategory: Subcategory) -> some View {
-        let backgroundColor = colorForHex(subcategory.colorHex ?? category.colorHex)
+        let backgroundColor = Color(hex: colorHex)
 
         HStack(spacing: 12) {
             Circle()
                 .fill(backgroundColor)
                 .frame(width: 32, height: 32)
                 .overlay(
-                    Image(systemName: "tag")
+                    Image(systemName: subcategory.iconName ?? category.iconName ?? "tag")
                         .font(.subheadline)
-                        .foregroundStyle(Color.contrastingText(for: backgroundColor))
+                        .foregroundStyle(.white)
                 )
 
             VStack(alignment: .leading, spacing: 2) {
@@ -288,6 +334,7 @@ struct CategoryDetailView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+        .contentShape(Rectangle())
     }
 
     private func saveCategory() {
@@ -301,6 +348,13 @@ struct CategoryDetailView: View {
 
         category.name = trimmedName
         category.isVisible = isVisible
+        category.iconName = iconName
+        category.colorHex = colorHex
+
+        // Enforce color inheritance for all subcategories
+        for subcategory in category.subcategories {
+            subcategory.colorHex = colorHex
+        }
 
         do {
             try modelContext.save()

@@ -30,6 +30,8 @@ private struct SubcategorySeedDefinition {
     /// Raw value para SubcategoryNature (esencial, prioritaria, opcional, sin_clasificacion)
     /// Si es nil, se asumirá sin_clasificacion (o lógica por defecto).
     let natureRawValue: String?
+    /// Nombre del icono SF Symbol
+    let iconName: String?
 }
 
 /// Estructura interna para describir cada categoría de la semilla
@@ -37,11 +39,13 @@ private struct CategorySeedDefinition {
     let name: String
     let colorHex: String
     let isIncome: Bool
+    /// Nombre del icono SF Symbol
+    let iconName: String?
     let subcategories: [SubcategorySeedDefinition]
 }
 
 // -------------------------------------------------------------------------
-// DEFINICIÓN DE LA SEMILLA (FIN-18 / Actualizado)
+// DEFINICIÓN DE LA SEMILLA (FIN-18 / Actualizado con iconos)
 // -------------------------------------------------------------------------
 // Ajustar únicamente si actualizamos FIN-18 y SIEMPRE bajo pedido expreso.
 //
@@ -52,12 +56,19 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Alimentación",
         colorHex: "#22C55E",
         isIncome: false,
+        iconName: "cart.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Supermercados y bodegas", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Restaurantes", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Delivery", natureRawValue: "opcional"),
             SubcategorySeedDefinition(
-                name: "Suplementos alimenticios", natureRawValue: "prioritaria"),
+                name: "Delivery", natureRawValue: "opcional",
+                iconName: "takeoutbag.and.cup.and.straw.fill"),
+            SubcategorySeedDefinition(
+                name: "Restaurantes", natureRawValue: "opcional", iconName: "fork.knife"),
+            SubcategorySeedDefinition(
+                name: "Suplementos alimenticios", natureRawValue: "prioritaria",
+                iconName: "pill.fill"),
+            SubcategorySeedDefinition(
+                name: "Supermercados y bodegas", natureRawValue: "esencial", iconName: "basket.fill"
+            ),
         ]
     ),
     // 2. Compras
@@ -65,16 +76,26 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Compras",
         colorHex: "#F59E0B",
         isIncome: false,
+        iconName: "bag.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Hogar y decoración", natureRawValue: "prioritaria"),
             SubcategorySeedDefinition(
-                name: "Tecnología y accesorios", natureRawValue: "prioritaria"),
+                name: "Cuidado personal y belleza", natureRawValue: "prioritaria",
+                iconName: "sparkles"),
             SubcategorySeedDefinition(
-                name: "Cuidado personal y belleza", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Ropa y calzado", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Regalos y detalles", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Farmacia y botiquín", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Otros", natureRawValue: "opcional"),
+                name: "Farmacia y botiquín", natureRawValue: "esencial", iconName: "cross.case.fill"
+            ),
+            SubcategorySeedDefinition(
+                name: "Hogar y decoración", natureRawValue: "prioritaria",
+                iconName: "lamp.desk.fill"),
+            SubcategorySeedDefinition(
+                name: "Otros", natureRawValue: "opcional", iconName: "ellipsis.circle.fill"),
+            SubcategorySeedDefinition(
+                name: "Regalos y detalles", natureRawValue: "opcional", iconName: "gift.fill"),
+            SubcategorySeedDefinition(
+                name: "Ropa y calzado", natureRawValue: "prioritaria", iconName: "tshirt.fill"),
+            SubcategorySeedDefinition(
+                name: "Tecnología y accesorios", natureRawValue: "prioritaria",
+                iconName: "laptopcomputer"),
         ]
     ),
     // 3. Transporte
@@ -82,10 +103,14 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Transporte",
         colorHex: "#0EA5E9",
         isIncome: false,
+        iconName: "car.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Transporte público", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Taxis y apps", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Movilidad ocasional", natureRawValue: "opcional"),
+            SubcategorySeedDefinition(
+                name: "Movilidad ocasional", natureRawValue: "opcional", iconName: "figure.walk"),
+            SubcategorySeedDefinition(
+                name: "Taxis y apps", natureRawValue: "prioritaria", iconName: "car.fill"),
+            SubcategorySeedDefinition(
+                name: "Transporte público", natureRawValue: "esencial", iconName: "bus.fill"),
         ]
     ),
     // 4. Finanzas
@@ -93,12 +118,20 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Finanzas",
         colorHex: "#6366F1",
         isIncome: false,
+        iconName: "banknote.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Impuestos", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Seguros", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Préstamos y créditos", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Comisiones y cargos", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Pensiones y aportes", natureRawValue: "esencial"),
+            SubcategorySeedDefinition(
+                name: "Comisiones y cargos", natureRawValue: "prioritaria", iconName: "percent"),
+            SubcategorySeedDefinition(
+                name: "Impuestos", natureRawValue: "esencial", iconName: "doc.text.fill"),
+            SubcategorySeedDefinition(
+                name: "Pensiones y aportes", natureRawValue: "esencial",
+                iconName: "building.columns.fill"),
+            SubcategorySeedDefinition(
+                name: "Préstamos y créditos", natureRawValue: "esencial",
+                iconName: "creditcard.fill"),
+            SubcategorySeedDefinition(
+                name: "Seguros", natureRawValue: "esencial", iconName: "shield.fill"),
         ]
     ),
     // 5. Hogar
@@ -106,14 +139,22 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Hogar",
         colorHex: "#475569",
         isIncome: false,
+        iconName: "house.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Alquiler o hipoteca", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Servicios del hogar", natureRawValue: "esencial"),
             SubcategorySeedDefinition(
-                name: "Mantenimiento y reparaciones", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Seguro del hogar", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Personal de apoyo", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Otros", natureRawValue: "opcional"),
+                name: "Alquiler o hipoteca", natureRawValue: "esencial", iconName: "key.fill"),
+            SubcategorySeedDefinition(
+                name: "Mantenimiento y reparaciones", natureRawValue: "prioritaria",
+                iconName: "wrench.and.screwdriver.fill"),
+            SubcategorySeedDefinition(
+                name: "Otros", natureRawValue: "opcional", iconName: "ellipsis.circle.fill"),
+            SubcategorySeedDefinition(
+                name: "Personal de apoyo", natureRawValue: "prioritaria", iconName: "person.2.fill"),
+            SubcategorySeedDefinition(
+                name: "Seguro del hogar", natureRawValue: "esencial",
+                iconName: "house.and.flag.fill"),
+            SubcategorySeedDefinition(
+                name: "Servicios del hogar", natureRawValue: "esencial", iconName: "bolt.fill"),
         ]
     ),
     // 6. Entretenimiento
@@ -121,16 +162,29 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Entretenimiento",
         colorHex: "#FF0080",
         isIncome: false,
+        iconName: "sparkles",
         subcategories: [
-            SubcategorySeedDefinition(name: "Espectáculos y eventos", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Deportes y recreación", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Bares y salidas sociales", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Fiestas y vida nocturna", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Salidas en pareja", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Viajes y vacaciones", natureRawValue: "opcional"),
             SubcategorySeedDefinition(
-                name: "Streaming y plataformas", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Hobbies y gaming", natureRawValue: "opcional"),
+                name: "Bares y salidas sociales", natureRawValue: "opcional",
+                iconName: "wineglass.fill"),
+            SubcategorySeedDefinition(
+                name: "Deportes y recreación", natureRawValue: "opcional",
+                iconName: "sportscourt.fill"),
+            SubcategorySeedDefinition(
+                name: "Espectáculos y eventos", natureRawValue: "opcional", iconName: "ticket.fill"),
+            SubcategorySeedDefinition(
+                name: "Fiestas y vida nocturna", natureRawValue: "opcional",
+                iconName: "party.popper.fill"),
+            SubcategorySeedDefinition(
+                name: "Hobbies y gaming", natureRawValue: "opcional",
+                iconName: "gamecontroller.fill"),
+            SubcategorySeedDefinition(
+                name: "Salidas en pareja", natureRawValue: "opcional", iconName: "heart.fill"),
+            SubcategorySeedDefinition(
+                name: "Streaming y plataformas", natureRawValue: "prioritaria",
+                iconName: "play.tv.fill"),
+            SubcategorySeedDefinition(
+                name: "Viajes y vacaciones", natureRawValue: "opcional", iconName: "airplane"),
         ]
     ),
     // 7. Personal
@@ -138,30 +192,50 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Personal",
         colorHex: "#A855F7",
         isIncome: false,
+        iconName: "person.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Salud y atención médica", natureRawValue: "esencial"),
             SubcategorySeedDefinition(
-                name: "Fitness y actividad física", natureRawValue: "prioritaria"),
-            SubcategorySeedDefinition(name: "Belleza y estética", natureRawValue: "prioritaria"),
+                name: "Asesorías y trámites", natureRawValue: "prioritaria",
+                iconName: "doc.on.clipboard.fill"),
             SubcategorySeedDefinition(
-                name: "Educación y desarrollo", natureRawValue: "prioritaria"),
+                name: "Belleza y estética", natureRawValue: "prioritaria", iconName: "comb.fill"),
             SubcategorySeedDefinition(
-                name: "Suscripciones de utilidad", natureRawValue: "prioritaria"),
+                name: "Educación y desarrollo", natureRawValue: "prioritaria", iconName: "book.fill"
+            ),
             SubcategorySeedDefinition(
-                name: "Telefonía y comunicaciones", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Asesorías y trámites", natureRawValue: "prioritaria"),
+                name: "Fitness y actividad física", natureRawValue: "prioritaria",
+                iconName: "figure.run"),
+            SubcategorySeedDefinition(
+                name: "Salud y atención médica", natureRawValue: "esencial", iconName: "stethoscope"
+            ),
+            SubcategorySeedDefinition(
+                name: "Suscripciones de ocio", natureRawValue: "opcional",
+                iconName: "play.circle.fill"),
+            SubcategorySeedDefinition(
+                name: "Suscripciones de utilidad", natureRawValue: "prioritaria",
+                iconName: "app.badge.fill"),
+            SubcategorySeedDefinition(
+                name: "Telefonía y comunicaciones", natureRawValue: "esencial",
+                iconName: "phone.fill"),
         ]
     ),
-    // 8. Mascotas y animales (Nueva)
+    // 8. Mascotas y animales
     CategorySeedDefinition(
         name: "Mascotas y animales",
         colorHex: "#84CC16",
         isIncome: false,
+        iconName: "pawprint.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Alimentación de mascotas", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Salud veterinaria", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Accesorios y juguetes", natureRawValue: "opcional"),
-            SubcategorySeedDefinition(name: "Servicios y cuidados", natureRawValue: "prioritaria"),
+            SubcategorySeedDefinition(
+                name: "Accesorios y juguetes", natureRawValue: "opcional",
+                iconName: "tennisball.fill"),
+            SubcategorySeedDefinition(
+                name: "Alimentación de mascotas", natureRawValue: "esencial",
+                iconName: "pawprint.fill"),
+            SubcategorySeedDefinition(
+                name: "Salud veterinaria", natureRawValue: "esencial", iconName: "cross.vial.fill"),
+            SubcategorySeedDefinition(
+                name: "Servicios y cuidados", natureRawValue: "prioritaria", iconName: "scissors"),
         ]
     ),
     // 9. Vehículo
@@ -169,35 +243,55 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         name: "Vehículo",
         colorHex: "#64748B",
         isIncome: false,
+        iconName: "car.side.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Combustible", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Estacionamientos", natureRawValue: "prioritaria"),
             SubcategorySeedDefinition(
-                name: "Mantenimiento del vehículo", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Préstamo vehicular", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Seguro vehicular", natureRawValue: "esencial"),
-            SubcategorySeedDefinition(name: "Leasing", natureRawValue: "esencial"),
+                name: "Combustible", natureRawValue: "esencial", iconName: "fuelpump.fill"),
+            SubcategorySeedDefinition(
+                name: "Estacionamientos", natureRawValue: "prioritaria",
+                iconName: "parkingsign.circle.fill"),
+            SubcategorySeedDefinition(
+                name: "Leasing", natureRawValue: "esencial", iconName: "doc.richtext.fill"),
+            SubcategorySeedDefinition(
+                name: "Mantenimiento del vehículo", natureRawValue: "esencial",
+                iconName: "wrench.fill"),
+            SubcategorySeedDefinition(
+                name: "Préstamo vehicular", natureRawValue: "esencial", iconName: "creditcard.fill"),
+            SubcategorySeedDefinition(
+                name: "Seguro vehicular", natureRawValue: "esencial",
+                iconName: "car.badge.gearshape.fill"),
         ]
     ),
     // 10. Ingresos
     CategorySeedDefinition(
         name: "Ingresos",
-        colorHex: "#00F3FF",
+        colorHex: "#14B8A6",
         isIncome: true,
+        iconName: "arrow.down.circle.fill",
         subcategories: [
-            SubcategorySeedDefinition(name: "Salario", natureRawValue: "sin_clasificacion"),
             SubcategorySeedDefinition(
-                name: "Facturación y freelance", natureRawValue: "sin_clasificacion"),
+                name: "Alquileres recibidos", natureRawValue: "sin_clasificacion",
+                iconName: "building.2.fill"),
             SubcategorySeedDefinition(
-                name: "Intereses y dividendos", natureRawValue: "sin_clasificacion"),
-            SubcategorySeedDefinition(name: "Ventas", natureRawValue: "sin_clasificacion"),
+                name: "Ayudas y subvenciones", natureRawValue: "sin_clasificacion",
+                iconName: "hand.raised.fill"),
             SubcategorySeedDefinition(
-                name: "Alquileres recibidos", natureRawValue: "sin_clasificacion"),
+                name: "Facturación y freelance", natureRawValue: "sin_clasificacion",
+                iconName: "doc.text.fill"),
             SubcategorySeedDefinition(
-                name: "Ayudas y subvenciones", natureRawValue: "sin_clasificacion"),
-            SubcategorySeedDefinition(name: "Reembolsos", natureRawValue: "sin_clasificacion"),
+                name: "Intereses y dividendos", natureRawValue: "sin_clasificacion",
+                iconName: "chart.line.uptrend.xyaxis"),
             SubcategorySeedDefinition(
-                name: "Regalos y otros ingresos", natureRawValue: "sin_clasificacion"),
+                name: "Reembolsos", natureRawValue: "sin_clasificacion",
+                iconName: "arrow.uturn.backward.circle.fill"),
+            SubcategorySeedDefinition(
+                name: "Regalos y otros ingresos", natureRawValue: "sin_clasificacion",
+                iconName: "giftcard.fill"),
+            SubcategorySeedDefinition(
+                name: "Salario", natureRawValue: "sin_clasificacion", iconName: "briefcase.fill"),
+            SubcategorySeedDefinition(
+                name: "Ventas", natureRawValue: "sin_clasificacion",
+                iconName: "dollarsign.circle.fill"),
         ]
     ),
 ]
@@ -243,7 +337,8 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
             isIncome: definition.isIncome,
             isDefaultSeed: true,
             isVisible: true,
-            sortOrder: categoryIndex
+            sortOrder: categoryIndex,
+            iconName: definition.iconName
         )
         modelContext.insert(category)
 
@@ -256,6 +351,7 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
                 isVisible: true,
                 sortOrder: subIndex,
                 natureRawValue: subDef.natureRawValue,
+                iconName: subDef.iconName,
                 category: category
             )
             modelContext.insert(subcategory)

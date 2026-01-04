@@ -26,7 +26,7 @@ struct PersonalizationSettingsView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: DesignSystem.Spacing.xxLarge) {
+                VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: 8) {
                         Image(systemName: "slider.horizontal.3")
@@ -69,9 +69,9 @@ struct PersonalizationSettingsView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
                             .background(Color.netoCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
-                                RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
                                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                             )
                         }
@@ -93,10 +93,10 @@ struct PersonalizationSettingsView: View {
         }
         .navigationTitle("Personalización")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     dismiss()
                 }
             }
@@ -136,9 +136,9 @@ private struct PeriodPickerSheet: View {
                         }
                     }
                     .background(Color.netoCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .overlay(
-                        RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
                             .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                     )
                     .padding()
@@ -148,7 +148,7 @@ private struct PeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }

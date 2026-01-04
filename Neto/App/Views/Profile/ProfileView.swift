@@ -85,7 +85,7 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
@@ -362,6 +362,7 @@ struct ProfileView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+        .contentShape(Rectangle())
     }
 }
 

@@ -88,7 +88,7 @@ struct NatureTrendWidget: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+            RoundedRectangle(cornerRadius: DS.Radius.lg)
                 .fill(Color.netoCard)
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         )
@@ -173,6 +173,25 @@ struct NatureTrendChartView: View {
         let amount: Double
     }
 
+    // MARK: - Smart Axis Logic
+
+    /// Calculate smart axis dates for chart X-axis
+    private var smartAxisDates: [Date] {
+        guard !points.isEmpty else { return [] }
+        guard let firstDate = points.first?.date,
+            let lastDate = points.last?.date
+        else { return [] }
+        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+    }
+
+    /// Format axis label based on data span
+    private func smartAxisLabel(for date: Date) -> String {
+        guard let firstDate = points.first?.date,
+            let lastDate = points.last?.date
+        else { return "" }
+        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+    }
+
     var body: some View {
         let chartUnit = mapGroupingToUnit(grouping)
 
@@ -212,44 +231,22 @@ struct NatureTrendChartView: View {
             "Sin clasificación": Color.gray,
         ])
         .chartLegend(.hidden)
-        // X-Axis: Logic matching TrendChartView
+        // X-Axis: Smart dynamic labels matching TrendChartView
         .chartXAxis {
-            if grouping == .month {  // "This Year" (Year view) -> Months
-                AxisMarks(values: .stride(by: .month)) { value in
-                    AxisGridLine()
-                        .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
-                    if value.as(Date.self) != nil {
-                        AxisValueLabel(
-                            format: .dateTime.month(.abbreviated).locale(AppLocale.current)
-                        )
-                        .font(.caption2.bold())
-                        .foregroundStyle(Color.netoSecondaryText)
-                    }
-                }
-            } else if grouping == .week {  // "This Month" (Month view) -> Weeks/Days?
-                // User request: "si es 'Este mes' los ejes son semanas"
-                // TrendGrouping.week usually means the data is grouped by week.
-                AxisMarks(values: .stride(by: .weekOfYear)) { value in
-                    AxisGridLine()
-                        .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
-                    if let date = value.as(Date.self) {
-                        AxisValueLabel {
-                            Text(formatDate(date, grouping: grouping))
-                                .font(.caption2.bold())
-                                .foregroundStyle(Color.netoSecondaryText)
-                        }
-                    }
-                }
-            } else {  // "This Week" -> Days
-                AxisMarks(values: .stride(by: .day)) { value in
-                    AxisGridLine()
-                        .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
-                    if let date = value.as(Date.self) {
-                        AxisValueLabel {
-                            Text(date, format: .dateTime.day().locale(Locale(identifier: "es")))
-                                .font(.caption2.bold())
-                                .foregroundStyle(Color.netoSecondaryText)
-                        }
+            AxisMarks(values: smartAxisDates) { value in
+                AxisGridLine()
+                    .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
+
+                if let date = value.as(Date.self) {
+                    // Use trailing anchor for last label to prevent truncation
+                    let isLast = date == smartAxisDates.last
+                    let isFirst = date == smartAxisDates.first
+                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+
+                    AxisValueLabel(anchor: anchor) {
+                        Text(smartAxisLabel(for: date))
+                            .font(.caption2.bold())
+                            .foregroundStyle(Color.netoSecondaryText)
                     }
                 }
             }
@@ -431,7 +428,7 @@ struct NatureTrendChartView: View {
                         }
                         .padding(8)
                         .background(
-                            RoundedRectangle(cornerRadius: DesignSystem.Radius.small)
+                            RoundedRectangle(cornerRadius: DS.Radius.sm)
                                 .fill(Color.netoCard)
                                 .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
                         )

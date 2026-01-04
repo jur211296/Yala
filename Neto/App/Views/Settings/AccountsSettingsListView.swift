@@ -85,23 +85,24 @@ struct AccountsSettingsListView: View {
         }
         .navigationTitle("Cuentas")
         .navigationBarTitleDisplayMode(.inline)  // título reducido y centrado
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     // Logic to pop? usually dismiss works for sheets, but for stack navigation we need environment dismiss
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    SheetTopButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down") {
+                    NetoToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down")
+                    {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             isEditMode.toggle()
                         }
                     }
 
-                    SheetTopButton(systemName: "plus") {
+                    NetoToolbarButton(systemName: "plus") {
                         isPresentingCreateAccount = true
                     }
                 }
@@ -269,6 +270,7 @@ struct AccountsSettingsListView: View {
                 }
             }
         }
+        .contentShape(Rectangle())
     }
 
     private func moveAccountList(from source: IndexSet, to destination: Int) {
@@ -356,6 +358,7 @@ struct AccountsSettingsListView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 
 }

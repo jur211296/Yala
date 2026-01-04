@@ -47,10 +47,10 @@ struct ExportColumnsStepView: View {
         .navigationTitle("Seleccionar columnas")
         .navigationBarTitleDisplayMode(.inline)
         // Botón "Atrás" estándar del NavigationStack
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     dismiss()
                 }
             }

@@ -109,7 +109,7 @@ struct SubcategorySelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
@@ -247,7 +247,7 @@ struct SubcategoryGridItem: View {
                         .fill(Color(hex: effectiveColor).opacity(isSelected ? 1 : 0.15))
                         .frame(width: 48, height: 48)
 
-                    Image(systemName: "tag.fill")
+                    Image(systemName: subcategory.iconName ?? "tag.fill")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(isSelected ? .white : Color(hex: effectiveColor))
 

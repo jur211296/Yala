@@ -51,16 +51,12 @@ struct AccountFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetPrimaryButton(
-                        title: "Guardar",
-                        action: { saveAccount() },
-                        isDisabled: !viewModel.canSave
-                    )
+                    NetoSaveButton(action: { saveAccount() }, isDisabled: !viewModel.canSave)
                 }
             }
             .sheet(isPresented: $viewModel.isPresentingColorPicker) {
@@ -148,7 +144,7 @@ struct AccountFormView: View {
         SectionBox(title: "Moneda") {
             NavigationLink {
                 CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
-                    .navigationBarBackButtonHidden(true)
+                    .swipeBack()
             } label: {
                 HStack(spacing: 12) {
                     Text(currencyInfo(for: viewModel.selectedCurrency).flag)

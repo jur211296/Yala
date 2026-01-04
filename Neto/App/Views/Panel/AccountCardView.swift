@@ -53,15 +53,15 @@ struct AccountCardView: View {
             isSelected ? foregroundColor.opacity(0.85) : Color.netoSecondaryText
         let iconBackground =
             isSelected
-            ? Color.white.opacity(DesignSystem.Opacity.subtle + 0.08)
-            : Color.black.opacity(DesignSystem.Opacity.subtle / 2)
+            ? Color.white.opacity(DS.Opacity.subtle + 0.08)
+            : Color.black.opacity(DS.Opacity.subtle / 2)
 
         ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.standard) {
-                HStack(spacing: DesignSystem.Spacing.standard) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: iconForAccount)
                         .font(.body)
-                        .padding(DesignSystem.Spacing.standard)
+                        .padding(DS.Spacing.sm)
                         .background(
                             Circle()
                                 .fill(iconBackground)
@@ -85,14 +85,14 @@ struct AccountCardView: View {
                 .font(.headline.weight(.bold))
                 .foregroundStyle(foregroundColor)
             }
-            .padding(DesignSystem.Spacing.medium)
+            .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(backgroundColor)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
             )
 
@@ -107,7 +107,7 @@ struct AccountCardView: View {
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .padding(DesignSystem.Spacing.standard)
+                .padding(DS.Spacing.sm)
             }
         }
     }
@@ -147,7 +147,7 @@ struct AddAccountCardView: View {
         Button {
             onTap()
         } label: {
-            VStack(spacing: DesignSystem.Spacing.medium) {
+            VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "plus")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(Color.netoPrimaryText)
@@ -158,11 +158,11 @@ struct AddAccountCardView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 96)
             .background(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.netoCard.opacity(0.95))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
             )
         }

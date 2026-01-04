@@ -47,13 +47,12 @@ struct ImportAccountPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetPrimaryButton(
-                        title: "Continuar",
+                    NetoSaveButton(
                         action: {
                             if let account = selectedAccount {
                                 onContinue(account)
@@ -101,5 +100,6 @@ struct ImportAccountPickerSheet: View {
             }
         }
         .padding(.vertical, 6)
+        .contentShape(Rectangle())
     }
 }

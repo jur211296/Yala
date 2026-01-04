@@ -18,17 +18,17 @@ struct SectionBox<Content: View>: View {
             Text(title)
                 .font(.headline)
                 .foregroundStyle(Color.netoSecondaryText)
-                .padding(.leading, DesignSystem.Spacing.standard)
+                .padding(.leading, DS.Spacing.sm)
 
             VStack(spacing: 0) {
                 content()
             }
             .background(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.netoCard)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)

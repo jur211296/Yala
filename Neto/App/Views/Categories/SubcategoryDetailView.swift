@@ -22,15 +22,17 @@ struct SubcategoryDetailView: View {
     @State private var selectedNature: SubcategoryNature
     @State private var isVisible: Bool
     @State private var selectedColorHex: String
+    @State private var selectedIconName: String
 
     @State private var isPresentingNatureSelector: Bool = false
-
     @State private var showDiscardDialog: Bool = false
+    @State private var showIconColorPicker: Bool = false
 
     private let initialName: String
     private let initialNature: SubcategoryNature
     private let initialIsVisible: Bool
     private let initialColorHex: String
+    private let initialIconName: String
 
     init(parentCategory: Category, subcategoryToEdit: Subcategory? = nil) {
         self.parentCategory = parentCategory
@@ -41,27 +43,35 @@ struct SubcategoryDetailView: View {
             self.initialNature = sub.nature
             self.initialIsVisible = sub.isVisible
             self.initialColorHex = sub.colorHex ?? parentCategory.colorHex
+            self.initialIconName = sub.iconName ?? parentCategory.iconName ?? "tag"
             _name = State(initialValue: sub.name)
             _selectedNature = State(initialValue: sub.nature)
             _isVisible = State(initialValue: sub.isVisible)
             _selectedColorHex = State(initialValue: sub.colorHex ?? parentCategory.colorHex)
+            _selectedIconName = State(
+                initialValue: sub.iconName ?? parentCategory.iconName ?? "tag")
         } else {
             self.initialName = ""
             self.initialNature = .unclassified
             self.initialIsVisible = true
             self.initialColorHex = parentCategory.colorHex
+            self.initialIconName = parentCategory.iconName ?? "tag"
             _name = State(initialValue: "")
             _selectedNature = State(initialValue: .unclassified)
             _isVisible = State(initialValue: true)
             _selectedColorHex = State(initialValue: parentCategory.colorHex)
+            _selectedIconName = State(initialValue: parentCategory.iconName ?? "tag")
         }
     }
 
     private var hasUnsavedChanges: Bool {
         let trimmedCurrentName = trimmedName
         let trimmedInitialName = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedCurrentName != trimmedInitialName || selectedNature != initialNature
-            || isVisible != initialIsVisible || selectedColorHex != initialColorHex
+        return trimmedCurrentName != trimmedInitialName
+            || selectedNature != initialNature
+            || isVisible != initialIsVisible
+            || selectedColorHex != initialColorHex
+            || selectedIconName != initialIconName
     }
 
     private func handleBack() {
@@ -94,17 +104,16 @@ struct SubcategoryDetailView: View {
             }
         }
         .navigationTitle(isEditing ? "Editar subcategoría" : "Nueva subcategoría")
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     handleBack()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                SheetPrimaryButton(
-                    title: "Guardar",
+                NetoSaveButton(
                     action: { saveSubcategory() },
                     isDisabled: !canSave
                 )
@@ -129,23 +138,56 @@ struct SubcategoryDetailView: View {
         }
     }
 
-    // Encabezado con círculo de color e icono
+    // Encabezado con círculo de color e icono (tappable para editar)
     private var header: some View {
         VStack(spacing: 12) {
-            Circle()
-                .fill(colorForHex(selectedColorHex))
-                .frame(width: 70, height: 70)
-                .overlay(
-                    Image(systemName: "tag")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                )
+            Button {
+                showIconColorPicker = true
+            } label: {
+                ZStack(alignment: .bottomTrailing) {
+                    Circle()
+                        .fill(Color(hex: selectedColorHex))
+                        .frame(width: 70, height: 70)
+                        .overlay(
+                            Image(systemName: selectedIconName)
+                                .font(.title2)
+                                .foregroundStyle(.white)
+                        )
+                        .shadow(
+                            color: Color(hex: selectedColorHex).opacity(0.3), radius: 6, x: 0, y: 3)
+
+                    // Pencil edit indicator
+                    Circle()
+                        .fill(Color.netoCard)
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Image(systemName: "pencil")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.electricIndigo)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(Color.netoBackground, lineWidth: 2)
+                        )
+                        .offset(x: 4, y: 4)
+                }
+            }
+            .buttonStyle(.plain)
 
             Text(parentCategory.name)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .sheet(isPresented: $showIconColorPicker) {
+            IconColorPickerSheet(
+                selectedIconName: $selectedIconName,
+                selectedColorHex: $selectedColorHex,
+                supportsColorPicking: false
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     // Sección de nombre, naturaleza y visibilidad
@@ -204,7 +246,8 @@ struct SubcategoryDetailView: View {
             sub.name = finalName
             sub.isVisible = isVisible
             sub.nature = selectedNature
-            sub.colorHex = selectedColorHex
+            sub.colorHex = parentCategory.colorHex  // Enforce parent color
+            sub.iconName = selectedIconName
         } else {
             // Creación
             let sortOrder: Int
@@ -221,11 +264,12 @@ struct SubcategoryDetailView: View {
 
             let newSubcategory = Subcategory(
                 name: finalName,
-                colorHex: selectedColorHex,
+                colorHex: parentCategory.colorHex,  // Enforce parent color
                 isDefaultSeed: false,
                 isVisible: isVisible,
                 sortOrder: sortOrder,
                 natureRawValue: selectedNature.rawValue,
+                iconName: selectedIconName,
                 category: parentCategory
             )
 

@@ -160,7 +160,7 @@ struct TrendChartView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.Radius.small)
+                        RoundedRectangle(cornerRadius: DS.Radius.sm)
                             .fill(Color.netoCard.opacity(0.95))
                             .shadow(radius: 2)
                     )

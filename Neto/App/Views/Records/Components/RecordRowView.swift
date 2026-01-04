@@ -141,17 +141,20 @@ struct RecordRowView: View {
     private var subcategoryIcon: some View {
         // Use category color for the icon background
         let colorHex = record.category?.colorHex ?? "#6366F1"
-        // Use income/expense arrow as the icon
-        let iconName = record.category?.isIncome == true ? "arrow.down" : "arrow.up"
+        // Use subcategory icon if available, fallback to category icon, then default tag
+        let iconName =
+            record.subcategory?.iconName
+            ?? record.category?.iconName
+            ?? "tag.fill"
 
         return ZStack {
             Circle()
-                .fill(Color(hex: colorHex).opacity(0.15))
+                .fill(Color(hex: colorHex))
                 .frame(width: 40, height: 40)
 
             Image(systemName: iconName)
                 .font(.callout.weight(.medium))
-                .foregroundStyle(Color(hex: colorHex))
+                .foregroundStyle(.white)
         }
     }
 

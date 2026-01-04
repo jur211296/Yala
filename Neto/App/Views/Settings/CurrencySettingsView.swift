@@ -33,7 +33,7 @@ struct CurrencySettingsView: View {
 
             // Main Content
             ScrollView {
-                VStack(spacing: DesignSystem.Spacing.xxLarge) {
+                VStack(spacing: DS.Spacing.xxl) {
 
                     // Header
                     VStack(spacing: 8) {
@@ -140,6 +140,7 @@ struct CurrencySettingsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -251,6 +252,7 @@ struct CurrencySettingsView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Helpers

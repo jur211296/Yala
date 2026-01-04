@@ -104,12 +104,8 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.headline)
-                            .foregroundStyle(.black)
                     }
                 }
 
@@ -471,7 +467,7 @@ struct RecordsFiltersView: View {
             .navigationTitle("Seleccionar cuentas")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showAccountsSheet = false
                     }
                 }
@@ -556,7 +552,7 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showCategoriesSheet = false
                     }
                 }
@@ -794,7 +790,7 @@ struct RecordsFiltersView: View {
             .navigationTitle("Seleccionar etiquetas")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showTagsSheet = false
                     }
                 }
@@ -814,7 +810,7 @@ struct RecordsFiltersView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showCurrencySheet = false
                     }
                 }

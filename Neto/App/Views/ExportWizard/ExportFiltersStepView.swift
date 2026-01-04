@@ -172,7 +172,7 @@ struct ExportFiltersStepView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
@@ -221,7 +221,7 @@ struct ExportFiltersStepView: View {
             .navigationTitle("Seleccionar cuentas")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showAccountsSheet = false
                     }
                 }
@@ -431,7 +431,7 @@ struct ExportFiltersStepView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showCategoriesSheet = false
                     }
                 }
@@ -473,7 +473,7 @@ struct ExportFiltersStepView: View {
             .navigationTitle("Seleccionar etiquetas")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showTagsSheet = false
                     }
                 }
@@ -491,7 +491,7 @@ struct ExportFiltersStepView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         showCurrencySheet = false
                     }
                 }

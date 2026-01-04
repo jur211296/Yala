@@ -65,7 +65,7 @@ struct PersonalDetailsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "chevron.left") {
+                    NetoToolbarButton(systemName: "chevron.left") {
                         saveAndDismiss()
                     }
                 }

@@ -405,9 +405,11 @@ final class PanelViewModel {
             ? calculateCategoriesWidget(context: calcContext)
             : topSpendingCategories
 
-        // Subcategories
+        // Subcategories - used by both topSubcategories and subcategoriesPie widgets
+        let needsSubcategories =
+            activeTypes.contains(.topSubcategories) || activeTypes.contains(.subcategoriesPie)
         let newTopSubcategories =
-            activeTypes.contains(.topSubcategories)
+            needsSubcategories
             ? calculateSubcategoriesWidget(context: calcContext)
             : topSubcategories
 
@@ -470,13 +472,17 @@ final class PanelViewModel {
         let calendar = Calendar.current
 
         // Determine groupings based on period
+        // NOTE: TrendWidget (line chart) always uses day for smooth interpolation
+        // But CashFlow and Nature (bar charts) need coarser grouping for long periods
         let newTrendGrouping = selectedPeriod.chartGrouping
         let (newCashFlowGrouping, newNatureGrouping): (TrendGrouping, TrendGrouping) = {
             switch selectedPeriod {
+            case .thisWeek, .last7Days:
+                return (.day, .day)  // Daily bars for week
             case .thisMonth, .lastMonth, .last30Days:
-                return (.week, .week)
-            default:
-                return (newTrendGrouping, newTrendGrouping)
+                return (.day, .day)  // Daily bars for month (smart axis handles labels)
+            case .thisYear, .lastYear, .allTime:
+                return (.month, .month)  // Monthly bars for year/all-time
             }
         }()
 

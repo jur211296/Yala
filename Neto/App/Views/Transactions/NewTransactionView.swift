@@ -117,7 +117,7 @@ struct NewTransactionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    SheetTopButton(systemName: "xmark") {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
                     }
                 }
@@ -958,17 +958,13 @@ struct DatePickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
+                    NetoToolbarButton(systemName: "xmark") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color(UIColor.label))
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetPrimaryButton(title: "Listo", action: { dismiss() })
+                    NetoSaveButton(action: { dismiss() })
                 }
             }
         }

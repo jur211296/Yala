@@ -34,7 +34,24 @@ struct CashFlowWidget: View {
 
     @Environment(\.colorScheme) var colorScheme
 
-    // ... (imports)
+    // MARK: - Smart Axis Logic
+
+    /// Calculate smart axis dates for chart X-axis
+    private var smartAxisDates: [Date] {
+        guard !summary.chartData.isEmpty else { return [] }
+        guard let firstDate = summary.chartData.first?.date,
+            let lastDate = summary.chartData.last?.date
+        else { return [] }
+        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+    }
+
+    /// Format axis label based on data span
+    private func smartAxisLabel(for date: Date) -> String {
+        guard let firstDate = summary.chartData.first?.date,
+            let lastDate = summary.chartData.last?.date
+        else { return "" }
+        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -70,17 +87,17 @@ struct CashFlowWidget: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding([.horizontal, .top], DesignSystem.Spacing.large)
-            .padding(.bottom, DesignSystem.Spacing.medium)
+            .padding([.horizontal, .top], DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
 
             contentView
         }
         .background(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge)
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
                 .fill(Color.netoCard)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xLarge)
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
     }
@@ -91,7 +108,7 @@ struct CashFlowWidget: View {
     private var contentView: some View {
         if size == .large {
             // Large - Chart View
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                 // Chart
                 Chart {
                     // Zero Baseline
@@ -136,18 +153,23 @@ struct CashFlowWidget: View {
                 }  // Close Chart
                 .chartXScale(domain: interval.start...interval.end)
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: calendarUnit(for: grouping))) { value in
-                        AxisGridLine().foregroundStyle(.clear)  // Explicitly hide gridlines
-                        AxisTick().foregroundStyle(.clear)  // Explicitly hide ticks
+                    // Smart dynamic X-axis labels (matching TrendChartView)
+                    AxisMarks(values: smartAxisDates) { value in
+                        AxisGridLine()
+                            .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
 
-                        if grouping == .day {
-                            AxisValueLabel(format: .dateTime.weekday(.abbreviated), centered: true)
-                        } else if grouping == .week {
-                            AxisValueLabel(
-                                format: .dateTime.day().month(.abbreviated), centered: true)
-                        } else {
-                            // Use abbreviated (3 letters: Jan, Feb...) instead of narrow
-                            AxisValueLabel(format: .dateTime.month(.abbreviated), centered: true)
+                        if let date = value.as(Date.self) {
+                            // Use trailing anchor for last label to prevent truncation
+                            let isLast = date == smartAxisDates.last
+                            let isFirst = date == smartAxisDates.first
+                            let anchor: UnitPoint =
+                                isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+
+                            AxisValueLabel(anchor: anchor) {
+                                Text(smartAxisLabel(for: date))
+                                    .font(.caption2.bold())
+                                    .foregroundStyle(Color.netoSecondaryText)
+                            }
                         }
                     }
                 }
@@ -271,7 +293,7 @@ struct CashFlowWidget: View {
                                 }
                                 .padding(8)
                                 .background(
-                                    RoundedRectangle(cornerRadius: DesignSystem.Radius.small)
+                                    RoundedRectangle(cornerRadius: DS.Radius.sm)
                                         .fill(Color.netoCard)
                                         .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
                                 )
@@ -285,9 +307,10 @@ struct CashFlowWidget: View {
                         }
                     }
                 }
+                .frame(height: 180)  // Fixed height to prevent overflow
             }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.bottom, DesignSystem.Spacing.large)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.lg)
 
         } else {
             // Small & Medium - Summary Layout (With Bars)
@@ -364,8 +387,8 @@ struct CashFlowWidget: View {
                     }
                 }
             }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.bottom, DesignSystem.Spacing.xLarge)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.xl)
         }
     }
 

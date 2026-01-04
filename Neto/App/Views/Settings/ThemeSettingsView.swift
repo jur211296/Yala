@@ -15,7 +15,7 @@ struct ThemeSettingsView: View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: DesignSystem.Spacing.xxLarge) {
+            VStack(spacing: DS.Spacing.xxl) {
                 // Header / Intro
                 VStack(spacing: 8) {
                     Image(systemName: "paintpalette.fill")
@@ -42,9 +42,9 @@ struct ThemeSettingsView: View {
                 }
                 .padding()
                 .background(Color.netoCard)
-                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignSystem.Radius.large)
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
                         .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                 )
 
@@ -54,10 +54,10 @@ struct ThemeSettingsView: View {
         }
         .navigationTitle("Temas")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                SheetTopButton(systemName: "chevron.left") {
+                NetoToolbarButton(systemName: "chevron.left") {
                     dismiss()
                 }
             }
