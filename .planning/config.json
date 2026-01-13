@@ -1,0 +1,17 @@
+{
+  "project_type": "brownfield",
+  "initialized": "2026-01-13",
+  "current_milestone": null,
+  "current_phase": null,
+  "workflow": {
+    "verify_command": "/verify-ios",
+    "test_command": "/test-ios",
+    "commit_command": "/commit-one"
+  },
+  "conventions": {
+    "language": "swift",
+    "framework": "swiftui",
+    "persistence": "swiftdata",
+    "architecture": "mvvm"
+  }
+}
