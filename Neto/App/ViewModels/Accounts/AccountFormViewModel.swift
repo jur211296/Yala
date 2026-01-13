@@ -285,6 +285,9 @@ final class AccountFormViewModel {
             }
         }
 
+        // Force save to ensure @Query observers are notified of changes
+        try? context.save()
+
         return true
     }
 
