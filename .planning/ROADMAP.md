@@ -1,125 +1,146 @@
-# Roadmap V1.0
+# Roadmap: Neto V1.0
 
-**Creado:** 2026-01-13
-**Milestone:** V1.0
+## Overview
 
----
+App iOS de finanzas personales. V1.0 estabiliza el core, añade automatización, mejora visualizaciones, introduce pagos planificados, registro inteligente con IA, e integración con plataforma iOS.
 
-## Fase 1: Estabilidad Core
+## Domain Expertise
 
-**Objetivo:** Eliminar bugs críticos que afectan flujos principales antes de construir encima.
+- ./.claude/skills/expertise/iphone-apps/SKILL.md (si existe)
 
-**Incluye:**
+## Phases
+
+- [ ] **Fase 1: Estabilidad Core** - Eliminar bugs críticos antes de construir
+- [ ] **Fase 2: Periodos y Filtros** - Infraestructura de filtrado para toda la app
+- [ ] **Fase 3: Gestión Categorías** - Mantenimiento eficiente de categorías
+- [ ] **Fase 4: Panel y Navegación** - Navegabilidad y widgets del Panel
+- [ ] **Fase 5: Visualizaciones Categorías** - Comparativas y detalles en gráficas
+- [ ] **Fase 6: Pagos Planificados** - Nuevo módulo de suscripciones y pagos futuros
+- [ ] **Fase 7: Registro Inteligente** - Entrada de transacciones con IA
+- [ ] **Fase 8: Plataforma y Polish** - Integración iOS y refinamiento final
+
+## Phase Details
+
+### Fase 1: Estabilidad Core
+**Goal**: Eliminar bugs críticos que afectan flujos principales
+**Depends on**: Nothing (first phase)
+**Research**: Unlikely (debugging existing code)
+**Plans**: TBD
+
+Incluye:
 - Bug tipo de cambio en transferencias (se resetea a 1.000 con teclado)
 - Hover CashFlow en Panel/Trends con colores incorrectos
 
-**Criterio de salida:**
-- Tipo de cambio persiste correctamente en flujo completo de transferencia
-- Colores de hover en CashFlow corresponden a ingreso/gasto
+DoD:
+- Tipo de cambio persiste correctamente en flujo completo
+- Colores hover corresponden a ingreso/gasto
 
----
+### Fase 2: Periodos y Filtros
+**Goal**: Base sólida de filtrado que el resto de la app consumirá
+**Depends on**: Fase 1
+**Research**: Unlikely (patterns existentes en codebase)
+**Plans**: TBD
 
-## Fase 2: Infraestructura de Periodos y Filtros
-
-**Objetivo:** Establecer base sólida de filtrado que el resto de la app consumirá.
-
-**Incluye:**
+Incluye:
 - Periodo Personalizado en PeriodSelector
 - Filtro por nota: chips de búsqueda
-- Sincronización de filtros entre Statistics y Panel
-- Filtro de categorías aplica a gráficas
+- Sincronización de filtros Statistics/Panel
+- Filtro categorías aplica a gráficas
 
-**Criterio de salida:**
-- Periodo personalizado seleccionable y funcional
+DoD:
+- Periodo personalizado funcional
 - Filtros sincronizados entre vistas
 - Gráficas respetan filtro de categorías
 
----
+### Fase 3: Gestión Categorías
+**Goal**: Permitir mantenimiento eficiente de categorías/subcategorías
+**Depends on**: Fase 1
+**Research**: Unlikely (SwiftData operations)
+**Plans**: TBD
 
-## Fase 3: Gestión de Categorías
-
-**Objetivo:** Permitir mantenimiento eficiente de categorías/subcategorías.
-
-**Incluye:**
+Incluye:
 - Edición masiva de categorías/subcategorías
-- Eliminación de categorías/subcategorías sin transacciones
-- Transferencia de transacciones al eliminar categorías con datos
+- Eliminación sin transacciones
+- Transferencia de transacciones al eliminar
 
-**Criterio de salida:**
-- Usuario puede editar múltiples categorías en una operación
-- Eliminación segura con opción de transferir transacciones
+DoD:
+- Edición múltiple en una operación
+- Eliminación segura con transferencia
 
----
+### Fase 4: Panel y Navegación
+**Goal**: Mejorar navegabilidad y completar widgets del Panel
+**Depends on**: Fase 2
+**Research**: Unlikely (UI patterns existentes)
+**Plans**: TBD
 
-## Fase 4: Panel y Navegación
-
-**Objetivo:** Mejorar navegabilidad y completar widgets del Panel.
-
-**Incluye:**
-- Chevron en widgets de PanelView para redirigir a detalle
+Incluye:
+- Chevron en widgets para redirigir a detalle
 - Widget de Presupuestos en PanelView
-- Home configurable (botones del TabView desde personalización)
+- Home configurable (tabs desde personalización)
 
-**Criterio de salida:**
-- Widgets navegan a su vista de detalle
-- Widget de presupuestos muestra estado actual
-- Usuario puede personalizar tabs visibles
+DoD:
+- Widgets navegan a detalle
+- Widget presupuestos funcional
+- Tabs personalizables
 
----
+### Fase 5: Visualizaciones Categorías
+**Goal**: Enriquecer CategoriesTabView con comparativas
+**Depends on**: Fase 2
+**Research**: Unlikely (Charts framework ya usado)
+**Plans**: TBD
 
-## Fase 5: Visualizaciones de Categorías
+Incluye:
+- Pie de etiquetas en carrusel
+- Var% vs periodo anterior en barras
+- Carrusel naturaleza compacto con variación
 
-**Objetivo:** Enriquecer CategoriesTabView con comparativas y detalles.
-
-**Incluye:**
-- Pie de etiquetas en carrusel de pies
-- Var% vs periodo anterior en barras (excepto "Todo el tiempo")
-- Carrusel de naturaleza compacto con variación vs periodo anterior
-
-**Criterio de salida:**
+DoD:
 - Carrusel incluye pie de etiquetas
-- Barras muestran variación porcentual cuando aplica
-- Carrusel de naturaleza muestra comparativa temporal
+- Barras muestran variación porcentual
+- Carrusel naturaleza con comparativa
 
----
+### Fase 6: Pagos Planificados
+**Goal**: Nuevo módulo para suscripciones y pagos futuros
+**Depends on**: Fase 2, Fase 4
+**Research**: Likely (nuevo modelo SwiftData, diseño de recurrencia)
+**Research topics**: Patrón de recurrencia, modelo ScheduledPayment, integración con widgets
+**Plans**: TBD
 
-## Fase 6: Pagos Planificados
-
-**Objetivo:** Nuevo módulo para gestionar suscripciones y pagos futuros.
-
-**Incluye:**
+Incluye:
 - Pagos planificados con SegmentedControl (suscripciones vs otros)
 - Widget Medium: 3 pagos siguientes
 - Widget Large: calendario por periodo
 
-**Criterio de salida:**
+DoD:
 - CRUD completo de pagos planificados
-- Widgets muestran próximos pagos correctamente
+- Widgets muestran próximos pagos
 
----
+### Fase 7: Registro Inteligente
+**Goal**: Automatizar entrada de transacciones con IA
+**Depends on**: Fase 3
+**Research**: Likely (Vision API, Speech Recognition, LLM integration)
+**Research topics**: iOS Vision framework, Speech framework, on-device vs cloud AI, duplicate detection
+**Plans**: TBD
 
-## Fase 7: Registro Inteligente
+Incluye:
+- Registro por foto con IA
+- Registro por audio con IA
+- Bandeja de entrada para automatizados
+- Validación de repetidos
 
-**Objetivo:** Automatizar y simplificar entrada de transacciones.
+DoD:
+- Transacción desde foto/audio funcional
+- Bandeja muestra pendientes
+- Detección de duplicados
 
-**Incluye:**
-- Nuevo registro por foto con IA
-- Nuevo registro por audio con IA
-- Bandeja de entrada para transacciones automatizadas
-- Validación de repetidos en automatizados
+### Fase 8: Plataforma y Polish
+**Goal**: Integración con sistema iOS y refinamiento final
+**Depends on**: Todas las fases anteriores
+**Research**: Likely (WidgetKit, App Intents, Notifications)
+**Research topics**: WidgetKit timeline, App Intents/Shortcuts, UNNotification scheduling, Local Authentication
+**Plans**: TBD
 
-**Criterio de salida:**
-- Usuario puede crear transacción desde foto o audio
-- Bandeja muestra pendientes de confirmar
-- Sistema detecta posibles duplicados
-
----
-
-## Fase 8: Plataforma y Polish
-
-**Objetivo:** Integración con sistema iOS y refinamiento final.
-
-**Incluye:**
+Incluye:
 - Widgets iOS (general)
 - Atajos (Shortcuts)
 - Share Sheet
@@ -127,31 +148,29 @@
 - Inicio de sesión (autenticación)
 - Textos explicativos en ajustes
 - Vaciar datos: preguntar si cargar seed
-- **FINAL:** Analizar solo gastos vs todo (ingresos + gastos)
+- **FINAL:** Analizar solo gastos vs todo
 
-**Criterio de salida:**
-- Widgets disponibles en pantalla de inicio
+DoD:
+- Widgets en pantalla de inicio
 - Atajos funcionales
-- Share Sheet permite importar datos
+- Share Sheet importa datos
 - Notificaciones configurables
-- App protegida con autenticación
+- Autenticación activa
 - Ajustes documentados
-- Opción gastos/todo implementada y coherente en toda la app
+- Opción gastos/todo coherente en toda la app
 
----
+## Progress
 
-## Resumen
-
-| Fase | Nombre | Dependencias |
-|------|--------|--------------|
-| 1 | Estabilidad Core | - |
-| 2 | Periodos y Filtros | 1 |
-| 3 | Gestión Categorías | 1 |
-| 4 | Panel y Navegación | 2 |
-| 5 | Visualizaciones Categorías | 2 |
-| 6 | Pagos Planificados | 2, 4 |
-| 7 | Registro Inteligente | 3 |
-| 8 | Plataforma y Polish | Todas |
+| Fase | Nombre | Plans | Status | Completed |
+|------|--------|-------|--------|-----------|
+| 1 | Estabilidad Core | TBD | Not started | - |
+| 2 | Periodos y Filtros | TBD | Not started | - |
+| 3 | Gestión Categorías | TBD | Not started | - |
+| 4 | Panel y Navegación | TBD | Not started | - |
+| 5 | Visualizaciones Categorías | TBD | Not started | - |
+| 6 | Pagos Planificados | TBD | Not started | - |
+| 7 | Registro Inteligente | TBD | Not started | - |
+| 8 | Plataforma y Polish | TBD | Not started | - |
 
 ---
 
