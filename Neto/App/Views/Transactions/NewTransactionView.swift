@@ -191,6 +191,10 @@ struct NewTransactionView: View {
         .tint(Color.electricIndigo)
         .onAppear {
             prefillFromContext()
+            // Auto-focus amount field when view appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                isAmountFieldFocused = true
+            }
         }
         .onChange(of: viewModel.sourceAccount) { _, _ in
             Task {

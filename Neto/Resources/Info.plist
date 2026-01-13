@@ -6,28 +6,15 @@
 	<array>
 		<string>com.jurgenschmidt.finaria.daily</string>
 	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-	</array>
 	<key>CFBundleIcons</key>
 	<dict>
-		<key>CFBundlePrimaryIcon</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array>
-				<string>IconOriginal</string>
-			</array>
-			<key>UIPrerenderedIcon</key>
-			<false/>
-		</dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
-			<key>IconNeon</key>
+			<key>IconDark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
 				<array>
-					<string>IconNeon</string>
+					<string>IconDark</string>
 				</array>
 				<key>UIPrerenderedIcon</key>
 				<false/>
@@ -41,17 +28,29 @@
 				<key>UIPrerenderedIcon</key>
 				<false/>
 			</dict>
-			<key>IconDark</key>
+			<key>IconNeon</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
 				<array>
-					<string>IconDark</string>
+					<string>IconNeon</string>
 				</array>
 				<key>UIPrerenderedIcon</key>
 				<false/>
 			</dict>
 		</dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>IconOriginal</string>
+			</array>
+			<key>UIPrerenderedIcon</key>
+			<false/>
+		</dict>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>
-
