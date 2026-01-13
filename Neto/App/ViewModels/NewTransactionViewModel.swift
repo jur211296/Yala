@@ -45,6 +45,9 @@ final class NewTransactionViewModel {
     /// Subcategoría seleccionada (obligatoria)
     var selectedSubcategory: Subcategory?
 
+    /// Naturaleza seleccionada (nil = usar la de subcategoría)
+    var selectedNature: SubcategoryNature?
+
     /// Fecha de la transacción
     var transactionDate: Date = Date()
 
@@ -77,6 +80,7 @@ final class NewTransactionViewModel {
     var showTagSelector: Bool = false
     var showFavoritesSheet: Bool = false
     var showDatePicker: Bool = false
+    var showNatureSelector: Bool = false
 
     // MARK: - Validation State
 
@@ -423,6 +427,8 @@ final class NewTransactionViewModel {
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
+            // Save nature override if different from subcategory's nature
+            transaction.natureOverride = selectedNature?.rawValue
         } else {
             transaction = TransactionItem(
                 date: transactionDate,
@@ -437,6 +443,8 @@ final class NewTransactionViewModel {
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode
             )
+            // Save nature override for new transactions
+            transaction.natureOverride = selectedNature?.rawValue
             context.insert(transaction)
         }
 

@@ -45,7 +45,7 @@ struct SubcategorySelectorSheet: View {
                                 Image(systemName: "tag.slash")
                                     .font(.system(size: 48))
                                     .foregroundStyle(.secondary)
-                                Text("No hay subcategorías disponibles")
+                                Text(L10n.Empty.noSubcategories)
                                     .font(.headline)
                                     .foregroundStyle(.secondary)
                             }
@@ -59,7 +59,7 @@ struct SubcategorySelectorSheet: View {
                                         Image(systemName: "clock.arrow.circlepath")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
-                                        Text("Recientes")
+                                        Text(L10n.Common.recent)
                                             .font(.subheadline.weight(.semibold))
                                             .foregroundStyle(.secondary)
                                     }

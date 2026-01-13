@@ -60,7 +60,7 @@ struct SubcategoryNatureSelectorView: View {
                 .padding(.vertical, 24)
             }
         }
-        .navigationTitle("Naturaleza")
+        .navigationTitle(L10n.Nature.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {

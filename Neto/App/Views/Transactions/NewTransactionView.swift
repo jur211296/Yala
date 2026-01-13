@@ -25,8 +25,6 @@ struct NewTransactionView: View {
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
-    @FocusState private var isDestFieldFocused: Bool
-    @FocusState private var isRateFieldFocused: Bool  // Added focus state for Rate
 
     // Autocomplete mention state
     @State private var currentMentionState: MentionState?
@@ -34,11 +32,6 @@ struct NewTransactionView: View {
     // Success screen state
     @State private var showSuccessScreen = false
     @State private var successData: TransactionSuccessData?
-
-    // Exchange rate UI state
-    @State private var exchangeRateString: String = ""
-    @State private var destinationAmountString: String = ""
-    @State private var isRateInverted: Bool = false
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -113,7 +106,10 @@ struct NewTransactionView: View {
                         .padding(.bottom, 24)
                 }
             }
-            .navigationTitle(transactionToEdit != nil ? "Editar registro" : "Nuevo registro")
+            .navigationTitle(
+                transactionToEdit != nil
+                    ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -136,7 +132,7 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
-                    title: "Cuenta"
+                    title: L10n.Transaction.account
                 )
                 .onChange(of: viewModel.selectedAccount) { _, newAccount in
                     if let account = newAccount {
@@ -147,13 +143,13 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSourceAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.sourceAccount,
-                    title: "Cuenta origen"
+                    title: L10n.Transaction.sourceAccount
                 )
             }
             .sheet(isPresented: $viewModel.showDestinationAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.destinationAccount,
-                    title: "Cuenta destino"
+                    title: L10n.Transaction.destinationAccount
                 )
             }
             .sheet(isPresented: $viewModel.showSubcategorySelector) {
@@ -166,7 +162,9 @@ struct NewTransactionView: View {
                 TagSelectorSheet(selectedTags: $viewModel.selectedTags)
             }
             .sheet(isPresented: $viewModel.showFavoritesSheet) {
-                FavoritesSheet()
+                FavoritesListView(mode: .select) { favorite in
+                    prefillFromFavorite(favorite)
+                }
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.transactionDate)
@@ -176,6 +174,18 @@ struct NewTransactionView: View {
                             await viewModel.loadExchangeRate(context: modelContext)
                         }
                     }
+            }
+            .sheet(isPresented: $viewModel.showNatureSelector) {
+                NatureSelectorSheet(
+                    selectedNature: Binding(
+                        get: {
+                            viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
+                                ?? .unclassified
+                        },
+                        set: { viewModel.selectedNature = $0 }
+                    )
+                )
+                .presentationDetents([.medium])
             }
         }
         .tint(Color.electricIndigo)
@@ -197,38 +207,18 @@ struct NewTransactionView: View {
     // MARK: - Transaction Type Selector
 
     private var transactionTypeSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(TransactionType.allCases) { type in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        viewModel.transactionType = type
-                        viewModel.selectedSubcategory = nil
-                        if type == .transfer {
-                            viewModel.prepareForTransfer(allAccounts: accounts)
-                            Task {
-                                await viewModel.loadExchangeRate(context: modelContext)
-                            }
-                        }
+        TransactionTypeSelectorView(
+            selectedType: $viewModel.transactionType,
+            onTypeChange: { type in
+                viewModel.selectedSubcategory = nil
+                if type == .transfer {
+                    viewModel.prepareForTransfer(allAccounts: accounts)
+                    Task {
+                        await viewModel.loadExchangeRate(context: modelContext)
                     }
-                } label: {
-                    Text(type.rawValue)
-                        .font(
-                            .subheadline.weight(
-                                viewModel.transactionType == type ? .semibold : .regular)
-                        )
-                        .foregroundStyle(viewModel.transactionType == type ? .white : .secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(
-                            Capsule()
-                                .fill(viewModel.transactionType == type ? type.color : Color.clear)
-                        )
                 }
             }
-        }
-        .padding(4)
-        .background(Capsule().fill(Color.netoCard))
-        .padding(.horizontal, 16)
+        )
     }
 
     // MARK: - Central Content
@@ -256,7 +246,7 @@ struct NewTransactionView: View {
             .buttonStyle(.plain)
 
             // Note field with mention detection and popover autocomplete
-            TextField("Descripción", text: $viewModel.note)
+            TextField(L10n.Transaction.description, text: $viewModel.note)
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
@@ -285,6 +275,25 @@ struct NewTransactionView: View {
                 transferAmountDisplay
             } else {
                 amountDisplay
+            }
+
+            // Nature chip (visible when subcategory is selected, not for transfers)
+            if !viewModel.isTransfer, viewModel.selectedSubcategory != nil {
+                NatureEditChip(
+                    nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
+                        ?? .unclassified
+                ) {
+                    viewModel.showNatureSelector = true
+                }
+                .padding(.top, 8)
+            }
+        }
+        .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
+            // Sync nature when subcategory changes
+            if let subcategory = newSubcategory {
+                viewModel.selectedNature = subcategory.nature
+            } else {
+                viewModel.selectedNature = nil
             }
         }
     }
@@ -384,7 +393,7 @@ struct NewTransactionView: View {
                     // Source account chip - pink
                     SelectionChip(
                         icon: "arrow.up.circle",
-                        text: viewModel.sourceAccount?.name ?? "Origen",
+                        text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
                         isSelected: viewModel.sourceAccount != nil,
                         color: viewModel.sourceAccount != nil ? Color.hotPink : nil
                     ) {
@@ -394,7 +403,7 @@ struct NewTransactionView: View {
                     // Destination account chip - purple
                     SelectionChip(
                         icon: "arrow.down.circle",
-                        text: viewModel.destinationAccount?.name ?? "Destino",
+                        text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
                         isSelected: viewModel.destinationAccount != nil,
                         color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil
                     ) {
@@ -403,7 +412,7 @@ struct NewTransactionView: View {
                 } else {
                     SelectionChip(
                         icon: "creditcard",
-                        text: viewModel.selectedAccount?.name ?? "Cuenta",
+                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
                         isSelected: viewModel.selectedAccount != nil,
                         color: viewModel.selectedAccount != nil
                             ? Color(hex: viewModel.selectedAccount!.colorHex) : nil
@@ -416,7 +425,7 @@ struct NewTransactionView: View {
                 if !viewModel.isTransfer {
                     SelectionChip(
                         icon: "tag",
-                        text: viewModel.selectedSubcategory?.name ?? "Subcategoría",
+                        text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
                         isSelected: viewModel.selectedSubcategory != nil,
                         color: subcategoryChipColor
                     ) {
@@ -430,7 +439,7 @@ struct NewTransactionView: View {
                         // Default chip when no tags selected
                         SelectionChip(
                             icon: "number",
-                            text: "Etiquetas",
+                            text: L10n.Transaction.tags,
                             isSelected: false,
                             color: nil
                         ) {
@@ -457,9 +466,9 @@ struct NewTransactionView: View {
 
     private var dateChipText: String {
         if Calendar.current.isDateInToday(viewModel.transactionDate) {
-            return "Hoy"
+            return L10n.Date.today
         } else if Calendar.current.isDateInYesterday(viewModel.transactionDate) {
-            return "Ayer"
+            return L10n.Date.yesterday
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"
@@ -474,14 +483,14 @@ struct NewTransactionView: View {
         } else if let source = viewModel.sourceAccount {
             return "\(source.name) → ?"
         } else {
-            return "Cuentas"
+            return L10n.Panel.accounts
         }
     }
 
     /// Text for the tags chip - comma-separated list of tag names
     private var tagsChipText: String {
         if viewModel.selectedTags.isEmpty {
-            return "Etiquetas"
+            return L10n.Transaction.tags
         } else {
             return viewModel.selectedTags.map { $0.name }.joined(separator: ", ")
         }
@@ -497,166 +506,10 @@ struct NewTransactionView: View {
         return Color(hex: colorHex)
     }
 
-    /// Filters destination amount input (same logic as source)
-    private func filterDestinationAmountInput(_ input: String) -> String {
-        return filterAmountInput(input)
-    }
-
     // MARK: - Transfer Amount Display
 
     private var transferAmountDisplay: some View {
-        VStack(spacing: 16) {
-            // Source Amount (Large)
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(viewModel.sourceAccount?.currencyCode ?? "")
-                    .font(.system(size: 20, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.hotPink.opacity(0.7))
-
-                TextField("0.00", text: $viewModel.amountString)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.hotPink)
-                    .multilineTextAlignment(.center)
-                    .keyboardType(.decimalPad)
-                    .focused($isAmountFieldFocused)
-                    .frame(minWidth: 100)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .onChange(of: isAmountFieldFocused) { _, isFocused in
-                        if isFocused
-                            && (viewModel.amountString == "0" || viewModel.amountString == "0.00")
-                        {
-                            viewModel.amountString = ""
-                        }
-                        if !isFocused {
-                            if viewModel.amountString.isEmpty {
-                                viewModel.amountString = "0.00"
-                            } else if let amount = Double(viewModel.amountString) {
-                                viewModel.amountString = String(format: "%.2f", amount)
-                            }
-                        }
-                    }
-                    .onChange(of: viewModel.amountString) { _, newValue in
-                        let filtered = filterAmountInput(newValue)
-                        if filtered != newValue {
-                            viewModel.amountString = filtered
-                        }
-                    }
-            }
-
-            // Arrow visual
-            Image(systemName: "arrow.down")
-                .font(.title2)
-                .foregroundStyle(.secondary.opacity(0.5))
-
-            // Destination Amount (Large)
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(viewModel.destinationAccount?.currencyCode ?? "")
-                    .font(.system(size: 20, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.electricIndigo.opacity(0.7))
-
-                TextField("0.00", text: $destinationAmountString)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.electricIndigo)
-                    .multilineTextAlignment(.center)
-                    .keyboardType(.decimalPad)
-                    .focused($isDestFieldFocused)
-                    .frame(minWidth: 100)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .onAppear {
-                        destinationAmountString = String(
-                            format: "%.2f", viewModel.destinationAmount)
-                    }
-                    .onChange(of: isDestFieldFocused) { _, isFocused in
-                        // Same clear-on-focus behavior as Source Amount
-                        if isFocused
-                            && (destinationAmountString == "0.00" || destinationAmountString == "0")
-                        {
-                            destinationAmountString = ""
-                        }
-                        // Format on blur
-                        if !isFocused {
-                            if destinationAmountString.isEmpty {
-                                destinationAmountString = "0.00"
-                            } else if let amount = Double(
-                                destinationAmountString.replacingOccurrences(of: ",", with: "."))
-                            {
-                                destinationAmountString = String(format: "%.2f", amount)
-                            }
-                        }
-                    }
-                    .onChange(of: viewModel.destinationAmount) { _, newValue in
-                        // Only update string if USER is NOT editing it
-                        if !isDestFieldFocused {
-                            destinationAmountString = String(format: "%.2f", newValue)
-                        }
-                    }
-                    .onChange(of: destinationAmountString) { _, newValue in
-                        // Only sync to model if USER IS editing it
-                        if isDestFieldFocused {
-                            let filtered = filterDestinationAmountInput(newValue)
-                            if filtered != newValue {
-                                destinationAmountString = filtered
-                            }
-
-                            if let amount = Double(
-                                filtered.replacingOccurrences(of: ",", with: ".")), amount > 0
-                            {
-                                viewModel.destinationAmount = amount
-                                viewModel.updateExchangeRateFromDestination()
-
-                                isRateInverted =
-                                    viewModel.exchangeRate < 1.0 && viewModel.exchangeRate > 0
-                                let displayRate =
-                                    isRateInverted
-                                    ? (1.0 / viewModel.exchangeRate) : viewModel.exchangeRate
-                                exchangeRateString = String(format: "%.4f", displayRate)
-                            }
-                        }
-                    }
-            }
-
-            // Exchange Rate (Clean, Explicit, No Box)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                if let source = viewModel.sourceAccount, let dest = viewModel.destinationAccount {
-                    // Explicit label format: "1 DEST ="
-                    Text("1 \(isRateInverted ? dest.currencyCode : source.currencyCode) =")
-                        .font(.system(size: 18, weight: .medium))  // Larger, clearer font
-                        .foregroundStyle(.secondary)
-
-                    TextField("Rate", text: $exchangeRateString)
-                        .font(.system(size: 18, weight: .medium))  // Matching font size
-                        .foregroundStyle(.primary)
-                        .keyboardType(.decimalPad)
-                        .focused($isRateFieldFocused)  // Bind focus
-                        .fixedSize(horizontal: true, vertical: false)
-                        .multilineTextAlignment(.leading)  // Align with label
-
-                    // Trailing currency code for completeness: "X SOURCE"
-                    Text(isRateInverted ? source.currencyCode : dest.currencyCode)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .onChange(of: exchangeRateString) { _, newValue in
-                // Only sync to model if USER IS editing it
-                if isRateFieldFocused {
-                    if let rateInput = Double(newValue.replacingOccurrences(of: ",", with: ".")),
-                        rateInput > 0
-                    {
-                        let internalRate = isRateInverted ? (1.0 / rateInput) : rateInput
-                        viewModel.exchangeRate = internalRate
-                        viewModel.updateDestinationAmount()
-                    }
-                }
-            }
-            .onChange(of: viewModel.exchangeRate) { _, newRate in
-                // Sync from model if USER is NOT editing it
-                if !isRateFieldFocused {
-                    isRateInverted = newRate < 1.0 && newRate > 0
-                    let displayRate = isRateInverted ? (1.0 / newRate) : newRate
-                    exchangeRateString = String(format: "%.4f", displayRate)
-                }
-            }
-        }
+        TransferAmountInputView(viewModel: viewModel)
     }
 
     // MARK: - Autocomplete
@@ -730,9 +583,9 @@ struct NewTransactionView: View {
     private var mentionTypeTitle: String {
         guard let mentionState = currentMentionState else { return "" }
         switch mentionState.type {
-        case .tag: return "Etiquetas"
-        case .subcategory: return "Subcategorías"
-        case .account: return "Cuentas"
+        case .tag: return L10n.Transaction.tags
+        case .subcategory: return L10n.Widget.subcategories
+        case .account: return L10n.Panel.accounts
         }
     }
 
@@ -795,7 +648,7 @@ struct NewTransactionView: View {
                 } else {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 20, weight: .semibold))
-                    Text("Registrar")
+                    Text(L10n.Action.save)
                         .font(.headline)
                 }
             }
@@ -819,7 +672,7 @@ struct NewTransactionView: View {
             successData = TransactionSuccessData(
                 transactionType: viewModel.transactionType,
                 date: viewModel.transactionDate,
-                accountName: account?.name ?? "Cuenta",
+                accountName: account?.name ?? L10n.Transaction.account,
                 accountColorHex: account?.colorHex ?? "6366F1",
                 note: viewModel.note,
                 amount: Decimal(viewModel.amount),
@@ -829,6 +682,7 @@ struct NewTransactionView: View {
                 categoryName: viewModel.selectedSubcategory?.category.name,
                 categoryColorHex: viewModel.selectedSubcategory?.category.colorHex,
                 tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
+                nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature,
                 isTransfer: viewModel.isTransfer,
                 destinationAccountName: destAccount?.name,
                 destinationAccountColorHex: destAccount?.colorHex,
@@ -890,85 +744,40 @@ struct NewTransactionView: View {
             subcategories: allSubcategories
         )
     }
-}
 
-// MARK: - Selection Chip
+    private func prefillFromFavorite(_ favorite: FavoritePayment) {
+        // Set transaction type
+        viewModel.transactionType = favorite.type
 
-struct SelectionChip: View {
-    let icon: String
-    let text: String
-    let isSelected: Bool
-    var color: Color? = nil
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
-
-                Text(text)
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(isSelected ? (color ?? Color.electricIndigo) : .secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(
-                        isSelected ? (color ?? Color.electricIndigo).opacity(0.12) : Color.netoCard)
-            )
-            .overlay(
-                Capsule()
-                    .stroke(
-                        isSelected ? (color ?? Color.electricIndigo).opacity(0.3) : Color.clear,
-                        lineWidth: 1
-                    )
-            )
+        // Set amount if available
+        if let amount = favorite.amount, amount > 0 {
+            viewModel.amountString = String(format: "%.2f", amount)
         }
-        .buttonStyle(.plain)
-    }
-}
 
-// MARK: - Date Picker Sheet
-
-struct DatePickerSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var selectedDate: Date
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.netoBackground.ignoresSafeArea()
-
-                VStack {
-                    DatePicker(
-                        "Fecha",
-                        selection: $selectedDate,
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.graphical)
-                    .padding()
-
-                    Spacer()
-                }
-            }
-            .navigationTitle("Fecha")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NetoToolbarButton(systemName: "xmark") {
-                        dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    NetoSaveButton(action: { dismiss() })
-                }
-            }
+        // Set account if available
+        if let account = favorite.account {
+            viewModel.selectedAccount = account
+            viewModel.sourceAccount = account
+            viewModel.currencyCode = account.currencyCode
         }
-        .tint(Color.electricIndigo)
+
+        // Set subcategory if available
+        viewModel.selectedSubcategory = favorite.subcategory
+
+        // Set nature override if available
+        if let natureRaw = favorite.natureOverride {
+            viewModel.selectedNature = SubcategoryNature(rawValue: natureRaw)
+        } else {
+            viewModel.selectedNature = favorite.subcategory?.nature
+        }
+
+        // Set tags
+        viewModel.selectedTags = favorite.tags
+
+        // Set note if available
+        if let note = favorite.note, !note.isEmpty {
+            viewModel.note = note
+        }
     }
 }
 

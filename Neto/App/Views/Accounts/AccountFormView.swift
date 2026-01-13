@@ -47,7 +47,7 @@ struct AccountFormView: View {
                     .padding(.vertical, 24)
                 }
             }
-            .navigationTitle("Configurar cuenta")
+            .navigationTitle(L10n.Account.configure)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -63,13 +63,13 @@ struct AccountFormView: View {
                 NavigationStack {
                     VStack(spacing: 24) {
                         ColorPicker(
-                            "Selecciona un color",
+                            L10n.Common.selectColor,
                             selection: $viewModel.customColor,
                             supportsOpacity: false
                         )
                         .padding()
 
-                        Button("Usar este color") {
+                        Button(L10n.Common.useThisColor) {
                             viewModel.updateColorFromCustom()
                         }
                         .buttonStyle(.borderedProminent)
@@ -77,17 +77,18 @@ struct AccountFormView: View {
                         Spacer()
                     }
                     .padding()
-                    .navigationTitle("Nuevo color")
+                    .navigationTitle(L10n.Common.newColor)
                     .navigationBarTitleDisplayMode(.inline)
                 }
             }
         }
+
         .tint(Color.electricIndigo)
         .alert(
-            "No se puede eliminar esta cuenta",
+            L10n.Account.deleteError,
             isPresented: $viewModel.isShowingDeleteError,
             actions: {
-                Button("Entendido", role: .cancel) {}
+                Button(L10n.Common.understood, role: .cancel) {}
             },
             message: {
                 Text(viewModel.deleteErrorMessage)
@@ -98,12 +99,12 @@ struct AccountFormView: View {
     // MARK: Secciones de la vista
 
     private var generalSection: some View {
-        SectionBox(title: "General") {
+        SectionBox(title: L10n.Common.general) {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
-                    TextField("Nombre de la cuenta", text: $viewModel.name)
+                    TextField(L10n.Account.accountName, text: $viewModel.name)
                         .textContentType(.name)
                 }
                 .padding()
@@ -114,10 +115,10 @@ struct AccountFormView: View {
                     AccountTypeSelectorView(selectedType: $viewModel.selectedType)
                 } label: {
                     HStack {
-                        Text("Tipo")
+                        Text(L10n.Account.type)
                             .foregroundStyle(.primary)
                         Spacer()
-                        Text(viewModel.selectedType.rawValue)
+                        Text(viewModel.selectedType.localizedName)
                             .foregroundStyle(.secondary)
                         Image(systemName: "chevron.right")
                             .font(.footnote)
@@ -132,7 +133,7 @@ struct AccountFormView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "number")
                         .foregroundStyle(.secondary)
-                    TextField("Número de cuenta", text: $viewModel.accountNumber)
+                    TextField(L10n.Account.accountNumber, text: $viewModel.accountNumber)
                         .keyboardType(.numbersAndPunctuation)
                 }
                 .padding()
@@ -150,7 +151,7 @@ struct AccountFormView: View {
                     Text(currencyInfo(for: viewModel.selectedCurrency).flag)
                         .font(.title3)
 
-                    Text("Moneda")
+                    Text(L10n.Account.currency)
                         .font(.body)
                         .foregroundStyle(.primary)
 
@@ -173,7 +174,7 @@ struct AccountFormView: View {
         SectionBox(title: "Saldo actual") {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    Text("Signo")
+                    Text(L10n.Account.sign)
                         .font(.subheadline)
                     Spacer()
                     Picker("Signo", selection: $viewModel.isPositive) {
@@ -211,7 +212,7 @@ struct AccountFormView: View {
                         selectedAdjustmentMode: $viewModel.selectedAdjustmentMode)
                 } label: {
                     HStack {
-                        Text("Ajuste")
+                        Text(L10n.Account.adjustment)
                             .foregroundStyle(.primary)
                         Spacer()
                         Text(viewModel.selectedAdjustmentMode.rawValue)
@@ -285,7 +286,7 @@ struct AccountFormView: View {
         SectionBox(title: "Acciones") {
             VStack(spacing: 0) {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
-                    Text("Excluir de las estadísticas")
+                    Text(L10n.Account.excludeFromStats)
                 }
                 .tint(Color.electricIndigo)
                 .padding()
@@ -293,7 +294,7 @@ struct AccountFormView: View {
                 SubsectionDivider()
 
                 Toggle(isOn: $viewModel.isArchived) {
-                    Text("Archivar cuenta")
+                    Text(L10n.Account.archive)
                 }
                 .tint(Color.electricIndigo)
                 .padding()
@@ -306,7 +307,7 @@ struct AccountFormView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text("Eliminar cuenta")
+                            Text(L10n.Account.delete)
                             Spacer()
                         }
                     }

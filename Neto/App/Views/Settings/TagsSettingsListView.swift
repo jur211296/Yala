@@ -72,7 +72,7 @@ struct TagsSettingsListView: View {
                 .padding(.vertical, 32)
             }
         }
-        .navigationTitle("Etiquetas")
+        .navigationTitle(L10n.Settings.tags)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
@@ -110,11 +110,11 @@ struct TagsSettingsListView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
 
-            Text("No tienes etiquetas")
+            Text(L10n.Empty.noTags)
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            Text("Crea etiquetas para organizar tus transacciones de forma flexible.")
+            Text(L10n.Empty.tagsDescription)
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -127,7 +127,7 @@ struct TagsSettingsListView: View {
 
     private var activeTagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Activas")
+            Text(L10n.Common.active)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
@@ -172,7 +172,7 @@ struct TagsSettingsListView: View {
 
     private var inactiveTagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Inactivas")
+            Text(L10n.Common.inactive)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)

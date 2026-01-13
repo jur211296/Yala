@@ -39,7 +39,7 @@ struct NatureTrendWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Header
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -76,7 +76,7 @@ struct NatureTrendWidget: View {
             // Content
             if trendPoints.isEmpty {
                 Spacer()
-                Text("No hay gastos registrados para este periodo y filtros.")
+                Text(L10n.Widget.noExpensesNaturePeriod)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -86,11 +86,11 @@ struct NatureTrendWidget: View {
                 chartView
             }
         }
-        .padding(16)
+        .padding(DS.Card.paddingCompact)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg)
                 .fill(Color.netoCard)
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 4)
         )
     }
 
@@ -98,13 +98,12 @@ struct NatureTrendWidget: View {
     private var chartView: some View {
         if size == .large {
             // Large: Chart + Legend (legend handles filtering)
-            VStack(spacing: 16) {
+            VStack(spacing: DS.Spacing.lg) {
                 NatureTrendChartView(
                     points: trendPoints, selectedNature: selectedNature, currencyCode: currencyCode,
                     grouping: grouping, interval: interval,
                     onSelectNature: nil  // Legend handles explicit selection
                 )
-                .frame(height: 180)
 
                 NatureLegendView(
                     points: trendPoints,
@@ -113,31 +112,58 @@ struct NatureTrendWidget: View {
                 )
             }
         } else {
-            // Medium: Chart Only (Compact Legend if needed or just interactive chart)
-            // For now just chart, maybe a small legend below?
-            VStack(spacing: 12) {
-                NatureTrendChartView(
-                    points: trendPoints, selectedNature: selectedNature, currencyCode: currencyCode,
-                    grouping: grouping, interval: interval,
-                    onSelectNature: onSelectNature  // Chart bars are interactive
-                )
-                .frame(height: 140)
+            // Compact: Summary Bars Layout (like CashFlowWidget)
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                // Calculate totals and max for normalization
+                let essentialTotal = trendPoints.reduce(0) { $0 + $1.essential }
+                let priorityTotal = trendPoints.reduce(0) { $0 + $1.priority }
+                let optionalTotal = trendPoints.reduce(0) { $0 + $1.optional }
+                let unclassifiedTotal = trendPoints.reduce(0) { $0 + $1.unclassified }
+                let maxVal = max(
+                    essentialTotal, max(priorityTotal, max(optionalTotal, unclassifiedTotal)))
 
-                // Compact Legend (just bubbles)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(SubcategoryNature.allCases) { nature in  // Show all for selection availability
-                            NatureCompactLegendItem(
-                                nature: nature,
-                                isSelected: selectedNature == nature,
-                                total: getTotal(for: nature),
-                                currencyCode: currencyCode
-                            ) {
-                                onSelectNature(nature)
-                            }
-                        }
+                VStack(spacing: DS.Spacing.md) {
+                    // Essential Bar
+                    NatureCompactBar(
+                        nature: .essential,
+                        amount: essentialTotal,
+                        maxAmount: maxVal,
+                        currencyCode: currencyCode,
+                        isSelected: selectedNature == nil || selectedNature == .essential,
+                        onTap: { onSelectNature(.essential) }
+                    )
+
+                    // Priority Bar
+                    NatureCompactBar(
+                        nature: .priority,
+                        amount: priorityTotal,
+                        maxAmount: maxVal,
+                        currencyCode: currencyCode,
+                        isSelected: selectedNature == nil || selectedNature == .priority,
+                        onTap: { onSelectNature(.priority) }
+                    )
+
+                    // Optional Bar
+                    NatureCompactBar(
+                        nature: .optional,
+                        amount: optionalTotal,
+                        maxAmount: maxVal,
+                        currencyCode: currencyCode,
+                        isSelected: selectedNature == nil || selectedNature == .optional,
+                        onTap: { onSelectNature(.optional) }
+                    )
+
+                    // Unclassified Bar (only if has value)
+                    if unclassifiedTotal > 0 {
+                        NatureCompactBar(
+                            nature: .unclassified,
+                            amount: unclassifiedTotal,
+                            maxAmount: maxVal,
+                            currencyCode: currencyCode,
+                            isSelected: selectedNature == nil || selectedNature == .unclassified,
+                            onTap: { onSelectNature(.unclassified) }
+                        )
                     }
-                    .padding(.horizontal, 2)
                 }
             }
         }
@@ -192,8 +218,32 @@ struct NatureTrendChartView: View {
         return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
     }
 
+    /// X-axis domain based on actual data range (not period range)
+    private var dataXDomain: ClosedRange<Date> {
+        guard let firstDate = points.first?.date,
+            let lastDate = points.last?.date
+        else { return interval.start...interval.end }
+        // Asymmetric padding: less on left, more on right (where Y-axis labels are)
+        let calendar = Calendar.current
+        let (startPadding, endPadding): (Int, Int) = {
+            switch grouping {
+            case .day: return (0, 1)
+            case .week: return (0, 4)
+            case .month: return (0, 30)
+            }
+        }()
+        let paddedStart =
+            calendar.date(byAdding: .day, value: -startPadding, to: firstDate) ?? firstDate
+        let paddedEnd = calendar.date(byAdding: .day, value: endPadding, to: lastDate) ?? lastDate
+        return paddedStart...paddedEnd
+    }
+
     var body: some View {
         let chartUnit = mapGroupingToUnit(grouping)
+
+        // Calculate max value for Y domain with minimal padding
+        let maxValue = calculateMaxValue()
+        let yDomain: ClosedRange<Double> = 0...(maxValue * 1.05)  // 5% padding instead of default ~20%
 
         Chart {
             ForEach(flattenData(points)) { item in
@@ -223,7 +273,8 @@ struct NatureTrendChartView: View {
                 }
             }
         }
-        .chartXScale(domain: interval.start...interval.end)
+        .chartXScale(domain: dataXDomain)
+        .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([
             "Esencial": Color.electricIndigo,
             "Prioritaria": Color.priorityNature,
@@ -251,11 +302,11 @@ struct NatureTrendChartView: View {
                 }
             }
         }
-        // Y-Axis: Right (Trailing), grid dashed, limited count
+        // Y-Axis: Right (Trailing), minimal gridlines for clean look
         .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 5)) { value in
-                AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                    .foregroundStyle(Color.netoSecondaryText.opacity(0.2))
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                    .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
                         Text(formatAxisAmount(amount))
@@ -265,181 +316,101 @@ struct NatureTrendChartView: View {
                 }
             }
         }
+        .chartXSelection(value: $selectedDate)  // Native iOS 17+ selection
         .chartOverlay { proxy in
             GeometryReader { geo in
                 let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
 
-                ZStack(alignment: .topLeading) {
-                    // 1. Gesture Handler - Long Press for Hover, Tap for Filter
-                    Rectangle().fill(.clear).contentShape(Rectangle())
-                        .gesture(
-                            LongPressGesture(minimumDuration: 0.3)
-                                .sequenced(before: DragGesture(minimumDistance: 0))
-                                .onChanged { value in
-                                    switch value {
-                                    case .second(true, let drag):
-                                        guard let drag = drag else { return }
-                                        let x = drag.location.x - plotFrame.origin.x
-                                        if let date: Date = proxy.value(atX: x) {
-                                            let granularity: Calendar.Component =
-                                                grouping == .month
-                                                ? .month
-                                                : (grouping == .week ? .weekOfYear : .day)
+                // Tooltip only (no gesture - chartXSelection handles it)
+                if let activeDate = selectedDate,
+                    let selectedData = points.first(where: {
+                        Calendar.current.isDate(
+                            $0.date, equalTo: activeDate,
+                            toGranularity: grouping == .month
+                                ? .month : (grouping == .week ? .weekOfYear : .day))
+                    }),
+                    let xPos = proxy.position(forX: selectedData.date)
+                {
+                    // Vertical Line
+                    Rectangle()
+                        .fill(Color.netoSecondaryText.opacity(0.3))
+                        .frame(width: 1, height: plotFrame.height)
+                        .position(x: xPos + plotFrame.origin.x, y: plotFrame.midY)
 
-                                            if let match = points.first(where: {
-                                                Calendar.current.isDate(
-                                                    $0.date, equalTo: date,
-                                                    toGranularity: granularity)
-                                            }) {
-                                                self.selectedDate = match.date
-                                            }
-                                        }
-                                    default:
-                                        break
-                                    }
-                                }
-                                .onEnded { _ in
-                                    self.selectedDate = nil
-                                }
-                        )
-                        .simultaneousGesture(
-                            SpatialTapGesture()
-                                .onEnded { value in
-                                    // Disabled in Large mode (legend handles it)
-                                    guard let onSelectNature = onSelectNature else { return }
+                    // Tooltip Card
+                    VStack(spacing: 6) {
+                        Text(formatDateFull(selectedData.date, grouping: grouping))
+                            .font(.caption2)
+                            .foregroundStyle(Color.netoSecondaryText)
 
-                                    // Get tap location relative to plot
-                                    let tapX = value.location.x - plotFrame.origin.x
-                                    let tapY = value.location.y - plotFrame.origin.y
-
-                                    // 1. Find which date was tapped
-                                    guard let date: Date = proxy.value(atX: tapX) else { return }
-                                    let granularity: Calendar.Component =
-                                        grouping == .month
-                                        ? .month : (grouping == .week ? .weekOfYear : .day)
-
-                                    guard
-                                        let dataPoint = points.first(where: {
-                                            Calendar.current.isDate(
-                                                $0.date, equalTo: date, toGranularity: granularity)
-                                        })
-                                    else { return }
-
-                                    // 2. Detect which segment was tapped based on Y position
-                                    // Stacked bars stack from bottom, so we calculate from bottom up
-                                    let total = dataPoint.total
-                                    guard total > 0 else { return }
-
-                                    // Get Y range for the chart (inverted: 0 at top, max at bottom in SwiftUI)
-                                    let chartHeight = plotFrame.height
-
-                                    // Calculate proportional Y position (0 = bottom, 1 = top of data range)
-                                    // In SwiftUI Charts, Y=0 is at bottom of chart
-                                    let yRatio = 1.0 - (tapY / chartHeight)  // Invert: tap at bottom = ratio 0
-                                    let tappedValue = yRatio * total  // Approximate value at tap point
-
-                                    // Determine segment based on stacking order (bottom to top):
-                                    // Essential -> Priority -> Optional -> Unclassified
-                                    var cumulativeHeight: Double = 0
-                                    var tappedNature: SubcategoryNature? = nil
-
-                                    if dataPoint.essential > 0 {
-                                        cumulativeHeight += dataPoint.essential
-                                        if tappedValue <= cumulativeHeight {
-                                            tappedNature = .essential
-                                        }
-                                    }
-                                    if tappedNature == nil && dataPoint.priority > 0 {
-                                        cumulativeHeight += dataPoint.priority
-                                        if tappedValue <= cumulativeHeight {
-                                            tappedNature = .priority
-                                        }
-                                    }
-                                    if tappedNature == nil && dataPoint.optional > 0 {
-                                        cumulativeHeight += dataPoint.optional
-                                        if tappedValue <= cumulativeHeight {
-                                            tappedNature = .optional
-                                        }
-                                    }
-                                    if tappedNature == nil && dataPoint.unclassified > 0 {
-                                        tappedNature = .unclassified
-                                    }
-
-                                    if let nature = tappedNature {
-                                        onSelectNature(nature)
-                                    }
-                                }
-                        )
-
-                    // 2. Hover Visuals (Line + Tooltip)
-                    if let selectedDate = selectedDate,
-                        let selectedData = points.first(where: {
-                            Calendar.current.isDate(
-                                $0.date, equalTo: selectedDate,
-                                toGranularity: grouping == .month
-                                    ? .month : (grouping == .week ? .weekOfYear : .day))
-                        }),
-                        let xPos = proxy.position(forX: selectedData.date)
-                    {
-                        // Vertical Line
-                        Rectangle()
-                            .fill(Color.netoSecondaryText.opacity(0.3))
-                            .frame(width: 1, height: plotFrame.height)
-                            .position(x: xPos + plotFrame.origin.x, y: plotFrame.midY)
-
-                        // Tooltip Card
-                        VStack(spacing: 6) {
-                            Text(formatDateFull(selectedData.date, grouping: grouping))
-                                .font(.caption2)
-                                .foregroundStyle(Color.netoSecondaryText)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                if selectedData.essential > 0 {
-                                    TooltipRow(
-                                        nature: .essential, amount: selectedData.essential,
-                                        currencyCode: currencyCode)
-                                }
-                                if selectedData.priority > 0 {
-                                    TooltipRow(
-                                        nature: .priority, amount: selectedData.priority,
-                                        currencyCode: currencyCode)
-                                }
-                                if selectedData.optional > 0 {
-                                    TooltipRow(
-                                        nature: .optional, amount: selectedData.optional,
-                                        currencyCode: currencyCode)
-                                }
-                                if selectedData.unclassified > 0 {
-                                    TooltipRow(
-                                        nature: .unclassified, amount: selectedData.unclassified,
-                                        currencyCode: currencyCode)
-                                }
-                                Divider()
-                                HStack {
-                                    Text("Total")
-                                        .font(.caption2)
-                                        .foregroundStyle(Color.secondary)
-                                    Spacer()
-                                    Text(formatAxisAmount(selectedData.total))
-                                        .font(.caption2.bold())
-                                        .foregroundStyle(Color.primary)
-                                }
+                        VStack(alignment: .leading, spacing: 4) {
+                            if selectedData.essential > 0 {
+                                TooltipRow(
+                                    nature: .essential, amount: selectedData.essential,
+                                    currencyCode: currencyCode)
+                            }
+                            if selectedData.priority > 0 {
+                                TooltipRow(
+                                    nature: .priority, amount: selectedData.priority,
+                                    currencyCode: currencyCode)
+                            }
+                            if selectedData.optional > 0 {
+                                TooltipRow(
+                                    nature: .optional, amount: selectedData.optional,
+                                    currencyCode: currencyCode)
+                            }
+                            if selectedData.unclassified > 0 {
+                                TooltipRow(
+                                    nature: .unclassified, amount: selectedData.unclassified,
+                                    currencyCode: currencyCode)
+                            }
+                            Divider()
+                            HStack {
+                                Text("Total")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.secondary)
+                                Spacer()
+                                Text(
+                                    NetoFormatter.currency(
+                                        value: selectedData.total, currencyCode: currencyCode)
+                                )
+                                .font(.caption2.bold())
+                                .foregroundStyle(Color.primary)
                             }
                         }
-                        .padding(8)
-                        .background(
-                            RoundedRectangle(cornerRadius: DS.Radius.sm)
-                                .fill(Color.netoCard)
-                                .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
-                        )
-                        .fixedSize()
-                        .position(
-                            x: max(80, min(xPos + plotFrame.origin.x, geo.size.width - 80)),
-                            y: 40  // Fixed Y position near top of chart
-                        )
                     }
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                            .fill(Color.netoCard)
+                            .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
+                    )
+                    .fixedSize()
+                    .position(
+                        x: max(80, min(xPos + plotFrame.origin.x, geo.size.width - 80)),
+                        y: 40
+                    )
                 }
             }
+        }
+    }
+
+    private func calculateMaxValue() -> Double {
+        guard !points.isEmpty else { return 100 }
+
+        if let selected = selectedNature {
+            // If a nature is selected, find max for that nature
+            return points.map { point in
+                switch selected {
+                case .essential: return point.essential
+                case .priority: return point.priority
+                case .optional: return point.optional
+                case .unclassified: return point.unclassified
+                }
+            }.max() ?? 100
+        } else {
+            // If showing all, find max total per date (stacked)
+            return points.map { $0.total }.max() ?? 100
         }
     }
 
@@ -447,11 +418,11 @@ struct NatureTrendChartView: View {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
         switch grouping {
-        case .day: formatter.dateFormat = "EEEE d MMM, yyyy"
-        case .week: formatter.dateFormat = "'Semana del' d MMM"
-        case .month: formatter.dateFormat = "MMMM yyyy"
+        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
+        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
+        case .month: formatter.dateFormat = "MMM yy"  // ene 25
         }
-        return formatter.string(from: date)
+        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }
 
     struct TooltipRow: View {
@@ -467,7 +438,7 @@ struct NatureTrendChartView: View {
                     .foregroundStyle(Color.primary)
                 Spacer()
                 // Simple formatting for tooltip
-                Text(NetoFormatter.currency(value: amount, currencyCode: currencyCode, decimals: 0))
+                Text(NetoFormatter.currency(value: amount, currencyCode: currencyCode))
                     .font(.caption2.bold())
                     .foregroundStyle(Color.primary)
             }
@@ -523,14 +494,13 @@ struct NatureTrendChartView: View {
     }
 
     private func formatAxisAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        if value >= 1000 {
-            let kValue = value / 1000
-            return formatter.string(from: NSNumber(value: kValue))! + "k"
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        if absValue >= 1000 {
+            let kValue = absValue / 1000.0
+            return String(format: "%@%.0fK", sign, kValue)
         }
-        return formatter.string(from: NSNumber(value: value)) ?? ""
+        return String(format: "%@%.0f", sign, absValue)
     }
 }
 
@@ -547,24 +517,26 @@ struct NatureLegendView: View {
         let unclassified = points.reduce(0) { $0 + $1.unclassified }
         let total = essentials + priorities + optionals + unclassified
 
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            LegendItem(
-                nature: .essential, amount: essentials, total: total,
-                isSelected: selectedNature == .essential || selectedNature == nil,
-                onTap: { onSelect(.essential) })
-            LegendItem(
-                nature: .priority, amount: priorities, total: total,
-                isSelected: selectedNature == .priority || selectedNature == nil,
-                onTap: { onSelect(.priority) })
-            LegendItem(
-                nature: .optional, amount: optionals, total: total,
-                isSelected: selectedNature == .optional || selectedNature == nil,
-                onTap: { onSelect(.optional) })
-            if unclassified > 0 {
-                LegendItem(
-                    nature: .unclassified, amount: unclassified, total: total,
-                    isSelected: selectedNature == .unclassified || selectedNature == nil,
-                    onTap: { onSelect(.unclassified) })
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                CompactLegendChip(
+                    nature: .essential, amount: essentials, total: total,
+                    isSelected: selectedNature == .essential || selectedNature == nil,
+                    onTap: { onSelect(.essential) })
+                CompactLegendChip(
+                    nature: .priority, amount: priorities, total: total,
+                    isSelected: selectedNature == .priority || selectedNature == nil,
+                    onTap: { onSelect(.priority) })
+                CompactLegendChip(
+                    nature: .optional, amount: optionals, total: total,
+                    isSelected: selectedNature == .optional || selectedNature == nil,
+                    onTap: { onSelect(.optional) })
+                if unclassified > 0 {
+                    CompactLegendChip(
+                        nature: .unclassified, amount: unclassified, total: total,
+                        isSelected: selectedNature == .unclassified || selectedNature == nil,
+                        onTap: { onSelect(.unclassified) })
+                }
             }
         }
     }
@@ -603,6 +575,57 @@ struct LegendItem: View {
     }
 
     private func extensionColor(for nature: SubcategoryNature) -> Color {
+        switch nature {
+        case .essential: return .electricIndigo
+        case .priority: return .priorityNature
+        case .optional: return .hotPink
+        case .unclassified: return .gray
+        }
+    }
+
+    private func formattedPercent(_ value: Double, _ total: Double) -> String {
+        guard total > 0 else { return "0%" }
+        let pct = value / total
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .percent
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: pct)) ?? "0%"
+    }
+}
+
+// MARK: - Compact Legend Chip for Horizontal Layout
+
+struct CompactLegendChip: View {
+    let nature: SubcategoryNature
+    let amount: Double
+    let total: Double
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(chipColor(for: nature))
+                    .frame(width: 6, height: 6)
+
+                Text(nature.displayName)
+                    .font(.caption2)
+                    .foregroundStyle(Color.primary)
+
+                Text(formattedPercent(amount, total))
+                    .font(.caption2)
+                    .foregroundStyle(Color.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(isSelected ? Color.netoBackground.opacity(0.5) : Color.clear)
+            .cornerRadius(12)
+            .opacity(isSelected ? 1.0 : 0.4)
+        }
+    }
+
+    private func chipColor(for nature: SubcategoryNature) -> Color {
         switch nature {
         case .essential: return .electricIndigo
         case .priority: return .priorityNature
@@ -675,5 +698,51 @@ extension SubcategoryNature {
         case .optional: return .hotPink
         case .unclassified: return .gray
         }
+    }
+}
+
+// MARK: - Compact Bar Component (CashFlow Style)
+
+struct NatureCompactBar: View {
+    let nature: SubcategoryNature
+    let amount: Double
+    let maxAmount: Double
+    let currencyCode: String
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 6) {
+                HStack {
+                    Text(nature.displayName)
+                        .font(.subheadline)
+                        .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                    Spacer()
+                    Text(NetoFormatter.currency(value: amount, currencyCode: currencyCode))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                }
+
+                // Progress Bar
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        // Track
+                        Capsule()
+                            .fill(Color.primary.opacity(0.05))
+                            .frame(height: 8)
+
+                        // Fill
+                        let width = maxAmount > 0 ? (amount / maxAmount) * geo.size.width : 0
+                        Capsule()
+                            .fill(nature.color)
+                            .frame(width: max(width, 6), height: 8)
+                    }
+                }
+                .frame(height: 8)
+            }
+            .opacity(isSelected ? 1.0 : 0.4)
+        }
+        .buttonStyle(.plain)
     }
 }

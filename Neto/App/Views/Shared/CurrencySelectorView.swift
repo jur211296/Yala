@@ -34,7 +34,7 @@ struct CurrencySelectorView: View {
                 .padding(.vertical, 24)
             }
         }
-        .navigationTitle("Divisa preferida")
+        .navigationTitle(L10n.Settings.preferredCurrency)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

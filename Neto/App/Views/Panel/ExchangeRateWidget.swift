@@ -54,7 +54,7 @@ struct ExchangeRateWidget: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
         .sheet(isPresented: $showCurrencySelector) {
             CurrencySelectorSheet(
@@ -83,7 +83,7 @@ struct ExchangeRateWidget: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Sin datos")
+                    Text(L10n.Empty.noData)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -152,7 +152,7 @@ struct ExchangeRateWidget: View {
     private var contentView: some View {
         if let data = data {
             if data.hasError {
-                errorView(message: data.errorMessage ?? "Error desconocido")
+                errorView(message: data.errorMessage ?? L10n.Common.unknownError)
             } else if data.chartPoints.isEmpty {
                 emptyChartView
             } else {
@@ -166,17 +166,19 @@ struct ExchangeRateWidget: View {
     // MARK: - Date Formatting
 
     /// Formats date for subtitle: "Hoy, 15:45" or "19 dic, 15:45"
+    /// Formats date for subtitle: "Hoy, 15:45" or "19 dic, 15:45"
     private func formatSubtitleDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
 
         if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "'Hoy,' HH:mm"
+            formatter.dateFormat = "HH:mm"
+            let timeStr = formatter.string(from: date)
+            return "\(L10n.Widget.today), \(timeStr)"
         } else {
             formatter.dateFormat = "d MMM, HH:mm"
+            return formatter.string(from: date)
         }
-
-        return formatter.string(from: date)
     }
 
     // MARK: - Chart View
@@ -292,7 +294,7 @@ struct ExchangeRateWidget: View {
                 }
             }
         }
-        .frame(height: 140)
+
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.lg)
     }

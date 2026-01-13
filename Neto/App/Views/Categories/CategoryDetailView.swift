@@ -104,7 +104,7 @@ struct CategoryDetailView: View {
                 .padding(.vertical, 24)
             }
         }
-        .navigationTitle("Editar categoría")
+        .navigationTitle(L10n.Category.editTitle)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -120,24 +120,24 @@ struct CategoryDetailView: View {
                 )
             }
         }
-        .alert("Categoría oculta", isPresented: $showVisibilityInfo) {
-            Button("Entendido", role: .cancel) {}
+        .alert(L10n.Category.hiddenTitle, isPresented: $showVisibilityInfo) {
+            Button(L10n.Common.understood, role: .cancel) {}
         } message: {
             Text(
-                "La categoría y sus subcategorías dejarán de aparecer en los selectores, pero no se perderán datos históricos."
+                L10n.Category.hiddenDescription
             )
         }
-        .alert("Añade al menos una subcategoría", isPresented: $showMissingSubcategoriesAlert) {
-            Button("Entendido", role: .cancel) {}
+        .alert(L10n.Category.addOneSubcategory, isPresented: $showMissingSubcategoriesAlert) {
+            Button(L10n.Common.understood, role: .cancel) {}
         } message: {
-            Text("Para crear una nueva categoría, debes añadir al menos una subcategoría.")
+            Text(L10n.Category.requiresSubcategory)
         }
         .confirmationDialog(
-            "¿Descartar cambios?",
+            L10n.Alert.discardChanges,
             isPresented: $showDiscardDialog,
             titleVisibility: .visible
         ) {
-            Button("Descartar cambios", role: .destructive) {
+            Button(L10n.Alert.discardChanges, role: .destructive) {
                 if isNewCategory {
                     modelContext.delete(category)
                     do {
@@ -152,7 +152,7 @@ struct CategoryDetailView: View {
                 // El usuario decide seguir editando; no hacemos nada.
             }
         } message: {
-            Text("Si sales ahora, se perderán los cambios realizados.")
+            Text(L10n.Alert.discardChanges)
         }
     }
 
@@ -221,7 +221,7 @@ struct CategoryDetailView: View {
                 SubsectionDivider()
 
                 Toggle(isOn: $isVisible) {
-                    Text("Mostrar")
+                    Text(L10n.Category.show)
                 }
                 .tint(Color.electricIndigo)
                 .padding()
@@ -243,7 +243,7 @@ struct CategoryDetailView: View {
             SectionBox(title: "Subcategorías activas") {
                 VStack(spacing: 0) {
                     if visibles.isEmpty && ocultas.isEmpty {
-                        Text("Esta categoría aún no tiene subcategorías.")
+                        Text(L10n.Category.noSubcategoriesYet)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .padding()
@@ -272,7 +272,7 @@ struct CategoryDetailView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundStyle(Color.brandPrimary)
-                            Text("Añadir subcategoría")
+                            Text(L10n.Category.addSubcategory)
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.footnote)

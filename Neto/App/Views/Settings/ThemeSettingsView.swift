@@ -23,11 +23,11 @@ struct ThemeSettingsView: View {
                         .foregroundStyle(Color.brandPrimary)
                         .padding(.bottom, 8)
 
-                    Text("Apariencia")
+                    Text(L10n.Profile.appearance)
                         .font(.title2.bold())
                         .foregroundStyle(Color.netoPrimaryText)
 
-                    Text("Elige cómo quieres que se vea Neto.")
+                    Text(L10n.Settings.themeDescription)
                         .font(.body)
                         .foregroundStyle(Color.netoSecondaryText)
                         .multilineTextAlignment(.center)
@@ -52,7 +52,7 @@ struct ThemeSettingsView: View {
             }
             .padding()
         }
-        .navigationTitle("Temas")
+        .navigationTitle(L10n.Settings.theme)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {

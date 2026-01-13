@@ -111,7 +111,7 @@ struct RecordRowView: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(colorScheme == .dark ? Color(white: 0.12) : Color.white)
+            .fill(Color.netoCard)
     }
 
     // MARK: - Selection Circle

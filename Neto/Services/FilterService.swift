@@ -248,10 +248,17 @@ struct FilterService {
             else { return false }
         }
 
-        // Search text filter (note)
+        // Search text filter (searches in note, category, subcategory, account, tags)
         if !criteria.searchText.isEmpty {
-            let noteText = transaction.note ?? ""
-            guard noteText.localizedCaseInsensitiveContains(criteria.searchText) else {
+            let search = criteria.searchText.lowercased()
+            let noteMatch = (transaction.note ?? "").lowercased().contains(search)
+            let categoryMatch = (transaction.category?.name ?? "").lowercased().contains(search)
+            let subcategoryMatch = (transaction.subcategory?.name ?? "").lowercased().contains(
+                search)
+            let accountMatch = (transaction.account?.name ?? "").lowercased().contains(search)
+            let tagMatch = transaction.tags.contains { $0.name.lowercased().contains(search) }
+
+            guard noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch else {
                 return false
             }
         }

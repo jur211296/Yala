@@ -152,7 +152,7 @@ struct AddAccountCardView: View {
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(Color.netoPrimaryText)
 
-                Text("Agregar cuenta")
+                Text(L10n.Account.addAccount)
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(Color.netoPrimaryText)
             }

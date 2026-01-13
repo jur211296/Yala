@@ -32,6 +32,18 @@ final class TransactionItem {
     /// Indica si el tipo de cambio es provisional (fallback) o oficial (exacto para la fecha)
     var isExchangeRateProvisional: Bool = false
 
+    // MARK: - Nature Override
+    /// Override manual de naturaleza (nil = usar la de subcategoría)
+    var natureOverride: String?
+
+    /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
+    var effectiveNature: SubcategoryNature {
+        if let override = natureOverride {
+            return SubcategoryNature(rawValue: override) ?? .unclassified
+        }
+        return subcategory?.nature ?? .unclassified
+    }
+
     init(
         date: Date,
         amount: Double,

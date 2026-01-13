@@ -76,7 +76,7 @@ struct ExportSummaryStepView: View {
                 closeToRoot()
             }
         } message: {
-            Text("El archivo CSV se ha generado y compartido correctamente.")
+            Text(L10n.Export.csvGeneratedSuccess)
         }
         .sheet(isPresented: $showShareSheet) {
             if let url = exportedFileURL {
@@ -100,7 +100,7 @@ struct ExportSummaryStepView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Confirma tu exportación")
+            Text(L10n.Export.confirmExport)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
 
@@ -218,24 +218,13 @@ struct ExportSummaryStepView: View {
     }
 
     private var periodSummaryText: String {
-        switch exportFilters.period {
-        case .today: return "Hoy"
-        case .thisYear: return "Este año"
-        case .thisMonth: return "Este mes"
-        case .thisWeek: return "Esta semana"
-        case .last7Days: return "Últimos 7 días"
-        case .last30Days: return "Últimos 30 días"
-        case .last90Days: return "Últimos 90 días"
-        case .last180Days: return "Últimos 180 días"
-        case .custom:
-            guard let from = exportFilters.customDateFrom, let to = exportFilters.customDateTo
-            else {
-                return "Personalizado (Incompleto)"
-            }
-            let formatter = DateFormatter()
-            formatter.dateStyle = .short
-            return "\(formatter.string(from: from)) - \(formatter.string(from: to))"
-        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_ES")
+        formatter.dateFormat = "d MMM yyyy"
+
+        let from = exportFilters.dateFrom
+        let to = exportFilters.dateTo
+        return "\(formatter.string(from: from)) - \(formatter.string(from: to))"
     }
 
     private var categoriesSummaryText: String {

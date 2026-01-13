@@ -1,0 +1,2146 @@
+
+> web@0.0.1 build
+> astro build --verbose
+
+2026-01-11T18:36:19.193Z astro:cli --verbose flag enabled! Enabling: DEBUG="astro:*,vite:*"
+2026-01-11T18:36:19.194Z astro:cli Tip: Set the DEBUG env variable directly for more control. Example: "DEBUG=astro:*,vite:* astro build".
+2026-01-11T18:36:19.332Z astro:telemetry [notify] last notified on 1768153146871
+2026-01-11T18:36:20.118Z astro:telemetry {
+  context: {
+    isGit: false,
+    anonymousProjectId: '2e4d466d2095253c5b4c62b78bac3161f2b990edc1f5067db7122797ca21a46f',
+    packageManager: 'npm',
+    packageManagerVersion: '11.6.2',
+    anonymousId: '1060f79ef537bee3e456f5e10be784f2c553722df624a83a7925b1821d8399b1',
+    anonymousSessionId: '3b2386ff43943a2d81950db1f56ed92a396f837f7f90e484fbe4c91a29ea1b2a'
+  },
+  meta: {
+    nodeVersion: '25.2.1',
+    viteVersion: '6.4.1',
+    astroVersion: '5.16.8',
+    systemPlatform: 'darwin',
+    systemRelease: '25.2.0',
+    systemArchitecture: 'arm64',
+    cpuCount: 10,
+    cpuModel: 'Apple M4',
+    cpuSpeed: 2400,
+    memoryInMb: 16384,
+    isDocker: false,
+    isTTY: undefined,
+    isWSL: false,
+    isCI: false,
+    ciName: null
+  }
+}
+2026-01-11T18:36:20.118Z astro:telemetry [
+  {
+    "eventName": "ASTRO_CLI_SESSION_STARTED",
+    "payload": {
+      "cliCommand": "build",
+      "config": {
+        "build": {},
+        "server": true,
+        "image": {},
+        "markdown": {},
+        "vite": {
+          "plugins": true
+        },
+        "experimental": {},
+        "legacy": {}
+      }
+    }
+  }
+]
+2026-01-11T18:36:20.137Z astro:build Initial setup...
+2026-01-11T18:36:20.143Z vite:env loading env files: [
+  '/Users/jur/Desktop/Neto/Web/.env',
+  '/Users/jur/Desktop/Neto/Web/.env.local',
+  '/Users/jur/Desktop/Neto/Web/.env.production',
+  '/Users/jur/Desktop/Neto/Web/.env.production.local'
+]
+2026-01-11T18:36:20.143Z vite:env env files loaded in 0.32ms
+2026-01-11T18:36:20.144Z vite:env using resolved env: {
+  ANTIGRAVITY_AGENT: '1',
+  TERM_PROGRAM: 'vscode',
+  NODE: '/opt/homebrew/Cellar/node/25.2.1/bin/node',
+  INIT_CWD: '/Users/jur/Desktop/Neto/Web',
+  TERM: 'xterm-256color',
+  SHELL: '/bin/zsh',
+  HOMEBREW_REPOSITORY: '/opt/homebrew',
+  TMPDIR: '/var/folders/v6/0p4flx5d1gl4_qnr12r8668c0000gn/T/',
+  npm_config_global_prefix: '/opt/homebrew',
+  VSCODE_PYTHON_AUTOACTIVATE_GUARD: '1',
+  TERM_PROGRAM_VERSION: '1.104.0',
+  ZDOTDIR: '/Users/jur',
+  ORIGINAL_XDG_CURRENT_DESKTOP: 'undefined',
+  MallocNanoZone: '0',
+  COLOR: '0',
+  npm_config_noproxy: '',
+  npm_config_local_prefix: '/Users/jur/Desktop/Neto/Web',
+  USER: 'jur',
+  COMMAND_MODE: 'unix2003',
+  npm_config_globalconfig: '/opt/homebrew/etc/npmrc',
+  SSH_AUTH_SOCK: '/private/tmp/com.apple.launchd.airb9i07QM/Listeners',
+  VSCODE_PROFILE_INITIALIZED: '1',
+  __CF_USER_TEXT_ENCODING: '0x1F5:0x0:0x8',
+  npm_execpath: '/opt/homebrew/lib/node_modules/npm/bin/npm-cli.js',
+  PAGER: 'cat',
+  PATH: '/Users/jur/Desktop/Neto/Web/node_modules/.bin:/Users/jur/Desktop/Neto/node_modules/.bin:/Users/jur/Desktop/node_modules/.bin:/Users/jur/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/jur/.local/bin:/Users/jur/.antigravity/antigravity/bin:/Users/jur/Library/Python/3.9/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/pmk/env/global/bin:/Library/Apple/usr/bin:/Users/jur/.antigravity/antigravity/bin:/Users/jur/Library/Python/3.9/bin',
+  npm_package_json: '/Users/jur/Desktop/Neto/Web/package.json',
+  _: '/Users/jur/Desktop/Neto/Web/node_modules/.bin/astro',
+  npm_config_userconfig: '/Users/jur/.npmrc',
+  npm_config_init_module: '/Users/jur/.npm-init.js',
+  USER_ZDOTDIR: '/Users/jur',
+  __CFBundleIdentifier: 'com.google.antigravity',
+  npm_command: 'run',
+  PWD: '/Users/jur/Desktop/Neto/Web',
+  npm_lifecycle_event: 'build',
+  EDITOR: 'vi',
+  npm_package_name: 'web',
+  LANG: 'C.UTF-8',
+  npm_config_npm_version: '11.6.2',
+  VSCODE_GIT_ASKPASS_EXTRA_ARGS: '',
+  XPC_FLAGS: '0x0',
+  npm_config_node_gyp: '/opt/homebrew/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js',
+  npm_package_version: '0.0.1',
+  XPC_SERVICE_NAME: '0',
+  VSCODE_INJECTION: '1',
+  ANTIGRAVITY_CLI_ALIAS: 'agy',
+  SHLVL: '2',
+  HOME: '/Users/jur',
+  VSCODE_GIT_ASKPASS_MAIN: '/Applications/Antigravity.app/Contents/Resources/app/extensions/git/dist/askpass-main.js',
+  HOMEBREW_PREFIX: '/opt/homebrew',
+  npm_config_cache: '/Users/jur/.npm',
+  LOGNAME: 'jur',
+  npm_lifecycle_script: 'astro build',
+  VSCODE_GIT_IPC_HANDLE: '/var/folders/v6/0p4flx5d1gl4_qnr12r8668c0000gn/T/vscode-git-2df69c2760.sock',
+  npm_config_user_agent: 'npm/11.6.2 node/v25.2.1 darwin arm64 workspaces/false',
+  VSCODE_GIT_ASKPASS_NODE: '/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Plugin).app/Contents/MacOS/Antigravity Helper (Plugin)',
+  GIT_ASKPASS: '/Applications/Antigravity.app/Contents/Resources/app/extensions/git/dist/askpass.sh',
+  INFOPATH: '/opt/homebrew/share/info:/opt/homebrew/share/info:',
+  HOMEBREW_CELLAR: '/opt/homebrew/Cellar',
+  OSLogRateLimit: '64',
+  npm_node_execpath: '/opt/homebrew/Cellar/node/25.2.1/bin/node',
+  npm_config_prefix: '/opt/homebrew',
+  COLORTERM: 'truecolor',
+  DEBUG: 'astro:*,vite:*',
+  NODE_ENV: 'production'
+}
+2026-01-11T18:36:20.146Z vite:env loading env files: [
+  '/Users/jur/Desktop/Neto/Web/.env',
+  '/Users/jur/Desktop/Neto/Web/.env.local',
+  '/Users/jur/Desktop/Neto/Web/.env.production',
+  '/Users/jur/Desktop/Neto/Web/.env.production.local'
+]
+2026-01-11T18:36:20.146Z vite:env env files loaded in 0.08ms
+2026-01-11T18:36:20.146Z vite:env using resolved env: {
+  ANTIGRAVITY_AGENT: '1',
+  TERM_PROGRAM: 'vscode',
+  NODE: '/opt/homebrew/Cellar/node/25.2.1/bin/node',
+  INIT_CWD: '/Users/jur/Desktop/Neto/Web',
+  TERM: 'xterm-256color',
+  SHELL: '/bin/zsh',
+  HOMEBREW_REPOSITORY: '/opt/homebrew',
+  TMPDIR: '/var/folders/v6/0p4flx5d1gl4_qnr12r8668c0000gn/T/',
+  npm_config_global_prefix: '/opt/homebrew',
+  VSCODE_PYTHON_AUTOACTIVATE_GUARD: '1',
+  TERM_PROGRAM_VERSION: '1.104.0',
+  ZDOTDIR: '/Users/jur',
+  ORIGINAL_XDG_CURRENT_DESKTOP: 'undefined',
+  MallocNanoZone: '0',
+  COLOR: '0',
+  npm_config_noproxy: '',
+  npm_config_local_prefix: '/Users/jur/Desktop/Neto/Web',
+  USER: 'jur',
+  COMMAND_MODE: 'unix2003',
+  npm_config_globalconfig: '/opt/homebrew/etc/npmrc',
+  SSH_AUTH_SOCK: '/private/tmp/com.apple.launchd.airb9i07QM/Listeners',
+  VSCODE_PROFILE_INITIALIZED: '1',
+  __CF_USER_TEXT_ENCODING: '0x1F5:0x0:0x8',
+  npm_execpath: '/opt/homebrew/lib/node_modules/npm/bin/npm-cli.js',
+  PAGER: 'cat',
+  PATH: '/Users/jur/Desktop/Neto/Web/node_modules/.bin:/Users/jur/Desktop/Neto/node_modules/.bin:/Users/jur/Desktop/node_modules/.bin:/Users/jur/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/jur/.local/bin:/Users/jur/.antigravity/antigravity/bin:/Users/jur/Library/Python/3.9/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/pmk/env/global/bin:/Library/Apple/usr/bin:/Users/jur/.antigravity/antigravity/bin:/Users/jur/Library/Python/3.9/bin',
+  npm_package_json: '/Users/jur/Desktop/Neto/Web/package.json',
+  _: '/Users/jur/Desktop/Neto/Web/node_modules/.bin/astro',
+  npm_config_userconfig: '/Users/jur/.npmrc',
+  npm_config_init_module: '/Users/jur/.npm-init.js',
+  USER_ZDOTDIR: '/Users/jur',
+  __CFBundleIdentifier: 'com.google.antigravity',
+  npm_command: 'run',
+  PWD: '/Users/jur/Desktop/Neto/Web',
+  npm_lifecycle_event: 'build',
+  EDITOR: 'vi',
+  npm_package_name: 'web',
+  LANG: 'C.UTF-8',
+  npm_config_npm_version: '11.6.2',
+  VSCODE_GIT_ASKPASS_EXTRA_ARGS: '',
+  XPC_FLAGS: '0x0',
+  npm_config_node_gyp: '/opt/homebrew/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js',
+  npm_package_version: '0.0.1',
+  XPC_SERVICE_NAME: '0',
+  VSCODE_INJECTION: '1',
+  ANTIGRAVITY_CLI_ALIAS: 'agy',
+  SHLVL: '2',
+  HOME: '/Users/jur',
+  VSCODE_GIT_ASKPASS_MAIN: '/Applications/Antigravity.app/Contents/Resources/app/extensions/git/dist/askpass-main.js',
+  HOMEBREW_PREFIX: '/opt/homebrew',
+  npm_config_cache: '/Users/jur/.npm',
+  LOGNAME: 'jur',
+  npm_lifecycle_script: 'astro build',
+  VSCODE_GIT_IPC_HANDLE: '/var/folders/v6/0p4flx5d1gl4_qnr12r8668c0000gn/T/vscode-git-2df69c2760.sock',
+  npm_config_user_agent: 'npm/11.6.2 node/v25.2.1 darwin arm64 workspaces/false',
+  VSCODE_GIT_ASKPASS_NODE: '/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Plugin).app/Contents/MacOS/Antigravity Helper (Plugin)',
+  GIT_ASKPASS: '/Applications/Antigravity.app/Contents/Resources/app/extensions/git/dist/askpass.sh',
+  INFOPATH: '/opt/homebrew/share/info:/opt/homebrew/share/info:',
+  HOMEBREW_CELLAR: '/opt/homebrew/Cellar',
+  OSLogRateLimit: '64',
+  npm_node_execpath: '/opt/homebrew/Cellar/node/25.2.1/bin/node',
+  npm_config_prefix: '/opt/homebrew',
+  COLORTERM: 'truecolor',
+  DEBUG: 'astro:*,vite:*',
+  NODE_ENV: 'production'
+}
+2026-01-11T18:36:20.148Z vite:env loading env files: [
+  '/Users/jur/Desktop/Neto/Web/.env',
+  '/Users/jur/Desktop/Neto/Web/.env.local',
+  '/Users/jur/Desktop/Neto/Web/.env.production',
+  '/Users/jur/Desktop/Neto/Web/.env.production.local'
+]
+2026-01-11T18:36:20.148Z vite:env env files loaded in 0.07ms
+2026-01-11T18:36:20.148Z vite:env using resolved env: {}
+2026-01-11T18:36:20.153Z vite:config using resolved config: {
+  configFile: undefined,
+  mode: 'production',
+  cacheDir: '/Users/jur/Desktop/Neto/Web/node_modules/.vite',
+  clearScreen: false,
+  customLogger: {
+    hasWarned: false,
+    info: [Function: info],
+    warn: [Function: warn],
+    warnOnce: [Function: warnOnce],
+    error: [Function: error],
+    clearScreen: [Function: clearScreen],
+    hasErrorLogged: [Function: hasErrorLogged]
+  },
+  appType: 'custom',
+  optimizeDeps: {
+    include: [
+      'astro > cssesc',
+      'astro > aria-query',
+      'astro > axobject-query'
+    ],
+    exclude: [ 'astro', 'node-fetch' ],
+    needsInterop: [],
+    extensions: [],
+    disabled: undefined,
+    holdUntilCrawlEnd: true,
+    force: false,
+    noDiscovery: true,
+    esbuildOptions: { preserveSymlinks: false },
+    entries: [
+      '/Users/jur/Desktop/Neto/Web/src/**/*.{jsx,tsx,vue,svelte,html,astro}'
+    ]
+  },
+  plugins: [
+    'vite:optimized-deps',
+    'vite:watch-package-data',
+    'vite:pre-alias',
+    'alias',
+    'astro-manifest-plugin',
+    'astro:build',
+    'astro-env-plugin',
+    'astro:markdown',
+    'astro:head-metadata',
+    'astro-content-virtual-mod-plugin',
+    'astro:content-asset-propagation',
+    'astro:assets:esm',
+    'astro:vite-plugin-file-url',
+    'astro:i18n',
+    'astro:actions',
+    'astro:container',
+    '@tailwindcss/vite:scan',
+    'vite:modulepreload-polyfill',
+    'vite:resolve',
+    'vite:html-inline-proxy',
+    'vite:css',
+    'vite:esbuild',
+    'vite:json',
+    'vite:wasm-helper',
+    'vite:worker',
+    'vite:asset',
+    'astro:build:normal',
+    'astro:scripts',
+    'astro:adapter-config',
+    'astro:html',
+    'astro:postprocess',
+    'astro:integration-container',
+    'astro:content-imports',
+    '@astro/plugin-middleware',
+    'astro:assets',
+    'astro:fonts:fallback',
+    'astro:prefetch',
+    'astro:transitions',
+    'astro:dev-toolbar',
+    'vite:wasm-fallback',
+    'astro:vite-plugin-env',
+    'vite:define',
+    'vite:css-post',
+    'vite:worker-import-meta-url',
+    'vite:asset-import-meta-url',
+    'vite:dynamic-import-vars',
+    'vite:import-glob',
+    'astro:scripts:page-ssr',
+    'astro:scanner',
+    '@astrojs/vite-plugin-astro-ssr-manifest',
+    'astro:server-islands',
+    'astro:hmr-reload',
+    'vite:client-inject',
+    'vite:css-analysis',
+    'vite:import-analysis'
+  ],
+  publicDir: '/Users/jur/Desktop/Neto/Web/public',
+  root: '/Users/jur/Desktop/Neto/Web',
+  envPrefix: 'PUBLIC_',
+  define: {
+    'import.meta.env.SITE': 'undefined',
+    'import.meta.env.BASE_URL': '"/"',
+    'import.meta.env.ASSETS_PREFIX': 'undefined',
+    __ASTRO_INTERNAL_I18N_CONFIG__: '{"base":"/","format":"directory","trailingSlash":"ignore","isBuild":false}'
+  },
+  server: {
+    port: 5173,
+    strictPort: false,
+    host: undefined,
+    allowedHosts: [],
+    https: undefined,
+    open: false,
+    proxy: undefined,
+    cors: {
+      origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/
+    },
+    headers: {},
+    warmup: { clientFiles: [], ssrFiles: [] },
+    middlewareMode: true,
+    fs: {
+      strict: true,
+      deny: [ '.env', '.env.*', '*.{crt,pem}', '**/.git/**' ],
+      allow: [ '/Users/jur/Desktop/Neto/Web' ]
+    },
+    preTransformRequests: true,
+    perEnvironmentStartEndDuringDev: false,
+    sourcemapIgnoreList: [Function: isInNodeModules$1],
+    hmr: false,
+    watch: { ignored: [ '**' ] },
+    ws: false
+  },
+  resolve: {
+    externalConditions: [ 'node' ],
+    extensions: [
+      '.mjs',  '.js',
+      '.mts',  '.ts',
+      '.jsx',  '.tsx',
+      '.json'
+    ],
+    dedupe: [ 'astro' ],
+    noExternal: [],
+    external: [],
+    preserveSymlinks: false,
+    alias: [
+      { find: 'randombytes', replacement: 'randombytes/browser' },
+      {
+        find: /^astro$/,
+        replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+      },
+      {
+        find: 'astro:middleware',
+        replacement: 'astro/virtual-modules/middleware.js'
+      },
+      { find: 'astro:schema', replacement: 'astro/zod' },
+      { find: 'astro:components', replacement: 'astro/components' },
+      {
+        find: /^\/?@vite\/env/,
+        replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/env.mjs'
+      },
+      {
+        find: /^\/?@vite\/client/,
+        replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/client.mjs'
+      }
+    ],
+    mainFields: [ 'browser', 'module', 'jsnext:main', 'jsnext' ],
+    conditions: [ 'module', 'browser', 'development|production', 'astro' ],
+    builtins: []
+  },
+  ssr: {
+    target: 'node',
+    optimizeDeps: {
+      esbuildOptions: { preserveSymlinks: false },
+      include: [],
+      exclude: [],
+      needsInterop: [],
+      extensions: [],
+      holdUntilCrawlEnd: true,
+      force: false,
+      noDiscovery: true
+    },
+    noExternal: [
+      'astro',
+      'astro/components',
+      '@nanostores/preact',
+      '@fontsource/*'
+    ],
+    external: [],
+    resolve: {
+      conditions: [ 'module', 'node', 'development|production', 'astro' ],
+      externalConditions: [ 'node' ]
+    }
+  },
+  build: {
+    target: [ 'es2020', 'edge88', 'firefox78', 'chrome87', 'safari14' ],
+    polyfillModulePreload: true,
+    modulePreload: { polyfill: true },
+    outDir: 'dist',
+    assetsDir: '_astro',
+    assetsInlineLimit: 4096,
+    sourcemap: false,
+    terserOptions: {},
+    rollupOptions: {},
+    commonjsOptions: { include: [ /node_modules/ ], extensions: [ '.js', '.cjs' ] },
+    dynamicImportVarsOptions: { warnOnError: true, exclude: [ /node_modules/ ] },
+    write: true,
+    emptyOutDir: null,
+    copyPublicDir: true,
+    manifest: false,
+    lib: false,
+    ssrManifest: false,
+    ssrEmitAssets: false,
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 500,
+    watch: null,
+    cssCodeSplit: true,
+    minify: 'esbuild',
+    ssr: false,
+    emitAssets: false,
+    createEnvironment: [Function: createEnvironment],
+    cssTarget: [ 'es2020', 'edge88', 'firefox78', 'chrome87', 'safari14' ],
+    cssMinify: true
+  },
+  logLevel: 'silent',
+  environments: {
+    client: {
+      define: {
+        'import.meta.env.SITE': 'undefined',
+        'import.meta.env.BASE_URL': '"/"',
+        'import.meta.env.ASSETS_PREFIX': 'undefined',
+        __ASTRO_INTERNAL_I18N_CONFIG__: '{"base":"/","format":"directory","trailingSlash":"ignore","isBuild":false}'
+      },
+      resolve: {
+        externalConditions: [ 'node' ],
+        extensions: [
+          '.mjs',  '.js',
+          '.mts',  '.ts',
+          '.jsx',  '.tsx',
+          '.json'
+        ],
+        dedupe: [ 'astro' ],
+        noExternal: [],
+        external: [],
+        preserveSymlinks: false,
+        alias: [
+          { find: 'randombytes', replacement: 'randombytes/browser' },
+          {
+            find: /^astro$/,
+            replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+          },
+          {
+            find: 'astro:middleware',
+            replacement: 'astro/virtual-modules/middleware.js'
+          },
+          { find: 'astro:schema', replacement: 'astro/zod' },
+          { find: 'astro:components', replacement: 'astro/components' },
+          {
+            find: /^\/?@vite\/env/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/env.mjs'
+          },
+          {
+            find: /^\/?@vite\/client/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/client.mjs'
+          }
+        ],
+        mainFields: [ 'browser', 'module', 'jsnext:main', 'jsnext' ],
+        conditions: [ 'module', 'browser', 'development|production', 'astro' ],
+        builtins: []
+      },
+      keepProcessEnv: false,
+      consumer: 'client',
+      optimizeDeps: {
+        include: [
+          'astro > cssesc',
+          'astro > aria-query',
+          'astro > axobject-query'
+        ],
+        exclude: [ 'astro', 'node-fetch' ],
+        needsInterop: [],
+        extensions: [],
+        disabled: undefined,
+        holdUntilCrawlEnd: true,
+        force: false,
+        noDiscovery: true,
+        esbuildOptions: { preserveSymlinks: false },
+        entries: [
+          '/Users/jur/Desktop/Neto/Web/src/**/*.{jsx,tsx,vue,svelte,html,astro}'
+        ]
+      },
+      dev: {
+        warmup: [],
+        sourcemap: { js: true },
+        sourcemapIgnoreList: [Function: isInNodeModules$1],
+        preTransformRequests: true,
+        createEnvironment: [Function: defaultCreateClientDevEnvironment],
+        recoverable: true,
+        moduleRunnerTransform: false
+      },
+      build: {
+        target: [ 'es2020', 'edge88', 'firefox78', 'chrome87', 'safari14' ],
+        polyfillModulePreload: true,
+        modulePreload: { polyfill: true },
+        outDir: 'dist',
+        assetsDir: '_astro',
+        assetsInlineLimit: 4096,
+        sourcemap: false,
+        terserOptions: {},
+        rollupOptions: {},
+        commonjsOptions: { include: [ /node_modules/ ], extensions: [ '.js', '.cjs' ] },
+        dynamicImportVarsOptions: { warnOnError: true, exclude: [ /node_modules/ ] },
+        write: true,
+        emptyOutDir: null,
+        copyPublicDir: true,
+        manifest: false,
+        lib: false,
+        ssrManifest: false,
+        ssrEmitAssets: false,
+        reportCompressedSize: true,
+        chunkSizeWarningLimit: 500,
+        watch: null,
+        cssCodeSplit: true,
+        minify: 'esbuild',
+        ssr: false,
+        emitAssets: true,
+        createEnvironment: [Function: createEnvironment],
+        cssTarget: [ 'es2020', 'edge88', 'firefox78', 'chrome87', 'safari14' ],
+        cssMinify: true
+      }
+    },
+    ssr: {
+      define: {
+        'import.meta.env.SITE': 'undefined',
+        'import.meta.env.BASE_URL': '"/"',
+        'import.meta.env.ASSETS_PREFIX': 'undefined',
+        __ASTRO_INTERNAL_I18N_CONFIG__: '{"base":"/","format":"directory","trailingSlash":"ignore","isBuild":false}'
+      },
+      resolve: {
+        externalConditions: [ 'node' ],
+        extensions: [
+          '.mjs',  '.js',
+          '.mts',  '.ts',
+          '.jsx',  '.tsx',
+          '.json'
+        ],
+        dedupe: [ 'astro' ],
+        noExternal: [
+          'astro',
+          'astro/components',
+          '@nanostores/preact',
+          '@fontsource/*'
+        ],
+        external: [],
+        preserveSymlinks: false,
+        alias: [
+          { find: 'randombytes', replacement: 'randombytes/browser' },
+          {
+            find: /^astro$/,
+            replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+          },
+          {
+            find: 'astro:middleware',
+            replacement: 'astro/virtual-modules/middleware.js'
+          },
+          { find: 'astro:schema', replacement: 'astro/zod' },
+          { find: 'astro:components', replacement: 'astro/components' },
+          {
+            find: /^\/?@vite\/env/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/env.mjs'
+          },
+          {
+            find: /^\/?@vite\/client/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/client.mjs'
+          }
+        ],
+        mainFields: [ 'module', 'jsnext:main', 'jsnext' ],
+        conditions: [ 'module', 'node', 'development|production', 'astro' ],
+        builtins: [
+          '_http_agent',         '_http_client',        '_http_common',
+          '_http_incoming',      '_http_outgoing',      '_http_server',
+          '_stream_duplex',      '_stream_passthrough', '_stream_readable',
+          '_stream_transform',   '_stream_wrap',        '_stream_writable',
+          '_tls_common',         '_tls_wrap',           'assert',
+          'assert/strict',       'async_hooks',         'buffer',
+          'child_process',       'cluster',             'console',
+          'constants',           'crypto',              'dgram',
+          'diagnostics_channel', 'dns',                 'dns/promises',
+          'domain',              'events',              'fs',
+          'fs/promises',         'http',                'http2',
+          'https',               'inspector',           'inspector/promises',
+          'module',              'net',                 'os',
+          'path',                'path/posix',          'path/win32',
+          'perf_hooks',          'process',             'punycode',
+          'querystring',         'readline',            'readline/promises',
+          'repl',                'stream',              'stream/consumers',
+          'stream/promises',     'stream/web',          'string_decoder',
+          'sys',                 'timers',              'timers/promises',
+          'tls',                 'trace_events',        'tty',
+          'url',                 'util',                'util/types',
+          'v8',                  'vm',                  'wasi',
+          'worker_threads',      'zlib',                /^node:/,
+          /^npm:/,               /^bun:/
+        ]
+      },
+      keepProcessEnv: true,
+      consumer: 'server',
+      optimizeDeps: {
+        include: [],
+        exclude: [],
+        needsInterop: [],
+        extensions: [],
+        disabled: undefined,
+        holdUntilCrawlEnd: true,
+        force: false,
+        noDiscovery: true,
+        esbuildOptions: { preserveSymlinks: false }
+      },
+      dev: {
+        warmup: [],
+        sourcemap: { js: true },
+        sourcemapIgnoreList: [Function: isInNodeModules$1],
+        preTransformRequests: false,
+        createEnvironment: [Function: defaultCreateDevEnvironment],
+        recoverable: false,
+        moduleRunnerTransform: true
+      },
+      build: {
+        target: [ 'es2020', 'edge88', 'firefox78', 'chrome87', 'safari14' ],
+        polyfillModulePreload: true,
+        modulePreload: { polyfill: true },
+        outDir: 'dist',
+        assetsDir: '_astro',
+        assetsInlineLimit: 4096,
+        sourcemap: false,
+        terserOptions: {},
+        rollupOptions: {},
+        commonjsOptions: { include: [ /node_modules/ ], extensions: [ '.js', '.cjs' ] },
+        dynamicImportVarsOptions: { warnOnError: true, exclude: [ /node_modules/ ] },
+        write: true,
+        emptyOutDir: null,
+        copyPublicDir: true,
+        manifest: false,
+        lib: false,
+        ssrManifest: false,
+        ssrEmitAssets: false,
+        reportCompressedSize: true,
+        chunkSizeWarningLimit: 500,
+        watch: null,
+        cssCodeSplit: true,
+        minify: false,
+        ssr: true,
+        emitAssets: false,
+        createEnvironment: [Function: createEnvironment],
+        cssTarget: [ 'es2020', 'edge88', 'firefox78', 'chrome87', 'safari14' ],
+        cssMinify: 'esbuild'
+      }
+    }
+  },
+  configFileDependencies: [],
+  inlineConfig: {
+    configFile: false,
+    mode: 'production',
+    cacheDir: '/Users/jur/Desktop/Neto/Web/node_modules/.vite/',
+    clearScreen: false,
+    customLogger: {
+      hasWarned: false,
+      info: [Function: info],
+      warn: [Function: warn],
+      warnOnce: [Function: warnOnce],
+      error: [Function: error],
+      clearScreen: [Function: clearScreen],
+      hasErrorLogged: [Function: hasErrorLogged]
+    },
+    appType: 'custom',
+    optimizeDeps: {
+      entries: [
+        '/Users/jur/Desktop/Neto/Web/src/**/*.{jsx,tsx,vue,svelte,html,astro}'
+      ],
+      exclude: [ 'astro', 'node-fetch' ],
+      noDiscovery: true
+    },
+    plugins: [
+      {
+        enforce: 'pre',
+        name: 'astro-manifest-plugin',
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      null,
+      false,
+      [
+        {
+          name: 'astro:build',
+          enforce: 'pre',
+          configEnvironment: [AsyncFunction: configEnvironment],
+          configResolved: [Function: configResolved],
+          configureServer: [Function: configureServer],
+          buildStart: [Function: buildStart],
+          load: [AsyncFunction: load],
+          transform: [AsyncFunction: transform],
+          handleHotUpdate: [AsyncFunction: handleHotUpdate]
+        },
+        {
+          name: 'astro:build:normal',
+          resolveId: [Function: resolveId]
+        }
+      ],
+      {
+        name: 'astro:scripts',
+        config: [Function: config],
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load],
+        buildStart: [Function: buildStart]
+      },
+      false,
+      {
+        name: 'astro:vite-plugin-env',
+        config: [Function: config],
+        configResolved: [Function: configResolved],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro-env-plugin',
+        enforce: 'pre',
+        config: [Function: config],
+        buildStart: [Function: buildStart],
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      {
+        name: 'astro:adapter-config',
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      {
+        enforce: 'pre',
+        name: 'astro:markdown',
+        buildEnd: [Function: buildEnd],
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: 'astro:html',
+        options: [Function: options],
+        transform: [AsyncFunction: transform]
+      },
+      {
+        name: 'astro:postprocess',
+        transform: [AsyncFunction: transform]
+      },
+      {
+        name: 'astro:integration-container',
+        configureServer: [AsyncFunction: configureServer],
+        buildStart: [AsyncFunction: buildStart]
+      },
+      {
+        name: 'astro:scripts:page-ssr',
+        enforce: 'post',
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:head-metadata',
+        enforce: 'pre',
+        apply: 'serve',
+        configureServer: [Function: configureServer],
+        resolveId: [Function: resolveId],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:scanner',
+        enforce: 'post',
+        transform: [AsyncFunction: transform],
+        handleHotUpdate: [AsyncFunction: handleHotUpdate]
+      },
+      {
+        name: 'astro-content-virtual-mod-plugin',
+        enforce: 'pre',
+        config: [Function: config],
+        buildStart: [Function: buildStart],
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load],
+        configureServer: [Function: configureServer]
+      },
+      [
+        {
+          name: 'astro:content-imports',
+          config: [Function: config],
+          buildStart: [AsyncFunction: buildStart],
+          transform: [AsyncFunction: transform],
+          configureServer: [Function: configureServer]
+        }
+      ],
+      {
+        name: 'astro:content-asset-propagation',
+        enforce: 'pre',
+        resolveId: [AsyncFunction: resolveId],
+        configureServer: [Function: configureServer],
+        transform: [AsyncFunction: transform]
+      },
+      {
+        name: '@astro/plugin-middleware',
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: '@astrojs/vite-plugin-astro-ssr-manifest',
+        enforce: 'post',
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      [
+        {
+          name: 'astro:assets',
+          config: [Function: config],
+          resolveId: [AsyncFunction: resolveId],
+          load: [Function: load],
+          buildStart: [Function: buildStart],
+          renderChunk: [AsyncFunction: renderChunk]
+        },
+        {
+          name: 'astro:assets:esm',
+          enforce: 'pre',
+          config: [Function: config],
+          configResolved: [Function: configResolved],
+          load: [AsyncFunction: load]
+        },
+        {
+          name: 'astro:fonts:fallback',
+          resolveId: [Function: resolveId],
+          load: [Function: load]
+        }
+      ],
+      {
+        name: 'astro:prefetch',
+        resolveId: [AsyncFunction: resolveId],
+        load: [Function: load],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:transitions',
+        config: [Function: config],
+        resolveId: [AsyncFunction: resolveId],
+        load: [Function: load],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:dev-toolbar',
+        config: [Function: config],
+        resolveId: [Function: resolveId],
+        configureServer: [Function: configureServer],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: 'astro:vite-plugin-file-url',
+        enforce: 'pre',
+        resolveId: [Function: resolveId]
+      },
+      {
+        name: 'astro:i18n',
+        enforce: 'pre',
+        config: [Function: config],
+        resolveId: [Function: resolveId]
+      },
+      {
+        name: 'astro:actions',
+        enforce: 'pre',
+        resolveId: [AsyncFunction: resolveId],
+        configureServer: [AsyncFunction: configureServer],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: 'astro:server-islands',
+        enforce: 'post',
+        config: [Function: config],
+        configureServer: [Function: configureServer],
+        resolveId: [Function: resolveId],
+        load: [Function: load],
+        transform: [Function: transform],
+        renderChunk: [Function: renderChunk]
+      },
+      {
+        name: 'astro:container',
+        enforce: 'pre',
+        resolveId: [Function: resolveId]
+      },
+      {
+        name: 'astro:hmr-reload',
+        enforce: 'post',
+        hotUpdate: { order: 'post', handler: [Function: handler] }
+      },
+      {
+        name: '@tailwindcss/vite:scan',
+        enforce: 'pre',
+        configureServer: [Function: configureServer],
+        configResolved: [AsyncFunction: configResolved]
+      },
+      {
+        name: '@tailwindcss/vite:generate:build',
+        apply: 'build',
+        enforce: 'pre',
+        transform: {
+          filter: {
+            id: {
+              exclude: [
+                /\/\.vite\//,
+                /[?&](?:worker|sharedworker|raw|url)\b/,
+                /\?commonjs-proxy/
+              ],
+              include: [
+                /\.css(?:\?.*)?$/,
+                /&lang\.css/,
+                /[?&]index\=\d+\.css$/
+              ]
+            }
+          },
+          handler: [AsyncFunction: handler]
+        }
+      }
+    ],
+    publicDir: '/Users/jur/Desktop/Neto/Web/public/',
+    root: '/Users/jur/Desktop/Neto/Web/',
+    envPrefix: 'PUBLIC_',
+    define: {
+      'import.meta.env.SITE': 'undefined',
+      'import.meta.env.BASE_URL': '"/"',
+      'import.meta.env.ASSETS_PREFIX': 'undefined'
+    },
+    server: {
+      hmr: false,
+      watch: { ignored: [ '**' ] },
+      middlewareMode: true,
+      ws: false
+    },
+    resolve: {
+      alias: [
+        { find: 'randombytes', replacement: 'randombytes/browser' },
+        {
+          find: /^astro$/,
+          replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+        },
+        {
+          find: 'astro:middleware',
+          replacement: 'astro/virtual-modules/middleware.js'
+        },
+        { find: 'astro:schema', replacement: 'astro/zod' },
+        { find: 'astro:components', replacement: 'astro/components' }
+      ],
+      dedupe: [ 'astro' ],
+      conditions: [ 'module', 'browser', 'development|production', 'astro' ],
+      mainFields: undefined
+    },
+    ssr: {
+      noExternal: [
+        'astro',
+        'astro/components',
+        '@nanostores/preact',
+        '@fontsource/*'
+      ],
+      external: []
+    },
+    build: { assetsDir: '_astro' },
+    logLevel: 'silent'
+  },
+  base: '/',
+  decodedBase: '/',
+  rawBase: '/',
+  command: 'serve',
+  isWorker: false,
+  mainConfig: null,
+  bundleChain: [],
+  isProduction: true,
+  css: {
+    transformer: 'postcss',
+    preprocessorMaxWorkers: 0,
+    devSourcemap: false
+  },
+  json: { namedExports: true, stringify: 'auto' },
+  esbuild: { jsxDev: false },
+  builder: undefined,
+  preview: {
+    port: 4173,
+    strictPort: false,
+    host: undefined,
+    allowedHosts: [],
+    https: undefined,
+    open: false,
+    proxy: undefined,
+    cors: {
+      origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/
+    },
+    headers: {}
+  },
+  envDir: '/Users/jur/Desktop/Neto/Web',
+  env: { BASE_URL: '/', MODE: 'production', DEV: false, PROD: true },
+  assetsInclude: [Function: assetsInclude],
+  logger: {
+    hasWarned: false,
+    info: [Function: info],
+    warn: [Function: warn],
+    warnOnce: [Function: warnOnce],
+    error: [Function: error],
+    clearScreen: [Function: clearScreen],
+    hasErrorLogged: [Function: hasErrorLogged]
+  },
+  packageCache: Map(1) {
+    'fnpd_/Users/jur/Desktop/Neto/Web' => {
+      dir: '/Users/jur/Desktop/Neto/Web',
+      data: {
+        name: 'web',
+        type: 'module',
+        version: '0.0.1',
+        scripts: {
+          dev: 'astro dev',
+          build: 'astro build',
+          preview: 'astro preview',
+          astro: 'astro'
+        },
+        dependencies: {
+          '@tailwindcss/vite': '^4.1.18',
+          astro: '^5.16.8',
+          tailwindcss: '^4.1.18'
+        }
+      },
+      hasSideEffects: [Function: hasSideEffects],
+      setResolvedCache: [Function: setResolvedCache],
+      getResolvedCache: [Function: getResolvedCache]
+    },
+    set: [Function (anonymous)]
+  },
+  worker: { format: 'iife', plugins: '() => plugins', rollupOptions: {} },
+  experimental: { importGlobRestoreExtension: false, hmrPartialAccept: false },
+  future: undefined,
+  dev: {
+    warmup: [],
+    sourcemap: { js: true },
+    sourcemapIgnoreList: [Function: isInNodeModules$1],
+    preTransformRequests: false,
+    createEnvironment: [Function: defaultCreateDevEnvironment],
+    recoverable: false,
+    moduleRunnerTransform: false
+  },
+  webSocketToken: 'EdqVhi5tBLdW',
+  getSortedPlugins: [Function: getSortedPlugins],
+  getSortedPluginHooks: [Function: getSortedPluginHooks],
+  createResolver: [Function: createResolver],
+  fsDenyGlob: [Function: arrayMatcher],
+  safeModulePaths: Set(0) {},
+  additionalAllowedHosts: [],
+  Symbol(vite:resolved-config): true
+}
+2026-01-11T18:36:20.163Z vite:deps (client) removing old cache dir /Users/jur/Desktop/Neto/Web/node_modules/.vite/deps
+2026-01-11T18:36:20.165Z vite:resolve 0.85ms cssesc -> /Users/jur/Desktop/Neto/Web/node_modules/cssesc/cssesc.js
+2026-01-11T18:36:20.165Z vite:resolve 0.35ms aria-query -> /Users/jur/Desktop/Neto/Web/node_modules/aria-query/lib/index.js
+2026-01-11T18:36:20.166Z vite:resolve 0.21ms axobject-query -> /Users/jur/Desktop/Neto/Web/node_modules/axobject-query/lib/index.js
+2026-01-11T18:36:20.166Z vite:deps creating package.json in /Users/jur/Desktop/Neto/Web/node_modules/.vite/deps_temp_90fe481c
+2026-01-11T18:36:20.275Z vite:deps Dependencies bundled in 108.81ms
+2026-01-11T18:36:20.276Z vite:deps creating _metadata.json in /Users/jur/Desktop/Neto/Web/node_modules/.vite/deps_temp_90fe481c
+2026-01-11T18:36:20.276Z vite:deps renaming /Users/jur/Desktop/Neto/Web/node_modules/.vite/deps_temp_90fe481c to /Users/jur/Desktop/Neto/Web/node_modules/.vite/deps
+13:36:20 [content] Syncing content
+13:36:20 [content] Synced content
+13:36:20 [types] Generated 134ms
+13:36:20 [build] output: "static"
+13:36:20 [build] mode: "static"
+13:36:20 [build] directory: /Users/jur/Desktop/Neto/Web/dist/
+13:36:20 [build] Collecting build info...
+2026-01-11T18:36:20.280Z astro:build ├── ✔ src/pages/privacy.astro → /privacy/index.html
+2026-01-11T18:36:20.280Z astro:build ├── ✔ src/pages/privacy_content.md → /privacy_content/index.html
+2026-01-11T18:36:20.280Z astro:build ├── ✔ src/pages/index.astro → /index.html
+2026-01-11T18:36:20.280Z astro:build All pages loaded   1768156579.1s
+13:36:20 [build] ✓ Completed in 143ms.
+13:36:20 [build] Building static entrypoints...
+2026-01-11T18:36:20.281Z vite:env loading env files: [
+  '/Users/jur/Desktop/Neto/Web/.env',
+  '/Users/jur/Desktop/Neto/Web/.env.local',
+  '/Users/jur/Desktop/Neto/Web/.env.production',
+  '/Users/jur/Desktop/Neto/Web/.env.production.local'
+]
+2026-01-11T18:36:20.281Z vite:env env files loaded in 0.08ms
+2026-01-11T18:36:20.281Z vite:env using resolved env: {}
+2026-01-11T18:36:20.286Z vite:config using resolved config: {
+  configFile: undefined,
+  mode: 'production',
+  cacheDir: '/Users/jur/Desktop/Neto/Web/node_modules/.vite',
+  clearScreen: false,
+  customLogger: {
+    hasWarned: false,
+    info: [Function: info],
+    warn: [Function: warn],
+    warnOnce: [Function: warnOnce],
+    error: [Function: error],
+    clearScreen: [Function: clearScreen],
+    hasErrorLogged: [Function: hasErrorLogged]
+  },
+  appType: 'custom',
+  optimizeDeps: {
+    include: [
+      'astro > cssesc',
+      'astro > aria-query',
+      'astro > axobject-query'
+    ],
+    exclude: [ 'astro', 'node-fetch' ],
+    needsInterop: [],
+    extensions: [],
+    disabled: undefined,
+    holdUntilCrawlEnd: true,
+    force: false,
+    noDiscovery: false,
+    esbuildOptions: { preserveSymlinks: false },
+    entries: [
+      '/Users/jur/Desktop/Neto/Web/src/**/*.{jsx,tsx,vue,svelte,html,astro}'
+    ]
+  },
+  plugins: [
+    'vite:build-metadata',
+    'vite:watch-package-data',
+    'alias',
+    'astro-manifest-plugin',
+    'astro:build',
+    'astro-env-plugin',
+    'astro:markdown',
+    'astro-content-virtual-mod-plugin',
+    'astro:content-asset-propagation',
+    'astro:assets:esm',
+    'astro:vite-plugin-file-url',
+    'astro:i18n',
+    'astro:actions',
+    'astro:container',
+    '@tailwindcss/vite:scan',
+    '@tailwindcss/vite:generate:build',
+    'vite:resolve',
+    'vite:html-inline-proxy',
+    'vite:css',
+    'vite:esbuild',
+    'vite:json',
+    'vite:wasm-helper',
+    'vite:worker',
+    'vite:asset',
+    '@astro/rollup-plugin-astro-analyzer',
+    '@astro/plugin-build-internals',
+    '@astro/plugin-renderers',
+    '@astro/plugin-middleware-build',
+    '@astro/plugin-actions-build',
+    '@astro/plugin-build-pages',
+    'astro:rollup-plugin-build-css',
+    'astro:head-metadata-build',
+    'astro:chunks',
+    'astro:build:normal',
+    'astro:scripts',
+    'astro:adapter-config',
+    'astro:html',
+    'astro:postprocess',
+    'astro:integration-container',
+    'astro:content-imports',
+    '@astro/plugin-middleware',
+    'astro:assets',
+    'astro:fonts:fallback',
+    'astro:prefetch',
+    'astro:transitions',
+    'astro:dev-toolbar',
+    'vite:wasm-fallback',
+    'astro:vite-plugin-env',
+    'vite:define',
+    'vite:css-post',
+    'vite:build-html',
+    'vite:worker-import-meta-url',
+    'vite:asset-import-meta-url',
+    'vite:force-systemjs-wrap-complete',
+    'commonjs',
+    'vite:data-uri',
+    'vite:rollup-options-plugins',
+    'vite:dynamic-import-vars',
+    'vite:import-glob',
+    '@astro/plugin-build-manifest',
+    'astro:rollup-plugin-single-css',
+    'astro:rollup-plugin-inline-stylesheets',
+    '@astrojs/vite-plugin-astro-adapter',
+    'astro:scripts:page-ssr',
+    'astro:scanner',
+    '@astrojs/vite-plugin-astro-ssr-manifest',
+    'astro:server-islands',
+    'astro:hmr-reload',
+    'vite:build-import-analysis',
+    'vite:esbuild-transpile',
+    'vite:terser',
+    'vite:manifest',
+    'vite:ssr-manifest',
+    'vite:reporter',
+    'vite:load-fallback'
+  ],
+  publicDir: '/Users/jur/Desktop/Neto/Web/public',
+  root: '/Users/jur/Desktop/Neto/Web',
+  envPrefix: 'PUBLIC_',
+  define: {
+    'import.meta.env.SITE': 'undefined',
+    'import.meta.env.BASE_URL': '"/"',
+    'import.meta.env.ASSETS_PREFIX': 'undefined',
+    __ASTRO_INTERNAL_I18N_CONFIG__: '{"base":"/","format":"directory","trailingSlash":"ignore","isBuild":true}'
+  },
+  server: {
+    port: 5173,
+    strictPort: false,
+    host: undefined,
+    allowedHosts: [],
+    https: undefined,
+    open: false,
+    proxy: undefined,
+    cors: {
+      origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/
+    },
+    headers: {},
+    warmup: { clientFiles: [], ssrFiles: [] },
+    middlewareMode: true,
+    fs: {
+      strict: true,
+      deny: [ '.env', '.env.*', '*.{crt,pem}', '**/.git/**' ],
+      allow: [ '/Users/jur/Desktop/Neto/Web' ]
+    },
+    preTransformRequests: true,
+    perEnvironmentStartEndDuringDev: false,
+    sourcemapIgnoreList: [Function: isInNodeModules$1],
+    hmr: false,
+    watch: { ignored: [ '**' ] }
+  },
+  resolve: {
+    externalConditions: [ 'node' ],
+    extensions: [
+      '.mjs',  '.js',
+      '.mts',  '.ts',
+      '.jsx',  '.tsx',
+      '.json'
+    ],
+    dedupe: [ 'astro' ],
+    noExternal: [],
+    external: [],
+    preserveSymlinks: false,
+    alias: [
+      { find: 'randombytes', replacement: 'randombytes/browser' },
+      {
+        find: /^astro$/,
+        replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+      },
+      {
+        find: 'astro:middleware',
+        replacement: 'astro/virtual-modules/middleware.js'
+      },
+      { find: 'astro:schema', replacement: 'astro/zod' },
+      { find: 'astro:components', replacement: 'astro/components' },
+      {
+        find: /^\/?@vite\/env/,
+        replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/env.mjs'
+      },
+      {
+        find: /^\/?@vite\/client/,
+        replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/client.mjs'
+      }
+    ],
+    mainFields: [ 'browser', 'module', 'jsnext:main', 'jsnext' ],
+    conditions: [ 'module', 'browser', 'development|production', 'astro' ],
+    builtins: []
+  },
+  ssr: {
+    target: 'node',
+    optimizeDeps: {
+      esbuildOptions: { preserveSymlinks: false },
+      include: [],
+      exclude: [],
+      needsInterop: [],
+      extensions: [],
+      holdUntilCrawlEnd: true,
+      force: false,
+      noDiscovery: true
+    },
+    noExternal: [
+      'astro',
+      'astro/components',
+      '@nanostores/preact',
+      '@fontsource/*',
+      'astro'
+    ],
+    external: [ 'sharp' ],
+    resolve: {
+      conditions: [ 'module', 'node', 'development|production', 'astro' ],
+      externalConditions: [ 'node' ]
+    }
+  },
+  build: {
+    target: 'esnext',
+    polyfillModulePreload: true,
+    modulePreload: { polyfill: false },
+    outDir: '/Users/jur/Desktop/Neto/Web/dist/',
+    assetsDir: '_astro',
+    assetsInlineLimit: 4096,
+    sourcemap: false,
+    terserOptions: {},
+    rollupOptions: {
+      preserveEntrySignatures: 'exports-only',
+      input: [],
+      output: {
+        hoistTransitiveImports: false,
+        format: 'esm',
+        minifyInternalExports: true,
+        chunkFileNames: [Function: chunkFileNames],
+        assetFileNames: '_astro/[name].[hash][extname]',
+        entryFileNames: [Function: entryFileNames]
+      }
+    },
+    commonjsOptions: { include: [ /node_modules/ ], extensions: [ '.js', '.cjs' ] },
+    dynamicImportVarsOptions: { warnOnError: true, exclude: [ /node_modules/ ] },
+    write: true,
+    emptyOutDir: false,
+    copyPublicDir: true,
+    manifest: false,
+    lib: false,
+    ssrManifest: false,
+    ssrEmitAssets: true,
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 500,
+    watch: null,
+    cssCodeSplit: true,
+    minify: false,
+    ssr: true,
+    emitAssets: true,
+    createEnvironment: [Function: createEnvironment],
+    cssMinify: true,
+    cssTarget: 'esnext'
+  },
+  logLevel: 'error',
+  base: '/',
+  environments: {
+    client: {
+      define: {
+        'import.meta.env.SITE': 'undefined',
+        'import.meta.env.BASE_URL': '"/"',
+        'import.meta.env.ASSETS_PREFIX': 'undefined',
+        __ASTRO_INTERNAL_I18N_CONFIG__: '{"base":"/","format":"directory","trailingSlash":"ignore","isBuild":true}'
+      },
+      resolve: {
+        externalConditions: [ 'node' ],
+        extensions: [
+          '.mjs',  '.js',
+          '.mts',  '.ts',
+          '.jsx',  '.tsx',
+          '.json'
+        ],
+        dedupe: [ 'astro' ],
+        noExternal: [],
+        external: [],
+        preserveSymlinks: false,
+        alias: [
+          { find: 'randombytes', replacement: 'randombytes/browser' },
+          {
+            find: /^astro$/,
+            replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+          },
+          {
+            find: 'astro:middleware',
+            replacement: 'astro/virtual-modules/middleware.js'
+          },
+          { find: 'astro:schema', replacement: 'astro/zod' },
+          { find: 'astro:components', replacement: 'astro/components' },
+          {
+            find: /^\/?@vite\/env/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/env.mjs'
+          },
+          {
+            find: /^\/?@vite\/client/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/client.mjs'
+          }
+        ],
+        mainFields: [ 'browser', 'module', 'jsnext:main', 'jsnext' ],
+        conditions: [ 'module', 'browser', 'development|production', 'astro' ],
+        builtins: []
+      },
+      keepProcessEnv: false,
+      consumer: 'client',
+      optimizeDeps: {
+        include: [
+          'astro > cssesc',
+          'astro > aria-query',
+          'astro > axobject-query'
+        ],
+        exclude: [ 'astro', 'node-fetch' ],
+        needsInterop: [],
+        extensions: [],
+        disabled: undefined,
+        holdUntilCrawlEnd: true,
+        force: false,
+        noDiscovery: false,
+        esbuildOptions: { preserveSymlinks: false },
+        entries: [
+          '/Users/jur/Desktop/Neto/Web/src/**/*.{jsx,tsx,vue,svelte,html,astro}'
+        ]
+      },
+      dev: {
+        warmup: [],
+        sourcemap: { js: true },
+        sourcemapIgnoreList: [Function: isInNodeModules$1],
+        preTransformRequests: true,
+        createEnvironment: [Function: defaultCreateClientDevEnvironment],
+        recoverable: true,
+        moduleRunnerTransform: false
+      },
+      build: {
+        target: 'esnext',
+        polyfillModulePreload: true,
+        modulePreload: { polyfill: false },
+        outDir: '/Users/jur/Desktop/Neto/Web/dist/',
+        assetsDir: '_astro',
+        assetsInlineLimit: 4096,
+        sourcemap: false,
+        terserOptions: {},
+        rollupOptions: {
+          preserveEntrySignatures: 'exports-only',
+          input: [],
+          output: {
+            hoistTransitiveImports: false,
+            format: 'esm',
+            minifyInternalExports: true,
+            chunkFileNames: [Function: chunkFileNames],
+            assetFileNames: '_astro/[name].[hash][extname]',
+            entryFileNames: [Function: entryFileNames]
+          }
+        },
+        commonjsOptions: { include: [ /node_modules/ ], extensions: [ '.js', '.cjs' ] },
+        dynamicImportVarsOptions: { warnOnError: true, exclude: [ /node_modules/ ] },
+        write: true,
+        emptyOutDir: false,
+        copyPublicDir: true,
+        manifest: false,
+        lib: false,
+        ssrManifest: false,
+        ssrEmitAssets: true,
+        reportCompressedSize: false,
+        chunkSizeWarningLimit: 500,
+        watch: null,
+        cssCodeSplit: true,
+        minify: false,
+        ssr: true,
+        emitAssets: true,
+        createEnvironment: [Function: createEnvironment],
+        cssMinify: true,
+        cssTarget: 'esnext'
+      }
+    },
+    ssr: {
+      define: {
+        'import.meta.env.SITE': 'undefined',
+        'import.meta.env.BASE_URL': '"/"',
+        'import.meta.env.ASSETS_PREFIX': 'undefined',
+        __ASTRO_INTERNAL_I18N_CONFIG__: '{"base":"/","format":"directory","trailingSlash":"ignore","isBuild":true}'
+      },
+      resolve: {
+        externalConditions: [ 'node' ],
+        extensions: [
+          '.mjs',  '.js',
+          '.mts',  '.ts',
+          '.jsx',  '.tsx',
+          '.json'
+        ],
+        dedupe: [ 'astro' ],
+        noExternal: [
+          'astro',
+          'astro/components',
+          '@nanostores/preact',
+          '@fontsource/*',
+          'astro'
+        ],
+        external: [ 'sharp' ],
+        preserveSymlinks: false,
+        alias: [
+          { find: 'randombytes', replacement: 'randombytes/browser' },
+          {
+            find: /^astro$/,
+            replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+          },
+          {
+            find: 'astro:middleware',
+            replacement: 'astro/virtual-modules/middleware.js'
+          },
+          { find: 'astro:schema', replacement: 'astro/zod' },
+          { find: 'astro:components', replacement: 'astro/components' },
+          {
+            find: /^\/?@vite\/env/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/env.mjs'
+          },
+          {
+            find: /^\/?@vite\/client/,
+            replacement: '/@fs/Users/jur/Desktop/Neto/Web/node_modules/astro/node_modules/vite/dist/client/client.mjs'
+          }
+        ],
+        mainFields: [ 'module', 'jsnext:main', 'jsnext' ],
+        conditions: [ 'module', 'node', 'development|production', 'astro' ],
+        builtins: [
+          '_http_agent',         '_http_client',        '_http_common',
+          '_http_incoming',      '_http_outgoing',      '_http_server',
+          '_stream_duplex',      '_stream_passthrough', '_stream_readable',
+          '_stream_transform',   '_stream_wrap',        '_stream_writable',
+          '_tls_common',         '_tls_wrap',           'assert',
+          'assert/strict',       'async_hooks',         'buffer',
+          'child_process',       'cluster',             'console',
+          'constants',           'crypto',              'dgram',
+          'diagnostics_channel', 'dns',                 'dns/promises',
+          'domain',              'events',              'fs',
+          'fs/promises',         'http',                'http2',
+          'https',               'inspector',           'inspector/promises',
+          'module',              'net',                 'os',
+          'path',                'path/posix',          'path/win32',
+          'perf_hooks',          'process',             'punycode',
+          'querystring',         'readline',            'readline/promises',
+          'repl',                'stream',              'stream/consumers',
+          'stream/promises',     'stream/web',          'string_decoder',
+          'sys',                 'timers',              'timers/promises',
+          'tls',                 'trace_events',        'tty',
+          'url',                 'util',                'util/types',
+          'v8',                  'vm',                  'wasi',
+          'worker_threads',      'zlib',                /^node:/,
+          /^npm:/,               /^bun:/
+        ]
+      },
+      keepProcessEnv: true,
+      consumer: 'server',
+      optimizeDeps: {
+        include: [],
+        exclude: [],
+        needsInterop: [],
+        extensions: [],
+        disabled: undefined,
+        holdUntilCrawlEnd: true,
+        force: false,
+        noDiscovery: true,
+        esbuildOptions: { preserveSymlinks: false }
+      },
+      dev: {
+        warmup: [],
+        sourcemap: { js: true },
+        sourcemapIgnoreList: [Function: isInNodeModules$1],
+        preTransformRequests: false,
+        createEnvironment: [Function: defaultCreateDevEnvironment],
+        recoverable: false,
+        moduleRunnerTransform: true
+      },
+      build: {
+        target: 'esnext',
+        polyfillModulePreload: true,
+        modulePreload: { polyfill: false },
+        outDir: '/Users/jur/Desktop/Neto/Web/dist/',
+        assetsDir: '_astro',
+        assetsInlineLimit: 4096,
+        sourcemap: false,
+        terserOptions: {},
+        rollupOptions: {
+          preserveEntrySignatures: 'exports-only',
+          input: [],
+          output: {
+            hoistTransitiveImports: false,
+            format: 'esm',
+            minifyInternalExports: true,
+            chunkFileNames: [Function: chunkFileNames],
+            assetFileNames: '_astro/[name].[hash][extname]',
+            entryFileNames: [Function: entryFileNames]
+          }
+        },
+        commonjsOptions: { include: [ /node_modules/ ], extensions: [ '.js', '.cjs' ] },
+        dynamicImportVarsOptions: { warnOnError: true, exclude: [ /node_modules/ ] },
+        write: true,
+        emptyOutDir: false,
+        copyPublicDir: true,
+        manifest: false,
+        lib: false,
+        ssrManifest: false,
+        ssrEmitAssets: true,
+        reportCompressedSize: false,
+        chunkSizeWarningLimit: 500,
+        watch: null,
+        cssCodeSplit: true,
+        minify: false,
+        ssr: true,
+        emitAssets: true,
+        createEnvironment: [Function: createEnvironment],
+        cssMinify: true,
+        cssTarget: 'esnext'
+      }
+    }
+  },
+  configFileDependencies: [],
+  inlineConfig: {
+    configFile: false,
+    mode: 'production',
+    cacheDir: '/Users/jur/Desktop/Neto/Web/node_modules/.vite/',
+    clearScreen: false,
+    customLogger: {
+      hasWarned: false,
+      info: [Function: info],
+      warn: [Function: warn],
+      warnOnce: [Function: warnOnce],
+      error: [Function: error],
+      clearScreen: [Function: clearScreen],
+      hasErrorLogged: [Function: hasErrorLogged]
+    },
+    appType: 'custom',
+    optimizeDeps: {
+      entries: [
+        '/Users/jur/Desktop/Neto/Web/src/**/*.{jsx,tsx,vue,svelte,html,astro}'
+      ],
+      exclude: [ 'astro', 'node-fetch' ]
+    },
+    plugins: [
+      {
+        name: '@astro/rollup-plugin-astro-analyzer',
+        generateBundle: [AsyncFunction: generateBundle]
+      },
+      {
+        name: '@astro/plugin-build-internals',
+        config: [Function: config],
+        generateBundle: [AsyncFunction: generateBundle]
+      },
+      {
+        name: '@astro/plugin-build-manifest',
+        enforce: 'post',
+        options: [Function: options],
+        resolveId: [Function: resolveId],
+        augmentChunkHash: [Function: augmentChunkHash],
+        load: [Function: load],
+        generateBundle: [AsyncFunction: generateBundle]
+      },
+      {
+        name: '@astro/plugin-renderers',
+        options: [Function: options],
+        resolveId: [Function: resolveId],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: '@astro/plugin-middleware-build',
+        options: [Function: options],
+        writeBundle: [Function: writeBundle]
+      },
+      {
+        name: '@astro/plugin-actions-build',
+        options: [Function: options],
+        writeBundle: [Function: writeBundle]
+      },
+      {
+        name: '@astro/plugin-build-pages',
+        options: [Function: options],
+        resolveId: [Function: resolveId],
+        load: [AsyncFunction: load]
+      },
+      [
+        {
+          name: 'astro:rollup-plugin-build-css',
+          outputOptions: [Function: outputOptions],
+          generateBundle: [AsyncFunction: generateBundle]
+        },
+        {
+          name: 'astro:rollup-plugin-single-css',
+          enforce: 'post',
+          configResolved: [Function: configResolved],
+          generateBundle: [Function: generateBundle]
+        },
+        {
+          name: 'astro:rollup-plugin-inline-stylesheets',
+          enforce: 'post',
+          configResolved: [Function: configResolved],
+          generateBundle: [AsyncFunction: generateBundle]
+        }
+      ],
+      {
+        name: 'astro:head-metadata-build',
+        generateBundle: [Function: generateBundle]
+      },
+      [
+        {
+          name: '@astrojs/vite-plugin-astro-adapter',
+          enforce: 'post',
+          resolveId: [Function: resolveId],
+          load: [AsyncFunction: load]
+        }
+      ],
+      {
+        name: 'astro:chunks',
+        outputOptions: [Function: outputOptions]
+      },
+      {
+        enforce: 'pre',
+        name: 'astro-manifest-plugin',
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      null,
+      false,
+      [
+        {
+          name: 'astro:build',
+          enforce: 'pre',
+          configEnvironment: [AsyncFunction: configEnvironment],
+          configResolved: [Function: configResolved],
+          configureServer: [Function: configureServer],
+          buildStart: [Function: buildStart],
+          load: [AsyncFunction: load],
+          transform: [AsyncFunction: transform],
+          handleHotUpdate: [AsyncFunction: handleHotUpdate]
+        },
+        {
+          name: 'astro:build:normal',
+          resolveId: [Function: resolveId]
+        }
+      ],
+      {
+        name: 'astro:scripts',
+        config: [Function: config],
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load],
+        buildStart: [Function: buildStart]
+      },
+      false,
+      {
+        name: 'astro:vite-plugin-env',
+        config: [Function: config],
+        configResolved: [Function: configResolved],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro-env-plugin',
+        enforce: 'pre',
+        config: [Function: config],
+        buildStart: [Function: buildStart],
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      {
+        name: 'astro:adapter-config',
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      {
+        enforce: 'pre',
+        name: 'astro:markdown',
+        buildEnd: [Function: buildEnd],
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: 'astro:html',
+        options: [Function: options],
+        transform: [AsyncFunction: transform]
+      },
+      {
+        name: 'astro:postprocess',
+        transform: [AsyncFunction: transform]
+      },
+      {
+        name: 'astro:integration-container',
+        configureServer: [AsyncFunction: configureServer],
+        buildStart: [AsyncFunction: buildStart]
+      },
+      {
+        name: 'astro:scripts:page-ssr',
+        enforce: 'post',
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:head-metadata',
+        enforce: 'pre',
+        apply: 'serve',
+        configureServer: [Function: configureServer],
+        resolveId: [Function: resolveId],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:scanner',
+        enforce: 'post',
+        transform: [AsyncFunction: transform],
+        handleHotUpdate: [AsyncFunction: handleHotUpdate]
+      },
+      {
+        name: 'astro-content-virtual-mod-plugin',
+        enforce: 'pre',
+        config: [Function: config],
+        buildStart: [Function: buildStart],
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load],
+        configureServer: [Function: configureServer]
+      },
+      [
+        {
+          name: 'astro:content-imports',
+          config: [Function: config],
+          buildStart: [AsyncFunction: buildStart],
+          transform: [AsyncFunction: transform],
+          configureServer: [Function: configureServer]
+        }
+      ],
+      {
+        name: 'astro:content-asset-propagation',
+        enforce: 'pre',
+        resolveId: [AsyncFunction: resolveId],
+        configureServer: [Function: configureServer],
+        transform: [AsyncFunction: transform]
+      },
+      {
+        name: '@astro/plugin-middleware',
+        resolveId: [AsyncFunction: resolveId],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: '@astrojs/vite-plugin-astro-ssr-manifest',
+        enforce: 'post',
+        resolveId: [Function: resolveId],
+        load: [Function: load]
+      },
+      [
+        {
+          name: 'astro:assets',
+          config: [Function: config],
+          resolveId: [AsyncFunction: resolveId],
+          load: [Function: load],
+          buildStart: [Function: buildStart],
+          renderChunk: [AsyncFunction: renderChunk]
+        },
+        {
+          name: 'astro:assets:esm',
+          enforce: 'pre',
+          config: [Function: config],
+          configResolved: [Function: configResolved],
+          load: [AsyncFunction: load]
+        },
+        {
+          name: 'astro:fonts:fallback',
+          resolveId: [Function: resolveId],
+          load: [Function: load]
+        }
+      ],
+      {
+        name: 'astro:prefetch',
+        resolveId: [AsyncFunction: resolveId],
+        load: [Function: load],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:transitions',
+        config: [Function: config],
+        resolveId: [AsyncFunction: resolveId],
+        load: [Function: load],
+        transform: [Function: transform]
+      },
+      {
+        name: 'astro:dev-toolbar',
+        config: [Function: config],
+        resolveId: [Function: resolveId],
+        configureServer: [Function: configureServer],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: 'astro:vite-plugin-file-url',
+        enforce: 'pre',
+        resolveId: [Function: resolveId]
+      },
+      {
+        name: 'astro:i18n',
+        enforce: 'pre',
+        config: [Function: config],
+        resolveId: [Function: resolveId]
+      },
+      {
+        name: 'astro:actions',
+        enforce: 'pre',
+        resolveId: [AsyncFunction: resolveId],
+        configureServer: [AsyncFunction: configureServer],
+        load: [AsyncFunction: load]
+      },
+      {
+        name: 'astro:server-islands',
+        enforce: 'post',
+        config: [Function: config],
+        configureServer: [Function: configureServer],
+        resolveId: [Function: resolveId],
+        load: [Function: load],
+        transform: [Function: transform],
+        renderChunk: [Function: renderChunk]
+      },
+      {
+        name: 'astro:container',
+        enforce: 'pre',
+        resolveId: [Function: resolveId]
+      },
+      {
+        name: 'astro:hmr-reload',
+        enforce: 'post',
+        hotUpdate: { order: 'post', handler: [Function: handler] }
+      },
+      {
+        name: '@tailwindcss/vite:scan',
+        enforce: 'pre',
+        configureServer: [Function: configureServer],
+        configResolved: [AsyncFunction: configResolved]
+      },
+      {
+        name: '@tailwindcss/vite:generate:build',
+        apply: 'build',
+        enforce: 'pre',
+        transform: {
+          filter: {
+            id: {
+              exclude: [
+                /\/\.vite\//,
+                /[?&](?:worker|sharedworker|raw|url)\b/,
+                /\?commonjs-proxy/
+              ],
+              include: [
+                /\.css(?:\?.*)?$/,
+                /&lang\.css/,
+                /[?&]index\=\d+\.css$/
+              ]
+            }
+          },
+          handler: [AsyncFunction: handler]
+        }
+      }
+    ],
+    publicDir: '/Users/jur/Desktop/Neto/Web/public/',
+    root: '/Users/jur/Desktop/Neto/Web/',
+    envPrefix: 'PUBLIC_',
+    define: {
+      'import.meta.env.SITE': 'undefined',
+      'import.meta.env.BASE_URL': '"/"',
+      'import.meta.env.ASSETS_PREFIX': 'undefined'
+    },
+    server: { hmr: false, watch: { ignored: [ '**' ] }, middlewareMode: true },
+    resolve: {
+      alias: [
+        { find: 'randombytes', replacement: 'randombytes/browser' },
+        {
+          find: /^astro$/,
+          replacement: '/Users/jur/Desktop/Neto/Web/node_modules/astro/dist/types/public/index.js'
+        },
+        {
+          find: 'astro:middleware',
+          replacement: 'astro/virtual-modules/middleware.js'
+        },
+        { find: 'astro:schema', replacement: 'astro/zod' },
+        { find: 'astro:components', replacement: 'astro/components' }
+      ],
+      dedupe: [ 'astro' ],
+      conditions: [ 'module', 'browser', 'development|production', 'astro' ],
+      mainFields: undefined
+    },
+    ssr: {
+      noExternal: [
+        'astro',
+        'astro/components',
+        '@nanostores/preact',
+        '@fontsource/*'
+      ],
+      external: []
+    },
+    build: {
+      target: 'esnext',
+      cssMinify: true,
+      assetsDir: '_astro',
+      emptyOutDir: false,
+      manifest: false,
+      outDir: '/Users/jur/Desktop/Neto/Web/dist/',
+      copyPublicDir: true,
+      rollupOptions: {
+        preserveEntrySignatures: 'exports-only',
+        input: [],
+        output: {
+          hoistTransitiveImports: false,
+          format: 'esm',
+          minifyInternalExports: true,
+          chunkFileNames: [Function: chunkFileNames],
+          assetFileNames: '_astro/[name].[hash][extname]',
+          entryFileNames: [Function: entryFileNames]
+        }
+      },
+      ssr: true,
+      ssrEmitAssets: true,
+      minify: false,
+      modulePreload: { polyfill: false },
+      reportCompressedSize: false
+    },
+    logLevel: 'error',
+    base: '/'
+  },
+  decodedBase: '/',
+  rawBase: '/',
+  command: 'build',
+  isWorker: false,
+  mainConfig: null,
+  bundleChain: [],
+  isProduction: true,
+  css: {
+    transformer: 'postcss',
+    preprocessorMaxWorkers: 0,
+    devSourcemap: false
+  },
+  json: { namedExports: true, stringify: 'auto' },
+  esbuild: { jsxDev: false },
+  builder: undefined,
+  preview: {
+    port: 4173,
+    strictPort: false,
+    host: undefined,
+    allowedHosts: [],
+    https: undefined,
+    open: false,
+    proxy: undefined,
+    cors: {
+      origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/
+    },
+    headers: {}
+  },
+  envDir: '/Users/jur/Desktop/Neto/Web',
+  env: { BASE_URL: '/', MODE: 'production', DEV: false, PROD: true },
+  assetsInclude: [Function: assetsInclude],
+  logger: {
+    hasWarned: false,
+    info: [Function: info],
+    warn: [Function: warn],
+    warnOnce: [Function: warnOnce],
+    error: [Function: error],
+    clearScreen: [Function: clearScreen],
+    hasErrorLogged: [Function: hasErrorLogged]
+  },
+  packageCache: Map(1) {
+    'fnpd_/Users/jur/Desktop/Neto/Web' => {
+      dir: '/Users/jur/Desktop/Neto/Web',
+      data: {
+        name: 'web',
+        type: 'module',
+        version: '0.0.1',
+        scripts: {
+          dev: 'astro dev',
+          build: 'astro build',
+          preview: 'astro preview',
+          astro: 'astro'
+        },
+        dependencies: {
+          '@tailwindcss/vite': '^4.1.18',
+          astro: '^5.16.8',
+          tailwindcss: '^4.1.18'
+        }
+      },
+      hasSideEffects: [Function: hasSideEffects],
+      setResolvedCache: [Function: setResolvedCache],
+      getResolvedCache: [Function: getResolvedCache]
+    },
+    set: [Function (anonymous)]
+  },
+  worker: { format: 'iife', plugins: '() => plugins', rollupOptions: {} },
+  experimental: { importGlobRestoreExtension: false, hmrPartialAccept: false },
+  future: undefined,
+  dev: {
+    warmup: [],
+    sourcemap: { js: true },
+    sourcemapIgnoreList: [Function: isInNodeModules$1],
+    preTransformRequests: false,
+    createEnvironment: [Function: defaultCreateDevEnvironment],
+    recoverable: false,
+    moduleRunnerTransform: false
+  },
+  webSocketToken: 'GNAekeehmzSU',
+  getSortedPlugins: [Function: getSortedPlugins],
+  getSortedPluginHooks: [Function: getSortedPluginHooks],
+  createResolver: [Function: createResolver],
+  fsDenyGlob: [Function: arrayMatcher],
+  safeModulePaths: Set(0) {},
+  additionalAllowedHosts: [],
+  Symbol(vite:resolved-config): true
+}
+2026-01-11T18:36:20.299Z vite:env loading env files: [
+  '/Users/jur/Desktop/Neto/Web/.env',
+  '/Users/jur/Desktop/Neto/Web/.env.local',
+  '/Users/jur/Desktop/Neto/Web/.env.production',
+  '/Users/jur/Desktop/Neto/Web/.env.production.local'
+]
+2026-01-11T18:36:20.299Z vite:env env files loaded in 0.12ms
+2026-01-11T18:36:20.299Z vite:env using resolved env: {
+  ANTIGRAVITY_AGENT: '1',
+  TERM_PROGRAM: 'vscode',
+  NODE: '/opt/homebrew/Cellar/node/25.2.1/bin/node',
+  INIT_CWD: '/Users/jur/Desktop/Neto/Web',
+  TERM: 'xterm-256color',
+  SHELL: '/bin/zsh',
+  HOMEBREW_REPOSITORY: '/opt/homebrew',
+  TMPDIR: '/var/folders/v6/0p4flx5d1gl4_qnr12r8668c0000gn/T/',
+  npm_config_global_prefix: '/opt/homebrew',
+  VSCODE_PYTHON_AUTOACTIVATE_GUARD: '1',
+  TERM_PROGRAM_VERSION: '1.104.0',
+  ZDOTDIR: '/Users/jur',
+  ORIGINAL_XDG_CURRENT_DESKTOP: 'undefined',
+  MallocNanoZone: '0',
+  COLOR: '0',
+  npm_config_noproxy: '',
+  npm_config_local_prefix: '/Users/jur/Desktop/Neto/Web',
+  USER: 'jur',
+  COMMAND_MODE: 'unix2003',
+  npm_config_globalconfig: '/opt/homebrew/etc/npmrc',
+  SSH_AUTH_SOCK: '/private/tmp/com.apple.launchd.airb9i07QM/Listeners',
+  VSCODE_PROFILE_INITIALIZED: '1',
+  __CF_USER_TEXT_ENCODING: '0x1F5:0x0:0x8',
+  npm_execpath: '/opt/homebrew/lib/node_modules/npm/bin/npm-cli.js',
+  PAGER: 'cat',
+  PATH: '/Users/jur/Desktop/Neto/Web/node_modules/.bin:/Users/jur/Desktop/Neto/node_modules/.bin:/Users/jur/Desktop/node_modules/.bin:/Users/jur/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/jur/.local/bin:/Users/jur/.antigravity/antigravity/bin:/Users/jur/Library/Python/3.9/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/pmk/env/global/bin:/Library/Apple/usr/bin:/Users/jur/.antigravity/antigravity/bin:/Users/jur/Library/Python/3.9/bin',
+  npm_package_json: '/Users/jur/Desktop/Neto/Web/package.json',
+  _: '/Users/jur/Desktop/Neto/Web/node_modules/.bin/astro',
+  npm_config_userconfig: '/Users/jur/.npmrc',
+  npm_config_init_module: '/Users/jur/.npm-init.js',
+  USER_ZDOTDIR: '/Users/jur',
+  __CFBundleIdentifier: 'com.google.antigravity',
+  npm_command: 'run',
+  PWD: '/Users/jur/Desktop/Neto/Web',
+  npm_lifecycle_event: 'build',
+  EDITOR: 'vi',
+  npm_package_name: 'web',
+  LANG: 'C.UTF-8',
+  npm_config_npm_version: '11.6.2',
+  VSCODE_GIT_ASKPASS_EXTRA_ARGS: '',
+  XPC_FLAGS: '0x0',
+  npm_config_node_gyp: '/opt/homebrew/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js',
+  npm_package_version: '0.0.1',
+  XPC_SERVICE_NAME: '0',
+  VSCODE_INJECTION: '1',
+  ANTIGRAVITY_CLI_ALIAS: 'agy',
+  SHLVL: '2',
+  HOME: '/Users/jur',
+  VSCODE_GIT_ASKPASS_MAIN: '/Applications/Antigravity.app/Contents/Resources/app/extensions/git/dist/askpass-main.js',
+  HOMEBREW_PREFIX: '/opt/homebrew',
+  npm_config_cache: '/Users/jur/.npm',
+  LOGNAME: 'jur',
+  npm_lifecycle_script: 'astro build',
+  VSCODE_GIT_IPC_HANDLE: '/var/folders/v6/0p4flx5d1gl4_qnr12r8668c0000gn/T/vscode-git-2df69c2760.sock',
+  npm_config_user_agent: 'npm/11.6.2 node/v25.2.1 darwin arm64 workspaces/false',
+  VSCODE_GIT_ASKPASS_NODE: '/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Plugin).app/Contents/MacOS/Antigravity Helper (Plugin)',
+  GIT_ASKPASS: '/Applications/Antigravity.app/Contents/Resources/app/extensions/git/dist/askpass.sh',
+  INFOPATH: '/opt/homebrew/share/info:/opt/homebrew/share/info:',
+  HOMEBREW_CELLAR: '/opt/homebrew/Cellar',
+  OSLogRateLimit: '64',
+  npm_node_execpath: '/opt/homebrew/Cellar/node/25.2.1/bin/node',
+  npm_config_prefix: '/opt/homebrew',
+  COLORTERM: 'truecolor',
+  DEBUG: 'astro:*,vite:*',
+  NODE_ENV: 'production'
+}

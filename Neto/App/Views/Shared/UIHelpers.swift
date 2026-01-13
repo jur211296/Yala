@@ -27,6 +27,15 @@ enum AccountType: String, CaseIterable, Identifiable {
     case savings = "Cuenta de ahorros"
 
     var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .general: return L10n.Account.AccountType.general
+        case .cash: return L10n.Account.AccountType.cash
+        case .checking: return L10n.Account.AccountType.current
+        case .savings: return L10n.Account.AccountType.savings
+        }
+    }
 }
 
 enum AdjustmentMode: String, CaseIterable, Identifiable {
@@ -56,9 +65,9 @@ enum AppTheme: Int, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .system: return "Sistema"
-        case .light: return "Claro"
-        case .dark: return "Oscuro"
+        case .system: return L10n.Settings.system
+        case .light: return L10n.Settings.light
+        case .dark: return L10n.Settings.dark
         }
     }
 
@@ -213,7 +222,9 @@ extension Color {
 
     // MARK: - Semantic Aliases
     static let brandPrimary = electricIndigo
-    static let incomeGraph = neonCyan
+    static let brandSecondary = hotPink
+    static let brandTertiary = priorityNature  // Teal - third main color
+    static let incomeGraph = priorityNature  // Changed from neonCyan to teal
     static let expenseGraph = hotPink
     static let darkBackground = deepSlate
 
@@ -240,26 +251,33 @@ extension Color {
 // MARK: - Formatters
 
 struct NetoFormatter {
+    /// Formats a currency value with standard format: `PEN 20,000.00` or `PEN -20,000.00`
+    /// - Parameters:
+    ///   - value: The numeric value to format
+    ///   - currencyCode: 3-letter currency code (e.g., "PEN", "USD")
+    ///   - forceSign: If true, adds '+' for positive values (only for tooltips like CashFlow)
+    /// - Returns: Formatted string like "PEN 20,000.00" or "PEN -20,000.00"
     static func currency(
-        value: Double, currencyCode: String, forceSign: Bool = false, decimals: Int = 2
+        value: Double, currencyCode: String, forceSign: Bool = false
     ) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = decimals
-        formatter.maximumFractionDigits = decimals
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
 
         let absoluteValue = abs(value)
         let formattedNumber = formatter.string(from: NSNumber(value: absoluteValue)) ?? "0.00"
 
-        var sign = ""
+        // Build sign prefix (attached to number, no extra space)
+        var signedNumber = formattedNumber
         if value < 0 {
-            sign = "- "
-        } else if forceSign {
-            sign = "+ "
+            signedNumber = "-\(formattedNumber)"
+        } else if forceSign && value > 0 {
+            signedNumber = "+\(formattedNumber)"
         }
 
-        // Format: "PEN - 1000.00"
-        return "\(currencyCode) \(sign)\(formattedNumber)"
+        // Format: "PEN 20,000.00" or "PEN -20,000.00"
+        return "\(currencyCode) \(signedNumber)"
     }
 
     static func compactCurrency(value: Double) -> String {

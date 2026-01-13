@@ -117,32 +117,36 @@ struct TrendDataProcessor {
             )
 
         case .income:
-            for transaction in transactions where transaction.amountInPreferredCurrency > 0 {
-                let bucketDate = grouping.dateKey(for: transaction.date, calendar: calendar)
-                buckets[bucketDate, default: 0] += transaction.amountInPreferredCurrency
-            }
+            fillCumulativeBuckets(
+                &buckets,
+                transactions: transactions.filter { $0.amountInPreferredCurrency > 0 },
+                grouping: grouping,
+                calendar: calendar,
+                valueTransform: { $0.amountInPreferredCurrency }
+            )
 
         case .expense:
-            for transaction in transactions where transaction.amountInPreferredCurrency < 0 {
-                let bucketDate = grouping.dateKey(for: transaction.date, calendar: calendar)
-                buckets[bucketDate, default: 0] += abs(transaction.amountInPreferredCurrency)
-            }
+            fillCumulativeBuckets(
+                &buckets,
+                transactions: transactions.filter { $0.amountInPreferredCurrency < 0 },
+                grouping: grouping,
+                calendar: calendar,
+                valueTransform: { abs($0.amountInPreferredCurrency) }
+            )
         }
 
-        // 4. Filter and convert to BarPoints
-        let filteredBuckets: [Date: Double]
-        if metric == .balance {
-            filteredBuckets = buckets
-        } else {
-            // For income/expense, only keep dates with actual data
-            filteredBuckets = buckets.filter { $0.value != 0 }
-        }
-
-        var rawPoints = filteredBuckets.map { date, value in
+        // 4. Convert to BarPoints
+        // For cumulative charts (all metrics now), keep all points after first non-zero value
+        var rawPoints = buckets.map { date, value in
             PanelViewModel.BarPoint(date: date, value: value)
         }.sorted { $0.date < $1.date }
 
-        // 5. Apply smoothing for balance on long periods
+        // Remove leading zeros (before first transaction)
+        if let firstNonZeroIndex = rawPoints.firstIndex(where: { $0.value != 0 }) {
+            rawPoints = Array(rawPoints[firstNonZeroIndex...])
+        }
+
+        // 5. Apply smoothing only for balance on long periods
         let shouldSmooth =
             smoothingPeriods.contains(period)
             && metric == .balance
@@ -204,6 +208,35 @@ struct TrendDataProcessor {
                 }
             }
             buckets[date] = runningBalance
+        }
+    }
+
+    /// Fill buckets with cumulative (running total) values for income/expense
+    private static func fillCumulativeBuckets(
+        _ buckets: inout [Date: Double],
+        transactions: [TransactionItem],
+        grouping: TrendGrouping,
+        calendar: Calendar,
+        valueTransform: (TransactionItem) -> Double
+    ) {
+        // Group transactions by bucket date
+        let transactionsByBucket = Dictionary(
+            grouping: transactions
+        ) { transaction in
+            grouping.dateKey(for: transaction.date, calendar: calendar)
+        }
+
+        // Fill buckets with cumulative sum
+        var runningTotal: Double = 0
+        let sortedDates = buckets.keys.sorted()
+
+        for date in sortedDates {
+            if let txns = transactionsByBucket[date] {
+                for txn in txns {
+                    runningTotal += valueTransform(txn)
+                }
+            }
+            buckets[date] = runningTotal
         }
     }
 }

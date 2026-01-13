@@ -43,7 +43,7 @@ struct TrendWidgetSkeleton: View {
                 .fill(Color.netoSecondaryText.opacity(0.1))
                 .frame(height: 180)
         }
-        .padding(20)
+        .padding(DS.Card.padding)
         .background(Color.netoCard)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shimmer()
@@ -71,7 +71,7 @@ struct CashFlowSkeleton: View {
                 .fill(Color.netoSecondaryText.opacity(0.1))
                 .frame(height: 120)
         }
-        .padding(20)
+        .padding(DS.Card.padding)
         .background(Color.netoCard)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shimmer()
@@ -107,7 +107,7 @@ struct LatestRecordsSkeleton: View {
                 }
             }
         }
-        .padding(20)
+        .padding(DS.Card.padding)
         .background(Color.netoCard)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shimmer()
@@ -142,7 +142,7 @@ struct CategoriesPieSkeleton: View {
                 }
             }
         }
-        .padding(20)
+        .padding(DS.Card.padding)
         .background(Color.netoCard)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shimmer()

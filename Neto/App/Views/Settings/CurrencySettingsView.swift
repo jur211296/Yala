@@ -42,16 +42,14 @@ struct CurrencySettingsView: View {
                             .foregroundStyle(Color.brandPrimary)
                             .padding(.bottom, 8)
 
-                        Text("Divisa y Cambio")
+                        Text(L10n.Settings.currencyAndExchange)
                             .font(Typography.title2)
                             .foregroundStyle(Color.netoPrimaryText)
 
-                        Text(
-                            "Elige tu moneda principal y consulta los tipos de cambio actualizados."
-                        )
-                        .font(Typography.body)
-                        .foregroundStyle(Color.netoSecondaryText)
-                        .multilineTextAlignment(.center)
+                        Text(L10n.Settings.currencyDescription)
+                            .font(Typography.body)
+                            .foregroundStyle(Color.netoSecondaryText)
+                            .multilineTextAlignment(.center)
                     }
                     .padding(.top, 32)
 
@@ -76,11 +74,11 @@ struct CurrencySettingsView: View {
                         .progressViewStyle(.linear)
                         .frame(width: 200)
 
-                    Text("Actualizando registros...")
+                    Text(L10n.Common.updatingRecords)
                         .font(.headline)
                         .foregroundStyle(.white)
 
-                    Text("Recalculando conversiones históricas")
+                    Text(L10n.Common.recalculatingConversions)
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.8))
                 }
@@ -89,7 +87,7 @@ struct CurrencySettingsView: View {
                 .cornerRadius(16)
             }
         }
-        .navigationTitle("Divisa y cambio")
+        .navigationTitle(L10n.Settings.currencyAndExchange)
         .navigationBarTitleDisplayMode(.inline)
         .interactiveDismissDisabled(isUpdating)
     }
@@ -97,7 +95,7 @@ struct CurrencySettingsView: View {
     // MARK: - Preferred Currency Section
 
     private var preferredCurrencySection: some View {
-        SectionBox(title: "Divisa preferida") {
+        SectionBox(title: L10n.Settings.preferredCurrency) {
             VStack(spacing: 0) {
                 ForEach(Array(CurrencyCode.allCases.enumerated()), id: \.element) {
                     index, currency in
@@ -178,7 +176,7 @@ struct CurrencySettingsView: View {
 
     private var exchangeRatesSection: some View {
         VStack(spacing: 8) {
-            SectionBox(title: "Tipo de cambio") {
+            SectionBox(title: L10n.Settings.exchangeRate) {
                 VStack(spacing: 0) {
                     ForEach(Array(displayedCurrencies.enumerated()), id: \.element) {
                         index, currency in
@@ -203,7 +201,7 @@ struct CurrencySettingsView: View {
                     }()
 
                 if let date = rateDate {
-                    Text("Última actualización: \(formatLastUpdated(date))")
+                    Text("\(L10n.Common.lastUpdate) \(formatLastUpdated(date))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)

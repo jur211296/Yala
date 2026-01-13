@@ -31,7 +31,7 @@ struct SectionBox<Content: View>: View {
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+            .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
         }
     }
 }

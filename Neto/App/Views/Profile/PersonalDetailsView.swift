@@ -5,6 +5,7 @@
 //  Created by Neto Refactoring.
 //
 
+import PhotosUI
 import SwiftUI
 
 /// View for editing personal user details
@@ -12,33 +13,20 @@ struct PersonalDetailsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("userSex") private var userSex: String = ""
-    @AppStorage("userBirthday") private var userBirthdayRaw: String = ""
+    @AppStorage("userAlias") private var userAlias: String = ""
+    @AppStorage("userProfileImageData") private var userProfileImageData: Data?
 
     @State private var editedName: String = ""
-    @State private var editedSex: String = ""
-    @State private var editedBirthday: Date = Date()
-    @State private var showBirthdayPicker: Bool = false
-    @State private var hasBirthday: Bool = false
+    @State private var editedAlias: String = ""
+    @State private var aliasValidationMessage: String = ""
+    @State private var isAliasValid: Bool = true
 
-    private let sexOptions = ["", "Masculino", "Femenino", "Otro", "Prefiero no decir"]
+    private let maxNameLength = 30
 
-    private var birthdayFormatted: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.locale = Locale(identifier: "es_ES")
-        return formatter.string(from: editedBirthday)
-    }
-
-    private var ageString: String {
-        let calendar = Calendar.current
-        let now = Date()
-        let components = calendar.dateComponents([.year], from: editedBirthday, to: now)
-        if let years = components.year, years > 0 {
-            return "\(years) años"
-        }
-        return ""
-    }
+    // Photo picker
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var profileImage: Image?
+    @State private var profileUIImage: UIImage?
 
     var body: some View {
         NavigationStack {
@@ -47,7 +35,7 @@ struct PersonalDetailsView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Avatar header
+                        // Avatar header with photo picker
                         avatarHeader
 
                         // Details form
@@ -61,7 +49,7 @@ struct PersonalDetailsView: View {
                     .padding(.bottom, 32)
                 }
             }
-            .navigationTitle("Detalles personales")
+            .navigationTitle(L10n.Profile.personalDetails)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -73,6 +61,25 @@ struct PersonalDetailsView: View {
             .onAppear {
                 loadCurrentValues()
             }
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self),
+                        let uiImage = UIImage(data: data)
+                    {
+                        profileUIImage = uiImage
+                        profileImage = Image(uiImage: uiImage)
+                    }
+                }
+            }
+            .onChange(of: editedName) { _, newValue in
+                // Limit name length
+                if newValue.count > maxNameLength {
+                    editedName = String(newValue.prefix(maxNameLength))
+                }
+            }
+            .onChange(of: editedAlias) { _, newValue in
+                validateAlias(newValue)
+            }
         }
     }
 
@@ -80,21 +87,40 @@ struct PersonalDetailsView: View {
 
     private var avatarHeader: some View {
         VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.15))
-                    .frame(width: 100, height: 100)
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                ZStack {
+                    if let profileImage {
+                        profileImage
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 100, height: 100)
+                            .clipShape(Circle())
+                    } else {
+                        Circle()
+                            .fill(Color.electricIndigo.opacity(0.15))
+                            .frame(width: 100, height: 100)
 
-                Image(systemName: "person.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(Color.electricIndigo)
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(Color.electricIndigo)
+                    }
+
+                    // Camera badge overlay
+                    Circle()
+                        .fill(Color.electricIndigo)
+                        .frame(width: 32, height: 32)
+                        .overlay {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.white)
+                        }
+                        .offset(x: 35, y: 35)
+                }
             }
 
-            Button("Editar foto") {
-                // Placeholder for photo picker
-            }
-            .font(.subheadline)
-            .foregroundStyle(Color.electricIndigo)
+            Text(profileImage != nil ? L10n.Profile.changePhoto : L10n.Profile.addPhoto)
+                .font(.subheadline)
+                .foregroundStyle(Color.electricIndigo)
         }
         .padding(.vertical, 8)
     }
@@ -105,83 +131,69 @@ struct PersonalDetailsView: View {
         SectionBox(title: "") {
             VStack(spacing: 0) {
                 // Name row
-                HStack {
-                    Text("Nombre")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    TextField("Tu nombre", text: $editedName)
-                        .multilineTextAlignment(.trailing)
-                        .foregroundStyle(.primary)
-                }
-                .padding(16)
-
-                SubsectionDivider()
-
-                // Sex row
-                HStack {
-                    Text("Sexo")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Picker("", selection: $editedSex) {
-                        ForEach(sexOptions, id: \.self) { option in
-                            Text(option.isEmpty ? "Sin especificar" : option).tag(option)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
-                SubsectionDivider()
-
-                // Birthday/Age row
-                Button {
-                    showBirthdayPicker.toggle()
-                } label: {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Edad")
+                        Text(L10n.Common.name)
                             .foregroundStyle(.primary)
                         Spacer()
-                        if hasBirthday {
-                            Text(ageString)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("Sin especificar")
-                                .foregroundStyle(.secondary)
-                        }
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.tertiary)
+                        TextField(L10n.Profile.yourName, text: $editedName)
+                            .multilineTextAlignment(.trailing)
+                            .foregroundStyle(.primary)
                     }
                     .padding(16)
-                }
-                .buttonStyle(.plain)
 
-                if showBirthdayPicker {
-                    VStack(spacing: 8) {
-                        DatePicker(
-                            "Cumpleaños",
-                            selection: $editedBirthday,
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .onChange(of: editedBirthday) { _, _ in
-                            hasBirthday = true
-                        }
-
-                        if hasBirthday {
-                            Button("Quitar fecha") {
-                                hasBirthday = false
-                                userBirthdayRaw = ""
-                            }
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                        }
+                    // Character count
+                    if !editedName.isEmpty {
+                        Text("\(editedName.count)/\(maxNameLength) \(L10n.Profile.characters)")
+                            .font(.caption2)
+                            .foregroundStyle(
+                                editedName.count >= maxNameLength ? .orange : .secondary
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                }
+
+                SubsectionDivider()
+
+                // Alias row
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(L10n.Common.alias)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        TextField(L10n.Profile.aliasPlaceholder, text: $editedAlias)
+                            .multilineTextAlignment(.trailing)
+                            .foregroundStyle(.primary)
+                            .autocapitalization(.none)
+                            .autocorrectionDisabled()
+                    }
+                    .padding(16)
+
+                    // Validation message
+                    if !editedAlias.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(
+                                systemName: isAliasValid
+                                    ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(isAliasValid ? .green : .orange)
+
+                            Text(aliasValidationMessage)
+                                .font(.caption)
+                                .foregroundStyle(isAliasValid ? .green : .orange)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 12)
+                    }
+
+                    // Alias info
+                    Text(L10n.Profile.aliasHelper)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 12)
                 }
             }
         }
@@ -191,15 +203,20 @@ struct PersonalDetailsView: View {
 
     private var privacyDisclaimer: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Tus datos nunca salen de tu dispositivo")
+            Text(L10n.Profile.privacyTitle)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.primary)
 
-            Text(
-                "Neto almacena tus datos personales únicamente en tu dispositivo. No tenemos acceso a ellos ni los compartimos con terceros. Si eliminas la app, se borrarán todos tus datos."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            Text(L10n.Profile.privacyDesc)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            // TODO: Future feature note
+            Text(L10n.Profile.aliasFutureNote)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .italic()
+                .padding(.top, 8)
         }
         .padding(.horizontal, 8)
     }
@@ -208,30 +225,69 @@ struct PersonalDetailsView: View {
 
     private func loadCurrentValues() {
         editedName = userName
-        editedSex = userSex
+        editedAlias = userAlias
 
-        if !userBirthdayRaw.isEmpty {
-            let formatter = ISO8601DateFormatter()
-            if let date = formatter.date(from: userBirthdayRaw) {
-                editedBirthday = date
-                hasBirthday = true
-            }
+        // Load profile image if exists
+        if let imageData = userProfileImageData,
+            let uiImage = UIImage(data: imageData)
+        {
+            profileUIImage = uiImage
+            profileImage = Image(uiImage: uiImage)
         }
     }
 
+    private func validateAlias(_ alias: String) {
+        // Convert to lowercase
+        let lowercased = alias.lowercased()
+        if lowercased != alias {
+            editedAlias = lowercased
+            return
+        }
+
+        // Check length
+        if alias.count < 3 {
+            aliasValidationMessage = L10n.Profile.minChars
+            isAliasValid = false
+            return
+        }
+
+        if alias.count > 20 {
+            aliasValidationMessage = L10n.Profile.maxChars
+            isAliasValid = false
+            return
+        }
+
+        // Check allowed characters (letters, numbers, underscores)
+        let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+        if alias.rangeOfCharacter(from: allowedCharacters.inverted) != nil {
+            aliasValidationMessage = L10n.Profile.allowedChars
+            isAliasValid = false
+            return
+        }
+
+        // All validations passed
+        aliasValidationMessage = L10n.Profile.aliasAvailable
+        isAliasValid = true
+    }
+
     private func saveAndDismiss() {
-        // Save changes
-        userName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if userName.isEmpty {
-            userName = "Usuario"
-        }
-        userSex = editedSex
+        // Save name (trim whitespace and ensure not empty)
+        let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        userName = trimmedName.isEmpty ? "Usuario" : trimmedName
 
-        if hasBirthday {
-            let formatter = ISO8601DateFormatter()
-            userBirthdayRaw = formatter.string(from: editedBirthday)
+        // Save alias (only if valid or empty)
+        if isAliasValid || editedAlias.isEmpty {
+            userAlias = editedAlias.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }
 
+        // Save profile image (if user selected one)
+        if let uiImage = profileUIImage {
+            if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
+                userProfileImageData = imageData
+            }
+        }
+
+        // Dismiss the sheet
         dismiss()
     }
 }

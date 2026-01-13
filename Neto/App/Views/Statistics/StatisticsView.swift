@@ -13,7 +13,7 @@ struct StatisticsView: View {
         NavigationStack {
             // DetailContainerView manages its own content, navigation, and toolbar
             DetailContainerView(initialTab: .trends)
-                .navigationTitle("Estadísticas")
+                .navigationTitle(L10n.Statistics.title)
                 .navigationBarTitleDisplayMode(.large)
         }
     }

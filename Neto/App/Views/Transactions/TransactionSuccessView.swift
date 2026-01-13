@@ -23,6 +23,7 @@ struct TransactionSuccessData {
     let categoryName: String?
     let categoryColorHex: String?
     let tags: [(name: String, colorHex: String)]
+    let nature: SubcategoryNature?
 
     // For transfers
     let isTransfer: Bool
@@ -48,7 +49,7 @@ struct TransactionSuccessView: View {
                 // Edit button at top right - native iOS style (inverted)
                 HStack {
                     Spacer()
-                    Button("Editar", action: onEdit)
+                    Button(L10n.Action.edit, action: onEdit)
                         .buttonStyle(.bordered)
                 }
                 .padding(.horizontal, 20)
@@ -84,7 +85,7 @@ struct TransactionSuccessView: View {
                 VStack(spacing: 12) {
                     // Primary: Accept
                     Button(action: onAccept) {
-                        Text("Aceptar")
+                        Text(L10n.Common.accept)
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -93,7 +94,7 @@ struct TransactionSuccessView: View {
 
                     // Secondary: Create another
                     Button(action: onCreateAnother) {
-                        Text("Crear otra transacción")
+                        Text(L10n.Transaction.createAnother)
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -119,7 +120,7 @@ struct TransactionSuccessView: View {
             // Date
             detailRow(
                 icon: "calendar",
-                label: "Fecha",
+                label: L10n.Transaction.date,
                 value: formattedDate
             )
 
@@ -135,13 +136,18 @@ struct TransactionSuccessView: View {
                 if data.subcategoryName != nil || data.categoryName != nil {
                     categoryRow
                 }
+
+                // Nature (only for non-transfers)
+                if let nature = data.nature {
+                    natureRow(nature: nature)
+                }
             }
 
             // Note
             if !data.note.isEmpty {
                 detailRow(
                     icon: "text.alignleft",
-                    label: "Nota",
+                    label: L10n.Transaction.note,
                     value: data.note
                 )
             }
@@ -162,7 +168,7 @@ struct TransactionSuccessView: View {
 
     private var amountRow: some View {
         HStack {
-            Text("Total")
+            Text(L10n.Transaction.total)
                 .font(.title3.weight(.medium))
                 .foregroundStyle(.secondary)
 
@@ -187,7 +193,7 @@ struct TransactionSuccessView: View {
                 .foregroundStyle(data.transactionType.color)
                 .frame(width: 20)
 
-            Text("Tipo")
+            Text(L10n.Transaction.type)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -204,7 +210,7 @@ struct TransactionSuccessView: View {
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM yyyy"
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = AppLocale.current
         return formatter.string(from: data.date)
     }
 
@@ -237,7 +243,7 @@ struct TransactionSuccessView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
-            Text("Cuenta")
+            Text(L10n.Account.selectAccount)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -265,7 +271,7 @@ struct TransactionSuccessView: View {
                     .foregroundStyle(Color.hotPink)
                     .frame(width: 20)
 
-                Text("Origen")
+                Text(L10n.Transaction.origin)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
@@ -293,7 +299,7 @@ struct TransactionSuccessView: View {
                         .foregroundStyle(Color.electricIndigo)
                         .frame(width: 20)
 
-                    Text("Destino")
+                    Text(L10n.Transaction.destination)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -332,7 +338,7 @@ struct TransactionSuccessView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
-            Text("Categoría")
+            Text(L10n.Transaction.category)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -364,6 +370,38 @@ struct TransactionSuccessView: View {
         .padding(.vertical, 14)
     }
 
+    private func natureRow(nature: SubcategoryNature) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "leaf")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            Text(L10n.Category.nature)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(nature.color)
+                    .frame(width: 6, height: 6)
+
+                Text(nature.displayName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(nature.color.opacity(0.1))
+            )
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+    }
+
     private var tagsRow: some View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: "number")
@@ -371,7 +409,7 @@ struct TransactionSuccessView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
-            Text("Etiquetas")
+            Text(L10n.Transaction.tags)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -420,6 +458,7 @@ struct TransactionSuccessView: View {
                 (name: "Necesario", colorHex: "2196F3"),
                 (name: "Mensual", colorHex: "9C27B0"),
             ],
+            nature: .essential,
             isTransfer: false,
             destinationAccountName: nil,
             destinationAccountColorHex: nil,

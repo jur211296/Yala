@@ -15,7 +15,7 @@ struct WidgetPreferencesView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Elige qué quieres ver en tu panel principal y en qué orden.")
+                    Text(L10n.Widget.preferencesDescription)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .listRowBackground(Color.clear)
@@ -45,7 +45,7 @@ struct WidgetPreferencesView: View {
                     }
                     .deleteDisabled(true)  // Disable delete, use toggles instead
                 } header: {
-                    Text("Widgets")
+                    Text(L10n.Panel.widgets)
                 }
 
                 Section {
@@ -54,7 +54,7 @@ struct WidgetPreferencesView: View {
                             viewModel.resetWidgetConfigs()
                         }
                     } label: {
-                        Text("Restablecer disposición original")
+                        Text(L10n.Widget.resetLayout)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .listRowBackground(Color.netoCard)  // Adapts to Light/Dark mode
@@ -62,7 +62,7 @@ struct WidgetPreferencesView: View {
             }
             .listStyle(.insetGrouped)
             .environment(\.editMode, .constant(.active))  // Force edit mode for reordering handles
-            .navigationTitle("Preferencias del panel")
+            .navigationTitle(L10n.Widget.preferences)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -100,15 +100,15 @@ private struct WidgetRow: View {
                         .foregroundStyle(.primary)
 
                     if config.isLocked {
-                        Text("Siempre visible • Posición fija")
+                        Text("\(L10n.Widget.alwaysVisible) • \(L10n.Widget.fixedPosition)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     } else if !config.isVisible {
-                        Text("Oculto")
+                        Text(L10n.Common.hidden)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     } else if let sizeName = config.type.displaySizeName(for: config.size) {
-                        Text("Tamaño: \(sizeName)")
+                        Text(String(format: L10n.Widget.size, sizeName))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -134,7 +134,7 @@ private struct WidgetRow: View {
             // Custom condition: Hide size picker if only 1 size is supported
             if config.isVisible && !config.isLocked && availableSizes(for: config.type).count > 1 {
                 Picker(
-                    "Tamaño",
+                    L10n.Widget.sizeLabel,
                     selection: Binding(
                         get: { config.size },
                         set: { onSizeChange($0) }

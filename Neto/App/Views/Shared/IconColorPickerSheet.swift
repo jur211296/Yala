@@ -74,123 +74,123 @@ struct IconColorPickerSheet: View {
     // Comprehensive SF Symbol collection organized by category
     private let iconCategories: [IconCategory] = [
         IconCategory(
-            name: "Compras",
+            name: L10n.IconPicker.shopping,
             icons: [
                 "cart.fill", "cart", "bag.fill", "bag", "basket.fill", "creditcard.fill",
                 "creditcard", "dollarsign.circle.fill", "dollarsign.circle", "giftcard.fill",
                 "gift.fill", "gift", "tag.fill", "tag", "barcode", "qrcode",
             ]),
         IconCategory(
-            name: "Alimentación",
+            name: L10n.IconPicker.food,
             icons: [
                 "fork.knife", "cup.and.saucer.fill", "takeoutbag.and.cup.and.straw.fill",
                 "wineglass.fill", "wineglass", "mug.fill", "birthday.cake.fill",
             ]),
         IconCategory(
-            name: "Transporte",
+            name: L10n.IconPicker.transport,
             icons: [
                 "car.fill", "car", "car.side.fill", "bus.fill", "bus", "tram.fill",
                 "airplane", "bicycle", "scooter", "fuelpump.fill", "parkingsign.circle.fill",
             ]),
         IconCategory(
-            name: "Finanzas",
+            name: L10n.IconPicker.finance,
             icons: [
                 "banknote.fill", "banknote", "building.columns.fill", "building.2.fill",
                 "briefcase.fill", "case.fill", "chart.line.uptrend.xyaxis", "chart.bar.fill",
                 "chart.pie.fill", "percent", "arrow.up.right", "arrow.down.left",
             ]),
         IconCategory(
-            name: "Hogar",
+            name: L10n.IconPicker.home,
             icons: [
                 "house.fill", "house", "key.fill", "key", "lock.fill", "bed.double.fill",
                 "sofa.fill", "lamp.desk.fill", "lightbulb.fill", "fan.fill",
                 "washer.fill", "refrigerator.fill", "tv.fill", "wifi",
             ]),
         IconCategory(
-            name: "Servicios",
+            name: L10n.IconPicker.services,
             icons: [
                 "bolt.fill", "bolt", "drop.fill", "flame.fill", "thermometer.medium",
                 "antenna.radiowaves.left.and.right", "phone.fill", "envelope.fill",
             ]),
         IconCategory(
-            name: "Entretenimiento",
+            name: L10n.IconPicker.entertainment,
             icons: [
                 "sparkles", "star.fill", "star", "heart.fill", "heart",
                 "gamecontroller.fill", "gamecontroller", "play.tv.fill", "film.fill",
                 "music.note", "headphones", "ticket.fill", "party.popper.fill",
             ]),
         IconCategory(
-            name: "Deportes",
+            name: L10n.IconPicker.sports,
             icons: [
                 "figure.run", "figure.walk", "figure.hiking", "sportscourt.fill",
                 "tennisball.fill", "basketball.fill", "football.fill", "dumbbell.fill",
             ]),
         IconCategory(
-            name: "Salud",
+            name: L10n.IconPicker.health,
             icons: [
                 "heart.text.square.fill", "stethoscope", "pill.fill", "cross.case.fill",
                 "cross.vial.fill", "bandage.fill", "medical.thermometer.fill",
             ]),
         IconCategory(
-            name: "Cuidado Personal",
+            name: L10n.IconPicker.personalCare,
             icons: [
                 "comb.fill", "scissors", "sparkle", "wand.and.stars",
             ]),
         IconCategory(
-            name: "Educación",
+            name: L10n.IconPicker.education,
             icons: [
                 "book.fill", "book", "books.vertical.fill", "graduationcap.fill",
                 "pencil", "highlighter", "ruler.fill", "backpack.fill",
             ]),
         IconCategory(
-            name: "Trabajo",
+            name: L10n.IconPicker.work,
             icons: [
                 "doc.text.fill", "doc.on.clipboard.fill", "folder.fill", "archivebox.fill",
                 "tray.fill", "paperclip", "calendar", "clock.fill",
             ]),
         IconCategory(
-            name: "Mascotas",
+            name: L10n.IconPicker.pets,
             icons: [
                 "pawprint.fill", "pawprint", "hare.fill", "tortoise.fill",
                 "bird.fill", "fish.fill", "ant.fill", "ladybug.fill",
             ]),
         IconCategory(
-            name: "Naturaleza",
+            name: L10n.IconPicker.nature,
             icons: [
                 "leaf.fill", "leaf", "tree.fill", "globe.americas.fill",
                 "sun.max.fill", "moon.fill", "cloud.fill", "snowflake",
             ]),
         IconCategory(
-            name: "Tecnología",
+            name: L10n.IconPicker.tech,
             icons: [
                 "laptopcomputer", "desktopcomputer", "iphone", "ipad",
                 "applewatch", "airpodspro", "headphones.circle.fill", "printer.fill",
             ]),
         IconCategory(
-            name: "Viajes",
+            name: L10n.IconPicker.travel,
             icons: [
                 "suitcase.fill", "suitcase.cart.fill", "map.fill", "mappin.circle.fill",
                 "building.fill", "tent.fill", "beach.umbrella.fill",
             ]),
         IconCategory(
-            name: "Comunicación",
+            name: L10n.IconPicker.communication,
             icons: [
                 "message.fill", "bubble.left.fill", "video.fill", "phone.bubble.fill",
             ]),
         IconCategory(
-            name: "Herramientas",
+            name: L10n.IconPicker.tools,
             icons: [
                 "wrench.fill", "wrench.and.screwdriver.fill", "hammer.fill", "screwdriver.fill",
                 "paintbrush.fill", "paintpalette.fill",
             ]),
         IconCategory(
-            name: "Seguridad",
+            name: L10n.IconPicker.security,
             icons: [
                 "shield.fill", "shield.checkered", "hand.raised.fill",
                 "exclamationmark.triangle.fill", "checkmark.seal.fill",
             ]),
         IconCategory(
-            name: "Símbolos",
+            name: L10n.IconPicker.symbols,
             icons: [
                 "flag.fill", "bell.fill", "megaphone.fill", "pin.fill",
                 "bookmark.fill", "rosette", "crown.fill", "trophy.fill",
@@ -198,13 +198,13 @@ struct IconColorPickerSheet: View {
                 "info.circle.fill", "plus.circle.fill", "minus.circle.fill",
             ]),
         IconCategory(
-            name: "Dirección",
+            name: L10n.IconPicker.direction,
             icons: [
                 "arrow.down.circle.fill", "arrow.up.circle.fill",
                 "arrow.uturn.backward.circle.fill", "arrow.2.circlepath.circle.fill",
             ]),
         IconCategory(
-            name: "Otros",
+            name: L10n.IconPicker.other,
             icons: [
                 "hand.thumbsup.fill", "hand.thumbsdown.fill", "hands.clap.fill",
                 "figure.2.arms.open", "person.fill", "person.2.fill", "person.3.fill",

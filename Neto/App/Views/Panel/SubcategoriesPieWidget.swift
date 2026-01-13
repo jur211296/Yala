@@ -56,29 +56,28 @@ struct SubcategoriesPieWidget: View {
                 emptyState
             } else {
                 contentForSize
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.xxl)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .frame(height: size == .large ? 320 : (size == .medium ? 220 : nil))
+        .frame(maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.netoCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             Image(systemName: "chart.pie")
                 .font(.system(size: 32))
                 .foregroundStyle(.secondary)
-            Text("Aún no hay gastos en subcategorías para este periodo.")
+            Text(L10n.Widget.noExpensesSubcategoriesPeriod)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -102,7 +101,7 @@ struct SubcategoriesPieWidget: View {
 
     private var headerSection: some View {
         HStack {
-            Text("Subcategorías")
+            Text(L10n.Widget.subcategories)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -303,7 +302,7 @@ struct SubcategoriesPieWidget: View {
     // MARK: - Medium Layout (Stacked Bar Chart)
 
     private var mediumLayout: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerView
 
             // 1. Subcategory Labels
@@ -397,7 +396,7 @@ struct SubcategoriesPieWidget: View {
             }
             .frame(height: 28)
         }
-        .padding(.top, 16)
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Shared Header
@@ -405,54 +404,25 @@ struct SubcategoriesPieWidget: View {
     private var headerView: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Distribución por subcategoría")
+                Text(L10n.Widget.distributionBySubcategory)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .padding(.bottom, 2)
-
-                // Dynamic subtitle based on filter state
-                if selectedSubcategoryID != nil {
-                    Text("Subcategoría seleccionada")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if selectedCategoryID != nil {
-                    if let categoryName = subcategories.first?.category?.name {
-                        Text("Categoría: \(categoryName)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Categoría filtrada")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    Text("Total del periodo")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
 
                 Text(formattedCurrency(filteredTotalExpense))
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.primary)
             }
             Spacer()
-            HStack(spacing: 8) {
-                Text("\(subcategories.count) subcategorías")
-                    .font(.caption2.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.ultraThinMaterial, in: Capsule())
-
-                if onShowDetail != nil {
-                    Button {
-                        onShowDetail?()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.headline)
-                            .foregroundStyle(Color.gray.opacity(0.7))
-                    }
-                    .buttonStyle(.plain)
+            if onShowDetail != nil {
+                Button {
+                    onShowDetail?()
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.headline)
+                        .foregroundStyle(Color.gray.opacity(0.7))
                 }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -519,7 +489,7 @@ struct SubcategoriesPieWidget: View {
 
             Chart(safeData) { item in
                 SectorMark(
-                    angle: .value("Gasto", item.amount),
+                    angle: .value(L10n.TrendType.expense, item.amount),
                     innerRadius: .ratio(innerRadiusRatio),
                     angularInset: 1.5
                 )
@@ -543,11 +513,11 @@ struct SubcategoriesPieWidget: View {
     // MARK: - Helpers
 
     private func formattedAmountCompact(_ value: Double) -> String {
-        NetoFormatter.currency(value: value, currencyCode: currencyCode, decimals: 0)
+        NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     private func formattedCurrency(_ value: Double) -> String {
-        NetoFormatter.currency(value: value, currencyCode: currencyCode, decimals: 2)
+        NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {
@@ -653,7 +623,7 @@ struct SubcategoriesPieWidget: View {
                 finalItems.append(
                     PieChartData(
                         id: "__restante__",
-                        name: "Restante",
+                        name: L10n.Common.remaining,
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,

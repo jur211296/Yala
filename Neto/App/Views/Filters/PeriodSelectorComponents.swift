@@ -18,7 +18,7 @@ struct TrendsPeriodMenu: View, Equatable {
                     onSelect(period)
                 } label: {
                     HStack {
-                        Text(period.rawValue)
+                        Text(period.displayName)
                         if selectedPeriod == period {
                             Image(systemName: "checkmark")
                         }
@@ -26,7 +26,7 @@ struct TrendsPeriodMenu: View, Equatable {
                 }
             }
         } label: {
-            PeriodSelectorLabel(title: selectedPeriod.rawValue)
+            PeriodSelectorLabel(title: selectedPeriod.displayName)
         }
         .transaction { $0.animation = nil }
         .id(selectedPeriod)

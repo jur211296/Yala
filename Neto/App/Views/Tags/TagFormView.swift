@@ -99,7 +99,7 @@ struct TagFormView: View {
                     .padding(.vertical, 24)
                 }
             }
-            .navigationTitle(isEditing ? "Editar etiqueta" : "Nueva etiqueta")
+            .navigationTitle(isEditing ? L10n.Tag.editTag : L10n.Tag.newTag)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -115,13 +115,13 @@ struct TagFormView: View {
                 NavigationStack {
                     VStack(spacing: 24) {
                         ColorPicker(
-                            "Selecciona un color",
+                            L10n.Common.selectColor,
                             selection: $customColor,
                             supportsOpacity: false
                         )
                         .padding()
 
-                        Button("Usar este color") {
+                        Button(L10n.Common.useThisColor) {
                             selectedColorHex = hexString(from: customColor)
                             isPresentingColorPicker = false
                         }
@@ -130,17 +130,17 @@ struct TagFormView: View {
                         Spacer()
                     }
                     .padding()
-                    .navigationTitle("Nuevo color")
+                    .navigationTitle(L10n.Common.newColor)
                     .navigationBarTitleDisplayMode(.inline)
                 }
             }
-            .alert("¿Eliminar etiqueta?", isPresented: $isShowingDeleteConfirmation) {
-                Button("Cancelar", role: .cancel) {}
-                Button("Eliminar", role: .destructive) {
+            .alert(L10n.Tag.deleteConfirmation, isPresented: $isShowingDeleteConfirmation) {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Action.delete, role: .destructive) {
                     deleteTag()
                 }
             } message: {
-                Text("Esta acción no se puede deshacer.")
+                Text(L10n.Common.cannotUndo)
             }
         }
     }
@@ -212,7 +212,7 @@ struct TagFormView: View {
     private var statusSection: some View {
         SectionBox(title: "Estado") {
             Toggle(isOn: $isActive) {
-                Text("Activa")
+                Text(L10n.Common.active)
             }
             .tint(Color.electricIndigo)
             .padding()
@@ -226,7 +226,7 @@ struct TagFormView: View {
             } label: {
                 HStack {
                     Spacer()
-                    Text("Eliminar etiqueta")
+                    Text(L10n.Tag.delete)
                     Spacer()
                 }
             }

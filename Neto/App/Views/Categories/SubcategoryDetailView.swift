@@ -102,8 +102,9 @@ struct SubcategoryDetailView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 24)
             }
+
         }
-        .navigationTitle(isEditing ? "Editar subcategoría" : "Nueva subcategoría")
+        .navigationTitle(isEditing ? L10n.Subcategory.editTitle : L10n.Subcategory.newTitle)
         .swipeBack()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -125,16 +126,16 @@ struct SubcategoryDetailView: View {
             }
         }
         .confirmationDialog(
-            "Hay cambios sin guardar",
+            L10n.Alert.unsavedChanges,
             isPresented: $showDiscardDialog,
             titleVisibility: .visible
         ) {
-            Button("Salir sin guardar", role: .destructive) {
+            Button(L10n.Alert.discardChanges, role: .destructive) {
                 dismiss()
             }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            Text("Si sales ahora, se perderán los cambios realizados en esta subcategoría.")
+            Text(L10n.Alert.discardChanges)
         }
     }
 
@@ -211,7 +212,7 @@ struct SubcategoryDetailView: View {
                         Image(systemName: "circle.lefthalf.filled")
                             .foregroundStyle(.secondary)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Naturaleza")
+                            Text(L10n.Category.nature)
                                 .foregroundStyle(.primary)
                             Text(selectedNature.displayName)
                                 .font(.subheadline)
@@ -229,7 +230,7 @@ struct SubcategoryDetailView: View {
                 SubsectionDivider()
 
                 Toggle(isOn: $isVisible) {
-                    Text("Mostrar")
+                    Text(L10n.Category.show)
                 }
                 .tint(Color.electricIndigo)
                 .padding()

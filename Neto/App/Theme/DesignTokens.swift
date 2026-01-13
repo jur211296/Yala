@@ -122,6 +122,78 @@ enum DS {
             .black.opacity(0.20), 20, 0, 10
         )
     }
+
+    // MARK: - Chip Dimensions
+
+    /// Specific dimensions for filter chips (unified across views)
+    enum Chip {
+        /// Horizontal padding inside chip
+        static let paddingH: CGFloat = 10
+
+        /// Vertical padding inside chip
+        static let paddingV: CGFloat = 6
+
+        /// Spacing between chip elements
+        static let spacing: CGFloat = 6
+
+        /// Color dot diameter
+        static let dotSize: CGFloat = 8
+
+        /// Icon circle diameter
+        static let iconCircleSize: CGFloat = 16
+
+        /// Icon font size inside circle
+        static let iconSize: CGFloat = 8
+
+        /// Standalone icon size (no circle)
+        static let iconOnlySize: CGFloat = 12
+
+        /// Close button size
+        static let closeButtonSize: CGFloat = 11
+
+        /// Border opacity
+        static let borderOpacity: Double = 0.08
+    }
+
+    // MARK: - Card Dimensions
+
+    /// Widget/card styling tokens (unified across Panel, Statistics, etc.)
+    enum Card {
+        /// Standard internal padding for cards
+        static let padding: CGFloat = 20
+
+        /// Compact internal padding for smaller cards
+        static let paddingCompact: CGFloat = 16
+
+        /// Standard corner radius for cards
+        static let radius: CGFloat = 24
+
+        /// White overlay opacity for borders
+        static let borderOpacity: Double = 0.1
+    }
+
+    // MARK: - Icon Badge Dimensions
+
+    /// Icon size and badge tokens
+    enum Icon {
+        /// Small icon badge (categories, etc.)
+        static let badgeSmall: CGFloat = 24
+
+        /// Medium icon badge
+        static let badgeMedium: CGFloat = 32
+
+        /// Large icon badge (accounts, etc.)
+        static let badgeLarge: CGFloat = 40
+
+        /// Small icon size inside badge
+        static let sizeSmall: CGFloat = 12
+
+        /// Medium icon size inside badge
+        static let sizeMedium: CGFloat = 16
+
+        /// Large icon size inside badge
+        static let sizeLarge: CGFloat = 20
+    }
 }
 
 // MARK: - View Extensions

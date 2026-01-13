@@ -14,6 +14,7 @@ struct PersonalizationSettingsView: View {
     @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
         .rawValue
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
+    @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
 
     @State private var showingPeriodPicker = false
 
@@ -34,11 +35,11 @@ struct PersonalizationSettingsView: View {
                             .foregroundStyle(Color.brandPrimary)
                             .padding(.bottom, 8)
 
-                        Text("Personalización")
+                        Text(L10n.Settings.personalization)
                             .font(.title2.bold())
                             .foregroundStyle(Color.netoPrimaryText)
 
-                        Text("Ajusta cómo funciona Neto según tus preferencias.")
+                        Text(L10n.Settings.personalizationDescription)
                             .font(.body)
                             .foregroundStyle(Color.netoSecondaryText)
                             .multilineTextAlignment(.center)
@@ -52,13 +53,13 @@ struct PersonalizationSettingsView: View {
                             showingPeriodPicker = true
                         } label: {
                             HStack {
-                                Text("Período predeterminado")
+                                Text(L10n.Settings.defaultPeriod)
                                     .font(.body)
                                     .foregroundStyle(Color.netoPrimaryText)
 
                                 Spacer()
 
-                                Text(selectedPeriod.rawValue)
+                                Text(selectedPeriod.displayName)
                                     .font(.body)
                                     .foregroundStyle(.secondary)
 
@@ -79,7 +80,37 @@ struct PersonalizationSettingsView: View {
 
                         // Explanatory text
                         Text(
-                            "Este período se aplicará por defecto cada vez que abras la app. Puedes cambiarlo temporalmente desde el selector de período en cualquier momento."
+                            L10n.Settings.defaultPeriodDescription
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                    }
+
+                    // Colorful Icons Toggle Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(L10n.Settings.colorfulIcons)
+                                .font(.body)
+                                .foregroundStyle(Color.netoPrimaryText)
+
+                            Spacer()
+
+                            Toggle("", isOn: $colorfulIcons)
+                                .labelsHidden()
+                                .tint(Color.brandPrimary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.netoCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                        )
+
+                        Text(
+                            L10n.Settings.colorfulIconsDescription
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -91,7 +122,7 @@ struct PersonalizationSettingsView: View {
                 .padding()
             }
         }
-        .navigationTitle("Personalización")
+        .navigationTitle(L10n.Settings.personalization)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
@@ -144,7 +175,7 @@ private struct PeriodPickerSheet: View {
                     .padding()
                 }
             }
-            .navigationTitle("Período predeterminado")
+            .navigationTitle(L10n.Settings.defaultPeriod)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -164,7 +195,7 @@ private struct PeriodPickerSheet: View {
             onSelect(period)
         } label: {
             HStack {
-                Text(period.rawValue)
+                Text(period.displayName)
                     .font(.body)
                     .foregroundStyle(Color.netoPrimaryText)
 

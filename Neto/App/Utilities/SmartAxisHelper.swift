@@ -101,6 +101,7 @@ enum SmartAxisHelper {
             formatter.dateFormat = "d"  // "15"
         }
 
-        return formatter.string(from: date).lowercased()
+        // Remove trailing periods from abbreviations (e.g., "ene." -> "ene")
+        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }
 }

@@ -60,7 +60,7 @@ struct ImportResultOverlay: View {
                 Button {
                     onDismiss()
                 } label: {
-                    Text("Continuar")
+                    Text(L10n.Import.continueBtn)
                         .font(Typography.bodyLarge)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -147,10 +147,10 @@ struct ImportIntroSheet: View {
                                     ProgressView()
                                         .progressViewStyle(.circular)
                                         .tint(.white)
-                                    Text("Importando...")
+                                    Text(L10n.Import.importing)
                                 } else {
                                     Image(systemName: "square.and.arrow.down")
-                                    Text("Importar archivo CSV")
+                                    Text(L10n.Import.selectFile)
                                 }
                             }
                             .font(Typography.bodyLarge)
@@ -225,7 +225,7 @@ struct ImportIntroSheet: View {
                 .foregroundStyle(Color.brandPrimary)
                 .padding(.bottom, 8)
 
-            Text("Importar Transacciones")
+            Text(L10n.Import.title)
                 .font(Typography.title2)
                 .foregroundStyle(Color.netoPrimaryText)
 
@@ -245,7 +245,7 @@ struct ImportIntroSheet: View {
                 generateTemplate()
             } label: {
                 HStack {
-                    Text("Descargar plantilla CSV")
+                    Text(L10n.Import.downloadTemplate)
                         .font(Typography.bodyLarge)
                         .foregroundStyle(Color.netoPrimaryText)
 
@@ -280,7 +280,7 @@ struct ImportIntroSheet: View {
 
             // Toggle Container
             HStack {
-                Text("Crear categorías nuevas")
+                Text(L10n.Import.createCategories)
                     .font(Typography.bodyLarge)
                     .foregroundStyle(Color.netoPrimaryText)
 

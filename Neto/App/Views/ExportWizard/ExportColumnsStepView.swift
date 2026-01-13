@@ -62,7 +62,7 @@ struct ExportColumnsStepView: View {
                         onFinish: onFinish
                     )
                 } label: {
-                    Text("Siguiente")
+                    Text(L10n.Common.next)
                 }
                 .disabled(!isValid)
             }
@@ -73,7 +73,7 @@ struct ExportColumnsStepView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Personaliza tu archivo")
+            Text(L10n.Export.customizeFile)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
 

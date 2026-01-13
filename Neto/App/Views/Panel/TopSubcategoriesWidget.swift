@@ -45,14 +45,15 @@ struct TopSubcategoriesWidget: View {
             }
         }
         .padding(size == .small ? DS.Spacing.lg : DS.Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(Color.netoCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
     }
 
     // MARK: - Header
@@ -63,12 +64,12 @@ struct TopSubcategoriesWidget: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     if size == .small {
-                        Text("Subcategorías")
+                        Text(L10n.Widget.subcategories)
                             .font(.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                     } else {
-                        Text("Subcategorías principales")
+                        Text(L10n.Widget.topSubcategories)
                             .font(.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
@@ -105,7 +106,7 @@ struct TopSubcategoriesWidget: View {
             {
                 // Locked State (Global Filter Active)
                 HStack(spacing: 4) {
-                    Image(systemName: "tag.fill")
+                    Image(systemName: category.iconName ?? "tag.fill")
                         .font(.caption2)
                         .foregroundStyle(Color(hex: category.colorHex))
 
@@ -127,16 +128,12 @@ struct TopSubcategoriesWidget: View {
                     HStack(spacing: 8) {
                         // "Todas" Chip
                         Button {
-                            var transaction = Transaction()
-                            transaction.disablesAnimations = true
-                            withTransaction(transaction) {
-                                localCategoryFilterID = nil
-                            }
+                            localCategoryFilterID = nil
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "list.bullet")
                                     .font(.caption2)
-                                Text("Todas")
+                                Text(L10n.Common.all)
                                     .font(.caption.weight(.medium))
                             }
                             .foregroundStyle(localCategoryFilterID == nil ? .white : .primary)
@@ -154,14 +151,10 @@ struct TopSubcategoriesWidget: View {
                         ForEach(allCategories) { category in
                             let isSelected = localCategoryFilterID == category.persistentModelID
                             Button {
-                                var transaction = Transaction()
-                                transaction.disablesAnimations = true
-                                withTransaction(transaction) {
-                                    localCategoryFilterID = category.persistentModelID
-                                }
+                                localCategoryFilterID = category.persistentModelID
                             } label: {
                                 HStack(spacing: 4) {
-                                    Image(systemName: "tag.fill")
+                                    Image(systemName: category.iconName ?? "tag.fill")
                                         .font(.caption2)
                                     Text(category.name)
                                         .font(.caption.weight(.medium))
@@ -191,7 +184,7 @@ struct TopSubcategoriesWidget: View {
         {
             return category.name
         }
-        return "Todas"
+        return L10n.Common.all
     }
 
     // MARK: - Content
@@ -211,10 +204,18 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Lists
 
     private func subcategoriesList(limit: Int) -> some View {
-        VStack(spacing: 16) {
-            // Find max amount for bar scaling
-            if let maxAmount = subcategories.first?.amount {
-                let displayed = Array(subcategories.prefix(limit))
+        VStack(spacing: DS.Spacing.lg) {
+            // Filter subcategories by local category filter first
+            let filteredSubcategories: [SubcategorySpendingSummary] = {
+                if let localFilterID = localCategoryFilterID {
+                    return subcategories.filter { $0.category?.persistentModelID == localFilterID }
+                }
+                return subcategories
+            }()
+
+            // Find max amount for bar scaling from filtered list
+            if let maxAmount = filteredSubcategories.first?.amount {
+                let displayed = Array(filteredSubcategories.prefix(limit))
                 ForEach(displayed) { summary in
                     let isSelected = selectedSubcategoryID == summary.subcategoryName
                     let isDimmed = selectedSubcategoryID != nil && !isSelected
@@ -269,7 +270,7 @@ struct TopSubcategoriesWidget: View {
                         // % of Category (Most relevant context for subcats)
                         HStack(spacing: 4) {
                             Text(
-                                "\(formattedPercentage(top.percentageOfCategory)) de \(top.category?.name ?? "Categ.")"
+                                "\(formattedPercentage(top.percentageOfCategory)) \(String(format: L10n.Widget.of, top.category?.name ?? L10n.Widget.categoryAbbr))"
                             )
                             .font(.caption2.bold())
                             .foregroundStyle(Color(hex: top.colorHex ?? "#888888"))
@@ -294,33 +295,32 @@ struct TopSubcategoriesWidget: View {
     private var emptyState: some View {
         VStack(spacing: 8) {
             if size == .small {
-                Spacer()  // Push down
                 Image(systemName: "list.bullet.rectangle.portrait")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
-                Text("Sin gastos")
+                Text(L10n.Empty.noExpenses)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer()  // Push up
             } else {
                 Image(systemName: "list.bullet.rectangle.portrait")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
                     .padding(.bottom, 4)
 
-                Text("Aún no tienes gastos en este periodo.")
+                Text(L10n.Widget.noExpensesPeriod)
                     .font(.subheadline.weight(.medium))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
-                Text("Cuando registres movimientos, verás aquí tus categorías principales.")
+                Text(L10n.Widget.noExpensesDescriptionSubcategories)
                     .font(.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)  // Fill available space
-        .padding(.vertical, size == .small ? 0 : 24)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: size == .small ? 120 : 180)
+        .padding(.vertical, size == .small ? 12 : 24)
     }
 
     // MARK: - Formatters
@@ -353,13 +353,13 @@ private struct SubcategoryRow: View {
                     ZStack {
                         Circle()
                             .fill(Color(hex: summary.colorHex ?? "#888888"))
-                            .frame(width: 32, height: 32)
+                            .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
                         Image(
                             systemName: summary.subcategory?.iconName ?? summary.category?.iconName
                                 ?? "tag.fill"
                         )
-                        .font(.caption.weight(.bold))
+                        .font(.subheadline)
                         .foregroundStyle(.white)
                     }
 
@@ -380,7 +380,7 @@ private struct SubcategoryRow: View {
                         // Percentages logic
                         HStack(spacing: 8) {
                             Text(
-                                "\(formattedPercentage(summary.percentageOfCategory)) de \(summary.category?.name ?? "Categ.")"
+                                "\(formattedPercentage(summary.percentageOfCategory)) \(String(format: L10n.Widget.of, summary.category?.name ?? L10n.Widget.categoryAbbr))"
                             )
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -389,9 +389,11 @@ private struct SubcategoryRow: View {
                                 .font(.caption2)
                                 .foregroundStyle(.secondary.opacity(0.5))
 
-                            Text("\(formattedPercentage(summary.percentageOfTotal)) del total")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                            Text(
+                                "\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Widget.ofTotal)"
+                            )
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                         }
 
                         // Bar

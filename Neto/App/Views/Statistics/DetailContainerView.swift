@@ -25,6 +25,7 @@ struct DetailContainerView: View {
 
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \Category.sortOrder) private var categories: [Category]
+    @Query(sort: \Subcategory.name) private var allSubcategories: [Subcategory]
     @Query(sort: \Tag.name) private var tags: [Tag]
 
     // MARK: - ViewModels
@@ -41,6 +42,7 @@ struct DetailContainerView: View {
     @State private var showDeleteConfirmation = false
     @State private var showMultiEditPlaceholder = false
     @State private var isPresentingSettings = false
+    private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
@@ -48,11 +50,16 @@ struct DetailContainerView: View {
     // MARK: - Initialization
 
     init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .records) {
+        self.isFromSearch = context.isFromSearch
         var cleanContext = context
-        cleanContext.period = .thisMonth
-        cleanContext.accountID = nil
-        cleanContext.categoryID = nil
-        cleanContext.nature = nil
+        // Only reset period and filters when NOT coming from search
+        // When from search, respect the passed period (.allTime) and searchText
+        if !context.isFromSearch {
+            cleanContext.period = .thisMonth
+            cleanContext.accountID = nil
+            cleanContext.categoryID = nil
+            cleanContext.nature = nil
+        }
         _recordsViewModel = State(initialValue: RecordsViewModel(context: cleanContext))
 
         let trendsContext = StatisticsContext(
@@ -71,15 +78,106 @@ struct DetailContainerView: View {
     // MARK: - Body
 
     var body: some View {
+        mainContent
+            .toolbar {
+                if recordsViewModel.isSelectionMode {
+                    selectionModeToolbar
+                } else {
+                    normalModeToolbar
+                }
+            }
+            .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
+            .tint(.primary)
+            .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
+                RecordsFiltersView(viewModel: recordsViewModel)
+                    .onDisappear { refreshRecordsData() }
+            }
+            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
+                NewTransactionView()
+                    .onDisappear { refreshRecordsData() }
+            }
+            .sheet(isPresented: $recordsViewModel.showEditTransaction) {
+                if let transaction = recordsViewModel.editingTransaction {
+                    NewTransactionView(transactionToEdit: transaction)
+                        .onDisappear {
+                            recordsViewModel.editingTransaction = nil
+                            refreshRecordsData()
+                        }
+                }
+            }
+            .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
+                RecordsFiltersView(viewModel: recordsViewModel)
+                    .onDisappear {
+                        syncFiltersToTrends()
+                        calculateTrendsData()
+                    }
+            }
+            .confirmationDialog(
+                "¿Eliminar \(recordsViewModel.selectedRecordIDs.count) registro(s)?",
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Eliminar", role: .destructive) {
+                    recordsViewModel.deleteSelected(context: modelContext)
+                    refreshRecordsData()
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text("Esta acción no se puede deshacer.")
+            }
+            .alert("Edición múltiple", isPresented: $showMultiEditPlaceholder) {
+                Button("Entendido", role: .cancel) {}
+            } message: {
+                Text("La edición múltiple estará disponible próximamente.")
+            }
+            .sheet(isPresented: $isPresentingSettings) {
+                ProfileView()
+            }
+            .onRecordsFilterChange(viewModel: recordsViewModel) {
+                refreshRecordsData()
+                syncFiltersToTrends()
+                syncToSessionState()
+            }
+            .onTrendsFilterChange(viewModel: trendsViewModel) {
+                calculateTrendsData()
+                syncFiltersToRecords()
+                syncToSessionState()
+            }
+            .onAppear {
+                if !isFromSearch { syncFromSessionState() }
+                refreshRecordsData()
+                calculateTrendsData()
+            }
+            .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
+            .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedCategoryIDs) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedNatures) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedSubcategoryNames) {
+                handleSessionStateFilterChange()
+            }
+            .onChange(of: sessionState.selectedTrendMetric) {
+                syncFromSessionState()
+                calculateTrendsData()
+            }
+            .onChange(of: trendsViewModel.selectedMetric) { _, _ in
+                syncToSessionState()
+                calculateTrendsData()
+            }
+            .onChange(of: trendsViewModel.isAggregatedView) { _, _ in calculateTrendsData() }
+            .onChange(of: trendsViewModel.detailPeriod) { _, _ in calculateTrendsData() }
+            .onChange(of: recordsViewModel.searchText) { refreshRecordsData() }
+    }
+
+    // MARK: - Main Content
+
+    private var mainContent: some View {
         ZStack {
             PanelBackgroundView()
 
             VStack(spacing: 0) {
-                // Navigation Chips (always visible)
                 navigationChipsBar
                     .padding(.vertical, 8)
 
-                // Content based on selected tab - using extracted components
                 Group {
                     switch selectedTab {
                     case .trends:
@@ -89,127 +187,32 @@ struct DetailContainerView: View {
                             onNavigateToRecords: { selectedTab = .records }
                         )
                     case .categories:
-                        CategoriesTabView()
+                        CategoriesTabView(
+                            viewModel: trendsViewModel,
+                            defaultCurrencyCode: defaultCurrencyCode,
+                            onNavigateToRecords: { selectedTab = .records }
+                        )
                     case .records:
-                        recordsContentView
+                        RecordsTabView(
+                            viewModel: recordsViewModel,
+                            accounts: accounts,
+                            categories: categories,
+                            tags: tags,
+                            defaultCurrencyCode: defaultCurrencyCode,
+                            onFilterChange: { refreshRecordsData() }
+                        )
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
-            // Floating Action Button for new record (only for Records)
             if selectedTab == .records && !recordsViewModel.isSelectionMode {
                 newRecordFAB
             }
 
-            // Selection action bar
             if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
                 selectionActionBar
             }
-        }
-        .toolbar {
-            if recordsViewModel.isSelectionMode {
-                selectionModeToolbar
-            } else {
-                normalModeToolbar
-            }
-        }
-        .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
-        .tint(.primary)
-        .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
-            RecordsFiltersView(viewModel: recordsViewModel)
-                .onDisappear {
-                    refreshRecordsData()
-                }
-        }
-        .sheet(isPresented: $recordsViewModel.showNewTransaction) {
-            NewTransactionView()
-                .onDisappear {
-                    refreshRecordsData()
-                }
-        }
-        .sheet(isPresented: $recordsViewModel.showEditTransaction) {
-            if let transaction = recordsViewModel.editingTransaction {
-                NewTransactionView(transactionToEdit: transaction)
-                    .onDisappear {
-                        recordsViewModel.editingTransaction = nil
-                        refreshRecordsData()
-                    }
-            }
-        }
-        .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
-            // Use RecordsFiltersView since filters are synchronized between tabs
-            RecordsFiltersView(viewModel: recordsViewModel)
-                .onDisappear {
-                    syncFiltersToTrends()
-                    calculateTrendsData()
-                }
-        }
-        .confirmationDialog(
-            "¿Eliminar \(recordsViewModel.selectedRecordIDs.count) registro(s)?",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Eliminar", role: .destructive) {
-                recordsViewModel.deleteSelected(context: modelContext)
-                refreshRecordsData()
-            }
-            Button("Cancelar", role: .cancel) {}
-        } message: {
-            Text("Esta acción no se puede deshacer.")
-        }
-        .alert("Edición múltiple", isPresented: $showMultiEditPlaceholder) {
-            Button("Entendido", role: .cancel) {}
-        } message: {
-            Text("La edición múltiple estará disponible próximamente.")
-        }
-        .sheet(isPresented: $isPresentingSettings) {
-            ProfileView()
-        }
-        .onRecordsFilterChange(viewModel: recordsViewModel) {
-            refreshRecordsData()
-            syncFiltersToTrends()
-            syncToSessionState()
-        }
-        .onTrendsFilterChange(viewModel: trendsViewModel) {
-            calculateTrendsData()
-            syncFiltersToRecords()
-            syncToSessionState()
-        }
-        .onAppear {
-            syncFromSessionState()
-            refreshRecordsData()
-            calculateTrendsData()
-        }
-        .onChange(of: sessionState.selectedPeriod) {
-            syncFromSessionState()
-        }
-        .onChange(of: sessionState.selectedAccountIDs) {
-            syncFromSessionState()
-            calculateTrendsData()
-            refreshRecordsData()
-        }
-        .onChange(of: sessionState.selectedCategoryIDs) {
-            syncFromSessionState()
-            calculateTrendsData()
-            refreshRecordsData()
-        }
-        .onChange(of: sessionState.selectedNatures) {
-            syncFromSessionState()
-            calculateTrendsData()
-            refreshRecordsData()
-        }
-        .onChange(of: trendsViewModel.selectedMetric) { _, _ in
-            calculateTrendsData()
-        }
-        .onChange(of: trendsViewModel.isAggregatedView) { _, _ in
-            calculateTrendsData()
-        }
-        .onChange(of: trendsViewModel.detailPeriod) { _, _ in
-            calculateTrendsData()
-        }
-        .onChange(of: recordsViewModel.searchText) {
-            refreshRecordsData()
         }
     }
 
@@ -310,232 +313,16 @@ struct DetailContainerView: View {
     @ToolbarContentBuilder
     private var selectionModeToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button("Cancelar") {
+            Button(L10n.Common.cancel) {
                 recordsViewModel.exitSelectionMode()
             }
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            Button("Seleccionar todo") {
+            Button(L10n.Export.selectAll) {
                 recordsViewModel.selectAll()
             }
         }
-    }
-
-    // MARK: - Records Content
-
-    private var recordsContentView: some View {
-        VStack(spacing: 0) {
-            recordsControlBar
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-
-            if recordsViewModel.groupedRecords.isEmpty {
-                emptyRecordsState
-            } else {
-                recordsList
-            }
-        }
-    }
-
-    private var recordsControlBar: some View {
-        HStack(spacing: 12) {
-            recordsPeriodSelector
-
-            if recordsViewModel.hasActiveFilters {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        if let chipText = accountsChipText(for: recordsViewModel.selectedAccounts) {
-                            FilterChipView(text: chipText) {
-                                recordsViewModel.selectedAccounts.removeAll()
-                                refreshRecordsData()
-                            }
-                        }
-
-                        if let chipText = categoriesChipText(
-                            categories: recordsViewModel.selectedCategories,
-                            subcategories: recordsViewModel.selectedSubcategories
-                        ) {
-                            FilterChipView(text: chipText) {
-                                recordsViewModel.selectedCategories.removeAll()
-                                recordsViewModel.selectedSubcategories.removeAll()
-                                refreshRecordsData()
-                            }
-                        }
-
-                        if let chipText = tagsChipText(for: recordsViewModel.selectedTags) {
-                            FilterChipView(text: chipText) {
-                                recordsViewModel.selectedTags.removeAll()
-                                refreshRecordsData()
-                            }
-                        }
-
-                        if let chipText = naturesChipText(for: recordsViewModel.selectedNatures) {
-                            FilterChipView(text: chipText) {
-                                recordsViewModel.selectedNatures.removeAll()
-                                refreshRecordsData()
-                            }
-                        }
-
-                        if recordsViewModel.transactionTypeFilter != .all {
-                            FilterChipView(text: recordsViewModel.transactionTypeFilter.displayName)
-                            {
-                                recordsViewModel.transactionTypeFilter = .all
-                                refreshRecordsData()
-                            }
-                        }
-
-                        if recordsViewModel.activeFilterCount > 1 {
-                            Button {
-                                withAnimation {
-                                    recordsViewModel.clearFilters()
-                                    refreshRecordsData()
-                                }
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer()
-        }
-        .animation(nil, value: recordsViewModel.period)
-    }
-
-    private var recordsPeriodSelector: some View {
-        TrendsPeriodMenu(
-            selectedPeriod: recordsViewModel.period,
-            onSelect: { period in
-                withTransaction(Transaction(animation: nil)) {
-                    recordsViewModel.period = period
-                }
-            }
-        )
-        .equatable()
-    }
-
-    private var recordsList: some View {
-        ScrollView {
-            LazyVStack(spacing: 8, pinnedViews: [.sectionHeaders]) {
-                ForEach(recordsViewModel.groupedRecords, id: \.date) { group in
-                    Section {
-                        ForEach(group.records, id: \.persistentModelID) { record in
-                            RecordRowView(
-                                record: record,
-                                currencyCode: defaultCurrencyCode,
-                                isSelectionMode: recordsViewModel.isSelectionMode,
-                                isSelected: recordsViewModel.selectedRecordIDs.contains(
-                                    record.persistentModelID),
-                                onTap: {
-                                    recordsViewModel.editRecord(record)
-                                },
-                                onToggleSelection: {
-                                    recordsViewModel.toggleSelection(record.persistentModelID)
-                                }
-                            )
-                            .padding(.horizontal, 16)
-                        }
-                    } header: {
-                        RecordDateSectionView(date: group.date)
-                    }
-                }
-            }
-            .padding(.top, 8)
-            .padding(.bottom, recordsViewModel.isSelectionMode ? 80 : 100)
-        }
-    }
-
-    private var emptyRecordsState: some View {
-        VStack(spacing: 16) {
-            Spacer()
-
-            Image(systemName: "list.bullet.rectangle")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-
-            Text("No hay registros")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.primary)
-
-            Text(
-                recordsViewModel.hasActiveFilters
-                    ? "No se encontraron registros con los filtros aplicados."
-                    : "Cuando registres movimientos, aparecerán aquí."
-            )
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 40)
-
-            if recordsViewModel.hasActiveFilters {
-                Button {
-                    recordsViewModel.clearFilters()
-                    refreshRecordsData()
-                } label: {
-                    Text("Limpiar filtros")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.electricIndigo)
-                }
-                .padding(.top, 8)
-            }
-
-            Spacer()
-        }
-    }
-
-    // MARK: - Chip Text Helpers
-
-    private func accountsChipText(for selectedIDs: Set<PersistentIdentifier>) -> String? {
-        guard !selectedIDs.isEmpty else { return nil }
-        let selectedNames = accounts.filter { selectedIDs.contains($0.persistentModelID) }.map {
-            $0.name
-        }
-        guard !selectedNames.isEmpty else { return nil }
-        if selectedNames.count == 1 {
-            return selectedNames.first
-        }
-        return "\(selectedNames.first ?? "") +\(selectedNames.count - 1)"
-    }
-
-    private func categoriesChipText(
-        categories: Set<PersistentIdentifier>,
-        subcategories: Set<PersistentIdentifier>
-    ) -> String? {
-        var names: [String] = []
-        for cat in self.categories where categories.contains(cat.persistentModelID) {
-            names.append(cat.name)
-        }
-        guard !names.isEmpty || !subcategories.isEmpty else { return nil }
-
-        let totalCount = categories.count + subcategories.count
-        if totalCount == 1 {
-            return names.first ?? "Categoría"
-        }
-        return "\(names.first ?? "Categorías") +\(totalCount - 1)"
-    }
-
-    private func tagsChipText(for selectedIDs: Set<PersistentIdentifier>) -> String? {
-        guard !selectedIDs.isEmpty else { return nil }
-        let selectedNames = tags.filter { selectedIDs.contains($0.persistentModelID) }.map {
-            $0.name
-        }
-        guard !selectedNames.isEmpty else { return nil }
-        if selectedNames.count == 1 {
-            return selectedNames.first
-        }
-        return "\(selectedNames.first ?? "") +\(selectedNames.count - 1)"
-    }
-
-    private func naturesChipText(for selectedNatures: Set<SubcategoryNature>) -> String? {
-        guard !selectedNatures.isEmpty else { return nil }
-        let names = selectedNatures.map { $0.displayName }
-        if names.count == 1 {
-            return names.first
-        }
-        return "\(names.first ?? "") +\(names.count - 1)"
     }
 
     // MARK: - New Record FAB
@@ -551,12 +338,15 @@ struct DetailContainerView: View {
                     recordsViewModel.showNewTransaction = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.title2.weight(.semibold))
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(Color.netoPrimaryText, in: Circle())
-                        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+                        .background(Color.electricIndigo)
+                        .clipShape(Circle())
                 }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive())
+                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
             .padding(.trailing, 20)
             .padding(.bottom, 24)
@@ -575,13 +365,13 @@ struct DetailContainerView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "trash")
-                        Text("Eliminar")
+                        Text(L10n.Tag.delete)
                             .font(.caption2)
                     }
                     .frame(maxWidth: .infinity)
                 }
 
-                Text("\(recordsViewModel.selectedRecordIDs.count) seleccionado(s)")
+                Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity)
 
@@ -590,7 +380,7 @@ struct DetailContainerView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "pencil")
-                        Text("Editar")
+                        Text(L10n.Favorites.edit)
                             .font(.caption2)
                     }
                     .frame(maxWidth: .infinity)
@@ -640,6 +430,13 @@ struct DetailContainerView: View {
         case .multiple:
             showMultiEditPlaceholder = true
         }
+    }
+
+    /// Handles changes to session state filter properties
+    private func handleSessionStateFilterChange() {
+        syncFromSessionState()
+        calculateTrendsData()
+        refreshRecordsData()
     }
 
     // MARK: - Synchronization
@@ -714,13 +511,31 @@ struct DetailContainerView: View {
         trendsViewModel.selectedCategories = sessionState.selectedCategoryIDs
         recordsViewModel.selectedCategories = sessionState.selectedCategoryIDs
 
+        // Convert subcategory names to PersistentIdentifiers
+        // Using allSubcategories Query instead of category.subcategories to avoid SwiftData lazy loading issues
+        print(
+            "🔍 syncFromSessionState - selectedSubcategoryNames: \(sessionState.selectedSubcategoryNames)"
+        )
+        print("🔍 syncFromSessionState - allSubcategories count: \(allSubcategories.count)")
         if sessionState.selectedSubcategoryNames.isEmpty {
             trendsViewModel.selectedSubcategories.removeAll()
             recordsViewModel.selectedSubcategories.removeAll()
+        } else {
+            print("🔍 All subcategory names: \(allSubcategories.map { $0.name })")
+            let subcategoryIDs =
+                allSubcategories
+                .filter { sessionState.selectedSubcategoryNames.contains($0.name) }
+                .map { $0.persistentModelID }
+            print("🔍 Matched subcategory IDs count: \(subcategoryIDs.count)")
+            trendsViewModel.selectedSubcategories = Set(subcategoryIDs)
+            recordsViewModel.selectedSubcategories = Set(subcategoryIDs)
         }
 
         trendsViewModel.selectedNatures = sessionState.selectedNatures
         recordsViewModel.selectedNatures = sessionState.selectedNatures
+
+        // Sync trend metric from SessionState
+        trendsViewModel.selectedMetric = sessionState.selectedTrendMetric
     }
 
     private func syncToSessionState() {
@@ -728,6 +543,17 @@ struct DetailContainerView: View {
         sessionState.selectedAccountIDs = trendsViewModel.selectedAccounts
         sessionState.selectedCategoryIDs = trendsViewModel.selectedCategories
         sessionState.selectedNatures = trendsViewModel.selectedNatures
+
+        // Convert subcategory PersistentIdentifiers back to names
+        // Using allSubcategories Query for consistency
+        let selectedSubNames =
+            allSubcategories
+            .filter { trendsViewModel.selectedSubcategories.contains($0.persistentModelID) }
+            .map { $0.name }
+        sessionState.selectedSubcategoryNames = Set(selectedSubNames)
+
+        // Sync trend metric to SessionState
+        sessionState.selectedTrendMetric = trendsViewModel.selectedMetric
     }
 }
 

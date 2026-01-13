@@ -28,6 +28,7 @@ struct TopCategoriesWidget: View {
     }
 
     var size: CardSize = .large
+    var limit: Int? = nil  // nil = show all
 
     var body: some View {
         VStack(alignment: .leading, spacing: size == .small ? 12 : 16) {
@@ -45,9 +46,9 @@ struct TopCategoriesWidget: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     // MARK: - Content Switcher
@@ -56,9 +57,9 @@ struct TopCategoriesWidget: View {
     private var contentForSize: some View {
         switch size {
         case .large:
-            categoriesList(limit: 5)
+            categoriesList(limit: limit ?? 5)
         case .medium:
-            categoriesList(limit: 3)
+            categoriesList(limit: limit ?? 3)
         case .small:
             smallCardContent
         }
@@ -69,7 +70,7 @@ struct TopCategoriesWidget: View {
     private var headerSection: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(size == .small ? "Principal" : "Categorías principales")
+                Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -93,9 +94,10 @@ struct TopCategoriesWidget: View {
     // MARK: - Lists (Large & Medium)
 
     private func categoriesList(limit: Int) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             if let maxAmount = categories.first?.amount {
-                let displayedCategories = Array(categories.prefix(limit))
+                let displayedCategories =
+                    limit >= categories.count ? categories : Array(categories.prefix(limit))
                 ForEach(displayedCategories) { summary in
                     let isSelected = selectedCategoryID == summary.category.persistentModelID
                     let isAnySelected = selectedCategoryID != nil
@@ -155,13 +157,15 @@ struct TopCategoriesWidget: View {
                             .minimumScaleFactor(0.8)
                             .lineLimit(1)
 
-                        Text("\(formattedPercentage(topCategory.percentage)) del total")
-                            .font(.caption2.bold())
-                            .foregroundStyle(Color(hex: topCategory.category.colorHex))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(hex: topCategory.category.colorHex).opacity(0.1))
-                            .clipShape(Capsule())
+                        Text(
+                            "\(formattedPercentage(topCategory.percentage)) \(L10n.Widget.ofTotal)"
+                        )
+                        .font(.caption2.bold())
+                        .foregroundStyle(Color(hex: topCategory.category.colorHex))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(hex: topCategory.category.colorHex).opacity(0.1))
+                        .clipShape(Capsule())
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -183,7 +187,7 @@ struct TopCategoriesWidget: View {
                 Image(systemName: "creditcard")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
-                Text("Sin gastos")
+                Text(L10n.Empty.noExpenses)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()  // Push up
@@ -193,12 +197,12 @@ struct TopCategoriesWidget: View {
                     .foregroundStyle(.secondary.opacity(0.5))
                     .padding(.bottom, 4)
 
-                Text("Aún no tienes gastos en este periodo.")
+                Text(L10n.Widget.noExpensesPeriod)
                     .font(.subheadline.weight(.medium))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
-                Text("Cuando registres movimientos, verás aquí tus categorías principales.")
+                Text(L10n.Widget.noExpensesDescriptionCategories)
                     .font(.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
@@ -234,7 +238,7 @@ private struct CategoryRow: View {
             ZStack {
                 Circle()
                     .fill(Color(hex: summary.category.colorHex))
-                    .frame(width: 40, height: 40)
+                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
                 Image(systemName: summary.category.iconName ?? "tag.fill")  // Use actual category icon
                     .font(.subheadline)
@@ -258,7 +262,7 @@ private struct CategoryRow: View {
                 // Bar and Percentage
                 VStack(alignment: .leading, spacing: 4) {
                     // Percentage Text
-                    Text("\(formattedPercentage(summary.percentage)) del gasto")
+                    Text("\(formattedPercentage(summary.percentage)) \(L10n.Widget.ofExpense)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 

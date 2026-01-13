@@ -72,7 +72,7 @@ struct CategoriesSettingsListView: View {
                 .padding(.vertical, 32)
             }
         }
-        .navigationTitle("Categorías")
+        .navigationTitle(L10n.Settings.categories)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
@@ -102,11 +102,11 @@ struct CategoriesSettingsListView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
 
-            Text("No tienes categorías")
+            Text(L10n.Empty.noCategories)
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            Text("Crea categorías para clasificar tus ingresos y gastos.")
+            Text(L10n.Empty.categoriesDescription)
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -119,7 +119,7 @@ struct CategoriesSettingsListView: View {
 
     private var activeCategoriesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Activas")
+            Text(L10n.Common.active)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
@@ -159,7 +159,7 @@ struct CategoriesSettingsListView: View {
 
     private var hiddenCategoriesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Ocultas")
+            Text(L10n.Common.hidden)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)

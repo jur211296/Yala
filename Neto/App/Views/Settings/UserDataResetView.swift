@@ -32,15 +32,15 @@ struct UserDataResetView: View {
 
             ScrollView {
                 VStack(spacing: 24) {
-                    SectionBox(title: "Vaciar tus datos") {
+                    SectionBox(title: L10n.Settings.resetData) {
                         VStack(alignment: .leading, spacing: 12) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Vaciar todos tus datos")
+                                Text(L10n.Settings.resetAllData)
                                     .font(.title3)
                                     .fontWeight(.semibold)
 
                                 Text(
-                                    "Esta operación eliminará de forma permanente tus cuentas, transacciones, presupuestos, tipos de cambio, categorías y cualquier otro dato asociado a tu perfil de Neto. Después del borrado, la app volverá a un estado similar al inicial."
+                                    L10n.Settings.resetDataDescription
                                 )
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
@@ -59,7 +59,7 @@ struct UserDataResetView: View {
                                             .progressViewStyle(.circular)
                                     }
 
-                                    Text("Eliminar todos mis datos")
+                                    Text(L10n.Settings.deleteAllData)
                                         .font(.body)
 
                                     Spacer()
@@ -74,26 +74,26 @@ struct UserDataResetView: View {
                 .padding(.vertical, 24)
             }
         }
-        .navigationTitle("Vaciar datos")
+        .navigationTitle(L10n.Settings.resetData)
         .navigationBarTitleDisplayMode(.inline)
 
         // Alerta principal de confirmación
         .alert(
-            "¿Eliminar todos tus datos?",
+            L10n.Settings.deleteDataConfirmation,
             isPresented: $isShowingConfirmationAlert
         ) {
-            Button("Cancelar", role: .cancel) {
+            Button(L10n.Settings.cancel, role: .cancel) {
                 // El usuario se arrepiente, no hacemos nada.
             }
 
-            Button("Eliminar definitivamente", role: .destructive) {
+            Button(L10n.Settings.deleteAllDataAction, role: .destructive) {
                 Task {
                     await handleWipeAllData()
                 }
             }
         } message: {
             Text(
-                "Esta acción es irreversible. Se eliminarán todas tus cuentas, transacciones, presupuestos, tipos de cambio y categorías. Después de esto, Neto se reiniciará a un estado similar al inicial y no podrás recuperar tus datos."
+                L10n.Settings.deleteDataWarning
             )
         }
 

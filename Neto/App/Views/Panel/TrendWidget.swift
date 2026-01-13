@@ -11,14 +11,14 @@ import SwiftUI
 
 struct TrendWidget: View {
     @Bindable var viewModel: PanelViewModel
-    var size: WidgetSize = .medium
+    @Bindable var sessionState: SessionState
     var currencyCode: String
     var currentBalance: Double
 
     @Namespace private var animationNamespace
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             // Header with KPI
             chartHeader
 
@@ -34,25 +34,25 @@ struct TrendWidget: View {
                 trendType: viewModel.dataTrendType,  // Use dataTrendType for guaranteed color sync
                 focusedDate: $viewModel.focusedDate,
                 period: viewModel.currentPeriod,
-                chartHeight: 220
+                chartHeight: 160  // Fixed compact size
             )
             .padding(.top, 8)
         }
-        .padding(20)
+        .padding(DS.Card.padding)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Card.radius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DS.Card.radius, style: .continuous)
+                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .dsCardShadow()
     }
 
     // MARK: - Components
 
     private var chartHeader: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(chartTitle)
                     .font(.headline)
                     .foregroundStyle(Color.netoPrimaryText)
@@ -61,7 +61,7 @@ struct TrendWidget: View {
                 Text(currentKPIValue)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(Color.netoPrimaryText)
-                    .padding(.top, 4)
+                    .padding(.top, DS.Spacing.xs)
             }
 
             Spacer()
@@ -73,21 +73,36 @@ struct TrendWidget: View {
 
     private var metricSelector: some View {
         HStack(spacing: 0) {
-            ForEach(TrendType.allCases) { type in
+            // When locked to expense (filters applied), only show expense button
+            // Otherwise show all options
+            ForEach(availableMetricTypes) { type in
                 metricButton(for: type)
             }
         }
         .padding(3)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isTrendLockedToExpense)
+    }
+
+    /// Returns available metric types based on filter state
+    private var availableMetricTypes: [TrendType] {
+        if viewModel.isTrendLockedToExpense {
+            return [.expense]  // Only expense when filters are applied
+        }
+        return TrendType.allCases
     }
 
     private func metricButton(for type: TrendType) -> some View {
         let isSelected = viewModel.trendType == type
+        let isLocked = viewModel.isTrendLockedToExpense
 
         return Button {
-            // Change metric - onChange in PanelView handles recalculation
-            viewModel.trendType = type
+            // Only allow change if not locked
+            guard !isLocked else { return }
+
+            // Change metric manually (marks as user selection, not automatic)
+            viewModel.setTrendTypeManually(type, sessionState: sessionState)
 
             // Apply smooth animation for UI transition
             withAnimation(.interpolatingSpring(stiffness: 300, damping: 30)) {
@@ -97,12 +112,13 @@ struct TrendWidget: View {
             HStack(spacing: 4) {
                 Image(systemName: type.iconName)
                     .font(.caption.weight(.semibold))
-                if isSelected {
-                    Text(type.rawValue)
+                // When locked, always show the label since there's only one option
+                if isSelected || isLocked {
+                    Text(title(for: type))
                         .font(.caption.weight(.semibold))
                 }
             }
-            .padding(.horizontal, isSelected ? 12 : 10)
+            .padding(.horizontal, isSelected || isLocked ? 12 : 10)
             .padding(.vertical, 8)
             .foregroundStyle(isSelected ? .white : type.color)
             .background(
@@ -152,5 +168,13 @@ struct TrendWidget: View {
         }
 
         return NetoFormatter.currency(value: value, currencyCode: currencyCode)
+    }
+
+    private func title(for type: TrendType) -> String {
+        switch type {
+        case .balance: return L10n.TrendType.balance
+        case .income: return L10n.TrendType.income
+        case .expense: return L10n.TrendType.expense
+        }
     }
 }

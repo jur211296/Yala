@@ -16,6 +16,8 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
 
     @AppStorage("userName") private var userName: String = "Usuario"
+    @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
+    @AppStorage("userProfileImageData") private var userProfileImageData: Data?
 
     @Query private var allTransactions: [TransactionItem]
     @Query private var accounts: [Account]
@@ -47,6 +49,7 @@ struct ProfileView: View {
         case themes
         case personalization
         case currency
+        case appIcon
         case notifications
         case favorites
         case planned
@@ -73,7 +76,7 @@ struct ProfileView: View {
                         legalSection
 
                         // Version info
-                        Text("Versión 1.0.0 (Build 1)")
+                        Text(L10n.Settings.versionInfo)
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                             .padding(.top, 8)
@@ -81,7 +84,7 @@ struct ProfileView: View {
                     .padding(.vertical, 24)
                 }
             }
-            .navigationTitle("Perfil")
+            .navigationTitle(L10n.Profile.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -113,7 +116,8 @@ struct ProfileView: View {
                 }
             }
             .alert(
-                importResult?.isSuccess == true ? "Importación completada" : "Error al importar",
+                importResult?.isSuccess == true
+                    ? L10n.Profile.importSuccess : L10n.Profile.importError,
                 isPresented: $showImportResult,
                 presenting: importResult
             ) { _ in
@@ -135,12 +139,14 @@ struct ProfileView: View {
                     PersonalizationSettingsView()
                 case .currency:
                     CurrencySettingsView()
+                case .appIcon:
+                    AppIconSettingsView()
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
                     SettingsPlaceholderView(title: "Notificaciones")
                 case .favorites:
-                    SettingsPlaceholderView(title: "Pagos favoritos")
+                    FavoritesListView(mode: .manage)
                 case .planned:
                     SettingsPlaceholderView(title: "Pagos planificados")
                 case .userDataReset:
@@ -176,20 +182,30 @@ struct ProfileView: View {
                     )
                     .frame(width: 100, height: 100)
 
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: 90, height: 90)
+                if let imageData = userProfileImageData,
+                    let uiImage = UIImage(data: imageData)
+                {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 90, height: 90)
+                        .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.electricIndigo.opacity(0.1))
+                        .frame(width: 90, height: 90)
 
-                Image(systemName: "person.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(Color.electricIndigo)
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(Color.electricIndigo)
+                }
             }
 
             Text(userName)
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
 
-            Button("Editar perfil") {
+            Button(L10n.Profile.edit) {
                 activeSheet = .personalDetails
             }
             .font(.subheadline.weight(.medium))
@@ -201,18 +217,28 @@ struct ProfileView: View {
     // MARK: - Sections
 
     private var organizacionSection: some View {
-        SectionBox(title: "Organización") {
+        SectionBox(title: L10n.Settings.organization) {
             VStack(spacing: 0) {
-                profileRow(icon: "creditcard.fill", title: "Cuentas", destination: .accounts)
-                SubsectionDivider()
-                profileRow(icon: "tag.fill", title: "Categorías", destination: .categories)
-                SubsectionDivider()
-                profileRow(icon: "number", title: "Etiquetas", destination: .tags)
-                SubsectionDivider()
-                profileRow(icon: "star.fill", title: "Pagos favoritos", destination: .favorites)
+                profileRow(
+                    icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: .green,
+                    destination: .accounts)
                 SubsectionDivider()
                 profileRow(
-                    icon: "calendar.badge.clock", title: "Pagos planificados", destination: .planned
+                    icon: "tag.fill", title: L10n.Settings.tags, iconColor: .orange,
+                    destination: .categories)
+                SubsectionDivider()
+                profileRow(
+                    icon: "number", title: L10n.Settings.tags, iconColor: .purple,
+                    destination: .tags)
+                SubsectionDivider()
+                profileRow(
+                    icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
+                    destination: .favorites)
+                SubsectionDivider()
+                profileRow(
+                    icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments,
+                    iconColor: .cyan,
+                    destination: .planned
                 )
             }
         }
@@ -220,35 +246,42 @@ struct ProfileView: View {
     }
 
     private var preferenciasSection: some View {
-        SectionBox(title: "Preferencias") {
+        SectionBox(title: L10n.Settings.preferences) {
             VStack(spacing: 0) {
                 profileRow(
-                    icon: "slider.horizontal.3", title: "Personalización",
-                    destination: .personalization)
-                SubsectionDivider()
-                profileRow(icon: "paintpalette.fill", title: "Temas", destination: .themes)
+                    icon: "slider.horizontal.3", title: L10n.Settings.personalization,
+                    iconColor: .indigo, destination: .personalization)
                 SubsectionDivider()
                 profileRow(
-                    icon: "app.fill", title: "Icono de aplicación",
-                    destination: .placeholder("Icono de aplicación"))
+                    icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
+                    destination: .themes)
                 SubsectionDivider()
                 profileRow(
-                    icon: "dollarsign.circle.fill", title: "Divisa y cambio", destination: .currency
+                    icon: "app.fill", title: L10n.Settings.appIcon,
+                    iconColor: .blue, destination: .appIcon)
+                SubsectionDivider()
+                profileRow(
+                    icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
+                    iconColor: .green, destination: .currency
                 )
                 SubsectionDivider()
-                profileRow(icon: "bell.fill", title: "Notificaciones", destination: .notifications)
+                profileRow(
+                    icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
+                    destination: .notifications)
             }
         }
         .padding(.horizontal, 16)
     }
 
     private var datosSection: some View {
-        SectionBox(title: "Datos") {
+        SectionBox(title: L10n.Settings.data) {
             VStack(spacing: 0) {
                 Button {
                     activeSheet = .importIntro
                 } label: {
-                    settingsRowContent(icon: "tray.and.arrow.down.fill", title: "Importar archivo")
+                    settingsRowContent(
+                        icon: "tray.and.arrow.down.fill", title: L10n.Settings.importData,
+                        iconColor: .blue)
                 }
                 .buttonStyle(.plain)
 
@@ -257,8 +290,11 @@ struct ProfileView: View {
                 Button {
                     activeSheet = .exportWizard
                 } label: {
-                    settingsRowContent(icon: "square.and.arrow.up.fill", title: "Exportar datos")
-                        .opacity(allTransactions.isEmpty ? 0.5 : 1.0)
+                    settingsRowContent(
+                        icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
+                        iconColor: .mint
+                    )
+                    .opacity(allTransactions.isEmpty ? 0.5 : 1.0)
                 }
                 .disabled(allTransactions.isEmpty)
                 .buttonStyle(.plain)
@@ -266,7 +302,8 @@ struct ProfileView: View {
                 SubsectionDivider()
 
                 NavigationLink(value: ProfileDestination.userDataReset) {
-                    settingsRowContent(icon: "trash.fill", title: "Vaciar datos", color: .red)
+                    settingsRowContent(
+                        icon: "trash.fill", title: L10n.Settings.wipeData, iconColor: .red)
                 }
                 .buttonStyle(.plain)
             }
@@ -275,55 +312,57 @@ struct ProfileView: View {
     }
 
     private var seguridadSection: some View {
-        SectionBox(title: "Seguridad y cuenta") {
+        SectionBox(title: L10n.Settings.security) {
             VStack(spacing: 0) {
-                profileRow(icon: "faceid", title: "Face ID", destination: .placeholder("Face ID"))
+                profileRow(
+                    icon: "faceid", title: L10n.Settings.faceId, iconColor: .green,
+                    destination: .placeholder("Face ID"))
                 SubsectionDivider()
                 profileRow(
-                    icon: "lock.shield.fill", title: "Permisos",
-                    destination: .placeholder("Permisos"))
+                    icon: "lock.shield.fill", title: L10n.Settings.permissions,
+                    iconColor: .blue, destination: .placeholder("Permisos"))
                 SubsectionDivider()
                 profileRow(
-                    icon: "creditcard.fill", title: "Administrar suscripciones",
-                    destination: .placeholder("Suscripciones"))
+                    icon: "creditcard.fill", title: L10n.Settings.subscriptions,
+                    iconColor: .purple, destination: .placeholder("Suscripciones"))
                 SubsectionDivider()
                 profileRow(
-                    icon: "star.bubble.fill", title: "Calificar y recomendar",
-                    destination: .placeholder("Calificar"))
+                    icon: "star.bubble.fill", title: L10n.Settings.rateApp,
+                    iconColor: .yellow, destination: .placeholder("Calificar"))
             }
         }
         .padding(.horizontal, 16)
     }
 
     private var ayudaSection: some View {
-        SectionBox(title: "¿Necesitas ayuda?") {
+        SectionBox(title: L10n.Settings.help) {
             VStack(spacing: 0) {
                 profileRow(
-                    icon: "lightbulb.fill", title: "Consejos y trucos",
-                    destination: .placeholder("Consejos"))
+                    icon: "lightbulb.fill", title: L10n.Settings.tips,
+                    iconColor: .yellow, destination: .placeholder("Consejos"))
                 SubsectionDivider()
                 profileRow(
-                    icon: "questionmark.circle.fill", title: "Preguntas frecuentes",
-                    destination: .placeholder("FAQ"))
+                    icon: "questionmark.circle.fill", title: L10n.Settings.faq,
+                    iconColor: .orange, destination: .placeholder("FAQ"))
                 SubsectionDivider()
                 profileRow(
-                    icon: "envelope.fill", title: "Contacta con nosotros",
-                    destination: .placeholder("Contacta"))
+                    icon: "envelope.fill", title: L10n.Settings.contact,
+                    iconColor: .teal, destination: .placeholder("Contacta"))
             }
         }
         .padding(.horizontal, 16)
     }
 
     private var legalSection: some View {
-        SectionBox(title: "Legal") {
+        SectionBox(title: L10n.Settings.legal) {
             VStack(spacing: 0) {
                 profileRow(
-                    icon: "hand.raised.fill", title: "Política de privacidad",
-                    destination: .placeholder("Privacidad"))
+                    icon: "hand.raised.fill", title: L10n.Settings.privacy,
+                    iconColor: .gray, destination: .placeholder("Privacidad"))
                 SubsectionDivider()
                 profileRow(
-                    icon: "doc.text.fill", title: "Términos de uso",
-                    destination: .placeholder("Términos"))
+                    icon: "doc.text.fill", title: L10n.Settings.terms,
+                    iconColor: .gray, destination: .placeholder("Términos"))
             }
         }
         .padding(.horizontal, 16)
@@ -332,27 +371,47 @@ struct ProfileView: View {
     // MARK: - Reference Builder
 
     @ViewBuilder
-    private func profileRow(icon: String, title: String, destination: ProfileDestination)
-        -> some View
-    {
+    private func profileRow(
+        icon: String,
+        title: String,
+        iconColor: Color = .gray,
+        destination: ProfileDestination
+    ) -> some View {
         NavigationLink(value: destination) {
-            settingsRowContent(icon: icon, title: title)
+            settingsRowContent(icon: icon, title: title, iconColor: iconColor)
         }
         .buttonStyle(.plain)
     }
 
-    private func settingsRowContent(icon: String, title: String, color: Color = .primary)
-        -> some View
-    {
+    private func settingsRowContent(
+        icon: String,
+        title: String,
+        iconColor: Color = .gray,
+        textColor: Color = .primary
+    ) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(color)
-                .frame(width: 28)
+            // Conditionally show colored or plain icons based on setting
+            if colorfulIcons {
+                // iOS-style colored icon with rounded square background
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(iconColor)
+                    )
+            } else {
+                // Plain icon without background
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .frame(width: 28)
+            }
 
             Text(title)
                 .font(.body)
-                .foregroundStyle(color)
+                .foregroundStyle(textColor)
 
             Spacer()
 

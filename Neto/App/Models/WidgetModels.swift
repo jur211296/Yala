@@ -22,15 +22,15 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .trend: return "Tendencias"
-        case .topSpending: return "Top categorías"
-        case .topSubcategories: return "Top subcategorías"
-        case .cashFlow: return "Flujo de efectivo"
-        case .categoriesPie: return "Distribución de categorías"
-        case .subcategoriesPie: return "Distribución de subcategorías"
-        case .latestRecords: return "Últimos registros"
-        case .expensesByNature: return "Gastos por naturaleza"
-        case .exchangeRate: return "Tipo de cambio"
+        case .trend: return L10n.WidgetType.trend
+        case .topSpending: return L10n.WidgetType.topSpending
+        case .topSubcategories: return L10n.WidgetType.topSubcategories
+        case .cashFlow: return L10n.WidgetType.cashFlow
+        case .categoriesPie: return L10n.WidgetType.categoriesPie
+        case .subcategoriesPie: return L10n.WidgetType.subcategoriesPie
+        case .latestRecords: return L10n.WidgetType.latestRecords
+        case .expensesByNature: return L10n.WidgetType.expensesByNature
+        case .exchangeRate: return L10n.WidgetType.exchangeRate
         }
     }
 
@@ -50,7 +50,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
 
     var supportedSizes: [WidgetSize] {
         switch self {
-        case .trend: return [.medium, .large]
+        case .trend: return [.medium]  // Tamaño único (compacta)
         case .cashFlow: return [.medium, .large]
         case .topSpending: return [.medium, .large]
         case .topSubcategories: return [.medium, .large]
@@ -65,11 +65,11 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     /// Returns custom size name for the widget, or nil if single size
     func displaySizeName(for size: WidgetSize) -> String? {
         switch self {
-        case .trend, .cashFlow, .expensesByNature:
-            return size == .medium ? "Compacta" : "Ampliada"
+        case .cashFlow, .expensesByNature:
+            return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         case .topSpending, .topSubcategories:
-            return size == .medium ? "Top 3" : "Top 5"
-        case .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate:
+            return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
+        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate:
             return nil  // Single size, no name needed
         }
     }

@@ -181,8 +181,7 @@ final class AccountFormViewModel {
         guard let account = accountToEdit else { return false }
 
         if account.initialBalance != 0 {
-            deleteErrorMessage =
-                "No puedes eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla."
+            deleteErrorMessage = L10n.Account.deleteBalanceError
             isShowingDeleteError = true
             return false
         }

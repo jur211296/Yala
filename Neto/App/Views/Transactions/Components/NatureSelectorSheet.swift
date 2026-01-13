@@ -1,0 +1,99 @@
+//
+//  NatureSelectorSheet.swift
+//  Neto
+//
+//  Sheet for selecting transaction nature
+//
+
+import SwiftUI
+
+// MARK: - Nature Selector Sheet
+
+struct NatureSelectorSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedNature: SubcategoryNature
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.netoBackground.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(SubcategoryNature.allCases) { nature in
+                            NatureOptionRow(
+                                nature: nature,
+                                isSelected: selectedNature == nature
+                            ) {
+                                selectedNature = nature
+                                dismiss()
+                            }
+                        }
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Naturaleza")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NetoToolbarButton(systemName: "xmark") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .tint(Color.electricIndigo)
+    }
+}
+
+// MARK: - Nature Option Row
+
+private struct NatureOptionRow: View {
+    let nature: SubcategoryNature
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 14) {
+                // Color indicator
+                Circle()
+                    .fill(nature.color)
+                    .frame(width: 12, height: 12)
+
+                // Text content
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(nature.displayName)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+
+                    Text(nature.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                // Checkmark
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.electricIndigo)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(isSelected ? nature.color.opacity(0.1) : Color.netoCard)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? nature.color.opacity(0.3) : Color.clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}

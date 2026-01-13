@@ -75,7 +75,7 @@ struct AccountsSettingsListView: View {
                         }
 
                         if !archivedAccounts.isEmpty {
-                            accountsSection(title: "Archivadas", accounts: archivedAccounts)
+                            accountsSection(title: L10n.Common.archived, accounts: archivedAccounts)
                         }
                     }
                 }
@@ -83,7 +83,7 @@ struct AccountsSettingsListView: View {
                 .padding(.vertical, 32)
             }
         }
-        .navigationTitle("Cuentas")
+        .navigationTitle(L10n.Settings.accounts)
         .navigationBarTitleDisplayMode(.inline)  // título reducido y centrado
         .swipeBack()
         .toolbar {
@@ -129,11 +129,11 @@ struct AccountsSettingsListView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
 
-            Text("No tienes cuentas")
+            Text(L10n.Empty.noAccounts)
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            Text("Crea cuentas para organizar tus finanzas por banco, efectivo u otros.")
+            Text(L10n.Empty.accountsDescription)
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -181,7 +181,7 @@ struct AccountsSettingsListView: View {
 
     private var listBasedSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Activas")
+            Text(L10n.Common.active)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)

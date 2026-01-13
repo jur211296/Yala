@@ -93,7 +93,7 @@ struct AccountFormRow: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Seleccionar")
+                    Text(L10n.Transaction.select)
                         .font(.subheadline)
                         .foregroundStyle(hasError ? .red.opacity(0.8) : .secondary)
                 }
@@ -139,7 +139,7 @@ struct SubcategoryFormRow: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Subcategoría")
+                    Text(L10n.Transaction.subcategory)
                         .font(.body)
                         .foregroundStyle(hasError ? .red : .primary)
 
@@ -162,7 +162,7 @@ struct SubcategoryFormRow: View {
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    Text("Seleccionar")
+                    Text(L10n.Transaction.select)
                         .font(.subheadline)
                         .foregroundStyle(hasError ? .red.opacity(0.8) : .secondary)
                 }
@@ -218,7 +218,7 @@ struct DateFormRow: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
-                Text("Fecha")
+                Text(L10n.Transaction.date)
                     .font(.body)
                     .foregroundStyle(.primary)
 
@@ -242,10 +242,10 @@ struct DateFormRow: View {
 
     private var formattedDate: String {
         if Calendar.current.isDateInToday(date) {
-            return "Hoy"
+            return L10n.Date.today
         }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = AppLocale.current
         formatter.dateFormat = "d MMM yyyy"
         return formatter.string(from: date)
     }
@@ -266,14 +266,14 @@ struct TagsFormRow: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
-                Text("Etiquetas")
+                Text(L10n.Transaction.tags)
                     .font(.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 if tags.isEmpty {
-                    Text("Añadir etiquetas")
+                    Text(L10n.Transaction.addTags)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else {

@@ -15,7 +15,7 @@ struct AccountTypeSelectorView: View {
         List {
             ForEach(AccountType.allCases) { type in
                 HStack {
-                    Text(type.rawValue)
+                    Text(type.localizedName)
                     Spacer()
                     if type == selectedType {
                         Image(systemName: "checkmark")
@@ -29,6 +29,6 @@ struct AccountTypeSelectorView: View {
                 }
             }
         }
-        .navigationTitle("Tipo de cuenta")
+        .navigationTitle(L10n.Account.type)
     }
 }

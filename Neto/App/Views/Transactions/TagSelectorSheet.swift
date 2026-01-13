@@ -61,7 +61,7 @@ struct TagSelectorSheet: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
 
-            Text("No hay etiquetas")
+            Text(L10n.Empty.noTags)
                 .font(.headline)
                 .foregroundStyle(.secondary)
 

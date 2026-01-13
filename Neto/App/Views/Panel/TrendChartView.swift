@@ -63,16 +63,16 @@ struct TrendChartView: View {
             // Past & Today: Solid Line & Area
             ForEach(pastPoints, id: \.date) { point in
                 AreaMark(
-                    x: .value("Fecha", point.date),
-                    yStart: .value("Base", yBase),
-                    yEnd: .value("Monto", point.value)
+                    x: .value(L10n.Common.date, point.date),
+                    yStart: .value(L10n.Common.base, yBase),
+                    yEnd: .value(L10n.Common.amount, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .foregroundStyle(areaGradient.opacity(dimOpacity))
 
                 LineMark(
-                    x: .value("Fecha", point.date),
-                    y: .value("Monto", point.value)
+                    x: .value(L10n.Common.date, point.date),
+                    y: .value(L10n.Common.amount, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: 2))
@@ -81,8 +81,8 @@ struct TrendChartView: View {
                 // DATA ANNOTATIONS FOR WEEK VIEW
                 if period == .thisWeek || period == .last7Days {
                     PointMark(
-                        x: .value("Fecha", point.date),
-                        y: .value("Monto", point.value)
+                        x: .value(L10n.Common.date, point.date),
+                        y: .value(L10n.Common.amount, point.value)
                     )
                     .symbolSize(0)  // Invisible point just for annotation context
                     .annotation(position: .top, spacing: 4) {
@@ -96,8 +96,8 @@ struct TrendChartView: View {
             // Future: Dashed Line (Overlaps at Today to connect)
             ForEach(futurePoints, id: \.date) { point in
                 LineMark(
-                    x: .value("Fecha", point.date),
-                    y: .value("Monto", point.value)
+                    x: .value(L10n.Common.date, point.date),
+                    y: .value(L10n.Common.amount, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
@@ -105,11 +105,11 @@ struct TrendChartView: View {
             }
 
             // Marker for "Today"
-            RuleMark(x: .value("Hoy", today))
+            RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 .foregroundStyle(Color.netoSecondaryText.opacity(0.5))
                 .annotation(position: .top, alignment: .center) {
-                    Text("Hoy")
+                    Text(L10n.Widget.today)
                         .font(.caption2.bold())
                         .foregroundStyle(Color.netoPrimaryText)
                         .padding(.horizontal, 6)
@@ -124,22 +124,22 @@ struct TrendChartView: View {
                 let rawValue = value(for: activeDate, in: data)
             {
 
-                RuleMark(x: .value("Selected Date", activeDate))
+                RuleMark(x: .value(L10n.Common.selectedDate, activeDate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                     .foregroundStyle(Color.netoSecondaryText)
 
                 // Ring Border (Background) at SMOOTHED position
                 PointMark(
-                    x: .value("Selected Date", activeDate),
-                    y: .value("Selected Value", selectedPoint.value)
+                    x: .value(L10n.Common.selectedDate, activeDate),
+                    y: .value(L10n.Common.selectedValue, selectedPoint.value)
                 )
                 .symbolSize(140)
                 .foregroundStyle(primaryLineColor)
 
                 // Main Dot (Foreground) at SMOOTHED position
                 PointMark(
-                    x: .value("Selected Date", activeDate),
-                    y: .value("Selected Value", selectedPoint.value)
+                    x: .value(L10n.Common.selectedDate, activeDate),
+                    y: .value(L10n.Common.selectedValue, selectedPoint.value)
                 )
                 .symbolSize(100)
                 .foregroundStyle(Color.netoCard)
@@ -164,15 +164,15 @@ struct TrendChartView: View {
                             .fill(Color.netoCard.opacity(0.95))
                             .shadow(radius: 2)
                     )
-                    .offset(y: -10)
+                    .offset(y: -30)
                 }
             }
         }
-        // Y-Axis: Right (Trailing) only
+        // Y-Axis: Right (Trailing) only - minimal gridlines
         .chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
-                AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                    .foregroundStyle(Color.netoSecondaryText.opacity(0.2))
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                    .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatK(doubleValue))
@@ -206,27 +206,7 @@ struct TrendChartView: View {
                 }
             }
         }
-        .chartOverlay { proxy in
-            GeometryReader { geometry in
-                Rectangle()
-                    .fill(Color.clear)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                guard let plotFrame = proxy.plotFrame else { return }
-                                let frame = geometry[plotFrame]
-                                let x = value.location.x - frame.origin.x
-                                if let date: Date = proxy.value(atX: x) {
-                                    draggingDate = date
-                                }
-                            }
-                            .onEnded { _ in
-                                draggingDate = nil
-                            }
-                    )
-            }
-        }
+        .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
         .frame(height: chartHeight)
     }
 
@@ -306,35 +286,7 @@ struct TrendChartView: View {
         else {
             return formatDayNumber(date)
         }
-
-        let calendar = Calendar.current
-        let span = lastDate.timeIntervalSince(firstDate)
-        let days = span / 86400
-
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-
-        // Check if data spans multiple years
-        let firstYear = calendar.component(.year, from: firstDate)
-        let lastYear = calendar.component(.year, from: lastDate)
-        let multipleYears = firstYear != lastYear
-
-        if days > 60 {
-            // Long period (> 2 months): Show month abbreviation
-            if multipleYears {
-                formatter.dateFormat = "MMM yy"  // "ene 25"
-            } else {
-                formatter.dateFormat = "MMM"  // "ene"
-            }
-        } else if days > 14 {
-            // Medium period (2 weeks - 2 months): Show day + month
-            formatter.dateFormat = "d MMM"  // "15 dic"
-        } else {
-            // Short period (< 2 weeks): Just day number
-            formatter.dateFormat = "d"  // "15"
-        }
-
-        return formatter.string(from: date).lowercased()
+        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
     }
 
     private func formattedAmountShort(_ value: Double) -> String {
@@ -352,14 +304,7 @@ struct TrendChartView: View {
 
     private func formatK(_ value: Double) -> String {
         let absValue = abs(value)
-        let sign: String
-        if value < 0 {
-            sign = "-"
-        } else if value > 0 && trendType == .balance {
-            sign = "+"
-        } else {
-            sign = ""
-        }
+        let sign = value < 0 ? "-" : ""
 
         if absValue >= 1000 {
             let kValue = absValue / 1000.0
@@ -412,8 +357,12 @@ struct TrendChartView: View {
     private func periodLabel(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM yy"
-        return formatter.string(from: date)
+        switch grouping {
+        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
+        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
+        case .month: formatter.dateFormat = "MMM yy"  // ene 25
+        }
+        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }
 
     private func formattedAmount(_ value: Double) -> String {

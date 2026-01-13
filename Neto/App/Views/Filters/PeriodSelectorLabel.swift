@@ -26,6 +26,8 @@ struct PeriodSelectorLabel: View {
             Capsule()
                 .fill(Color.netoSecondaryText.opacity(0.08))
         )
+        // Ensure entire capsule is tappable
+        .contentShape(Capsule())
         // CRITICAL: Prevent truncation even if parent animates/constrains width
         .fixedSize()
         // CRITICAL: Disable animation to prevent clipping during period changes

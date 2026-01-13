@@ -60,7 +60,7 @@ struct PanelView: View {
     var body: some View {
         NavigationStack {
             mainContent
-                .navigationTitle("Habla neto, \(userName)")
+                .navigationTitle(L10n.Panel.greeting(userName))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -169,6 +169,13 @@ struct PanelView: View {
         }
         // Recalculate when trend metric changes (Balance/Income/Expense)
         .onChange(of: viewModel.trendType) {
+            // Sync trend type to SessionState when it changes
+            viewModel.syncToSessionState(sessionState)
+            recalculateData()
+        }
+        // Sync trend metric from SessionState when it changes in other views
+        .onChange(of: sessionState.selectedTrendMetric) {
+            viewModel.syncFromSessionState(sessionState)
             recalculateData()
         }
     }
@@ -196,19 +203,15 @@ struct PanelView: View {
                         showNewTransaction = true
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 22, weight: .bold))
+                            .font(.system(size: 24, weight: .bold))
                             .foregroundStyle(.white)
-                            .frame(width: 60, height: 60)
-                            .background(
-                                Circle()
-                                    .fill(Color.electricIndigo)
-                            )
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.35), lineWidth: 1.2)
-                            )
-                            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                            .frame(width: 56, height: 56)
+                            .background(Color.electricIndigo)
+                            .clipShape(Circle())
                     }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive())
+                    .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
                     .padding(.trailing, 20)
                     .padding(.bottom, 24)
                 }
@@ -262,52 +265,28 @@ struct PanelView: View {
                 {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
+                            // Account Chip
                             if let selectedID = viewModel.selectedAccountID,
                                 let account = accounts.first(where: {
                                     $0.persistentModelID == selectedID
                                 })
                             {
-                                HStack(spacing: 6) {
-                                    Text(account.name)
-                                        .font(.caption)
-
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 11, weight: .semibold))
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                FilterChipView(
+                                    accountName: account.name,
+                                    onClear: { viewModel.selectedAccountID = nil }
                                 )
-                                .foregroundStyle(.primary)
-                                .onTapGesture {
-                                    viewModel.selectedAccountID = nil
-                                }
                             }
 
+                            // Date Chip
                             if let focusedDate = viewModel.focusedDate {
-                                HStack(spacing: 6) {
-                                    Text("Fecha: \(formattedDate(focusedDate))")
-                                        .font(.caption)
-
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 11, weight: .semibold))
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                                )
-                                .foregroundStyle(.primary)
-                                .onTapGesture {
-                                    withAnimation {
-                                        viewModel.focusedDate = nil
+                                FilterChipView(
+                                    text: "Fecha: \(formattedDate(focusedDate))",
+                                    onClear: {
+                                        withAnimation {
+                                            viewModel.focusedDate = nil
+                                        }
                                     }
-                                }
+                                )
                             }
 
                             // Category Chip
@@ -316,85 +295,37 @@ struct PanelView: View {
                                     $0.category.persistentModelID == categoryID
                                 })?.category
                             {
-                                HStack(spacing: 6) {
-                                    Circle()
-                                        .fill(Color(hex: category.colorHex))
-                                        .frame(width: 8, height: 8)
-
-                                    Text(category.name)
-                                        .font(.caption)
-
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 11, weight: .semibold))
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                FilterChipView(
+                                    categoryName: category.name,
+                                    iconName: category.iconName,
+                                    colorHex: category.colorHex,
+                                    onClear: { viewModel.selectedCategoryID = nil }
                                 )
-                                .foregroundStyle(.primary)
-                                .onTapGesture {
-                                    viewModel.selectedCategoryID = nil
-                                }
                             }
 
                             // Subcategory Chip
-                            if let subcategoryID = viewModel.selectedSubcategoryID {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "list.bullet.indent")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-
-                                    Text(subcategoryID)
-                                        .font(.caption)
-
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 11, weight: .semibold))
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                                )
-                                .foregroundStyle(.primary)
-                                .onTapGesture {
-                                    // Clear ONLY subcategory filter
-                                    withAnimation {
-                                        viewModel.selectedSubcategoryID = nil
+                            if let subcategoryName = viewModel.selectedSubcategoryID {
+                                let subcategoryInfo = viewModel.topSubcategories.first(where: {
+                                    $0.subcategoryName == subcategoryName
+                                })
+                                FilterChipView(
+                                    subcategoryName: subcategoryName,
+                                    iconName: subcategoryInfo?.subcategory?.iconName,
+                                    colorHex: subcategoryInfo?.colorHex,
+                                    onClear: {
+                                        withAnimation { viewModel.selectedSubcategoryID = nil }
                                     }
-                                }
+                                )
                             }
 
                             // Nature Chip
                             if let nature = viewModel.selectedNature {
-                                HStack(spacing: 6) {
-                                    Circle()
-                                        .fill(nature.color)
-                                        .frame(width: 8, height: 8)
-
-                                    Text(nature.displayName)
-                                        .font(.caption)
-
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 11, weight: .semibold))
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                                )
-                                .foregroundStyle(.primary)
-                                .onTapGesture {
-                                    withAnimation {
-                                        viewModel.selectedNature = nil
+                                FilterChipView(
+                                    nature: nature,
+                                    onClear: {
+                                        withAnimation { viewModel.selectedNature = nil }
                                     }
-                                }
+                                )
                             }
                         }
                     }
@@ -405,7 +336,7 @@ struct PanelView: View {
             .padding(.bottom, 8)
 
             HStack {
-                Text("Widgets")
+                Text(L10n.Panel.widgets)
                     .font(.title2.weight(.semibold))
 
                 Spacer()
@@ -426,21 +357,21 @@ struct PanelView: View {
                     switch row.type {
                     case .fullWidth(let config):
                         widgetView(for: config)
+                            .clipped()  // Prevent content overflow
                     case .halfWidthPair(let left, let right):
                         HStack(spacing: 16) {
                             widgetView(for: left)
                                 .frame(maxWidth: .infinity)
-                                .aspectRatio(1, contentMode: .fit)
+                                .clipped()  // Prevent content overflow
 
                             if let right = right {
                                 widgetView(for: right)
                                     .frame(maxWidth: .infinity)
-                                    .aspectRatio(1, contentMode: .fit)
+                                    .clipped()  // Prevent content overflow
                             } else {
                                 // Spacer for empty slot
                                 Color.clear
                                     .frame(maxWidth: .infinity)
-                                    .aspectRatio(1, contentMode: .fit)
                             }
                         }
                     }
@@ -484,7 +415,8 @@ struct PanelView: View {
                 accounts: accounts,
                 transactions: transactions,
                 defaultCurrencyCode: defaultCurrencyCodeRaw,
-                context: modelContext
+                context: modelContext,
+                sessionState: sessionState
             )
         }
     }
@@ -528,7 +460,7 @@ struct PanelView: View {
         if config.type == .trend {
             TrendWidget(
                 viewModel: viewModel,
-                size: config.size,
+                sessionState: sessionState,
                 currencyCode: preferredCurrency.rawValue,
                 currentBalance: balance
             )
@@ -576,7 +508,8 @@ struct PanelView: View {
                             transactions: transactions,
                             accounts: accounts,
                             defaultCurrencyCode: preferredCurrency.rawValue,
-                            context: modelContext
+                            context: modelContext,
+                            sessionState: sessionState
                         )
                     }
                 },
@@ -610,7 +543,8 @@ struct PanelView: View {
                             transactions: transactions,
                             accounts: accounts,
                             defaultCurrencyCode: preferredCurrency.rawValue,
-                            context: modelContext
+                            context: modelContext,
+                            sessionState: sessionState
                         )
                     }
                 },
@@ -625,7 +559,8 @@ struct PanelView: View {
                     period: viewModel.selectedPeriod.rawValue,
                     grouping: viewModel.cashFlowGrouping,
                     interval: viewModel.currentInterval,
-                    onShowDetail: nil  // REMOVED CHEVRON
+                    onShowDetail: nil,  // REMOVED CHEVRON
+                    displayMode: viewModel.trendType
                 )
             } else {
                 EmptyView()

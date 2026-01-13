@@ -15,6 +15,8 @@ struct CashFlowWidget: View {
     let grouping: TrendGrouping
     let interval: DateInterval
     let onShowDetail: (() -> Void)?
+    let customTitle: String?
+    let displayMode: TrendType?
 
     init(
         summary: CashFlowSummary,
@@ -22,7 +24,9 @@ struct CashFlowWidget: View {
         period: String,
         grouping: TrendGrouping,
         interval: DateInterval,
-        onShowDetail: (() -> Void)? = nil
+        onShowDetail: (() -> Void)? = nil,
+        customTitle: String? = nil,
+        displayMode: TrendType? = nil
     ) {
         self.summary = summary
         self.size = size
@@ -30,27 +34,133 @@ struct CashFlowWidget: View {
         self.grouping = grouping
         self.interval = interval
         self.onShowDetail = onShowDetail
+        self.customTitle = customTitle
+        self.displayMode = displayMode
     }
 
     @Environment(\.colorScheme) var colorScheme
 
+    // MARK: - KPI Value Logic
+
+    /// KPI value based on display mode
+    private var kpiValue: Double {
+        switch displayMode {
+        case .balance:
+            return summary.netFlow
+        case .income:
+            return summary.totalIncome
+        case .expense:
+            return summary.totalExpense
+        case .none:
+            return summary.netFlow
+        }
+    }
+
+    /// KPI label based on display mode
+    private var kpiLabel: String {
+        switch displayMode {
+        case .balance:
+            return L10n.CashFlow.netFlow
+        case .income:
+            return L10n.CashFlow.income
+        case .expense:
+            return L10n.CashFlow.expense
+        case .none:
+            return customTitle ?? L10n.CashFlow.title
+        }
+    }
+
     // MARK: - Smart Axis Logic
+
+    /// Filter chart data to only include points with actual data (non-zero income or expense)
+    private var nonEmptyChartData: [CashFlowData] {
+        summary.chartData.filter { $0.income > 0 || $0.expense > 0 }
+    }
+
+    /// Detect if chart only has expenses (no income at all)
+    /// Also returns true if displayMode is explicitly set to expense
+    private var hasOnlyExpenses: Bool {
+        // If displayMode is explicitly set to expense, show only expenses
+        if displayMode == .expense {
+            return true
+        }
+
+        let totalIncome = nonEmptyChartData.reduce(0) { $0 + $1.income }
+        let totalExpense = nonEmptyChartData.reduce(0) { $0 + $1.expense }
+        return totalIncome == 0 && totalExpense > 0
+    }
+
+    /// Detect if chart only has income (no expenses at all)
+    /// Also returns true if displayMode is explicitly set to income
+    private var hasOnlyIncome: Bool {
+        // If displayMode is explicitly set to income, show only income
+        if displayMode == .income {
+            return true
+        }
+
+        let totalIncome = nonEmptyChartData.reduce(0) { $0 + $1.income }
+        let totalExpense = nonEmptyChartData.reduce(0) { $0 + $1.expense }
+        return totalExpense == 0 && totalIncome > 0
+    }
 
     /// Calculate smart axis dates for chart X-axis
     private var smartAxisDates: [Date] {
-        guard !summary.chartData.isEmpty else { return [] }
-        guard let firstDate = summary.chartData.first?.date,
-            let lastDate = summary.chartData.last?.date
+        guard !nonEmptyChartData.isEmpty else { return [] }
+        guard let firstDate = nonEmptyChartData.first?.date,
+            let lastDate = nonEmptyChartData.last?.date
         else { return [] }
         return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
     }
 
     /// Format axis label based on data span
     private func smartAxisLabel(for date: Date) -> String {
-        guard let firstDate = summary.chartData.first?.date,
-            let lastDate = summary.chartData.last?.date
+        guard let firstDate = nonEmptyChartData.first?.date,
+            let lastDate = nonEmptyChartData.last?.date
         else { return "" }
         return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+    }
+
+    /// X-axis domain based on actual data range (not period range)
+    private var dataXDomain: ClosedRange<Date> {
+        guard let firstDate = nonEmptyChartData.first?.date,
+            let lastDate = nonEmptyChartData.last?.date
+        else { return interval.start...interval.end }
+        // Asymmetric padding: less on left, more on right (where Y-axis labels are)
+        let calendar = Calendar.current
+        let (startPadding, endPadding): (Int, Int) = {
+            switch grouping {
+            case .day: return (0, 1)
+            case .week: return (0, 4)
+            case .month: return (0, 30)
+            }
+        }()
+        let paddedStart =
+            calendar.date(byAdding: .day, value: -startPadding, to: firstDate) ?? firstDate
+        let paddedEnd = calendar.date(byAdding: .day, value: endPadding, to: lastDate) ?? lastDate
+        return paddedStart...paddedEnd
+    }
+
+    /// Y-axis domain with independent scales for income and expense
+    private var dataYDomain: ClosedRange<Double> {
+        let maxIncome = nonEmptyChartData.map { $0.income }.max() ?? 0
+        let maxExpense = nonEmptyChartData.map { $0.expense }.max() ?? 0
+
+        // If only expenses: show expenses as positive bars (0 to max)
+        if hasOnlyExpenses {
+            let maxValue = maxExpense * 1.1
+            return 0...maxValue
+        }
+
+        // If only income: show income bars (0 to max)
+        if hasOnlyIncome {
+            let maxValue = maxIncome * 1.1
+            return 0...maxValue
+        }
+
+        // Default: bidirectional (expenses down, income up)
+        let incomeTop = maxIncome * 1.1
+        let expenseBottom = -maxExpense * 1.1
+        return expenseBottom...incomeTop
     }
 
     var body: some View {
@@ -58,19 +168,15 @@ struct CashFlowWidget: View {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.CashFlow.title)
+                    Text(kpiLabel)
                         .font(.headline)
                         .foregroundStyle(.primary)
                         .padding(.bottom, 2)
 
-                    Text("Flujo Neto")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
                     Text(
                         NetoFormatter.currency(
-                            value: summary.netFlow, currencyCode: summary.currencyCode,
-                            forceSign: true)
+                            value: kpiValue, currencyCode: summary.currencyCode,
+                            forceSign: displayMode == .balance || displayMode == .none)
                     )
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.primary)
@@ -98,7 +204,7 @@ struct CashFlowWidget: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
     }
 
@@ -111,47 +217,71 @@ struct CashFlowWidget: View {
             VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                 // Chart
                 Chart {
-                    // Zero Baseline
-                    RuleMark(y: .value("Zero", 0))
-                        .foregroundStyle(Color.netoSecondaryText.opacity(0.3))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
+                    // Zero Baseline (only show for bidirectional charts)
+                    if !hasOnlyExpenses && !hasOnlyIncome {
+                        RuleMark(y: .value("Zero", 0))
+                            .foregroundStyle(Color.netoSecondaryText.opacity(0.3))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
+                    }
 
-                    ForEach(summary.chartData) { data in
-                        // Income (Up)
-                        BarMark(
-                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                            y: .value("Income", data.income)
-                        )
-                        .foregroundStyle(Color.brandPrimary.gradient)
-                        .cornerRadius(4)
+                    ForEach(nonEmptyChartData) { data in
+                        if hasOnlyExpenses {
+                            // Only expenses mode: show expenses as positive bars upward
+                            BarMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Expense", data.expense)
+                            )
+                            .foregroundStyle(Color.expenseGraph.gradient)
+                            .cornerRadius(4)
+                        } else if hasOnlyIncome {
+                            // Only income mode: show income bars upward (teal)
+                            BarMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Income", data.income)
+                            )
+                            .foregroundStyle(Color.incomeGraph.gradient)
+                            .cornerRadius(4)
+                        } else {
+                            // Default bidirectional mode
+                            // Income (Up) - Teal bars
+                            BarMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Income", data.income)
+                            )
+                            .foregroundStyle(Color.incomeGraph.gradient)
+                            .cornerRadius(4)
 
-                        // Expense (Down)
-                        BarMark(
-                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                            y: .value("Expense", -data.expense)
-                        )
-                        .foregroundStyle(Color.expenseGraph.gradient)
-                        .cornerRadius(4)
+                            // Expense (Down)
+                            BarMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Expense", -data.expense)
+                            )
+                            .foregroundStyle(Color.expenseGraph.gradient)
+                            .cornerRadius(4)
 
-                        // Net Flow Line
-                        LineMark(
-                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                            y: .value("Net", data.net)
-                        )
-                        .foregroundStyle(Color.incomeGraph)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .interpolationMethod(.catmullRom)
+                            // Net Flow Line - Purple line
+                            if grouping == .month {
+                                LineMark(
+                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                    y: .value("Net", data.net)
+                                )
+                                .foregroundStyle(Color.brandPrimary)
+                                .lineStyle(StrokeStyle(lineWidth: 2))
+                                .interpolationMethod(.catmullRom)
 
-                        // Points on Line
-                        PointMark(
-                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                            y: .value("Net", data.net)
-                        )
-                        .foregroundStyle(Color.incomeGraph)
-                        .symbolSize(20)
+                                // Points on Line
+                                PointMark(
+                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                    y: .value("Net", data.net)
+                                )
+                                .foregroundStyle(Color.brandPrimary)
+                                .symbolSize(20)
+                            }
+                        }
                     }
                 }  // Close Chart
-                .chartXScale(domain: interval.start...interval.end)
+                .chartXScale(domain: dataXDomain)
+                .chartYScale(domain: dataYDomain)
                 .chartXAxis {
                     // Smart dynamic X-axis labels (matching TrendChartView)
                     AxisMarks(values: smartAxisDates) { value in
@@ -175,8 +305,8 @@ struct CashFlowWidget: View {
                 }
                 .chartYAxis {
                     AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
-                        AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                            .foregroundStyle(Color.netoSecondaryText.opacity(0.2))
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                            .foregroundStyle(Color.netoSecondaryText.opacity(0.1))
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
                                 Text(formatK(doubleValue))
@@ -186,140 +316,88 @@ struct CashFlowWidget: View {
                         }
                     }
                 }
+                .chartXSelection(value: $selectedDate)  // Native iOS 17+ selection
                 .chartOverlay { proxy in
                     GeometryReader { geo in
                         let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
 
-                        ZStack(alignment: .topLeading) {
-                            // 1. Gesture Handler (Invisible)
-                            Rectangle().fill(.clear).contentShape(Rectangle())
-                                .gesture(
-                                    DragGesture()
-                                        .onChanged { value in
-                                            let x = value.location.x - plotFrame.origin.x
-                                            if let date: Date = proxy.value(atX: x) {
-                                                // Find EXACT match based on grouping granularity
-                                                let granularity: Calendar.Component =
-                                                    grouping == .month
-                                                    ? .month
-                                                    : (grouping == .week ? .weekOfYear : .day)
-
-                                                if let match = summary.chartData.first(where: {
-                                                    Calendar.current.isDate(
-                                                        $0.date, equalTo: date,
-                                                        toGranularity: granularity)
-                                                }) {
-                                                    self.selectedDate = match.date
-                                                }
-                                            }
-                                        }
-                                        .onEnded { _ in
-                                            self.selectedDate = nil
-                                        }
-                                )
-
-                            // 2. Hover Visuals (Line + Tooltip)
-                            if let selectedDate = selectedDate,
-                                let selectedData = summary.chartData.first(where: {
-                                    Calendar.current.isDate(
-                                        $0.date, equalTo: selectedDate,
-                                        toGranularity: grouping == .month
-                                            ? .month : (grouping == .week ? .weekOfYear : .day))
-                                }),
-                                let xPos = proxy.position(forX: selectedData.date)
-                            {  // Position line at the exact data point center
-
-                                // Tooltip Card
-                                VStack(spacing: 6) {
-                                    Group {
-                                        if grouping == .day {
-                                            Text(
-                                                selectedData.date,
-                                                format: .dateTime.weekday(.abbreviated).day().month(
-                                                    .abbreviated
-                                                ).year())
-                                        } else if grouping == .week {
-                                            Text(
-                                                selectedData.date,
-                                                format: .dateTime.day().month(.abbreviated).year())
-                                        } else {
-                                            Text(
-                                                selectedData.date,
-                                                format: .dateTime.month(.abbreviated).year())
-                                        }
-                                    }
+                        // Tooltip only (no gesture - chartXSelection handles it)
+                        if let activeDate = selectedDate,
+                            let selectedData = summary.chartData.first(where: {
+                                Calendar.current.isDate(
+                                    $0.date, equalTo: activeDate,
+                                    toGranularity: grouping == .month
+                                        ? .month : (grouping == .week ? .weekOfYear : .day))
+                            }),
+                            let xPos = proxy.position(forX: selectedData.date)
+                        {
+                            VStack(spacing: 6) {
+                                Text(formatTooltipDate(selectedData.date, grouping: grouping))
                                     .font(.caption2)
                                     .foregroundStyle(Color.netoSecondaryText)
 
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack {
-                                            Circle().fill(Color.brandPrimary).frame(
-                                                width: 6, height: 6)
-                                            Text(
-                                                NetoFormatter.currency(
-                                                    value: selectedData.income,
-                                                    currencyCode: summary.currencyCode,
-                                                    forceSign: true)
-                                            )
-                                            .font(.caption2.bold())
-                                            .foregroundStyle(Color.brandPrimary)
-                                        }
-                                        HStack {
-                                            Circle().fill(Color.expenseGraph).frame(
-                                                width: 6, height: 6)
-                                            Text(
-                                                NetoFormatter.currency(
-                                                    value: selectedData.expense,
-                                                    currencyCode: summary.currencyCode
-                                                )
-                                            )
-                                            .font(.caption2.bold())
-                                            .foregroundStyle(Color.expenseGraph)
-                                        }
-                                        Divider()
-                                        HStack {
-                                            Circle().fill(Color.incomeGraph).frame(
-                                                width: 6, height: 6)
-                                            Text(
-                                                NetoFormatter.currency(
-                                                    value: selectedData.net,
-                                                    currencyCode: summary.currencyCode,
-                                                    forceSign: true)
-                                            )
-                                            .font(.caption2.bold())
-                                            .foregroundStyle(Color.incomeGraph)
-                                        }
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 6) {
+                                        Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
+                                        Text(
+                                            NetoFormatter.currency(
+                                                value: selectedData.income,
+                                                currencyCode: summary.currencyCode, forceSign: true)
+                                        )
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(.primary)
+                                    }
+                                    HStack(spacing: 6) {
+                                        Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
+                                        Text(
+                                            NetoFormatter.currency(
+                                                value: -selectedData.expense,
+                                                currencyCode: summary.currencyCode)
+                                        )
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(.primary)
+                                    }
+                                    Divider()
+                                    HStack(spacing: 6) {
+                                        Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
+                                        Text(
+                                            NetoFormatter.currency(
+                                                value: selectedData.net,
+                                                currencyCode: summary.currencyCode, forceSign: true)
+                                        )
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(.primary)
                                     }
                                 }
-                                .padding(8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: DS.Radius.sm)
-                                        .fill(Color.netoCard)
-                                        .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
-                                )
-                                .fixedSize()  // Prevent expansion
-                                .position(
-                                    x: max(80, min(xPos + plotFrame.origin.x, geo.size.width - 80)),
-                                    y: plotFrame.minY + 20
-                                )
-                                .offset(y: -50)
                             }
+                            .padding(8)
+                            .background(
+                                RoundedRectangle(cornerRadius: DS.Radius.sm)
+                                    .fill(Color.netoCard)
+                                    .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
+                            )
+                            .fixedSize()
+                            .position(
+                                x: max(80, min(xPos + plotFrame.origin.x, geo.size.width - 80)),
+                                y: plotFrame.minY + 20
+                            )
+                            .offset(y: -50)
                         }
                     }
                 }
-                .frame(height: 180)  // Fixed height to prevent overflow
+
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.lg)
 
         } else {
             // Small & Medium - Summary Layout (With Bars)
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                 // Bars Section
                 // Calculate max value for normalization
                 let maxVal = max(summary.totalIncome, summary.totalExpense)
 
-                VStack(spacing: 12) {
+                VStack(spacing: DS.Spacing.md) {
                     // Income Group
                     VStack(spacing: 6) {
                         HStack {
@@ -356,7 +434,7 @@ struct CashFlowWidget: View {
                     // Expense Group
                     VStack(spacing: 6) {
                         HStack {
-                            Text("Gastos")
+                            Text(L10n.Transaction.expense)
                                 .font(.subheadline)
                                 .foregroundStyle(Color.netoSecondaryText)
                             Spacer()
@@ -421,5 +499,16 @@ struct CashFlowWidget: View {
         case .week: return .weekOfYear
         case .month: return .month
         }
+    }
+
+    private func formatTooltipDate(_ date: Date, grouping: TrendGrouping) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        switch grouping {
+        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
+        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
+        case .month: formatter.dateFormat = "MMM yy"  // ene 25
+        }
+        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }
 }

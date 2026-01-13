@@ -20,7 +20,7 @@ struct RecentRecordsWidget: View {
     var onShowMore: (() -> Void)? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerSection
 
             if records.isEmpty {
@@ -35,9 +35,9 @@ struct RecentRecordsWidget: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     // MARK: - Header
@@ -84,41 +84,71 @@ struct RecentRecordsWidget: View {
             // Icon
             subcategoryIcon(for: record, size: 36)
 
-            // Lines - reordered: Note, Subcategory, Account
+            // Lines - Note, Subcategory • Account
             VStack(alignment: .leading, spacing: 2) {
-                // Line 1: Note (primary) or Subcategory as fallback
+                // Line 1: Note (bold) or Subcategory as fallback
                 if let note = record.note, !note.isEmpty {
                     Text(note)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
+
+                    // Line 2: Subcategory • Account
+                    Text(secondaryLine(for: record))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 } else {
-                    Text(record.subcategory?.name ?? record.category?.name ?? "Sin categoría")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
+                    Text(
+                        record.subcategory?.name ?? record.category?.name
+                            ?? L10n.Common.uncategorized
+                    )
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                    // Date as secondary
+                    Text(shortDateFormat(record.date))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-
-                // Line 2: Subcategory · Account (when note exists, show subcategory)
-                Text(secondaryLine(for: record))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
 
             Spacer()
 
-            // Right Column: Amount + Date
-            VStack(alignment: .trailing, spacing: 2) {
+            // Right Column: Amount + Nature (matches CompactRecordRow and RecordRowView)
+            VStack(alignment: .trailing, spacing: 4) {
                 Text(formattedAmount(record.amount, currencyCode: record.currencyCode))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(amountColor(for: record))
 
-                Text(shortDateTime(record.date))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                // Nature indicator (if available)
+                if let subcategory = record.subcategory {
+                    natureIndicator(for: subcategory.nature)
+                }
             }
         }
+    }
+
+    // MARK: - Nature Indicator
+
+    private func natureIndicator(for nature: SubcategoryNature) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(nature.color)
+                .frame(width: 6, height: 6)
+
+            Text(nature.displayName)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(
+            Capsule()
+                .fill(nature.color.opacity(0.1))
+        )
     }
 
     // MARK: - Subcategory Icon
@@ -151,7 +181,7 @@ struct RecentRecordsWidget: View {
     private func secondaryLine(for record: TransactionItem) -> String {
         var parts: [String] = []
 
-        // If note exists, show subcategory first
+        // Show subcategory/category
         if record.note != nil && !(record.note?.isEmpty ?? true) {
             if let subcategory = record.subcategory {
                 parts.append(subcategory.name)
@@ -160,12 +190,14 @@ struct RecentRecordsWidget: View {
             }
         }
 
-        // Then account
-        if let account = record.account {
-            parts.append(account.name)
-        }
+        // Then date (instead of account)
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.dateFormat = "d MMM"
+        let dateStr = formatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
+        parts.append(dateStr)
 
-        return parts.joined(separator: " · ")
+        return parts.joined(separator: " • ")
     }
 
     private func amountColor(for record: TransactionItem) -> Color {
@@ -173,15 +205,15 @@ struct RecentRecordsWidget: View {
         return isIncome ? Color.electricIndigo : Color.hotPink
     }
 
-    private func formattedAmount(_ value: Double, currencyCode: String) -> String {
-        NetoFormatter.currency(value: value, currencyCode: currencyCode)
-    }
-
-    private func shortDateTime(_ date: Date) -> String {
+    private func shortDateFormat(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es")
-        formatter.dateFormat = "d MMM · HH:mm"
-        return formatter.string(from: date)
+        formatter.dateFormat = "d MMM"
+        return formatter.string(from: date).replacingOccurrences(of: ".", with: "")
+    }
+
+    private func formattedAmount(_ value: Double, currencyCode: String) -> String {
+        NetoFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
     // MARK: - Empty State

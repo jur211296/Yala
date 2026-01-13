@@ -39,7 +39,7 @@ struct ExchangeRateInputView: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
-                Text("Tipo de cambio")
+                Text(L10n.Settings.exchangeRate)
                     .font(.body)
                     .foregroundStyle(.primary)
 
@@ -82,7 +82,7 @@ struct ExchangeRateInputView: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
-                Text("Recibirá")
+                Text(L10n.Transaction.willReceive)
                     .font(.body)
                     .foregroundStyle(.primary)
 
@@ -129,7 +129,7 @@ struct ExchangeRateInputView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Listo") {
+                Button(L10n.Action.done) {
                     focusedField = nil
                 }
             }

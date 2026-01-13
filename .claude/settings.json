@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(rm:*)",
+      "Bash(sudo:*)"
+    ],
+    "allow": [
+      "Bash(pwd:*)",
+      "Bash(ls:*)",
+      "Bash(cd:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+
+      "Bash(xcodebuild:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)"
+    ]
+  }
+}

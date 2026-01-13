@@ -1,0 +1,391 @@
+//
+//  RecordsTabView.swift
+//  Neto
+//
+//  Records tab content extracted from DetailContainerView.
+//  Provides the records list, control bar, filter chips, and empty state.
+//
+
+import SwiftData
+import SwiftUI
+
+// MARK: - Records Tab View
+
+/// Records tab content with control bar, filter chips, and record list.
+/// Extracted from DetailContainerView to reduce complexity.
+struct RecordsTabView: View {
+    @Bindable var viewModel: RecordsViewModel
+    let accounts: [Account]
+    let categories: [Category]
+    let tags: [Tag]
+    let defaultCurrencyCode: String
+    var onFilterChange: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            controlBar
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+
+            if viewModel.groupedRecords.isEmpty {
+                emptyState
+            } else {
+                VStack(spacing: 0) {
+                    // Summary above records
+                    summaryRow
+
+                    recordsList
+                }
+            }
+        }
+    }
+
+    // MARK: - Control Bar
+
+    private var controlBar: some View {
+        HStack(spacing: 12) {
+            periodSelector
+
+            if viewModel.hasActiveFilters {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        // Account chips (with icon)
+                        ForEach(selectedAccountChips, id: \.id) { chip in
+                            FilterChipView(
+                                accountName: chip.name,
+                                count: chip.count,
+                                onClear: {
+                                    viewModel.selectedAccounts.removeAll()
+                                    onFilterChange()
+                                }
+                            )
+                        }
+
+                        // Category chips (with icons)
+                        ForEach(categoryChips, id: \.id) { chip in
+                            if let category = categories.first(where: {
+                                $0.persistentModelID == chip.categoryID
+                            }) {
+                                FilterChipView(
+                                    categoryName: category.name,
+                                    iconName: category.iconName,
+                                    colorHex: category.colorHex,
+                                    onClear: {
+                                        viewModel.selectedCategories.remove(chip.categoryID)
+                                        onFilterChange()
+                                    }
+                                )
+                            }
+                        }
+
+                        // Subcategory chips (with icons)
+                        ForEach(subcategoryChips, id: \.id) { chip in
+                            FilterChipView(
+                                subcategoryName: chip.name,
+                                iconName: chip.iconName,
+                                colorHex: chip.colorHex,
+                                onClear: {
+                                    if let subcategoryID = chip.subcategoryID {
+                                        viewModel.selectedSubcategories.remove(subcategoryID)
+                                        onFilterChange()
+                                    }
+                                }
+                            )
+                        }
+
+                        // Tag chips (individual with color dots)
+                        ForEach(selectedTagChips, id: \.id) { chip in
+                            FilterChipView(
+                                tagName: chip.name,
+                                colorHex: chip.colorHex,
+                                onClear: {
+                                    viewModel.selectedTags.remove(chip.tagID)
+                                    onFilterChange()
+                                }
+                            )
+                        }
+
+                        // Nature chips (with color dots)
+                        ForEach(natureChips, id: \.nature.rawValue) { chipData in
+                            FilterChipView(
+                                nature: chipData.nature,
+                                onClear: {
+                                    viewModel.selectedNatures.remove(chipData.nature)
+                                    onFilterChange()
+                                }
+                            )
+                        }
+
+                        // Transaction type chip
+                        if viewModel.transactionTypeFilter != .all {
+                            FilterChipView(text: viewModel.transactionTypeFilter.displayName) {
+                                viewModel.transactionTypeFilter = .all
+                                onFilterChange()
+                            }
+                        }
+
+                        // Clear all button
+                        if viewModel.activeFilterCount > 1 {
+                            Button {
+                                withAnimation {
+                                    viewModel.clearFilters()
+                                    onFilterChange()
+                                }
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .animation(nil, value: viewModel.period)
+    }
+
+    // MARK: - Period Selector
+
+    private var periodSelector: some View {
+        TrendsPeriodMenu(
+            selectedPeriod: viewModel.period,
+            onSelect: { period in
+                withTransaction(Transaction(animation: nil)) {
+                    viewModel.period = period
+                }
+            }
+        )
+        .equatable()
+    }
+
+    // MARK: - Summary Row
+
+    private var summaryRow: some View {
+        VStack(alignment: .center, spacing: 4) {
+            // Balance (Saldo) - Large and centered
+            Text(
+                NetoFormatter.currency(
+                    value: recordsSummary.balance, currencyCode: defaultCurrencyCode)
+            )
+            .font(.title.weight(.bold))
+            .foregroundStyle(.primary)
+
+            // Income and Expense indicators below
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.incomeGraph)
+                    Text(
+                        NetoFormatter.currency(
+                            value: recordsSummary.income, currencyCode: defaultCurrencyCode)
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.down.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.expenseGraph)
+                    Text(
+                        NetoFormatter.currency(
+                            value: recordsSummary.expense, currencyCode: defaultCurrencyCode)
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private var recordsSummary: (balance: Double, income: Double, expense: Double) {
+        var income: Double = 0
+        var expense: Double = 0
+
+        for group in viewModel.groupedRecords {
+            for record in group.records {
+                // Use amountInPreferredCurrency if available and matches defaultCurrencyCode
+                let amount =
+                    (record.preferredCurrencyCode == defaultCurrencyCode)
+                    ? record.amountInPreferredCurrency
+                    : record.amount
+
+                // Check if it's income based on category
+                if record.category?.isIncome == true {
+                    income += abs(amount)  // Always positive
+                } else {
+                    expense += abs(amount)  // Always positive
+                }
+            }
+        }
+
+        let balance = income - expense
+        return (balance, income, expense)
+    }
+
+    // MARK: - Records List
+
+    private var recordsList: some View {
+        ScrollView {
+            LazyVStack(spacing: 8, pinnedViews: [.sectionHeaders]) {
+                ForEach(viewModel.groupedRecords, id: \.date) { group in
+                    Section {
+                        ForEach(group.records, id: \.persistentModelID) { record in
+                            RecordRowView(
+                                record: record,
+                                currencyCode: defaultCurrencyCode,
+                                isSelectionMode: viewModel.isSelectionMode,
+                                isSelected: viewModel.selectedRecordIDs.contains(
+                                    record.persistentModelID),
+                                onTap: {
+                                    viewModel.editRecord(record)
+                                },
+                                onToggleSelection: {
+                                    viewModel.toggleSelection(record.persistentModelID)
+                                }
+                            )
+                            .padding(.horizontal, 16)
+                        }
+                    } header: {
+                        RecordDateSectionView(date: group.date)
+                    }
+                }
+            }
+            .padding(.top, 8)
+            .padding(.bottom, viewModel.isSelectionMode ? 80 : 100)
+        }
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Image(systemName: "list.bullet.rectangle")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary.opacity(0.5))
+
+            Text(L10n.Records.noRecords)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Text(
+                viewModel.hasActiveFilters
+                    ? L10n.Statistics.noRecordsFiltered
+                    : L10n.Statistics.noRecordsDescription
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 40)
+
+            if viewModel.hasActiveFilters {
+                Button {
+                    viewModel.clearFilters()
+                    onFilterChange()
+                } label: {
+                    Text(L10n.Filters.clearFilters)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.electricIndigo)
+                }
+                .padding(.top, 8)
+            }
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Chip Data Structures
+
+    private struct AccountChip: Identifiable {
+        let id = UUID()
+        let name: String
+        let count: Int
+    }
+
+    private struct CategoryChip: Identifiable {
+        let id = UUID()
+        let categoryID: PersistentIdentifier
+    }
+
+    private struct SubcategoryChip: Identifiable {
+        let id = UUID()
+        let name: String
+        let iconName: String?
+        let colorHex: String?
+        let subcategoryID: PersistentIdentifier?
+    }
+
+    private struct TagChip: Identifiable {
+        let id: PersistentIdentifier
+        let tagID: PersistentIdentifier
+        let name: String
+        let colorHex: String?
+    }
+
+    private struct NatureChipData: Identifiable {
+        let id = UUID()
+        let nature: SubcategoryNature
+    }
+
+    // MARK: - Chip Computation
+
+    private var categoryChips: [CategoryChip] {
+        viewModel.selectedCategories.map { CategoryChip(categoryID: $0) }
+    }
+
+    private var subcategoryChips: [SubcategoryChip] {
+        var chips: [SubcategoryChip] = []
+        for subcategoryID in viewModel.selectedSubcategories {
+            for category in categories {
+                if let subcategory = category.subcategories.first(where: {
+                    $0.persistentModelID == subcategoryID
+                }) {
+                    chips.append(
+                        SubcategoryChip(
+                            name: subcategory.name,
+                            iconName: subcategory.iconName,
+                            colorHex: (subcategory.colorHex?.isEmpty == false
+                                ? subcategory.colorHex : nil) ?? category.colorHex,
+                            subcategoryID: subcategoryID
+                        ))
+                    break
+                }
+            }
+        }
+        return chips
+    }
+
+    private var natureChips: [NatureChipData] {
+        viewModel.selectedNatures.map { NatureChipData(nature: $0) }
+    }
+
+    private var selectedAccountChips: [AccountChip] {
+        guard !viewModel.selectedAccounts.isEmpty else { return [] }
+        let selectedAccountsList =
+            accounts
+            .filter { viewModel.selectedAccounts.contains($0.persistentModelID) }
+        guard !selectedAccountsList.isEmpty else { return [] }
+
+        // Return a single chip with the first account name and total count
+        if let firstName = selectedAccountsList.first?.name {
+            return [AccountChip(name: firstName, count: selectedAccountsList.count)]
+        }
+        return []
+    }
+
+    private var selectedTagChips: [TagChip] {
+        tags.filter { viewModel.selectedTags.contains($0.persistentModelID) }
+            .map {
+                TagChip(
+                    id: $0.persistentModelID, tagID: $0.persistentModelID, name: $0.name,
+                    colorHex: $0.colorHex)
+            }
+    }
+}

@@ -49,7 +49,9 @@ struct RecordsFilterContext {
     var subcategoryName: String?
     var nature: SubcategoryNature?
     var transactionType: TransactionTypeFilter?
-    var period: DetailPeriod?  // Unified period type
+    var period: DetailPeriod?
+    var searchText: String?
+    var isFromSearch: Bool = false  // Hide FAB when coming from global search
 
     static let empty = RecordsFilterContext()
 }

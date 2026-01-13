@@ -1,0 +1,143 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Neto - La verdad de tu dinero, sin filtros.">
+  <main class="relative min-h-screen overflow-hidden">
+    
+    <!-- Background Blobs -->
+    <div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none">
+      <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-neto-indigo rounded-full blur-[120px] opacity-20 animate-pulse"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-neto-teal rounded-full blur-[120px] opacity-10"></div>
+    </div>
+
+    <!-- Sticky CTA (Mobile/Global) -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto">
+      <a href="#" class="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-full font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.23-3.14-2.47-1.72-2.49-2.92-6.95-1.22-9.91.85-1.48 2.37-2.41 4.01-2.44 1.27-.03 2.47.85 3.25.85.78 0 2.24-1.05 3.78-.9 1.29.1 2.46.53 3.32 1.34-2.91 1.76-2.43 5.48.51 6.74-.63 1.89-1.5 3.75-2.9 5.79zm-4.58-13.6c.66-2.03 3.68-2.67 3.68-2.67-.18 2.38-2.66 4.38-4.74 4.14-.14-2.26 2.05-4.13 1.06-1.47z"/></svg>
+        Descargar en App Store
+      </a>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex flex-col items-center justify-center text-center px-4 pt-20 pb-32 relative">
+      <div class="max-w-4xl mx-auto space-y-8 z-10">
+        <h1 class="text-5xl md:text-7xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-white/70">
+          La verdad de tu dinero, <span class="italic text-white">sin filtros</span>.
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+          Neto es el espejo donde tus finanzas se ven tal como son. <br/>
+          <span class="text-white/80">Sin bancos. Sin nubes. Sin terceros.</span>
+        </p>
+        
+        <div class="pt-8">
+           <!-- Hero Image -->
+           <div class="relative max-w-[300px] mx-auto z-20">
+              <img src="/images/hero_mockup.jpg" alt="Neto App Home" class="rounded-[2.5rem] border-8 border-gray-900 shadow-2xl relative z-10 mx-auto" />
+              <!-- Glow effect behind phone -->
+              <div class="absolute -inset-4 bg-neto-indigo blur-3xl opacity-40 -z-10 rounded-full"></div>
+           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Philosophy Grid -->
+    <section class="py-24 px-4 relative z-10">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-center mb-16">Finanzas reinterpretadas</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+          
+          <div class="glass p-8 rounded-3xl space-y-4 hover:border-neto-teal/30 transition-colors">
+            <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">🌿</div>
+            <h3 class="text-xl font-bold">Naturaleza del Gasto</h3>
+            <p class="text-gray-400">No todos los gastos son iguales. Distingue lo <span class="text-white">Esencial</span> de lo <span class="text-white">Opcional</span> para entender tus prioridades reales.</p>
+          </div>
+
+          <div class="glass p-8 rounded-3xl space-y-4 hover:border-neto-indigo/30 transition-colors">
+            <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">🔒</div>
+            <h3 class="text-xl font-bold">Privacidad Radical</h3>
+            <p class="text-gray-400">Tus datos viven en tu teléfono, no en nuestros servidores. Cifrado, local y seguro. <span class="text-white">Lo que pasa en tu iPhone, se queda en tu iPhone.</span></p>
+          </div>
+
+          <div class="glass p-8 rounded-3xl space-y-4 hover:border-neto-pink/30 transition-colors">
+            <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">✨</div>
+            <h3 class="text-xl font-bold">Claridad Visual</h3>
+            <p class="text-gray-400">Diseño "Liquid Glass" que no abruma. Widgets interactivos que responden a cada movimiento y te dan paz mental.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Showcase (Zig Zag) -->
+    <section class="py-32 px-4 space-y-32">
+      
+      <!-- Feature 1 -->
+      <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-16">
+        <div class="md:w-1/2 space-y-6">
+          <h3 class="text-3xl font-bold text-neto-teal">Control Total</h3>
+          <p class="text-xl text-gray-300">Registra cada movimiento en segundos. Cuentas ilimitadas, categorías flexibles y etiquetas a tu medida. Diseñado para la velocidad.</p>
+        </div>
+        <div class="md:w-1/2">
+           <div class="glass p-4 rounded-[3rem] border border-white/10 relative">
+             <img src="/images/feature_1.jpg" alt="Transaction Screen" class="rounded-[2rem] shadow-2xl" />
+           </div>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="max-w-6xl mx-auto flex flex-col md:flex-row-reverse items-center gap-16">
+        <div class="md:w-1/2 space-y-6">
+          <h3 class="text-3xl font-bold text-neto-pink">Análisis Líquido</h3>
+          <p class="text-xl text-gray-300">Entiende tus tendencias al instante. Gráficos que fluyen con tu dinero y te muestran si vas por buen camino.</p>
+        </div>
+        <div class="md:w-1/2">
+           <div class="glass p-4 rounded-[3rem] border border-white/10 relative">
+             <img src="/images/feature_2.jpg" alt="Trends Widget" class="rounded-[2rem] shadow-2xl" />
+           </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Trust / No List -->
+    <section class="py-24 px-4 text-center bg-white/5 backdrop-blur-3xl border-y border-white/5">
+      <div class="max-w-3xl mx-auto space-y-12">
+        <h2 class="text-3xl font-bold">Lo que NO hacemos</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+           <div class="flex items-start gap-4 p-4">
+             <span class="text-red-400 text-xl">✕</span>
+             <p class="text-gray-300">No vendemos tus datos. Jamás.</p>
+           </div>
+           <div class="flex items-start gap-4 p-4">
+            <span class="text-red-400 text-xl">✕</span>
+            <p class="text-gray-300">No conectamos con bancos. Tus claves son tuyas.</p>
+          </div>
+          <div class="flex items-start gap-4 p-4">
+            <span class="text-red-400 text-xl">✕</span>
+            <p class="text-gray-300">No te juzgamos. Es tu dinero.</p>
+          </div>
+          <div class="flex items-start gap-4 p-4">
+            <span class="text-red-400 text-xl">✕</span>
+            <p class="text-gray-300">Sin trampas. Freemium real con funciones claras.</p>
+          </div>
+        </div>
+        
+        <div class="pt-8">
+          <a href="/privacy" class="text-sm text-gray-400 underline decoration-gray-600 hover:text-white transition-colors">Leer Política de Privacidad</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 text-center text-gray-600 text-sm">
+      <div class="flex justify-center gap-8 mb-8">
+        <a href="/privacy" class="hover:text-neto-indigo">Privacidad</a>
+        <a href="#" class="hover:text-neto-indigo">Términos</a>
+        <a href="mailto:hola@neto.app" class="hover:text-neto-indigo">Contacto</a>
+      </div>
+      <p>© 2026 Neto. Hecho en Perú.</p>
+    </footer>
+
+  </main>
+</Layout>
