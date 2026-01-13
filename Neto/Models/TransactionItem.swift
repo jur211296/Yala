@@ -36,6 +36,10 @@ final class TransactionItem {
     /// Override manual de naturaleza (nil = usar la de subcategoría)
     var natureOverride: String?
 
+    // MARK: - Balance Adjustment Type
+    /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | nil (normal)
+    var balanceAdjustmentType: String?
+
     /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
     var effectiveNature: SubcategoryNature {
         if let override = natureOverride {

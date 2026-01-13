@@ -113,8 +113,12 @@ enum L10n {
         static var trends: String { NSLocalizedString("statistics.trends", comment: "") }
         static var categories: String { NSLocalizedString("statistics.categories", comment: "") }
         static var records: String { NSLocalizedString("statistics.records", comment: "") }
-        static var noRecordsFiltered: String { NSLocalizedString("statistics.noRecordsFiltered", comment: "") }
-        static var noRecordsDescription: String { NSLocalizedString("statistics.noRecordsDescription", comment: "") }
+        static var noRecordsFiltered: String {
+            NSLocalizedString("statistics.noRecordsFiltered", comment: "")
+        }
+        static var noRecordsDescription: String {
+            NSLocalizedString("statistics.noRecordsDescription", comment: "")
+        }
     }
 
     // MARK: - Nature
@@ -305,6 +309,30 @@ enum L10n {
             static var other: String { NSLocalizedString("account.type.other", comment: "") }
         }
 
+        // Balance Adjustments
+        static var newBalance: String { NSLocalizedString("account.newBalance", comment: "") }
+        static var currentBalance: String {
+            NSLocalizedString("account.currentBalance", comment: "")
+        }
+        static func adjustmentPreview(_ amount: String) -> String {
+            String(format: NSLocalizedString("account.adjustmentPreview", comment: ""), amount)
+        }
+        static var initialBalanceNote: String {
+            NSLocalizedString("account.initialBalanceNote", comment: "")
+        }
+        static var adjustmentNote: String {
+            NSLocalizedString("account.adjustmentNote", comment: "")
+        }
+        static func existingInitialBalance(_ amount: String) -> String {
+            String(format: NSLocalizedString("account.existingInitialBalance", comment: ""), amount)
+        }
+        static var modifyInitialBalance: String {
+            NSLocalizedString("account.modifyInitialBalance", comment: "")
+        }
+        static var adjustmentDate: String {
+            NSLocalizedString("account.adjustmentDate", comment: "")
+        }
+
     }
 
     // MARK: - Category
@@ -423,10 +451,14 @@ enum L10n {
     enum Settings {
         static var title: String { NSLocalizedString("settings.title", comment: "") }
         static var theme: String { NSLocalizedString("settings.theme", comment: "") }
-        static var themeDescription: String { NSLocalizedString("settings.themeDescription", comment: "") }
+        static var themeDescription: String {
+            NSLocalizedString("settings.themeDescription", comment: "")
+        }
         static var currency: String { NSLocalizedString("settings.currency", comment: "") }
         static var appIcon: String { NSLocalizedString("settings.appIcon", comment: "") }
-        static var appIconDescription: String { NSLocalizedString("settings.appIconDescription", comment: "") }
+        static var appIconDescription: String {
+            NSLocalizedString("settings.appIconDescription", comment: "")
+        }
         static var personalization: String {
             NSLocalizedString("settings.personalization", comment: "")
         }
@@ -744,15 +776,21 @@ enum L10n {
 
     enum CashFlowViewType {
         static var total: String { NSLocalizedString("cashFlowViewType.total", comment: "") }
-        static var byAccount: String { NSLocalizedString("cashFlowViewType.byAccount", comment: "") }
-        static var byCurrency: String { NSLocalizedString("cashFlowViewType.byCurrency", comment: "") }
+        static var byAccount: String {
+            NSLocalizedString("cashFlowViewType.byAccount", comment: "")
+        }
+        static var byCurrency: String {
+            NSLocalizedString("cashFlowViewType.byCurrency", comment: "")
+        }
     }
 
     // MARK: - List View Type
 
     enum ListViewType {
         static var categories: String { NSLocalizedString("listViewType.categories", comment: "") }
-        static var subcategories: String { NSLocalizedString("listViewType.subcategories", comment: "") }
+        static var subcategories: String {
+            NSLocalizedString("listViewType.subcategories", comment: "")
+        }
     }
 }
 

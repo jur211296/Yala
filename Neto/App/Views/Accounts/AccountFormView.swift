@@ -15,10 +15,10 @@ struct AccountFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @State private var viewModel: AccountFormViewModel
+    @Query private var allTransactions: [TransactionItem]
 
-    // Keeping these to pass to init if needed, though they are inside VM now.
-    // The VM is the source of truth.
+    @State private var viewModel: AccountFormViewModel
+    @FocusState private var isBalanceFieldFocused: Bool
 
     init(existingNames: [String], accountToEdit: Account? = nil) {
         _viewModel = State(
@@ -39,8 +39,8 @@ struct AccountFormView: View {
                     VStack(spacing: 24) {
                         generalSection
                         currencySection
+                        adjustmentSection  // Moved above balance per design
                         balanceSection
-                        adjustmentSection
                         actionsSection
                     }
                     .padding(.horizontal, 16)
@@ -80,6 +80,13 @@ struct AccountFormView: View {
                     .navigationTitle(L10n.Common.newColor)
                     .navigationBarTitleDisplayMode(.inline)
                 }
+            }
+            .onAppear {
+                // Pass transactions to view model for balance calculation
+                viewModel.allTransactions = allTransactions
+            }
+            .onChange(of: allTransactions) { _, newTransactions in
+                viewModel.allTransactions = newTransactions
             }
         }
 
@@ -170,40 +177,6 @@ struct AccountFormView: View {
         }
     }
 
-    private var balanceSection: some View {
-        SectionBox(title: "Saldo actual") {
-            VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    Text(L10n.Account.sign)
-                        .font(.subheadline)
-                    Spacer()
-                    Picker("Signo", selection: $viewModel.isPositive) {
-                        Text("Positivo").tag(true)
-                        Text("Negativo").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                }
-                .padding()
-
-                SubsectionDivider()
-
-                HStack {
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(currencyInfo(for: viewModel.selectedCurrency).code)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("0.00", text: $viewModel.balanceText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 28, weight: .bold))
-                    }
-                }
-                .padding()
-            }
-        }
-    }
-
     private var adjustmentSection: some View {
         SectionBox(title: "Ajuste") {
             VStack(spacing: 0) {
@@ -233,6 +206,148 @@ struct AccountFormView: View {
                     .foregroundStyle(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Date picker for "Ajustar por registro" mode
+                if viewModel.selectedAdjustmentMode == .byEntry && viewModel.isEditing {
+                    SubsectionDivider()
+
+                    DatePicker(
+                        L10n.Account.adjustmentDate,
+                        selection: $viewModel.adjustmentDate,
+                        displayedComponents: .date
+                    )
+                    .padding()
+                }
+            }
+        }
+    }
+
+    private var balanceSection: some View {
+        SectionBox(
+            title: viewModel.isEditing
+                ? (viewModel.selectedAdjustmentMode == .changeInitialBalance
+                    ? "Saldo inicial" : "Nuevo saldo") : "Saldo inicial"
+        ) {
+            VStack(spacing: 0) {
+                // Show current balance (read-only) when editing
+                if viewModel.isEditing {
+                    HStack {
+                        Text(L10n.Account.currentBalance)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(
+                            formatAmount(
+                                viewModel.currentBalance, currency: viewModel.selectedCurrency)
+                        )
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    }
+                    .padding()
+
+                    SubsectionDivider()
+                }
+
+                // Sign selector
+                HStack(spacing: 12) {
+                    Text("Signo")
+                        .font(.subheadline)
+                    Spacer()
+                    Picker("Signo", selection: $viewModel.isPositive) {
+                        Text("Positivo").tag(true)
+                        Text("Negativo").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding()
+
+                SubsectionDivider()
+
+                // Balance input
+                HStack {
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(
+                            viewModel.selectedAdjustmentMode == .changeInitialBalance
+                                ? "Saldo inicial" : L10n.Account.newBalance
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                        ZStack(alignment: .trailing) {
+                            // Placeholder
+                            if viewModel.balanceText.isEmpty {
+                                Text("0.00")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.gray.opacity(0.4))
+                            }
+
+                            TextField("", text: $viewModel.balanceText)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .font(.system(size: 28, weight: .bold))
+                                .focused($isBalanceFieldFocused)
+                        }
+                        .onChange(of: isBalanceFieldFocused) { _, isFocused in
+                            // When field gains focus, clear placeholder values
+                            if isFocused
+                                && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00")
+                            {
+                                viewModel.balanceText = ""
+                            }
+                            // When field loses focus, format if has value
+                            if !isFocused && !viewModel.balanceText.isEmpty {
+                                if let amount = Double(
+                                    viewModel.balanceText.replacingOccurrences(of: ",", with: "."))
+                                {
+                                    viewModel.balanceText = String(format: "%.2f", amount)
+                                }
+                            }
+                        }
+                        .onChange(of: viewModel.balanceText) { _, newValue in
+                            let filtered = filterBalanceInput(newValue)
+                            if filtered != newValue {
+                                viewModel.balanceText = filtered
+                            }
+                        }
+                    }
+                }
+                .padding()
+
+                // Show calculated final balance for "Cambiar saldo inicial" mode
+                if viewModel.isEditing
+                    && viewModel.selectedAdjustmentMode == .changeInitialBalance,
+                    let finalBalance = viewModel.calculatedFinalBalance
+                {
+                    SubsectionDivider()
+
+                    HStack {
+                        Text("Saldo final:")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatAmount(finalBalance, currency: viewModel.selectedCurrency))
+                            .font(.headline)
+                            .foregroundColor(finalBalance >= 0 ? Color.primary : Color.red)
+                    }
+                    .padding()
+                }
+
+                // Adjustment preview for "Ajustar por registro" mode
+                if viewModel.isEditing && viewModel.selectedAdjustmentMode == .byEntry,
+                    let adjustment = viewModel.adjustmentAmount, viewModel.needsAdjustment
+                {
+                    SubsectionDivider()
+
+                    HStack {
+                        Text("Ajuste:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatAdjustment(adjustment, currency: viewModel.selectedCurrency))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(adjustment >= 0 ? .green : .red)
+                    }
+                    .padding()
+                }
             }
         }
     }
@@ -315,6 +430,54 @@ struct AccountFormView: View {
                 }
             }
         }
+    }
+
+    // MARK: Helpers
+
+    private func formatAmount(_ amount: Double, currency: CurrencyCode) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currency.rawValue
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: amount)) ?? "0.00"
+    }
+
+    private func formatAdjustment(_ amount: Double, currency: CurrencyCode) -> String {
+        let sign = amount >= 0 ? "+" : ""
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currency.rawValue
+        formatter.maximumFractionDigits = 2
+        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "0.00"
+        return sign + formatted
+    }
+
+    /// Filters balance input to only allow numbers and one decimal with max 2 decimal places
+    private func filterBalanceInput(_ input: String) -> String {
+        let decimalSeparator = Locale.current.decimalSeparator ?? "."
+        var result = ""
+        var hasDecimal = false
+        var decimalCount = 0
+
+        for char in input {
+            if char.isNumber {
+                if hasDecimal {
+                    if decimalCount < 2 {
+                        result.append(char)
+                        decimalCount += 1
+                    }
+                } else {
+                    result.append(char)
+                }
+            } else if String(char) == decimalSeparator || char == "." || char == "," {
+                if !hasDecimal {
+                    result.append(decimalSeparator.first ?? ".")
+                    hasDecimal = true
+                }
+            }
+        }
+
+        return result
     }
 
     // MARK: Guardado

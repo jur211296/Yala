@@ -286,25 +286,25 @@ final class StatisticsViewModel: Filterable {
         }
 
         // Calculate total income and expense from filtered transactions
+        // Exclude balance adjustments - they only affect balance, not income/expense
         totalIncome =
             filtered
-            .filter { $0.amountInPreferredCurrency > 0 }
+            .filter { $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil }
             .reduce(0) { $0 + $1.amountInPreferredCurrency }
 
         totalExpense =
             filtered
-            .filter { $0.amountInPreferredCurrency < 0 }
+            .filter { $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil }
             .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
 
         // Calculate current actual balance from eligible accounts
-        // This is the TRUE balance, not a chart point value
+        // This is the TRUE balance, calculated from transactions (initial balance is now a transaction)
         currentBalance = eligibleAccounts.reduce(0.0) { total, account in
-            let initialBalance = account.initialBalance
             let transactionSum =
                 transactions
                 .filter { $0.account?.persistentModelID == account.persistentModelID }
                 .reduce(0.0) { $0 + $1.amountInPreferredCurrency }
-            return total + initialBalance + transactionSum
+            return total + transactionSum
         }
 
         // Calculate trend points based on metric using unified TrendDataProcessor
@@ -336,14 +336,19 @@ final class StatisticsViewModel: Filterable {
         }
 
         // Calculate recent records filtered by selected metric
+        // For income/expense, exclude balance adjustments
         let metricFiltered: [TransactionItem]
         switch selectedMetric {
         case .balance:
             metricFiltered = filtered
         case .income:
-            metricFiltered = filtered.filter { $0.amountInPreferredCurrency > 0 }
+            metricFiltered = filtered.filter {
+                $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil
+            }
         case .expense:
-            metricFiltered = filtered.filter { $0.amountInPreferredCurrency < 0 }
+            metricFiltered = filtered.filter {
+                $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil
+            }
         }
         recentRecords = Array(
             metricFiltered.sorted { $0.date > $1.date }.prefix(maxRecentRecords)
@@ -404,13 +409,8 @@ final class StatisticsViewModel: Filterable {
         // Fill buckets based on metric
         switch selectedMetric {
         case .balance:
-            // Calculate running balance
+            // Calculate running balance (initial balance is now a transaction, start from 0)
             var runningBalance = 0.0
-
-            // Get initial balance from accounts
-            for account in accounts {
-                runningBalance += account.initialBalance
-            }
 
             // Add transactions before interval
             for transaction in transactions where transaction.date < interval.start {
@@ -435,15 +435,21 @@ final class StatisticsViewModel: Filterable {
             }
 
         case .income:
-            // Sum of positive amounts per bucket
-            for transaction in transactions where transaction.amountInPreferredCurrency > 0 {
+            // Sum of positive amounts per bucket (exclude balance adjustments)
+            for transaction in transactions
+            where transaction.amountInPreferredCurrency > 0
+                && transaction.balanceAdjustmentType == nil
+            {
                 let bucketDate = trendGrouping.dateKey(for: transaction.date, calendar: calendar)
                 buckets[bucketDate, default: 0] += transaction.amountInPreferredCurrency
             }
 
         case .expense:
-            // Sum of negative amounts (as positive) per bucket
-            for transaction in transactions where transaction.amountInPreferredCurrency < 0 {
+            // Sum of negative amounts (as positive) per bucket (exclude balance adjustments)
+            for transaction in transactions
+            where transaction.amountInPreferredCurrency < 0
+                && transaction.balanceAdjustmentType == nil
+            {
                 let bucketDate = trendGrouping.dateKey(for: transaction.date, calendar: calendar)
                 buckets[bucketDate, default: 0] += abs(transaction.amountInPreferredCurrency)
             }
@@ -529,7 +535,8 @@ final class StatisticsViewModel: Filterable {
 
             switch selectedMetric {
             case .balance:
-                var runningBalance = account.initialBalance
+                // Initial balance is now a transaction, start from 0
+                var runningBalance = 0.0
 
                 // Add transactions before interval
                 let allAccountTxns = transactions.filter {
@@ -554,13 +561,17 @@ final class StatisticsViewModel: Filterable {
                 }
 
             case .income:
-                for txn in accountTransactions where txn.amountInPreferredCurrency > 0 {
+                // Exclude balance adjustments from income
+                for txn in accountTransactions
+                where txn.amountInPreferredCurrency > 0 && txn.balanceAdjustmentType == nil {
                     let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
                     buckets[bucketDate, default: 0] += txn.amountInPreferredCurrency
                 }
 
             case .expense:
-                for txn in accountTransactions where txn.amountInPreferredCurrency < 0 {
+                // Exclude balance adjustments from expense
+                for txn in accountTransactions
+                where txn.amountInPreferredCurrency < 0 && txn.balanceAdjustmentType == nil {
                     let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
                     buckets[bucketDate, default: 0] += abs(txn.amountInPreferredCurrency)
                 }

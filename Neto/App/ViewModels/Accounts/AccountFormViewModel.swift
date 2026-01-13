@@ -20,24 +20,26 @@ final class AccountFormViewModel {
     // MARK: - Dependencies
     var accountToEdit: Account?
     var existingNames: [String] = []
+    var allTransactions: [TransactionItem] = []
 
     // MARK: - Form State
     var name: String = ""
     var selectedType: AccountType = .general
     var accountNumber: String = ""
 
-    // Balance
-    var isPositive: Bool = true
-    var balanceText: String = ""
+    // Balance - new transaction-based system
+    var isPositive: Bool = true  // Sign selector for balance
+    var balanceText: String = ""  // Amount without sign
+    var adjustmentDate: Date = Date()
 
     // Currency
     var selectedCurrency: CurrencyCode = .pen
 
-    // Adjustment
-    var selectedAdjustmentMode: AdjustmentMode = .byEntry
+    // Adjustment Mode
+    var selectedAdjustmentMode: AdjustmentMode = .changeInitialBalance
 
     // Color
-    var selectedColorHex: String = "#6366F1"  // electricIndigo
+    var selectedColorHex: String = "#6366F1"
     var customColor: Color = Color(hex: "6366F1")
     var isPresentingColorPicker: Bool = false
 
@@ -49,35 +51,102 @@ final class AccountFormViewModel {
     var isShowingDeleteError: Bool = false
     var deleteErrorMessage: String = ""
 
+    // MARK: - Computed Balance Properties
+
+    /// Current balance calculated from all transactions
+    var currentBalance: Double {
+        guard let account = accountToEdit else { return 0 }
+        return InitialBalanceService.currentBalance(
+            for: account,
+            allTransactions: allTransactions
+        )
+    }
+
+    /// Existing initial balance transaction amount (for editing)
+    var existingInitialBalance: Double {
+        guard let account = accountToEdit else { return 0 }
+        // Need to get from context, but we don't have it here
+        // So we calculate: current balance - sum of non-initial transactions
+        let nonInitialTransactions = allTransactions.filter {
+            $0.account?.persistentModelID == account.persistentModelID
+                && $0.balanceAdjustmentType != InitialBalanceService.typeInitialBalance
+        }
+        let otherTransactionsSum = nonInitialTransactions.reduce(0.0) { $0 + $1.amount }
+        return currentBalance - otherTransactionsSum
+    }
+
+    /// The parsed balance amount from user input
+    var parsedBalanceAmount: Double? {
+        let trimmed = balanceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return nil }
+        guard let decimal = parseDecimal(from: trimmed) else { return nil }
+        let magnitude = (decimal as NSDecimalNumber).doubleValue
+        return isPositive ? magnitude : -magnitude
+    }
+
+    /// For "Cambiar saldo inicial" mode: what the final balance will be
+    var calculatedFinalBalance: Double? {
+        guard selectedAdjustmentMode == .changeInitialBalance else { return nil }
+        guard let newInitial = parsedBalanceAmount else { return nil }
+        // Final = Current - OldInitial + NewInitial
+        let oldInitial = existingInitialBalance
+        return currentBalance - oldInitial + newInitial
+    }
+
+    /// For "Ajustar por registro" mode: the adjustment amount needed
+    var adjustmentAmount: Double? {
+        guard selectedAdjustmentMode == .byEntry else { return nil }
+        guard let targetBalance = parsedBalanceAmount else { return nil }
+        return targetBalance - currentBalance
+    }
+
+    /// Whether an adjustment is needed
+    var needsAdjustment: Bool {
+        if selectedAdjustmentMode == .changeInitialBalance {
+            guard let newInitial = parsedBalanceAmount else { return false }
+            return abs(newInitial - existingInitialBalance) > 0.01
+        } else {
+            guard let adjustment = adjustmentAmount else { return false }
+            return abs(adjustment) > 0.01
+        }
+    }
+
     // MARK: - Initialization
 
-    init(accountToEdit: Account?, existingNames: [String]) {
+    init(accountToEdit: Account?, existingNames: [String], allTransactions: [TransactionItem] = [])
+    {
         self.accountToEdit = accountToEdit
         self.existingNames = existingNames
+        self.allTransactions = allTransactions
 
         if let account = accountToEdit {
             self.name = account.name
             self.selectedType = AccountType(rawValue: account.type) ?? .general
             self.accountNumber = account.accountNumber ?? ""
 
-            let balance = account.initialBalance
-            self.isPositive = balance >= 0
-            self.balanceText = String(format: "%.2f", abs(balance))
-
             self.selectedCurrency =
                 CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode)) ?? .pen
-            self.selectedAdjustmentMode =
-                AdjustmentMode(rawValue: account.adjustmentMode) ?? .byEntry
+
+            // Default to "Ajustar por registro" when editing
+            self.selectedAdjustmentMode = .byEntry
 
             self.selectedColorHex = account.colorHex
             self.customColor = colorForHex(account.colorHex)
 
             self.excludeFromStatistics = account.excludeFromStatistics
             self.isArchived = account.isArchived
+
+            // Pre-fill with existing initial balance for "Cambiar saldo inicial" mode
+            let existingInitial = self.existingInitialBalance
+            self.isPositive = existingInitial >= 0
+            self.balanceText = String(format: "%.2f", abs(existingInitial))
         } else {
-            // Defaults are already set in property declarations
+            // Creation mode - default to "Cambiar saldo inicial"
+            self.selectedAdjustmentMode = .changeInitialBalance
             self.selectedColorHex = "#6366F1"
             self.customColor = Color(hex: "6366F1")
+            self.isPositive = true
+            self.balanceText = ""
         }
     }
 
@@ -93,11 +162,9 @@ final class AccountFormViewModel {
 
     var isNameUnique: Bool {
         let lower = trimmedName.lowercased()
-        // If editing, exclude current name from check if it matches
         if let account = accountToEdit, account.name.lowercased() == lower {
             return true
         }
-
         return
             !existingNames
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
@@ -108,20 +175,18 @@ final class AccountFormViewModel {
         CurrencyCode.allCases.contains(where: { $0.rawValue == selectedCurrency.rawValue })
     }
 
-    var parsedAmount: Double? {
-        let trimmed = balanceText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return 0 }
-
-        guard let decimal = parseDecimal(from: trimmed) else { return nil }
-        return (decimal as NSDecimalNumber).doubleValue
-    }
-
-    var isAmountValid: Bool {
-        parsedAmount != nil
+    var isBalanceValid: Bool {
+        // For new accounts, must have an initial balance
+        // For existing accounts, balance change is optional
+        if isEditing {
+            return balanceText.isEmpty || parsedBalanceAmount != nil
+        } else {
+            return parsedBalanceAmount != nil
+        }
     }
 
     var canSave: Bool {
-        isNameValid && isNameUnique && isCurrencyValid && isAmountValid
+        isNameValid && isNameUnique && isCurrencyValid && isBalanceValid
     }
 
     var isEditing: Bool {
@@ -140,25 +205,50 @@ final class AccountFormViewModel {
     }
 
     func saveAccount(context: ModelContext) -> Bool {
-        guard canSave, let amount = parsedAmount else { return false }
+        guard canSave else { return false }
 
-        let finalAmount = isPositive ? amount : -amount
         let trimmedAccountNumber = accountNumber.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        // Find the balance adjustment subcategory
+        let subcategory = InitialBalanceService.findBalanceAdjustmentSubcategory(context: context)
+
         if let account = accountToEdit {
-            // Update
+            // Update account properties
             account.name = trimmedName
             account.currencyCode = normalizeCurrencyCode(selectedCurrency.rawValue)
             account.colorHex = selectedColorHex
             account.iconName = iconName(for: selectedType)
             account.type = selectedType.rawValue
             account.accountNumber = trimmedAccountNumber.isEmpty ? nil : trimmedAccountNumber
-            account.initialBalance = finalAmount
             account.adjustmentMode = selectedAdjustmentMode.rawValue
             account.excludeFromStatistics = excludeFromStatistics
             account.isArchived = isArchived
+
+            // Handle balance adjustment if specified
+            if let balanceValue = parsedBalanceAmount, needsAdjustment, let sub = subcategory {
+                if selectedAdjustmentMode == .changeInitialBalance {
+                    // Update or create initial balance transaction with the new initial balance value
+                    _ = InitialBalanceService.setInitialBalance(
+                        amount: balanceValue,
+                        for: account,
+                        subcategory: sub,
+                        allTransactions: allTransactions,
+                        context: context
+                    )
+                } else {
+                    // Create adjustment transaction to reach target balance
+                    _ = InitialBalanceService.createAdjustment(
+                        targetBalance: balanceValue,
+                        currentBalance: currentBalance,
+                        for: account,
+                        subcategory: sub,
+                        date: adjustmentDate,
+                        context: context
+                    )
+                }
+            }
         } else {
-            // Create
+            // Create new account
             let newAccount = Account(
                 name: trimmedName,
                 currencyCode: normalizeCurrencyCode(selectedCurrency.rawValue),
@@ -166,12 +256,22 @@ final class AccountFormViewModel {
                 iconName: iconName(for: selectedType),
                 type: selectedType.rawValue,
                 accountNumber: trimmedAccountNumber.isEmpty ? nil : trimmedAccountNumber,
-                initialBalance: finalAmount,
                 adjustmentMode: selectedAdjustmentMode.rawValue,
                 excludeFromStatistics: excludeFromStatistics,
                 isArchived: isArchived
             )
             context.insert(newAccount)
+
+            // Create initial balance transaction if amount specified
+            if let initialAmount = parsedBalanceAmount, let sub = subcategory {
+                _ = InitialBalanceService.setInitialBalance(
+                    amount: initialAmount,
+                    for: newAccount,
+                    subcategory: sub,
+                    allTransactions: [],
+                    context: context
+                )
+            }
         }
 
         return true
@@ -179,13 +279,6 @@ final class AccountFormViewModel {
 
     func deleteAccount(context: ModelContext) -> Bool {
         guard let account = accountToEdit else { return false }
-
-        if account.initialBalance != 0 {
-            deleteErrorMessage = L10n.Account.deleteBalanceError
-            isShowingDeleteError = true
-            return false
-        }
-
         context.delete(account)
         return true
     }

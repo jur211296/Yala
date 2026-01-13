@@ -19,7 +19,6 @@ final class Account {
 
     var type: String
     var accountNumber: String?
-    var initialBalance: Double
     var adjustmentMode: String
     var excludeFromStatistics: Bool
     var isArchived: Bool
@@ -31,7 +30,6 @@ final class Account {
         iconName: String,
         type: String,
         accountNumber: String? = nil,
-        initialBalance: Double = 0,
         adjustmentMode: String = "Ajustar por registro",
         excludeFromStatistics: Bool = false,
         isArchived: Bool = false
@@ -42,7 +40,6 @@ final class Account {
         self.iconName = iconName
         self.type = type
         self.accountNumber = accountNumber
-        self.initialBalance = initialBalance
         self.adjustmentMode = adjustmentMode
         self.excludeFromStatistics = excludeFromStatistics
         self.isArchived = isArchived

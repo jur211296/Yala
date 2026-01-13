@@ -57,10 +57,17 @@ struct TrendDataProcessor {
 
         for transaction in transactions {
             let amount = transaction.amountInPreferredCurrency
-            if amount > 0 {
-                totalIncome += amount
-            } else {
-                totalExpense += abs(amount)
+
+            // Exclude balance adjustments from income/expense totals
+            // (they should only affect balance, not income/expense stats)
+            let isBalanceAdjustment = transaction.balanceAdjustmentType != nil
+
+            if !isBalanceAdjustment {
+                if amount > 0 {
+                    totalIncome += amount
+                } else {
+                    totalExpense += abs(amount)
+                }
             }
 
             let date = transaction.date
@@ -119,7 +126,9 @@ struct TrendDataProcessor {
         case .income:
             fillCumulativeBuckets(
                 &buckets,
-                transactions: transactions.filter { $0.amountInPreferredCurrency > 0 },
+                transactions: transactions.filter {
+                    $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil
+                },
                 grouping: grouping,
                 calendar: calendar,
                 valueTransform: { $0.amountInPreferredCurrency }
@@ -128,7 +137,9 @@ struct TrendDataProcessor {
         case .expense:
             fillCumulativeBuckets(
                 &buckets,
-                transactions: transactions.filter { $0.amountInPreferredCurrency < 0 },
+                transactions: transactions.filter {
+                    $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil
+                },
                 grouping: grouping,
                 calendar: calendar,
                 valueTransform: { abs($0.amountInPreferredCurrency) }
@@ -184,8 +195,8 @@ struct TrendDataProcessor {
         grouping: TrendGrouping,
         calendar: Calendar
     ) {
-        // Start with initial account balances
-        var runningBalance = accounts.reduce(0.0) { $0 + $1.initialBalance }
+        // Start with 0 - initial balance is now a transaction
+        var runningBalance = 0.0
 
         // Add transactions before interval
         for transaction in transactions where transaction.date < interval.start {

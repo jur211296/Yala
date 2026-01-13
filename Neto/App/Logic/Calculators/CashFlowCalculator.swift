@@ -44,7 +44,9 @@ struct CashFlowCalculator {
         for tx in transactions {
             // Strict Filter:
             // Must have a category (excludes Transfers)
+            // Skip balance adjustments (they affect balance, not cash flow)
             guard let category = tx.category else { continue }
+            guard tx.balanceAdjustmentType == nil else { continue }
 
             let decimalAmt = Decimal(abs(tx.amount))
 

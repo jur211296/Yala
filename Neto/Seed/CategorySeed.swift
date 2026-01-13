@@ -294,6 +294,18 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
                 iconName: "dollarsign.circle.fill"),
         ]
     ),
+    // 11. Otros (neutral category for system/adjustment transactions)
+    CategorySeedDefinition(
+        name: "Otros",
+        colorHex: "#64748B",
+        isIncome: false,
+        iconName: "ellipsis.circle.fill",
+        subcategories: [
+            SubcategorySeedDefinition(
+                name: "Ajustes de saldo", natureRawValue: "sin_clasificacion",
+                iconName: "plus.forwardslash.minus")
+        ]
+    ),
 ]
 
 /// FIN-18

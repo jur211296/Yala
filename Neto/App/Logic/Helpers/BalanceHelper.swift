@@ -15,6 +15,7 @@ struct BalanceHelper {
 
     /// Calculates the total balance of all eligible accounts in the default currency.
     /// Uses pre-calculated amountInPreferredCurrency for optimal performance.
+    /// Initial balance is now a transaction, so we start from 0.
     static func totalBalance(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -31,22 +32,7 @@ struct BalanceHelper {
 
         var totalDecimal: Decimal = 0
 
-        // 1. Sum initial balances (converted at today's rate since they don't have a date)
-        for account in eligibleAccounts {
-            let sourceCurrency =
-                CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode))
-                ?? preferredCurrency
-
-            let initialConverted = convertToPreferredCurrency(
-                amount: Decimal(account.initialBalance),
-                from: sourceCurrency,
-                to: preferredCurrency,
-                context: context
-            )
-            totalDecimal += initialConverted
-        }
-
-        // 2. Sum each transaction using pre-calculated amount when available
+        // Initial balance is now a transaction, so we only sum transactions
         for tx in transactions {
             guard let account = tx.account,
                 eligibleAccountIDs.contains(account.persistentModelID)
@@ -77,6 +63,7 @@ struct BalanceHelper {
 
     /// Calculates the displayed balance (either total or selected account).
     /// Uses date-specific exchange rates for each transaction for accuracy.
+    /// Initial balance is now a transaction.
     static func displayedBalance(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -91,20 +78,9 @@ struct BalanceHelper {
             !account.isArchived,
             !account.excludeFromStatistics
         {
-            // Use date-specific rates for single account balance
-            let sourceCurrency =
-                CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode))
-                ?? preferredCurrency
+            // Sum transactions for single account
+            var totalDecimal: Decimal = 0
 
-            // 1. Initial balance at today's rate (no specific date)
-            var totalDecimal = convertToPreferredCurrency(
-                amount: Decimal(account.initialBalance),
-                from: sourceCurrency,
-                to: preferredCurrency,
-                context: context
-            )
-
-            // 2. Each transaction using pre-calculated amount when available
             let accountTransactions = transactions.filter {
                 $0.account?.persistentModelID == selectedID
             }
@@ -141,18 +117,8 @@ struct BalanceHelper {
     }
 
     /// Calculates the initial balance for trend calculation up to a specific date.
-    /// It computes the sum of:
-    /// 1. Initial balance of all accounts (converted to preferred currency).
-    /// 2. All transactions that occurred strictly before the `before` date.
-    ///
-    /// - Parameters:
-    ///   - accounts: List of accounts to include.
-    ///   - transactions: List of all transactions (will be filtered by date).
-    ///   - date: The cutoff date. Transactions on or after this date are ignored.
-    ///   - preferredCurrency: The target currency for the calculation.
-    ///   - categoryFilter: Optional category filter to restrict transactions.
-    ///   - context: SwiftData context for currency conversion.
-    /// - Returns: The total calculated balance as a Double.
+    /// Computes all transactions that occurred strictly before the `before` date.
+    /// Initial balance is now a transaction, so we start from 0.
     static func initialBalanceForTrend(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -163,22 +129,7 @@ struct BalanceHelper {
     ) -> Double {
         var total: Decimal = 0
 
-        // 1. Sum initial balances of all accounts
-        for account in accounts {
-            let sourceCurrency =
-                CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode))
-                ?? preferredCurrency
-
-            let initial = convertToPreferredCurrency(
-                amount: Decimal(account.initialBalance),
-                from: sourceCurrency,
-                to: preferredCurrency,
-                context: context
-            )
-            total += initial
-        }
-
-        // 2. Sum all transactions before the date
+        // Sum all transactions before the date
         let pastTransactions = transactions.filter { $0.date < date }
         let eligibleAccountIDs = Set(accounts.map { $0.persistentModelID })
 

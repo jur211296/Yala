@@ -604,3 +604,15 @@
 
 "nature.title" = "Naturaleza";
 
+// MARK: - Balance Adjustments
+
+"account.newBalance" = "Nuevo saldo";
+"account.currentBalance" = "Saldo actual";
+"account.adjustmentPreview" = "Se creará un ajuste de %@";
+"account.initialBalanceNote" = "Saldo inicial";
+"account.adjustmentNote" = "Ajuste de saldo";
+"account.existingInitialBalance" = "Ya tienes un saldo inicial de %@. ¿Deseas modificarlo?";
+"account.modifyInitialBalance" = "Modificar saldo inicial";
+"account.adjustmentDate" = "Fecha del ajuste";
+"category.others" = "Otros";
+"subcategory.balanceAdjustment" = "Ajustes de saldo";
