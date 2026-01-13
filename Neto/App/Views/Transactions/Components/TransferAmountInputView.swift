@@ -195,6 +195,13 @@ struct TransferAmountInputView: View {
                 exchangeRateString = String(format: "%.4f", displayRate)
             }
         }
+        .onAppear {
+            // Sync exchange rate from viewModel when view appears
+            let rate = viewModel.exchangeRate
+            isRateInverted = rate < 1.0 && rate > 0
+            let displayRate = isRateInverted ? (1.0 / rate) : rate
+            exchangeRateString = String(format: "%.4f", displayRate)
+        }
     }
 
     // MARK: - Helper Methods
