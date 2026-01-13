@@ -59,6 +59,8 @@ final class PanelViewModel {
     var exchangeRateWidgetData: ExchangeRateWidgetData?
     var exchangeRateGrouping: TrendGrouping = .day
     private let exchangeRateCurrencySelectionKey = "panel_exchange_rate_currencies_v1"
+    /// Tracks the last period for which exchange rate was calculated (to avoid redundant recalculations)
+    private var lastExchangeRatePeriod: DetailPeriod?
 
     /// Selected currencies to compare against the preferred currency (max 2).
     var selectedComparisonCurrencies: [CurrencyCode] = [] {
@@ -91,10 +93,29 @@ final class PanelViewModel {
         selectedCategoryID != nil || selectedSubcategoryID != nil || selectedNature != nil
     }
 
-    private func enforceTrendLock() {
+    /// Enforce trend lock logic based on current filters
+    /// Now uses SessionState.isExpenseAutomatic for cross-view synchronization
+    private func enforceTrendLock(sessionState: SessionState) {
         if isTrendLockedToExpense {
-            trendType = .expense
+            // Lock to expense when filters are applied (automatic)
+            if trendType != .expense {
+                trendType = .expense
+                sessionState.isExpenseAutomatic = true
+            }
+        } else {
+            // When filters are cleared, reset to balance ONLY if expense was automatic
+            if trendType == .expense && sessionState.isExpenseAutomatic {
+                trendType = .balance
+                sessionState.isExpenseAutomatic = false
+            }
         }
+    }
+
+    /// Called when user manually selects a trend type
+    func setTrendTypeManually(_ type: TrendType, sessionState: SessionState) {
+        trendType = type
+        // Mark as manual selection (not automatic)
+        sessionState.isExpenseAutomatic = false
     }
 
     // MARK: - SessionState Synchronization
@@ -115,6 +136,12 @@ final class PanelViewModel {
 
         // Nature (single-select)
         self.selectedNature = sessionState.selectedNatures.first
+
+        // Trend Metric - convert TrendMetric to TrendType
+        self.trendType = convertMetricToTrendType(sessionState.selectedTrendMetric)
+
+        // Apply trend lock logic after syncing filters
+        enforceTrendLock(sessionState: sessionState)
     }
 
     /// Sync local filters TO SessionState (call after filter changes)
@@ -144,6 +171,27 @@ final class PanelViewModel {
         sessionState.selectedNatures.removeAll()
         if let nature = self.selectedNature {
             sessionState.selectedNatures.insert(nature)
+        }
+
+        // Trend Metric - convert TrendType to TrendMetric
+        sessionState.selectedTrendMetric = convertTrendTypeToMetric(self.trendType)
+    }
+
+    /// Convert TrendMetric to TrendType
+    private func convertMetricToTrendType(_ metric: TrendMetric) -> TrendType {
+        switch metric {
+        case .balance: return .balance
+        case .income: return .income
+        case .expense: return .expense
+        }
+    }
+
+    /// Convert TrendType to TrendMetric
+    private func convertTrendTypeToMetric(_ type: TrendType) -> TrendMetric {
+        switch type {
+        case .balance: return .balance
+        case .income: return .income
+        case .expense: return .expense
         }
     }
 
@@ -332,7 +380,7 @@ final class PanelViewModel {
     /// Intervalo de fecha calculado basado en el periodo seleccionado:
     var panelDateInterval: DateInterval {
         // Use the centralized date interval logic from DetailPeriod models
-        return selectedPeriod.dateInterval
+        return selectedPeriod.dateInterval()
     }
 
     // MARK: - Trend & Balance Status Logic
@@ -360,7 +408,8 @@ final class PanelViewModel {
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String,
-        context: ModelContext
+        context: ModelContext,
+        sessionState: SessionState
     ) {
         // 1. Build shared calculation context
         let calcContext = buildCalculationContext(
@@ -370,69 +419,43 @@ final class PanelViewModel {
             modelContext: context
         )
 
-        // Determine which widget types are visible (for lazy evaluation)
-        let activeTypes = Set(activeWidgets().map { $0.type })
-
-        // 2. Calculate each widget's data (only if visible)
+        // 2. Calculate ALL widget data (unconditionally to ensure data is ready when widgets are added)
 
         // Trend chart - use unified TrendDataProcessor
         let newProcessedData: (points: [BarPoint], yDomain: ClosedRange<Double>)
         var newTrendTotalIncome = trendTotalIncome
         var newTrendTotalExpense = trendTotalExpense
-        if activeTypes.contains(.trend) {
-            let result = TrendDataProcessor.processTrendData(
-                transactions: calcContext.filteredTransactions,
-                accounts: calcContext.eligibleAccounts,
-                metric: trendType,
-                period: calcContext.period,
-                grouping: calcContext.trendGrouping,
-                interval: calcContext.effectiveInterval,
-                currencyCode: calcContext.defaultCurrencyCode,
-                context: calcContext.modelContext
-            )
-            newProcessedData = (result.points, result.yDomain)
-            newTrendTotalIncome = result.totalIncome
-            newTrendTotalExpense = result.totalExpense
-        } else {
-            newProcessedData = (processedTrendPoints, processedYDomain)
-        }
+        let result = TrendDataProcessor.processTrendData(
+            transactions: calcContext.filteredTransactions,
+            accounts: calcContext.eligibleAccounts,
+            metric: trendType,
+            period: calcContext.period,
+            grouping: calcContext.trendGrouping,
+            interval: calcContext.effectiveInterval,
+            currencyCode: calcContext.defaultCurrencyCode,
+            context: calcContext.modelContext
+        )
+        newProcessedData = (result.points, result.yDomain)
+        newTrendTotalIncome = result.totalIncome
+        newTrendTotalExpense = result.totalExpense
 
         // Categories - used by both topSpending and categoriesPie widgets
-        let needsCategories =
-            activeTypes.contains(.topSpending) || activeTypes.contains(.categoriesPie)
-        let newTopSpendingCategories =
-            needsCategories
-            ? calculateCategoriesWidget(context: calcContext)
-            : topSpendingCategories
+        let newTopSpendingCategories = calculateCategoriesWidget(context: calcContext)
 
         // Subcategories - used by both topSubcategories and subcategoriesPie widgets
-        let needsSubcategories =
-            activeTypes.contains(.topSubcategories) || activeTypes.contains(.subcategoriesPie)
-        let newTopSubcategories =
-            needsSubcategories
-            ? calculateSubcategoriesWidget(context: calcContext)
-            : topSubcategories
+        let newTopSubcategories = calculateSubcategoriesWidget(context: calcContext)
 
         // Cash Flow
-        let newCashFlowSummary =
-            activeTypes.contains(.cashFlow)
-            ? calculateCashFlowWidget(context: calcContext)
-            : cashFlowSummary
+        let newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
 
         // Latest Records
-        let newLatestRecords =
-            activeTypes.contains(.latestRecords)
-            ? calculateLatestRecordsWidget(context: calcContext)
-            : latestRecords
+        let newLatestRecords = calculateLatestRecordsWidget(context: calcContext)
 
         // Nature Trend
-        let newNatureTrendPoints =
-            activeTypes.contains(.expensesByNature)
-            ? calculateNatureWidget(context: calcContext)
-            : natureTrendPoints
+        let newNatureTrendPoints = calculateNatureWidget(context: calcContext)
 
         // 3. BATCH STATE UPDATE - Single render cycle
-        enforceTrendLock()
+        enforceTrendLock(sessionState: sessionState)
 
         self.trendGrouping = calcContext.trendGrouping
         self.cashFlowGrouping = calcContext.cashFlowGrouping
@@ -451,8 +474,11 @@ final class PanelViewModel {
         // Track the metric for which data was calculated (prevents stale data rendering)
         self.dataTrendType = self.trendType
 
-        // 4. Calculate Exchange Rate Widget Data (only if visible)
-        if activeTypes.contains(.exchangeRate) {
+        // 4. Calculate Exchange Rate Widget Data (only if period changed - filters don't affect it)
+        let periodChanged = lastExchangeRatePeriod != selectedPeriod
+        let needsExchangeRateData = exchangeRateWidgetData == nil || periodChanged
+        if needsExchangeRateData {
+            lastExchangeRatePeriod = selectedPeriod
             calculateExchangeRateData(
                 preferredCurrencyCode: defaultCurrencyCode,
                 context: context
@@ -481,8 +507,8 @@ final class PanelViewModel {
                 return (.day, .day)  // Daily bars for week
             case .thisMonth, .lastMonth, .last30Days:
                 return (.day, .day)  // Daily bars for month (smart axis handles labels)
-            case .thisYear, .lastYear, .allTime:
-                return (.month, .month)  // Monthly bars for year/all-time
+            case .thisYear, .lastYear, .allTime, .custom:
+                return (.month, .month)  // Monthly bars for year/all-time/custom
             }
         }()
 
@@ -768,7 +794,8 @@ final class PanelViewModel {
         transactions: [TransactionItem],
         accounts: [Account],
         defaultCurrencyCode: String,
-        context: ModelContext
+        context: ModelContext,
+        sessionState: SessionState
     ) {
         if selectedSubcategoryID == id {
             // Deselect Subcategory
@@ -805,7 +832,8 @@ final class PanelViewModel {
             accounts: accounts,
             transactions: transactions,
             defaultCurrencyCode: defaultCurrencyCode,
-            context: context
+            context: context,
+            sessionState: sessionState
         )
     }
 

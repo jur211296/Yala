@@ -27,6 +27,40 @@ final class StatisticsViewModel: Filterable {
     /// Whether to show aggregated view (true) or per-account view (false)
     var isAggregatedView: Bool = true
 
+    // MARK: - Trend Locking Logic
+
+    /// Determines if metric should be locked to expense due to active filters
+    var isMetricLockedToExpense: Bool {
+        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNatures.isEmpty
+    }
+
+    /// Track if the current expense selection was automatic (due to filters) or manual (user click)
+    private var isExpenseAutomatic: Bool = false
+
+    /// Enforce metric lock: switch to expense when filters applied
+    private func enforceMetricLock() {
+        if isMetricLockedToExpense {
+            // Lock to expense when filters are applied (automatic)
+            if selectedMetric != .expense {
+                selectedMetric = .expense
+                isExpenseAutomatic = true
+            }
+        } else {
+            // When filters are cleared, reset to balance ONLY if expense was automatic
+            if selectedMetric == .expense && isExpenseAutomatic {
+                selectedMetric = .balance
+                isExpenseAutomatic = false
+            }
+        }
+    }
+
+    /// Called when user manually selects a metric
+    func setMetricManually(_ metric: TrendMetric) {
+        selectedMetric = metric
+        // Mark as manual selection (not automatic)
+        isExpenseAutomatic = false
+    }
+
     // MARK: - Filter State
 
     /// Selected accounts for filtering (empty = all)
@@ -198,7 +232,7 @@ final class StatisticsViewModel: Filterable {
 
     /// Calculate the date interval for the current period
     var panelDateInterval: DateInterval {
-        detailPeriod.dateInterval
+        detailPeriod.dateInterval()
     }
 
     // MARK: - Data Calculation
@@ -210,6 +244,9 @@ final class StatisticsViewModel: Filterable {
         defaultCurrencyCode: String,
         context: ModelContext
     ) {
+
+        // Enforce metric lock based on filters
+        enforceMetricLock()
 
         // Always use day grouping so chart data reaches today
         // The x-axis display will still show months for yearly view
@@ -592,6 +629,18 @@ final class StatisticsViewModel: Filterable {
             transactionType: transactionType,
             period: detailPeriod
         )
+    }
+
+    // MARK: - SessionState Synchronization
+
+    /// Sync trend metric FROM SessionState
+    func syncMetricFromSessionState(_ sessionState: SessionState) {
+        self.selectedMetric = sessionState.selectedTrendMetric
+    }
+
+    /// Sync trend metric TO SessionState
+    func syncMetricToSessionState(_ sessionState: SessionState) {
+        sessionState.selectedTrendMetric = self.selectedMetric
     }
 }
 

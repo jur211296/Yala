@@ -5,6 +5,7 @@
 //  Tests for FilterService unified filtering logic.
 //
 
+import Foundation
 import SwiftData
 import Testing
 

@@ -26,18 +26,13 @@ struct ExportFiltersStepView: View {
     @State private var hasInitializedAccounts = false
 
     // Categorías y Subcategorías
-    // Para simplificar, si se selecciona una categoría, se asume que se quieren todas sus subcategorías
-    // O podemos permitir selección granular. El requerimiento dice "selector jerárquico".
-    // Por ahora, implementaremos selección de subcategorías plana agrupada visualmente o simple.
-    // Dado el tiempo, haremos selección de categorías y subcategorías independientes o vinculadas.
-    // Requerimiento: "Permite abrir un selector jerárquico (categoría → subcategorías) para filtrar por una o varias subcategorías."
-    @State private var selectedCategoriesState: Set<Category> = []
-    @State private var selectedSubcategories: Set<Subcategory> = []
-    // Control de expansión/colapso por categoría en el selector de categorías
-    @State private var expandedCategories: Set<Category> = []
+    @State private var selectedSubcategories: Set<PersistentIdentifier> = []
 
     // Etiquetas
     @State private var selectedTags: Set<PersistentIdentifier> = []
+
+    // Naturaleza
+    @State private var selectedNatures: Set<SubcategoryNature> = Set(SubcategoryNature.allCases)
 
     // Moneda
     @State private var selectedCurrencies: Set<CurrencyCode> = Set(CurrencyCode.allCases)
@@ -46,18 +41,14 @@ struct ExportFiltersStepView: View {
     @State private var amountCondition: AmountFilterCondition = .any
 
     // Periodo
-    @State private var period: ExportPeriod = .last30Days
-    @State private var customDateFrom: Date? = nil
-    @State private var customDateTo: Date? = nil
+    @State private var selectedPeriod: DetailPeriod = .last30Days
 
     // Nota
     @State private var noteContains: String = ""
 
     // MARK: - Sheet Presentation State
-    @State private var showAccountsSheet = false
     @State private var showCategoriesSheet = false
-    @State private var showTagsSheet = false
-    @State private var showCurrencySheet = false
+    @State private var showPeriodPicker = false
 
     // MARK: - Computed Properties
 
@@ -70,17 +61,6 @@ struct ExportFiltersStepView: View {
             return false
         }
 
-        // Validar rango de fechas si es personalizado
-        if period == .custom {
-            if let from = customDateFrom, let to = customDateTo {
-                return from <= to
-            }
-            // Si falta alguna fecha, depende de la lógica deseada.
-            // El modelo permite nil, pero la UI debería quizás exigir ambas o manejarlo.
-            // Asumiremos que se requiere al menos una o que si están ambas deben ser válidas.
-            return true
-        }
-
         // Validar rango de montos
         if case .between(let min, let max) = amountCondition {
             return min <= max
@@ -90,9 +70,13 @@ struct ExportFiltersStepView: View {
     }
 
     private var exportFilters: ExportFilters {
-        // Combinar categorías seleccionadas explícitamente con las de las subcategorías
-        let categoriesFromSub = Set(selectedSubcategories.map { $0.category })
-        let finalCategories = selectedCategoriesState.union(categoriesFromSub)
+        // Resolve subcategory objects from PersistentIdentifiers
+        let selectedSubcategoryObjects = allSubcategories.filter {
+            selectedSubcategories.contains($0.persistentModelID)
+        }
+
+        // Derive categories from the selected subcategories
+        let finalCategories = Set(selectedSubcategoryObjects.compactMap { $0.category })
 
         let selectedTagObjects = allTags.filter { selectedTags.contains($0.persistentModelID) }
 
@@ -104,18 +88,20 @@ struct ExportFiltersStepView: View {
             selectedTagNames = selectedTagObjects.map { $0.name }
         }
 
+        // Convert DetailPeriod to date interval
+        let dateInterval = selectedPeriod.dateInterval()
+
         return ExportFilters(
             selectedAccounts: allAccounts.filter {
                 selectedAccounts.contains($0.persistentModelID)
             },
             selectedCategories: Array(finalCategories),
-            selectedSubcategories: Array(selectedSubcategories),
+            selectedSubcategories: selectedSubcategoryObjects,
             selectedTagNames: selectedTagNames,
             selectedCurrencies: Array(selectedCurrencies),
             amountCondition: amountCondition,
-            period: period,
-            customDateFrom: customDateFrom,
-            customDateTo: customDateTo,
+            dateFrom: dateInterval.start,
+            dateTo: dateInterval.end,
             noteContains: noteContains.isEmpty ? nil : noteContains
         )
     }
@@ -124,21 +110,21 @@ struct ExportFiltersStepView: View {
 
     var body: some View {
         mainContent
-            .sheet(isPresented: $showAccountsSheet) {
-                accountsSheetView
-            }
             .sheet(isPresented: $showCategoriesSheet) {
                 categoriesSheetView
             }
-            .sheet(isPresented: $showTagsSheet) {
-                tagsSheetView
-            }
-            .sheet(isPresented: $showCurrencySheet) {
-                currencySheetView
+            .sheet(isPresented: $showPeriodPicker) {
+                ExportPeriodPickerSheet(
+                    selectedPeriod: selectedPeriod,
+                    onSelect: { period in
+                        selectedPeriod = period
+                        showPeriodPicker = false
+                    }
+                )
+                .presentationDetents([.medium])
             }
     }
 
-    // Vista principal del paso de filtros (sin hojas)
     private var mainContent: some View {
         NavigationStack {
             ZStack {
@@ -146,15 +132,17 @@ struct ExportFiltersStepView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        dateSection
-
                         SectionBox(title: "Opciones de filtrado") {
                             VStack(spacing: 0) {
+                                periodRow
+                                Divider().padding(.leading, 16)
                                 accountsContent
                                 Divider().padding(.leading, 16)
                                 categoriesContent
                                 Divider().padding(.leading, 16)
                                 tagsContent
+                                Divider().padding(.leading, 16)
+                                naturesContent
                                 Divider().padding(.leading, 16)
                                 currencyContent
                                 Divider().padding(.leading, 16)
@@ -184,7 +172,7 @@ struct ExportFiltersStepView: View {
                             onFinish: { dismiss() }
                         )
                     } label: {
-                        Text("Siguiente")
+                        Text(L10n.Common.next)
                     }
                     .disabled(!isValid)
                 }
@@ -194,367 +182,18 @@ struct ExportFiltersStepView: View {
 
     // MARK: - Sheets
 
-    private var accountsSheetView: some View {
-        NavigationStack {
-            List {
-                ForEach(allAccounts) { account in
-                    Button {
-                        if selectedAccounts.contains(account.persistentModelID) {
-                            selectedAccounts.remove(account.persistentModelID)
-                        } else {
-                            selectedAccounts.insert(account.persistentModelID)
-                        }
-                    } label: {
-                        HStack {
-                            Text(account.name)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if selectedAccounts.contains(account.persistentModelID) {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.brandPrimary)
-                            }
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                }
-            }
-            .navigationTitle("Seleccionar cuentas")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NetoToolbarButton(systemName: "chevron.left") {
-                        showAccountsSheet = false
-                    }
-                }
-            }
-        }
-    }
-
     private var categoriesSheetView: some View {
-        NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: 24) {
-                        SectionBox(title: "Seleccionar categorías") {
-                            VStack(spacing: 0) {
-                                // Fila "Seleccionar todo"
-                                Button {
-                                    if isEverythingSelected {
-                                        clearAllCategoriesAndSubcategories()
-                                    } else {
-                                        selectAllCategoriesAndSubcategories()
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(
-                                            isEverythingSelected
-                                                ? "Deseleccionar todo" : "Seleccionar todo"
-                                        )
-                                        .font(.body.weight(.semibold))
-                                        .foregroundStyle(.primary)
-
-                                        Spacer()
-
-                                        Image(
-                                            systemName: isEverythingSelected
-                                                ? "checkmark.circle.fill"
-                                                : "circle"
-                                        )
-                                        .foregroundStyle(
-                                            isEverythingSelected
-                                                ? Color.brandPrimary
-                                                : Color.netoSecondaryText.opacity(0.4)
-                                        )
-                                    }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
-                                }
-                                .buttonStyle(.plain)
-
-                                SubsectionDivider()
-
-                                // Lista jerárquica de categorías + subcategorías
-                                ForEach(Array(allCategories.enumerated()), id: \.element.id) {
-                                    index, category in
-                                    VStack(spacing: 0) {
-                                        // Cabecera de categoría
-                                        HStack(spacing: 12) {
-                                            // Icono de categoría con color (similar a Ajustes → Categorías)
-                                            Circle()
-                                                .fill(colorForHex(category.colorHex))
-                                                .frame(width: 36, height: 36)
-                                                .overlay(
-                                                    Image(systemName: "tag")
-                                                        .font(.subheadline)
-                                                        .foregroundStyle(.white)
-                                                )
-
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(category.name)
-                                                    .font(.body)  // sin negrita
-                                                    .foregroundStyle(.primary)
-
-                                                Text(subcategorySelectionSummary(for: category))
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-
-                                            Spacer()
-
-                                            // Estado de selección de la categoría
-                                            Button {
-                                                toggleCategory(category)
-                                            } label: {
-                                                let state = selectionState(for: category)
-                                                Image(systemName: selectionIconName(for: state))
-                                                    .foregroundStyle(
-                                                        state == .none
-                                                            ? Color.netoSecondaryText.opacity(0.4)
-                                                            : Color.brandPrimary
-                                                    )
-                                            }
-                                            .buttonStyle(.plain)
-
-                                            // Botón expandir / contraer
-                                            Button {
-                                                toggleExpanded(category)
-                                            } label: {
-                                                Image(systemName: "chevron.down")
-                                                    .rotationEffect(
-                                                        .degrees(isExpanded(category) ? 0 : -90)
-                                                    )
-                                                    .foregroundStyle(.tertiary)
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 14)  // un poco más alta, como en la vista de Categorías
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            toggleExpanded(category)
-                                        }
-
-                                        // Subcategorías
-                                        if isExpanded(category) {
-                                            let subs = subcategories(for: category)
-
-                                            ForEach(Array(subs.enumerated()), id: \.element.id) {
-                                                _, subcategory in
-                                                SubsectionDivider()
-
-                                                Button {
-                                                    let subsForCategory = subcategories(
-                                                        for: category)
-
-                                                    if selectedSubcategories.contains(subcategory) {
-                                                        // Quitar solo esta subcategoría y asegurar que la categoría pase a estado parcial
-                                                        selectedSubcategories.remove(subcategory)
-                                                        selectedCategoriesState.remove(category)
-                                                    } else {
-                                                        // Añadir la subcategoría
-                                                        selectedSubcategories.insert(subcategory)
-
-                                                        // Si ahora todas las subcategorías de la categoría están seleccionadas,
-                                                        // marcamos también la categoría como completa
-                                                        let allSubsSelected =
-                                                            !subsForCategory.isEmpty
-                                                            && subsForCategory.allSatisfy {
-                                                                selectedSubcategories.contains($0)
-                                                            }
-                                                        if allSubsSelected {
-                                                            selectedCategoriesState.insert(category)
-                                                        }
-                                                    }
-                                                } label: {
-                                                    HStack(spacing: 12) {
-                                                        // Ícono de subcategoría con mismo tamaño que el de categoría,
-                                                        // pero con sangría mediante padding.
-                                                        let subColor = colorForHex(
-                                                            subcategory.colorHex
-                                                                ?? category.colorHex)
-                                                        Circle()
-                                                            .fill(subColor)
-                                                            .frame(width: 36, height: 36)
-                                                            .overlay(
-                                                                Image(systemName: "tag")
-                                                                    .font(.subheadline)
-                                                                    .foregroundStyle(.white)
-                                                            )
-
-                                                        VStack(alignment: .leading, spacing: 2) {
-                                                            Text(subcategory.name)
-                                                                .foregroundStyle(.primary)
-                                                                .font(.body)
-                                                        }
-
-                                                        Spacer()
-
-                                                        let isSelected =
-                                                            selectedSubcategories.contains(
-                                                                subcategory)
-                                                        Image(
-                                                            systemName: isSelected
-                                                                ? "checkmark.circle.fill" : "circle"
-                                                        )
-                                                        .foregroundStyle(
-                                                            isSelected
-                                                                ? Color.brandPrimary
-                                                                : Color.netoSecondaryText.opacity(
-                                                                    0.4)
-                                                        )
-                                                    }
-                                                    .padding(.horizontal, 16)
-                                                    .padding(.vertical, 10)
-                                                    .padding(.leading, 48)  // sangría para que quede jerárquico respecto a la categoría
-                                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                                    .contentShape(Rectangle())
-                                                }
-                                                .buttonStyle(.plain)
-                                            }
-                                        }
-                                    }
-
-                                    // Divider entre categorías
-                                    if index < allCategories.count - 1 {
-                                        SubsectionDivider()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
-                }
-            }
-            .navigationTitle("Seleccionar categorías")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NetoToolbarButton(systemName: "chevron.left") {
-                        showCategoriesSheet = false
-                    }
-                }
-            }
-        }
+        CategorySelectorSheet(
+            categories: allCategories,
+            subcategories: allSubcategories,
+            selectedSubcategories: $selectedSubcategories
+        )
         .onAppear {
-            // Solo inicializamos la selección la primera vez,
-            // cuando aún no hay nada elegido explícitamente.
-            if selectedCategoriesState.isEmpty && selectedSubcategories.isEmpty {
-                selectAllCategoriesAndSubcategories()
+            // Initialize with all selected if empty
+            if selectedSubcategories.isEmpty {
+                let visibleSubs = allSubcategories.filter { $0.isVisible }
+                selectedSubcategories = Set(visibleSubs.map { $0.persistentModelID })
             }
-        }
-    }
-
-    private var tagsSheetView: some View {
-        NavigationStack {
-            List {
-                ForEach(allTags) { tag in
-                    Button {
-                        if selectedTags.contains(tag.persistentModelID) {
-                            selectedTags.remove(tag.persistentModelID)
-                        } else {
-                            selectedTags.insert(tag.persistentModelID)
-                        }
-                    } label: {
-                        HStack {
-                            Text(tag.name)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if selectedTags.contains(tag.persistentModelID) {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.brandPrimary)
-                            }
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                }
-            }
-            .navigationTitle("Seleccionar etiquetas")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NetoToolbarButton(systemName: "chevron.left") {
-                        showTagsSheet = false
-                    }
-                }
-            }
-        }
-    }
-
-    private var currencySheetView: some View {
-        NavigationStack {
-            MultiSelectionList(
-                title: "Seleccionar monedas",
-                items: availableCurrencies,
-                selection: $selectedCurrencies,
-                label: { $0.rawValue }
-            )
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NetoToolbarButton(systemName: "chevron.left") {
-                        showCurrencySheet = false
-                    }
-                }
-            }
-        }
-    }
-
-    // Estado visual de selección de una categoría (para el icono de la cabecera)
-    private enum CategorySelectionVisualState {
-        case none
-        case partial
-        case all
-    }
-
-    /// Indica si todas las categorías y subcategorías visibles están seleccionadas
-    private var isEverythingSelected: Bool {
-        let allVisibleSubs = allSubcategories.filter { $0.isVisible }
-        return selectedCategoriesState.count == allCategories.count
-            && selectedSubcategories.count == allVisibleSubs.count
-    }
-
-    /// Selecciona todas las categorías y todas las subcategorías visibles
-    private func selectAllCategoriesAndSubcategories() {
-        selectedCategoriesState = Set(allCategories)
-        let visibleSubs = allSubcategories.filter { $0.isVisible }
-        selectedSubcategories = Set(visibleSubs)
-    }
-
-    /// Limpia por completo el filtro de categorías y subcategorías
-    private func clearAllCategoriesAndSubcategories() {
-        selectedCategoriesState.removeAll()
-        selectedSubcategories.removeAll()
-    }
-
-    /// Devuelve el estado visual de una categoría para decidir el icono:
-    /// - .all: todo seleccionado
-    /// - .partial: algunas subcategorías seleccionadas
-    /// - .none: nada seleccionado
-    private func selectionState(for category: Category) -> CategorySelectionVisualState {
-        let subs = subcategories(for: category)
-        let selectedSubs = subs.filter { selectedSubcategories.contains($0) }
-
-        let allSubsSelected = !subs.isEmpty && selectedSubs.count == subs.count
-        let anySubSelected = !selectedSubs.isEmpty
-
-        if selectedCategoriesState.contains(category) || allSubsSelected {
-            return .all
-        } else if anySubSelected {
-            return .partial
-        } else {
-            return .none
-        }
-    }
-
-    private func isExpanded(_ category: Category) -> Bool {
-        expandedCategories.contains(category)
-    }
-
-    private func toggleExpanded(_ category: Category) {
-        if expandedCategories.contains(category) {
-            expandedCategories.remove(category)
-        } else {
-            expandedCategories.insert(category)
         }
     }
 
@@ -578,26 +217,20 @@ struct ExportFiltersStepView: View {
     }
 
     private var selectedCategoriesText: String {
-        // Caso 1: sin filtro aplicado (estado inicial)
-        if selectedCategoriesState.isEmpty && selectedSubcategories.isEmpty {
+        let visibleSubs = allSubcategories.filter { $0.isVisible }
+
+        // Empty = all selected
+        if selectedSubcategories.isEmpty {
             return "Todas las categorías"
         }
 
-        // Caso 2: todo realmente seleccionado (todas las categorías y subcategorías visibles)
-        if isEverythingSelected {
+        // All visible subcategories selected
+        if selectedSubcategories.count == visibleSubs.count {
             return "Todas las categorías"
         }
 
-        // Caso 3: hay filtro parcial; solo hablamos de subcategorías
-        let count = selectedSubcategories.count
-
-        if count == 0 {
-            // Hay alguna combinación rara (p. ej. categorías sin subcategorías),
-            // pero mantenemos un texto consistente.
-            return "Ninguna subcategoría seleccionada"
-        }
-
-        return "\(count) subcategorías seleccionadas"
+        // Partial selection
+        return "\(selectedSubcategories.count) subcategorías seleccionadas"
     }
 
     private var selectedTagsText: String {
@@ -624,17 +257,16 @@ struct ExportFiltersStepView: View {
     }
 
     private var accountsContent: some View {
-        FilterSelectionRow(
+        FilterChipsSection(
+            icon: "creditcard",
             title: "Cuentas",
-            subtitle: selectedAccountsText,
-            icon: "creditcard"
-        )
-        .onTapGesture {
-            showAccountsSheet = true
+            status: selectedAccountsText,
+            items: allAccounts,
+            showEmptyPlaceholder: false
+        ) { account in
+            accountChip(account)
         }
         .onAppear {
-            // Asegurar que, por defecto, todas las cuentas estén seleccionadas
-            // para que el texto "Todas las cuentas" coincida con la selección real
             syncAccountsSelection()
         }
         .onChange(of: selectedAccounts) { _, newAccountIDs in
@@ -649,33 +281,51 @@ struct ExportFiltersStepView: View {
         }
     }
 
+    private func accountChip(_ account: Account) -> some View {
+        let isSelected = selectedAccounts.contains(account.persistentModelID)
+
+        return Button {
+            if isSelected {
+                selectedAccounts.remove(account.persistentModelID)
+            } else {
+                selectedAccounts.insert(account.persistentModelID)
+            }
+        } label: {
+            Text(account.name)
+                .font(.subheadline)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(
+                            isSelected ? Color(hex: account.colorHex) : Color(.tertiarySystemFill))
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
     private var categoriesContent: some View {
-        FilterSelectionRow(
-            title: "Categorías",
-            subtitle: selectedCategoriesText,
-            icon: "tag"
-        )
+        HStack(spacing: 0) {
+            FilterSectionHeader(
+                icon: "tag",
+                title: "Categorías",
+                status: selectedCategoriesText
+            )
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.footnote)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
         .onTapGesture {
             showCategoriesSheet = true
         }
-    }
-
-    private func toggleCategory(_ category: Category) {
-        let subs = subcategories(for: category)
-
-        if selectedCategoriesState.contains(category) {
-            // Desmarcar categoría completa y todas sus subcategorías
-            selectedCategoriesState.remove(category)
-            subs.forEach { selectedSubcategories.remove($0) }
-        } else {
-            // Marcar categoría completa y todas sus subcategorías visibles
-            selectedCategoriesState.insert(category)
-            subs.forEach { selectedSubcategories.insert($0) }
-        }
-    }
-
-    private func isCategorySelected(_ category: Category) -> Bool {
-        selectedCategoriesState.contains(category)
     }
 
     private func subcategories(for category: Category) -> [Subcategory] {
@@ -685,31 +335,95 @@ struct ExportFiltersStepView: View {
     }
 
     private var tagsContent: some View {
-        FilterSelectionRow(
+        FilterChipsSection(
+            icon: "number",
             title: "Etiquetas",
-            subtitle: selectedTagsText,
-            icon: "number"
-        )
-        .onTapGesture {
-            if !allTags.isEmpty {
-                showTagsSheet = true
-            }
+            status: selectedTagsText,
+            items: allTags,
+            showEmptyPlaceholder: true
+        ) { tag in
+            tagChip(tag)
         }
         .onAppear {
             syncTagsSelection()
         }
-        .opacity(allTags.isEmpty ? 0.5 : 1.0)
+    }
+
+    private func tagChip(_ tag: Tag) -> some View {
+        let isSelected = selectedTags.contains(tag.persistentModelID)
+
+        return Button {
+            if isSelected {
+                selectedTags.remove(tag.persistentModelID)
+            } else {
+                selectedTags.insert(tag.persistentModelID)
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(isSelected ? Color.white : Color(hex: tag.colorHex))
+                    .frame(width: 8, height: 8)
+
+                Text(tag.name)
+                    .font(.subheadline)
+                    .foregroundStyle(isSelected ? .white : .primary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var currencyContent: some View {
-        FilterSelectionRow(
-            title: "Moneda",
-            subtitle: selectedCurrenciesText,
-            icon: "arrow.triangle.2.circlepath"
-        )
-        .onTapGesture {
-            showCurrencySheet = true
+        VStack(alignment: .leading, spacing: 10) {
+            // Header
+            FilterSectionHeader(
+                icon: "arrow.triangle.2.circlepath",
+                title: "Moneda",
+                status: selectedCurrenciesText
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+
+            // Chips
+            FlowLayout(spacing: 8) {
+                ForEach(availableCurrencies) { currency in
+                    currencyChip(currency)
+                }
+            }
+            .padding(.leading, 52)
+            .padding(.trailing, 16)
+            .padding(.bottom, 12)
         }
+    }
+
+    private func currencyChip(_ currency: CurrencyCode) -> some View {
+        let isSelected = selectedCurrencies.contains(currency)
+
+        return Button {
+            if isSelected {
+                selectedCurrencies.remove(currency)
+            } else {
+                selectedCurrencies.insert(currency)
+            }
+        } label: {
+            Text(currency.rawValue)
+                .font(.subheadline)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     private var availableCurrencies: [CurrencyCode] {
@@ -722,6 +436,62 @@ struct ExportFiltersStepView: View {
         return CurrencyCode.allCases.filter { accountCurrencies.contains($0) }
     }
 
+    // MARK: - Natures Content
+
+    private var naturesContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header
+            FilterSectionHeader(
+                icon: "leaf.fill",
+                title: "Naturaleza",
+                status: selectedNaturesText
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+
+            // Chips
+            FlowLayout(spacing: 8) {
+                ForEach(SubcategoryNature.allCases, id: \.self) { nature in
+                    natureChip(nature)
+                }
+            }
+            .padding(.leading, 52)
+            .padding(.trailing, 16)
+            .padding(.bottom, 12)
+        }
+    }
+
+    private func natureChip(_ nature: SubcategoryNature) -> some View {
+        let isSelected = selectedNatures.contains(nature)
+
+        return Button {
+            if isSelected {
+                selectedNatures.remove(nature)
+            } else {
+                selectedNatures.insert(nature)
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(nature.displayName)
+                    .font(.subheadline)
+                    .foregroundStyle(isSelected ? .white : .primary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var selectedNaturesText: String {
+        if selectedNatures.isEmpty { return "Todas" }
+        return "\(selectedNatures.count)"
+    }
+
     private var amountContent: some View {
         AmountFilterView(
             condition: $amountCondition,
@@ -729,147 +499,8 @@ struct ExportFiltersStepView: View {
         )
     }
 
-    // MARK: - Period Selection State
-    @State private var selectedPeriodCategory: ExportPeriodCategory = .rolling
-
-    private var dateSection: some View {
-        SectionBox(title: "Seleccione el período a exportar") {
-            VStack(alignment: .leading, spacing: 16) {
-                // Category Picker: Dropdown menu style
-                Menu {
-                    ForEach(ExportPeriodCategory.allCases) { category in
-                        Button(category.displayName) {
-                            selectedPeriodCategory = category
-                        }
-                    }
-                } label: {
-                    HStack {
-                        Text(selectedPeriodCategory.displayName)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-
-                Divider()
-                    .padding(.horizontal, 16)
-
-                // Show options based on selected category
-                switch selectedPeriodCategory {
-                case .current:
-                    currentPeriodPicker
-                case .rolling:
-                    rollingPeriodPicker
-                case .custom:
-                    customDatePickers
-                }
-            }
-            .padding(.bottom, 12)
-        }
-        .onChange(of: selectedPeriodCategory) { _, newCategory in
-            // When changing category, set a default period for that category
-            switch newCategory {
-            case .current:
-                if period.category != .current {
-                    period = .thisMonth
-                }
-            case .rolling:
-                if period.category != .rolling {
-                    period = .last30Days
-                }
-            case .custom:
-                period = .custom
-            }
-        }
-        .onAppear {
-            // Sync category from period
-            selectedPeriodCategory = period.category
-        }
-    }
-
-    private var currentPeriodPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Picker("Periodo", selection: $period) {
-                ForEach(ExportPeriod.currentPeriods) { p in
-                    Text(p.displayName).tag(p)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-
-            if let subtitle = periodSubtitle {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 16)
-            }
-        }
-    }
-
-    private var rollingPeriodPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Picker("Periodo", selection: $period) {
-                ForEach(ExportPeriod.rollingPeriods) { p in
-                    Text(p.displayName).tag(p)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-
-            if let subtitle = periodSubtitle {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 16)
-            }
-        }
-    }
-
-    private var customDatePickers: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text("Desde")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                DatePicker(
-                    "",
-                    selection: Binding(
-                        get: { customDateFrom ?? Date() },
-                        set: { customDateFrom = $0 }
-                    ), displayedComponents: .date
-                )
-                .labelsHidden()
-            }
-            .padding(.horizontal, 16)
-
-            HStack {
-                Text("Hasta")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                DatePicker(
-                    "",
-                    selection: Binding(
-                        get: { customDateTo ?? Date() },
-                        set: { customDateTo = $0 }
-                    ), displayedComponents: .date
-                )
-                .labelsHidden()
-            }
-            .padding(.horizontal, 16)
-        }
-    }
-
-    private var periodSubtitle: String? {
-        guard period != .custom else { return nil }
-        guard let interval = period.standardDateInterval() else { return nil }
+    private var periodSubtitle: String {
+        let interval = selectedPeriod.dateInterval()
 
         let calendar = Calendar.current
         let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
@@ -879,6 +510,39 @@ struct ExportFiltersStepView: View {
         formatter.dateFormat = "d MMM yyyy"
 
         return "\(formatter.string(from: interval.start)) - \(formatter.string(from: displayEnd))"
+    }
+
+    // MARK: - Period Row (inside SectionBox)
+
+    private var periodRow: some View {
+        Button {
+            showPeriodPicker = true
+        } label: {
+            HStack {
+                Image(systemName: "calendar")
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .frame(width: 24)
+
+                Text(L10n.Export.period)
+                    .font(.body)
+                    .foregroundStyle(Color.netoPrimaryText)
+
+                Spacer()
+
+                Text(selectedPeriod.rawValue)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var noteContent: some View {
@@ -893,39 +557,77 @@ struct ExportFiltersStepView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
     }
+}
 
-    /// Texto resumen para mostrar bajo el nombre de la categoría
-    /// (cuántas subcategorías están seleccionadas).
-    private func subcategorySelectionSummary(for category: Category) -> String {
-        let subs = subcategories(for: category)
-        let total = subs.count
-        let selectedCount = subs.filter { selectedSubcategories.contains($0) }.count
+// MARK: - Period Picker Sheet
 
-        if total == 0 {
-            return "Sin subcategorías"
+private struct ExportPeriodPickerSheet: View {
+    let selectedPeriod: DetailPeriod
+    let onSelect: (DetailPeriod) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(DetailPeriod.allCases) { period in
+                            periodRow(for: period)
+                        }
+                    }
+                    .background(Color.netoCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                    .padding()
+                }
+            }
+            .navigationTitle("Seleccionar periodo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NetoToolbarButton(systemName: "xmark") {
+                        dismiss()
+                    }
+                }
+            }
         }
-
-        // Si la categoría está marcada completa o todas sus subcategorías lo están
-        if selectedCategoriesState.contains(category) || selectedCount == total {
-            return "Todas las subcategorías"
-        }
-
-        if selectedCount == 0 {
-            return "Ninguna subcategoría seleccionada"
-        }
-
-        return "\(selectedCount) de \(total) subcategorías seleccionadas"
     }
 
-    // Helper para obtener el ícono según el estado de selección de la categoría
-    private func selectionIconName(for state: CategorySelectionVisualState) -> String {
-        switch state {
-        case .all:
-            return "checkmark.circle.fill"
-        case .partial:
-            return "minus.circle.fill"
-        case .none:
-            return "circle"
+    @ViewBuilder
+    private func periodRow(for period: DetailPeriod) -> some View {
+        let isSelected = selectedPeriod == period
+
+        Button {
+            onSelect(period)
+        } label: {
+            HStack {
+                Text(period.rawValue)
+                    .font(.body)
+                    .foregroundStyle(Color.netoPrimaryText)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Color.brandPrimary)
+                        .font(.body.weight(.semibold))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        if period != DetailPeriod.allCases.last {
+            Divider()
+                .padding(.leading, 16)
         }
     }
 }

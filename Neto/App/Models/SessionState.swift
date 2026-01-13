@@ -18,9 +18,19 @@ class SessionState {
     var selectedPeriod: DetailPeriod {
         didSet {
             // Update globalFilters.dateInterval when period changes
-            globalFilters.dateInterval = selectedPeriod.dateInterval
+            globalFilters.dateInterval = selectedPeriod.dateInterval()
         }
     }
+
+    // MARK: - Trend Metric State
+
+    /// The currently selected trend metric (Balance/Income/Expense), synchronized across Panel and Statistics
+    /// Defaults to .balance
+    var selectedTrendMetric: TrendMetric = .balance
+
+    /// Tracks whether the current Expense selection was automatic (due to filters) or manual (user click)
+    /// Used to determine if we should auto-reset to Balance when filters are cleared
+    var isExpenseAutomatic: Bool = false
 
     // MARK: - Global Filter State (shared between Panel and Statistics)
 
@@ -46,7 +56,7 @@ class SessionState {
 
     /// Convenience: current date interval based on selectedPeriod
     var currentDateInterval: DateInterval {
-        selectedPeriod.dateInterval
+        selectedPeriod.dateInterval()
     }
 
     /// Check if any global filter is active
@@ -112,7 +122,7 @@ class SessionState {
     func resetToDefaults() {
         selectedPeriod = .allTime
         clearFilters()
-        globalFilters.dateInterval = selectedPeriod.dateInterval
+        globalFilters.dateInterval = selectedPeriod.dateInterval()
     }
 
     // MARK: - Initialization
@@ -128,6 +138,6 @@ class SessionState {
         }
 
         // Set initial dateInterval on globalFilters
-        self.globalFilters.dateInterval = selectedPeriod.dateInterval
+        self.globalFilters.dateInterval = selectedPeriod.dateInterval()
     }
 }

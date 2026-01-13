@@ -31,6 +31,7 @@
 "period.thisYear" = "This Year";
 "period.lastYear" = "Last Year";
 "period.allTime" = "All Time";
+"period.custom" = "Custom";
 
 // MARK: - Trend Types
 
@@ -102,3 +103,504 @@
 
 "empty.noData" = "No data";
 "empty.noTransactions" = "No transactions";
+"empty.noFavorites" = "No favorites";
+"empty.noTags" = "No tags";
+"empty.noAccounts" = "No accounts";
+"empty.noCategories" = "No categories";
+"empty.noSubcategories" = "No subcategories available";
+
+// MARK: - Transaction
+
+"transaction.new" = "New Transaction";
+"transaction.edit" = "Edit Transaction";
+"transaction.type" = "Type";
+"transaction.amount" = "Amount";
+"transaction.note" = "Note";
+"transaction.date" = "Date";
+"transaction.tags" = "Tags";
+"transaction.addTags" = "Add tags";
+"transaction.category" = "Category";
+"transaction.subcategory" = "Subcategory";
+"transaction.select" = "Select";
+"transaction.total" = "Total";
+"transaction.income" = "Income";
+"transaction.expense" = "Expense";
+"transaction.transfer" = "Transfer";
+"transaction.origin" = "Origin";
+"transaction.destination" = "Destination";
+"transaction.exchangeRate" = "Exchange rate";
+"transaction.willReceive" = "Will receive";
+"transaction.createAnother" = "Create another";
+"transaction.recents" = "Recents";
+
+// MARK: - Account
+
+"account.new" = "New Account";
+"account.edit" = "Edit Account";
+"account.name" = "Name";
+"account.type" = "Type";
+"account.currency" = "Currency";
+"account.balance" = "Balance";
+"account.initialBalance" = "Initial Balance";
+"account.sign" = "Sign";
+"account.positive" = "Positive";
+"account.negative" = "Negative";
+"account.adjustment" = "Adjustment";
+"account.selected" = "Selected";
+"account.selectAccount" = "Select account";
+"account.archived" = "Archived";
+"account.archive" = "Archive account";
+"account.unarchive" = "Unarchive";
+"account.excludeFromStats" = "Exclude from statistics";
+"account.delete" = "Delete account";
+
+// MARK: - Category
+
+"category.new" = "New Category";
+"category.edit" = "Edit Category";
+"category.name" = "Name";
+"category.nature" = "Nature";
+"category.show" = "Show";
+"category.addSubcategory" = "Add subcategory";
+"category.subcategories" = "Subcategories";
+"category.noSubcategoriesYet" = "This category has no subcategories yet.";
+"category.requiresSubcategory" = "To create a new category, you must add at least one subcategory.";
+
+// MARK: - Alert
+
+"alert.unsavedChanges" = "Unsaved changes";
+"alert.discardChanges" = "Discard changes";
+"alert.keepEditing" = "Keep editing";
+"alert.confirmDelete" = "Confirm deletion";
+"alert.deleteWarning" = "This action cannot be undone.";
+
+// MARK: - Import
+
+"import.title" = "Import Transactions";
+"import.selectFile" = "Import CSV file";
+"import.importing" = "Importing...";
+"import.downloadTemplate" = "Download CSV template";
+"import.createCategories" = "Create new categories";
+"import.continue" = "Continue";
+"import.noAccountsAvailable" = "No accounts available";
+"import.createAccountFirst" = "Create at least one account before importing transactions.";
+
+// MARK: - Export
+
+"export.title" = "Export";
+"export.filters" = "Filters";
+"export.columns" = "Columns";
+"export.summary" = "Summary";
+"export.format" = "Format";
+"export.period" = "Period";
+"export.selectAll" = "Select all";
+"export.deselectAll" = "Deselect all";
+
+// MARK: - Favorites
+
+"favorites.title" = "Favorite Payments";
+"favorites.new" = "New Favorite";
+"favorites.edit" = "Edit Favorite";
+"favorites.noFavorites" = "No favorites";
+"favorites.createTemplate" = "Create recurring payment templates to record them faster.";
+
+// MARK: - Settings
+
+"settings.title" = "Settings";
+"settings.theme" = "Theme";
+"settings.currency" = "Currency";
+"settings.appIcon" = "App Icon";
+"settings.personalization" = "Personalization";
+"settings.accounts" = "Accounts";
+"settings.categories" = "Categories";
+"settings.tags" = "Tags";
+"settings.notifications" = "Notifications";
+"settings.favorites" = "Favorite Payments";
+"settings.plannedPayments" = "Planned Payments";
+"settings.resetData" = "Reset Data";
+"settings.version" = "Version";
+"settings.light" = "Light";
+"settings.dark" = "Dark";
+"settings.system" = "System";
+"settings.defaultCurrency" = "Default Currency";
+"settings.currentIcon" = "Current Icon";
+"settings.resetAllData" = "Reset all your data";
+"settings.deleteAllData" = "Delete all my data";
+
+// MARK: - Common
+
+"common.accept" = "Accept";
+"common.name" = "Name";
+"common.alias" = "Alias";
+"common.color" = "Color";
+"common.icon" = "Icon";
+"common.search" = "Search";
+"common.loading" = "Loading...";
+"common.error" = "Error";
+"common.success" = "Success";
+"common.dataPrivacy" = "Your data never leaves your device";
+"common.active" = "Active";
+"common.hidden" = "Hidden";
+"common.inactive" = "Inactive";
+
+// MARK: - Widgets
+
+"widget.preferences" = "Widget Preferences";
+"widget.visible" = "Visible";
+"widget.size" = "Size";
+"widget.compact" = "Compact";
+"widget.expanded" = "Expanded";
+"widget.top3" = "Top 3";
+"widget.top5" = "Top 5";
+
+// MARK: - Planning
+
+"planning.title" = "Planning";
+"planning.budgets" = "Budgets";
+"planning.goals" = "Goals";
+"planning.comingSoon" = "Coming Soon";
+
+// MARK: - Budgets
+
+"budgets.title" = "Budgets";
+"budgets.empty.title" = "No budgets";
+"budgets.empty.message" = "Create budgets to control your spending.";
+"budgets.new" = "New Budget";
+"budgets.edit" = "Edit Budget";
+"budgets.delete.confirm.title" = "Delete budget?";
+"budgets.delete.confirm.message" = "This action cannot be undone.";
+
+// Budget Period Types
+"budgets.period.weekly" = "Weekly";
+"budgets.period.monthly" = "Monthly";
+"budgets.period.yearly" = "Yearly";
+"budgets.period.unique" = "One-time";
+"budgets.period.all" = "All";
+
+// Budget Status
+"budgets.status.exceeded" = "Exceeded";
+"budgets.status.active" = "Active";
+"budgets.status.inactive" = "Inactive";
+
+// Budget Details
+"budgets.spent.percent" = "%@ spent";
+"budgets.days.remaining" = "%@ days left";
+"budgets.period.past" = "Past";
+"budgets.amount.of" = "of %@";
+
+// Budget Editor
+"budgets.editor.name.placeholder" = "Budget name";
+"budgets.editor.amount.placeholder" = "Amount";
+"budgets.editor.basic.info" = "Basic Information";
+"budgets.editor.filters" = "Filters";
+"budgets.editor.period.type" = "Period";
+"budgets.editor.date.range" = "Date Range";
+"budgets.editor.start.date" = "Start Date";
+"budgets.editor.end.date" = "End Date";
+
+// Period Selector
+"budgets.period.selector.title.weekly" = "Choose a week";
+"budgets.period.selector.title.monthly" = "Choose a month";
+"budgets.period.selector.title.yearly" = "Choose a year";
+"budgets.period.week.of" = "Week of %@";
+"budgets.period.current.week" = "This week";
+"budgets.period.current.month" = "This month";
+"budgets.period.current.year" = "This year";
+"budgets.period.confirm" = "Done";
+
+// MARK: - Profile
+
+"profile.title" = "Profile";
+"profile.personalDetails" = "Personal Details";
+"profile.dataManagement" = "Data Management";
+"profile.appearance" = "Appearance";
+"empty.noExpenses" = "No expenses";
+"empty.noSubcategories" = "No subcategories available";
+"common.recent" = "Recent";
+"tag.new" = "New Tag";
+"tag.edit" = "Edit Tag";
+"tag.delete" = "Delete Tag";
+"settings.currencyAndExchange" = "Currency & Exchange";
+"common.updatingRecords" = "Updating records...";
+"common.recalculatingConversions" = "Recalculating historical conversions";
+"export.customizeFile" = "Customize your file";
+"export.csvGeneratedSuccess" = "The CSV file has been generated and shared successfully.";
+"export.confirmExport" = "Confirm your export";
+"common.next" = "Next";
+"settings.versionInfo" = "Version 1.0.0 (Build 1)";
+"tab.panel" = "Home";
+"tab.statistics" = "Statistics";
+"tab.planning" = "Planning";
+"tab.more" = "More";
+"tab.search" = "Search";
+"common.moreOptions" = "More options";
+"common.comingSoon" = "Coming soon";
+"panel.greeting" = "Ready for neto, %@";
+"widget.today" = "Today";
+
+// Widget Preferences
+"widget.preferences" = "Dashboard Preferences";
+"widget.preferences.description" = "Choose what you want to see on your dashboard and in what order.";
+"widget.resetLayout" = "Reset to original layout";
+"widget.alwaysVisible" = "Always visible";
+"widget.fixedPosition" = "Fixed position";
+"widget.visible" = "Visible";
+"widget.size" = "Size: %@";
+"widget.compact" = "Compact";
+"widget.expanded" = "Expanded";
+"widget.top3" = "Top 3";
+"widget.top5" = "Top 5";
+
+// Widget Types
+"widgetType.trend" = "Trends";
+"widgetType.topSpending" = "Top Categories";
+"widgetType.topSubcategories" = "Top Subcategories";
+"widgetType.cashFlow" = "Cash Flow";
+"widgetType.categoriesPie" = "Category Distribution";
+"widgetType.subcategoriesPie" = "Subcategory Distribution";
+"widgetType.latestRecords" = "Latest Records";
+"widgetType.expensesByNature" = "Expenses by Nature";
+"widgetType.exchangeRate" = "Exchange Rate";
+
+"widget.sizeLabel" = "Size";
+
+"common.all" = "All";
+"widget.main" = "Main";
+"widget.topCategories" = "Top Categories";
+"widget.topSubcategories" = "Top Subcategories";
+"widget.subcategories" = "Subcategories";
+"widget.noExpensesPeriod" = "No expenses yet in this period.";
+"widget.noExpensesDescriptionCategories" = "Your top categories will appear here once you add transactions.";
+"widget.noExpensesDescriptionSubcategories" = "Your top subcategories will appear here once you add transactions.";
+"widget.of" = "of";
+"widget.ofTotal" = "of total";
+"widget.ofExpense" = "of expense";
+"widget.categoryAbbr" = "Cat.";
+
+
+"common.others" = "Others";
+"common.remaining" = "Remaining";
+"widget.categories" = "Categories";
+"widget.noExpensesSubcategoriesPeriod" = "No subcategory expenses yet for this period.";
+"widget.distributionByCategory" = "Distribution by category";
+"widget.distributionBySubcategory" = "Distribution by subcategory";
+
+
+"common.uncategorized" = "Uncategorized";
+"cashFlow.netFlow" = "Net Flow";
+
+
+"common.unknownError" = "Unknown error";
+"widget.noExpensesNaturePeriod" = "No nature expenses recorded for this period.";
+
+
+"account.addAccount" = "Add Account";
+
+
+"common.date" = "Date";
+"common.amount" = "Amount";
+"common.base" = "Base";
+"common.selectedDate" = "Selected Date";
+"common.selectedValue" = "Selected Value";
+"common.selected" = "selected";
+
+
+"statistics.title" = "Statistics";
+"statistics.trends" = "Trends";
+"statistics.categories" = "Categories";
+"statistics.records" = "Records";
+
+
+"period.thisWeek" = "This Week";
+"period.last7Days" = "Last 7 Days";
+"period.last30Days" = "Last 30 Days";
+"period.thisMonth" = "This Month";
+"period.lastMonth" = "Last Month";
+"period.thisYear" = "This Year";
+"period.lastYear" = "Last Year";
+"period.allTime" = "All Time";
+
+"nature.essential" = "Essential";
+"nature.priority" = "Priority";
+"nature.optional" = "Optional";
+"nature.unclassified" = "Unclassified";
+"nature.essential.desc" = "Essential expenses, hard to cut.";
+"nature.priority.desc" = "Important but with some flexibility.";
+"nature.optional.desc" = "Discretionary or leisure expenses.";
+"nature.unclassified.desc" = "No specific nature tag.";
+
+"trendType.balance" = "Balance";
+"trendType.income" = "Income";
+"trendType.expense" = "Expense";
+
+
+"cashFlowViewType.total" = "Total";
+"cashFlowViewType.byAccount" = "By Account";
+"cashFlowViewType.byCurrency" = "By Currency";
+
+
+"listViewType.categories" = "Categories";
+"listViewType.subcategories" = "Subcategories";
+
+
+"statistics.noRecordsFiltered" = "No records found with the applied filters.";
+"statistics.noRecordsDescription" = "When you add transactions, they will appear here.";
+
+
+"settings.organization" = "Organization";
+"settings.preferences" = "Preferences";
+"settings.data" = "Data";
+"settings.security" = "Security & Account";
+"settings.help" = "Need Help?";
+"settings.legal" = "Legal";
+
+"settings.importData" = "Import File";
+"settings.exportData" = "Export Data";
+"settings.wipeData" = "Clear Data";
+"settings.faceId" = "Face ID";
+"settings.permissions" = "Permissions";
+"settings.subscriptions" = "Manage Subscriptions";
+"settings.rateApp" = "Rate & Recommend";
+"settings.tips" = "Tips & Tricks";
+"settings.faq" = "FAQ";
+"settings.contact" = "Contact Us";
+"settings.privacy" = "Privacy Policy";
+"settings.terms" = "Terms of Use";
+
+"profile.title" = "Profile";
+"profile.edit" = "Edit Profile";
+"profile.importSuccess" = "Import Completed";
+"profile.importError" = "Import Error";
+
+
+"profile.personalDetails" = "Personal Details";
+"profile.changePhoto" = "Change Photo";
+"profile.addPhoto" = "Add Photo";
+"profile.yourName" = "Your Name";
+"profile.aliasPlaceholder" = "user_123";
+"profile.characters" = "characters";
+"profile.minChars" = "Minimum 3 characters";
+"profile.maxChars" = "Maximum 20 characters";
+"profile.allowedChars" = "Only letters, numbers, and underscores";
+"profile.aliasAvailable" = "Alias available";
+"profile.aliasHelper" = "3-20 characters. Only letters, numbers, and underscores.";
+"profile.privacyTitle" = "Your data never leaves your device";
+"profile.privacyDesc" = "Neto stores your personal data solely on your device. We do not have access to it nor do we share it with third parties. If you delete the app, all your data will be erased.";
+"profile.aliasFutureNote" = "Note: Alias uniqueness validation will be available when shared expenses functionality is implemented.";
+
+"settings.currencyDescription" = "Choose your main currency and check updated exchange rates.";
+"settings.preferredCurrency" = "Preferred Currency";
+"settings.exchangeRate" = "Exchange Rate";
+"common.lastUpdate" = "Last update:";
+
+
+"common.inactive" = "Inactive";
+"common.hidden" = "Hidden";
+"common.archived" = "Archived";
+"empty.tagsDescription" = "Create tags to organize your transactions flexibly.";
+"empty.categoriesDescription" = "Create categories to classify your income and expenses.";
+"empty.accountsDescription" = "Create accounts to organize your finances by bank, cash, or others.";
+
+
+"profile.appearance" = "Appearance";
+"settings.theme" = "Themes";
+"settings.themeDescription" = "Choose how Neto looks.";
+"settings.system" = "System";
+"settings.light" = "Light";
+"settings.dark" = "Dark";
+"settings.appIcon" = "App Icon";
+"settings.appIconDescription" = "Choose the icon that best fits your style.";
+"settings.personalization" = "Personalization";
+"settings.personalizationDescription" = "Adjust how Neto works according to your preferences.";
+"settings.defaultPeriod" = "Default Period";
+"settings.defaultPeriodDescription" = "This period will be applied by default every time you open the app. You can temporarily change it from the period selector at any time.";
+"settings.colorfulIcons" = "Colorful Icons";
+"settings.colorfulIconsDescription" = "Show colored icons in the profile section, iOS Settings style.";
+"settings.resetData" = "Reset Data";
+"settings.resetDataDescription" = "This operation will permanently delete your accounts, transactions, budgets, exchange rates, categories, and any other data associated with your Neto profile. After deletion, the app will return to a state similar to initial setup.";
+"settings.deleteAllData" = "Delete All Data";
+"settings.deleteDataConfirmation" = "Delete all your data?";
+"settings.deleteDataWarning" = "This action is irreversible. All your accounts, transactions, budgets, exchange rates, and categories will be deleted. After this, Neto will reset to a state similar to initial setup and you cannot recover your data.";
+"settings.delete" = "Delete";
+"settings.cancel" = "Cancel";
+"settings.iconOriginal" = "Original";
+"settings.iconDark" = "Dark";
+"settings.iconLight" = "Light";
+"settings.iconNeon" = "Neon";
+"settings.deleteAllDataAction" = "Delete Definitely";
+
+
+"transaction.newTransaction" = "New Transaction";
+"transaction.editTransaction" = "Edit Transaction";
+"transaction.description" = "Description";
+"transaction.sourceAccount" = "Source Account";
+"transaction.destinationAccount" = "Destination Account";
+"transaction.account" = "Account";
+"tag.newTag" = "New Tag";
+"tag.editTag" = "Edit Tag";
+"tag.deleteConfirmation" = "Delete Tag?";
+"common.selectColor" = "Select a Color";
+"common.useThisColor" = "Use This Color";
+"common.newColor" = "New Color";
+"common.understood" = "Understood";
+"common.cannotUndo" = "This action cannot be undone.";
+"common.general" = "General";
+"account.configure" = "Configure Account";
+"account.deleteError" = "Cannot Delete This Account";
+"account.accountName" = "Account Name";
+"account.accountNumber" = "Account Number";
+"category.editTitle" = "Edit Category";
+"category.hiddenTitle" = "Category Hidden";
+"category.hiddenDescription" = "The category and its subcategories will stop appearing in selectors, but historical data will not be lost.";
+"category.addOneSubcategory" = "Add at least one subcategory";
+"subcategory.newTitle" = "New Subcategory";
+"subcategory.editTitle" = "Edit Subcategory";
+
+
+"account.deleteBalanceError" = "You cannot delete this account because it has a non-zero balance. Adjust the balance to 0 before deleting it.";
+"account.type.general" = "General";
+"account.type.cash" = "Cash";
+"account.type.current" = "Checking Account";
+"account.type.savings" = "Savings";
+"account.type.creditCard" = "Credit Card";
+"account.type.investment" = "Investment";
+"account.type.loan" = "Loan";
+"account.type.other" = "Other";
+
+
+"nature.essential" = "Essential";
+"nature.essentialDesc" = "Vital expenses you cannot avoid (rent, basic food, health).";
+"nature.priority" = "Priority";
+"nature.priorityDesc" = "Important for your well-being or future, but adjustable if necessary.";
+"nature.optional" = "Optional";
+"nature.optionalDesc" = "Expenses for pleasure or desire, the first to cut if there are problems.";
+"nature.unclassified" = "Unclassified";
+"nature.unclassifiedDesc" = "No specific nature defined.";
+
+"iconPicker.preview" = "Preview";
+"iconPicker.shopping" = "Shopping";
+"iconPicker.food" = "Food";
+"iconPicker.transport" = "Transport";
+"iconPicker.finance" = "Finance";
+"iconPicker.home" = "Home";
+"iconPicker.services" = "Services";
+"iconPicker.entertainment" = "Entertainment";
+"iconPicker.sports" = "Sports";
+"iconPicker.health" = "Health";
+"iconPicker.personalCare" = "Personal Care";
+"iconPicker.education" = "Education";
+"iconPicker.work" = "Work";
+"iconPicker.pets" = "Pets";
+"iconPicker.nature" = "Nature";
+"iconPicker.tech" = "Technology";
+"iconPicker.travel" = "Travel";
+"iconPicker.communication" = "Communication";
+"iconPicker.tools" = "Tools";
+"iconPicker.security" = "Security";
+"iconPicker.symbols" = "Symbols";
+"iconPicker.direction" = "Direction";
+"iconPicker.other" = "Other";
+
+
+"nature.title" = "Nature";
+

@@ -128,6 +128,9 @@ final class RecordsViewModel: Filterable {
         if let type = context.transactionType {
             self.transactionTypeFilter = type
         }
+        if let search = context.searchText, !search.isEmpty {
+            self.searchText = search
+        }
     }
 
     // MARK: - Filter Application
@@ -163,7 +166,7 @@ final class RecordsViewModel: Filterable {
     /// Get effective date interval from current period
     private func effectiveDateInterval() -> DateInterval? {
         // DetailPeriod always has a valid dateInterval
-        return period.dateInterval
+        return period.dateInterval()
     }
 
     // MARK: - Selection Actions

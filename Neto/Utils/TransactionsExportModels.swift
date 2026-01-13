@@ -400,16 +400,11 @@ struct ExportFilters: Equatable {
 
     // MARK: Periodo y fechas
 
-    /// Periodo seleccionado (este año, este mes, últimos 30 días, etc.).
-    var period: ExportPeriod
+    /// Fecha de inicio del periodo de exportación.
+    var dateFrom: Date
 
-    /// Fecha "desde" para el periodo personalizado.
-    /// Solo se considera cuando `period == .custom`.
-    var customDateFrom: Date?
-
-    /// Fecha "hasta" para el periodo personalizado.
-    /// Solo se considera cuando `period == .custom`.
-    var customDateTo: Date?
+    /// Fecha de fin del periodo de exportación.
+    var dateTo: Date
 
     // MARK: Nota
 
@@ -425,16 +420,16 @@ struct ExportFilters: Equatable {
     /// - Periodo "Últimos 30 días".
     /// - Sin filtro de nota.
     static var `default`: ExportFilters {
-        ExportFilters(
+        let defaultInterval = DetailPeriod.last30Days.dateInterval()
+        return ExportFilters(
             selectedAccounts: [],
             selectedCategories: [],
             selectedSubcategories: [],
             selectedTagNames: [],
             selectedCurrencies: [],  // vacío = todas las monedas
             amountCondition: .any,
-            period: .defaultPeriod,
-            customDateFrom: nil,
-            customDateTo: nil,
+            dateFrom: defaultInterval.start,
+            dateTo: defaultInterval.end,
             noteContains: nil
         )
     }
@@ -442,109 +437,7 @@ struct ExportFilters: Equatable {
     // MARK: Helpers de periodo
 
     /// Devuelve el `DateInterval` efectivo a aplicar al filtrar transacciones.
-    ///
-    /// - Si `period` no es `.custom`, se utiliza el intervalo estándar de `ExportPeriod`.
-    /// - Si `period == .custom`, se construye un intervalo a partir de `customDateFrom` / `customDateTo`.
-    ///   Si alguno de los extremos es `nil`, se devuelve `nil` para que el llamador decida.
-    ///
-    /// - Parameters:
-    ///   - today:    Fecha de referencia (por defecto `Date()`).
-    ///   - calendar: Calendario utilizado (por defecto `.current`).
-    /// - Returns: Intervalo de fechas o `nil` si no es posible construirlo.
-    func effectiveDateInterval(
-        relativeTo today: Date = Date(),
-        calendar: Calendar = .current
-    ) -> DateInterval? {
-        // Caso 1: periodos estándar.
-        if period != .custom {
-            return period.standardDateInterval(relativeTo: today, calendar: calendar)
-        }
-
-        // Caso 2: periodo personalizado.
-        return ExportFilters.makeCustomDateInterval(
-            from: customDateFrom,
-            to: customDateTo,
-            calendar: calendar
-        )
-    }
-
-    /// Construye un `DateInterval` personalizado a partir de fechas opcionales.
-    ///
-    /// Reglas:
-    /// - Si `from` y `to` son `nil`, devuelve `nil`.
-    /// - Si solo se indica `from`, se crea un intervalo desde el inicio de ese día
-    ///   hasta "ahora + infinito" (se puede ajustar en el servicio si se desea).
-    /// - Si solo se indica `to`, se crea un intervalo desde el inicio de los tiempos
-    ///   hasta el final de ese día.
-    /// - Si existen ambos:
-    ///   - Si `from > to`, devuelve `nil` (debe ser validado en UI previamente).
-    ///   - Se crea un intervalo desde el inicio del día `from` hasta el final del día `to`.
-    ///
-    /// - Parameters:
-    ///   - from:     Fecha inicial opcional.
-    ///   - to:       Fecha final opcional.
-    ///   - calendar: Calendario utilizado.
-    /// - Returns: Intervalo de fechas o `nil`.
-    static func makeCustomDateInterval(
-        from: Date?,
-        to: Date?,
-        calendar: Calendar = .current
-    ) -> DateInterval? {
-        // Caso sin información.
-        if from == nil && to == nil {
-            return nil
-        }
-
-        // Helper para "inicio de día".
-        func startOfDay(_ date: Date) -> Date {
-            calendar.startOfDay(for: date)
-        }
-
-        // Helper para "final de día" (23:59:59 aprox).
-        func endOfDay(_ date: Date) -> Date {
-            calendar.date(
-                byAdding: DateComponents(day: 1, second: -1),
-                to: calendar.startOfDay(for: date)
-            ) ?? date
-        }
-
-        switch (from, to) {
-        case (let f?, let t?):
-            // Ambos presentes: validamos orden.
-            let start = startOfDay(f)
-            let end = endOfDay(t)
-            guard start <= end else {
-                // Rango inconsistente: la UI debería evitar este caso.
-                return nil
-            }
-            return DateInterval(start: start, end: end)
-
-        case (let f?, nil):
-            // Solo "from": desde ese día en adelante.
-            let start = startOfDay(f)
-            // Para un límite superior "abierto", usamos un intervalo amplio.
-            let farFuture =
-                calendar.date(
-                    byAdding: .year,
-                    value: 50,
-                    to: start
-                ) ?? start.addingTimeInterval(60 * 60 * 24 * 365 * 50)
-            return DateInterval(start: start, end: farFuture)
-
-        case (nil, let t?):
-            // Solo "to": hasta ese día desde un pasado lejano.
-            let end = endOfDay(t)
-            let distantPast =
-                calendar.date(
-                    byAdding: .year,
-                    value: -50,
-                    to: end
-                ) ?? end.addingTimeInterval(-60 * 60 * 24 * 365 * 50)
-            return DateInterval(start: distantPast, end: end)
-
-        case (nil, nil):
-            // Ya tratado arriba, pero el compilador exige exhaustividad.
-            return nil
-        }
+    func effectiveDateInterval() -> DateInterval {
+        return DateInterval(start: dateFrom, end: dateTo)
     }
 }

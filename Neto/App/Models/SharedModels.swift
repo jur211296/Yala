@@ -14,24 +14,20 @@ enum SubcategoryNature: String, CaseIterable, Identifiable {
     /// Nombre visible en la UI
     var displayName: String {
         switch self {
-        case .essential: return "Esencial"
-        case .priority: return "Prioritaria"
-        case .optional: return "Opcional"
-        case .unclassified: return "Sin clasificación"
+        case .essential: return L10n.Nature.essential
+        case .priority: return L10n.Nature.priority
+        case .optional: return L10n.Nature.optional
+        case .unclassified: return L10n.Nature.unclassified
         }
     }
 
     /// Descripción corta para ayudar al usuario
     var description: String {
         switch self {
-        case .essential:
-            return "Gastos imprescindibles, difíciles de recortar."
-        case .priority:
-            return "Importantes pero con algo de flexibilidad."
-        case .optional:
-            return "Gastos discrecionales o de ocio."
-        case .unclassified:
-            return "Sin etiqueta de naturaleza específica."
+        case .essential: return L10n.Nature.essentialDesc
+        case .priority: return L10n.Nature.priorityDesc
+        case .optional: return L10n.Nature.optionalDesc
+        case .unclassified: return L10n.Nature.unclassifiedDesc
         }
     }
 }
@@ -54,6 +50,14 @@ enum TrendType: String, CaseIterable, Identifiable {
     case expense = "Gasto"
 
     var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .balance: return L10n.TrendType.balance
+        case .income: return L10n.TrendType.income
+        case .expense: return L10n.TrendType.expense
+        }
+    }
 
     var color: Color {
         switch self {
@@ -79,6 +83,14 @@ enum TrendMetric: String, CaseIterable, Identifiable {
     case expense = "Gasto"
 
     var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .balance: return L10n.TrendType.balance
+        case .income: return L10n.TrendType.income
+        case .expense: return L10n.TrendType.expense
+        }
+    }
 
     /// Convert to TrendType for shared properties
     var toTrendType: TrendType {
@@ -106,17 +118,34 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     case thisYear = "Este año"
     case lastYear = "Año pasado"
     case allTime = "Todo el tiempo"
+    case custom = "Personalizado"
 
     var id: String { rawValue }
 
-    /// Display name for UI (same as rawValue)
-    var displayName: String { rawValue }
+    // Use localized display name
+    var displayName: String {
+        switch self {
+        case .thisWeek: return L10n.Period.thisWeek
+        case .last7Days: return L10n.Period.last7Days
+        case .last30Days: return L10n.Period.last30Days
+        case .thisMonth: return L10n.Period.thisMonth
+        case .lastMonth: return L10n.Period.lastMonth
+        case .thisYear: return L10n.Period.thisYear
+        case .lastYear: return L10n.Period.lastYear
+        case .allTime: return L10n.Period.allTime
+        case .custom: return L10n.Period.custom
+        }
+    }
+
+    /// Display name for UI - redirect to displayName property which is now localized
+    // var displayName: String { rawValue } // OLD
 
     /// Calendar icon for the selector
     var iconName: String { "calendar" }
 
     /// Get the date interval for this period
-    var dateInterval: DateInterval {
+    /// - Parameter customRange: Optional custom date range for .custom period
+    func dateInterval(customRange: DateInterval? = nil) -> DateInterval {
         let calendar = Calendar.current
         let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
@@ -159,6 +188,16 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
             // Return a very long interval (10 years back)
             let start = calendar.date(byAdding: .year, value: -10, to: now)!
             return DateInterval(start: start, end: now)
+
+        case .custom:
+            // Use provided custom range or fallback to this month
+            if let customRange {
+                return customRange
+            } else {
+                let startOfMonth = calendar.date(
+                    from: calendar.dateComponents([.year, .month], from: now))!
+                return DateInterval(start: startOfMonth, end: now)
+            }
         }
     }
 
@@ -169,7 +208,7 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
             return .day
         case .last30Days, .thisMonth, .lastMonth:
             return .day
-        case .thisYear, .lastYear, .allTime:
+        case .thisYear, .lastYear, .allTime, .custom:
             return .day  // Use day for data, but smooth visually
         }
     }
@@ -182,6 +221,14 @@ enum DetailViewTab: String, CaseIterable, Identifiable {
     case records = "Registros"
 
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .trends: return L10n.Statistics.trends
+        case .categories: return L10n.Statistics.categories
+        case .records: return L10n.Statistics.records
+        }
+    }
 
     var icon: String {
         switch self {
