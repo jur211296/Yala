@@ -16,6 +16,8 @@ final class Tag {
     var colorHex: String
     var isActive: Bool
     var createdAt: Date
+
+    @Relationship(inverse: \TransactionItem.tags)
     var transactions: [TransactionItem]
 
     init(
