@@ -82,6 +82,8 @@ struct InitialBalanceService {
     // MARK: - Transaction Creation/Update
 
     /// Creates or updates an initial balance transaction for an account
+    /// Note: We delete and recreate instead of modifying in-place to ensure
+    /// SwiftData's @Query observers detect the change.
     static func setInitialBalance(
         amount: Double,
         for account: Account,
@@ -91,11 +93,10 @@ struct InitialBalanceService {
     ) -> TransactionItem {
         let date = calculateInitialBalanceDate(for: account, allTransactions: allTransactions)
 
-        // Check for existing initial balance
+        // Delete existing initial balance if present
+        // (deleting + inserting ensures @Query detects the change)
         if let existing = findInitialBalanceTransaction(for: account, in: context) {
-            existing.amount = amount
-            existing.date = date
-            return existing
+            context.delete(existing)
         }
 
         // Create new initial balance transaction
