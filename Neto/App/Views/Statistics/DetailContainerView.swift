@@ -88,51 +88,17 @@ struct DetailContainerView: View {
             }
             .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
             .tint(.primary)
-            .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
-                RecordsFiltersView(viewModel: recordsViewModel)
-                    .onDisappear { refreshRecordsData() }
-            }
-            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
-                NewTransactionView()
-                    .onDisappear { refreshRecordsData() }
-            }
-            .sheet(isPresented: $recordsViewModel.showEditTransaction) {
-                if let transaction = recordsViewModel.editingTransaction {
-                    NewTransactionView(transactionToEdit: transaction)
-                        .onDisappear {
-                            recordsViewModel.editingTransaction = nil
-                            refreshRecordsData()
-                        }
-                }
-            }
-            .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
-                RecordsFiltersView(viewModel: recordsViewModel)
-                    .onDisappear {
-                        syncFiltersToTrends()
-                        calculateTrendsData()
-                    }
-            }
-            .confirmationDialog(
-                "¿Eliminar \(recordsViewModel.selectedRecordIDs.count) registro(s)?",
-                isPresented: $showDeleteConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Eliminar", role: .destructive) {
-                    recordsViewModel.deleteSelected(context: modelContext)
-                    refreshRecordsData()
-                }
-                Button("Cancelar", role: .cancel) {}
-            } message: {
-                Text("Esta acción no se puede deshacer.")
-            }
-            .alert("Edición múltiple", isPresented: $showMultiEditPlaceholder) {
-                Button("Entendido", role: .cancel) {}
-            } message: {
-                Text("La edición múltiple estará disponible próximamente.")
-            }
-            .sheet(isPresented: $isPresentingSettings) {
-                ProfileView()
-            }
+            .modifier(DetailContainerSheets(
+                recordsViewModel: recordsViewModel,
+                trendsViewModel: trendsViewModel,
+                showDeleteConfirmation: $showDeleteConfirmation,
+                showMultiEditPlaceholder: $showMultiEditPlaceholder,
+                isPresentingSettings: $isPresentingSettings,
+                modelContext: modelContext,
+                refreshRecordsData: refreshRecordsData,
+                syncFiltersToTrends: syncFiltersToTrends,
+                calculateTrendsData: calculateTrendsData
+            ))
             .onRecordsFilterChange(viewModel: recordsViewModel) {
                 refreshRecordsData()
                 syncFiltersToTrends()
@@ -148,24 +114,21 @@ struct DetailContainerView: View {
                 refreshRecordsData()
                 calculateTrendsData()
             }
-            .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
-            .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedCategoryIDs) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedNatures) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedSubcategoryNames) {
-                handleSessionStateFilterChange()
-            }
-            .onChange(of: sessionState.selectedTrendMetric) {
-                syncFromSessionState()
+            .onChange(of: allTransactions) {
+                // Recalculate when transactions change (e.g., initial balance modified)
                 calculateTrendsData()
+                refreshRecordsData()
             }
-            .onChange(of: trendsViewModel.selectedMetric) { _, _ in
-                syncToSessionState()
-                calculateTrendsData()
-            }
-            .onChange(of: trendsViewModel.isAggregatedView) { _, _ in calculateTrendsData() }
-            .onChange(of: trendsViewModel.detailPeriod) { _, _ in calculateTrendsData() }
-            .onChange(of: recordsViewModel.searchText) { refreshRecordsData() }
+            .modifier(DetailContainerObservers(
+                sessionState: sessionState,
+                trendsViewModel: trendsViewModel,
+                recordsViewModel: recordsViewModel,
+                syncFromSessionState: syncFromSessionState,
+                handleSessionStateFilterChange: handleSessionStateFilterChange,
+                syncToSessionState: syncToSessionState,
+                calculateTrendsData: calculateTrendsData,
+                refreshRecordsData: refreshRecordsData
+            ))
     }
 
     // MARK: - Main Content
@@ -598,5 +561,103 @@ extension View {
             .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
             .onChange(of: viewModel.amountCondition) { _, _ in action() }
             .onChange(of: viewModel.searchText) { _, _ in action() }
+    }
+}
+
+// MARK: - ViewModifiers to break up expression complexity
+
+/// Encapsulates sheet presentations to reduce body complexity
+private struct DetailContainerSheets: ViewModifier {
+    @Bindable var recordsViewModel: RecordsViewModel
+    @Bindable var trendsViewModel: StatisticsViewModel
+    @Binding var showDeleteConfirmation: Bool
+    @Binding var showMultiEditPlaceholder: Bool
+    @Binding var isPresentingSettings: Bool
+    let modelContext: ModelContext
+    let refreshRecordsData: () -> Void
+    let syncFiltersToTrends: () -> Void
+    let calculateTrendsData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
+                RecordsFiltersView(viewModel: recordsViewModel)
+                    .onDisappear { refreshRecordsData() }
+            }
+            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
+                NewTransactionView()
+                    .onDisappear { refreshRecordsData() }
+            }
+            .sheet(isPresented: $recordsViewModel.showEditTransaction) {
+                if let transaction = recordsViewModel.editingTransaction {
+                    NewTransactionView(transactionToEdit: transaction)
+                        .onDisappear {
+                            recordsViewModel.editingTransaction = nil
+                            refreshRecordsData()
+                        }
+                }
+            }
+            .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
+                RecordsFiltersView(viewModel: recordsViewModel)
+                    .onDisappear {
+                        syncFiltersToTrends()
+                        calculateTrendsData()
+                    }
+            }
+            .confirmationDialog(
+                "¿Eliminar \(recordsViewModel.selectedRecordIDs.count) registro(s)?",
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Eliminar", role: .destructive) {
+                    recordsViewModel.deleteSelected(context: modelContext)
+                    refreshRecordsData()
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text("Esta acción no se puede deshacer.")
+            }
+            .alert("Edición múltiple", isPresented: $showMultiEditPlaceholder) {
+                Button("Entendido", role: .cancel) {}
+            } message: {
+                Text("La edición múltiple estará disponible próximamente.")
+            }
+            .sheet(isPresented: $isPresentingSettings) {
+                ProfileView()
+            }
+    }
+}
+
+/// Encapsulates onChange observers to reduce body complexity
+private struct DetailContainerObservers: ViewModifier {
+    let sessionState: SessionState
+    @Bindable var trendsViewModel: StatisticsViewModel
+    @Bindable var recordsViewModel: RecordsViewModel
+    let syncFromSessionState: () -> Void
+    let handleSessionStateFilterChange: () -> Void
+    let syncToSessionState: () -> Void
+    let calculateTrendsData: () -> Void
+    let refreshRecordsData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
+            .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedCategoryIDs) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedNatures) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedSubcategoryNames) {
+                handleSessionStateFilterChange()
+            }
+            .onChange(of: sessionState.selectedTrendMetric) {
+                syncFromSessionState()
+                calculateTrendsData()
+            }
+            .onChange(of: trendsViewModel.selectedMetric) { _, _ in
+                syncToSessionState()
+                calculateTrendsData()
+            }
+            .onChange(of: trendsViewModel.isAggregatedView) { _, _ in calculateTrendsData() }
+            .onChange(of: trendsViewModel.detailPeriod) { _, _ in calculateTrendsData() }
+            .onChange(of: recordsViewModel.searchText) { refreshRecordsData() }
     }
 }
