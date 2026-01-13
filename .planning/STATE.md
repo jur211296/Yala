@@ -10,52 +10,32 @@ See: .planning/PROJECT.md (updated 2026-01-13)
 ## Current Position
 
 Phase: 1 of 8 (Estabilidad Core)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-13 — Project initialized
+Plan: In progress
+Status: Working on bugs
+Last activity: 2026-01-13 — Fix saldo inicial en gráficas de tendencia
 
-Progress: ░░░░░░░░░░ 0%
+Progress: ░░░░░░░░░░ 5%
 
-## Performance Metrics
+## Completed
 
-**Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 hours
+- Refactor: Saldo inicial ahora es transacción (no propiedad de Account)
+- Fix: Gráficas de tendencia se actualizan al cambiar saldo inicial
+- Fix: SwiftData @Query detecta cambios en transacciones de saldo
 
-**By Phase:**
+## Next (Fase 1)
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| — | — | — | — |
+- Bug: Tipo de cambio en transferencias se resetea a 1.000 con teclado
+- Bug: Hover CashFlow en Panel/Trends muestra colores incorrectos
 
-**Recent Trend:**
-- Last 5 plans: —
-- Trend: —
+## Risk/Notes
 
-## Accumulated Context
-
-### Decisions
-
-Decisions logged in PROJECT.md.
-Recent decisions affecting current work:
-
-(None yet)
-
-### Deferred Issues
-
-None yet.
-
-### Pending Todos
-
-None yet.
-
-### Blockers/Concerns
-
-None yet.
+- SwiftData @Query no detecta modificaciones in-place; usar delete+insert
+- Cadenas largas de .onChange pueden exceder límite del compilador; extraer a ViewModifiers
+- Saldo inicial usa `balanceAdjustmentType = "initial_balance"` en TransactionItem
+- Categoría seed "Otros/Ajustes de saldo" para transacciones de ajuste
 
 ## Session Continuity
 
-Last session: 2026-01-13
-Stopped at: Project initialization complete
+Last session: 2026-01-13 16:15
+Stopped at: Fase 1 bugs pendientes
 Resume file: None
