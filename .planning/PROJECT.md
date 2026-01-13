@@ -1,73 +1,44 @@
-# Neto - Project Definition
+# Neto
 
-**Created:** 2026-01-13
-**Status:** Active Development
+App iOS de finanzas personales (SwiftUI) para registrar y entender gastos, cuentas, presupuestos y reportes con claridad.
 
-## Vision
+## Stack
 
-Neto is a personal finance iOS app for the general public that helps users understand their spending, manage accounts, track budgets, and gain financial insights with clarity and simplicity.
+- **Persistencia:** SwiftData
+- **ModelContainer:** `NetoApp.swift`
+- **Entidades:** Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
 
-## Target Users
+## Proyecto
 
-- General public via App Store
-- Users seeking intuitive personal finance tracking
-- People who want automated categorization and insights
-- Multi-device users needing data sync
+- **Archivo:** `Neto.xcodeproj`
+- **Scheme:** Neto
+- **Unit Tests:** NetoTests
+- **UI Tests:** NetoUITests
 
-## Core Value Proposition
+## Regla Operativa
 
-A native iOS finance app that combines ease of use with powerful analytics, automation, and cross-device sync.
+Cambios pequeños e incrementales.
 
-## Current State (Brownfield)
+Antes de commit:
+1. Ejecutar `/verify-ios`
+2. Si aplica, ejecutar `/test-ios` o `/uitest-ios`
+3. Commits atómicos con `/commit-one`
 
-Existing codebase with:
-- 149 Swift files, 8 SwiftData models
-- Transaction tracking with multi-currency support
-- Category/subcategory organization with budgets
-- Statistics views with charts and trends
-- CSV/Excel import/export
-- Exchange rate integration
+## Restricciones
 
-See `.planning/codebase/` for detailed analysis.
+- Evitar refactors grandes
+- Evitar dependencias nuevas sin justificación
 
-## Development Priorities
+## Prioridades de Desarrollo
 
-1. **Automation** - Recurring transactions, smart categorization
-2. **Financial insights** - Better analytics, predictions, recommendations
-3. **Data sync** - iCloud sync, multi-device support
+1. **Automatización** - Transacciones recurrentes, categorización inteligente
+2. **Insights financieros** - Mejores analíticas, predicciones, recomendaciones
+3. **Sincronización** - iCloud sync, soporte multi-dispositivo
 
-## Timeline
+## Deuda Técnica Conocida
 
-Rapid iteration with weekly milestones.
-
-## Technical Constraints
-
-- iOS 26.1+ deployment target
-- Swift 5.0, SwiftUI, SwiftData
-- MVVM architecture with @Observable
-- No new dependencies without justification
-
-## Quality Standards
-
-- Build must pass before commits
-- Follow existing conventions (see CONVENTIONS.md)
-- Atomic, focused commits via /commit-one
-
-## Known Technical Debt
-
-From CONCERNS.md:
-- Hardcoded API key fallback in ExchangeRateAPIService
-- Large view files (TrendsTabView, CategoriesTabView ~1,200 lines)
-- Missing tests for TransactionCSVImportService
-- DispatchQueue usage instead of Task API
-
-## Success Criteria
-
-- Features ship incrementally in weeks
-- App Store ready quality
-- Maintains performance with growing data
-- Clean, maintainable codebase
+Ver `.planning/codebase/CONCERNS.md`
 
 ---
 
-*Update this document as project scope evolves*
+*Actualizar cuando el alcance del proyecto evolucione*
