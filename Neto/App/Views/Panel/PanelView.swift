@@ -78,6 +78,11 @@ struct PanelView: View {
                         existingNames: existingAccountNames(editingAccount: sheet.account),
                         accountToEdit: sheet.account
                     )
+                    .onDisappear {
+                        // Force recalculation when account form closes
+                        // (initial balance changes may not trigger @Query immediately)
+                        recalculateData()
+                    }
                 }
                 .sheet(isPresented: $isPresentingSettings) {
                     ProfileView()
