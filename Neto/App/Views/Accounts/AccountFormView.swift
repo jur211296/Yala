@@ -84,9 +84,12 @@ struct AccountFormView: View {
             .onAppear {
                 // Pass transactions to view model for balance calculation
                 viewModel.allTransactions = allTransactions
+                // Initialize balance field with existing initial balance (needs transactions loaded)
+                viewModel.initializeBalanceIfNeeded()
             }
             .onChange(of: allTransactions) { _, newTransactions in
                 viewModel.allTransactions = newTransactions
+                viewModel.initializeBalanceIfNeeded()
             }
         }
 

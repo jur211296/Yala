@@ -132,7 +132,7 @@ enum TransactionCSVImportService {
 
         // Reutilizamos la versión genérica basada en drafts y closure,
         // pero aquí concretamos la creación de `TransactionItem`.
-        return try await importCSV(
+        let result = try await importCSV(
             from: url,
             into: account,
             in: context,
@@ -178,6 +178,19 @@ enum TransactionCSVImportService {
 
             context.insert(transaction)
         }
+
+        // After import, update initial balance date if older transactions were imported
+        // This ensures the initial balance always precedes all other transactions
+        let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
+        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+            InitialBalanceService.updateInitialBalanceDateIfNeeded(
+                for: account,
+                allTransactions: allTransactions,
+                context: context
+            )
+        }
+
+        return result
     }
 
     // MARK: Versión genérica con closure (para tests o extensiones futuras)

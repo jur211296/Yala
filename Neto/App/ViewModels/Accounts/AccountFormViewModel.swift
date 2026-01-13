@@ -50,6 +50,7 @@ final class AccountFormViewModel {
     // MARK: - UI State
     var isShowingDeleteError: Bool = false
     var deleteErrorMessage: String = ""
+    var hasInitializedBalance: Bool = false  // Track if balance was initialized from transactions
 
     // MARK: - Computed Balance Properties
 
@@ -136,10 +137,10 @@ final class AccountFormViewModel {
             self.excludeFromStatistics = account.excludeFromStatistics
             self.isArchived = account.isArchived
 
-            // Pre-fill with existing initial balance for "Cambiar saldo inicial" mode
-            let existingInitial = self.existingInitialBalance
-            self.isPositive = existingInitial >= 0
-            self.balanceText = String(format: "%.2f", abs(existingInitial))
+            // Don't pre-fill balance here - will be done in initializeBalanceIfNeeded()
+            // after transactions are loaded
+            self.isPositive = true
+            self.balanceText = ""
         } else {
             // Creation mode - default to "Cambiar saldo inicial"
             self.selectedAdjustmentMode = .changeInitialBalance
@@ -148,6 +149,16 @@ final class AccountFormViewModel {
             self.isPositive = true
             self.balanceText = ""
         }
+    }
+
+    /// Call this after transactions are loaded to pre-fill the initial balance
+    func initializeBalanceIfNeeded() {
+        guard isEditing, !hasInitializedBalance, !allTransactions.isEmpty else { return }
+
+        let existingInitial = existingInitialBalance
+        isPositive = existingInitial >= 0
+        balanceText = String(format: "%.2f", abs(existingInitial))
+        hasInitializedBalance = true
     }
 
     // MARK: - Computed Properties (Validation)
