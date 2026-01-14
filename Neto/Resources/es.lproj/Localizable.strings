@@ -557,7 +557,7 @@
 "category.deleteConfirmTitle" = "¿Eliminar categoría?";
 "category.deleteConfirmMessage" = "Se eliminarán la categoría y todas sus subcategorías. Esta acción no se puede deshacer.";
 "category.cannotDeleteTitle" = "No se puede eliminar";
-"category.cannotDeleteMessage" = "Esta categoría tiene %d transacciones en sus subcategorías. Transfiere las transacciones antes de eliminarla.";
+"category.cannotDeleteMessage" = "Esta categoría tiene subcategorías con %d transacciones. Para eliminarla, primero elimina o transfiere las transacciones desde cada subcategoría.";
 "subcategory.newTitle" = "Nueva subcategoría";
 "subcategory.editTitle" = "Editar subcategoría";
 "subcategory.delete" = "Eliminar subcategoría";
@@ -565,6 +565,19 @@
 "subcategory.deleteConfirmMessage" = "Esta acción no se puede deshacer.";
 "subcategory.cannotDeleteTitle" = "No se puede eliminar";
 "subcategory.cannotDeleteMessage" = "Esta subcategoría tiene %d transacciones asociadas. Transfiere las transacciones a otra subcategoría antes de eliminarla.";
+"subcategory.transferTitle" = "Transferir transacciones";
+"subcategory.transferHeader" = "Esta subcategoría tiene transacciones";
+"subcategory.transferDescription" = "Hay %d transacciones en \"%@\". Elige qué hacer con ellas antes de eliminar.";
+"subcategory.transferToSpecific" = "Transferir a otra subcategoría";
+"subcategory.transferToSpecificDesc" = "Selecciona una subcategoría destino para mover las transacciones";
+"subcategory.transferToUnassigned" = "Mover a Sin asignar";
+"subcategory.transferToUnassignedDesc" = "Las transacciones se moverán a la subcategoría \"Sin asignar\" en Otros";
+"subcategory.deleteTransactions" = "Eliminar transacciones";
+"subcategory.deleteTransactionsDesc" = "Se eliminarán permanentemente todas las transacciones";
+"subcategory.selectDestination" = "Seleccionar destino";
+"subcategory.deleteTransactionsConfirmTitle" = "¿Eliminar transacciones?";
+"subcategory.deleteTransactionsConfirm" = "Eliminar";
+"subcategory.deleteTransactionsConfirmMessage" = "Se eliminarán permanentemente %d transacciones. Esta acción no se puede deshacer.";
 
 
 "account.deleteBalanceError" = "No puedes eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla.";

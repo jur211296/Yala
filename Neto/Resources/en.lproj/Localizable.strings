@@ -557,7 +557,7 @@
 "category.deleteConfirmTitle" = "Delete Category?";
 "category.deleteConfirmMessage" = "The category and all its subcategories will be deleted. This action cannot be undone.";
 "category.cannotDeleteTitle" = "Cannot Delete";
-"category.cannotDeleteMessage" = "This category has %d transactions in its subcategories. Transfer the transactions before deleting.";
+"category.cannotDeleteMessage" = "This category has subcategories with %d transactions. To delete it, first delete or transfer the transactions from each subcategory.";
 "subcategory.newTitle" = "New Subcategory";
 "subcategory.editTitle" = "Edit Subcategory";
 "subcategory.delete" = "Delete Subcategory";
@@ -565,6 +565,19 @@
 "subcategory.deleteConfirmMessage" = "This action cannot be undone.";
 "subcategory.cannotDeleteTitle" = "Cannot Delete";
 "subcategory.cannotDeleteMessage" = "This subcategory has %d transactions. Transfer the transactions to another subcategory before deleting.";
+"subcategory.transferTitle" = "Transfer Transactions";
+"subcategory.transferHeader" = "This subcategory has transactions";
+"subcategory.transferDescription" = "There are %d transactions in \"%@\". Choose what to do with them before deleting.";
+"subcategory.transferToSpecific" = "Transfer to another subcategory";
+"subcategory.transferToSpecificDesc" = "Select a destination subcategory to move the transactions";
+"subcategory.transferToUnassigned" = "Move to Unassigned";
+"subcategory.transferToUnassignedDesc" = "Transactions will be moved to the \"Unassigned\" subcategory in Others";
+"subcategory.deleteTransactions" = "Delete transactions";
+"subcategory.deleteTransactionsDesc" = "All transactions will be permanently deleted";
+"subcategory.selectDestination" = "Select destination";
+"subcategory.deleteTransactionsConfirmTitle" = "Delete transactions?";
+"subcategory.deleteTransactionsConfirm" = "Delete";
+"subcategory.deleteTransactionsConfirmMessage" = "%d transactions will be permanently deleted. This action cannot be undone.";
 
 
 "account.deleteBalanceError" = "You cannot delete this account because it has a non-zero balance. Adjust the balance to 0 before deleting it.";

@@ -28,7 +28,7 @@ struct SubcategoryDetailView: View {
     @State private var showDiscardDialog: Bool = false
     @State private var showIconColorPicker: Bool = false
     @State private var showDeleteConfirmation: Bool = false
-    @State private var showCannotDeleteAlert: Bool = false
+    @State private var showTransferSheet: Bool = false
     @State private var transactionCount: Int = 0
 
     private let initialName: String
@@ -152,13 +152,17 @@ struct SubcategoryDetailView: View {
         } message: {
             Text(L10n.Subcategory.deleteConfirmMessage)
         }
-        .alert(
-            L10n.Subcategory.cannotDeleteTitle,
-            isPresented: $showCannotDeleteAlert
-        ) {
-            Button(L10n.Common.understood, role: .cancel) {}
-        } message: {
-            Text(L10n.Subcategory.cannotDeleteMessage(transactionCount))
+        .sheet(isPresented: $showTransferSheet) {
+            if let subcategory = subcategoryToEdit {
+                SubcategoryTransferSheet(
+                    subcategoryToDelete: subcategory,
+                    onComplete: {
+                        deleteSubcategory()
+                    }
+                )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -267,7 +271,7 @@ struct SubcategoryDetailView: View {
                     Button {
                         transactionCount = countTransactions()
                         if transactionCount > 0 {
-                            showCannotDeleteAlert = true
+                            showTransferSheet = true
                         } else {
                             showDeleteConfirmation = true
                         }
@@ -289,10 +293,11 @@ struct SubcategoryDetailView: View {
     /// Counts transactions linked to this subcategory
     private func countTransactions() -> Int {
         guard let subcategory = subcategoryToEdit else { return 0 }
+        let subcategoryID = subcategory.persistentModelID
         do {
             let descriptor = FetchDescriptor<TransactionItem>()
             let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { $0.subcategory == subcategory }.count
+            return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
         } catch {
             print("FIN-45: Error counting transactions for subcategory: \(error)")
             return 0
@@ -304,6 +309,7 @@ struct SubcategoryDetailView: View {
         modelContext.delete(subcategory)
         do {
             try modelContext.save()
+            modelContext.processPendingChanges()
         } catch {
             print("FIN-45: Error deleting subcategory: \(error)")
         }

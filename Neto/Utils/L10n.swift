@@ -412,6 +412,54 @@ enum L10n {
                 count
             )
         }
+
+        // Transfer sheet
+        static var transferTitle: String {
+            NSLocalizedString("subcategory.transferTitle", comment: "")
+        }
+        static var transferHeader: String {
+            NSLocalizedString("subcategory.transferHeader", comment: "")
+        }
+        static func transferDescription(_ count: Int, _ name: String) -> String {
+            String(
+                format: NSLocalizedString("subcategory.transferDescription", comment: ""),
+                count,
+                name
+            )
+        }
+        static var transferToSpecific: String {
+            NSLocalizedString("subcategory.transferToSpecific", comment: "")
+        }
+        static var transferToSpecificDesc: String {
+            NSLocalizedString("subcategory.transferToSpecificDesc", comment: "")
+        }
+        static var transferToUnassigned: String {
+            NSLocalizedString("subcategory.transferToUnassigned", comment: "")
+        }
+        static var transferToUnassignedDesc: String {
+            NSLocalizedString("subcategory.transferToUnassignedDesc", comment: "")
+        }
+        static var deleteTransactions: String {
+            NSLocalizedString("subcategory.deleteTransactions", comment: "")
+        }
+        static var deleteTransactionsDesc: String {
+            NSLocalizedString("subcategory.deleteTransactionsDesc", comment: "")
+        }
+        static var selectDestination: String {
+            NSLocalizedString("subcategory.selectDestination", comment: "")
+        }
+        static var deleteTransactionsConfirmTitle: String {
+            NSLocalizedString("subcategory.deleteTransactionsConfirmTitle", comment: "")
+        }
+        static var deleteTransactionsConfirm: String {
+            NSLocalizedString("subcategory.deleteTransactionsConfirm", comment: "")
+        }
+        static func deleteTransactionsConfirmMessage(_ count: Int) -> String {
+            String(
+                format: NSLocalizedString("subcategory.deleteTransactionsConfirmMessage", comment: ""),
+                count
+            )
+        }
     }
 
     // MARK: - Tag

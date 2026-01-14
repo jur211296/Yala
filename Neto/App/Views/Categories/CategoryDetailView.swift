@@ -408,6 +408,7 @@ struct CategoryDetailView: View {
         modelContext.delete(category)
         do {
             try modelContext.save()
+            modelContext.processPendingChanges()
         } catch {
             print("FIN-45: Error deleting category: \(error)")
         }

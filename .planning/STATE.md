@@ -11,19 +11,19 @@ See: .planning/PROJECT.md (updated 2026-01-13)
 
 Phase: 3 of 8 (Gestión Categorías)
 Plan: In progress
-Status: 1/3 items done
-Last activity: 2026-01-14 — Eliminación categorías/subcategorías sin transacciones
+Status: 2/3 items done
+Last activity: 2026-01-14 — Transferencia de transacciones al eliminar subcategorías
 
-Progress: ███░░░░░░░ 33%
+Progress: ██████░░░░ 66%
 
 ## Pending (Fase 3)
 
 - Edición masiva de categorías/subcategorías
-- Transferencia de transacciones al eliminar
 
 ## Completed (Fase 3)
 
 - Eliminación sin transacciones (botón eliminar con validación de transacciones asociadas)
+- Transferencia de transacciones al eliminar (sheet con 3 opciones: transferir a específica, mover a Sin asignar, eliminar transacciones)
 
 ## Completed (Fase 2) ✅
 
@@ -54,6 +54,6 @@ Progress: ███░░░░░░░ 33%
 
 ## Session Continuity
 
-Last session: 2026-01-14 14:05
-Stopped at: Fase 3 item 1/3 completado — Eliminación sin transacciones
+Last session: 2026-01-14 14:40
+Stopped at: Fase 3 item 2/3 completado — Transferencia de transacciones
 Resume file: None
