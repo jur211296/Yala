@@ -386,6 +386,10 @@ struct CashFlowWidget: View {
                     }
                 }
 
+                // Legend (only for bidirectional mode)
+                if !hasOnlyExpenses && !hasOnlyIncome {
+                    CashFlowLegendView(showNet: grouping == .month)
+                }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.lg)
@@ -510,5 +514,47 @@ struct CashFlowWidget: View {
         case .month: formatter.dateFormat = "MMM yy"  // ene 25
         }
         return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+    }
+}
+
+// MARK: - CashFlow Legend View
+
+struct CashFlowLegendView: View {
+    let showNet: Bool
+
+    var body: some View {
+        HStack(spacing: 16) {
+            // Income
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.incomeGraph)
+                    .frame(width: 6, height: 6)
+                Text(L10n.CashFlow.income)
+                    .font(.caption2)
+                    .foregroundStyle(Color.netoSecondaryText)
+            }
+
+            // Expense
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.expenseGraph)
+                    .frame(width: 6, height: 6)
+                Text(L10n.CashFlow.expense)
+                    .font(.caption2)
+                    .foregroundStyle(Color.netoSecondaryText)
+            }
+
+            // Net (only for monthly grouping)
+            if showNet {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color.brandPrimary)
+                        .frame(width: 6, height: 6)
+                    Text(L10n.CashFlow.netFlow)
+                        .font(.caption2)
+                        .foregroundStyle(Color.netoSecondaryText)
+                }
+            }
+        }
     }
 }
