@@ -32,6 +32,7 @@ struct NewTransactionView: View {
     // Success screen state
     @State private var showSuccessScreen = false
     @State private var successData: TransactionSuccessData?
+    @State private var isCreatingAnother = false
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -63,6 +64,7 @@ struct NewTransactionView: View {
                 onCreateAnother: {
                     // Reset form for new transaction
                     viewModel = NewTransactionViewModel()
+                    isCreatingAnother = true
                     withAnimation(.easeInOut(duration: 0.25)) {
                         showSuccessScreen = false
                         successData = nil
@@ -725,6 +727,12 @@ struct NewTransactionView: View {
     }
 
     private func prefillFromContext() {
+        // Skip prefill if user chose "Create another" - viewModel already reset
+        if isCreatingAnother {
+            isCreatingAnother = false
+            return
+        }
+
         let allSubcategories = categories.flatMap { $0.subcategories }
 
         // Reset viewModel if opening for new transaction (prevents stale data from previous edit)
