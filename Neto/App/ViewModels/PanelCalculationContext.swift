@@ -34,10 +34,13 @@ struct PanelCalculationContext {
     /// IDs of eligible accounts for fast lookup
     let eligibleAccountIDs: Set<PersistentIdentifier>
 
-    /// Transactions filtered by account, date, and global filters
+    /// Transactions filtered by account, date, and global filters (includes adjustments for balance)
     let filteredTransactions: [TransactionItem]
 
-    /// Transactions for category/subcategory widgets (respects focus date)
+    /// Transactions for expense analysis (excludes adjustments and initial balances)
+    let expenseFilteredTransactions: [TransactionItem]
+
+    /// Transactions for category/subcategory widgets (respects focus date, excludes adjustments)
     let contextTransactions: [TransactionItem]
 
     // MARK: - Pre-Filtered Data (Efficiency Optimization)

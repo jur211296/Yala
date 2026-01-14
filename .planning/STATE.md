@@ -31,6 +31,7 @@ Progress: ███░░░░░░░ 33%
 - Fix: Crash al acceder categoría eliminada (cascade delete en Category.swift)
 - Fix: Posición incorrecta de pantalla éxito con teclado abierto (dismiss + delay 150ms)
 - Fix: Teclado se cierra al abrir selectores de cuenta/categoría/tags en NewTransactionView
+- Fix: Widgets de gastos en Panel excluyen ajustes y saldos iniciales (expenseFilteredTransactions)
 
 ## Completed (Fase 3) ✅
 

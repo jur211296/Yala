@@ -623,6 +623,9 @@ final class PanelViewModel {
             return true
         }
 
+        // Expense-filtered transactions (excludes adjustments and initial balances)
+        let expenseFiltered = filtered.filter { $0.balanceAdjustmentType == nil }
+
         // Calculate effective interval (optimized for All Time)
         let effectiveInterval: DateInterval
         if selectedPeriod == .allTime {
@@ -641,10 +644,11 @@ final class PanelViewModel {
             effectiveInterval = self.panelDateInterval
         }
 
-        // Context transactions for category/subcategory widgets
+        // Context transactions for category/subcategory widgets (excludes adjustments)
         let contextTransactions = transactions.filter { txn in
             guard let acct = txn.account, eligibleAccountIDs.contains(acct.persistentModelID)
             else { return false }
+            guard txn.balanceAdjustmentType == nil else { return false }
             return effectiveInterval.contains(txn.date)
         }
 
@@ -688,6 +692,7 @@ final class PanelViewModel {
             eligibleAccounts: eligibleAccounts,
             eligibleAccountIDs: eligibleAccountIDs,
             filteredTransactions: filtered,
+            expenseFilteredTransactions: expenseFiltered,
             contextTransactions: finalContextTransactions,
             natureFilteredTransactions: natureFiltered,
             fullyFilteredTransactions: fullyFiltered,
@@ -796,10 +801,10 @@ final class PanelViewModel {
         )
     }
 
-    /// Calculate cash flow summary
+    /// Calculate cash flow summary (excludes adjustments/initial balances)
     private func calculateCashFlowWidget(context: PanelCalculationContext) -> CashFlowSummary? {
         return CashFlowCalculator.calculateCashFlow(
-            transactions: context.filteredTransactions,
+            transactions: context.expenseFilteredTransactions,
             interval: context.effectiveInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
@@ -807,21 +812,21 @@ final class PanelViewModel {
         )
     }
 
-    /// Calculate latest records
+    /// Calculate latest records (excludes adjustments/initial balances)
     private func calculateLatestRecordsWidget(context: PanelCalculationContext) -> [TransactionItem]
     {
         return Array(
-            context.filteredTransactions
+            context.expenseFilteredTransactions
                 .filter { context.effectiveInterval.contains($0.date) }
                 .sorted { $0.date > $1.date }
                 .prefix(5)
         )
     }
 
-    /// Calculate nature trend points
+    /// Calculate nature trend points (excludes adjustments/initial balances)
     private func calculateNatureWidget(context: PanelCalculationContext) -> [NatureTrendPoint] {
         return NatureTrendHelper.calculateTrend(
-            transactions: context.filteredTransactions,
+            transactions: context.expenseFilteredTransactions,
             grouping: context.natureGrouping,
             interval: context.effectiveInterval,
             preferredCurrency: CurrencyCode(rawValue: context.defaultCurrencyCode) ?? .pen,
