@@ -20,6 +20,10 @@ struct RecordsTabView: View {
     @Query(sort: \TransactionItem.date, order: .reverse)
     private var allTransactions: [TransactionItem]
 
+    /// All subcategories for chip display (independent of spending data)
+    @Query(sort: \Subcategory.name, order: .forward)
+    private var allSubcategories: [Subcategory]
+
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
     let categories: [Category]
@@ -423,20 +427,19 @@ struct RecordsTabView: View {
     private var subcategoryChips: [SubcategoryChip] {
         var chips: [SubcategoryChip] = []
         for subcategoryID in viewModel.selectedSubcategories {
-            for category in categories {
-                if let subcategory = category.subcategories.first(where: {
-                    $0.persistentModelID == subcategoryID
-                }) {
-                    chips.append(
-                        SubcategoryChip(
-                            name: subcategory.name,
-                            iconName: subcategory.iconName,
-                            colorHex: (subcategory.colorHex?.isEmpty == false
-                                ? subcategory.colorHex : nil) ?? category.colorHex,
-                            subcategoryID: subcategoryID
-                        ))
-                    break
-                }
+            // Use allSubcategories Query for chip display
+            if let subcategory = allSubcategories.first(where: {
+                $0.persistentModelID == subcategoryID
+            }) {
+                let categoryColor = subcategory.category.colorHex
+                chips.append(
+                    SubcategoryChip(
+                        name: subcategory.name,
+                        iconName: subcategory.iconName,
+                        colorHex: (subcategory.colorHex?.isEmpty == false
+                            ? subcategory.colorHex : nil) ?? categoryColor,
+                        subcategoryID: subcategoryID
+                    ))
             }
         }
         return chips

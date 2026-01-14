@@ -22,6 +22,7 @@ struct CategoriesTabView: View {
 
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     @Query(sort: \Category.name, order: .forward) private var categories: [Category]
+    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
     @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
     @Query(sort: \TransactionItem.date, order: .reverse) private var allTransactions:
         [TransactionItem]
@@ -152,11 +153,15 @@ struct CategoriesTabView: View {
             if hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        // Account chips
-                        if let chipText = accountsChipText {
-                            FilterChipView(text: chipText) {
-                                viewModel.selectedAccounts.removeAll()
-                            }
+                        // Account chips (with icon)
+                        ForEach(selectedAccountChips, id: \.id) { chip in
+                            FilterChipView(
+                                accountName: chip.name,
+                                count: chip.count,
+                                onClear: {
+                                    viewModel.selectedAccounts.removeAll()
+                                }
+                            )
                         }
 
                         // Category chips (with icons)
@@ -858,29 +863,31 @@ struct CategoriesTabView: View {
     private var selectedSubcategoryChips: [SubcategoryChip] {
         var chips: [SubcategoryChip] = []
 
-        // From ViewModel
+        // From ViewModel - use allSubcategories Query to find details
         for subcategoryID in viewModel.selectedSubcategories {
-            if let summary = subcategorySpending.first(where: {
-                $0.subcategory?.persistentModelID == subcategoryID
+            if let subcategory = allSubcategories.first(where: {
+                $0.persistentModelID == subcategoryID
             }) {
+                let categoryColor = subcategory.category.colorHex
                 chips.append(
                     SubcategoryChip(
-                        id: summary.id,
-                        name: summary.subcategoryName,
-                        iconName: summary.subcategory?.iconName,
-                        colorHex: summary.colorHex,
+                        id: subcategory.name,
+                        name: subcategory.name,
+                        iconName: subcategory.iconName,
+                        colorHex: (subcategory.colorHex?.isEmpty == false
+                            ? subcategory.colorHex : nil) ?? categoryColor,
                         subcategoryID: subcategoryID
                     ))
             }
         }
 
-        // From local selection (if not already in ViewModel)
+        // From local selection (if not already added via ViewModel)
         if let localSubcategoryID = selectedSubcategoryID,
-            let summary = subcategorySpending.first(where: { $0.id == localSubcategoryID }),
-            !viewModel.selectedSubcategories.contains(where: {
-                subcategorySpending.first(where: { s in s.id == localSubcategoryID })?.subcategory?
-                    .persistentModelID == $0
-            })
+            !viewModel.selectedSubcategories.contains(where: { id in
+                allSubcategories.first(where: { $0.persistentModelID == id })?.name
+                    == localSubcategoryID
+            }),
+            let summary = subcategorySpending.first(where: { $0.id == localSubcategoryID })
         {
             chips.append(
                 SubcategoryChip(
@@ -929,16 +936,26 @@ struct CategoriesTabView: View {
         return count
     }
 
-    // MARK: - Chip Text Helpers
+    // MARK: - Chip Helpers
 
-    private var accountsChipText: String? {
-        guard !viewModel.selectedAccounts.isEmpty else { return nil }
-        let names =
+    private struct AccountChip: Identifiable {
+        let id = UUID()
+        let name: String
+        let count: Int
+    }
+
+    private var selectedAccountChips: [AccountChip] {
+        guard !viewModel.selectedAccounts.isEmpty else { return [] }
+        let selectedAccountsList =
             accounts
             .filter { viewModel.selectedAccounts.contains($0.persistentModelID) }
-            .map { $0.name }
-        guard !names.isEmpty else { return nil }
-        return names.count == 1 ? names.first : "\(names.first ?? "") +\(names.count - 1)"
+        guard !selectedAccountsList.isEmpty else { return [] }
+
+        // Return a single chip with the first account name and total count
+        if let firstName = selectedAccountsList.first?.name {
+            return [AccountChip(name: firstName, count: selectedAccountsList.count)]
+        }
+        return []
     }
 
     private var tagsChipText: String? {
