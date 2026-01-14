@@ -41,7 +41,7 @@ struct NetoApp: App {
 
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
-    @State private var sessionState = SessionState()
+    private var sessionState = SessionState.shared
 
     var body: some Scene {
         WindowGroup {

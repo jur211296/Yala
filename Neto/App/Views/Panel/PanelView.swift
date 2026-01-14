@@ -588,7 +588,7 @@ struct PanelView: View {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
-                onShowMore: nil,  // REMOVED CHEVRON
+                onShowMore: { sessionState.navigateToDetail(.categories) },
                 size: mapWidgetSize(config.size)
             )
         } else if config.type == .topSubcategories {
@@ -610,7 +610,7 @@ struct PanelView: View {
                     }
                 },
                 selectedSubcategoryID: viewModel.selectedSubcategoryID,
-                onShowMore: nil,
+                onShowMore: { sessionState.navigateToDetail(.categories) },
                 size: mapWidgetSize(config.size)
             )
         } else if config.type == .categoriesPie {
@@ -623,7 +623,7 @@ struct PanelView: View {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
-                onShowDetail: nil,
+                onShowDetail: { sessionState.navigateToDetail(.categories) },
                 size: config.size
             )
         } else if config.type == .subcategoriesPie {
@@ -644,7 +644,7 @@ struct PanelView: View {
                         )
                     }
                 },
-                onShowDetail: nil,
+                onShowDetail: { sessionState.navigateToDetail(.categories) },
                 size: config.size
             )
         } else if config.type == .cashFlow {
@@ -655,7 +655,7 @@ struct PanelView: View {
                     period: viewModel.selectedPeriod.rawValue,
                     grouping: viewModel.cashFlowGrouping,
                     interval: viewModel.currentInterval,
-                    onShowDetail: nil,  // REMOVED CHEVRON
+                    onShowDetail: { sessionState.navigateToDetail(.trends) },
                     displayMode: viewModel.trendType
                 )
             } else {
@@ -665,7 +665,7 @@ struct PanelView: View {
             RecentRecordsWidget(
                 records: viewModel.latestRecords,
                 currencyCode: preferredCurrency.rawValue,
-                onShowMore: nil  // REMOVED CHEVRON
+                onShowMore: { sessionState.navigateToDetail(.records) }
             )
         } else if config.type == .expensesByNature {
             NatureTrendWidget(
@@ -680,7 +680,7 @@ struct PanelView: View {
                         viewModel.toggleNatureFilter(nature)
                     }
                 },
-                onShowDetail: nil  // Explicitly remove chevron
+                onShowDetail: { sessionState.navigateToDetail(.categories) }
             )
         } else if config.type == .exchangeRate {
             ExchangeRateWidget(

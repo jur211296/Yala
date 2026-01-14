@@ -12,6 +12,9 @@ import SwiftUI
 @Observable
 class SessionState {
 
+    /// Shared instance for global access
+    static let shared = SessionState()
+
     // MARK: - Period State
 
     /// The currently selected period, synchronized across Panel and Statistics
@@ -191,6 +194,20 @@ class SessionState {
         customDateRange = nil
         clearFilters()
         globalFilters.dateInterval = selectedPeriod.dateInterval()
+    }
+
+    // MARK: - Navigation State
+
+    /// Currently selected main tab (Panel, Statistics, etc.)
+    var selectedMainTab: AppTab = .panel
+
+    /// Currently selected detail tab within Statistics (Trends, Categories, Records)
+    var selectedDetailTab: DetailViewTab = .trends
+
+    /// Navigate to a specific detail view from any tab
+    func navigateToDetail(_ tab: DetailViewTab) {
+        selectedDetailTab = tab
+        selectedMainTab = .statistics
     }
 
     // MARK: - Initialization

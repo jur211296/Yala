@@ -5,25 +5,31 @@
 See: .planning/PROJECT.md (updated 2026-01-13)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 3 — Gestión Categorías
+**Current focus:** Fase 4 — Panel y Navegación
 
 ## Current Position
 
-Phase: 3 of 8 (Gestión Categorías)
+Phase: 4 of 8 (Panel y Navegación)
 Plan: In progress
-Status: 2/3 items done
-Last activity: 2026-01-14 — Transferencia de transacciones al eliminar subcategorías
+Status: 1/3 items done
+Last activity: 2026-01-14 — Chevron en widgets completado
 
-Progress: ██████░░░░ 66%
+Progress: ███░░░░░░░ 33%
 
-## Pending (Fase 3)
+## Pending (Fase 4)
 
-- Edición masiva de categorías/subcategorías
+- Widget de Presupuestos en PanelView
+- Home configurable (tabs desde personalización)
 
-## Completed (Fase 3)
+## Completed (Fase 4)
+
+- Chevron en widgets para redirigir a detalle (SessionState.navigateToDetail, 7 widgets conectados)
+
+## Completed (Fase 3) ✅
 
 - Eliminación sin transacciones (botón eliminar con validación de transacciones asociadas)
 - Transferencia de transacciones al eliminar (sheet con 3 opciones: transferir a específica, mover a Sin asignar, eliminar transacciones)
+- Edición masiva de categorías/subcategorías (modo editar con botones delete en CategoriesSettingsListView y CategoryDetailView)
 
 ## Completed (Fase 2) ✅
 
@@ -51,9 +57,10 @@ Progress: ██████░░░░ 66%
 - DateInterval crash si start > end; siempre validar
 - customTitle en CashFlowWidget tiene prioridad sobre displayMode
 - Anti-loop flags (`isSyncingFilters`, `isSyncingState`) previenen ciclos de sincronización
+- `SessionState.shared` controla navegación entre tabs (selectedMainTab, selectedDetailTab)
 
 ## Session Continuity
 
-Last session: 2026-01-14 14:40
-Stopped at: Fase 3 item 2/3 completado — Transferencia de transacciones
+Last session: 2026-01-14 16:25
+Stopped at: Fase 4 item 1/3 completado — Chevron en widgets
 Resume file: None

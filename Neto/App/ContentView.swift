@@ -19,11 +19,17 @@ struct ContentView: View {
 // MARK: - TabView Principal con Search Role (iOS 18+)
 
 struct MainTabView: View {
-    @State private var selectedTab: AppTab = .panel
+    @Bindable private var sessionState: SessionState
     @State private var searchText: String = ""
 
+    init() {
+        // Get SessionState from the environment wrapper
+        // This is initialized here to work with @Bindable
+        _sessionState = Bindable(wrappedValue: SessionState.shared)
+    }
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $sessionState.selectedMainTab) {
             Tab(L10n.Tab.panel, systemImage: "rectangle.grid.2x2.fill", value: .panel) {
                 PanelView()
             }
