@@ -224,7 +224,7 @@ struct ProfileView: View {
                     destination: .accounts)
                 SubsectionDivider()
                 profileRow(
-                    icon: "tag.fill", title: L10n.Settings.tags, iconColor: .orange,
+                    icon: "tag.fill", title: L10n.Settings.categories, iconColor: .orange,
                     destination: .categories)
                 SubsectionDivider()
                 profileRow(

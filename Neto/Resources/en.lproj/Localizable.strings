@@ -553,8 +553,18 @@
 "category.hiddenTitle" = "Category Hidden";
 "category.hiddenDescription" = "The category and its subcategories will stop appearing in selectors, but historical data will not be lost.";
 "category.addOneSubcategory" = "Add at least one subcategory";
+"category.delete" = "Delete Category";
+"category.deleteConfirmTitle" = "Delete Category?";
+"category.deleteConfirmMessage" = "The category and all its subcategories will be deleted. This action cannot be undone.";
+"category.cannotDeleteTitle" = "Cannot Delete";
+"category.cannotDeleteMessage" = "This category has %d transactions in its subcategories. Transfer the transactions before deleting.";
 "subcategory.newTitle" = "New Subcategory";
 "subcategory.editTitle" = "Edit Subcategory";
+"subcategory.delete" = "Delete Subcategory";
+"subcategory.deleteConfirmTitle" = "Delete Subcategory?";
+"subcategory.deleteConfirmMessage" = "This action cannot be undone.";
+"subcategory.cannotDeleteTitle" = "Cannot Delete";
+"subcategory.cannotDeleteMessage" = "This subcategory has %d transactions. Transfer the transactions to another subcategory before deleting.";
 
 
 "account.deleteBalanceError" = "You cannot delete this account because it has a non-zero balance. Adjust the balance to 0 before deleting it.";

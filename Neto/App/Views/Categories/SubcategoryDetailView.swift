@@ -27,6 +27,9 @@ struct SubcategoryDetailView: View {
     @State private var isPresentingNatureSelector: Bool = false
     @State private var showDiscardDialog: Bool = false
     @State private var showIconColorPicker: Bool = false
+    @State private var showDeleteConfirmation: Bool = false
+    @State private var showCannotDeleteAlert: Bool = false
+    @State private var transactionCount: Int = 0
 
     private let initialName: String
     private let initialNature: SubcategoryNature
@@ -137,6 +140,26 @@ struct SubcategoryDetailView: View {
         } message: {
             Text(L10n.Alert.discardChanges)
         }
+        .confirmationDialog(
+            L10n.Subcategory.deleteConfirmTitle,
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Subcategory.delete, role: .destructive) {
+                deleteSubcategory()
+            }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Subcategory.deleteConfirmMessage)
+        }
+        .alert(
+            L10n.Subcategory.cannotDeleteTitle,
+            isPresented: $showCannotDeleteAlert
+        ) {
+            Button(L10n.Common.understood, role: .cancel) {}
+        } message: {
+            Text(L10n.Subcategory.cannotDeleteMessage(transactionCount))
+        }
     }
 
     // Encabezado con círculo de color e icono (tappable para editar)
@@ -193,49 +216,98 @@ struct SubcategoryDetailView: View {
 
     // Sección de nombre, naturaleza y visibilidad
     private var detailsSection: some View {
-        SectionBox(title: "Detalles de la subcategoría") {
-            VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    Image(systemName: "textformat")
-                        .foregroundStyle(.secondary)
-                    TextField("Nombre de la subcategoría", text: $name)
-                        .textContentType(.name)
-                }
-                .padding()
-
-                SubsectionDivider()
-
-                Button {
-                    isPresentingNatureSelector = true
-                } label: {
+        VStack(spacing: 16) {
+            SectionBox(title: "Detalles de la subcategoría") {
+                VStack(spacing: 0) {
                     HStack(spacing: 12) {
-                        Image(systemName: "circle.lefthalf.filled")
+                        Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L10n.Category.nature)
-                                .foregroundStyle(.primary)
-                            Text(selectedNature.displayName)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.footnote)
-                            .foregroundStyle(.tertiary)
+                        TextField("Nombre de la subcategoría", text: $name)
+                            .textContentType(.name)
                     }
                     .padding()
-                }
-                .buttonStyle(.plain)
 
-                SubsectionDivider()
+                    SubsectionDivider()
 
-                Toggle(isOn: $isVisible) {
-                    Text(L10n.Category.show)
+                    Button {
+                        isPresentingNatureSelector = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "circle.lefthalf.filled")
+                                .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(L10n.Category.nature)
+                                    .foregroundStyle(.primary)
+                                Text(selectedNature.displayName)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                    }
+                    .buttonStyle(.plain)
+
+                    SubsectionDivider()
+
+                    Toggle(isOn: $isVisible) {
+                        Text(L10n.Category.show)
+                    }
+                    .tint(Color.electricIndigo)
+                    .padding()
                 }
-                .tint(Color.electricIndigo)
-                .padding()
+            }
+
+            // Delete button (only when editing an existing subcategory)
+            if isEditing {
+                SectionBox(title: "") {
+                    Button {
+                        transactionCount = countTransactions()
+                        if transactionCount > 0 {
+                            showCannotDeleteAlert = true
+                        } else {
+                            showDeleteConfirmation = true
+                        }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text(L10n.Subcategory.delete)
+                                .foregroundStyle(.red)
+                            Spacer()
+                        }
+                        .padding()
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
+    }
+
+    /// Counts transactions linked to this subcategory
+    private func countTransactions() -> Int {
+        guard let subcategory = subcategoryToEdit else { return 0 }
+        do {
+            let descriptor = FetchDescriptor<TransactionItem>()
+            let allTransactions = try modelContext.fetch(descriptor)
+            return allTransactions.filter { $0.subcategory == subcategory }.count
+        } catch {
+            print("FIN-45: Error counting transactions for subcategory: \(error)")
+            return 0
+        }
+    }
+
+    private func deleteSubcategory() {
+        guard let subcategory = subcategoryToEdit else { return }
+        modelContext.delete(subcategory)
+        do {
+            try modelContext.save()
+        } catch {
+            print("FIN-45: Error deleting subcategory: \(error)")
+        }
+        dismiss()
     }
 
     private func saveSubcategory() {

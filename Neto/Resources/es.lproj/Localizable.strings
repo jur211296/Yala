@@ -553,8 +553,18 @@
 "category.hiddenTitle" = "Categoría oculta";
 "category.hiddenDescription" = "La categoría y sus subcategorías dejarán de aparecer en los selectores, pero no se perderán datos históricos.";
 "category.addOneSubcategory" = "Añade al menos una subcategoría";
+"category.delete" = "Eliminar categoría";
+"category.deleteConfirmTitle" = "¿Eliminar categoría?";
+"category.deleteConfirmMessage" = "Se eliminarán la categoría y todas sus subcategorías. Esta acción no se puede deshacer.";
+"category.cannotDeleteTitle" = "No se puede eliminar";
+"category.cannotDeleteMessage" = "Esta categoría tiene %d transacciones en sus subcategorías. Transfiere las transacciones antes de eliminarla.";
 "subcategory.newTitle" = "Nueva subcategoría";
 "subcategory.editTitle" = "Editar subcategoría";
+"subcategory.delete" = "Eliminar subcategoría";
+"subcategory.deleteConfirmTitle" = "¿Eliminar subcategoría?";
+"subcategory.deleteConfirmMessage" = "Esta acción no se puede deshacer.";
+"subcategory.cannotDeleteTitle" = "No se puede eliminar";
+"subcategory.cannotDeleteMessage" = "Esta subcategoría tiene %d transacciones asociadas. Transfiere las transacciones a otra subcategoría antes de eliminarla.";
 
 
 "account.deleteBalanceError" = "No puedes eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla.";

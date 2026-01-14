@@ -24,6 +24,9 @@ struct CategoryDetailView: View {
     @State private var showDiscardDialog: Bool = false
     @State private var showMissingSubcategoriesAlert: Bool = false
     @State private var showIconColorPicker: Bool = false
+    @State private var showDeleteConfirmation: Bool = false
+    @State private var showCannotDeleteAlert: Bool = false
+    @State private var transactionCount: Int = 0
 
     private let initialName: String
     private let initialIsVisible: Bool
@@ -154,6 +157,26 @@ struct CategoryDetailView: View {
         } message: {
             Text(L10n.Alert.discardChanges)
         }
+        .confirmationDialog(
+            L10n.Category.deleteConfirmTitle,
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Category.delete, role: .destructive) {
+                deleteCategory()
+            }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Category.deleteConfirmMessage)
+        }
+        .alert(
+            L10n.Category.cannotDeleteTitle,
+            isPresented: $showCannotDeleteAlert
+        ) {
+            Button(L10n.Common.understood, role: .cancel) {}
+        } message: {
+            Text(L10n.Category.cannotDeleteMessage(transactionCount))
+        }
     }
 
     // Encabezado con círculo de color e icono (tappable para editar)
@@ -208,27 +231,52 @@ struct CategoryDetailView: View {
 
     // Sección de nombre y visibilidad
     private var detailsSection: some View {
-        SectionBox(title: "Detalles") {
-            VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    Image(systemName: "textformat")
-                        .foregroundStyle(.secondary)
-                    TextField("Nombre de la categoría", text: $name)
-                        .textContentType(.name)
-                }
-                .padding()
-
-                SubsectionDivider()
-
-                Toggle(isOn: $isVisible) {
-                    Text(L10n.Category.show)
-                }
-                .tint(Color.electricIndigo)
-                .padding()
-                .onChange(of: isVisible) { _, newValue in
-                    if newValue == false {
-                        showVisibilityInfo = true
+        VStack(spacing: 16) {
+            SectionBox(title: "Detalles") {
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "textformat")
+                            .foregroundStyle(.secondary)
+                        TextField("Nombre de la categoría", text: $name)
+                            .textContentType(.name)
                     }
+                    .padding()
+
+                    SubsectionDivider()
+
+                    Toggle(isOn: $isVisible) {
+                        Text(L10n.Category.show)
+                    }
+                    .tint(Color.electricIndigo)
+                    .padding()
+                    .onChange(of: isVisible) { _, newValue in
+                        if newValue == false {
+                            showVisibilityInfo = true
+                        }
+                    }
+                }
+            }
+
+            // Delete button (only for existing categories, not new ones)
+            if !isNewCategory {
+                SectionBox(title: "") {
+                    Button {
+                        transactionCount = countTransactionsInCategory()
+                        if transactionCount > 0 {
+                            showCannotDeleteAlert = true
+                        } else {
+                            showDeleteConfirmation = true
+                        }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text(L10n.Category.delete)
+                                .foregroundStyle(.red)
+                            Spacer()
+                        }
+                        .padding()
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -335,6 +383,35 @@ struct CategoryDetailView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .contentShape(Rectangle())
+    }
+
+    /// Counts transactions linked to any subcategory of this category
+    private func countTransactionsInCategory() -> Int {
+        do {
+            let descriptor = FetchDescriptor<TransactionItem>()
+            let allTransactions = try modelContext.fetch(descriptor)
+            return allTransactions.filter { transaction in
+                guard let subcategory = transaction.subcategory else { return false }
+                return subcategory.category == category
+            }.count
+        } catch {
+            print("FIN-45: Error counting transactions for category: \(error)")
+            return 0
+        }
+    }
+
+    private func deleteCategory() {
+        // Delete all subcategories first (cascade)
+        for subcategory in subcategories {
+            modelContext.delete(subcategory)
+        }
+        modelContext.delete(category)
+        do {
+            try modelContext.save()
+        } catch {
+            print("FIN-45: Error deleting category: \(error)")
+        }
+        dismiss()
     }
 
     private func saveCategory() {

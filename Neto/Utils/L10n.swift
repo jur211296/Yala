@@ -373,6 +373,22 @@ enum L10n {
         static var addOneSubcategory: String {
             NSLocalizedString("category.addOneSubcategory", comment: "")
         }
+        static var delete: String { NSLocalizedString("category.delete", comment: "") }
+        static var deleteConfirmTitle: String {
+            NSLocalizedString("category.deleteConfirmTitle", comment: "")
+        }
+        static var deleteConfirmMessage: String {
+            NSLocalizedString("category.deleteConfirmMessage", comment: "")
+        }
+        static var cannotDeleteTitle: String {
+            NSLocalizedString("category.cannotDeleteTitle", comment: "")
+        }
+        static func cannotDeleteMessage(_ count: Int) -> String {
+            String(
+                format: NSLocalizedString("category.cannotDeleteMessage", comment: ""),
+                count
+            )
+        }
     }
 
     // MARK: - Subcategory
@@ -380,6 +396,22 @@ enum L10n {
     enum Subcategory {
         static var newTitle: String { NSLocalizedString("subcategory.newTitle", comment: "") }
         static var editTitle: String { NSLocalizedString("subcategory.editTitle", comment: "") }
+        static var delete: String { NSLocalizedString("subcategory.delete", comment: "") }
+        static var deleteConfirmTitle: String {
+            NSLocalizedString("subcategory.deleteConfirmTitle", comment: "")
+        }
+        static var deleteConfirmMessage: String {
+            NSLocalizedString("subcategory.deleteConfirmMessage", comment: "")
+        }
+        static var cannotDeleteTitle: String {
+            NSLocalizedString("subcategory.cannotDeleteTitle", comment: "")
+        }
+        static func cannotDeleteMessage(_ count: Int) -> String {
+            String(
+                format: NSLocalizedString("subcategory.cannotDeleteMessage", comment: ""),
+                count
+            )
+        }
     }
 
     // MARK: - Tag
