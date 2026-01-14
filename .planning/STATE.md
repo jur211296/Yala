@@ -33,7 +33,7 @@ Progress: ███░░░░░░░ 33%
 - Fix: Teclado se cierra al abrir selectores de cuenta/categoría/tags en NewTransactionView
 - Fix: Widgets de gastos en Panel excluyen ajustes y saldos iniciales (expenseFilteredTransactions)
 - Fix: TagSelectorSheet permite crear etiquetas + diseño mejorado de filas
-- Fix: Nueva transacción resetea viewModel si tenía datos de edición previa
+- Fix: "Crear otra transacción" tras editar no precarga datos (isCreatingAnother flag)
 
 ## Completed (Fase 3) ✅
 
