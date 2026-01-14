@@ -727,6 +727,11 @@ struct NewTransactionView: View {
     private func prefillFromContext() {
         let allSubcategories = categories.flatMap { $0.subcategories }
 
+        // Reset viewModel if opening for new transaction (prevents stale data from previous edit)
+        if transactionToEdit == nil && viewModel.editingTransaction != nil {
+            viewModel = NewTransactionViewModel()
+        }
+
         // If we're editing an existing transaction, load all its data
         if let tx = transactionToEdit {
             viewModel.editingTransaction = tx
