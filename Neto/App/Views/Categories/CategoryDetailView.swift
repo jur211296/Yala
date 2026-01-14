@@ -28,6 +28,12 @@ struct CategoryDetailView: View {
     @State private var showCannotDeleteAlert: Bool = false
     @State private var transactionCount: Int = 0
 
+    // Subcategory editing/deletion states
+    @State private var isEditingSubcategories: Bool = false
+    @State private var subcategoryToDelete: Subcategory?
+    @State private var showSubcategoryDeleteConfirmation: Bool = false
+    @State private var subcategoryForTransfer: Subcategory?
+
     private let initialName: String
     private let initialIsVisible: Bool
     private let initialIconName: String
@@ -177,6 +183,33 @@ struct CategoryDetailView: View {
         } message: {
             Text(L10n.Category.cannotDeleteMessage(transactionCount))
         }
+        .confirmationDialog(
+            L10n.Subcategory.deleteConfirmTitle,
+            isPresented: $showSubcategoryDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Subcategory.delete, role: .destructive) {
+                if let subcategory = subcategoryToDelete {
+                    deleteSubcategory(subcategory)
+                }
+            }
+            Button(L10n.Action.cancel, role: .cancel) {
+                subcategoryToDelete = nil
+            }
+        } message: {
+            Text(L10n.Subcategory.deleteConfirmMessage)
+        }
+        .sheet(item: $subcategoryForTransfer) { subcategory in
+            SubcategoryTransferSheet(
+                subcategoryToDelete: subcategory,
+                onComplete: {
+                    deleteSubcategory(subcategory)
+                    subcategoryForTransfer = nil
+                }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     // Encabezado con círculo de color e icono (tappable para editar)
@@ -288,31 +321,77 @@ struct CategoryDetailView: View {
         let ocultas = subcategories.filter { !$0.isVisible }
 
         return VStack(spacing: 16) {
-            SectionBox(title: "Subcategorías activas") {
+            // Active subcategories section
+            VStack(alignment: .leading, spacing: 8) {
+                // Header with Edit/Done button
+                HStack {
+                    Text("Subcategorías activas")
+                        .font(.headline)
+                        .foregroundStyle(Color.primary.opacity(0.6))
+                    Spacer()
+                    if !visibles.isEmpty || !ocultas.isEmpty {
+                        Button {
+                            isEditingSubcategories.toggle()
+                        } label: {
+                            Text(isEditingSubcategories ? L10n.Action.done : L10n.Action.edit)
+                                .font(.subheadline)
+                                .foregroundStyle(Color.electricIndigo)
+                        }
+                    }
+                }
+                .padding(.horizontal, 6)
+
                 VStack(spacing: 0) {
                     if visibles.isEmpty && ocultas.isEmpty {
                         Text(L10n.Category.noSubcategoriesYet)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
                             .padding()
-                    } else {
-                        ForEach(Array(visibles.enumerated()), id: \.element.id) {
-                            index, subcategory in
-                            NavigationLink {
-                                SubcategoryDetailView(
-                                    parentCategory: category, subcategoryToEdit: subcategory)
-                            } label: {
-                                subcategoryRow(subcategory)
-                            }
-                            .buttonStyle(.plain)
+                    } else if !visibles.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(Array(visibles.enumerated()), id: \.element.id) {
+                                index, subcategory in
+                                HStack(spacing: 0) {
+                                    if isEditingSubcategories {
+                                        Button {
+                                            handleSubcategoryDelete(subcategory)
+                                        } label: {
+                                            Image(systemName: "minus.circle.fill")
+                                                .font(.title2)
+                                                .foregroundStyle(.red)
+                                        }
+                                        .padding(.leading, 16)
+                                        .padding(.trailing, 8)
+                                    }
 
-                            if index < visibles.count - 1 {
-                                SubsectionDivider()
+                                    NavigationLink {
+                                        SubcategoryDetailView(
+                                            parentCategory: category, subcategoryToEdit: subcategory)
+                                    } label: {
+                                        HStack {
+                                            subcategoryRow(subcategory)
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.horizontal, isEditingSubcategories ? 8 : 16)
+                                    .padding(.vertical, 8)
+                                }
+
+                                if index < visibles.count - 1 {
+                                    Divider()
+                                        .padding(.leading, isEditingSubcategories ? 56 : 16)
+                                }
                             }
                         }
+                        .padding(.vertical, 6)
                     }
 
-                    SubsectionDivider()
+                    Divider()
+                        .padding(.horizontal, 16)
 
                     NavigationLink {
                         SubcategoryDetailView(parentCategory: category)
@@ -321,34 +400,82 @@ struct CategoryDetailView: View {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundStyle(Color.brandPrimary)
                             Text(L10n.Category.addSubcategory)
+                                .foregroundStyle(.primary)
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
                         }
-                        .padding()
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
                     }
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(Color.netoCard)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                )
+                .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
             }
 
+            // Hidden subcategories section
             if !ocultas.isEmpty {
-                SectionBox(title: "Subcategorías ocultas") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Subcategorías ocultas")
+                        .font(.headline)
+                        .foregroundStyle(Color.primary.opacity(0.6))
+                        .padding(.leading, 6)
+
                     VStack(spacing: 0) {
                         ForEach(Array(ocultas.enumerated()), id: \.element.id) {
                             index, subcategory in
-                            NavigationLink {
-                                SubcategoryDetailView(
-                                    parentCategory: category, subcategoryToEdit: subcategory)
-                            } label: {
-                                subcategoryRow(subcategory)
+                            HStack(spacing: 0) {
+                                if isEditingSubcategories {
+                                    Button {
+                                        handleSubcategoryDelete(subcategory)
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill")
+                                            .font(.title2)
+                                            .foregroundStyle(.red)
+                                    }
+                                    .padding(.leading, 16)
+                                    .padding(.trailing, 8)
+                                }
+
+                                NavigationLink {
+                                    SubcategoryDetailView(
+                                        parentCategory: category, subcategoryToEdit: subcategory)
+                                } label: {
+                                    HStack {
+                                        subcategoryRow(subcategory)
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.horizontal, isEditingSubcategories ? 8 : 16)
+                                .padding(.vertical, 8)
                             }
-                            .buttonStyle(.plain)
 
                             if index < ocultas.count - 1 {
-                                SubsectionDivider()
+                                Divider()
+                                    .padding(.leading, isEditingSubcategories ? 56 : 16)
                             }
                         }
                     }
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(Color.netoCard)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    )
+                    .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
                 }
             }
         }
@@ -356,32 +483,22 @@ struct CategoryDetailView: View {
 
     @ViewBuilder
     private func subcategoryRow(_ subcategory: Subcategory) -> some View {
-        let backgroundColor = Color(hex: colorHex)
-
         HStack(spacing: 12) {
             Circle()
-                .fill(backgroundColor)
-                .frame(width: 32, height: 32)
+                .fill(Color(hex: colorHex))
+                .frame(width: 36, height: 36)
                 .overlay(
                     Image(systemName: subcategory.iconName ?? category.iconName ?? "tag")
                         .font(.subheadline)
                         .foregroundStyle(.white)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(subcategory.name)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-            }
+            Text(subcategory.name)
+                .font(.body)
+                .foregroundStyle(.primary)
 
             Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
         .contentShape(Rectangle())
     }
 
@@ -441,5 +558,41 @@ struct CategoryDetailView: View {
         }
 
         dismiss()
+    }
+
+    // MARK: - Subcategory Deletion
+
+    private func handleSubcategoryDelete(_ subcategory: Subcategory) {
+        let count = countTransactionsForSubcategory(subcategory)
+        if count > 0 {
+            subcategoryForTransfer = subcategory
+        } else {
+            subcategoryToDelete = subcategory
+            showSubcategoryDeleteConfirmation = true
+        }
+    }
+
+    private func deleteSubcategory(_ subcategory: Subcategory) {
+        modelContext.delete(subcategory)
+        do {
+            try modelContext.save()
+            modelContext.processPendingChanges()
+        } catch {
+            print("FIN-45: Error deleting subcategory: \(error)")
+        }
+        subcategoryToDelete = nil
+        subcategoryForTransfer = nil
+    }
+
+    private func countTransactionsForSubcategory(_ subcategory: Subcategory) -> Int {
+        let subcategoryID = subcategory.persistentModelID
+        do {
+            let descriptor = FetchDescriptor<TransactionItem>()
+            let allTransactions = try modelContext.fetch(descriptor)
+            return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
+        } catch {
+            print("FIN-45: Error counting transactions: \(error)")
+            return 0
+        }
     }
 }

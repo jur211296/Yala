@@ -31,6 +31,10 @@ struct CategoriesSettingsListView: View {
 
     @State private var isNavigatingToNewCategory: Bool = false
     @State private var newCategory: Category?
+    @State private var isEditing: Bool = false
+    @State private var showCannotDeleteAlert: Bool = false
+    @State private var categoryToDeleteName: String = ""
+    @State private var transactionCountForAlert: Int = 0
 
     private func createAndOpenNewCategory() {
         let nextSortOrder = (categories.map { $0.sortOrder }.max() ?? 0) + 1
@@ -94,6 +98,51 @@ struct CategoriesSettingsListView: View {
                 EmptyView()
             }
         }
+        .alert(
+            L10n.Category.cannotDeleteTitle,
+            isPresented: $showCannotDeleteAlert
+        ) {
+            Button(L10n.Common.understood, role: .cancel) {}
+        } message: {
+            Text(L10n.Category.cannotDeleteMessage(transactionCountForAlert))
+        }
+    }
+
+    // MARK: - Edit Mode Functions
+
+    private func handleCategoryDelete(_ category: Category) {
+        let count = countTransactionsInCategory(category)
+        if count > 0 {
+            categoryToDeleteName = category.name
+            transactionCountForAlert = count
+            showCannotDeleteAlert = true
+            return
+        }
+        // Delete subcategories first
+        for subcategory in category.subcategories {
+            modelContext.delete(subcategory)
+        }
+        modelContext.delete(category)
+        do {
+            try modelContext.save()
+            modelContext.processPendingChanges()
+        } catch {
+            print("FIN-45: Error deleting category: \(error)")
+        }
+    }
+
+    private func countTransactionsInCategory(_ category: Category) -> Int {
+        do {
+            let descriptor = FetchDescriptor<TransactionItem>()
+            let allTransactions = try modelContext.fetch(descriptor)
+            return allTransactions.filter { transaction in
+                guard let subcategory = transaction.subcategory else { return false }
+                return subcategory.category.persistentModelID == category.persistentModelID
+            }.count
+        } catch {
+            print("FIN-45: Error counting transactions: \(error)")
+            return 0
+        }
     }
 
     private var emptyState: some View {
@@ -119,28 +168,57 @@ struct CategoriesSettingsListView: View {
 
     private var activeCategoriesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.Common.active)
-                .font(.headline)
-                .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
-
-            List {
-                ForEach(Array(activeCategories.enumerated()), id: \.element.id) { index, category in
-                    NavigationLink {
-                        CategoryDetailView(category: category)
-                    } label: {
-                        categoryRow(category)
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowBackground(Color.netoCard)
-                    .listRowSeparator(
-                        index < activeCategories.count - 1 ? .visible : .hidden, edges: .bottom)
+            HStack {
+                Text(L10n.Common.active)
+                    .font(.headline)
+                    .foregroundStyle(Color.primary.opacity(0.6))
+                Spacer()
+                Button {
+                    isEditing.toggle()
+                } label: {
+                    Text(isEditing ? L10n.Action.done : L10n.Action.edit)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.electricIndigo)
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .scrollDisabled(true)
-            .frame(height: CGFloat(activeCategories.count) * 52)
+            .padding(.horizontal, 6)
+
+            VStack(spacing: 0) {
+                ForEach(Array(activeCategories.enumerated()), id: \.element.id) { index, category in
+                    HStack(spacing: 0) {
+                        if isEditing {
+                            Button {
+                                handleCategoryDelete(category)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.red)
+                            }
+                            .padding(.leading, 16)
+                            .padding(.trailing, 8)
+                        }
+
+                        NavigationLink {
+                            CategoryDetailView(category: category)
+                        } label: {
+                            HStack {
+                                categoryRow(category)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, isEditing ? 8 : 16)
+                        .padding(.vertical, 8)
+                    }
+
+                    if index < activeCategories.count - 1 {
+                        Divider()
+                            .padding(.leading, isEditing ? 56 : 16)
+                    }
+                }
+            }
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -164,23 +242,42 @@ struct CategoriesSettingsListView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
-            List {
+            VStack(spacing: 0) {
                 ForEach(Array(hiddenCategories.enumerated()), id: \.element.id) { index, category in
-                    NavigationLink {
-                        CategoryDetailView(category: category)
-                    } label: {
-                        categoryRow(category)
+                    HStack(spacing: 0) {
+                        if isEditing {
+                            Button {
+                                handleCategoryDelete(category)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.red)
+                            }
+                            .padding(.leading, 16)
+                            .padding(.trailing, 8)
+                        }
+
+                        NavigationLink {
+                            CategoryDetailView(category: category)
+                        } label: {
+                            HStack {
+                                categoryRow(category)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, isEditing ? 8 : 16)
+                        .padding(.vertical, 8)
                     }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowBackground(Color.netoCard)
-                    .listRowSeparator(
-                        index < hiddenCategories.count - 1 ? .visible : .hidden, edges: .bottom)
+
+                    if index < hiddenCategories.count - 1 {
+                        Divider()
+                            .padding(.leading, isEditing ? 56 : 16)
+                    }
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .scrollDisabled(true)
-            .frame(height: CGFloat(hiddenCategories.count) * 52)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)

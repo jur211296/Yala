@@ -12,8 +12,8 @@ App iOS de finanzas personales. V1.0 estabiliza el core, añade automatización,
 
 - [x] **Fase 1: Estabilidad Core** - Eliminar bugs críticos antes de construir ✅
 - [x] **Fase 2: Periodos y Filtros** - Infraestructura de filtrado para toda la app ✅
-- [ ] **Fase 3: Gestión Categorías** - Mantenimiento eficiente de categorías ← Siguiente
-- [ ] **Fase 4: Panel y Navegación** - Navegabilidad y widgets del Panel
+- [x] **Fase 3: Gestión Categorías** - Mantenimiento eficiente de categorías ✅
+- [ ] **Fase 4: Panel y Navegación** - Navegabilidad y widgets del Panel ← Siguiente
 - [ ] **Fase 5: Visualizaciones Categorías** - Comparativas y detalles en gráficas
 - [ ] **Fase 6: Pagos Planificados** - Nuevo módulo de suscripciones y pagos futuros
 - [ ] **Fase 7: Registro Inteligente** - Entrada de transacciones con IA
@@ -165,7 +165,7 @@ DoD:
 |------|--------|-------|--------|-----------|
 | 1 | Estabilidad Core | N/A | ✅ Done | 2026-01-13 |
 | 2 | Periodos y Filtros | N/A | ✅ Done | 2026-01-14 |
-| 3 | Gestión Categorías | TBD | Not started | - |
+| 3 | Gestión Categorías | N/A | ✅ Done | 2026-01-14 |
 | 4 | Panel y Navegación | TBD | Not started | - |
 | 5 | Visualizaciones Categorías | TBD | Not started | - |
 | 6 | Pagos Planificados | TBD | Not started | - |
