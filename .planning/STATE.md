@@ -25,6 +25,13 @@ Progress: ███░░░░░░░ 33%
 
 - Chevron en widgets para redirigir a detalle (SessionState.navigateToDetail, 7 widgets conectados)
 
+## Bug Fixes (Sesión actual)
+
+- Fix: Animación suave al mostrar pantalla de éxito en transacciones (transition opacity + scale)
+- Fix: Crash al acceder categoría eliminada (cascade delete en Category.swift)
+- Fix: Posición incorrecta de pantalla éxito con teclado abierto (dismiss + delay 150ms)
+- Fix: Teclado se cierra al abrir selectores de cuenta/categoría/tags en NewTransactionView
+
 ## Completed (Fase 3) ✅
 
 - Eliminación sin transacciones (botón eliminar con validación de transacciones asociadas)
@@ -61,6 +68,6 @@ Progress: ███░░░░░░░ 33%
 
 ## Session Continuity
 
-Last session: 2026-01-14 16:25
-Stopped at: Fase 4 item 1/3 completado — Chevron en widgets
+Last session: 2026-01-14 16:45
+Stopped at: Bug fixes en NewTransactionView
 Resume file: None

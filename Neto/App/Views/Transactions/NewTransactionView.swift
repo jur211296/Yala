@@ -63,17 +63,23 @@ struct NewTransactionView: View {
                 onCreateAnother: {
                     // Reset form for new transaction
                     viewModel = NewTransactionViewModel()
-                    showSuccessScreen = false
-                    successData = nil
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showSuccessScreen = false
+                        successData = nil
+                    }
                 },
                 onEdit: {
                     // Go back to form with current data
-                    showSuccessScreen = false
-                    successData = nil
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showSuccessScreen = false
+                        successData = nil
+                    }
                 }
             )
+            .transition(.opacity.combined(with: .scale(scale: 0.95)))
         } else {
             transactionFormView
+                .transition(.opacity)
         }
     }
 
@@ -401,6 +407,7 @@ struct NewTransactionView: View {
                         isSelected: viewModel.sourceAccount != nil,
                         color: viewModel.sourceAccount != nil ? Color.hotPink : nil
                     ) {
+                        dismissKeyboard()
                         viewModel.showSourceAccountSelector = true
                     }
 
@@ -411,6 +418,7 @@ struct NewTransactionView: View {
                         isSelected: viewModel.destinationAccount != nil,
                         color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil
                     ) {
+                        dismissKeyboard()
                         viewModel.showDestinationAccountSelector = true
                     }
                 } else {
@@ -421,6 +429,7 @@ struct NewTransactionView: View {
                         color: viewModel.selectedAccount != nil
                             ? Color(hex: viewModel.selectedAccount!.colorHex) : nil
                     ) {
+                        dismissKeyboard()
                         viewModel.showAccountSelector = true
                     }
                 }
@@ -433,6 +442,7 @@ struct NewTransactionView: View {
                         isSelected: viewModel.selectedSubcategory != nil,
                         color: subcategoryChipColor
                     ) {
+                        dismissKeyboard()
                         viewModel.showSubcategorySelector = true
                     }
                 }
@@ -447,6 +457,7 @@ struct NewTransactionView: View {
                             isSelected: false,
                             color: nil
                         ) {
+                            dismissKeyboard()
                             viewModel.showTagSelector = true
                         }
                     } else {
@@ -458,6 +469,7 @@ struct NewTransactionView: View {
                                 isSelected: true,
                                 color: Color.tagChipColor
                             ) {
+                                dismissKeyboard()
                                 viewModel.showTagSelector = true
                             }
                         }
@@ -667,8 +679,17 @@ struct NewTransactionView: View {
 
     // MARK: - Actions
 
+    /// Dismisses keyboard by clearing focus states
+    private func dismissKeyboard() {
+        isNoteFieldFocused = false
+        isAmountFieldFocused = false
+    }
+
     private func saveTransaction() {
         if viewModel.save(context: modelContext) != nil {
+            // Dismiss keyboard first
+            dismissKeyboard()
+
             // Build success data from saved transaction
             let account = viewModel.isTransfer ? viewModel.sourceAccount : viewModel.selectedAccount
             let destAccount = viewModel.destinationAccount
@@ -693,7 +714,13 @@ struct NewTransactionView: View {
                 destinationAmount: Decimal(viewModel.destinationAmount),
                 destinationCurrencyCode: destAccount?.currencyCode
             )
-            showSuccessScreen = true
+
+            // Delay animation to let keyboard dismiss
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showSuccessScreen = true
+                }
+            }
         }
     }
 
