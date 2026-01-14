@@ -504,6 +504,22 @@ struct DetailContainerView: View {
         trendsViewModel.selectedNatures = sessionState.selectedNatures
         recordsViewModel.selectedNatures = sessionState.selectedNatures
 
+        // Sync tags
+        trendsViewModel.selectedTags = sessionState.selectedTags
+        recordsViewModel.selectedTags = sessionState.selectedTags
+
+        // Sync currencies
+        trendsViewModel.selectedCurrencies = sessionState.selectedCurrencies
+        recordsViewModel.selectedCurrencies = sessionState.selectedCurrencies
+
+        // Sync amount condition
+        trendsViewModel.amountCondition = sessionState.amountCondition
+        recordsViewModel.amountCondition = sessionState.amountCondition
+
+        // Sync search text
+        trendsViewModel.searchText = sessionState.searchText
+        recordsViewModel.searchText = sessionState.searchText
+
         // Sync trend metric from SessionState
         trendsViewModel.selectedMetric = sessionState.selectedTrendMetric
     }
@@ -521,6 +537,18 @@ struct DetailContainerView: View {
             .filter { trendsViewModel.selectedSubcategories.contains($0.persistentModelID) }
             .map { $0.name }
         sessionState.selectedSubcategoryNames = Set(selectedSubNames)
+
+        // Sync tags
+        sessionState.selectedTags = trendsViewModel.selectedTags
+
+        // Sync currencies
+        sessionState.selectedCurrencies = trendsViewModel.selectedCurrencies
+
+        // Sync amount condition
+        sessionState.amountCondition = trendsViewModel.amountCondition
+
+        // Sync search text
+        sessionState.searchText = trendsViewModel.searchText
 
         // Sync trend metric to SessionState
         sessionState.selectedTrendMetric = trendsViewModel.selectedMetric
@@ -655,6 +683,10 @@ private struct DetailContainerObservers: ViewModifier {
             .onChange(of: sessionState.selectedSubcategoryNames) {
                 handleSessionStateFilterChange()
             }
+            .onChange(of: sessionState.selectedTags) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedCurrencies) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.amountCondition) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.searchText) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedTrendMetric) {
                 syncFromSessionState()
                 calculateTrendsData()

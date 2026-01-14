@@ -67,6 +67,18 @@ class SessionState {
     /// Selected natures (empty = all natures)
     var selectedNatures: Set<SubcategoryNature> = []
 
+    /// Selected tags (empty = all tags)
+    var selectedTags: Set<PersistentIdentifier> = []
+
+    /// Selected currencies (empty = all currencies)
+    var selectedCurrencies: Set<CurrencyCode> = []
+
+    /// Amount filter condition
+    var amountCondition: AmountFilterCondition = .any
+
+    /// Search text for note filtering
+    var searchText: String = ""
+
     // MARK: - Filter Criteria State
 
     /// Global filter criteria shared across views (Trends, Records)
@@ -84,6 +96,8 @@ class SessionState {
     var hasActiveFilters: Bool {
         !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
             || !selectedSubcategoryNames.isEmpty || !selectedNatures.isEmpty
+            || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
+            || amountCondition.isActive || !searchText.isEmpty
     }
 
     // MARK: - Actions
@@ -94,6 +108,10 @@ class SessionState {
         selectedCategoryIDs.removeAll()
         selectedSubcategoryNames.removeAll()
         selectedNatures.removeAll()
+        selectedTags.removeAll()
+        selectedCurrencies.removeAll()
+        amountCondition = .any
+        searchText = ""
         globalFilters.clearAll()
     }
 
@@ -137,6 +155,34 @@ class SessionState {
             selectedNatures.removeAll()  // Single-select for Panel
             selectedNatures.insert(nature)
         }
+    }
+
+    /// Toggle tag filter
+    func toggleTagFilter(_ id: PersistentIdentifier) {
+        if selectedTags.contains(id) {
+            selectedTags.remove(id)
+        } else {
+            selectedTags.insert(id)
+        }
+    }
+
+    /// Toggle currency filter
+    func toggleCurrencyFilter(_ currency: CurrencyCode) {
+        if selectedCurrencies.contains(currency) {
+            selectedCurrencies.remove(currency)
+        } else {
+            selectedCurrencies.insert(currency)
+        }
+    }
+
+    /// Set amount filter condition
+    func setAmountCondition(_ condition: AmountFilterCondition) {
+        amountCondition = condition
+    }
+
+    /// Set search text for note filtering
+    func setSearchText(_ text: String) {
+        searchText = text
     }
 
     /// Reset to default state
