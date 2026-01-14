@@ -30,6 +30,7 @@ struct PanelView: View {
     @Environment(SessionState.self) private var sessionState
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
+    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
     // FIN-46: Transacciones usadas para calcular saldos actuales por cuenta
     @Query(sort: \TransactionItem.date, order: .reverse)
     private var transactions: [TransactionItem]
@@ -316,13 +317,16 @@ struct PanelView: View {
 
                             // Subcategory Chip
                             if let subcategoryName = viewModel.selectedSubcategoryID {
-                                let subcategoryInfo = viewModel.topSubcategories.first(where: {
-                                    $0.subcategoryName == subcategoryName
+                                // Use allSubcategories Query to get icon (independent of spending data)
+                                let subcategory = allSubcategories.first(where: {
+                                    $0.name == subcategoryName
                                 })
+                                let colorHex = (subcategory?.colorHex?.isEmpty == false
+                                    ? subcategory?.colorHex : nil) ?? subcategory?.category.colorHex
                                 FilterChipView(
                                     subcategoryName: subcategoryName,
-                                    iconName: subcategoryInfo?.subcategory?.iconName,
-                                    colorHex: subcategoryInfo?.colorHex,
+                                    iconName: subcategory?.iconName,
+                                    colorHex: colorHex,
                                     onClear: {
                                         withAnimation { viewModel.selectedSubcategoryID = nil }
                                     }

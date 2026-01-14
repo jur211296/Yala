@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-13)
 Phase: 2 of 8 (Periodos y Filtros)
 Plan: In progress
 Status: 3/4 items done
-Last activity: 2026-01-14 — Sincronización completa de filtros
+Last activity: 2026-01-14 — Fix chips subcategoría en todas las vistas
 
 Progress: ███████░░░ 70%
 
@@ -21,10 +21,12 @@ Progress: ███████░░░ 70%
 - Periodo Personalizado en PeriodSelector (CustomPeriodPickerSheet, sincronización global, persistencia UserDefaults)
 - Sincronización de filtros Statistics/Panel (Tags, Currency, Amount, Note + chips en todas las vistas)
 - Filtro por nota: chips de búsqueda (searchText sincronizado, chip visible, filtrado aplicado)
+- Fix: Chips subcategoría/categoría ahora aparecen correctamente en todas las vistas (usando @Query allSubcategories)
 
 ## Pending (Fase 2)
 
 - Filtro categorías aplica a gráficas
+- Revisar sección de filtros de categorías en DetailContainerView (no funciona correctamente)
 
 ## Completed (Fase 1)
 
@@ -46,6 +48,6 @@ Progress: ███████░░░ 70%
 
 ## Session Continuity
 
-Last session: 2026-01-14 08:40
-Stopped at: Sincronización de filtros completada
+Last session: 2026-01-14 11:25
+Stopped at: Fix chips subcategoría + tarea pendiente filtros categorías
 Resume file: None
