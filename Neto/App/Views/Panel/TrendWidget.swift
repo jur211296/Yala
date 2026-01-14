@@ -27,6 +27,7 @@ struct TrendWidget: View {
             // This eliminates the need for loading indicators during metric transitions
             TrendChartView(
                 trendPoints: viewModel.processedTrendPoints,
+                rawPoints: viewModel.rawTrendPoints,
                 yDomain: viewModel.processedYDomain,
                 grouping: viewModel.trendGrouping,
                 interval: viewModel.currentInterval,
@@ -143,9 +144,9 @@ struct TrendWidget: View {
     }
 
     private var currentKPIValue: String {
-        // Show the value for the focused date if scrubbing
+        // Show the value for the focused date if scrubbing (use raw points, not smoothed)
         if let focusedDate = viewModel.focusedDate,
-            let point = viewModel.processedTrendPoints.first(where: {
+            let point = viewModel.rawTrendPoints.first(where: {
                 Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
             })
         {
@@ -157,8 +158,8 @@ struct TrendWidget: View {
         let value: Double
         switch viewModel.trendType {
         case .balance:
-            // For Balance: Show True Current Balance (not chart interactions)
-            value = currentBalance
+            // Balance: use the actual final balance before smoothing
+            value = viewModel.trendFinalBalance
         case .income:
             // For Income: Show TOTAL income from TrendDataProcessor
             value = viewModel.trendTotalIncome

@@ -279,6 +279,7 @@ struct TrendsTabView: View {
 
             TrendChartView(
                 trendPoints: trendsViewModel.trendPoints,
+                rawPoints: trendsViewModel.rawTrendPoints,
                 yDomain: trendsViewModel.yDomain,
                 grouping: .day,
                 interval: trendsViewModel.currentInterval,
@@ -776,12 +777,12 @@ struct TrendsTabView: View {
             return NetoFormatter.currency(value: point.value, currencyCode: defaultCurrencyCode)
         }
 
-        // Otherwise, show metric-specific KPI (matching TrendWidget behavior)
+        // Otherwise, show metric-specific KPI
         let value: Double
         switch trendsViewModel.selectedMetric {
         case .balance:
-            // Balance: show TRUE current balance from accounts (matches TrendWidget)
-            value = trendsViewModel.currentBalance
+            // Balance: show the last chart point value (balance at end of period)
+            value = trendsViewModel.trendPoints.last?.value ?? 0
         case .income:
             // Income: show TOTAL income for the period
             value = trendsViewModel.totalIncome

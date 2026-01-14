@@ -29,12 +29,27 @@ final class DataWipeService {
         //    finalmente categorías y otros catálogos.
 
         // Eliminar todas las transacciones (dependen de cuentas, categorías, subcategorías y tags)
+        // IMPORTANT: Clear many-to-many tag relationships on BOTH sides to avoid batch delete constraint violation
+        let transactionDescriptor = FetchDescriptor<TransactionItem>()
+        let allTransactions = try context.fetch(transactionDescriptor)
+        for transaction in allTransactions {
+            transaction.tags = []  // Clear MTM relationship from TransactionItem side
+        }
+
+        let tagDescriptor = FetchDescriptor<Tag>()
+        let allTags = try context.fetch(tagDescriptor)
+        for tag in allTags {
+            tag.transactions = []  // Clear MTM relationship from Tag side
+        }
+
+        try context.save()  // Persist relationship clearing
+
         try deleteAll(TransactionItem.self, in: context)
 
         // Eliminar todos los presupuestos (dependen de categorías)
         try deleteAll(Budget.self, in: context)
 
-        // Eliminar todos los tags (relacionados con transacciones)
+        // Eliminar todos los tags (ya no tienen relaciones)
         try deleteAll(Tag.self, in: context)
 
         // Eliminar todos los tipos de cambio

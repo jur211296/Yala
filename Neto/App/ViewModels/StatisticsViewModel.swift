@@ -107,8 +107,10 @@ final class StatisticsViewModel: Filterable {
 
     // MARK: - Computed Data
 
-    /// Trend data points for the chart
+    /// Trend data points for the chart (may be smoothed for visualization)
     var trendPoints: [PanelViewModel.BarPoint] = []
+    /// Original unsmoothed points for hover/KPI display
+    var rawTrendPoints: [PanelViewModel.BarPoint] = []
 
     /// The metric that the current trendPoints data corresponds to
     /// Used to prevent rendering stale data with the wrong color during metric switches
@@ -321,6 +323,7 @@ final class StatisticsViewModel: Filterable {
                 context: context
             )
             trendPoints = result.points
+            rawTrendPoints = result.rawPoints
             yDomain = result.yDomain
             totalIncome = result.totalIncome
             totalExpense = result.totalExpense

@@ -17,7 +17,7 @@ final class Tag {
     var isActive: Bool
     var createdAt: Date
 
-    @Relationship(inverse: \TransactionItem.tags)
+    @Relationship(deleteRule: .nullify, inverse: \TransactionItem.tags)
     var transactions: [TransactionItem]
 
     init(

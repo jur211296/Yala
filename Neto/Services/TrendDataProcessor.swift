@@ -27,10 +27,16 @@ struct TrendDataProcessor {
     // MARK: - Result Type
 
     struct TrendProcessingResult {
+        /// Points for chart visualization (smoothed when applicable)
         let points: [PanelViewModel.BarPoint]
+        /// Original unsmoothed points for hover display and data queries
+        let rawPoints: [PanelViewModel.BarPoint]
         let yDomain: ClosedRange<Double>
         let totalIncome: Double
         let totalExpense: Double
+        /// The actual final balance before any smoothing is applied.
+        /// Use this for KPI display instead of the last smoothed point.
+        let finalBalance: Double
     }
 
     // MARK: - Main Processing Entry Point
@@ -86,19 +92,27 @@ struct TrendDataProcessor {
             // No transactions - return empty result
             return TrendProcessingResult(
                 points: [],
+                rawPoints: [],
                 yDomain: 0...100,
                 totalIncome: 0,
-                totalExpense: 0
+                totalExpense: 0,
+                finalBalance: 0
             )
         }
 
         // Use actual data range, capped to the interval end
         let effectiveStart = max(firstTransactionDate, interval.start)
-        let effectiveEnd = min(lastTransactionDate, interval.end)
+        // Add 1 second to include transactions at exactly lastTransactionDate
+        // (DateInterval.contains uses date < end, so we need end > lastTransactionDate)
+        let effectiveEnd = min(lastTransactionDate.addingTimeInterval(1), interval.end)
+
+        // Create effective interval for filtering (must match bucket range)
+        let bucketStartDate = grouping.dateKey(for: effectiveStart, calendar: calendar)
+        let effectiveInterval = DateInterval(start: bucketStartDate, end: effectiveEnd)
 
         // 3. Build date buckets only for actual data range
         var buckets: [Date: Double] = [:]
-        var current = grouping.dateKey(for: effectiveStart, calendar: calendar)
+        var current = bucketStartDate
         let endDate = effectiveEnd
 
         while current <= endDate {
@@ -118,7 +132,7 @@ struct TrendDataProcessor {
                 &buckets,
                 transactions: transactions,
                 accounts: accounts,
-                interval: interval,
+                interval: effectiveInterval,  // Use the matched interval
                 grouping: grouping,
                 calendar: calendar
             )
@@ -157,30 +171,39 @@ struct TrendDataProcessor {
             rawPoints = Array(rawPoints[firstNonZeroIndex...])
         }
 
-        // 5. Apply smoothing only for balance on long periods
+        // Capture the actual final balance BEFORE smoothing for accurate KPI display
+        let finalBalance = rawPoints.last?.value ?? 0
+
+        // 5. Apply smoothing only for balance on long periods (visual only)
         let shouldSmooth =
             smoothingPeriods.contains(period)
             && metric == .balance
             && rawPoints.count > smoothingThreshold
 
+        // Smoothed points are for chart visualization only
+        let chartPoints: [PanelViewModel.BarPoint]
         if shouldSmooth {
-            rawPoints = TrendProcessingHelper.movingAverage(
+            chartPoints = TrendProcessingHelper.movingAverage(
                 for: rawPoints,
                 window: smoothingWindowSize
             )
+        } else {
+            chartPoints = rawPoints
         }
 
-        // 6. Calculate Y domain
+        // 6. Calculate Y domain based on raw points (not smoothed)
         let yDomain = TrendProcessingHelper.calculateYDomain(
             for: rawPoints,
             isExpense: metric == .expense
         )
 
         return TrendProcessingResult(
-            points: rawPoints,
+            points: chartPoints,
+            rawPoints: rawPoints,
             yDomain: yDomain,
             totalIncome: totalIncome,
-            totalExpense: totalExpense
+            totalExpense: totalExpense,
+            finalBalance: finalBalance
         )
     }
 

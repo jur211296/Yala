@@ -3,7 +3,10 @@ import SwiftData
 import SwiftUI
 
 struct TrendChartView: View {
+    /// Points for chart visualization (may be smoothed)
     let trendPoints: [PanelViewModel.BarPoint]
+    /// Original unsmoothed points for tooltip/hover display
+    let rawPoints: [PanelViewModel.BarPoint]
     let yDomain: ClosedRange<Double>
     let grouping: TrendGrouping
     let interval: DateInterval
@@ -121,7 +124,7 @@ struct TrendChartView: View {
             // Interaction: Scrubbing Rule Mark
             if let activeDate = draggingDate ?? focusedDate,
                 let selectedPoint = closestPoint(to: activeDate, in: data),
-                let rawValue = value(for: activeDate, in: data)
+                let rawValue = value(for: activeDate, in: rawPoints)  // Use raw points for actual value
             {
 
                 RuleMark(x: .value(L10n.Common.selectedDate, activeDate))

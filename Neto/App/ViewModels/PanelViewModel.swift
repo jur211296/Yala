@@ -73,6 +73,8 @@ final class PanelViewModel {
     typealias BarPoint = Neto.BarPoint
 
     var processedTrendPoints: [BarPoint] = []
+    /// Original unsmoothed points for hover display
+    var rawTrendPoints: [BarPoint] = []
     var processedYDomain: ClosedRange<Double> = 0...100
 
     // Stored interval - updated in batch with chart data to stay in sync
@@ -84,6 +86,8 @@ final class PanelViewModel {
     // KPI values for trends - from TrendDataProcessor for unified calculation
     var trendTotalIncome: Double = 0
     var trendTotalExpense: Double = 0
+    /// Actual final balance before smoothing - use for KPI instead of last smoothed point
+    var trendFinalBalance: Double = 0
 
     // Loading State - tracks when heavy calculations are in progress
     var isCalculating: Bool = false
@@ -422,9 +426,10 @@ final class PanelViewModel {
         // 2. Calculate ALL widget data (unconditionally to ensure data is ready when widgets are added)
 
         // Trend chart - use unified TrendDataProcessor
-        let newProcessedData: (points: [BarPoint], yDomain: ClosedRange<Double>)
+        let newProcessedData: (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)
         var newTrendTotalIncome = trendTotalIncome
         var newTrendTotalExpense = trendTotalExpense
+        var newTrendFinalBalance = trendFinalBalance
         let result = TrendDataProcessor.processTrendData(
             transactions: calcContext.filteredTransactions,
             accounts: calcContext.eligibleAccounts,
@@ -435,9 +440,10 @@ final class PanelViewModel {
             currencyCode: calcContext.defaultCurrencyCode,
             context: calcContext.modelContext
         )
-        newProcessedData = (result.points, result.yDomain)
+        newProcessedData = (result.points, result.rawPoints, result.yDomain)
         newTrendTotalIncome = result.totalIncome
         newTrendTotalExpense = result.totalExpense
+        newTrendFinalBalance = result.finalBalance
 
         // Categories - used by both topSpending and categoriesPie widgets
         let newTopSpendingCategories = calculateCategoriesWidget(context: calcContext)
@@ -466,11 +472,13 @@ final class PanelViewModel {
         self.latestRecords = newLatestRecords
         self.natureTrendPoints = newNatureTrendPoints
         self.processedTrendPoints = newProcessedData.points
+        self.rawTrendPoints = newProcessedData.rawPoints
         self.processedYDomain = newProcessedData.yDomain
         self.currentInterval = calcContext.effectiveInterval
         self.currentPeriod = self.selectedPeriod
         self.trendTotalIncome = newTrendTotalIncome
         self.trendTotalExpense = newTrendTotalExpense
+        self.trendFinalBalance = newTrendFinalBalance
         // Track the metric for which data was calculated (prevents stale data rendering)
         self.dataTrendType = self.trendType
 

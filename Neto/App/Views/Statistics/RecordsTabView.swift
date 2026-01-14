@@ -206,25 +206,35 @@ struct RecordsTabView: View {
     private var recordsSummary: (balance: Double, income: Double, expense: Double) {
         var income: Double = 0
         var expense: Double = 0
+        var balance: Double = 0
 
         for group in viewModel.groupedRecords {
             for record in group.records {
-                // Use amountInPreferredCurrency if available and matches defaultCurrencyCode
-                let amount =
-                    (record.preferredCurrencyCode == defaultCurrencyCode)
-                    ? record.amountInPreferredCurrency
-                    : record.amount
+                // Skip transactions without account or from archived/excluded accounts (matches Panel/Trends)
+                guard let account = record.account else { continue }
+                if account.isArchived || account.excludeFromStatistics {
+                    continue
+                }
 
-                // Check if it's income based on category
-                if record.category?.isIncome == true {
-                    income += abs(amount)  // Always positive
-                } else {
-                    expense += abs(amount)  // Always positive
+                // Always use amountInPreferredCurrency (matches TrendDataProcessor calculation)
+                let amount = record.amountInPreferredCurrency
+
+                // Balance includes ALL transactions (initial balance, adjustments, income, expense)
+                balance += amount
+
+                // Income/Expense exclude balance adjustments (initial_balance and adjustment)
+                let isBalanceAdjustment = record.balanceAdjustmentType != nil
+
+                if !isBalanceAdjustment {
+                    if amount > 0 {
+                        income += amount
+                    } else {
+                        expense += abs(amount)
+                    }
                 }
             }
         }
 
-        let balance = income - expense
         return (balance, income, expense)
     }
 
