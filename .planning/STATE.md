@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-01-13)
 
 Phase: 2 of 8 (Periodos y Filtros)
 Plan: In progress
-Status: 3/4 items done
-Last activity: 2026-01-14 — Fix chips subcategoría en todas las vistas
+Status: 4/4 items done
+Last activity: 2026-01-14 — Fix completo selección categorías y chips filtros
 
-Progress: ███████░░░ 70%
+Progress: ██████████ 100%
 
 ## Completed (Fase 2)
 
@@ -22,11 +22,9 @@ Progress: ███████░░░ 70%
 - Sincronización de filtros Statistics/Panel (Tags, Currency, Amount, Note + chips en todas las vistas)
 - Filtro por nota: chips de búsqueda (searchText sincronizado, chip visible, filtrado aplicado)
 - Fix: Chips subcategoría/categoría ahora aparecen correctamente en todas las vistas (usando @Query allSubcategories)
-
-## Pending (Fase 2)
-
-- Filtro categorías aplica a gráficas
-- Revisar sección de filtros de categorías en DetailContainerView (no funciona correctamente)
+- Fix: "Seleccionar todo" en CategorySelectorSheet funciona correctamente (guards anti-loop en DetailContainerView, CategoriesTabView)
+- Fix: Resumen de categorías muestra "Todas" cuando todo seleccionado
+- Fix: Selección manual de subcategorías funciona sin comportamiento inesperado
 
 ## Completed (Fase 1)
 
@@ -45,9 +43,10 @@ Progress: ███████░░░ 70%
 - customTitle en CashFlowWidget tiene prioridad sobre displayMode
 - RecordsTabView usa @Query sin filtro para límites del DatePicker
 - PanelSessionObservers extrae onChange para evitar límite del type-checker
+- Anti-loop flags (`isSyncingFilters`, `isSyncingState`) previenen ciclos de sincronización
 
 ## Session Continuity
 
-Last session: 2026-01-14 11:25
-Stopped at: Fix chips subcategoría + tarea pendiente filtros categorías
+Last session: 2026-01-14 13:11
+Stopped at: Fase 2 completa — todos los filtros y chips funcionando
 Resume file: None

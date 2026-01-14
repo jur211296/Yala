@@ -94,34 +94,37 @@ struct RecordsTabView: View {
                             )
                         }
 
-                        // Category chips (with icons)
-                        ForEach(categoryChips, id: \.id) { chip in
-                            if let category = categories.first(where: {
-                                $0.persistentModelID == chip.categoryID
-                            }) {
-                                FilterChipView(
-                                    categoryName: category.name,
-                                    iconName: category.iconName,
-                                    colorHex: category.colorHex,
-                                    onClear: {
-                                        viewModel.selectedCategories.remove(chip.categoryID)
-                                        onFilterChange()
-                                    }
-                                )
-                            }
+                        // Category chip (aggregated - one chip max)
+                        if let catChip = aggregatedCategoryChip(
+                            selectedSubcategories: viewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
+                            FilterChipView(
+                                categoryName: catChip.name,
+                                iconName: catChip.iconName,
+                                colorHex: catChip.colorHex,
+                                count: catChip.count,
+                                onClear: {
+                                    viewModel.selectedCategories.removeAll()
+                                    viewModel.selectedSubcategories.removeAll()
+                                    onFilterChange()
+                                }
+                            )
                         }
 
-                        // Subcategory chips (with icons)
-                        ForEach(subcategoryChips, id: \.id) { chip in
+                        // Subcategory chip (aggregated - one chip max)
+                        if let subChip = aggregatedSubcategoryChip(
+                            selectedSubcategories: viewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
                             FilterChipView(
-                                subcategoryName: chip.name,
-                                iconName: chip.iconName,
-                                colorHex: chip.colorHex,
+                                subcategoryName: subChip.name,
+                                iconName: subChip.iconName,
+                                colorHex: subChip.colorHex,
+                                count: subChip.count,
                                 onClear: {
-                                    if let subcategoryID = chip.subcategoryID {
-                                        viewModel.selectedSubcategories.remove(subcategoryID)
-                                        onFilterChange()
-                                    }
+                                    viewModel.selectedSubcategories.removeAll()
+                                    onFilterChange()
                                 }
                             )
                         }

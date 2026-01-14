@@ -91,6 +91,22 @@ struct RecordsFiltersView: View {
                                 noteContent
                             }
                         }
+
+                        // Reset filters button
+                        Button {
+                            withAnimation {
+                                viewModel.clearFilters()
+                            }
+                        } label: {
+                            Text(L10n.Filters.clearFilters)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(Color.electricIndigo)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color.white)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(.vertical, 24)
                     .padding(.horizontal, 16)
@@ -209,6 +225,12 @@ struct RecordsFiltersView: View {
         let subCount = viewModel.selectedSubcategories.count
 
         if subCount == 0 {
+            return "Todas"
+        }
+
+        // All selected = no filter (equivalent to "Todas")
+        let allIDs = Set(allSubcategories.map { $0.persistentModelID })
+        if viewModel.selectedSubcategories == allIDs {
             return "Todas"
         }
 

@@ -42,6 +42,7 @@ struct DetailContainerView: View {
     @State private var showDeleteConfirmation = false
     @State private var showMultiEditPlaceholder = false
     @State private var isPresentingSettings = false
+    @State private var isSyncingState = false  // Anti-loop flag for session sync
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
@@ -400,6 +401,10 @@ struct DetailContainerView: View {
 
     /// Handles changes to session state filter properties
     private func handleSessionStateFilterChange() {
+        guard !isSyncingState else { return }
+        isSyncingState = true
+        defer { isSyncingState = false }
+
         syncFromSessionState()
         calculateTrendsData()
         refreshRecordsData()
@@ -468,6 +473,10 @@ struct DetailContainerView: View {
     }
 
     private func syncFromSessionState() {
+        guard !isSyncingState else { return }
+        isSyncingState = true
+        defer { isSyncingState = false }
+
         trendsViewModel.detailPeriod = sessionState.selectedPeriod
         recordsViewModel.period = sessionState.selectedPeriod
 
@@ -525,6 +534,10 @@ struct DetailContainerView: View {
     }
 
     private func syncToSessionState() {
+        guard !isSyncingState else { return }
+        isSyncingState = true
+        defer { isSyncingState = false }
+
         sessionState.selectedPeriod = trendsViewModel.detailPeriod
         sessionState.selectedAccountIDs = trendsViewModel.selectedAccounts
         sessionState.selectedCategoryIDs = trendsViewModel.selectedCategories

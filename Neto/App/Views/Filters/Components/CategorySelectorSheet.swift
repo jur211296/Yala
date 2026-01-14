@@ -82,13 +82,20 @@ struct CategorySelectorSheet: View {
 
     private var selectAllRow: some View {
         Button {
+            // Guard: prevent action if subcategories not yet loaded
+            guard !subcategories.isEmpty else { return }
+
+            // Toggle logic:
+            // - If everything is selected → clear (no filter = "Todas")
+            // - Otherwise → select all
             if isEverythingSelected {
                 selectedSubcategories.removeAll()
             } else {
-                selectedSubcategories = Set(visibleSubcategories.map { $0.persistentModelID })
+                selectedSubcategories = Set(subcategories.map { $0.persistentModelID })
             }
         } label: {
             HStack {
+                // Show "Deseleccionar" only when everything is explicitly selected
                 Text(isEverythingSelected ? "Deseleccionar todo" : "Seleccionar todo")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -215,8 +222,9 @@ struct CategorySelectorSheet: View {
     }
 
     private var isEverythingSelected: Bool {
-        let visible = visibleSubcategories
-        return !visible.isEmpty && selectedSubcategories.count == visible.count
+        // Check against ALL subcategories, not just visible ones
+        let allIDs = Set(subcategories.map { $0.persistentModelID })
+        return !allIDs.isEmpty && selectedSubcategories == allIDs
     }
 
     private func toggleExpanded(_ category: Category) {

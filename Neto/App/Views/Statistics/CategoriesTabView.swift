@@ -46,6 +46,7 @@ struct CategoriesTabView: View {
     @State private var isListExpanded: Bool = false
     @State private var isSubcategoriesAutomatic: Bool = false  // Track if switch was automatic
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
+    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for sync functions
     @Namespace private var listSelectorNamespace
 
     // MARK: - List View Type
@@ -164,38 +165,37 @@ struct CategoriesTabView: View {
                             )
                         }
 
-                        // Category chips (with icons)
-                        ForEach(selectedCategoryChips, id: \.id) { chip in
-                            if let category = categories.first(where: {
-                                $0.persistentModelID == chip.categoryID
-                            }) {
-                                FilterChipView(
-                                    categoryName: category.name,
-                                    iconName: category.iconName,
-                                    colorHex: category.colorHex,
-                                    onClear: {
-                                        viewModel.selectedCategories.remove(chip.categoryID)
-                                        if selectedCategoryID == chip.categoryID {
-                                            selectedCategoryID = nil
-                                        }
-                                    }
-                                )
-                            }
+                        // Category chip (aggregated - one chip max)
+                        if let catChip = aggregatedCategoryChip(
+                            selectedSubcategories: viewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
+                            FilterChipView(
+                                categoryName: catChip.name,
+                                iconName: catChip.iconName,
+                                colorHex: catChip.colorHex,
+                                count: catChip.count,
+                                onClear: {
+                                    viewModel.selectedCategories.removeAll()
+                                    viewModel.selectedSubcategories.removeAll()
+                                    selectedCategoryID = nil
+                                }
+                            )
                         }
 
-                        // Subcategory chips (with icons)
-                        ForEach(selectedSubcategoryChips, id: \.id) { chip in
+                        // Subcategory chip (aggregated - one chip max)
+                        if let subChip = aggregatedSubcategoryChip(
+                            selectedSubcategories: viewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
                             FilterChipView(
-                                subcategoryName: chip.name,
-                                iconName: chip.iconName,
-                                colorHex: chip.colorHex,
+                                subcategoryName: subChip.name,
+                                iconName: subChip.iconName,
+                                colorHex: subChip.colorHex,
+                                count: subChip.count,
                                 onClear: {
-                                    if let subcategoryID = chip.subcategoryID {
-                                        viewModel.selectedSubcategories.remove(subcategoryID)
-                                    }
-                                    if selectedSubcategoryID == chip.id {
-                                        selectedSubcategoryID = nil
-                                    }
+                                    viewModel.selectedSubcategories.removeAll()
+                                    selectedSubcategoryID = nil
                                 }
                             )
                         }
@@ -676,6 +676,10 @@ struct CategoriesTabView: View {
 
     /// Sync chart selection to ViewModel filters (chart -> top filters)
     private func syncSelectionToCategoryFilter() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
         if let categoryID = selectedCategoryID {
             // Add to ViewModel's selected categories if not already there
             if !viewModel.selectedCategories.contains(categoryID) {
@@ -694,6 +698,10 @@ struct CategoriesTabView: View {
     }
 
     private func syncSelectionToSubcategoryFilter() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
         if let subcategoryID = selectedSubcategoryID {
             // Find the subcategory by name (subcategoryID is actually the name)
             if let subcategory = subcategorySpending.first(where: { $0.id == subcategoryID })?
@@ -719,6 +727,10 @@ struct CategoriesTabView: View {
 
     /// Sync ViewModel filters to chart selection (top filters -> chart)
     private func syncCategoryFilterToSelection() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
         if viewModel.selectedCategories.count == 1 {
             selectedCategoryID = viewModel.selectedCategories.first
         } else if viewModel.selectedCategories.isEmpty {
@@ -727,6 +739,10 @@ struct CategoriesTabView: View {
     }
 
     private func syncSubcategoryFilterToSelection() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
         if viewModel.selectedSubcategories.count == 1 {
             // Find the subcategory name from the ID
             if let subcategoryID = viewModel.selectedSubcategories.first,
@@ -742,6 +758,10 @@ struct CategoriesTabView: View {
     }
 
     private func syncSelectionToNatureFilter() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
         if let nature = selectedNature {
             // Add to ViewModel's selected natures if not already there
             if !viewModel.selectedNatures.contains(nature) {
@@ -756,6 +776,10 @@ struct CategoriesTabView: View {
     }
 
     private func syncNatureFilterToSelection() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
         if viewModel.selectedNatures.count == 1 {
             selectedNature = viewModel.selectedNatures.first
         } else if viewModel.selectedNatures.isEmpty {

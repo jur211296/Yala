@@ -208,32 +208,36 @@ struct TrendsTabView: View {
                             )
                         }
 
-                        // Category chips (with icons)
-                        ForEach(selectedCategoryChips, id: \.id) { chip in
-                            if let category = categories.first(where: {
-                                $0.persistentModelID == chip.categoryID
-                            }) {
-                                FilterChipView(
-                                    categoryName: category.name,
-                                    iconName: category.iconName,
-                                    colorHex: category.colorHex,
-                                    onClear: {
-                                        trendsViewModel.selectedCategories.remove(chip.categoryID)
-                                    }
-                                )
-                            }
+                        // Category chip (aggregated - one chip max)
+                        if let catChip = aggregatedCategoryChip(
+                            selectedSubcategories: trendsViewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
+                            FilterChipView(
+                                categoryName: catChip.name,
+                                iconName: catChip.iconName,
+                                colorHex: catChip.colorHex,
+                                count: catChip.count,
+                                onClear: {
+                                    // Clear both categories and subcategories
+                                    trendsViewModel.selectedCategories.removeAll()
+                                    trendsViewModel.selectedSubcategories.removeAll()
+                                }
+                            )
                         }
 
-                        // Subcategory chips (with icons)
-                        ForEach(selectedSubcategoryChips, id: \.id) { chip in
+                        // Subcategory chip (aggregated - one chip max)
+                        if let subChip = aggregatedSubcategoryChip(
+                            selectedSubcategories: trendsViewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
                             FilterChipView(
-                                subcategoryName: chip.name,
-                                iconName: chip.iconName,
-                                colorHex: chip.colorHex,
+                                subcategoryName: subChip.name,
+                                iconName: subChip.iconName,
+                                colorHex: subChip.colorHex,
+                                count: subChip.count,
                                 onClear: {
-                                    if let subcategoryID = chip.subcategoryID {
-                                        trendsViewModel.selectedSubcategories.remove(subcategoryID)
-                                    }
+                                    trendsViewModel.selectedSubcategories.removeAll()
                                 }
                             )
                         }

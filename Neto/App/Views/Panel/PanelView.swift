@@ -271,7 +271,7 @@ struct PanelView: View {
                 let activeFilterCount = [
                     hasAccountFilter, hasDateFilter, hasCategoryFilter,
                     hasNatureFilter, hasSubcategoryFilter, hasTagFilter,
-                    hasCurrencyFilter, hasAmountFilter, hasNoteFilter
+                    hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
                 ].filter { $0 }.count
 
                 if activeFilterCount > 0 {
@@ -301,36 +301,50 @@ struct PanelView: View {
                                 )
                             }
 
-                            // Category Chip
-                            if let categoryID = viewModel.selectedCategoryID,
-                                let category = viewModel.topSpendingCategories.first(where: {
-                                    $0.category.persistentModelID == categoryID
-                                })?.category
-                            {
-                                FilterChipView(
-                                    categoryName: category.name,
-                                    iconName: category.iconName,
-                                    colorHex: category.colorHex,
-                                    onClear: { viewModel.selectedCategoryID = nil }
-                                )
+                            // Category Chip (aggregated from selected subcategory names)
+                            // Skip if all subcategories are selected (= no filter = "Todas")
+                            let selectedSubsByName = allSubcategories.filter {
+                                sessionState.selectedSubcategoryNames.contains($0.name)
                             }
+                            let isAllSelected =
+                                !selectedSubsByName.isEmpty
+                                && selectedSubsByName.count == allSubcategories.count
 
-                            // Subcategory Chip
-                            if let subcategoryName = viewModel.selectedSubcategoryID {
-                                // Use allSubcategories Query to get icon (independent of spending data)
-                                let subcategory = allSubcategories.first(where: {
-                                    $0.name == subcategoryName
-                                })
-                                let colorHex = (subcategory?.colorHex?.isEmpty == false
-                                    ? subcategory?.colorHex : nil) ?? subcategory?.category.colorHex
-                                FilterChipView(
-                                    subcategoryName: subcategoryName,
-                                    iconName: subcategory?.iconName,
-                                    colorHex: colorHex,
-                                    onClear: {
-                                        withAnimation { viewModel.selectedSubcategoryID = nil }
-                                    }
-                                )
+                            if !isAllSelected {
+                                let parentCategories = Set(
+                                    selectedSubsByName.compactMap { $0.category })
+                                if let firstCategory = parentCategories.first {
+                                    FilterChipView(
+                                        categoryName: firstCategory.name,
+                                        iconName: firstCategory.iconName,
+                                        colorHex: firstCategory.colorHex,
+                                        count: parentCategories.count,
+                                        onClear: {
+                                            viewModel.selectedCategoryID = nil
+                                            viewModel.selectedSubcategoryID = nil
+                                            sessionState.selectedCategoryIDs.removeAll()
+                                            sessionState.selectedSubcategoryNames.removeAll()
+                                        }
+                                    )
+                                }
+
+                                // Subcategory Chip (aggregated from selected subcategory names)
+                                if let firstSub = selectedSubsByName.first {
+                                    let color =
+                                        (firstSub.colorHex?.isEmpty == false
+                                            ? firstSub.colorHex : nil)
+                                        ?? firstSub.category.colorHex
+                                    FilterChipView(
+                                        subcategoryName: firstSub.name,
+                                        iconName: firstSub.iconName,
+                                        colorHex: color,
+                                        count: selectedSubsByName.count,
+                                        onClear: {
+                                            viewModel.selectedSubcategoryID = nil
+                                            sessionState.selectedSubcategoryNames.removeAll()
+                                        }
+                                    )
+                                }
                             }
 
                             // Nature Chip
