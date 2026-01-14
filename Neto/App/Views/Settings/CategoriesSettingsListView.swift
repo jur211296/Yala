@@ -118,10 +118,7 @@ struct CategoriesSettingsListView: View {
             showCannotDeleteAlert = true
             return
         }
-        // Delete subcategories first
-        for subcategory in category.subcategories {
-            modelContext.delete(subcategory)
-        }
+        // Cascade delete rule handles subcategories automatically
         modelContext.delete(category)
         do {
             try modelContext.save()

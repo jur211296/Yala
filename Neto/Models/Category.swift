@@ -27,7 +27,8 @@ final class Category {
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
 
-    /// Relación 1 -> N con subcategorías
+    /// Relación 1 -> N con subcategorías (cascade delete)
+    @Relationship(deleteRule: .cascade, inverse: \Subcategory.category)
     var subcategories: [Subcategory]
 
     init(

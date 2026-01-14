@@ -518,10 +518,7 @@ struct CategoryDetailView: View {
     }
 
     private func deleteCategory() {
-        // Delete all subcategories first (cascade)
-        for subcategory in subcategories {
-            modelContext.delete(subcategory)
-        }
+        // Cascade delete rule handles subcategories automatically
         modelContext.delete(category)
         do {
             try modelContext.save()
