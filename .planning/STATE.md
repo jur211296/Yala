@@ -5,39 +5,40 @@
 See: .planning/PROJECT.md (updated 2026-01-13)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 1 — Estabilidad Core
+**Current focus:** Fase 1 — Estabilidad Core ✅
 
 ## Current Position
 
 Phase: 1 of 8 (Estabilidad Core)
-Plan: In progress
-Status: Working on bugs
-Last activity: 2026-01-13 — Fix bug de etiquetas (many-to-many relationship)
+Plan: Complete
+Status: Fase 1 terminada
+Last activity: 2026-01-13 — Todos los bugs de Fase 1 resueltos
 
-Progress: ██░░░░░░░░ 15%
+Progress: █████░░░░░ 50%
 
 ## Completed
 
-- Refactor: Saldo inicial ahora es transacción (no propiedad de Account)
-- Fix: Gráficas de tendencia se actualizan al cambiar saldo inicial
-- Fix: SwiftData @Query detecta cambios en transacciones de saldo
-- Fix: Bug de etiquetas — múltiples transacciones pueden tener la misma etiqueta (many-to-many)
-- Fix: KPI de tendencias de saldo unificado (PanelView/TrendsTabView/Records) — usa datos raw para exactitud
+- Fix: Leyenda centrada en CashFlowWidget (Ingreso/Egreso/Flujo neto)
+- Fix: Colores hover del tooltip ahora coinciden con barras/líneas del gráfico
+- Fix: Título dinámico en TrendsTabView (nombre de cuenta o moneda completo)
+- Fix: Carruseles ordenados — cuentas por orden de Profile, monedas por preferida+monto
+- Fix: Crash en TrendDataProcessor cuando bucketStart > effectiveEnd
+- Fix: Bug tipo de cambio en transferencias
+- Fix: Leyenda en CashFlow de PanelView
 
-## Next (Fase 1)
+## Next (Fase 2: Periodos y Filtros)
 
-- Bug: Hover CashFlow en Panel/Trends muestra colores incorrectos. Bug: Actualmente el hover muestra puntitos de colores que no son los colores de las barras/lineas. Añadir: leyenda debajo porque no está claro que el teal es ingreso, rosa egreso y morado saldo. Simple, similar a la de naturalezas. Esto en ambos lugares. Bug: El título siempre dice Flujo neto. Para PanelView esta bien, pero en TrendsTabView hay otros matices: Ahi tenemos un selector para ver un CashFlow por cada cuenta o por cada Moneda, entonces en lugar de Flujo neto deberia decir el nombre de la cuenta o el nombre de la moneda (nombre completo: dólar estadounidense, no diminutivo).
+- Periodo Personalizado en PeriodSelector
+- Sincronización de filtros Statistics/Panel
 
 ## Risk/Notes
 
-- SwiftData @Query no detecta modificaciones in-place; usar delete+insert
-- Cadenas largas de .onChange pueden exceder límite del compilador; extraer a ViewModifiers
-- Saldo inicial usa `balanceAdjustmentType = "initial_balance"` en TransactionItem
-- Categoría seed "Otros/Ajustes de saldo" para transacciones de ajuste
-- Tag ↔ TransactionItem require `@Relationship(inverse:)` para many-to-many correcto
+- Orden de cuentas usa `@AppStorage("accountsSortOrderNames")` (pipe-separated names)
+- DateInterval crash si start > end; siempre validar antes de construir
+- customTitle en CashFlowWidget tiene prioridad sobre displayMode para kpiLabel
 
 ## Session Continuity
 
-Last session: 2026-01-13 17:19
-Stopped at: Tag bug fixed, 2 bugs pendientes en Fase 1
+Last session: 2026-01-13 22:51
+Stopped at: Fase 1 completada
 Resume file: None
