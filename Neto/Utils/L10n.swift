@@ -105,6 +105,16 @@ enum L10n {
         static var lastYear: String { NSLocalizedString("period.lastYear", comment: "Last year") }
         static var allTime: String { NSLocalizedString("period.allTime", comment: "All time") }
         static var custom: String { NSLocalizedString("period.custom", comment: "Custom period") }
+        static var startDate: String {
+            NSLocalizedString("period.startDate", comment: "Start date")
+        }
+        static var endDate: String { NSLocalizedString("period.endDate", comment: "End date") }
+        static var selectRange: String {
+            NSLocalizedString("period.selectRange", comment: "Select range")
+        }
+        static var selectedRange: String {
+            NSLocalizedString("period.selectedRange", comment: "Selected range")
+        }
     }
 
     // MARK: - Statistics
@@ -638,6 +648,7 @@ enum L10n {
         static var general: String { NSLocalizedString("common.general", comment: "") }
         static var lastUpdate: String { NSLocalizedString("common.lastUpdate", comment: "") }
         static var cancel: String { NSLocalizedString("action.cancel", comment: "") }
+        static var apply: String { NSLocalizedString("common.apply", comment: "Apply action") }
         static var selected: String { NSLocalizedString("common.selected", comment: "") }
     }
 

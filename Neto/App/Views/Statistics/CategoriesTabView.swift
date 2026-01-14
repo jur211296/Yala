@@ -44,6 +44,7 @@ struct CategoriesTabView: View {
     @State private var listViewType: ListViewType = .categories
     @State private var isListExpanded: Bool = false
     @State private var isSubcategoriesAutomatic: Bool = false  // Track if switch was automatic
+    @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
     @Namespace private var listSelectorNamespace
 
     // MARK: - List View Type
@@ -120,6 +121,26 @@ struct CategoriesTabView: View {
             syncSelectionToNatureFilter()
             calculateData()
         }
+        .onChange(of: sessionState.customDateRange) {
+            // Sync custom date range and recalculate
+            viewModel.syncCustomRangeFromSessionState(sessionState)
+            calculateData()
+        }
+        .sheet(isPresented: $showCustomPeriodPicker) {
+            CustomPeriodPickerSheet(
+                minDate: transactionDateRange.start,
+                maxDate: transactionDateRange.end,
+                currentRange: sessionState.customDateRange
+            )
+        }
+    }
+
+    /// Date range of all transactions (for custom period picker limits)
+    private var transactionDateRange: (start: Date, end: Date) {
+        let sortedDates = allTransactions.map(\.date).sorted()
+        let start = sortedDates.first ?? Date()
+        let end = sortedDates.last ?? Date()
+        return (start, end)
     }
 
     // MARK: - Control Bar
@@ -218,8 +239,12 @@ struct CategoriesTabView: View {
     private var periodSelector: some View {
         TrendsPeriodMenu(
             selectedPeriod: viewModel.detailPeriod,
+            customDateRange: sessionState.customDateRange,
             onSelect: { period in
                 sessionState.selectedPeriod = period
+            },
+            onCustomTapped: {
+                showCustomPeriodPicker = true
             }
         )
         .equatable()

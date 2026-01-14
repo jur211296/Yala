@@ -12,6 +12,7 @@ final class PanelViewModel {
 
     // Period Filter State
     var selectedPeriod: DetailPeriod = .thisYear
+    var customDateRange: DateInterval?
 
     // Widget Configuration Manager (delegated)
     let widgetConfig = WidgetConfigManager()
@@ -128,6 +129,7 @@ final class PanelViewModel {
     func syncFromSessionState(_ sessionState: SessionState) {
         // Period
         self.selectedPeriod = sessionState.selectedPeriod
+        self.customDateRange = sessionState.customDateRange
 
         // Account (single-select from SessionState's set)
         self.selectedAccountID = sessionState.selectedAccountIDs.first
@@ -384,7 +386,7 @@ final class PanelViewModel {
     /// Intervalo de fecha calculado basado en el periodo seleccionado:
     var panelDateInterval: DateInterval {
         // Use the centralized date interval logic from DetailPeriod models
-        return selectedPeriod.dateInterval()
+        return selectedPeriod.dateInterval(customRange: customDateRange)
     }
 
     // MARK: - Trend & Balance Status Logic
@@ -426,7 +428,8 @@ final class PanelViewModel {
         // 2. Calculate ALL widget data (unconditionally to ensure data is ready when widgets are added)
 
         // Trend chart - use unified TrendDataProcessor
-        let newProcessedData: (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)
+        let newProcessedData:
+            (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)
         var newTrendTotalIncome = trendTotalIncome
         var newTrendTotalExpense = trendTotalExpense
         var newTrendFinalBalance = trendFinalBalance

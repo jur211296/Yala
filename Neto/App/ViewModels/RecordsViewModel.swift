@@ -42,11 +42,14 @@ final class RecordsViewModel: Filterable {
     /// Period filter (unified with Trends)
     var period: DetailPeriod = .thisMonth
 
-    /// Custom date range start
+    /// Custom date range (synced from SessionState)
+    var customDateRange: DateInterval?
+
+    /// Custom date range start (for backward compat, deprecated)
     var customStartDate: Date =
         Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
 
-    /// Custom date range end
+    /// Custom date range end (for backward compat, deprecated)
     var customEndDate: Date = Date()
 
     /// Selected currencies for filtering
@@ -166,7 +169,15 @@ final class RecordsViewModel: Filterable {
     /// Get effective date interval from current period
     private func effectiveDateInterval() -> DateInterval? {
         // DetailPeriod always has a valid dateInterval
-        return period.dateInterval()
+        return period.dateInterval(customRange: customDateRange)
+    }
+
+    // MARK: - SessionState Synchronization
+
+    /// Sync custom date range and period FROM SessionState
+    func syncCustomRangeFromSessionState(_ sessionState: SessionState) {
+        self.customDateRange = sessionState.customDateRange
+        self.period = sessionState.selectedPeriod
     }
 
     // MARK: - Selection Actions

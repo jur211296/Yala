@@ -14,12 +14,21 @@ import SwiftUI
 /// Records tab content with control bar, filter chips, and record list.
 /// Extracted from DetailContainerView to reduce complexity.
 struct RecordsTabView: View {
+    @Environment(SessionState.self) private var sessionState
+
+    /// All transactions (unfiltered) for date range limits
+    @Query(sort: \TransactionItem.date, order: .reverse)
+    private var allTransactions: [TransactionItem]
+
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
     let categories: [Category]
     let tags: [Tag]
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
+
+    // Custom period picker state
+    @State private var showCustomPeriodPicker: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,6 +47,26 @@ struct RecordsTabView: View {
                 }
             }
         }
+        .sheet(isPresented: $showCustomPeriodPicker) {
+            CustomPeriodPickerSheet(
+                minDate: transactionDateRange.start,
+                maxDate: transactionDateRange.end,
+                currentRange: sessionState.customDateRange
+            )
+        }
+        .onChange(of: sessionState.customDateRange) {
+            // Sync custom date range and period, then recalculate
+            viewModel.syncCustomRangeFromSessionState(sessionState)
+            onFilterChange()
+        }
+    }
+
+    /// Date range of all transactions (unfiltered, for custom period picker limits)
+    private var transactionDateRange: (start: Date, end: Date) {
+        let sortedDates = allTransactions.map(\.date).sorted()
+        let start = sortedDates.first ?? Date()
+        let end = sortedDates.last ?? Date()
+        return (start, end)
     }
 
     // MARK: - Control Bar
@@ -150,10 +179,15 @@ struct RecordsTabView: View {
     private var periodSelector: some View {
         TrendsPeriodMenu(
             selectedPeriod: viewModel.period,
+            customDateRange: sessionState.customDateRange,
             onSelect: { period in
                 withTransaction(Transaction(animation: nil)) {
                     viewModel.period = period
+                    sessionState.selectedPeriod = period
                 }
+            },
+            onCustomTapped: {
+                showCustomPeriodPicker = true
             }
         )
         .equatable()

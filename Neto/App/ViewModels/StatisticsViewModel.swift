@@ -90,11 +90,14 @@ final class StatisticsViewModel: Filterable {
     /// Selected period (using DetailPeriod for expanded options)
     var detailPeriod: DetailPeriod = .thisMonth
 
-    /// Custom date range start
+    /// Custom date range (synced from SessionState)
+    var customDateRange: DateInterval?
+
+    /// Custom date range start (for backward compat, deprecated)
     var customStartDate: Date =
         Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
 
-    /// Custom date range end
+    /// Custom date range end (for backward compat, deprecated)
     var customEndDate: Date = Date()
 
     // MARK: - Sheet State
@@ -234,7 +237,7 @@ final class StatisticsViewModel: Filterable {
 
     /// Calculate the date interval for the current period
     var panelDateInterval: DateInterval {
-        detailPeriod.dateInterval()
+        detailPeriod.dateInterval(customRange: customDateRange)
     }
 
     // MARK: - Data Calculation
@@ -650,11 +653,17 @@ final class StatisticsViewModel: Filterable {
     /// Sync trend metric FROM SessionState
     func syncMetricFromSessionState(_ sessionState: SessionState) {
         self.selectedMetric = sessionState.selectedTrendMetric
+        self.customDateRange = sessionState.customDateRange
     }
 
     /// Sync trend metric TO SessionState
     func syncMetricToSessionState(_ sessionState: SessionState) {
         sessionState.selectedTrendMetric = self.selectedMetric
+    }
+
+    /// Sync custom date range FROM SessionState
+    func syncCustomRangeFromSessionState(_ sessionState: SessionState) {
+        self.customDateRange = sessionState.customDateRange
     }
 }
 

@@ -18,7 +18,28 @@ class SessionState {
     var selectedPeriod: DetailPeriod {
         didSet {
             // Update globalFilters.dateInterval when period changes
-            globalFilters.dateInterval = selectedPeriod.dateInterval()
+            globalFilters.dateInterval = selectedPeriod.dateInterval(customRange: customDateRange)
+        }
+    }
+
+    /// Custom date range for .custom period (persisted via UserDefaults)
+    var customDateRange: DateInterval? {
+        didSet {
+            // Persist custom range
+            if let range = customDateRange {
+                UserDefaults.standard.set(
+                    range.start.timeIntervalSince1970, forKey: "customPeriodStart")
+                UserDefaults.standard.set(
+                    range.end.timeIntervalSince1970, forKey: "customPeriodEnd")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "customPeriodStart")
+                UserDefaults.standard.removeObject(forKey: "customPeriodEnd")
+            }
+            // Update filter if currently on custom period
+            if selectedPeriod == .custom {
+                globalFilters.dateInterval = selectedPeriod.dateInterval(
+                    customRange: customDateRange)
+            }
         }
     }
 
@@ -56,7 +77,7 @@ class SessionState {
 
     /// Convenience: current date interval based on selectedPeriod
     var currentDateInterval: DateInterval {
-        selectedPeriod.dateInterval()
+        selectedPeriod.dateInterval(customRange: customDateRange)
     }
 
     /// Check if any global filter is active
@@ -121,6 +142,7 @@ class SessionState {
     /// Reset to default state
     func resetToDefaults() {
         selectedPeriod = .allTime
+        customDateRange = nil
         clearFilters()
         globalFilters.dateInterval = selectedPeriod.dateInterval()
     }
@@ -137,7 +159,18 @@ class SessionState {
             self.selectedPeriod = .allTime
         }
 
+        // Load persisted custom date range
+        let startTimestamp = UserDefaults.standard.double(forKey: "customPeriodStart")
+        let endTimestamp = UserDefaults.standard.double(forKey: "customPeriodEnd")
+        if startTimestamp > 0 && endTimestamp > 0 {
+            let start = Date(timeIntervalSince1970: startTimestamp)
+            let end = Date(timeIntervalSince1970: endTimestamp)
+            if start < end {
+                self.customDateRange = DateInterval(start: start, end: end)
+            }
+        }
+
         // Set initial dateInterval on globalFilters
-        self.globalFilters.dateInterval = selectedPeriod.dateInterval()
+        self.globalFilters.dateInterval = selectedPeriod.dateInterval(customRange: customDateRange)
     }
 }

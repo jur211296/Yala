@@ -88,17 +88,19 @@ struct DetailContainerView: View {
             }
             .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
             .tint(.primary)
-            .modifier(DetailContainerSheets(
-                recordsViewModel: recordsViewModel,
-                trendsViewModel: trendsViewModel,
-                showDeleteConfirmation: $showDeleteConfirmation,
-                showMultiEditPlaceholder: $showMultiEditPlaceholder,
-                isPresentingSettings: $isPresentingSettings,
-                modelContext: modelContext,
-                refreshRecordsData: refreshRecordsData,
-                syncFiltersToTrends: syncFiltersToTrends,
-                calculateTrendsData: calculateTrendsData
-            ))
+            .modifier(
+                DetailContainerSheets(
+                    recordsViewModel: recordsViewModel,
+                    trendsViewModel: trendsViewModel,
+                    showDeleteConfirmation: $showDeleteConfirmation,
+                    showMultiEditPlaceholder: $showMultiEditPlaceholder,
+                    isPresentingSettings: $isPresentingSettings,
+                    modelContext: modelContext,
+                    refreshRecordsData: refreshRecordsData,
+                    syncFiltersToTrends: syncFiltersToTrends,
+                    calculateTrendsData: calculateTrendsData
+                )
+            )
             .onRecordsFilterChange(viewModel: recordsViewModel) {
                 refreshRecordsData()
                 syncFiltersToTrends()
@@ -119,16 +121,17 @@ struct DetailContainerView: View {
                 calculateTrendsData()
                 refreshRecordsData()
             }
-            .modifier(DetailContainerObservers(
-                sessionState: sessionState,
-                trendsViewModel: trendsViewModel,
-                recordsViewModel: recordsViewModel,
-                syncFromSessionState: syncFromSessionState,
-                handleSessionStateFilterChange: handleSessionStateFilterChange,
-                syncToSessionState: syncToSessionState,
-                calculateTrendsData: calculateTrendsData,
-                refreshRecordsData: refreshRecordsData
-            ))
+            .modifier(
+                DetailContainerObservers(
+                    sessionState: sessionState,
+                    trendsViewModel: trendsViewModel,
+                    recordsViewModel: recordsViewModel,
+                    syncFromSessionState: syncFromSessionState,
+                    handleSessionStateFilterChange: handleSessionStateFilterChange,
+                    syncToSessionState: syncToSessionState,
+                    calculateTrendsData: calculateTrendsData,
+                    refreshRecordsData: refreshRecordsData
+                ))
     }
 
     // MARK: - Main Content
@@ -468,6 +471,10 @@ struct DetailContainerView: View {
         trendsViewModel.detailPeriod = sessionState.selectedPeriod
         recordsViewModel.period = sessionState.selectedPeriod
 
+        // Sync custom date range for custom period
+        trendsViewModel.customDateRange = sessionState.customDateRange
+        recordsViewModel.customDateRange = sessionState.customDateRange
+
         trendsViewModel.selectedAccounts = sessionState.selectedAccountIDs
         recordsViewModel.selectedAccounts = sessionState.selectedAccountIDs
 
@@ -651,6 +658,11 @@ private struct DetailContainerObservers: ViewModifier {
             .onChange(of: sessionState.selectedTrendMetric) {
                 syncFromSessionState()
                 calculateTrendsData()
+            }
+            .onChange(of: sessionState.customDateRange) {
+                syncFromSessionState()
+                calculateTrendsData()
+                refreshRecordsData()
             }
             .onChange(of: trendsViewModel.selectedMetric) { _, _ in
                 syncToSessionState()

@@ -83,6 +83,9 @@ struct TrendsTabView: View {
     // Trend charts carousel state
     @State private var trendChartsCarouselPosition: Int = 0
 
+    // Custom period picker state
+    @State private var showCustomPeriodPicker: Bool = false
+
     // MARK: - Cash Flow View Type
 
     enum CashFlowViewType: String, CaseIterable, Identifiable {
@@ -164,6 +167,25 @@ struct TrendsTabView: View {
             // Sync metric from SessionState when it changes in other views
             trendsViewModel.syncMetricFromSessionState(sessionState)
         }
+        .onChange(of: sessionState.customDateRange) {
+            // Sync custom date range and recalculate
+            trendsViewModel.syncCustomRangeFromSessionState(sessionState)
+        }
+        .sheet(isPresented: $showCustomPeriodPicker) {
+            CustomPeriodPickerSheet(
+                minDate: transactionDateRange.start,
+                maxDate: transactionDateRange.end,
+                currentRange: sessionState.customDateRange
+            )
+        }
+    }
+
+    /// Date range of all transactions (for custom period picker limits)
+    private var transactionDateRange: (start: Date, end: Date) {
+        let sortedDates = allTransactions.map(\.date).sorted()
+        let start = sortedDates.first ?? Date()
+        let end = sortedDates.last ?? Date()
+        return (start, end)
     }
 
     // MARK: - Control Bar
@@ -257,8 +279,12 @@ struct TrendsTabView: View {
     private var periodSelector: some View {
         TrendsPeriodMenu(
             selectedPeriod: trendsViewModel.detailPeriod,
+            customDateRange: sessionState.customDateRange,
             onSelect: { period in
                 sessionState.selectedPeriod = period
+            },
+            onCustomTapped: {
+                showCustomPeriodPicker = true
             }
         )
         .equatable()

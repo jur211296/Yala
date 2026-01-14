@@ -52,6 +52,9 @@ struct PanelView: View {
     /// Task for debouncing data recalculations
     @State private var calculationTask: Task<Void, Never>?
 
+    /// Custom period picker sheet
+    @State private var showCustomPeriodPicker = false
+
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
         .rawValue
@@ -96,6 +99,13 @@ struct PanelView: View {
                         prefillAccountID: viewModel.selectedAccountID,
                         prefillCategoryID: viewModel.selectedCategoryID,
                         prefillSubcategoryName: viewModel.selectedSubcategoryID
+                    )
+                }
+                .sheet(isPresented: $showCustomPeriodPicker) {
+                    CustomPeriodPickerSheet(
+                        minDate: transactionDateRange.start,
+                        maxDate: transactionDateRange.end,
+                        currentRange: sessionState.customDateRange
                     )
                 }
         }
@@ -183,6 +193,11 @@ struct PanelView: View {
             viewModel.syncFromSessionState(sessionState)
             recalculateData()
         }
+        // Recalculate when custom date range changes
+        .onChange(of: sessionState.customDateRange) {
+            viewModel.syncFromSessionState(sessionState)
+            recalculateData()
+        }
     }
 
     private var mainContent: some View {
@@ -253,8 +268,12 @@ struct PanelView: View {
             HStack(alignment: .center, spacing: 12) {
                 TrendsPeriodMenu(
                     selectedPeriod: sessionState.selectedPeriod,
+                    customDateRange: sessionState.customDateRange,
                     onSelect: { period in
                         sessionState.selectedPeriod = period
+                    },
+                    onCustomTapped: {
+                        showCustomPeriodPicker = true
                     }
                 )
 
@@ -619,6 +638,14 @@ struct PanelView: View {
             accounts
             .filter { $0.persistentModelID != editingAccount.persistentModelID }
             .map { $0.name }
+    }
+
+    /// Date range of all transactions (for custom period picker limits)
+    private var transactionDateRange: (start: Date, end: Date) {
+        let sortedDates = transactions.map(\.date).sorted()
+        let start = sortedDates.first ?? Date()
+        let end = sortedDates.last ?? Date()
+        return (start, end)
     }
 }
 
