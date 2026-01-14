@@ -338,7 +338,7 @@ struct CashFlowWidget: View {
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack(spacing: 6) {
-                                        Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
+                                        Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
                                         Text(
                                             NetoFormatter.currency(
                                                 value: selectedData.income,
@@ -359,7 +359,7 @@ struct CashFlowWidget: View {
                                     }
                                     Divider()
                                     HStack(spacing: 6) {
-                                        Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
+                                        Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
                                         Text(
                                             NetoFormatter.currency(
                                                 value: selectedData.net,
@@ -389,6 +389,7 @@ struct CashFlowWidget: View {
                 // Legend (only for bidirectional mode)
                 if !hasOnlyExpenses && !hasOnlyIncome {
                     CashFlowLegendView(showNet: grouping == .month)
+                        .frame(maxWidth: .infinity)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
