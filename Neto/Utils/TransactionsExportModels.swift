@@ -57,6 +57,20 @@ enum AmountFilterCondition: Equatable {
             return true
         }
     }
+
+    /// Display text for filter chip (e.g., ">100", "<50", "100-500")
+    var displayText: String {
+        switch self {
+        case .any:
+            return ""
+        case .greaterThan(let value):
+            return ">\(value)"
+        case .lessThan(let value):
+            return "<\(value)"
+        case .between(let min, let max):
+            return "\(min)-\(max)"
+        }
+    }
 }
 
 // MARK: - Periodo de exportación

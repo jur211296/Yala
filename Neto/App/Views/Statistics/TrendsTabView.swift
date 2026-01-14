@@ -259,6 +259,39 @@ struct TrendsTabView: View {
                             )
                         }
 
+                        // Currency chips
+                        ForEach(Array(trendsViewModel.selectedCurrencies), id: \.self) { currency in
+                            FilterChipView(
+                                currencyCode: currency.rawValue,
+                                onClear: {
+                                    trendsViewModel.selectedCurrencies.remove(currency)
+                                    sessionState.selectedCurrencies.remove(currency)
+                                }
+                            )
+                        }
+
+                        // Amount chip
+                        if trendsViewModel.amountCondition.isActive {
+                            FilterChipView(
+                                amountText: trendsViewModel.amountCondition.displayText,
+                                onClear: {
+                                    trendsViewModel.amountCondition = .any
+                                    sessionState.amountCondition = .any
+                                }
+                            )
+                        }
+
+                        // Search/Note chip
+                        if !trendsViewModel.searchText.isEmpty {
+                            FilterChipView(
+                                noteText: trendsViewModel.searchText,
+                                onClear: {
+                                    trendsViewModel.searchText = ""
+                                    sessionState.searchText = ""
+                                }
+                            )
+                        }
+
                         if trendsViewModel.activeFilterCount > 1 {
                             Button {
                                 withAnimation { trendsViewModel.clearFilters() }

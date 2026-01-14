@@ -47,6 +47,12 @@ final class PanelViewModel {
     // Nature filter state
     var selectedNature: SubcategoryNature?
 
+    // Additional filter state (synced from SessionState for data filtering)
+    var selectedTags: Set<PersistentIdentifier> = []
+    var selectedCurrencies: Set<CurrencyCode> = []
+    var amountCondition: AmountFilterCondition = .any
+    var searchText: String = ""
+
     // Nature Widget State
     var natureTrendPoints: [NatureTrendPoint] = []
 
@@ -143,6 +149,12 @@ final class PanelViewModel {
         // Nature (single-select)
         self.selectedNature = sessionState.selectedNatures.first
 
+        // Additional filters (synced for data filtering, Panel doesn't show UI for these)
+        self.selectedTags = sessionState.selectedTags
+        self.selectedCurrencies = sessionState.selectedCurrencies
+        self.amountCondition = sessionState.amountCondition
+        self.searchText = sessionState.searchText
+
         // Trend Metric - convert TrendMetric to TrendType
         self.trendType = convertMetricToTrendType(sessionState.selectedTrendMetric)
 
@@ -178,6 +190,12 @@ final class PanelViewModel {
         if let nature = self.selectedNature {
             sessionState.selectedNatures.insert(nature)
         }
+
+        // Additional filters - sync back (Panel receives but doesn't modify these)
+        sessionState.selectedTags = self.selectedTags
+        sessionState.selectedCurrencies = self.selectedCurrencies
+        sessionState.amountCondition = self.amountCondition
+        sessionState.searchText = self.searchText
 
         // Trend Metric - convert TrendType to TrendMetric
         sessionState.selectedTrendMetric = convertTrendTypeToMetric(self.trendType)
@@ -574,6 +592,32 @@ final class PanelViewModel {
                         return false
                     }
                 }
+            }
+
+            // Tag Filter
+            if !selectedTags.isEmpty {
+                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+            }
+
+            // Currency Filter
+            if !selectedCurrencies.isEmpty {
+                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                    return false
+                }
+                if !selectedCurrencies.contains(txCurrency) { return false }
+            }
+
+            // Amount Filter
+            if amountCondition.isActive {
+                let amountDecimal = Decimal(transaction.amount)
+                if !amountCondition.matches(amountDecimal) { return false }
+            }
+
+            // Search/Note Filter
+            if !searchText.isEmpty {
+                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
+                if !noteMatches { return false }
             }
 
             return true

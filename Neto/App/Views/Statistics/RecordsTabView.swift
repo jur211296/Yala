@@ -153,6 +153,42 @@ struct RecordsTabView: View {
                             }
                         }
 
+                        // Currency chips
+                        ForEach(Array(viewModel.selectedCurrencies), id: \.self) { currency in
+                            FilterChipView(
+                                currencyCode: currency.rawValue,
+                                onClear: {
+                                    viewModel.selectedCurrencies.remove(currency)
+                                    sessionState.selectedCurrencies.remove(currency)
+                                    onFilterChange()
+                                }
+                            )
+                        }
+
+                        // Amount chip
+                        if viewModel.amountCondition.isActive {
+                            FilterChipView(
+                                amountText: viewModel.amountCondition.displayText,
+                                onClear: {
+                                    viewModel.amountCondition = .any
+                                    sessionState.amountCondition = .any
+                                    onFilterChange()
+                                }
+                            )
+                        }
+
+                        // Search/Note chip
+                        if !viewModel.searchText.isEmpty {
+                            FilterChipView(
+                                noteText: viewModel.searchText,
+                                onClear: {
+                                    viewModel.searchText = ""
+                                    sessionState.searchText = ""
+                                    onFilterChange()
+                                }
+                            )
+                        }
+
                         // Clear all button
                         if viewModel.activeFilterCount > 1 {
                             Button {

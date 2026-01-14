@@ -216,6 +216,39 @@ struct CategoriesTabView: View {
                             )
                         }
 
+                        // Currency chips
+                        ForEach(Array(viewModel.selectedCurrencies), id: \.self) { currency in
+                            FilterChipView(
+                                currencyCode: currency.rawValue,
+                                onClear: {
+                                    viewModel.selectedCurrencies.remove(currency)
+                                    sessionState.selectedCurrencies.remove(currency)
+                                }
+                            )
+                        }
+
+                        // Amount chip
+                        if viewModel.amountCondition.isActive {
+                            FilterChipView(
+                                amountText: viewModel.amountCondition.displayText,
+                                onClear: {
+                                    viewModel.amountCondition = .any
+                                    sessionState.amountCondition = .any
+                                }
+                            )
+                        }
+
+                        // Search/Note chip
+                        if !viewModel.searchText.isEmpty {
+                            FilterChipView(
+                                noteText: viewModel.searchText,
+                                onClear: {
+                                    viewModel.searchText = ""
+                                    sessionState.searchText = ""
+                                }
+                            )
+                        }
+
                         // Clear all button
                         if activeFilterCount > 1 {
                             Button {

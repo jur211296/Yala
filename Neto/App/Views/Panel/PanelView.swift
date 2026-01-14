@@ -29,6 +29,7 @@ struct PanelView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
     // FIN-46: Transacciones usadas para calcular saldos actuales por cuenta
     @Query(sort: \TransactionItem.date, order: .reverse)
     private var transactions: [TransactionItem]
@@ -164,40 +165,18 @@ struct PanelView: View {
             // Recalculate when preferred currency changes
             recalculateData()
         }
-        .onChange(of: sessionState.selectedPeriod) {
-            // Sync Session -> ViewModel
-            viewModel.syncFromSessionState(sessionState)
-            recalculateData()
-        }
-        // Also sync when SessionState filters change (from Statistics tab)
-        .onChange(of: sessionState.selectedAccountIDs) {
-            viewModel.syncFromSessionState(sessionState)
-            recalculateData()
-        }
-        .onChange(of: sessionState.selectedCategoryIDs) {
-            viewModel.syncFromSessionState(sessionState)
-            recalculateData()
-        }
-        .onChange(of: sessionState.selectedNatures) {
-            viewModel.syncFromSessionState(sessionState)
-            recalculateData()
-        }
-        // Recalculate when trend metric changes (Balance/Income/Expense)
         .onChange(of: viewModel.trendType) {
             // Sync trend type to SessionState when it changes
             viewModel.syncToSessionState(sessionState)
             recalculateData()
         }
-        // Sync trend metric from SessionState when it changes in other views
-        .onChange(of: sessionState.selectedTrendMetric) {
-            viewModel.syncFromSessionState(sessionState)
-            recalculateData()
-        }
-        // Recalculate when custom date range changes
-        .onChange(of: sessionState.customDateRange) {
-            viewModel.syncFromSessionState(sessionState)
-            recalculateData()
-        }
+        .modifier(
+            PanelSessionObservers(
+                sessionState: sessionState,
+                syncFromSessionState: { viewModel.syncFromSessionState(sessionState) },
+                recalculateData: recalculateData
+            )
+        )
     }
 
     private var mainContent: some View {
@@ -283,10 +262,18 @@ struct PanelView: View {
                 let hasCategoryFilter = viewModel.selectedCategoryID != nil
                 let hasNatureFilter = viewModel.selectedNature != nil
                 let hasSubcategoryFilter = viewModel.selectedSubcategoryID != nil
+                let hasTagFilter = !viewModel.selectedTags.isEmpty
+                let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
+                let hasAmountFilter = viewModel.amountCondition.isActive
+                let hasNoteFilter = !viewModel.searchText.isEmpty
 
-                if hasAccountFilter || hasDateFilter || hasCategoryFilter || hasNatureFilter
-                    || hasSubcategoryFilter
-                {
+                let activeFilterCount = [
+                    hasAccountFilter, hasDateFilter, hasCategoryFilter,
+                    hasNatureFilter, hasSubcategoryFilter, hasTagFilter,
+                    hasCurrencyFilter, hasAmountFilter, hasNoteFilter
+                ].filter { $0 }.count
+
+                if activeFilterCount > 0 {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             // Account Chip
@@ -350,6 +337,73 @@ struct PanelView: View {
                                         withAnimation { viewModel.selectedNature = nil }
                                     }
                                 )
+                            }
+
+                            // Tag Chips
+                            ForEach(Array(viewModel.selectedTags), id: \.self) { tagID in
+                                if let tag = tags.first(where: { $0.persistentModelID == tagID }) {
+                                    FilterChipView(
+                                        tagName: tag.name,
+                                        colorHex: tag.colorHex,
+                                        onClear: {
+                                            withAnimation {
+                                                viewModel.selectedTags.remove(tagID)
+                                                viewModel.syncToSessionState(sessionState)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+
+                            // Currency Chips
+                            ForEach(Array(viewModel.selectedCurrencies), id: \.self) { currency in
+                                FilterChipView(
+                                    currencyCode: currency.rawValue,
+                                    onClear: {
+                                        withAnimation {
+                                            viewModel.selectedCurrencies.remove(currency)
+                                            viewModel.syncToSessionState(sessionState)
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Amount Chip
+                            if viewModel.amountCondition.isActive {
+                                FilterChipView(
+                                    amountText: viewModel.amountCondition.displayText,
+                                    onClear: {
+                                        withAnimation {
+                                            viewModel.amountCondition = .any
+                                            viewModel.syncToSessionState(sessionState)
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Note/Search Chip
+                            if !viewModel.searchText.isEmpty {
+                                FilterChipView(
+                                    noteText: viewModel.searchText,
+                                    onClear: {
+                                        withAnimation {
+                                            viewModel.searchText = ""
+                                            viewModel.syncToSessionState(sessionState)
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Clear All Button
+                            if activeFilterCount > 1 {
+                                Button {
+                                    withAnimation {
+                                        clearAllPanelFilters()
+                                    }
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -647,6 +701,20 @@ struct PanelView: View {
         let end = sortedDates.last ?? Date()
         return (start, end)
     }
+
+    /// Clear all Panel filters and sync to SessionState
+    private func clearAllPanelFilters() {
+        viewModel.selectedAccountID = nil
+        viewModel.focusedDate = nil
+        viewModel.selectedCategoryID = nil
+        viewModel.selectedSubcategoryID = nil
+        viewModel.selectedNature = nil
+        viewModel.selectedTags.removeAll()
+        viewModel.selectedCurrencies.removeAll()
+        viewModel.amountCondition = .any
+        viewModel.searchText = ""
+        viewModel.syncToSessionState(sessionState)
+    }
 }
 
 // MARK: - Sheet Wrapper
@@ -655,4 +723,61 @@ struct PanelView: View {
 struct AccountFormSheet: Identifiable {
     let id = UUID()
     let account: Account?
+}
+
+// MARK: - Panel Observers
+
+/// Encapsulates SessionState onChange observers to reduce body complexity and avoid type-checker limits
+private struct PanelSessionObservers: ViewModifier {
+    let sessionState: SessionState
+    let syncFromSessionState: () -> Void
+    let recalculateData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: sessionState.selectedPeriod) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedAccountIDs) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedCategoryIDs) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedNatures) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedSubcategoryNames) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedTags) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedCurrencies) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.amountCondition) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.searchText) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedTrendMetric) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.customDateRange) {
+                syncFromSessionState()
+                recalculateData()
+            }
+    }
 }
