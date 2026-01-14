@@ -768,9 +768,9 @@ struct TrendsTabView: View {
     // MARK: - Helpers
 
     private var currentKPIValue: String {
-        // When scrubbing the chart, show the hovered point value
+        // When scrubbing the chart, show the hovered point value (use RAW points)
         if let focusedDate = trendsViewModel.focusedDate,
-            let point = trendsViewModel.trendPoints.first(where: {
+            let point = trendsViewModel.rawTrendPoints.first(where: {
                 Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
             })
         {
@@ -781,8 +781,8 @@ struct TrendsTabView: View {
         let value: Double
         switch trendsViewModel.selectedMetric {
         case .balance:
-            // Balance: show the last chart point value (balance at end of period)
-            value = trendsViewModel.trendPoints.last?.value ?? 0
+            // Balance: show the last RAW chart point value (actual end balance, not smoothed)
+            value = trendsViewModel.rawTrendPoints.last?.value ?? 0
         case .income:
             // Income: show TOTAL income for the period
             value = trendsViewModel.totalIncome
