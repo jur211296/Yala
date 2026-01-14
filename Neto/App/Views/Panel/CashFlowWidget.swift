@@ -58,6 +58,12 @@ struct CashFlowWidget: View {
 
     /// KPI label based on display mode
     private var kpiLabel: String {
+        // If customTitle is provided, use it (for account/currency specific views)
+        if let title = customTitle {
+            return title
+        }
+
+        // Otherwise, use display mode label
         switch displayMode {
         case .balance:
             return L10n.CashFlow.netFlow
@@ -66,7 +72,7 @@ struct CashFlowWidget: View {
         case .expense:
             return L10n.CashFlow.expense
         case .none:
-            return customTitle ?? L10n.CashFlow.title
+            return L10n.CashFlow.title
         }
     }
 

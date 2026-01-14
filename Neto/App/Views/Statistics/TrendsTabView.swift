@@ -21,12 +21,42 @@ struct TrendsTabView: View {
 
     // MARK: - Data Queries
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    @Query private var accounts: [Account]
     @Query(sort: \Category.name, order: .forward) private var categories: [Category]
     @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
     @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
     @Query(sort: \TransactionItem.date, order: .reverse) private var allTransactions:
         [TransactionItem]
+
+    // MARK: - Persistent Sort Order (matches Profile/Accounts view)
+
+    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
+
+    /// Account names in user-defined order (pipe-separated)
+    private var accountsSortOrderNames: [String] {
+        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
+    }
+
+    /// Sort accounts by user-defined order (from AccountsSettingsListView)
+    private func sortedAccountIDs(_ ids: [PersistentIdentifier]) -> [PersistentIdentifier] {
+        let order = accountsSortOrderNames
+        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+
+        return ids.sorted { id1, id2 in
+            let name1 = accounts.first(where: { $0.persistentModelID == id1 })?.name ?? ""
+            let name2 = accounts.first(where: { $0.persistentModelID == id2 })?.name ?? ""
+
+            let idx1 = indexByName[name1]
+            let idx2 = indexByName[name2]
+
+            switch (idx1, idx2) {
+            case (let x?, let y?): return x < y
+            case (_?, nil): return true
+            case (nil, _?): return false
+            default: return name1 < name2
+            }
+        }
+    }
 
     // MARK: - External Dependencies
 
@@ -534,16 +564,23 @@ struct TrendsTabView: View {
                 cashFlowViewType = viewType
                 // Reset carousel positions when switching view type
                 if viewType == .byAccount,
-                    let firstAccount = cashFlowByAccount.keys.sorted(by: { id1, id2 in
-                        let account1 = accounts.first(where: { $0.persistentModelID == id1 })
-                        let account2 = accounts.first(where: { $0.persistentModelID == id2 })
-                        return (account1?.name ?? "") < (account2?.name ?? "")
-                    }).first
+                    let firstAccount = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
                 {
                     accountCarouselPosition = firstAccount
                 }
                 if viewType == .byCurrency,
-                    let firstCurrency = cashFlowByCurrency.keys.sorted().first
+                    let firstCurrency = cashFlowByCurrency.keys.sorted(by: { code1, code2 in
+                        // Preferred currency first, then by total amount
+                        if code1 == defaultCurrencyCode { return true }
+                        if code2 == defaultCurrencyCode { return false }
+                        let total1 =
+                            (cashFlowByCurrency[code1]?.totalIncome ?? 0)
+                            + (cashFlowByCurrency[code1]?.totalExpense ?? 0)
+                        let total2 =
+                            (cashFlowByCurrency[code2]?.totalIncome ?? 0)
+                            + (cashFlowByCurrency[code2]?.totalExpense ?? 0)
+                        return total1 > total2
+                    }).first
                 {
                     currencyCarouselPosition = firstCurrency
                 }
@@ -570,12 +607,8 @@ struct TrendsTabView: View {
 
     @ViewBuilder
     private var cashFlowByAccountCarousel: some View {
-        let accountIDs = Array(
-            cashFlowByAccount.keys.sorted(by: { id1, id2 in
-                let account1 = accounts.first(where: { $0.persistentModelID == id1 })
-                let account2 = accounts.first(where: { $0.persistentModelID == id2 })
-                return (account1?.name ?? "") < (account2?.name ?? "")
-            }))
+        // Sort by user-defined order (same as Profile/Accounts view)
+        let accountIDs = sortedAccountIDs(Array(cashFlowByAccount.keys))
 
         if !accountIDs.isEmpty {
             VStack(spacing: DS.Spacing.sm) {
@@ -628,7 +661,21 @@ struct TrendsTabView: View {
 
     @ViewBuilder
     private var cashFlowByCurrencyCarousel: some View {
-        let currencyCodes = Array(cashFlowByCurrency.keys.sorted())
+        // Sort: preferred currency first, then by descending total amount
+        let currencyCodes = Array(
+            cashFlowByCurrency.keys.sorted(by: { code1, code2 in
+                // Preferred currency always first
+                if code1 == defaultCurrencyCode { return true }
+                if code2 == defaultCurrencyCode { return false }
+                // Then by descending total (income + expense)
+                let total1 =
+                    (cashFlowByCurrency[code1]?.totalIncome ?? 0)
+                    + (cashFlowByCurrency[code1]?.totalExpense ?? 0)
+                let total2 =
+                    (cashFlowByCurrency[code2]?.totalIncome ?? 0)
+                    + (cashFlowByCurrency[code2]?.totalExpense ?? 0)
+                return total1 > total2
+            }))
 
         if !currencyCodes.isEmpty {
             VStack(spacing: DS.Spacing.sm) {
@@ -638,7 +685,8 @@ struct TrendsTabView: View {
                             if let summary = cashFlowByCurrency[currencyCode] {
                                 cashFlowCard(
                                     summary: summary,
-                                    title: currencyCode,
+                                    title: Locale.current.localizedString(
+                                        forCurrencyCode: currencyCode)?.capitalized ?? currencyCode,
                                     currencyCode: currencyCode
                                 )
                                 .containerRelativeFrame(.horizontal)

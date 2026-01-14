@@ -108,6 +108,19 @@ struct TrendDataProcessor {
 
         // Create effective interval for filtering (must match bucket range)
         let bucketStartDate = grouping.dateKey(for: effectiveStart, calendar: calendar)
+
+        // Safety check: DateInterval crashes if start > end
+        guard bucketStartDate <= effectiveEnd else {
+            return TrendProcessingResult(
+                points: [],
+                rawPoints: [],
+                yDomain: 0...100,
+                totalIncome: totalIncome,
+                totalExpense: totalExpense,
+                finalBalance: 0
+            )
+        }
+
         let effectiveInterval = DateInterval(start: bucketStartDate, end: effectiveEnd)
 
         // 3. Build date buckets only for actual data range
