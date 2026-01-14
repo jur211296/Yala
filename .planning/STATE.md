@@ -32,6 +32,7 @@ Progress: ███░░░░░░░ 33%
 - Fix: Posición incorrecta de pantalla éxito con teclado abierto (dismiss + delay 150ms)
 - Fix: Teclado se cierra al abrir selectores de cuenta/categoría/tags en NewTransactionView
 - Fix: Widgets de gastos en Panel excluyen ajustes y saldos iniciales (expenseFilteredTransactions)
+- Fix: TagSelectorSheet permite crear etiquetas + diseño mejorado de filas
 
 ## Completed (Fase 3) ✅
 

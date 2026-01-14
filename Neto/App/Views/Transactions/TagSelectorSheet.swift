@@ -13,9 +13,13 @@ import SwiftUI
 /// Sheet para seleccionar múltiples etiquetas
 struct TagSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
 
     @Binding var selectedTags: [Tag]
+
+    @State private var showNewTagSheet: Bool = false
+    @State private var tagCountBeforeSheet: Int = 0
 
     var body: some View {
         NavigationStack {
@@ -47,8 +51,26 @@ struct TagSelectorSheet: View {
                     NetoSaveButton(action: { dismiss() })
                 }
             }
+            .sheet(isPresented: $showNewTagSheet, onDismiss: {
+                selectNewlyCreatedTag()
+            }) {
+                TagFormView(tagToEdit: nil)
+            }
         }
         .tint(Color.electricIndigo)
+    }
+
+    /// Selecciona automáticamente la etiqueta recién creada
+    private func selectNewlyCreatedTag() {
+        let currentCount = activeTags.count
+        if currentCount > tagCountBeforeSheet {
+            // Hay una nueva etiqueta, seleccionar la última creada (ordenada por nombre)
+            if let newTag = activeTags.last(where: { tag in
+                !selectedTags.contains { $0.persistentModelID == tag.persistentModelID }
+            }) {
+                selectedTags.append(newTag)
+            }
+        }
     }
 
     private var activeTags: [Tag] {
@@ -56,38 +78,68 @@ struct TagSelectorSheet: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "tag.slash")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+        VStack(spacing: 16) {
+            VStack(spacing: 12) {
+                Image(systemName: "tag.slash")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.secondary)
 
-            Text(L10n.Empty.noTags)
-                .font(.headline)
-                .foregroundStyle(.secondary)
+                Text(L10n.Empty.noTags)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
 
-            Text("Puedes crear etiquetas en Ajustes > Etiquetas")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
+                Text("Crea tu primera etiqueta para organizar tus transacciones")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+
+            // Add tag button even when empty
+            addTagButton
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
     }
 
     private var tagsList: some View {
-        SectionBox(title: "") {
-            VStack(spacing: 0) {
-                ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) {
-                    index, tag in
-                    if index > 0 {
-                        SubsectionDivider()
-                    }
+        VStack(spacing: 16) {
+            SectionBox(title: "") {
+                VStack(spacing: 0) {
+                    ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) {
+                        index, tag in
+                        if index > 0 {
+                            SubsectionDivider()
+                        }
 
-                    TagSelectorRow(tag: tag, isSelected: isSelected(tag)) {
-                        toggleTag(tag)
+                        TagSelectorRow(tag: tag, isSelected: isSelected(tag)) {
+                            toggleTag(tag)
+                        }
                     }
                 }
             }
+
+            addTagButton
+        }
+    }
+
+    private var addTagButton: some View {
+        SectionBox(title: "") {
+            Button {
+                tagCountBeforeSheet = activeTags.count
+                showNewTagSheet = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(Color.electricIndigo)
+                    Text(L10n.Tag.newTag)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -116,10 +168,15 @@ struct TagSelectorRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Small dot as requested
+                // Color circle
                 Circle()
                     .fill(Color(hex: tag.colorHex))
-                    .frame(width: 12, height: 12)
+                    .frame(width: 28, height: 28)
+                    .overlay(
+                        Image(systemName: "number")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                    )
 
                 Text(tag.name)
                     .font(.body)
@@ -134,7 +191,8 @@ struct TagSelectorRow: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
