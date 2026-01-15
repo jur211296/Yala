@@ -37,6 +37,7 @@ struct CategoriesTabView: View {
 
     @State private var categorySpending: [CategorySpendingSummary] = []
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
+    @State private var tagSpending: [TagSpendingSummary] = []
     @State private var natureTrendPoints: [NatureTrendPoint] = []
     @State private var selectedCategoryID: PersistentIdentifier?
     @State private var selectedSubcategoryID: PersistentIdentifier?
@@ -306,6 +307,10 @@ struct CategoriesTabView: View {
                         // Subcategories Chart
                         subcategoryChartCard
                             .frame(width: cardWidth)
+
+                        // Tags Chart
+                        tagChartCard
+                            .frame(width: cardWidth)
                     }
                     .scrollTargetLayout()
                 }
@@ -317,7 +322,7 @@ struct CategoriesTabView: View {
 
             // Page indicator
             HStack(spacing: 6) {
-                ForEach(0..<2, id: \.self) { page in
+                ForEach(0..<3, id: \.self) { page in
                     Circle()
                         .fill(
                             page == (carouselIndex ?? 0)
@@ -391,6 +396,36 @@ struct CategoriesTabView: View {
                             selectedSubcategoryID = subcategoryID
                         }
                     },
+                    size: .large
+                )
+            }
+        }
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+    }
+
+    // MARK: - Tag Chart Card
+
+    private var tagChartCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if tagSpending.isEmpty {
+                emptyState(
+                    icon: "tag",
+                    title: L10n.Empty.noTags,
+                    subtitle: L10n.Statistics.noExpensesInPeriod
+                )
+                .frame(height: 320)
+            } else {
+                TagsPieWidget(
+                    tags: tagSpending,
+                    currencyCode: defaultCurrencyCode,
+                    selectedTagID: nil,
+                    onSelectTag: { _ in },
                     size: .large
                 )
             }
@@ -656,6 +691,13 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,  // Don't filter here, show all with opacity
             context: modelContext
+        )
+
+        // Calculate tag spending
+        tagSpending = calculateTagSpending(
+            transactions: filtered,
+            interval: interval,
+            currencyCode: defaultCurrencyCode
         )
 
         // Calculate nature trend data with correct grouping based on period
@@ -992,6 +1034,41 @@ struct CategoriesTabView: View {
         guard !viewModel.selectedNatures.isEmpty else { return nil }
         let names = viewModel.selectedNatures.map { $0.displayName }
         return names.count == 1 ? names.first : "\(names.first ?? "") +\(names.count - 1)"
+    }
+
+    // MARK: - Tag Spending Calculator
+
+    private func calculateTagSpending(
+        transactions: [TransactionItem],
+        interval: DateInterval,
+        currencyCode: String
+    ) -> [TagSpendingSummary] {
+        let expenseTransactions = transactions.filter { transaction in
+            guard let category = transaction.category, !category.isIncome else { return false }
+            guard !transaction.tags.isEmpty else { return false }
+            return interval.contains(transaction.date)
+        }
+
+        var tagTotals: [PersistentIdentifier: Double] = [:]
+        var tagMap: [PersistentIdentifier: Tag] = [:]
+
+        for transaction in expenseTransactions {
+            let absAmount = abs(transaction.amountInPreferredCurrency)
+            for tag in transaction.tags {
+                let tagID = tag.persistentModelID
+                tagTotals[tagID, default: 0] += absAmount
+                tagMap[tagID] = tag
+            }
+        }
+
+        let totalExpense = tagTotals.values.reduce(0, +)
+        let sortedTags = tagTotals.sorted { $0.value > $1.value }
+
+        return sortedTags.compactMap { (id, amount) -> TagSpendingSummary? in
+            guard let tag = tagMap[id] else { return nil }
+            let percentage = totalExpense > 0 ? (amount / totalExpense) * 100 : 0
+            return TagSpendingSummary(tag: tag, amount: amount, percentage: percentage)
+        }
     }
 }
 
