@@ -58,11 +58,23 @@ final class DataWipeService {
         // Eliminar todas las cuentas
         try deleteAll(Account.self, in: context)
 
-        // Eliminar todas las subcategorías (hijas de Category)
-        try deleteAll(Subcategory.self, in: context)
+        // Eliminar todas las subcategorías primero (tienen relación mandatory con Category)
+        let subcategoryDescriptor = FetchDescriptor<Subcategory>()
+        let allSubcategories = try context.fetch(subcategoryDescriptor)
+        for subcategory in allSubcategories {
+            context.delete(subcategory)
+        }
+        try context.save()
+        context.processPendingChanges()
 
-        // Eliminar todas las categorías
-        try deleteAll(Category.self, in: context)
+        // Ahora eliminar las categorías (ya sin subcategorías)
+        let categoryDescriptor = FetchDescriptor<Category>()
+        let allCategories = try context.fetch(categoryDescriptor)
+        for category in allCategories {
+            context.delete(category)
+        }
+        try context.save()
+        context.processPendingChanges()
 
         // Si tienes otros modelos que son claramente "datos de usuario",
         // añádelos aquí, respetando el orden de dependencias.

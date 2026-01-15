@@ -171,6 +171,8 @@ struct TrendsTabView: View {
             // Sync custom date range and recalculate
             trendsViewModel.syncCustomRangeFromSessionState(sessionState)
         }
+        // NOTE: Removed .onChange(of: allTransactions) - it caused crashes during data wipe
+        // CashFlow updates via other onChange triggers (period, filters, etc.)
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -1019,7 +1021,33 @@ struct TrendsTabView: View {
     // MARK: - Cash Flow Data Calculation
 
     private func calculateCashFlowData() {
-        let interval = trendsViewModel.panelDateInterval
+        // Skip if no transactions (likely during data wipe)
+        guard !allTransactions.isEmpty else {
+            cashFlowSummary = nil
+            cashFlowByAccount = [:]
+            cashFlowByCurrency = [:]
+            return
+        }
+
+        let baseInterval = trendsViewModel.panelDateInterval
+
+        // For All Time, calculate effective interval based on actual transactions
+        let fetchedTransactions = try? modelContext.fetch(FetchDescriptor<TransactionItem>())
+        let effectiveInterval: DateInterval
+        if trendsViewModel.detailPeriod == .allTime {
+            let dates = (fetchedTransactions ?? []).map(\.date)
+            if let firstDate = dates.min(), let lastDate = dates.max() {
+                let calendar = Calendar.current
+                let start = calendar.startOfDay(for: firstDate)
+                let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: lastDate)) ?? lastDate
+                effectiveInterval = DateInterval(start: start, end: end)
+            } else {
+                effectiveInterval = baseInterval
+            }
+        } else {
+            effectiveInterval = baseInterval
+        }
+        let interval = effectiveInterval
 
         // Build filter criteria
         let criteria = FilterCriteria(
@@ -1035,10 +1063,9 @@ struct TrendsTabView: View {
             dateInterval: interval
         )
 
-        // Filter transactions
-        let allTransactions = try? modelContext.fetch(FetchDescriptor<TransactionItem>())
+        // Filter transactions (reuse fetchedTransactions from above)
         let filtered = FilterService.filterForTrends(
-            transactions: allTransactions ?? [],
+            transactions: fetchedTransactions ?? [],
             accounts: accounts,
             criteria: criteria
         )

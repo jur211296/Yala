@@ -649,6 +649,9 @@ enum L10n {
         static var deleteAllDataAction: String {
             NSLocalizedString("settings.deleteAllDataAction", comment: "")
         }
+        static var deletingData: String {
+            NSLocalizedString("settings.deletingData", comment: "")
+        }
     }
 
     // MARK: - Profile

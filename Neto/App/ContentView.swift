@@ -29,29 +29,51 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        TabView(selection: $sessionState.selectedMainTab) {
-            Tab(L10n.Tab.panel, systemImage: "rectangle.grid.2x2.fill", value: .panel) {
-                PanelView()
-            }
+        // IMPORTANT: When wiping data, completely unmount the TabView to deactivate all @Query observers
+        // This prevents crashes from SwiftUI trying to access invalidated model instances
+        if sessionState.isWipingData {
+            wipingDataView
+        } else {
+            TabView(selection: $sessionState.selectedMainTab) {
+                Tab(L10n.Tab.panel, systemImage: "rectangle.grid.2x2.fill", value: .panel) {
+                    PanelView()
+                }
 
-            Tab(L10n.Tab.statistics, systemImage: "chart.bar.fill", value: .statistics) {
-                StatisticsView()
-            }
+                Tab(L10n.Tab.statistics, systemImage: "chart.bar.fill", value: .statistics) {
+                    StatisticsView()
+                }
 
-            Tab(L10n.Tab.planning, systemImage: "calendar", value: .planning) {
-                PlanningView()
-            }
+                Tab(L10n.Tab.planning, systemImage: "calendar", value: .planning) {
+                    PlanningView()
+                }
 
-            Tab(L10n.Tab.more, systemImage: "ellipsis", value: .more) {
-                MorePlaceholderView()
-            }
+                Tab(L10n.Tab.more, systemImage: "ellipsis", value: .more) {
+                    MorePlaceholderView()
+                }
 
-            // Search tab with .search role - pinned to trailing edge
-            Tab(value: .search, role: .search) {
-                GlobalSearchView()
+                // Search tab with .search role - pinned to trailing edge
+                Tab(value: .search, role: .search) {
+                    GlobalSearchView()
+                }
+            }
+            .tint(Color.electricIndigo)
+        }
+    }
+
+    private var wipingDataView: some View {
+        ZStack {
+            Color(.systemBackground)
+                .ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                ProgressView()
+                    .scaleEffect(1.5)
+
+                Text(L10n.Settings.deletingData)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
             }
         }
-        .tint(Color.electricIndigo)
     }
 }
 

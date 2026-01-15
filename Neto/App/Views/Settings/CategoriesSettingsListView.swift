@@ -118,7 +118,10 @@ struct CategoriesSettingsListView: View {
             showCannotDeleteAlert = true
             return
         }
-        // Cascade delete rule handles subcategories automatically
+        // Delete subcategories first to avoid SwiftUI @Query conflicts
+        for subcategory in category.subcategories {
+            modelContext.delete(subcategory)
+        }
         modelContext.delete(category)
         do {
             try modelContext.save()

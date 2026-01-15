@@ -121,22 +121,33 @@ struct UserDataResetView: View {
     private func handleWipeAllData() async {
         isProcessing = true
 
+        // 1. Activate wipe overlay BEFORE starting deletion
+        //    This prevents @Query observers from crashing by showing a blocking overlay
+        SessionState.shared.isWipingData = true
+
+        // 2. Dismiss all sheets first to reduce active observers
+        onUserDataWiped?()
+        dismiss()
+
+        // 3. Wait for SwiftUI to fully unmount the TabView and deactivate @Query observers
+        //    This is critical - without this delay, @Query observers may still be active during deletion
+        try? await Task.sleep(for: .milliseconds(500))
+
+        // 4. Perform the actual wipe
         do {
             try DataWipeService.wipeAllUserData(
                 in: modelContext,
                 reseedInitialData: true
             )
 
+            // 5. Small delay to let SwiftData settle before removing overlay
+            try? await Task.sleep(for: .milliseconds(200))
+
             isProcessing = false
-
-            // Notificamos al presentador (Ajustes) para que cierre la hoja
-            // y el usuario vuelva al Panel de inicio.
-            onUserDataWiped?()
-
-            // Cerramos también esta vista de confirmación si sigue visible.
-            dismiss()
+            SessionState.shared.isWipingData = false
         } catch {
             isProcessing = false
+            SessionState.shared.isWipingData = false
             errorMessage = error.localizedDescription
         }
     }

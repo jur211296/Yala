@@ -27,8 +27,9 @@ final class Category {
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
 
-    /// Relación 1 -> N con subcategorías (cascade delete)
-    @Relationship(deleteRule: .cascade, inverse: \Subcategory.category)
+    /// Relación 1 -> N con subcategorías
+    /// NOTE: Using nullify instead of cascade - manual deletion handles subcategories to avoid SwiftUI @Query conflicts
+    @Relationship(deleteRule: .nullify)
     var subcategories: [Subcategory]
 
     init(

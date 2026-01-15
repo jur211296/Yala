@@ -196,6 +196,12 @@ class SessionState {
         globalFilters.dateInterval = selectedPeriod.dateInterval()
     }
 
+    // MARK: - Data Wipe State
+
+    /// Flag indicating data wipe is in progress
+    /// When true, ContentView shows a loading overlay to prevent @Query observers from crashing
+    var isWipingData: Bool = false
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

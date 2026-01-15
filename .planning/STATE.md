@@ -34,6 +34,10 @@ Progress: ███░░░░░░░ 33%
 - Fix: Widgets de gastos en Panel excluyen ajustes y saldos iniciales (expenseFilteredTransactions)
 - Fix: TagSelectorSheet permite crear etiquetas + diseño mejorado de filas
 - Fix: "Crear otra transacción" tras editar no precarga datos (isCreatingAnother flag)
+- Fix: ImportAccountPickerSheet dark mode (fondo negro → netoCard con ScrollView)
+- Fix: FavoriteRowView ancho completo (.frame(maxWidth: .infinity))
+- Fix: CashFlow eje en TrendsTabView usa intervalo efectivo basado en transacciones reales
+- Fix: Crash al vaciar datos (SessionState.isWipingData + TabView unmount durante wipe)
 
 ## Completed (Fase 3) ✅
 
@@ -71,6 +75,6 @@ Progress: ███░░░░░░░ 33%
 
 ## Session Continuity
 
-Last session: 2026-01-14 16:45
-Stopped at: Bug fixes en NewTransactionView
+Last session: 2026-01-14 20:30
+Stopped at: Bug fixes completados (wipe, dark mode, favoritos, cashflow)
 Resume file: None

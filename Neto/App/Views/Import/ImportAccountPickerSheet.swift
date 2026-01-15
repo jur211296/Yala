@@ -30,17 +30,28 @@ struct ImportAccountPickerSheet: View {
                     }
                     .padding()
                 } else {
-                    List {
-                        ForEach(accounts) { account in
-                            Button {
-                                selectedAccount = account
-                            } label: {
-                                accountRow(for: account)
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            SectionBox(title: "") {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
+
+                                        Button {
+                                            selectedAccount = account
+                                        } label: {
+                                            accountRow(for: account)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
                             }
-                            .buttonStyle(.plain)
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 24)
                     }
-                    .scrollContentBackground(.hidden)
                 }
             }
             .navigationTitle("Selecciona una cuenta")
@@ -99,7 +110,8 @@ struct ImportAccountPickerSheet: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .contentShape(Rectangle())
     }
 }

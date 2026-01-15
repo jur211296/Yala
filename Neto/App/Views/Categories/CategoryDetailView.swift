@@ -518,7 +518,10 @@ struct CategoryDetailView: View {
     }
 
     private func deleteCategory() {
-        // Cascade delete rule handles subcategories automatically
+        // Delete subcategories first to avoid SwiftUI @Query conflicts
+        for subcategory in subcategories {
+            modelContext.delete(subcategory)
+        }
         modelContext.delete(category)
         do {
             try modelContext.save()

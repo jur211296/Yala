@@ -528,6 +528,7 @@
 "settings.iconLight" = "Claro";
 "settings.iconNeon" = "Neón";
 "settings.deleteAllDataAction" = "Eliminar definitivamente";
+"settings.deletingData" = "Eliminando datos...";
 
 
 "transaction.newTransaction" = "Nuevo registro";

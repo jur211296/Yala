@@ -57,6 +57,7 @@ struct FavoriteRowView: View {
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
             .background(cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
