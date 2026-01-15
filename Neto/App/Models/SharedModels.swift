@@ -45,9 +45,9 @@ extension Subcategory {
 }
 
 enum TrendType: String, CaseIterable, Identifiable {
-    case balance = "Saldo"
-    case income = "Ingreso"
-    case expense = "Gasto"
+    case balance
+    case income
+    case expense
 
     var id: String { rawValue }
 
@@ -78,9 +78,9 @@ enum TrendType: String, CaseIterable, Identifiable {
 
 /// Metric type for detailed trends view (includes Income)
 enum TrendMetric: String, CaseIterable, Identifiable {
-    case balance = "Saldo"
-    case income = "Ingreso"
-    case expense = "Gasto"
+    case balance
+    case income
+    case expense
 
     var id: String { rawValue }
 
@@ -110,15 +110,15 @@ enum TrendMetric: String, CaseIterable, Identifiable {
 
 /// Period options for detail view (expanded from Panel's TrendPeriod)
 enum DetailPeriod: String, CaseIterable, Identifiable {
-    case thisWeek = "Esta semana"
-    case last7Days = "Últimos 7 días"
-    case last30Days = "Últimos 30 días"
-    case thisMonth = "Este mes"
-    case lastMonth = "Mes pasado"
-    case thisYear = "Este año"
-    case lastYear = "Año pasado"
-    case allTime = "Todo el tiempo"
-    case custom = "Personalizado"
+    case thisWeek
+    case last7Days
+    case last30Days
+    case thisMonth
+    case lastMonth
+    case thisYear
+    case lastYear
+    case allTime
+    case custom
 
     var id: String { rawValue }
 

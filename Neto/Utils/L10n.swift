@@ -177,6 +177,9 @@ enum L10n {
         static var title: String {
             NSLocalizedString("nature.expensesByNature", comment: "Expenses by nature")
         }
+        static var label: String {
+            NSLocalizedString("nature.title", comment: "Nature label")
+        }
         static var essential: String { NSLocalizedString("nature.essential", comment: "") }
         static var essentialDesc: String {
             NSLocalizedString("nature.essential.desc", comment: "")
@@ -247,6 +250,24 @@ enum L10n {
         }
         static var selectCurrencies: String {
             NSLocalizedString("filters.selectCurrencies", comment: "")
+        }
+        static var allTags: String {
+            NSLocalizedString("filters.allTags", comment: "")
+        }
+        static var noTags: String {
+            NSLocalizedString("filters.noTags", comment: "")
+        }
+        static var allCurrencies: String {
+            NSLocalizedString("filters.allCurrencies", comment: "")
+        }
+        static var allNatures: String {
+            NSLocalizedString("filters.allNatures", comment: "")
+        }
+        static func selectedCount(_ count: Int) -> String {
+            String(format: NSLocalizedString("filters.selectedCount", comment: ""), count)
+        }
+        static func subcategoriesSelectedCount(_ count: Int) -> String {
+            String(format: NSLocalizedString("filters.subcategoriesSelectedCount", comment: ""), count)
         }
     }
 
@@ -328,6 +349,9 @@ enum L10n {
         static var amount: String { NSLocalizedString("transaction.amount", comment: "") }
         static var description: String { NSLocalizedString("transaction.description", comment: "") }
         static var note: String { NSLocalizedString("transaction.note", comment: "") }
+        static var notePlaceholder: String {
+            NSLocalizedString("transaction.notePlaceholder", comment: "")
+        }
         static var date: String { NSLocalizedString("transaction.date", comment: "") }
         static var tags: String { NSLocalizedString("transaction.tags", comment: "") }
         static var addTags: String { NSLocalizedString("transaction.addTags", comment: "") }
@@ -521,6 +545,9 @@ enum L10n {
         static var details: String {
             NSLocalizedString("category.details", comment: "")
         }
+        static var others: String {
+            NSLocalizedString("category.others", comment: "")
+        }
     }
 
     // MARK: - Subcategory
@@ -600,6 +627,9 @@ enum L10n {
         }
         static var unassigned: String {
             NSLocalizedString("subcategory.unassigned", comment: "")
+        }
+        static var noSubcategory: String {
+            NSLocalizedString("subcategories.noSubcategory", comment: "")
         }
     }
 
@@ -1170,6 +1200,43 @@ enum L10n {
         static var categories: String { NSLocalizedString("listViewType.categories", comment: "") }
         static var subcategories: String {
             NSLocalizedString("listViewType.subcategories", comment: "")
+        }
+    }
+
+    // MARK: - Validation
+
+    enum Validation {
+        static var enterAmountGreaterThanZero: String {
+            NSLocalizedString("validation.enterAmountGreaterThanZero", comment: "")
+        }
+        static var selectSourceAccount: String {
+            NSLocalizedString("validation.selectSourceAccount", comment: "")
+        }
+        static var selectDestinationAccount: String {
+            NSLocalizedString("validation.selectDestinationAccount", comment: "")
+        }
+        static var accountsMustBeDifferent: String {
+            NSLocalizedString("validation.accountsMustBeDifferent", comment: "")
+        }
+        static var selectAccount: String {
+            NSLocalizedString("validation.selectAccount", comment: "")
+        }
+        static var selectSubcategory: String {
+            NSLocalizedString("validation.selectSubcategory", comment: "")
+        }
+    }
+
+    // MARK: - Transfer
+
+    enum Transfer {
+        static func transferTo(_ accountName: String) -> String {
+            String(format: NSLocalizedString("transfer.transferTo", comment: ""), accountName)
+        }
+        static func transferFrom(_ accountName: String) -> String {
+            String(format: NSLocalizedString("transfer.transferFrom", comment: ""), accountName)
+        }
+        static var categoryName: String {
+            NSLocalizedString("transfer.categoryName", comment: "")
         }
     }
 }

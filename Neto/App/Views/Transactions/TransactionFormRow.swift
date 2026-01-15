@@ -323,7 +323,7 @@ struct NoteFormRow: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 28)
 
-            TextField("Escribe una nota", text: $note)
+            TextField(L10n.Transaction.notePlaceholder, text: $note)
                 .font(.body)
         }
         .padding(.horizontal, 16)

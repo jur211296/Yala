@@ -89,9 +89,9 @@ struct TrendsTabView: View {
     // MARK: - Cash Flow View Type
 
     enum CashFlowViewType: String, CaseIterable, Identifiable {
-        case total = "Total"
-        case byAccount = "Por cuenta"
-        case byCurrency = "Por moneda"
+        case total
+        case byAccount
+        case byCurrency
 
         var id: String { rawValue }
 

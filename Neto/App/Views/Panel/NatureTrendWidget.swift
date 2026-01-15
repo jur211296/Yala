@@ -276,10 +276,10 @@ struct NatureTrendChartView: View {
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([
-            "Esencial": Color.electricIndigo,
-            "Prioritaria": Color.priorityNature,
-            "Opcional": Color.hotPink,
-            "Sin clasificación": Color.gray,
+            L10n.Nature.essential: Color.electricIndigo,
+            L10n.Nature.priority: Color.priorityNature,
+            L10n.Nature.optional: Color.hotPink,
+            L10n.Nature.unclassified: Color.gray,
         ])
         .chartLegend(.hidden)
         // X-Axis: Smart dynamic labels matching TrendChartView

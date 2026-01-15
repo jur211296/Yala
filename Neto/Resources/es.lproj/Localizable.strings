@@ -103,6 +103,12 @@
 "filters.selectAccounts" = "Seleccionar cuentas";
 "filters.selectTags" = "Seleccionar etiquetas";
 "filters.selectCurrencies" = "Seleccionar monedas";
+"filters.allTags" = "Todas las etiquetas";
+"filters.noTags" = "Sin etiquetas";
+"filters.allCurrencies" = "Todas las disponibles";
+"filters.allNatures" = "Todas";
+"filters.selectedCount" = "%d seleccionadas";
+"filters.subcategoriesSelectedCount" = "%d subcategorías seleccionadas";
 
 // MARK: - Actions
 
@@ -143,6 +149,7 @@
 "transaction.type" = "Tipo";
 "transaction.amount" = "Monto";
 "transaction.note" = "Nota";
+"transaction.notePlaceholder" = "Escribe una nota";
 "transaction.date" = "Fecha";
 "transaction.tags" = "Etiquetas";
 "transaction.addTags" = "Añadir etiquetas";
@@ -745,3 +752,18 @@
 "account.changeInitialBalanceDesc" = "Escribe el saldo correcto y cambiaremos el saldo inicial en tu cuenta. Usa esto si no has registrado durante mucho tiempo.";
 "category.others" = "Otros";
 "subcategory.balanceAdjustment" = "Ajustes de saldo";
+
+// MARK: - Validation
+
+"validation.enterAmountGreaterThanZero" = "Ingresa un monto mayor a 0";
+"validation.selectSourceAccount" = "Selecciona una cuenta origen";
+"validation.selectDestinationAccount" = "Selecciona una cuenta destino";
+"validation.accountsMustBeDifferent" = "Las cuentas deben ser diferentes";
+"validation.selectAccount" = "Selecciona una cuenta";
+"validation.selectSubcategory" = "Selecciona una subcategoría";
+
+// MARK: - Transfer
+
+"transfer.transferTo" = "Transferencia a %@";
+"transfer.transferFrom" = "Transferencia de %@";
+"transfer.categoryName" = "Transferencia entre cuentas";

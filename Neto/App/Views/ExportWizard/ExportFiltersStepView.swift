@@ -132,7 +132,7 @@ struct ExportFiltersStepView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        SectionBox(title: "Opciones de filtrado") {
+                        SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: 0) {
                                 periodRow
                                 Divider().padding(.leading, 16)
@@ -156,7 +156,7 @@ struct ExportFiltersStepView: View {
                     .padding(.horizontal, 16)
                 }
             }
-            .navigationTitle("Exportar datos")
+            .navigationTitle(L10n.Export.exportData)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -201,12 +201,12 @@ struct ExportFiltersStepView: View {
 
     private var selectedAccountsText: String {
         if selectedAccounts.isEmpty {
-            return "Ninguna seleccionada"
+            return L10n.Filters.noneSelected
         }
         if selectedAccounts.count == allAccounts.count {
-            return "Todas las cuentas"
+            return L10n.Filters.allAccounts
         }
-        return "\(selectedAccounts.count) seleccionadas"
+        return L10n.Filters.selectedCount(selectedAccounts.count)
     }
 
     private func syncAccountsSelection() {
@@ -221,26 +221,26 @@ struct ExportFiltersStepView: View {
 
         // Empty = all selected
         if selectedSubcategories.isEmpty {
-            return "Todas las categorías"
+            return L10n.Filters.allCategories
         }
 
         // All visible subcategories selected
         if selectedSubcategories.count == visibleSubs.count {
-            return "Todas las categorías"
+            return L10n.Filters.allCategories
         }
 
         // Partial selection
-        return "\(selectedSubcategories.count) subcategorías seleccionadas"
+        return L10n.Filters.subcategoriesSelectedCount(selectedSubcategories.count)
     }
 
     private var selectedTagsText: String {
         if allTags.isEmpty {
-            return "Sin etiquetas"
+            return L10n.Filters.noTags
         }
         if selectedTags.isEmpty || selectedTags.count == allTags.count {
-            return "Todas las etiquetas"
+            return L10n.Filters.allTags
         }
-        return "\(selectedTags.count) seleccionadas"
+        return L10n.Filters.selectedCount(selectedTags.count)
     }
 
     private func syncTagsSelection() {
@@ -251,7 +251,7 @@ struct ExportFiltersStepView: View {
 
     private var selectedCurrenciesText: String {
         if selectedCurrencies.count == availableCurrencies.count {
-            return "Todas las disponibles"
+            return L10n.Filters.allCurrencies
         }
         return selectedCurrencies.map { $0.rawValue }.joined(separator: ", ")
     }
@@ -259,7 +259,7 @@ struct ExportFiltersStepView: View {
     private var accountsContent: some View {
         FilterChipsSection(
             icon: "creditcard",
-            title: "Cuentas",
+            title: L10n.Settings.accounts,
             status: selectedAccountsText,
             items: allAccounts,
             showEmptyPlaceholder: false
@@ -310,7 +310,7 @@ struct ExportFiltersStepView: View {
         HStack(spacing: 0) {
             FilterSectionHeader(
                 icon: "tag",
-                title: "Categorías",
+                title: L10n.Settings.categories,
                 status: selectedCategoriesText
             )
 
@@ -337,7 +337,7 @@ struct ExportFiltersStepView: View {
     private var tagsContent: some View {
         FilterChipsSection(
             icon: "number",
-            title: "Etiquetas",
+            title: L10n.Settings.tags,
             status: selectedTagsText,
             items: allTags,
             showEmptyPlaceholder: true
@@ -384,7 +384,7 @@ struct ExportFiltersStepView: View {
             // Header
             FilterSectionHeader(
                 icon: "arrow.triangle.2.circlepath",
-                title: "Moneda",
+                title: L10n.Settings.currency,
                 status: selectedCurrenciesText
             )
             .padding(.horizontal, 16)
@@ -443,7 +443,7 @@ struct ExportFiltersStepView: View {
             // Header
             FilterSectionHeader(
                 icon: "leaf.fill",
-                title: "Naturaleza",
+                title: L10n.Nature.label,
                 status: selectedNaturesText
             )
             .padding(.horizontal, 16)
@@ -488,7 +488,7 @@ struct ExportFiltersStepView: View {
     }
 
     private var selectedNaturesText: String {
-        if selectedNatures.isEmpty { return "Todas" }
+        if selectedNatures.isEmpty { return L10n.Filters.allNatures }
         return "\(selectedNatures.count)"
     }
 
@@ -552,7 +552,7 @@ struct ExportFiltersStepView: View {
                 .foregroundStyle(.primary)
                 .frame(width: 24)
 
-            TextField("Nota contiene...", text: $noteContains)
+            TextField(L10n.Filters.noteContains, text: $noteContains)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -587,7 +587,7 @@ private struct ExportPeriodPickerSheet: View {
                     .padding()
                 }
             }
-            .navigationTitle("Seleccionar periodo")
+            .navigationTitle(L10n.Export.period)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

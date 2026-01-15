@@ -325,8 +325,8 @@ struct SubcategoryTransferSheet: View {
     /// Gets or creates the "Unassigned" subcategory in the "Others" category
     private func getOrCreateUnassignedSubcategory() -> Subcategory? {
         let isIncome = subcategoryToDelete.category.isIncome
-        let othersName = "Otros"
-        let unassignedName = "Sin asignar"
+        let othersName = L10n.Category.others
+        let unassignedName = L10n.Subcategory.unassigned
 
         // Find or create "Others" category
         var othersCategory: Category? = allCategories.first {

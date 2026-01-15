@@ -114,7 +114,7 @@ struct TopSubcategoriesCalculator {
                 } else {
                     // No Subcategory case
                     groupingMetadata[key] = (
-                        name: "Sin subcategoría",
+                        name: L10n.Subcategory.noSubcategory,
                         color: category.colorHex,
                         sub: nil,
                         cat: category

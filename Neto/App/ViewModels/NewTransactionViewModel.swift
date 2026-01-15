@@ -195,31 +195,31 @@ final class NewTransactionViewModel {
 
     var amountValidation: FieldValidationState {
         if !showValidationErrors { return .empty }
-        return isAmountValid ? .valid : .invalid(message: "Ingresa un monto mayor a 0")
+        return isAmountValid ? .valid : .invalid(message: L10n.Validation.enterAmountGreaterThanZero)
     }
 
     var accountValidation: FieldValidationState {
         if !showValidationErrors { return .empty }
         if isTransfer {
             if sourceAccount == nil {
-                return .invalid(message: "Selecciona una cuenta origen")
+                return .invalid(message: L10n.Validation.selectSourceAccount)
             }
             if destinationAccount == nil {
-                return .invalid(message: "Selecciona una cuenta destino")
+                return .invalid(message: L10n.Validation.selectDestinationAccount)
             }
             if !isTransferAccountsValid {
-                return .invalid(message: "Las cuentas deben ser diferentes")
+                return .invalid(message: L10n.Validation.accountsMustBeDifferent)
             }
             return .valid
         }
-        return selectedAccount != nil ? .valid : .invalid(message: "Selecciona una cuenta")
+        return selectedAccount != nil ? .valid : .invalid(message: L10n.Validation.selectAccount)
     }
 
     var subcategoryValidation: FieldValidationState {
         if !showValidationErrors { return .empty }
         if isTransfer { return .valid }
         return selectedSubcategory != nil
-            ? .valid : .invalid(message: "Selecciona una subcategoría")
+            ? .valid : .invalid(message: L10n.Validation.selectSubcategory)
     }
 
     // MARK: - Prefill
@@ -499,7 +499,7 @@ final class NewTransactionViewModel {
             outTransaction.date = transactionDate
             outTransaction.amount = outAmount
             outTransaction.currencyCode = source.currencyCode
-            outTransaction.note = note.isEmpty ? "Transferencia a \(dest.name)" : note
+            outTransaction.note = note.isEmpty ? L10n.Transfer.transferTo(dest.name) : note
             outTransaction.category = transferSubcategory.category
             outTransaction.subcategory = transferSubcategory
             outTransaction.account = source
@@ -513,7 +513,7 @@ final class NewTransactionViewModel {
             inTransaction.date = transactionDate
             inTransaction.amount = inAmount
             inTransaction.currencyCode = dest.currencyCode
-            inTransaction.note = note.isEmpty ? "Transferencia de \(source.name)" : note
+            inTransaction.note = note.isEmpty ? L10n.Transfer.transferFrom(source.name) : note
             inTransaction.category = transferSubcategory.category
             inTransaction.subcategory = transferSubcategory
             inTransaction.account = dest
@@ -528,7 +528,7 @@ final class NewTransactionViewModel {
                 date: transactionDate,
                 amount: outAmount,
                 currencyCode: source.currencyCode,
-                note: note.isEmpty ? "Transferencia a \(dest.name)" : note,
+                note: note.isEmpty ? L10n.Transfer.transferTo(dest.name) : note,
                 category: transferSubcategory.category,
                 subcategory: transferSubcategory,
                 account: source,
@@ -542,7 +542,7 @@ final class NewTransactionViewModel {
                 date: transactionDate,
                 amount: inAmount,
                 currencyCode: dest.currencyCode,
-                note: note.isEmpty ? "Transferencia de \(source.name)" : note,
+                note: note.isEmpty ? L10n.Transfer.transferFrom(source.name) : note,
                 category: transferSubcategory.category,
                 subcategory: transferSubcategory,
                 account: dest,
@@ -560,8 +560,8 @@ final class NewTransactionViewModel {
     }
 
     private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
-        let categoryName = "Transferencia entre cuentas"
-        let subcategoryName = "Transferencia entre cuentas"
+        let categoryName = L10n.Transfer.categoryName
+        let subcategoryName = L10n.Transfer.categoryName
 
         // Check if exists
         let descriptor = FetchDescriptor<Subcategory>(

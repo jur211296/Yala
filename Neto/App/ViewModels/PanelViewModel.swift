@@ -569,7 +569,7 @@ final class PanelViewModel {
                 if let sub = transaction.subcategory {
                     if sub.name != subName { return false }
                 } else {
-                    if subName == "Sin subcategoría" {
+                    if subName == L10n.Subcategory.noSubcategory {
                         if transaction.subcategory != nil { return false }
                     } else {
                         return false
