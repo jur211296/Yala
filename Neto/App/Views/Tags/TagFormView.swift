@@ -148,12 +148,12 @@ struct TagFormView: View {
     // MARK: - Sections
 
     private var generalSection: some View {
-        SectionBox(title: "General") {
+        SectionBox(title: L10n.Common.general) {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     Image(systemName: "tag")
                         .foregroundStyle(.secondary)
-                    TextField("Nombre (máx. 20)", text: $name)
+                    TextField(L10n.Tag.namePlaceholder, text: $name)
                         .onChange(of: name) { oldValue, newValue in
                             if newValue.count > 20 {
                                 name = String(newValue.prefix(20))
@@ -166,7 +166,7 @@ struct TagFormView: View {
     }
 
     private var colorSection: some View {
-        SectionBox(title: "Color") {
+        SectionBox(title: L10n.Tag.color) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 16) {
@@ -200,7 +200,7 @@ struct TagFormView: View {
                         .buttonStyle(.plain)
                     }
 
-                    Text("Seleccionado: \(selectedColorHex)")
+                    Text(L10n.Tag.colorSelected(selectedColorHex))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -210,7 +210,7 @@ struct TagFormView: View {
     }
 
     private var statusSection: some View {
-        SectionBox(title: "Estado") {
+        SectionBox(title: L10n.Common.status) {
             Toggle(isOn: $isActive) {
                 Text(L10n.Common.active)
             }
@@ -220,7 +220,7 @@ struct TagFormView: View {
     }
 
     private var deleteSection: some View {
-        SectionBox(title: "Acciones") {
+        SectionBox(title: L10n.Common.actions) {
             Button(role: .destructive) {
                 isShowingDeleteConfirmation = true
             } label: {

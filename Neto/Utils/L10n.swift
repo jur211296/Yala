@@ -310,6 +310,14 @@ enum L10n {
         static var updated: String { NSLocalizedString("exchangeRate.updated", comment: "") }
     }
 
+    // MARK: - Currency Names
+
+    enum Currency {
+        static var pen: String { NSLocalizedString("currency.pen", comment: "") }
+        static var usd: String { NSLocalizedString("currency.usd", comment: "") }
+        static var eur: String { NSLocalizedString("currency.eur", comment: "") }
+    }
+
     // MARK: - Empty States
 
     enum Empty {
@@ -646,6 +654,15 @@ enum L10n {
         static var delete: String { NSLocalizedString("tag.delete", comment: "") }
         static var deleteConfirmation: String {
             NSLocalizedString("tag.deleteConfirmation", comment: "")
+        }
+        static var namePlaceholder: String {
+            NSLocalizedString("tag.namePlaceholder", comment: "")
+        }
+        static var color: String {
+            NSLocalizedString("tag.color", comment: "")
+        }
+        static func colorSelected(_ hex: String) -> String {
+            String(format: NSLocalizedString("tag.colorSelected", comment: ""), hex)
         }
     }
 
@@ -1026,6 +1043,8 @@ enum L10n {
         static var understood: String { NSLocalizedString("common.understood", comment: "") }
         static var cannotUndo: String { NSLocalizedString("common.cannotUndo", comment: "") }
         static var general: String { NSLocalizedString("common.general", comment: "") }
+        static var status: String { NSLocalizedString("common.status", comment: "") }
+        static var actions: String { NSLocalizedString("common.actions", comment: "") }
         static var lastUpdate: String { NSLocalizedString("common.lastUpdate", comment: "") }
         static var cancel: String { NSLocalizedString("action.cancel", comment: "") }
         static var apply: String { NSLocalizedString("common.apply", comment: "Apply action") }

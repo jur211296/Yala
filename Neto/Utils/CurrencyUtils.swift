@@ -113,10 +113,10 @@ enum CurrencyDefaults {
 func currencyInfo(for currency: CurrencyCode) -> (name: String, code: String, flag: String) {
     switch currency {
     case .pen:
-        return ("sol peruano", "PEN", "🇵🇪")
+        return (L10n.Currency.pen, "PEN", "🇵🇪")
     case .usd:
-        return ("dólar estadounidense", "USD", "🇺🇸")
+        return (L10n.Currency.usd, "USD", "🇺🇸")
     case .eur:
-        return ("euro", "EUR", "🇪🇺")
+        return (L10n.Currency.eur, "EUR", "🇪🇺")
     }
 }

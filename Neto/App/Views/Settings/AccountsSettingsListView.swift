@@ -282,7 +282,10 @@ struct AccountsSettingsListView: View {
     // MARK: - Presentación de filas
 
     private func accountTypeText(for account: Account) -> String {
-        account.type.replacingOccurrences(of: "_", with: " ").capitalized
+        if let accountType = AccountType(rawValue: account.type) {
+            return accountType.localizedName
+        }
+        return account.type.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
     // FIN-46: Saldo actual mostrado en la lista de cuentas de Ajustes

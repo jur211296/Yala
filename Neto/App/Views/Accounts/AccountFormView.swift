@@ -391,7 +391,7 @@ struct AccountFormView: View {
                         .buttonStyle(.plain)
                     }
 
-                    Text("Seleccionado: \(viewModel.selectedColorHex)")
+                    Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -401,7 +401,7 @@ struct AccountFormView: View {
     }
 
     private var actionsSection: some View {
-        SectionBox(title: "Acciones") {
+        SectionBox(title: L10n.Common.actions) {
             VStack(spacing: 0) {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text(L10n.Account.excludeFromStats)

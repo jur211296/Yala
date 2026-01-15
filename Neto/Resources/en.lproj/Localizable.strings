@@ -639,12 +639,23 @@
 "tag.editTag" = "Edit Tag";
 "tag.createFirstDescription" = "Create your first tag to organize your transactions";
 "tag.deleteConfirmation" = "Delete Tag?";
+"tag.namePlaceholder" = "Name (max. 20)";
+"tag.color" = "Color";
+"tag.colorSelected" = "Selected: %@";
+
+// MARK: - Currency Names
+"currency.pen" = "Peruvian sol";
+"currency.usd" = "US dollar";
+"currency.eur" = "Euro";
+
 "common.selectColor" = "Select a Color";
 "common.useThisColor" = "Use This Color";
 "common.newColor" = "New Color";
 "common.understood" = "Understood";
 "common.cannotUndo" = "This action cannot be undone.";
 "common.general" = "General";
+"common.status" = "Status";
+"common.actions" = "Actions";
 "account.configure" = "Configure Account";
 "account.deleteError" = "Cannot Delete This Account";
 "account.accountName" = "Account Name";

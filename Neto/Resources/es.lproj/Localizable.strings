@@ -639,12 +639,23 @@
 "tag.editTag" = "Editar etiqueta";
 "tag.createFirstDescription" = "Crea tu primera etiqueta para organizar tus transacciones";
 "tag.deleteConfirmation" = "¿Eliminar etiqueta?";
+"tag.namePlaceholder" = "Nombre (máx. 20)";
+"tag.color" = "Color";
+"tag.colorSelected" = "Seleccionado: %@";
+
+// MARK: - Currency Names
+"currency.pen" = "sol peruano";
+"currency.usd" = "dólar estadounidense";
+"currency.eur" = "euro";
+
 "common.selectColor" = "Selecciona un color";
 "common.useThisColor" = "Usar este color";
 "common.newColor" = "Nuevo color";
 "common.understood" = "Entendido";
 "common.cannotUndo" = "Esta acción no se puede deshacer.";
 "common.general" = "General";
+"common.status" = "Estado";
+"common.actions" = "Acciones";
 "account.configure" = "Configurar cuenta";
 "account.deleteError" = "No se puede eliminar esta cuenta";
 "account.accountName" = "Nombre de la cuenta";
