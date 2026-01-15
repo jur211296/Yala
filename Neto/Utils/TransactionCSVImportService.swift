@@ -545,6 +545,11 @@ enum TransactionCSVImportService {
             return []
         }
 
+        // Obtener colores ya usados para asignar colores únicos a tags nuevos
+        let allTagsDescriptor = FetchDescriptor<Tag>()
+        let allTags = (try? context.fetch(allTagsDescriptor)) ?? []
+        var usedColors = allTags.map { $0.colorHex }
+
         var resolved: [Tag] = []
         resolved.reserveCapacity(names.count)
 
@@ -560,7 +565,9 @@ enum TransactionCSVImportService {
             if let found = existing.first {
                 resolved.append(found)
             } else if allowCreatingNewTags {
-                let newTag = Tag(name: name)
+                let nextColor = Tag.nextAvailableColor(excluding: usedColors)
+                let newTag = Tag(name: name, colorHex: nextColor)
+                usedColors.append(nextColor)
                 context.insert(newTag)
                 resolved.append(newTag)
             } else {
