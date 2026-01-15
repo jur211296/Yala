@@ -145,6 +145,16 @@ struct UserDataResetView: View {
 
             isProcessing = false
             SessionState.shared.isWipingData = false
+
+            // 6. Load exchange rates directly after wipe (more reliable than flag mechanism)
+            //    We call the service directly using the same context
+            try? await Task.sleep(for: .milliseconds(100))
+            await ExchangeRateService.shared.updateTodayIfNeeded(context: modelContext)
+            await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: modelContext)
+            await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+
+            // 7. Trigger widget refresh so Panel recalculates with new data
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
         } catch {
             isProcessing = false
             SessionState.shared.isWipingData = false
