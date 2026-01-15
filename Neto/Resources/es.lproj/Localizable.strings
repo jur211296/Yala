@@ -319,6 +319,8 @@
 "budgets.title" = "Presupuestos";
 "budgets.empty.title" = "Sin presupuestos";
 "budgets.empty.message" = "Crea presupuestos para controlar tus gastos.";
+"budgets.widget.noFavorites.title" = "Sin favoritos";
+"budgets.widget.noFavorites.message" = "Marca presupuestos como favoritos en Ajustes > Presupuestos para verlos aqui.";
 "budgets.new" = "Nuevo presupuesto";
 "budgets.edit" = "Editar presupuesto";
 "budgets.delete.confirm.title" = "¿Eliminar presupuesto?";

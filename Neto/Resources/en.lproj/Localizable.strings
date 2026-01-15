@@ -319,6 +319,8 @@
 "budgets.title" = "Budgets";
 "budgets.empty.title" = "No budgets";
 "budgets.empty.message" = "Create budgets to control your spending.";
+"budgets.widget.noFavorites.title" = "No favorites";
+"budgets.widget.noFavorites.message" = "Mark budgets as favorites in Settings > Budgets to see them here.";
 "budgets.new" = "New Budget";
 "budgets.edit" = "Edit Budget";
 "budgets.delete.confirm.title" = "Delete budget?";

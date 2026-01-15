@@ -31,8 +31,8 @@ final class Budget {
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
     var isActive: Bool
     var createdAt: Date
-    var isFavorite: Bool
-    var favoriteOrder: Int
+    var isFavorite: Bool = false
+    var favoriteOrder: Int = 0
 
     init(
         month: Int = 0,
