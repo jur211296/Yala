@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-13)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 4 — Panel y Navegación — Completada
+**Current focus:** Fase 4 — Panel y Navegación — TabView Configurable
 
 ## Current Position
 
 Phase: 4 of 8 (Panel y Navegación)
-Plan: Completed
-Status: 3/3 items done
-Last activity: 2026-01-15 — Widget de Presupuestos completado + múltiples bug fixes
+Plan: In progress
+Status: 2/3 items done (TabView configurable pendiente)
+Last activity: 2026-01-15 — Widget de Presupuestos completado, TabView configurable pendiente
 
-Progress: ██████████ 100%
+Progress: ████████░░ 80%
 
 ## Feature completada: Widget de Presupuestos en PanelView ✅
 
@@ -89,11 +89,89 @@ Neto/App/Views/Planning/BudgetEditorView.swift         # +botón eliminar
 - `389208c` - feat(import): Cargar tipos de cambio para transacciones importadas
 - `233bdbb` - feat(settings): Recargar tipos de cambio después de borrar datos
 
-## Completed (Fase 4) ✅
+## Completed (Fase 4)
 
 - [x] Chevron en widgets para redirigir a detalle
 - [x] Widget de Presupuestos (completo con todas las funcionalidades)
-- [x] Home configurable (widgets configurables desde preferencias)
+- [ ] **TabView configurable** ← PENDIENTE
+
+---
+
+## Feature pendiente: TabView Configurable
+
+### Descripción
+Permitir al usuario personalizar qué secciones aparecen en el TabView principal de la app.
+
+### Ubicación
+`ProfileView` → Sección "Personalización" → Nuevo item que abre sheet
+
+### Comportamiento actual
+TabView tiene 4 tabs fijos:
+1. **Panel** (inicio)
+2. **Estadísticas**
+3. **Planning** (presupuestos, pagos programados)
+4. **Más** (perfil, ajustes, etc.)
+
+### Comportamiento deseado
+- Usuario puede elegir qué tabs mostrar en el TabView
+- **Mínimo:** 1 tab + Más (obligatorio)
+- **Máximo:** 3 tabs + Más
+- Tabs no seleccionados se mueven dentro de "Más"
+- "Más" siempre es obligatorio y no se puede quitar
+
+### UI del Sheet
+1. **Preview en vivo del TabView**
+   - Mismo diseño visual que el TabView real
+   - No funcional (solo para visualizar)
+   - Se actualiza en tiempo real al cambiar selección
+
+2. **Lista de secciones disponibles**
+   - Panel
+   - Estadísticas
+   - Planning
+   - (Más no aparece en la lista, siempre está)
+
+3. **Controles**
+   - Toggle o checkbox por sección
+   - Validación: mínimo 1, máximo 3 seleccionados
+   - Mensaje de ayuda explicando las reglas
+
+### Persistencia
+- Guardar configuración en `@AppStorage` o UserDefaults
+- Key sugerida: `"tabBarConfiguration"` o similar
+- Formato: Array de identificadores de tabs activos
+
+### Archivos a modificar/crear
+```
+Neto/App/Views/Profile/ProfileView.swift          # Añadir entrada en Personalización
+Neto/App/Views/Settings/TabBarConfigView.swift    # NUEVO - Sheet de configuración
+Neto/App/Models/TabBarConfiguration.swift         # NUEVO - Modelo de configuración
+Neto/App/NetoApp.swift                            # Leer config y aplicar al TabView
+Neto/App/Views/More/MoreView.swift                # Mostrar tabs no seleccionados
+```
+
+### Consideraciones técnicas
+- El TabView en SwiftUI se define en `NetoApp.swift` o `ContentView.swift`
+- Necesita estado global para la configuración (¿SessionState o AppStorage?)
+- "Más" debe mostrar dinámicamente las secciones excluidas del TabView
+- Preview del TabView en el sheet debe reflejar cambios en tiempo real
+
+### Casos edge
+- ¿Qué pasa si el usuario está en un tab y lo desactiva?
+  - Opción A: Navegar automáticamente al primer tab activo
+  - Opción B: No permitir desactivar el tab actual
+- ¿Orden de los tabs es fijo o configurable?
+  - Sugerencia: Orden fijo por simplicidad (Panel → Estadísticas → Planning → Más)
+
+### Localización requerida
+```
+settings.tabBarConfig.title = "Personalizar navegación"
+settings.tabBarConfig.description = "Elige qué secciones mostrar..."
+settings.tabBarConfig.minWarning = "Debes tener al menos una sección"
+settings.tabBarConfig.maxWarning = "Máximo 3 secciones además de Más"
+```
+
+---
 
 ## Completed (Fases 1-3) ✅
 
@@ -115,7 +193,7 @@ Según ROADMAP.md, la siguiente fase incluye:
 
 ## Session Continuity
 
-Last session: 2026-01-15 12:35
-Stopped at: Fase 4 completada
-Next step: Revisar ROADMAP.md para Fase 5
+Last session: 2026-01-15 12:45
+Stopped at: Fase 4 en progreso — TabView configurable pendiente
+Next step: Planificar e implementar TabView configurable
 Resume file: None
