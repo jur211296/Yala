@@ -5,25 +5,96 @@
 See: .planning/PROJECT.md (updated 2026-01-13)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 4 — Panel y Navegación
+**Current focus:** Fase 4 — Panel y Navegación — Widget de Presupuestos
 
 ## Current Position
 
 Phase: 4 of 8 (Panel y Navegación)
 Plan: In progress
-Status: 1/3 items done
-Last activity: 2026-01-15 — Localización completa de la app
+Status: 2/3 items done (Widget de Presupuestos en progreso)
+Last activity: 2026-01-15 — Incrementos 1-3 del Widget de Presupuestos completados
 
-Progress: ███░░░░░░░ 33%
+Progress: ██████░░░░ 60%
 
-## Pending (Fase 4)
+## Feature en progreso: Widget de Presupuestos en PanelView
 
-- Widget de Presupuestos en PanelView
+### Commits realizados
+1. `c75f634` - feat(budgets): Añadir modelo y tipo de widget para presupuestos
+2. `17498fd` - feat(budgets): Crear vistas BudgetsWidget y BudgetWidgetRow
+3. `ff47c75` - feat(budgets): Integrar widget en PanelView con cálculo de datos
+
+### Incrementos completados
+
+**Incremento 1: Modelo + Widget Type** ✅
+- `Budget.swift`: añadido `isFavorite: Bool = false`, `favoriteOrder: Int = 0`
+- `WidgetModels.swift`: añadido `case .budgets` con sizes `[.medium, .large]` (top 3 / top 5)
+- `L10n.swift` + `Localizable.strings`: añadido `widgetType.budgets`
+
+**Incremento 2: Vista del Widget** ✅
+- `BudgetsWidget.swift`: widget con header, lista, empty states diferenciados
+- `BudgetWidgetRow.swift`: fila compacta con icono, progreso, días restantes
+- Empty states: "Sin presupuestos" vs "Sin favoritos" (guía a Ajustes)
+- Soporte `.medium` (top 3) y `.large` (top 5)
+
+**Incremento 3: Datos en PanelViewModel + integración** ✅
+- `PanelViewModel.swift`: añadido `calculateBudgetsWidget()` con lógica completa de filtros
+- `PanelViewModel.swift`: propiedades `topBudgetSummaries`, `hasBudgetsButNoFavorites`
+- `PanelView.swift`: añadido `@Query` de budgets activos
+- `PanelView.swift`: caso `.budgets` en `actualWidgetView(for:)`
+- Navegación: chevron → `sessionState.selectedMainTab = .planning`
+
+### Incrementos pendientes
+
+**Incremento 4: Navegación a Budgets** (opcional, chevron ya funciona)
+- Actualmente navega a tab Planning completa
+- Podría añadir navegación directa a Budgets si se requiere
+
+**Incremento 5: Interactividad (aplicar filtros del budget)**
+- `SessionState.swift`: añadir `applyBudgetFilters(budget: Budget)`
+- `BudgetsWidget.swift`: conectar tap en row con aplicación de filtros
+- Al tocar un budget, aplicar sus filtros (accounts, subcategories, tags, natures)
+
+**Incremento 6: Gestión de Favoritos en Profile**
+- Crear `BudgetsFavoritesSettingsView.swift` (secciones por periodType, toggle favoritos, reordenar)
+- `ProfileView.swift`: añadir entrada en sección Organización
+- Mensaje: "En el orden que estén los budgets aquí se verán en los widgets (top 3 y top 5)"
+
+**Incremento 7: Strings de localización adicionales**
+- Añadir keys para sección de favoritos en Profile
+- Ya completadas: `budgets.widget.noFavorites.title/message`, `widgetType.budgets`
+
+### Archivos clave modificados/creados
+
+```
+Neto/Models/Budget.swift                           # +isFavorite, +favoriteOrder
+Neto/App/Models/WidgetModels.swift                 # +case budgets
+Neto/App/Views/Panel/BudgetsWidget.swift           # NUEVO
+Neto/App/Views/Panel/BudgetWidgetRow.swift         # NUEVO
+Neto/App/ViewModels/PanelViewModel.swift           # +calculateBudgetsWidget()
+Neto/App/Views/Panel/PanelView.swift               # +@Query budgets, +caso .budgets
+Neto/Utils/L10n.swift                              # +WidgetType.budgets
+Neto/Resources/*/Localizable.strings               # +widgetType.budgets, +noFavorites
+```
+
+### Lógica de selección de budgets para widget
+1. Mostrar budgets favoritos (`isFavorite == true`) ordenados por `favoriteOrder`
+2. Si no hay favoritos pero hay budgets → empty state "Sin favoritos" con guía a configuración
+3. Si no hay budgets → empty state "Sin presupuestos"
+4. Límite: 3 en `.medium`, 5 en `.large`
+
+### Para retomar
+1. Activar widget en Preferencias de Widgets (Panel → gear icon)
+2. Marcar budgets como favoritos (pendiente Incremento 6)
+3. Probar interactividad (pendiente Incremento 5)
+
+## Pending (Fase 4 - resto)
+
 - Home configurable (tabs desde personalización)
 
 ## Completed (Fase 4)
 
 - Chevron en widgets para redirigir a detalle (SessionState.navigateToDetail, 7 widgets conectados)
+- Widget de Presupuestos - Incrementos 1-3 (modelo, vistas, integración)
 
 ## i18n (Trabajo paralelo completado)
 
@@ -82,9 +153,11 @@ Progress: ███░░░░░░░ 33%
 - customTitle en CashFlowWidget tiene prioridad sobre displayMode
 - Anti-loop flags (`isSyncingFilters`, `isSyncingState`) previenen ciclos de sincronización
 - `SessionState.shared` controla navegación entre tabs (selectedMainTab, selectedDetailTab)
+- Budget: `isFavorite` y `favoriteOrder` deben tener valores por defecto para migración SwiftData
 
 ## Session Continuity
 
-Last session: 2026-01-15 06:45
-Stopped at: i18n completo, listo para continuar Fase 4
+Last session: 2026-01-15 08:00
+Stopped at: Widget de Presupuestos - Incrementos 1-3 completados, pendientes 4-7
+Next step: Incremento 5 (interactividad) o Incremento 6 (gestión favoritos en Profile)
 Resume file: None
