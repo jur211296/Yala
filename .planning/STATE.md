@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-13)
 Phase: 4 of 8 (Panel y Navegación)
 Plan: In progress
 Status: 1/3 items done
-Last activity: 2026-01-14 — Chevron en widgets completado
+Last activity: 2026-01-15 — Localización completa de la app
 
 Progress: ███░░░░░░░ 33%
 
@@ -24,6 +24,16 @@ Progress: ███░░░░░░░ 33%
 ## Completed (Fase 4)
 
 - Chevron en widgets para redirigir a detalle (SessionState.navigateToDetail, 7 widgets conectados)
+
+## i18n (Trabajo paralelo completado)
+
+- Localización completa ES/EN de toda la app
+- Fechas con AppLocale.current (no hardcoded "es")
+- Nombres de moneda localizados (currencyInfo → L10n.Currency.*)
+- Tipos de cuenta con localizedName
+- Formularios de cuentas, tags, categorías localizados
+- SearchView, Statistics, RecordsTabView localizados
+- Chips de filtros y secciones localizadas
 
 ## Bug Fixes (Sesión actual)
 
@@ -75,6 +85,6 @@ Progress: ███░░░░░░░ 33%
 
 ## Session Continuity
 
-Last session: 2026-01-14 20:30
-Stopped at: Bug fixes completados (wipe, dark mode, favoritos, cashflow)
+Last session: 2026-01-15 06:45
+Stopped at: i18n completo, listo para continuar Fase 4
 Resume file: None
