@@ -21,6 +21,11 @@ struct ContentView: View {
 struct MainTabView: View {
     @Bindable private var sessionState: SessionState
     @State private var searchText: String = ""
+    @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+
+    private var tabConfig: TabBarConfiguration {
+        TabBarConfiguration.fromJSON(tabConfigJSON)
+    }
 
     init() {
         // Get SessionState from the environment wrapper
@@ -35,16 +40,11 @@ struct MainTabView: View {
             wipingDataView
         } else {
             TabView(selection: $sessionState.selectedMainTab) {
-                Tab(L10n.Tab.panel, systemImage: "rectangle.grid.2x2.fill", value: .panel) {
-                    PanelView()
-                }
-
-                Tab(L10n.Tab.statistics, systemImage: "chart.bar.fill", value: .statistics) {
-                    StatisticsView()
-                }
-
-                Tab(L10n.Tab.planning, systemImage: "calendar", value: .planning) {
-                    PlanningView()
+                // Dynamic tabs based on configuration
+                ForEach(tabConfig.activeTabs) { tab in
+                    Tab(tab.displayName, systemImage: tab.iconName, value: tab.appTab) {
+                        viewForTab(tab)
+                    }
                 }
 
                 Tab(L10n.Tab.more, systemImage: "ellipsis", value: .more) {
@@ -57,6 +57,18 @@ struct MainTabView: View {
                 }
             }
             .tint(Color.electricIndigo)
+        }
+    }
+
+    @ViewBuilder
+    private func viewForTab(_ tab: ConfigurableTab) -> some View {
+        switch tab {
+        case .panel:
+            PanelView()
+        case .statistics:
+            StatisticsView()
+        case .planning:
+            PlanningView()
         }
     }
 
