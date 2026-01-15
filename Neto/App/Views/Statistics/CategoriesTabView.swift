@@ -41,6 +41,7 @@ struct CategoriesTabView: View {
     @State private var natureTrendPoints: [NatureTrendPoint] = []
     @State private var selectedCategoryID: PersistentIdentifier?
     @State private var selectedSubcategoryID: PersistentIdentifier?
+    @State private var selectedTagID: PersistentIdentifier?
     @State private var selectedNature: SubcategoryNature?
     @State private var carouselIndex: Int? = 0
     @State private var listViewType: ListViewType = .categories
@@ -106,6 +107,7 @@ struct CategoriesTabView: View {
             syncSubcategoryFilterToSelection()
         }
         .onChange(of: viewModel.selectedTags) {
+            syncTagFilterToSelection()
             calculateData()
         }
         .onChange(of: viewModel.selectedNatures) {
@@ -118,6 +120,10 @@ struct CategoriesTabView: View {
         }
         .onChange(of: selectedSubcategoryID) {
             syncSelectionToSubcategoryFilter()
+            calculateData()
+        }
+        .onChange(of: selectedTagID) {
+            syncSelectionToTagFilter()
             calculateData()
         }
         .onChange(of: selectedNature) {
@@ -424,8 +430,14 @@ struct CategoriesTabView: View {
                 TagsPieWidget(
                     tags: tagSpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedTagID: nil,
-                    onSelectTag: { _ in },
+                    selectedTagID: selectedTagID,
+                    onSelectTag: { tagID in
+                        if selectedTagID == tagID {
+                            selectedTagID = nil
+                        } else {
+                            selectedTagID = tagID
+                        }
+                    },
                     size: .large
                 )
             }
@@ -767,6 +779,22 @@ struct CategoriesTabView: View {
         }
     }
 
+    private func syncSelectionToTagFilter() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
+        if let tagID = selectedTagID {
+            if !viewModel.selectedTags.contains(tagID) {
+                viewModel.selectedTags.insert(tagID)
+            }
+        } else {
+            if viewModel.selectedTags.count == 1 {
+                viewModel.selectedTags.removeAll()
+            }
+        }
+    }
+
     /// Sync ViewModel filters to chart selection (top filters -> chart)
     private func syncCategoryFilterToSelection() {
         guard !isSyncingFilters else { return }
@@ -826,6 +854,18 @@ struct CategoriesTabView: View {
             selectedNature = viewModel.selectedNatures.first
         } else if viewModel.selectedNatures.isEmpty {
             selectedNature = nil
+        }
+    }
+
+    private func syncTagFilterToSelection() {
+        guard !isSyncingFilters else { return }
+        isSyncingFilters = true
+        defer { isSyncingFilters = false }
+
+        if viewModel.selectedTags.count == 1 {
+            selectedTagID = viewModel.selectedTags.first
+        } else if viewModel.selectedTags.isEmpty {
+            selectedTagID = nil
         }
     }
 
