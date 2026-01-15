@@ -366,7 +366,7 @@ struct NatureTrendChartView: View {
                             }
                             Divider()
                             HStack {
-                                Text("Total")
+                                Text(L10n.Widget.total)
                                     .font(.caption2)
                                     .foregroundStyle(Color.secondary)
                                 Spacer()

@@ -388,6 +388,12 @@
 "widget.noExpensesSubcategoriesPeriod" = "No subcategory expenses yet for this period.";
 "widget.distributionByCategory" = "Distribution by category";
 "widget.distributionBySubcategory" = "Distribution by subcategory";
+"widget.noDataForPeriod" = "No data for this period";
+"widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
+"widget.currenciesToCompare" = "Currencies to compare";
+"widget.noRecordsForFilters" = "No records for this period and filters";
+"widget.recordsWillAppear" = "When you add transactions, they will appear here.";
+"widget.total" = "Total";
 
 
 "common.uncategorized" = "Uncategorized";

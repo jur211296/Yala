@@ -103,7 +103,7 @@ struct CategoriesPieWidget: View {
 
     private var headerSection: some View {
         HStack {
-            Text("Categorías")
+            Text(L10n.Widget.categories)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -417,7 +417,7 @@ struct CategoriesPieWidget: View {
     private var headerView: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Distribución por categoría")
+                Text(L10n.Widget.distributionByCategory)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .padding(.bottom, 2)

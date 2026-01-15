@@ -399,7 +399,7 @@ struct ExchangeRateWidget: View {
         VStack {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle())
-            Text("Cargando...")
+            Text(L10n.Common.loading)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -414,7 +414,7 @@ struct ExchangeRateWidget: View {
             Image(systemName: "chart.line.downtrend.xyaxis")
                 .font(.title2)
                 .foregroundStyle(.secondary)
-            Text("Sin datos para este periodo")
+            Text(L10n.Widget.noDataForPeriod)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -495,7 +495,7 @@ struct CurrencySelectorSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                Text("Selecciona hasta 2 divisas para comparar con \(preferredCurrency)")
+                Text(L10n.Widget.selectCurrencies(preferredCurrency))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -511,11 +511,11 @@ struct CurrencySelectorSheet: View {
                 Spacer()
             }
             .padding(.top)
-            .navigationTitle("Divisas a comparar")
+            .navigationTitle(L10n.Widget.currenciesToCompare)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Listo") {
+                    Button(L10n.Action.done) {
                         onDismiss()
                     }
                     .fontWeight(.semibold)

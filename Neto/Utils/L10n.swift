@@ -806,6 +806,22 @@ enum L10n {
         static var distributionBySubcategory: String {
             NSLocalizedString("widget.distributionBySubcategory", comment: "")
         }
+        static var noDataForPeriod: String {
+            NSLocalizedString("widget.noDataForPeriod", comment: "")
+        }
+        static func selectCurrencies(_ currency: String) -> String {
+            String(format: NSLocalizedString("widget.selectCurrencies", comment: ""), currency)
+        }
+        static var currenciesToCompare: String {
+            NSLocalizedString("widget.currenciesToCompare", comment: "")
+        }
+        static var noRecordsForFilters: String {
+            NSLocalizedString("widget.noRecordsForFilters", comment: "")
+        }
+        static var recordsWillAppear: String {
+            NSLocalizedString("widget.recordsWillAppear", comment: "")
+        }
+        static var total: String { NSLocalizedString("widget.total", comment: "") }
     }
 
     // MARK: - Widget Types

@@ -225,12 +225,12 @@ struct RecentRecordsWidget: View {
                 .foregroundStyle(.secondary.opacity(0.5))
                 .padding(.bottom, 4)
 
-            Text("Aún no hay registros para este periodo y filtros")
+            Text(L10n.Widget.noRecordsForFilters)
                 .font(.subheadline.weight(.medium))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.primary)
 
-            Text("Cuando registres movimientos, aparecerán aquí.")
+            Text(L10n.Widget.recordsWillAppear)
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
