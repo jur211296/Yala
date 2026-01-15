@@ -244,10 +244,11 @@ struct TrendsTabView: View {
                             )
                         }
 
-                        // Tag chips (with color dots, like nature chips)
+                        // Tag chips (with icons and color)
                         ForEach(selectedTagChips, id: \.id) { chip in
                             FilterChipView(
                                 tagName: chip.name,
+                                iconName: chip.iconName,
                                 colorHex: chip.colorHex,
                                 onClear: {
                                     trendsViewModel.selectedTags.remove(chip.tagID)
@@ -998,6 +999,7 @@ struct TrendsTabView: View {
         let id: PersistentIdentifier
         let tagID: PersistentIdentifier
         let name: String
+        let iconName: String
         let colorHex: String?
     }
 
@@ -1005,8 +1007,12 @@ struct TrendsTabView: View {
         tags.filter { trendsViewModel.selectedTags.contains($0.persistentModelID) }
             .map {
                 TagChip(
-                    id: $0.persistentModelID, tagID: $0.persistentModelID, name: $0.name,
-                    colorHex: $0.colorHex)
+                    id: $0.persistentModelID,
+                    tagID: $0.persistentModelID,
+                    name: $0.name,
+                    iconName: $0.iconName,
+                    colorHex: $0.colorHex
+                )
             }
     }
 

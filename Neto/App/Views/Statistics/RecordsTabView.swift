@@ -129,10 +129,11 @@ struct RecordsTabView: View {
                             )
                         }
 
-                        // Tag chips (individual with color dots)
+                        // Tag chips (individual with icon and color)
                         ForEach(selectedTagChips, id: \.id) { chip in
                             FilterChipView(
                                 tagName: chip.name,
+                                iconName: chip.iconName,
                                 colorHex: chip.colorHex,
                                 onClear: {
                                     viewModel.selectedTags.remove(chip.tagID)
@@ -413,6 +414,7 @@ struct RecordsTabView: View {
         let id: PersistentIdentifier
         let tagID: PersistentIdentifier
         let name: String
+        let iconName: String
         let colorHex: String?
     }
 
@@ -470,8 +472,12 @@ struct RecordsTabView: View {
         tags.filter { viewModel.selectedTags.contains($0.persistentModelID) }
             .map {
                 TagChip(
-                    id: $0.persistentModelID, tagID: $0.persistentModelID, name: $0.name,
-                    colorHex: $0.colorHex)
+                    id: $0.persistentModelID,
+                    tagID: $0.persistentModelID,
+                    name: $0.name,
+                    iconName: $0.iconName,
+                    colorHex: $0.colorHex
+                )
             }
     }
 }

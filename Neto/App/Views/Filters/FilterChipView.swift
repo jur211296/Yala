@@ -147,17 +147,21 @@ extension FilterChipView {
         self.onClear = onClear
     }
 
-    // MARK: - Tag chip (color dot, always individual)
+    // MARK: - Tag chip (icon + color, always individual)
 
-    /// Tag filter chip with color dot
-    /// - Each tag is shown as a separate chip
+    /// Tag filter chip with icon and color
+    /// - Each tag is shown as a separate chip with its icon
     init(
         tagName: String,
+        iconName: String?,
         colorHex: String?,
         onClear: @escaping () -> Void
     ) {
         self.text = tagName
-        self.indicator = .colorDot(Color(hex: colorHex ?? "#6366F1"))
+        self.indicator = .iconWithColor(
+            iconName: iconName ?? "tag.fill",
+            color: Color(hex: colorHex ?? "#FF9F0A")
+        )
         self.onClear = onClear
     }
 
@@ -252,6 +256,7 @@ extension FilterChipView {
         )
         FilterChipView(
             tagName: "Vacaciones",
+            iconName: "airplane",
             colorHex: "#22C55E",
             onClear: {}
         )

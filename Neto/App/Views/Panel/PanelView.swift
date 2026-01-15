@@ -389,6 +389,7 @@ struct PanelView: View {
                                 if let tag = tags.first(where: { $0.persistentModelID == tagID }) {
                                     FilterChipView(
                                         tagName: tag.name,
+                                        iconName: tag.iconName,
                                         colorHex: tag.colorHex,
                                         onClear: {
                                             withAnimation {
