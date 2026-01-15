@@ -274,6 +274,11 @@
 "settings.budgetsFavoritesInfo" = "Favorite budgets appear in the Budgets widget (3 in medium, 5 in large).";
 "settings.budgetsFavoritesEmptyHint" = "Create budgets in the Planning tab.";
 "settings.budgetsFavoritesReorder" = "Reorder favorites";
+"settings.tabBarConfig" = "Customize Navigation";
+"settings.tabBarConfigInfo" = "Choose which sections to show in the bottom bar. Minimum 1, maximum 3.";
+"settings.tabBarConfigSections" = "Sections";
+"settings.tabBarConfigMinWarning" = "You must have at least one section";
+"settings.tabBarConfigMaxWarning" = "Maximum 3 sections";
 "settings.plannedPayments" = "Planned Payments";
 "settings.resetData" = "Reset Data";
 "settings.version" = "Version";

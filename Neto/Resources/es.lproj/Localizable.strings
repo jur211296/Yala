@@ -274,6 +274,11 @@
 "settings.budgetsFavoritesInfo" = "Los presupuestos favoritos aparecen en el widget de Presupuestos (3 en mediano, 5 en grande).";
 "settings.budgetsFavoritesEmptyHint" = "Crea presupuestos en la pestaña Planificación.";
 "settings.budgetsFavoritesReorder" = "Ordenar favoritos";
+"settings.tabBarConfig" = "Personalizar navegación";
+"settings.tabBarConfigInfo" = "Elige qué secciones mostrar en la barra inferior. Mínimo 1, máximo 3.";
+"settings.tabBarConfigSections" = "Secciones";
+"settings.tabBarConfigMinWarning" = "Debes tener al menos una sección";
+"settings.tabBarConfigMaxWarning" = "Máximo 3 secciones";
 "settings.plannedPayments" = "Pagos planificados";
 "settings.resetData" = "Borrar datos";
 "settings.version" = "Versión";

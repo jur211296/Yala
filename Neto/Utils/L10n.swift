@@ -874,6 +874,21 @@ enum L10n {
         static var budgetsFavoritesReorder: String {
             NSLocalizedString("settings.budgetsFavoritesReorder", comment: "")
         }
+        static var tabBarConfig: String {
+            NSLocalizedString("settings.tabBarConfig", comment: "")
+        }
+        static var tabBarConfigInfo: String {
+            NSLocalizedString("settings.tabBarConfigInfo", comment: "")
+        }
+        static var tabBarConfigSections: String {
+            NSLocalizedString("settings.tabBarConfigSections", comment: "")
+        }
+        static var tabBarConfigMinWarning: String {
+            NSLocalizedString("settings.tabBarConfigMinWarning", comment: "")
+        }
+        static var tabBarConfigMaxWarning: String {
+            NSLocalizedString("settings.tabBarConfigMaxWarning", comment: "")
+        }
         static var plannedPayments: String {
             NSLocalizedString("settings.plannedPayments", comment: "")
         }
