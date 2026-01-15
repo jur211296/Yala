@@ -14,6 +14,7 @@ import SwiftData
 final class Tag {
     var name: String
     var colorHex: String
+    var iconName: String
     var isActive: Bool
     var createdAt: Date
 
@@ -26,12 +27,14 @@ final class Tag {
     init(
         name: String,
         colorHex: String = "#1C3556",
+        iconName: String = "tag.fill",
         isActive: Bool = true,
         createdAt: Date = Date(),
         transactions: [TransactionItem] = []
     ) {
         self.name = name
         self.colorHex = colorHex
+        self.iconName = iconName
         self.isActive = isActive
         self.createdAt = createdAt
         self.transactions = transactions
