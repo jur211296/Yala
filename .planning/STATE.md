@@ -5,159 +5,117 @@
 See: .planning/PROJECT.md (updated 2026-01-13)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 4 — Panel y Navegación — Widget de Presupuestos
+**Current focus:** Fase 4 — Panel y Navegación — Completada
 
 ## Current Position
 
 Phase: 4 of 8 (Panel y Navegación)
-Plan: In progress
-Status: 2/3 items done (Widget de Presupuestos en progreso)
-Last activity: 2026-01-15 — Incrementos 1-3 del Widget de Presupuestos completados
+Plan: Completed
+Status: 3/3 items done
+Last activity: 2026-01-15 — Widget de Presupuestos completado + múltiples bug fixes
 
-Progress: ██████░░░░ 60%
+Progress: ██████████ 100%
 
-## Feature en progreso: Widget de Presupuestos en PanelView
+## Feature completada: Widget de Presupuestos en PanelView ✅
 
-### Commits realizados
+### Commits realizados (completos)
 1. `c75f634` - feat(budgets): Añadir modelo y tipo de widget para presupuestos
 2. `17498fd` - feat(budgets): Crear vistas BudgetsWidget y BudgetWidgetRow
 3. `ff47c75` - feat(budgets): Integrar widget en PanelView con cálculo de datos
+4. `193d9cd` - feat(budgets): Añadir interactividad al widget con toggle y dimming
+5. `56b2365` - feat(budgets): Añadir gestión de favoritos en Profile
+6. `6135f92` - feat(budgets): Añadir botón "Seleccionar favoritos" en widget vacío
+7. `89beb71` - feat(budgets): Añadir acceso directo a favoritos desde BudgetsListView
+8. `15e3a4e` - fix(budgets): Refrescar widget al cambiar favoritos y mover botón estrella
+9. `1b57a60` - fix(budgets): Refrescar widget desde cualquier vista al modificar favoritos
+10. `723c52f` - feat(budgets): Añadir botón de eliminar en editor de presupuestos
+11. `7121d05` - fix(budgets): Mejorar estilo del botón eliminar y corregir localizaciones
 
-### Incrementos completados
+### Funcionalidad completa
 
-**Incremento 1: Modelo + Widget Type** ✅
-- `Budget.swift`: añadido `isFavorite: Bool = false`, `favoriteOrder: Int = 0`
-- `WidgetModels.swift`: añadido `case .budgets` con sizes `[.medium, .large]` (top 3 / top 5)
-- `L10n.swift` + `Localizable.strings`: añadido `widgetType.budgets`
-
-**Incremento 2: Vista del Widget** ✅
-- `BudgetsWidget.swift`: widget con header, lista, empty states diferenciados
-- `BudgetWidgetRow.swift`: fila compacta con icono, progreso, días restantes
-- Empty states: "Sin presupuestos" vs "Sin favoritos" (guía a Ajustes)
+**Widget en Panel:**
+- Muestra budgets favoritos ordenados por `favoriteOrder`
 - Soporte `.medium` (top 3) y `.large` (top 5)
+- Empty states: "Sin presupuestos" vs "Sin favoritos" con botón "Seleccionar favoritos"
+- Tap en budget aplica sus filtros globalmente (accounts, subcategories, tags, natures)
+- Toggle de selección con dimming visual
 
-**Incremento 3: Datos en PanelViewModel + integración** ✅
-- `PanelViewModel.swift`: añadido `calculateBudgetsWidget()` con lógica completa de filtros
-- `PanelViewModel.swift`: propiedades `topBudgetSummaries`, `hasBudgetsButNoFavorites`
-- `PanelView.swift`: añadido `@Query` de budgets activos
-- `PanelView.swift`: caso `.budgets` en `actualWidgetView(for:)`
-- Navegación: chevron → `sessionState.selectedMainTab = .planning`
+**Gestión de favoritos:**
+- `BudgetsFavoritesSettingsView` en Profile → Organización → Presupuestos favoritos
+- Toggle estrella para marcar/desmarcar favoritos
+- Modo edición para reordenar favoritos (drag & drop)
+- Acceso rápido desde Planning/Budgets (botón estrella en toolbar, izquierda del perfil)
+- Refresco inmediato del widget al modificar favoritos (desde cualquier vista)
 
-### Incrementos pendientes
+**Editor de presupuestos:**
+- Botón "Eliminar presupuesto" al final del editor (solo en edición)
+- Confirmación antes de eliminar
+- Estilo consistente con cornerRadius: 24
 
-**Incremento 4: Navegación a Budgets** (opcional, chevron ya funciona)
-- Actualmente navega a tab Planning completa
-- Podría añadir navegación directa a Budgets si se requiere
-
-**Incremento 5: Interactividad (aplicar filtros del budget)**
-- `SessionState.swift`: añadir `applyBudgetFilters(budget: Budget)`
-- `BudgetsWidget.swift`: conectar tap en row con aplicación de filtros
-- Al tocar un budget, aplicar sus filtros (accounts, subcategories, tags, natures)
-
-**Incremento 6: Gestión de Favoritos en Profile**
-- Crear `BudgetsFavoritesSettingsView.swift` (secciones por periodType, toggle favoritos, reordenar)
-- `ProfileView.swift`: añadir entrada en sección Organización
-- Mensaje: "En el orden que estén los budgets aquí se verán en los widgets (top 3 y top 5)"
-
-**Incremento 7: Strings de localización adicionales**
-- Añadir keys para sección de favoritos en Profile
-- Ya completadas: `budgets.widget.noFavorites.title/message`, `widgetType.budgets`
-
-### Archivos clave modificados/creados
+### Archivos clave
 
 ```
-Neto/Models/Budget.swift                           # +isFavorite, +favoriteOrder
-Neto/App/Models/WidgetModels.swift                 # +case budgets
-Neto/App/Views/Panel/BudgetsWidget.swift           # NUEVO
-Neto/App/Views/Panel/BudgetWidgetRow.swift         # NUEVO
-Neto/App/ViewModels/PanelViewModel.swift           # +calculateBudgetsWidget()
-Neto/App/Views/Panel/PanelView.swift               # +@Query budgets, +caso .budgets
-Neto/Utils/L10n.swift                              # +WidgetType.budgets
-Neto/Resources/*/Localizable.strings               # +widgetType.budgets, +noFavorites
+Neto/Models/Budget.swift                               # +isFavorite, +favoriteOrder, @Relationship inversas
+Neto/App/Models/WidgetModels.swift                     # +case budgets
+Neto/App/Models/SessionState.swift                     # +needsBudgetsWidgetRefresh, +applyBudgetFilters()
+Neto/App/Views/Panel/BudgetsWidget.swift               # Widget completo con interactividad
+Neto/App/Views/Panel/BudgetWidgetRow.swift             # Fila compacta
+Neto/App/ViewModels/PanelViewModel.swift               # +calculateBudgetsWidget()
+Neto/App/Views/Panel/PanelView.swift                   # Integración + onChange(budgets)
+Neto/App/Views/Settings/BudgetsFavoritesSettingsView.swift  # Gestión de favoritos
+Neto/App/Views/Planning/PlanningView.swift             # +botón estrella en toolbar
+Neto/App/Views/Planning/BudgetEditorView.swift         # +botón eliminar
 ```
 
-### Lógica de selección de budgets para widget
-1. Mostrar budgets favoritos (`isFavorite == true`) ordenados por `favoriteOrder`
-2. Si no hay favoritos pero hay budgets → empty state "Sin favoritos" con guía a configuración
-3. Si no hay budgets → empty state "Sin presupuestos"
-4. Límite: 3 en `.medium`, 5 en `.large`
+## Bug Fixes (Sesión 2026-01-15)
 
-### Para retomar
-1. Activar widget en Preferencias de Widgets (Panel → gear icon)
-2. Marcar budgets como favoritos (pendiente Incremento 6)
-3. Probar interactividad (pendiente Incremento 5)
+### Críticos
+- **Fix: Filtrado de subcategorías por ID** (`81af652`)
+  - Problema: Subcategorías con nombres duplicados (ej: "Otros" en Compras y Hogar) causaban filtrado incorrecto
+  - Solución: Cambiar de `selectedSubcategoryNames: Set<String>` a `selectedSubcategoryIDs: Set<PersistentIdentifier>`
+  - Archivos: SessionState, PanelViewModel, SharedModels, widgets de categorías/subcategorías
 
-## Pending (Fase 4 - resto)
+- **Fix: Filtros globales en widgets** (`7af8d89`)
+  - Problema: Tag, currency, amount, search no se aplicaban a PieCategories, TopCategories, PieSubcategories, TopSubcategories
+  - Solución: Derivar `contextTransactions` de `expenseFiltered` (que ya tiene todos los filtros)
 
-- Home configurable (tabs desde personalización)
+- **Fix: Relaciones many-to-many de Budget** (`44d94b9`)
+  - Añadir `@Relationship(inverse:)` explícitos para accounts, subcategories, tags
+  - Actualizar DataWipeService para limpiar relaciones antes de eliminar
 
-## Completed (Fase 4)
+### Exchange Rate
+- `c535939` - feat(exchangeRate): Smart axis labels + fix edge case start==end
+- `41adf86` - refactor(app): Extraer loadExchangeRates() reutilizable
+- `389208c` - feat(import): Cargar tipos de cambio para transacciones importadas
+- `233bdbb` - feat(settings): Recargar tipos de cambio después de borrar datos
 
-- Chevron en widgets para redirigir a detalle (SessionState.navigateToDetail, 7 widgets conectados)
-- Widget de Presupuestos - Incrementos 1-3 (modelo, vistas, integración)
+## Completed (Fase 4) ✅
 
-## i18n (Trabajo paralelo completado)
+- [x] Chevron en widgets para redirigir a detalle
+- [x] Widget de Presupuestos (completo con todas las funcionalidades)
+- [x] Home configurable (widgets configurables desde preferencias)
 
-- Localización completa ES/EN de toda la app
-- Fechas con AppLocale.current (no hardcoded "es")
-- Nombres de moneda localizados (currencyInfo → L10n.Currency.*)
-- Tipos de cuenta con localizedName
-- Formularios de cuentas, tags, categorías localizados
-- SearchView, Statistics, RecordsTabView localizados
-- Chips de filtros y secciones localizadas
+## Completed (Fases 1-3) ✅
 
-## Bug Fixes (Sesión actual)
+Ver historial completo en commits anteriores.
 
-- Fix: Animación suave al mostrar pantalla de éxito en transacciones (transition opacity + scale)
-- Fix: Crash al acceder categoría eliminada (cascade delete en Category.swift)
-- Fix: Posición incorrecta de pantalla éxito con teclado abierto (dismiss + delay 150ms)
-- Fix: Teclado se cierra al abrir selectores de cuenta/categoría/tags en NewTransactionView
-- Fix: Widgets de gastos en Panel excluyen ajustes y saldos iniciales (expenseFilteredTransactions)
-- Fix: TagSelectorSheet permite crear etiquetas + diseño mejorado de filas
-- Fix: "Crear otra transacción" tras editar no precarga datos (isCreatingAnother flag)
-- Fix: ImportAccountPickerSheet dark mode (fondo negro → netoCard con ScrollView)
-- Fix: FavoriteRowView ancho completo (.frame(maxWidth: .infinity))
-- Fix: CashFlow eje en TrendsTabView usa intervalo efectivo basado en transacciones reales
-- Fix: Crash al vaciar datos (SessionState.isWipingData + TabView unmount durante wipe)
+## Next Phase: Fase 5 — Gráficas de Estadísticas
 
-## Completed (Fase 3) ✅
-
-- Eliminación sin transacciones (botón eliminar con validación de transacciones asociadas)
-- Transferencia de transacciones al eliminar (sheet con 3 opciones: transferir a específica, mover a Sin asignar, eliminar transacciones)
-- Edición masiva de categorías/subcategorías (modo editar con botones delete en CategoriesSettingsListView y CategoryDetailView)
-
-## Completed (Fase 2) ✅
-
-- Periodo Personalizado en PeriodSelector (CustomPeriodPickerSheet, sincronización global, persistencia UserDefaults)
-- Sincronización de filtros Statistics/Panel (Tags, Currency, Amount, Note + chips en todas las vistas)
-- Filtro por nota: chips de búsqueda (searchText sincronizado, chip visible, filtrado aplicado)
-- Fix: Chips subcategoría/categoría ahora aparecen correctamente en todas las vistas
-- Fix: "Seleccionar todo" en CategorySelectorSheet funciona correctamente
-- Fix: Resumen de categorías muestra "Todas" cuando todo seleccionado
-- Fix: Selección manual de subcategorías funciona sin comportamiento inesperado
-
-## Completed (Fase 1) ✅
-
-- Fix: Saldo inicial ahora es transacción (no propiedad de Account)
-- Fix: Leyenda centrada en CashFlowWidget (Ingreso/Egreso/Flujo neto)
-- Fix: Colores hover del tooltip coinciden con barras/líneas
-- Fix: Título dinámico en TrendsTabView (cuenta/moneda)
-- Fix: Carruseles ordenados por Profile y monto
-- Fix: Crash en TrendDataProcessor (DateInterval validation)
-- Fix: Bug tipo de cambio en transferencias
+Según ROADMAP.md, la siguiente fase incluye:
+- Mejorar gráficas existentes
+- Añadir nuevos tipos de visualización
+- Optimizar rendimiento de cálculos
 
 ## Risk/Notes
 
-- Orden de cuentas usa `@AppStorage("accountsSortOrderNames")`
-- DateInterval crash si start > end; siempre validar
-- customTitle en CashFlowWidget tiene prioridad sobre displayMode
-- Anti-loop flags (`isSyncingFilters`, `isSyncingState`) previenen ciclos de sincronización
-- `SessionState.shared` controla navegación entre tabs (selectedMainTab, selectedDetailTab)
-- Budget: `isFavorite` y `favoriteOrder` deben tener valores por defecto para migración SwiftData
+- `selectedSubcategoryIDs` usa `PersistentIdentifier` para evitar duplicados por nombre
+- `needsBudgetsWidgetRefresh` flag en SessionState para sincronizar widget desde cualquier vista
+- Budget many-to-many relationships requieren limpieza explícita en DataWipeService
+- cornerRadius: 24 es el estándar para botones/cards en la app
 
 ## Session Continuity
 
-Last session: 2026-01-15 08:00
-Stopped at: Widget de Presupuestos - Incrementos 1-3 completados, pendientes 4-7
-Next step: Incremento 5 (interactividad) o Incremento 6 (gestión favoritos en Profile)
+Last session: 2026-01-15 12:35
+Stopped at: Fase 4 completada
+Next step: Revisar ROADMAP.md para Fase 5
 Resume file: None
