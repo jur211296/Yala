@@ -436,6 +436,7 @@
 "widgetType.latestRecords" = "Últimos registros";
 "widgetType.expensesByNature" = "Gastos por naturaleza";
 "widgetType.exchangeRate" = "Tipo de cambio";
+"widgetType.budgets" = "Presupuestos";
 
 "widget.sizeLabel" = "Tamaño";
 

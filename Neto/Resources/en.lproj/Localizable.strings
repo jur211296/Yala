@@ -436,6 +436,7 @@
 "widgetType.latestRecords" = "Latest Records";
 "widgetType.expensesByNature" = "Expenses by Nature";
 "widgetType.exchangeRate" = "Exchange Rate";
+"widgetType.budgets" = "Budgets";
 
 "widget.sizeLabel" = "Size";
 

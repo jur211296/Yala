@@ -17,6 +17,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     case latestRecords = "ultimos_registros"
     case expensesByNature = "gastos_por_naturaleza"
     case exchangeRate = "tipo_cambio"
+    case budgets = "presupuestos"
 
     var id: String { rawValue }
 
@@ -31,6 +32,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .latestRecords: return L10n.WidgetType.latestRecords
         case .expensesByNature: return L10n.WidgetType.expensesByNature
         case .exchangeRate: return L10n.WidgetType.exchangeRate
+        case .budgets: return L10n.WidgetType.budgets
         }
     }
 
@@ -45,6 +47,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .latestRecords: return "list.bullet.rectangle"
         case .expensesByNature: return "chart.bar.xaxis"
         case .exchangeRate: return "arrow.left.arrow.right"
+        case .budgets: return "chart.pie.fill"
         }
     }
 
@@ -59,6 +62,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .latestRecords: return [.medium]  // Tamaño único
         case .expensesByNature: return [.medium, .large]
         case .exchangeRate: return [.medium]  // Tamaño único
+        case .budgets: return [.medium, .large]  // Top 3 / Top 5
         }
     }
 
@@ -67,7 +71,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .cashFlow, .expensesByNature:
             return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
-        case .topSpending, .topSubcategories:
+        case .topSpending, .topSubcategories, .budgets:
             return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
         case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate:
             return nil  // Single size, no name needed
@@ -102,6 +106,7 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
             WidgetConfig(id: UUID(), type: .expensesByNature, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .latestRecords, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .budgets, isVisible: false, size: .medium),
         ]
     }
 }

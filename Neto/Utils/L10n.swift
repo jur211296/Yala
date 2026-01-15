@@ -1146,6 +1146,9 @@ enum L10n {
         static var exchangeRate: String {
             NSLocalizedString("widgetType.exchangeRate", comment: "")
         }
+        static var budgets: String {
+            NSLocalizedString("widgetType.budgets", comment: "")
+        }
     }
 
     // MARK: - Planning

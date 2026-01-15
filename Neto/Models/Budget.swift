@@ -31,6 +31,8 @@ final class Budget {
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
     var isActive: Bool
     var createdAt: Date
+    var isFavorite: Bool
+    var favoriteOrder: Int
 
     init(
         month: Int = 0,
@@ -48,7 +50,9 @@ final class Budget {
         tags: [Tag] = [],
         natures: String? = nil,
         isActive: Bool = true,
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        isFavorite: Bool = false,
+        favoriteOrder: Int = 0
     ) {
         self.month = month
         self.year = year
@@ -66,5 +70,7 @@ final class Budget {
         self.natures = natures
         self.isActive = isActive
         self.createdAt = createdAt
+        self.isFavorite = isFavorite
+        self.favoriteOrder = favoriteOrder
     }
 }
