@@ -66,6 +66,7 @@ struct MainTabView: View {
                 }
             }
             .tint(Color.electricIndigo)
+            .transaction { $0.animation = nil }
         }
     }
 
@@ -179,9 +180,12 @@ struct MorePlaceholderView: View {
 
     private func hiddenTabRow(_ tab: ConfigurableTab) -> some View {
         Button {
-            // Set temporary tab first, then navigate
+            // Set temporary tab first, then navigate after SwiftUI adds the tab
             SessionState.shared.temporaryTab = tab
-            SessionState.shared.selectedMainTab = tab.appTab
+            // Small delay to let TabView add the new tab before selecting it
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                SessionState.shared.selectedMainTab = tab.appTab
+            }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: tab.iconName)
