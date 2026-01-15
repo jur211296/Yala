@@ -35,6 +35,7 @@ struct ProfileView: View {
         case personalDetails
         case importIntro
         case exportWizard
+        case tabBarConfig
 
         var id: Int {
             hashValue
@@ -114,6 +115,8 @@ struct ProfileView: View {
                     )
                 case .exportWizard:
                     ExportFiltersStepView()
+                case .tabBarConfig:
+                    TabBarConfigView()
                 }
             }
             .alert(
@@ -259,6 +262,17 @@ struct ProfileView: View {
                 profileRow(
                     icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                     iconColor: .indigo, destination: .personalization)
+                SubsectionDivider()
+                Button {
+                    activeSheet = .tabBarConfig
+                } label: {
+                    settingsRowContent(
+                        icon: "rectangle.bottomhalf.inset.filled",
+                        title: L10n.Settings.tabBarConfig,
+                        iconColor: .cyan
+                    )
+                }
+                .buttonStyle(.plain)
                 SubsectionDivider()
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
