@@ -77,6 +77,7 @@
 "records.title" = "Records";
 "records.latest" = "Latest Records";
 "records.noRecords" = "No records";
+"records.deleteConfirmTitle" = "Delete %d record(s)?";
 
 // MARK: - Filters
 
@@ -93,6 +94,9 @@
 "action.delete" = "Delete";
 "action.edit" = "Edit";
 "action.add" = "Add";
+"action.viewAll" = "View all";
+"action.viewLess" = "View less";
+"action.multipleEdit" = "Multiple edit";
 
 // MARK: - Exchange Rate
 
@@ -455,6 +459,18 @@
 
 "statistics.noRecordsFiltered" = "No records found with the applied filters.";
 "statistics.noRecordsDescription" = "When you add transactions, they will appear here.";
+"statistics.periodComparison" = "Comparison with previous period";
+"statistics.currentPeriod" = "Current period";
+"statistics.previousPeriod" = "Previous period";
+"statistics.latestRecords" = "Latest records";
+"statistics.noCategoryData" = "No category data";
+"statistics.noSubcategoryData" = "No subcategory data";
+"statistics.noExpensesInPeriod" = "No expenses in the selected period";
+"statistics.topCategories" = "Top categories";
+"statistics.topSubcategories" = "Top subcategories";
+"statistics.noDataToShow" = "No data to show";
+"statistics.noRecords" = "No records";
+"statistics.ofExpense" = "of expense";
 
 
 "settings.organization" = "Organization";

@@ -129,6 +129,42 @@ enum L10n {
         static var noRecordsDescription: String {
             NSLocalizedString("statistics.noRecordsDescription", comment: "")
         }
+        static var periodComparison: String {
+            NSLocalizedString("statistics.periodComparison", comment: "")
+        }
+        static var currentPeriod: String {
+            NSLocalizedString("statistics.currentPeriod", comment: "")
+        }
+        static var previousPeriod: String {
+            NSLocalizedString("statistics.previousPeriod", comment: "")
+        }
+        static var latestRecords: String {
+            NSLocalizedString("statistics.latestRecords", comment: "")
+        }
+        static var noCategoryData: String {
+            NSLocalizedString("statistics.noCategoryData", comment: "")
+        }
+        static var noSubcategoryData: String {
+            NSLocalizedString("statistics.noSubcategoryData", comment: "")
+        }
+        static var noExpensesInPeriod: String {
+            NSLocalizedString("statistics.noExpensesInPeriod", comment: "")
+        }
+        static var topCategories: String {
+            NSLocalizedString("statistics.topCategories", comment: "")
+        }
+        static var topSubcategories: String {
+            NSLocalizedString("statistics.topSubcategories", comment: "")
+        }
+        static var noDataToShow: String {
+            NSLocalizedString("statistics.noDataToShow", comment: "")
+        }
+        static var noRecords: String {
+            NSLocalizedString("statistics.noRecords", comment: "")
+        }
+        static var ofExpense: String {
+            NSLocalizedString("statistics.ofExpense", comment: "")
+        }
     }
 
     // MARK: - Nature
@@ -162,6 +198,9 @@ enum L10n {
         static var title: String { NSLocalizedString("records.title", comment: "") }
         static var latest: String { NSLocalizedString("records.latest", comment: "") }
         static var noRecords: String { NSLocalizedString("records.noRecords", comment: "") }
+        static func deleteConfirmTitle(_ count: Int) -> String {
+            String(format: NSLocalizedString("records.deleteConfirmTitle", comment: ""), count)
+        }
     }
 
     // MARK: - Filters
@@ -182,6 +221,9 @@ enum L10n {
         static var delete: String { NSLocalizedString("action.delete", comment: "") }
         static var edit: String { NSLocalizedString("action.edit", comment: "") }
         static var add: String { NSLocalizedString("action.add", comment: "") }
+        static var viewAll: String { NSLocalizedString("action.viewAll", comment: "") }
+        static var viewLess: String { NSLocalizedString("action.viewLess", comment: "") }
+        static var multipleEdit: String { NSLocalizedString("action.multipleEdit", comment: "") }
     }
 
     // MARK: - Date Helpers

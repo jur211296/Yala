@@ -653,22 +653,22 @@ private struct DetailContainerSheets: ViewModifier {
                     }
             }
             .confirmationDialog(
-                "¿Eliminar \(recordsViewModel.selectedRecordIDs.count) registro(s)?",
+                L10n.Records.deleteConfirmTitle(recordsViewModel.selectedRecordIDs.count),
                 isPresented: $showDeleteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Eliminar", role: .destructive) {
+                Button(L10n.Action.delete, role: .destructive) {
                     recordsViewModel.deleteSelected(context: modelContext)
                     refreshRecordsData()
                 }
-                Button("Cancelar", role: .cancel) {}
+                Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
-                Text("Esta acción no se puede deshacer.")
+                Text(L10n.Common.cannotUndo)
             }
-            .alert("Edición múltiple", isPresented: $showMultiEditPlaceholder) {
-                Button("Entendido", role: .cancel) {}
+            .alert(L10n.Action.multipleEdit, isPresented: $showMultiEditPlaceholder) {
+                Button(L10n.Common.understood, role: .cancel) {}
             } message: {
-                Text("La edición múltiple estará disponible próximamente.")
+                Text(L10n.Common.comingSoon)
             }
             .sheet(isPresented: $isPresentingSettings) {
                 ProfileView()

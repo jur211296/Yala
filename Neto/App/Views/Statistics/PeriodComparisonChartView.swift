@@ -212,7 +212,7 @@ struct PeriodComparisonChartView: View {
                     Rectangle()
                         .fill(trendType.color)
                         .frame(width: 20, height: 3)
-                    Text("Período actual")
+                    Text(L10n.Statistics.currentPeriod)
                         .font(.caption2)
                         .foregroundStyle(Color.netoSecondaryText)
                 }
@@ -222,7 +222,7 @@ struct PeriodComparisonChartView: View {
                     Rectangle()
                         .fill(Color.netoSecondaryText.opacity(0.5))
                         .frame(width: 20, height: 3)
-                    Text("Período anterior")
+                    Text(L10n.Statistics.previousPeriod)
                         .font(.caption2)
                         .foregroundStyle(Color.netoSecondaryText)
                 }

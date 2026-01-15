@@ -400,7 +400,7 @@ struct TrendsTabView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
             VStack(alignment: .leading, spacing: 4) {
-                Text("Comparación con período anterior")
+                Text(L10n.Statistics.periodComparison)
                     .font(.headline)
                     .foregroundStyle(Color.netoPrimaryText)
 
@@ -574,7 +574,7 @@ struct TrendsTabView: View {
         VStack(spacing: DS.Spacing.sm) {
             // Header with selector
             HStack {
-                Text("Flujo de efectivo")
+                Text(L10n.CashFlow.title)
                     .font(.headline)
                     .foregroundStyle(.primary)
 
@@ -829,7 +829,7 @@ struct TrendsTabView: View {
 
     private var recentRecordsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Últimos registros")
+            Text(L10n.Statistics.latestRecords)
                 .font(.headline)
                 .foregroundStyle(Color.netoPrimaryText)
 
@@ -847,7 +847,7 @@ struct TrendsTabView: View {
             } label: {
                 HStack {
                     Spacer()
-                    Text("Ver todos")
+                    Text(L10n.Action.viewAll)
                         .font(.subheadline.weight(.semibold))
                     Image(systemName: "chevron.right")
                         .font(.caption)
@@ -870,7 +870,7 @@ struct TrendsTabView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.title2)
                 .foregroundStyle(.tertiary)
-            Text("Sin registros")
+            Text(L10n.Records.noRecords)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -908,9 +908,9 @@ struct TrendsTabView: View {
 
     private var chartTitle: String {
         switch trendsViewModel.selectedMetric {
-        case .balance: return "Tendencia de Saldo"
-        case .income: return "Tendencia de Ingresos"
-        case .expense: return "Tendencia de Gastos"
+        case .balance: return L10n.Trend.balanceTitle
+        case .income: return L10n.Trend.incomeTitle
+        case .expense: return L10n.Trend.expenseTitle
         }
     }
 
@@ -1221,7 +1221,7 @@ struct CompactRecordRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 } else {
-                    Text(record.subcategory?.name ?? record.category?.name ?? "Sin categoría")
+                    Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)

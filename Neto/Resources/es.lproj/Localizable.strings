@@ -77,6 +77,7 @@
 "records.title" = "Registros";
 "records.latest" = "Últimos registros";
 "records.noRecords" = "Sin registros";
+"records.deleteConfirmTitle" = "¿Eliminar %d registro(s)?";
 
 // MARK: - Filters
 
@@ -93,6 +94,9 @@
 "action.delete" = "Eliminar";
 "action.edit" = "Editar";
 "action.add" = "Añadir";
+"action.viewAll" = "Ver todos";
+"action.viewLess" = "Ver menos";
+"action.multipleEdit" = "Edición múltiple";
 
 // MARK: - Exchange Rate
 
@@ -455,6 +459,18 @@
 
 "statistics.noRecordsFiltered" = "No se encontraron registros con los filtros aplicados.";
 "statistics.noRecordsDescription" = "Cuando registres movimientos, aparecerán aquí.";
+"statistics.periodComparison" = "Comparación con período anterior";
+"statistics.currentPeriod" = "Período actual";
+"statistics.previousPeriod" = "Período anterior";
+"statistics.latestRecords" = "Últimos registros";
+"statistics.noCategoryData" = "Sin datos de categorías";
+"statistics.noSubcategoryData" = "Sin datos de subcategorías";
+"statistics.noExpensesInPeriod" = "No hay gastos en el período seleccionado";
+"statistics.topCategories" = "Categorías principales";
+"statistics.topSubcategories" = "Subcategorías principales";
+"statistics.noDataToShow" = "No hay datos para mostrar";
+"statistics.noRecords" = "Sin registros";
+"statistics.ofExpense" = "del gasto";
 
 
 "settings.organization" = "Organización";

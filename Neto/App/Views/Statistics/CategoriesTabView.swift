@@ -338,8 +338,8 @@ struct CategoriesTabView: View {
             if categorySpending.isEmpty {
                 emptyState(
                     icon: "chart.pie",
-                    title: "Sin datos de categorías",
-                    subtitle: "No hay gastos en el periodo seleccionado"
+                    title: L10n.Statistics.noCategoryData,
+                    subtitle: L10n.Statistics.noExpensesInPeriod
                 )
                 .frame(height: 320)
             } else {
@@ -374,8 +374,8 @@ struct CategoriesTabView: View {
             if subcategorySpending.isEmpty {
                 emptyState(
                     icon: "chart.pie",
-                    title: "Sin datos de subcategorías",
-                    subtitle: "No hay gastos en el periodo seleccionado"
+                    title: L10n.Statistics.noSubcategoryData,
+                    subtitle: L10n.Statistics.noExpensesInPeriod
                 )
                 .frame(height: 320)
             } else {
@@ -446,7 +446,7 @@ struct CategoriesTabView: View {
             HStack(alignment: .center) {
                 Text(
                     listViewType == .categories
-                        ? "Categorías principales" : "Subcategorías principales"
+                        ? L10n.Statistics.topCategories : L10n.Statistics.topSubcategories
                 )
                 .font(.headline)
                 .foregroundStyle(.primary)
@@ -464,8 +464,8 @@ struct CategoriesTabView: View {
                 if categorySpending.isEmpty {
                     emptyState(
                         icon: "chart.bar.xaxis",
-                        title: "Sin categorías",
-                        subtitle: "No hay datos para mostrar"
+                        title: L10n.Empty.noCategories,
+                        subtitle: L10n.Statistics.noDataToShow
                     )
                     .frame(height: 200)
                 } else {
@@ -488,8 +488,8 @@ struct CategoriesTabView: View {
                 if subcategorySpending.isEmpty {
                     emptyState(
                         icon: "list.bullet.indent",
-                        title: "Sin subcategorías",
-                        subtitle: "No hay datos para mostrar"
+                        title: L10n.Empty.noSubcategories,
+                        subtitle: L10n.Statistics.noDataToShow
                     )
                     .frame(height: 200)
                 } else {
@@ -791,7 +791,7 @@ struct CategoriesTabView: View {
 
     private var recentRecordsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Últimos registros")
+            Text(L10n.Statistics.latestRecords)
                 .font(.headline)
                 .foregroundStyle(Color.netoPrimaryText)
 
@@ -808,7 +808,7 @@ struct CategoriesTabView: View {
             } label: {
                 HStack {
                     Spacer()
-                    Text("Ver todos")
+                    Text(L10n.Action.viewAll)
                         .font(.subheadline.weight(.semibold))
                     Image(systemName: "chevron.right")
                         .font(.caption)
@@ -836,7 +836,7 @@ struct CategoriesTabView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.title2)
                 .foregroundStyle(.tertiary)
-            Text("Sin registros")
+            Text(L10n.Statistics.noRecords)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -1043,7 +1043,7 @@ private struct AllCategoriesListContent: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text(isExpanded ? "Ver menos" : "Ver todo")
+                            Text(isExpanded ? L10n.Action.viewLess : L10n.Action.viewAll)
                                 .font(.subheadline.weight(.semibold))
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                                 .font(.caption)
@@ -1119,7 +1119,7 @@ private struct AllSubcategoriesListContent: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text(isExpanded ? "Ver menos" : "Ver todo")
+                            Text(isExpanded ? L10n.Action.viewLess : L10n.Action.viewAll)
                                 .font(.subheadline.weight(.semibold))
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                                 .font(.caption)
@@ -1177,7 +1177,7 @@ private struct CategoryRowView: View {
                 // Bar and Percentage
                 VStack(alignment: .leading, spacing: 4) {
                     // Percentage Text
-                    Text("\(formattedPercentage(summary.percentage)) del gasto")
+                    Text("\(formattedPercentage(summary.percentage)) \(L10n.Statistics.ofExpense)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 
@@ -1253,7 +1253,7 @@ private struct SubcategoryRowView: View {
                 // Bar and Percentage
                 VStack(alignment: .leading, spacing: 4) {
                     // Percentage Text
-                    Text("\(formattedPercentage(summary.percentageOfTotal)) del gasto")
+                    Text("\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Statistics.ofExpense)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 
