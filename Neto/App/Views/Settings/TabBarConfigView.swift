@@ -97,17 +97,19 @@ struct TabBarConfigView: View {
             }
             .padding(.horizontal, 6)
 
-            VStack(spacing: 0) {
+            List {
                 ForEach(Array(localConfig.activeTabs.enumerated()), id: \.element) { index, tab in
                     activeTabRow(tab, position: index + 1)
-
-                    if index < localConfig.activeTabs.count - 1 {
-                        Divider()
-                            .padding(.leading, 52)
-                    }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.netoCard)
+                        .listRowSeparator(index == localConfig.activeTabs.count - 1 ? .hidden : .visible)
                 }
                 .onMove(perform: moveTab)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(localConfig.activeTabs.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(Color.netoCard)
@@ -118,23 +120,11 @@ struct TabBarConfigView: View {
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .environment(\.editMode, .constant(.active))
 
             // Validation message
             if !canDeactivate {
                 validationMessage(L10n.Settings.tabBarConfigMinWarning, icon: "exclamationmark.circle")
-            }
-
-            // Reorder hint
-            if localConfig.activeTabs.count > 1 {
-                HStack(spacing: 4) {
-                    Image(systemName: "hand.draw")
-                        .font(.caption)
-                    Text(L10n.Settings.tabBarConfigReorderHint)
-                        .font(.caption)
-                }
-                .foregroundStyle(.secondary)
-                .padding(.leading, 6)
-                .padding(.top, 4)
             }
         }
     }
@@ -171,11 +161,6 @@ struct TabBarConfigView: View {
                 }
                 .buttonStyle(.plain)
             }
-
-            // Drag handle
-            Image(systemName: "line.3.horizontal")
-                .font(.body)
-                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
