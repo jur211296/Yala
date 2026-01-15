@@ -276,7 +276,7 @@ struct IconColorPickerSheet: View {
                 )
                 .shadow(color: Color(hex: tempColorHex).opacity(0.4), radius: 8, x: 0, y: 4)
 
-            Text("Vista previa")
+            Text(L10n.IconPicker.preview)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -288,7 +288,7 @@ struct IconColorPickerSheet: View {
 
     private var colorSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Color")
+            Text(L10n.Common.color)
                 .font(.headline)
                 .foregroundStyle(.primary)
 

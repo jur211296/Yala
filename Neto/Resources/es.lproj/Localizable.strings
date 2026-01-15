@@ -699,5 +699,10 @@
 "account.existingInitialBalance" = "Ya tienes un saldo inicial de %@. ¿Deseas modificarlo?";
 "account.modifyInitialBalance" = "Modificar saldo inicial";
 "account.adjustmentDate" = "Fecha del ajuste";
+"account.finalBalance" = "Saldo final";
+"account.adjustByEntry" = "Ajustar por registro";
+"account.adjustByEntryDesc" = "Escribe el saldo correcto y crearemos un registro de corrección. Úsalo si se te olvidó registrar algunos gastos.";
+"account.changeInitialBalanceName" = "Cambiar saldo inicial";
+"account.changeInitialBalanceDesc" = "Escribe el saldo correcto y cambiaremos el saldo inicial en tu cuenta. Usa esto si no has registrado durante mucho tiempo.";
 "category.others" = "Otros";
 "subcategory.balanceAdjustment" = "Ajustes de saldo";

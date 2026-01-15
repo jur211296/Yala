@@ -191,7 +191,7 @@ struct AccountFormView: View {
                         Text(L10n.Account.adjustment)
                             .foregroundStyle(.primary)
                         Spacer()
-                        Text(viewModel.selectedAdjustmentMode.rawValue)
+                        Text(viewModel.selectedAdjustmentMode.displayName)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                         Image(systemName: "chevron.right")
@@ -229,7 +229,7 @@ struct AccountFormView: View {
         SectionBox(
             title: viewModel.isEditing
                 ? (viewModel.selectedAdjustmentMode == .changeInitialBalance
-                    ? "Saldo inicial" : "Nuevo saldo") : "Saldo inicial"
+                    ? L10n.Account.initialBalance : L10n.Account.newBalance) : L10n.Account.initialBalance
         ) {
             VStack(spacing: 0) {
                 // Show current balance (read-only) when editing
@@ -252,12 +252,12 @@ struct AccountFormView: View {
 
                 // Sign selector
                 HStack(spacing: 12) {
-                    Text("Signo")
+                    Text(L10n.Account.sign)
                         .font(.subheadline)
                     Spacer()
-                    Picker("Signo", selection: $viewModel.isPositive) {
-                        Text("Positivo").tag(true)
-                        Text("Negativo").tag(false)
+                    Picker(L10n.Account.sign, selection: $viewModel.isPositive) {
+                        Text(L10n.Account.positive).tag(true)
+                        Text(L10n.Account.negative).tag(false)
                     }
                     .pickerStyle(.segmented)
                 }
@@ -271,7 +271,7 @@ struct AccountFormView: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(
                             viewModel.selectedAdjustmentMode == .changeInitialBalance
-                                ? "Saldo inicial" : L10n.Account.newBalance
+                                ? L10n.Account.initialBalance : L10n.Account.newBalance
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -324,7 +324,7 @@ struct AccountFormView: View {
                     SubsectionDivider()
 
                     HStack {
-                        Text("Saldo final:")
+                        Text(L10n.Account.finalBalance + ":")
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(formatAmount(finalBalance, currency: viewModel.selectedCurrency))
@@ -341,7 +341,7 @@ struct AccountFormView: View {
                     SubsectionDivider()
 
                     HStack {
-                        Text("Ajuste:")
+                        Text(L10n.Account.adjustment + ":")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -356,7 +356,7 @@ struct AccountFormView: View {
     }
 
     private var colorSection: some View {
-        SectionBox(title: "Color") {
+        SectionBox(title: L10n.Common.color) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 16) {

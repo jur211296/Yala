@@ -39,19 +39,27 @@ enum AccountType: String, CaseIterable, Identifiable {
 }
 
 enum AdjustmentMode: String, CaseIterable, Identifiable {
+    // Keep rawValue for backward compatibility with stored data
     case byEntry = "Ajustar por registro"
     case changeInitialBalance = "Cambiar saldo inicial"
 
     var id: String { rawValue }
 
+    var displayName: String {
+        switch self {
+        case .byEntry:
+            return L10n.Account.adjustByEntry
+        case .changeInitialBalance:
+            return L10n.Account.changeInitialBalanceName
+        }
+    }
+
     var description: String {
         switch self {
         case .byEntry:
-            return
-                "Escribe el saldo correcto y crearemos un registro de corrección. Úsalo si se te olvidó registrar algunos gastos."
+            return L10n.Account.adjustByEntryDesc
         case .changeInitialBalance:
-            return
-                "Escribe el saldo correcto y cambiaremos el saldo inicial en tu cuenta. Usa esto si no has registrado durante mucho tiempo."
+            return L10n.Account.changeInitialBalanceDesc
         }
     }
 }

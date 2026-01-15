@@ -699,5 +699,10 @@
 "account.existingInitialBalance" = "You already have an initial balance of %@. Do you want to modify it?";
 "account.modifyInitialBalance" = "Modify initial balance";
 "account.adjustmentDate" = "Adjustment date";
+"account.finalBalance" = "Final balance";
+"account.adjustByEntry" = "Adjust by entry";
+"account.adjustByEntryDesc" = "Enter the correct balance and we'll create a correction entry. Use this if you forgot to record some expenses.";
+"account.changeInitialBalanceName" = "Change initial balance";
+"account.changeInitialBalanceDesc" = "Enter the correct balance and we'll change the initial balance in your account. Use this if you haven't recorded in a long time.";
 "category.others" = "Others";
 "subcategory.balanceAdjustment" = "Balance adjustments";

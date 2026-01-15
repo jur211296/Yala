@@ -16,7 +16,7 @@ struct AdjustmentModeSelectorView: View {
             ForEach(AdjustmentMode.allCases) { mode in
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(mode.rawValue)
+                        Text(mode.displayName)
                             .font(.body)
                         Text(mode.description)
                             .font(.caption)
@@ -36,6 +36,6 @@ struct AdjustmentModeSelectorView: View {
                 }
             }
         }
-        .navigationTitle("Ajuste")
+        .navigationTitle(L10n.Account.adjustment)
     }
 }

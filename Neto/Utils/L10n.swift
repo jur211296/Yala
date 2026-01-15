@@ -404,6 +404,21 @@ enum L10n {
         static var adjustmentDate: String {
             NSLocalizedString("account.adjustmentDate", comment: "")
         }
+        static var finalBalance: String {
+            NSLocalizedString("account.finalBalance", comment: "")
+        }
+        static var adjustByEntry: String {
+            NSLocalizedString("account.adjustByEntry", comment: "")
+        }
+        static var adjustByEntryDesc: String {
+            NSLocalizedString("account.adjustByEntryDesc", comment: "")
+        }
+        static var changeInitialBalanceName: String {
+            NSLocalizedString("account.changeInitialBalanceName", comment: "")
+        }
+        static var changeInitialBalanceDesc: String {
+            NSLocalizedString("account.changeInitialBalanceDesc", comment: "")
+        }
 
     }
 

@@ -144,11 +144,11 @@ struct ProfileView: View {
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
-                    SettingsPlaceholderView(title: "Notificaciones")
+                    SettingsPlaceholderView(title: L10n.Settings.notifications)
                 case .favorites:
                     FavoritesListView(mode: .manage)
                 case .planned:
-                    SettingsPlaceholderView(title: "Pagos planificados")
+                    SettingsPlaceholderView(title: L10n.Settings.plannedPayments)
                 case .userDataReset:
                     UserDataResetView(onUserDataWiped: {
                         dismiss()
