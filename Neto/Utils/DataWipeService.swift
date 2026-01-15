@@ -46,21 +46,45 @@ final class DataWipeService {
 
         try deleteAll(TransactionItem.self, in: context)
 
-        // Eliminar todos los presupuestos (dependen de categorías)
+        // Clear Budget many-to-many relationships before deletion
+        let budgetDescriptor = FetchDescriptor<Budget>()
+        let allBudgets = try context.fetch(budgetDescriptor)
+        for budget in allBudgets {
+            budget.accounts = []
+            budget.subcategories = []
+            budget.tags = []
+        }
+        try context.save()
+
+        // Eliminar todos los presupuestos
         try deleteAll(Budget.self, in: context)
 
-        // Eliminar todos los tags (ya no tienen relaciones)
+        // Clear Tag budget relationships and delete
+        for tag in allTags {
+            tag.budgets = []
+        }
+        try context.save()
         try deleteAll(Tag.self, in: context)
 
         // Eliminar todos los tipos de cambio
         try deleteAll(ExchangeRate.self, in: context)
 
-        // Eliminar todas las cuentas
+        // Clear Account budget relationships and delete
+        let accountDescriptor = FetchDescriptor<Account>()
+        let allAccounts = try context.fetch(accountDescriptor)
+        for account in allAccounts {
+            account.budgets = []
+        }
+        try context.save()
         try deleteAll(Account.self, in: context)
 
-        // Eliminar todas las subcategorías primero (tienen relación mandatory con Category)
+        // Clear Subcategory budget relationships and delete (tienen relación mandatory con Category)
         let subcategoryDescriptor = FetchDescriptor<Subcategory>()
         let allSubcategories = try context.fetch(subcategoryDescriptor)
+        for subcategory in allSubcategories {
+            subcategory.budgets = []
+        }
+        try context.save()
         for subcategory in allSubcategories {
             context.delete(subcategory)
         }
@@ -96,6 +120,7 @@ final class DataWipeService {
         if reseedInitialData {
             try reseedInitialAppState(in: context)
         }
+        // Note: Exchange rate reload is triggered by UserDataResetView after wipe completes
     }
 
     // MARK: - Helper de borrado genérico

@@ -23,6 +23,9 @@ final class Account {
     var excludeFromStatistics: Bool
     var isArchived: Bool
 
+    /// Relación inversa con budgets (muchos-a-muchos)
+    var budgets: [Budget] = []
+
     init(
         name: String,
         currencyCode: String,

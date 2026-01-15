@@ -20,6 +20,9 @@ final class Tag {
     @Relationship(deleteRule: .nullify, inverse: \TransactionItem.tags)
     var transactions: [TransactionItem]
 
+    /// Relación inversa con budgets (muchos-a-muchos)
+    var budgets: [Budget] = []
+
     init(
         name: String,
         colorHex: String = "#1C3556",

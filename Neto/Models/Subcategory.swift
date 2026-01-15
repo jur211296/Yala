@@ -29,6 +29,9 @@ final class Subcategory {
     /// Relación inversa con la categoría padre
     var category: Category
 
+    /// Relación inversa con budgets (muchos-a-muchos)
+    var budgets: [Budget] = []
+
     init(
         name: String,
         colorHex: String? = nil,
