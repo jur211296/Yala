@@ -52,6 +52,7 @@ struct ProfileView: View {
         case appIcon
         case notifications
         case favorites
+        case budgetsFavorites
         case planned
         case userDataReset
         case placeholder(String)
@@ -147,6 +148,8 @@ struct ProfileView: View {
                     SettingsPlaceholderView(title: L10n.Settings.notifications)
                 case .favorites:
                     FavoritesListView(mode: .manage)
+                case .budgetsFavorites:
+                    BudgetsFavoritesSettingsView()
                 case .planned:
                     SettingsPlaceholderView(title: L10n.Settings.plannedPayments)
                 case .userDataReset:
@@ -234,6 +237,11 @@ struct ProfileView: View {
                 profileRow(
                     icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
                     destination: .favorites)
+                SubsectionDivider()
+                profileRow(
+                    icon: "chart.pie.fill", title: L10n.Settings.budgetsFavorites,
+                    iconColor: .mint,
+                    destination: .budgetsFavorites)
                 SubsectionDivider()
                 profileRow(
                     icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments,

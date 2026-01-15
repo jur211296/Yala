@@ -861,6 +861,18 @@ enum L10n {
             NSLocalizedString("settings.notifications", comment: "")
         }
         static var favorites: String { NSLocalizedString("settings.favorites", comment: "") }
+        static var budgetsFavorites: String {
+            NSLocalizedString("settings.budgetsFavorites", comment: "")
+        }
+        static var budgetsFavoritesInfo: String {
+            NSLocalizedString("settings.budgetsFavoritesInfo", comment: "")
+        }
+        static var budgetsFavoritesEmptyHint: String {
+            NSLocalizedString("settings.budgetsFavoritesEmptyHint", comment: "")
+        }
+        static var budgetsFavoritesReorder: String {
+            NSLocalizedString("settings.budgetsFavoritesReorder", comment: "")
+        }
         static var plannedPayments: String {
             NSLocalizedString("settings.plannedPayments", comment: "")
         }
