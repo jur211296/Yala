@@ -49,20 +49,33 @@ struct NetoApp: App {
                 .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
                 .task {
                     // Update exchange rates on app launch
-                    let context = sharedModelContainer.mainContext
-
-                    // First get today's rate
-                    await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
-
-                    // Then preload historical data if needed (first launch or after data wipe)
-                    await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
-
-                    // Update any transactions with provisional exchange rates
-                    await TransactionUpdateService.updateProvisionalTransactions(context: context)
+                    await loadExchangeRates()
+                }
+                .onChange(of: sessionState.needsExchangeRateReload) { _, needsReload in
+                    if needsReload {
+                        Task {
+                            await loadExchangeRates()
+                            sessionState.needsExchangeRateReload = false
+                        }
+                    }
                 }
         }
         // Adjunta el contenedor de modelos a la escena principal.
         .modelContainer(sharedModelContainer)
         .environment(sessionState)
+    }
+
+    /// Load exchange rates (used on app launch and after data wipe)
+    private func loadExchangeRates() async {
+        let context = sharedModelContainer.mainContext
+
+        // First get today's rate
+        await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
+
+        // Then preload historical data if needed (first launch or after data wipe)
+        await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
+
+        // Update any transactions with provisional exchange rates
+        await TransactionUpdateService.updateProvisionalTransactions(context: context)
     }
 }
