@@ -215,6 +215,39 @@ enum L10n {
         static var allAccounts: String { NSLocalizedString("filters.allAccounts", comment: "") }
         static var allCategories: String { NSLocalizedString("filters.allCategories", comment: "") }
         static var clearFilters: String { NSLocalizedString("filters.clearFilters", comment: "") }
+        static var selectCategories: String {
+            NSLocalizedString("filters.selectCategories", comment: "")
+        }
+        static var selectAll: String {
+            NSLocalizedString("filters.selectAll", comment: "")
+        }
+        static var deselectAll: String {
+            NSLocalizedString("filters.deselectAll", comment: "")
+        }
+        static var noSubcategories: String {
+            NSLocalizedString("filters.noSubcategories", comment: "")
+        }
+        static var noneSelected: String {
+            NSLocalizedString("filters.noneSelected", comment: "")
+        }
+        static var allSubcategories: String {
+            NSLocalizedString("filters.allSubcategories", comment: "")
+        }
+        static var filterOptions: String {
+            NSLocalizedString("filters.filterOptions", comment: "")
+        }
+        static var noteContains: String {
+            NSLocalizedString("filters.noteContains", comment: "")
+        }
+        static var selectAccounts: String {
+            NSLocalizedString("filters.selectAccounts", comment: "")
+        }
+        static var selectTags: String {
+            NSLocalizedString("filters.selectTags", comment: "")
+        }
+        static var selectCurrencies: String {
+            NSLocalizedString("filters.selectCurrencies", comment: "")
+        }
     }
 
     // MARK: - Actions

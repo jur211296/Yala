@@ -37,6 +37,8 @@
 "period.nextYear" = "Next Year";
 "period.allTime" = "All Time";
 "period.custom" = "Custom";
+"period.startDate" = "Start date";
+"period.endDate" = "End date";
 
 // MARK: - Trend Types
 
@@ -90,6 +92,17 @@
 "filters.allAccounts" = "All Accounts";
 "filters.allCategories" = "All Categories";
 "filters.clearFilters" = "Clear Filters";
+"filters.selectCategories" = "Select categories";
+"filters.selectAll" = "Select all";
+"filters.deselectAll" = "Deselect all";
+"filters.noSubcategories" = "No subcategories";
+"filters.noneSelected" = "None selected";
+"filters.allSubcategories" = "All subcategories";
+"filters.filterOptions" = "Filter options";
+"filters.noteContains" = "Note contains...";
+"filters.selectAccounts" = "Select accounts";
+"filters.selectTags" = "Select tags";
+"filters.selectCurrencies" = "Select currencies";
 
 // MARK: - Actions
 

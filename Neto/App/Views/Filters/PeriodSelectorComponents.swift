@@ -145,14 +145,14 @@ struct CustomPeriodPickerSheet: View {
             List {
                 Section {
                     DatePicker(
-                        "Fecha de inicio",
+                        L10n.Period.startDate,
                         selection: $startDate,
                         in: minDate...endDate,
                         displayedComponents: .date
                     )
 
                     DatePicker(
-                        "Fecha de fin",
+                        L10n.Period.endDate,
                         selection: $endDate,
                         in: startDate...maxDate,
                         displayedComponents: .date

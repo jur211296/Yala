@@ -35,7 +35,7 @@ struct CategorySelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        SectionBox(title: "Seleccionar categorías") {
+                        SectionBox(title: L10n.Filters.selectCategories) {
                             VStack(spacing: 0) {
                                 selectAllRow
 
@@ -66,7 +66,7 @@ struct CategorySelectorSheet: View {
                     .padding(.vertical, 24)
                 }
             }
-            .navigationTitle("Seleccionar categorías")
+            .navigationTitle(L10n.Filters.selectCategories)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -95,8 +95,8 @@ struct CategorySelectorSheet: View {
             }
         } label: {
             HStack {
-                // Show "Deseleccionar" only when everything is explicitly selected
-                Text(isEverythingSelected ? "Deseleccionar todo" : "Seleccionar todo")
+                // Show "Deselect" only when everything is explicitly selected
+                Text(isEverythingSelected ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
 
@@ -267,9 +267,9 @@ struct CategorySelectorSheet: View {
         let total = subs.count
         let selected = subs.filter { selectedSubcategories.contains($0.persistentModelID) }.count
 
-        if total == 0 { return "Sin subcategorías" }
-        if selected == 0 { return "Ninguna seleccionada" }
-        if selected == total { return "Todas las subcategorías" }
-        return "\(selected) de \(total) subcategorías"
+        if total == 0 { return L10n.Filters.noSubcategories }
+        if selected == 0 { return L10n.Filters.noneSelected }
+        if selected == total { return L10n.Filters.allSubcategories }
+        return "\(selected) / \(total)"
     }
 }

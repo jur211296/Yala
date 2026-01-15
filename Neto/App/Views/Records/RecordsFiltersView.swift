@@ -74,7 +74,7 @@ struct RecordsFiltersView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        SectionBox(title: "Opciones de filtrado") {
+                        SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: 0) {
                                 accountsContent
                                 Divider().padding(.leading, 16)
@@ -450,7 +450,7 @@ struct RecordsFiltersView: View {
                 .foregroundStyle(.primary)
                 .frame(width: 24)
 
-            TextField("Nota contiene...", text: $viewModel.searchText)
+            TextField(L10n.Filters.noteContains, text: $viewModel.searchText)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -482,7 +482,7 @@ struct RecordsFiltersView: View {
                     .foregroundStyle(.primary)
                 }
             }
-            .navigationTitle("Seleccionar cuentas")
+            .navigationTitle(L10n.Filters.selectAccounts)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NetoToolbarButton(systemName: "chevron.left") {
@@ -517,18 +517,18 @@ struct RecordsFiltersView: View {
         }.count
 
         if total == 0 {
-            return "Sin subcategorías"
+            return L10n.Filters.noSubcategories
         }
 
         if selectedCount == 0 {
-            return "Ninguna seleccionada"
+            return L10n.Filters.noneSelected
         }
 
         if selectedCount == total {
-            return "Todas las subcategorías"
+            return L10n.Filters.allSubcategories
         }
 
-        return "\(selectedCount) de \(total) subcategorías"
+        return "\(selectedCount) / \(total)"
     }
 
     // MARK: - Tags Sheet
@@ -563,7 +563,7 @@ struct RecordsFiltersView: View {
                     .foregroundStyle(.primary)
                 }
             }
-            .navigationTitle("Seleccionar etiquetas")
+            .navigationTitle(L10n.Filters.selectTags)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NetoToolbarButton(systemName: "chevron.left") {
@@ -579,7 +579,7 @@ struct RecordsFiltersView: View {
     private var currencySheetView: some View {
         NavigationStack {
             MultiSelectionList(
-                title: "Seleccionar monedas",
+                title: L10n.Filters.selectCurrencies,
                 items: CurrencyCode.allCases,
                 selection: $viewModel.selectedCurrencies,
                 label: { $0.rawValue }

@@ -49,7 +49,7 @@ struct RecordRowView: View {
 
                         // Line 2: Category • Account (Compact)
                         let categoryName =
-                            record.subcategory?.name ?? record.category?.name ?? "Sin categoría"
+                            record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized
                         let accountName = record.account?.name ?? ""
 
                         Text("\(categoryName) • \(accountName)")
@@ -58,7 +58,7 @@ struct RecordRowView: View {
                             .lineLimit(1)
                     } else {
                         // Fallback: Line 1 = Category
-                        Text(record.subcategory?.name ?? record.category?.name ?? "Sin categoría")
+                        Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
