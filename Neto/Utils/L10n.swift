@@ -308,6 +308,7 @@ enum L10n {
     enum ExchangeRate {
         static var title: String { NSLocalizedString("exchangeRate.title", comment: "") }
         static var updated: String { NSLocalizedString("exchangeRate.updated", comment: "") }
+        static var loadError: String { NSLocalizedString("exchangeRate.loadError", comment: "") }
     }
 
     // MARK: - Currency Names
@@ -1160,6 +1161,16 @@ enum L10n {
         }
         static var budgets: String {
             NSLocalizedString("widgetType.budgets", comment: "")
+        }
+    }
+
+    // MARK: - Budgets
+
+    enum Budgets {
+        enum Widget {
+            static var selectFavorites: String {
+                NSLocalizedString("budgets.widget.selectFavorites", comment: "")
+            }
         }
     }
 

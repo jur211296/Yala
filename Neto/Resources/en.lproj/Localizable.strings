@@ -131,6 +131,7 @@
 
 "exchangeRate.title" = "Exchange Rate";
 "exchangeRate.updated" = "Updated";
+"exchangeRate.loadError" = "Could not load exchange rate for this period. Please try again later.";
 
 // MARK: - Empty States
 
@@ -325,6 +326,7 @@
 "budgets.empty.message" = "Create budgets to control your spending.";
 "budgets.widget.noFavorites.title" = "No favorites";
 "budgets.widget.noFavorites.message" = "Mark budgets as favorites in Settings > Budgets to see them here.";
+"budgets.widget.selectFavorites" = "Select favorites";
 "budgets.new" = "New Budget";
 "budgets.edit" = "Edit Budget";
 "budgets.delete.confirm.title" = "Delete budget?";

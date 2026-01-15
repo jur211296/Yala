@@ -21,6 +21,7 @@ struct BudgetsWidget: View {
     // Interaction callbacks
     var onSelectBudget: ((Budget) -> Void)?
     var onShowMore: (() -> Void)?
+    var onEditFavorites: (() -> Void)?
 
     // Layout variants
     enum CardSize {
@@ -125,6 +126,19 @@ struct BudgetsWidget: View {
                     .font(.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
+
+                // Quick action to edit favorites
+                if onEditFavorites != nil {
+                    Button {
+                        onEditFavorites?()
+                    } label: {
+                        Text(L10n.Budgets.Widget.selectFavorites)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.electricIndigo)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 8)
+                }
             } else {
                 Text(NSLocalizedString("budgets.empty.title", comment: ""))
                     .font(.subheadline.weight(.medium))

@@ -131,6 +131,7 @@
 
 "exchangeRate.title" = "Tipo de Cambio";
 "exchangeRate.updated" = "Actualizado";
+"exchangeRate.loadError" = "No se pudo cargar el tipo de cambio para este periodo. Inténtalo más tarde.";
 
 // MARK: - Empty States
 
@@ -325,6 +326,7 @@
 "budgets.empty.message" = "Crea presupuestos para controlar tus gastos.";
 "budgets.widget.noFavorites.title" = "Sin favoritos";
 "budgets.widget.noFavorites.message" = "Marca presupuestos como favoritos en Ajustes > Presupuestos para verlos aqui.";
+"budgets.widget.selectFavorites" = "Seleccionar favoritos";
 "budgets.new" = "Nuevo presupuesto";
 "budgets.edit" = "Editar presupuesto";
 "budgets.delete.confirm.title" = "¿Eliminar presupuesto?";
