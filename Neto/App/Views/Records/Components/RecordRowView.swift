@@ -29,7 +29,7 @@ struct RecordRowView: View {
                 onTap()
             }
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.ListRow.spacing) {
                 // Selection circle (only in selection mode)
                 if isSelectionMode {
                     selectionCircle
@@ -93,12 +93,12 @@ struct RecordRowView: View {
                     }
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 14)
+            .padding(.vertical, DS.ListRow.paddingV)
+            .padding(.horizontal, DS.ListRow.paddingH)
             .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.06),
+                color: Color.black.opacity(colorScheme == .dark ? 0.25 : DS.Opacity.faint),
                 radius: 6,
                 x: 0,
                 y: 3
@@ -110,7 +110,7 @@ struct RecordRowView: View {
     // MARK: - Card Background
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
+        RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
             .fill(Color.netoCard)
     }
 
@@ -122,12 +122,12 @@ struct RecordRowView: View {
                 .stroke(
                     isSelected ? Color.electricIndigo : Color.secondary.opacity(0.3), lineWidth: 2
                 )
-                .frame(width: 24, height: 24)
+                .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
             if isSelected {
                 Circle()
                     .fill(Color.electricIndigo)
-                    .frame(width: 24, height: 24)
+                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
                 Image(systemName: "checkmark")
                     .font(.caption2.weight(.bold))
@@ -150,7 +150,7 @@ struct RecordRowView: View {
         return ZStack {
             Circle()
                 .fill(Color(hex: colorHex))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
             Image(systemName: iconName)
                 .font(.callout.weight(.medium))

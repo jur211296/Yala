@@ -78,16 +78,16 @@ struct CategoriesTabView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 20) {
+            VStack(spacing: DS.Spacing.xl) {
                 controlBar
                 chartsCarousel
                 natureWidget
                 categoriesListSection
                 recentRecordsSection
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 100)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.sm)
+            .netoSafeBottomPadding()
         }
         .onAppear {
             calculateData()
@@ -155,12 +155,12 @@ struct CategoriesTabView: View {
     // MARK: - Control Bar
 
     private var controlBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             periodSelector
 
             if hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: DS.Spacing.sm) {
                         // Account chips (with icon)
                         ForEach(selectedAccountChips, id: \.id) { chip in
                             FilterChipView(
@@ -647,7 +647,7 @@ struct CategoriesTabView: View {
     // MARK: - Empty State
 
     private func emptyState(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
@@ -873,7 +873,7 @@ struct CategoriesTabView: View {
     // MARK: - Recent Records Section
 
     private var recentRecordsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
                 .font(.headline)
                 .foregroundStyle(Color.netoPrimaryText)
@@ -897,10 +897,10 @@ struct CategoriesTabView: View {
                         .font(.caption)
                     Spacer()
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, DS.Spacing.md)
                 .foregroundStyle(Color.electricIndigo)
-                .background(Color.electricIndigo.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .buttonStyle(.plain)
         }
