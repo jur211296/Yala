@@ -44,6 +44,9 @@ enum DS {
 
         /// 48pt - Page margins, large gaps
         static let xxxxl: CGFloat = 48
+
+        /// 100pt - Safe bottom padding for scrollable content
+        static let safeBottom: CGFloat = 100
     }
 
     // MARK: - Corner Radius
@@ -58,6 +61,9 @@ enum DS {
 
         /// 12pt - Cards, inputs, containers
         static let md: CGFloat = 12
+
+        /// 14pt - Record rows, list items
+        static let card: CGFloat = 14
 
         /// 16pt - Sheets, modals
         static let lg: CGFloat = 16
@@ -194,6 +200,97 @@ enum DS {
         /// Large icon size inside badge
         static let sizeLarge: CGFloat = 20
     }
+
+    // MARK: - Form Row Dimensions
+
+    /// Standard dimensions for form rows (TransactionFormRow, settings rows, etc.)
+    enum FormRow {
+        /// Horizontal padding inside form rows
+        static let paddingH: CGFloat = 16
+
+        /// Vertical padding inside form rows
+        static let paddingV: CGFloat = 14
+
+        /// Icon container width (left side)
+        static let iconWidth: CGFloat = 28
+
+        /// Spacing between icon and content
+        static let iconSpacing: CGFloat = 12
+
+        /// Chevron size for navigation rows
+        static let chevronSize: CGFloat = 14
+
+        /// Minimum row height
+        static let minHeight: CGFloat = 52
+    }
+
+    // MARK: - List Row Dimensions
+
+    /// Standard dimensions for list items (RecordRowView, etc.)
+    enum ListRow {
+        /// Horizontal padding
+        static let paddingH: CGFloat = 14
+
+        /// Vertical padding
+        static let paddingV: CGFloat = 12
+
+        /// Icon/avatar size
+        static let iconSize: CGFloat = 40
+
+        /// Spacing between elements
+        static let spacing: CGFloat = 12
+
+        /// Corner radius (uses Radius.card)
+        static let radius: CGFloat = 14
+    }
+
+    // MARK: - Typography
+
+    /// Semantic font styles for consistent typography.
+    /// Usage: `.font(DS.Typography.title)` or `Text("Hello").dsFont(.title)`
+    enum Typography {
+        // MARK: Headings
+        /// Screen titles, large headers
+        static let largeTitle = Font.largeTitle.weight(.bold)
+        /// Section headers
+        static let title = Font.title2.weight(.semibold)
+        /// Subsection headers
+        static let title2 = Font.title2.weight(.semibold)
+        /// Card titles, subsections
+        static let headline = Font.headline.weight(.semibold)
+
+        // MARK: Body
+        /// Primary body text, emphasized
+        static let bodyBold = Font.body.weight(.medium)
+        /// Alias for bodyBold (legacy compatibility)
+        static let bodyLarge = Font.body.weight(.medium)
+        /// Standard body text
+        static let body = Font.body
+        /// Secondary body text
+        static let subheadline = Font.subheadline
+
+        // MARK: Labels
+        /// UI labels, medium weight
+        static let label = Font.subheadline.weight(.medium)
+        /// Small labels
+        static let labelSmall = Font.caption.weight(.medium)
+        /// Tiny labels, badges
+        static let labelTiny = Font.caption2.weight(.medium)
+
+        // MARK: Captions
+        /// Descriptions, helper text
+        static let caption = Font.caption
+        /// Smallest text
+        static let captionSmall = Font.caption2
+
+        // MARK: Numbers
+        /// Large amounts (hero numbers)
+        static let amountLarge = Font.system(.title, design: .rounded).weight(.bold)
+        /// Standard amounts
+        static let amount = Font.system(.body, design: .rounded).weight(.semibold)
+        /// Small amounts
+        static let amountSmall = Font.system(.subheadline, design: .rounded).weight(.medium)
+    }
 }
 
 // MARK: - View Extensions
@@ -211,6 +308,11 @@ extension View {
         return self.shadow(color: s.color, radius: s.radius, x: s.x, y: s.y)
     }
 }
+
+// MARK: - Global Typealias
+
+/// Allows using `Typography.title` instead of `DS.Typography.title`
+typealias Typography = DS.Typography
 
 // MARK: - Legacy Aliases (Deprecated)
 
@@ -248,49 +350,3 @@ enum DesignSystem {
     }
 }
 
-// MARK: - Legacy Typography (Keep for reference, not actively used)
-
-/// Pre-configured font styles for consistent typography.
-/// Note: Most views currently use inline .font() calls.
-/// Consider migrating to these tokens for consistency.
-enum Typography {
-
-    // MARK: - Headlines
-
-    /// Large title: Bold, for main screen headers
-    static let titleLarge = Font.largeTitle.weight(.bold)
-
-    /// Title: Semibold, for section headers
-    static let title = Font.title.weight(.semibold)
-
-    /// Title 2: Semibold, for subsection headers
-    static let title2 = Font.title2.weight(.semibold)
-
-    /// Title 3: Medium, for card titles
-    static let title3 = Font.title3.weight(.medium)
-
-    // MARK: - Body
-
-    /// Body large: Medium weight, for emphasized body text
-    static let bodyLarge = Font.body.weight(.medium)
-
-    /// Body: Regular, for standard content
-    static let body = Font.body
-
-    /// Body small: Subheadline size
-    static let bodySmall = Font.subheadline
-
-    // MARK: - Labels & Captions
-
-    /// Label: Medium weight caption for UI labels
-    static let label = Font.caption.weight(.medium)
-
-    /// Label small: Caption 2 for secondary labels
-    static let labelSmall = Font.caption2
-
-    /// Mono: Monospaced for numbers and amounts
-    static let mono = Font.system(.body, design: .monospaced)
-
-    /// Mono large: Monospaced for large amounts
-    static let monoLarge = Font.system(.title2, design: .monospaced).weight(.semibold)
-}
