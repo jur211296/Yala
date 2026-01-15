@@ -14,7 +14,7 @@ import SwiftData
 final class Tag {
     var name: String
     var colorHex: String
-    var iconName: String
+    var iconName: String = "tag.fill"
     var isActive: Bool
     var createdAt: Date
 
