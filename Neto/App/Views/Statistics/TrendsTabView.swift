@@ -547,7 +547,7 @@ struct TrendsTabView: View {
                 Image(systemName: metric.iconName)
                     .font(.caption.weight(.semibold))
                 if isSelected {
-                    Text(metric.rawValue)
+                    Text(metric.displayName)
                         .font(.caption.weight(.semibold))
                 }
             }

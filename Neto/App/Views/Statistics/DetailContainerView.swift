@@ -207,7 +207,7 @@ struct DetailContainerView: View {
             HStack(spacing: 6) {
                 Image(systemName: tab.icon)
                     .font(.subheadline)
-                Text(tab.rawValue)
+                Text(tab.title)
                     .font(.subheadline.weight(.medium))
             }
             .padding(.horizontal, 16)

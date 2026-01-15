@@ -25,11 +25,11 @@ struct RecordDateSectionView: View {
         .padding(.vertical, 4)
     }
 
-    /// Format: "12 de diciembre" (Spanish locale, regular case)
+    /// Format: "12 December" or "12 de diciembre" depending on locale
     private var formattedDate: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "d 'de' MMMM"
+        formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("d MMMM")
         return formatter.string(from: date)
     }
 }
