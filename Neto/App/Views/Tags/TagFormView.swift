@@ -38,7 +38,7 @@ struct TagFormView: View {
         tagToEdit != nil
     }
 
-    init(tagToEdit: Tag? = nil) {
+    init(tagToEdit: Tag? = nil, existingTags: [Tag] = []) {
         self.tagToEdit = tagToEdit
 
         if let tag = tagToEdit {
@@ -47,10 +47,13 @@ struct TagFormView: View {
             _isActive = State(initialValue: tag.isActive)
             _customColor = State(initialValue: colorForHex(tag.colorHex))
         } else {
+            // Calcular color único basado en tags existentes
+            let usedColors = existingTags.map { $0.colorHex }
+            let defaultColor = Tag.nextAvailableColor(excluding: usedColors)
             _name = State(initialValue: "")
-            _selectedColorHex = State(initialValue: "#1C3556")  // Default dark blue
+            _selectedColorHex = State(initialValue: defaultColor)
             _isActive = State(initialValue: true)
-            _customColor = State(initialValue: Color(red: 0.11, green: 0.21, blue: 0.34))
+            _customColor = State(initialValue: colorForHex(defaultColor))
         }
     }
 
@@ -169,17 +172,24 @@ struct TagFormView: View {
         SectionBox(title: L10n.Tag.color) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 16) {
-                        ForEach(colorOptions, id: \.self) { hex in
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 8),
+                        spacing: 12
+                    ) {
+                        ForEach(Tag.defaultColors, id: \.self) { hex in
                             Circle()
                                 .fill(colorForHex(hex))
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Circle()
                                         .stroke(
-                                            Color.white, lineWidth: selectedColorHex == hex ? 3 : 1)
+                                            Color.white,
+                                            lineWidth: selectedColorHex.uppercased()
+                                                == hex.uppercased() ? 3 : 1)
                                 )
-                                .shadow(radius: selectedColorHex == hex ? 4 : 0)
+                                .shadow(
+                                    radius: selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
+                                )
                                 .onTapGesture {
                                     selectedColorHex = hex
                                 }
@@ -235,10 +245,6 @@ struct TagFormView: View {
     }
 
     // MARK: - Helpers
-
-    private var colorOptions: [String] {
-        ["#FF9F0A", "#30D158", "#FF375F", "#0A84FF", "#5E5CE6", "#FFD60A", "#1C3556"]
-    }
 
     private func hexString(from color: Color) -> String {
         var red: CGFloat = 0

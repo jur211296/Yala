@@ -97,10 +97,10 @@ struct TagsSettingsListView: View {
             }
         }
         .sheet(isPresented: $isPresentingCreateTag) {
-            TagFormView()
+            TagFormView(existingTags: tags)
         }
         .sheet(item: $tagToEdit) { tag in
-            TagFormView(tagToEdit: tag)
+            TagFormView(tagToEdit: tag, existingTags: tags)
         }
     }
 

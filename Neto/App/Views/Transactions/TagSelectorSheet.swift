@@ -54,7 +54,7 @@ struct TagSelectorSheet: View {
             .sheet(isPresented: $showNewTagSheet, onDismiss: {
                 selectNewlyCreatedTag()
             }) {
-                TagFormView(tagToEdit: nil)
+                TagFormView(existingTags: tags)
             }
         }
         .tint(Color.electricIndigo)
