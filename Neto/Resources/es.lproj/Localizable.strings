@@ -329,6 +329,7 @@
 "budgets.widget.selectFavorites" = "Seleccionar favoritos";
 "budgets.new" = "Nuevo presupuesto";
 "budgets.edit" = "Editar presupuesto";
+"budgets.delete" = "Eliminar presupuesto";
 "budgets.delete.confirm.title" = "¿Eliminar presupuesto?";
 "budgets.delete.confirm.message" = "Esta acción no se puede deshacer.";
 

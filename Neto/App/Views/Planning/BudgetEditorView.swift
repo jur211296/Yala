@@ -42,6 +42,7 @@ struct BudgetEditorView: View {
     // Sheet states
     @State private var showCategoriesSheet = false
     @State private var isFocused = false
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -63,11 +64,27 @@ struct BudgetEditorView: View {
 
                     // Filters Section
                     filtersSection
+
+                    // Delete Button (only for existing budgets)
+                    if budget != nil {
+                        deleteSection
+                    }
                 }
                 .padding(.vertical, 24)
                 .padding(.horizontal, 16)
             }
             .background(PanelBackgroundView())
+            .alert(
+                NSLocalizedString("budgets.delete.confirm.title", comment: ""),
+                isPresented: $showDeleteConfirmation
+            ) {
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+                Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                    deleteBudget()
+                }
+            } message: {
+                Text(NSLocalizedString("budgets.delete.confirm.message", comment: ""))
+            }
             .navigationTitle(
                 budget == nil
                     ? NSLocalizedString("budgets.new", comment: "")
@@ -439,6 +456,29 @@ struct BudgetEditorView: View {
         return "\(selectedNatures.count)"
     }
 
+    // MARK: - Delete Section
+
+    private var deleteSection: some View {
+        Button(role: .destructive) {
+            showDeleteConfirmation = true
+        } label: {
+            HStack {
+                Spacer()
+                Text(NSLocalizedString("budgets.delete", comment: ""))
+                    .font(.body.weight(.medium))
+                Spacer()
+            }
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.red.opacity(0.1))
+            )
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.red)
+        .padding(.top, 8)
+    }
+
     // MARK: - Categories Sheet
 
     private var categoriesSheetView: some View {
@@ -535,6 +575,15 @@ struct BudgetEditorView: View {
         }
 
         try? modelContext.save()
+        dismiss()
+    }
+
+    private func deleteBudget() {
+        guard let budget = budget else { return }
+        modelContext.delete(budget)
+        try? modelContext.save()
+        // Trigger widget refresh
+        SessionState.shared.needsBudgetsWidgetRefresh = true
         dismiss()
     }
 }

@@ -329,6 +329,7 @@
 "budgets.widget.selectFavorites" = "Select favorites";
 "budgets.new" = "New Budget";
 "budgets.edit" = "Edit Budget";
+"budgets.delete" = "Delete Budget";
 "budgets.delete.confirm.title" = "Delete budget?";
 "budgets.delete.confirm.message" = "This action cannot be undone.";
 
