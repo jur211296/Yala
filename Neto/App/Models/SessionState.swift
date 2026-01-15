@@ -215,6 +215,10 @@ class SessionState {
     /// Set to true after exchange rates are loaded/updated
     var needsExchangeRateWidgetRefresh: Bool = false
 
+    /// Flag to trigger budgets widget recalculation
+    /// Set to true after favorites are modified (toggled, reordered)
+    var needsBudgetsWidgetRefresh: Bool = false
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

@@ -287,6 +287,8 @@ struct BudgetsFavoritesSettingsView: View {
                 budget.favoriteOrder = maxOrder + 1
             }
             try? modelContext.save()
+            // Trigger widget refresh in PanelView
+            SessionState.shared.needsBudgetsWidgetRefresh = true
         }
     }
 
@@ -300,6 +302,8 @@ struct BudgetsFavoritesSettingsView: View {
         }
 
         try? modelContext.save()
+        // Trigger widget refresh in PanelView
+        SessionState.shared.needsBudgetsWidgetRefresh = true
     }
 
     private func reindexFavorites() {
