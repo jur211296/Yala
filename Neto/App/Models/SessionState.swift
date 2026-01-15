@@ -222,7 +222,17 @@ class SessionState {
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)
-    var selectedMainTab: AppTab = .panel
+    var selectedMainTab: AppTab = .panel {
+        didSet {
+            // Clear temporary tab when navigating to a permanent tab
+            if selectedMainTab != temporaryTab?.appTab && selectedMainTab != .more {
+                temporaryTab = nil
+            }
+        }
+    }
+
+    /// Temporary tab shown from "More" - cleared when navigating to another tab
+    var temporaryTab: ConfigurableTab?
 
     /// Currently selected detail tab within Statistics (Trends, Categories, Records)
     var selectedDetailTab: DetailViewTab = .trends

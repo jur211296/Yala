@@ -110,7 +110,6 @@ struct AppIconSettingsView: View {
                 }
             }
         }
-        .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
         .onAppear {
             loadCurrentIcon()
         }

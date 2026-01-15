@@ -166,7 +166,6 @@ struct PersonalizationSettingsView: View {
                 }
             }
         }
-        .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
         .sheet(isPresented: $showingPeriodPicker) {
             PeriodPickerSheet(
                 selectedPeriod: selectedPeriod,

@@ -27,6 +27,15 @@ struct MainTabView: View {
         TabBarConfiguration.fromJSON(tabConfigJSON)
     }
 
+    /// Tabs to show: active tabs + temporary tab (if set and not already active)
+    private var visibleTabs: [ConfigurableTab] {
+        var tabs = tabConfig.activeTabs
+        if let temp = sessionState.temporaryTab, !tabs.contains(temp) {
+            tabs.append(temp)
+        }
+        return tabs
+    }
+
     init() {
         // Get SessionState from the environment wrapper
         // This is initialized here to work with @Bindable
@@ -40,8 +49,8 @@ struct MainTabView: View {
             wipingDataView
         } else {
             TabView(selection: $sessionState.selectedMainTab) {
-                // Dynamic tabs based on configuration
-                ForEach(tabConfig.activeTabs) { tab in
+                // Dynamic tabs based on configuration + temporary tab
+                ForEach(visibleTabs) { tab in
                     Tab(tab.displayName, systemImage: tab.iconName, value: tab.appTab) {
                         viewForTab(tab)
                     }
@@ -170,6 +179,8 @@ struct MorePlaceholderView: View {
 
     private func hiddenTabRow(_ tab: ConfigurableTab) -> some View {
         Button {
+            // Set temporary tab first, then navigate
+            SessionState.shared.temporaryTab = tab
             SessionState.shared.selectedMainTab = tab.appTab
         } label: {
             HStack(spacing: 12) {

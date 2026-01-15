@@ -159,7 +159,6 @@ struct ProfileView: View {
                 }
             }
         }
-        .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
     }
 
     // User Theme for dynamic updates
