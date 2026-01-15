@@ -143,6 +143,7 @@ struct MorePlaceholderView: View {
         }
         .sheet(isPresented: $showProfile) {
             ProfileView()
+                .transaction { $0.animation = nil }
         }
     }
 
