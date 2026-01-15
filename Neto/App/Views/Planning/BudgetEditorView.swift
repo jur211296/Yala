@@ -78,8 +78,8 @@ struct BudgetEditorView: View {
                 NSLocalizedString("budgets.delete.confirm.title", comment: ""),
                 isPresented: $showDeleteConfirmation
             ) {
-                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
-                Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
+                Button(NSLocalizedString("action.delete", comment: ""), role: .destructive) {
                     deleteBudget()
                 }
             } message: {
@@ -468,15 +468,19 @@ struct BudgetEditorView: View {
                     .font(.body.weight(.medium))
                 Spacer()
             }
-            .padding(.vertical, 14)
+            .padding(.vertical, 16)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(Color.red.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
         .foregroundStyle(.red)
-        .padding(.top, 8)
+        .padding(.top, 16)
     }
 
     // MARK: - Categories Sheet
