@@ -391,6 +391,9 @@
 "export.allAvailable" = "Todas las disponibles";
 "export.noTagsSelected" = "Sin etiquetas";
 "export.noSubcategorySelected" = "Ninguna subcategoría seleccionada";
+"export.any" = "Cualquiera";
+"export.between" = "Entre";
+"export.condition" = "Condición";
 "common.next" = "Siguiente";
 "settings.versionInfo" = "Versión 1.0.0 (Build 1)";
 "tab.panel" = "Panel";

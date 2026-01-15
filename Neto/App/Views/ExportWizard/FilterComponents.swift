@@ -79,12 +79,21 @@ struct AmountFilterView: View {
 
     // Enum auxiliar para el Picker
     enum AmountConditionType: String, CaseIterable, Identifiable {
-        case any = "Cualquiera"
-        case greaterThan = "Mayor a"
-        case lessThan = "Menor a"
-        case between = "Entre"
+        case any
+        case greaterThan
+        case lessThan
+        case between
 
         var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .any: return L10n.Export.any
+            case .greaterThan: return L10n.Export.greaterThan
+            case .lessThan: return L10n.Export.lessThan
+            case .between: return L10n.Export.between
+            }
+        }
     }
 
     @State private var selectedType: AmountConditionType = .any
@@ -148,16 +157,16 @@ struct AmountFilterView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                    Text("Selecciona una única moneda para filtrar por monto.")
+                    Text(L10n.Export.selectSingleCurrency)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 8)
             } else {
                 // Selector superior (Cualquiera / Mayor a / Menor a / Entre)
-                Picker("Condición", selection: $selectedType) {
+                Picker(L10n.Export.condition, selection: $selectedType) {
                     ForEach(AmountConditionType.allCases) { type in
-                        Text(type.rawValue).tag(type)
+                        Text(type.displayName).tag(type)
                     }
                 }
                 .pickerStyle(.segmented)

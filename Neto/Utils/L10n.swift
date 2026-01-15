@@ -750,6 +750,15 @@ enum L10n {
         static var noSubcategorySelected: String {
             NSLocalizedString("export.noSubcategorySelected", comment: "")
         }
+        static var any: String {
+            NSLocalizedString("export.any", comment: "")
+        }
+        static var between: String {
+            NSLocalizedString("export.between", comment: "")
+        }
+        static var condition: String {
+            NSLocalizedString("export.condition", comment: "")
+        }
     }
 
     // MARK: - Favorites
