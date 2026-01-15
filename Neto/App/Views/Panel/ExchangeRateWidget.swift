@@ -187,6 +187,8 @@ struct ExchangeRateWidget: View {
     private func chartView(data: ExchangeRateWidgetData) -> some View {
         let activeCurrencies = selectedCurrencies.filter { $0.rawValue != preferredCurrency }
         let yDomain = calculateYDomain(data: data, currencies: activeCurrencies)
+        let smartDates = calculateSmartAxisDates(for: data.chartPoints)
+        let xDomain = calculateXDomain(for: data.chartPoints)
 
         Chart {
             ForEach(data.chartPoints) { point in
@@ -194,7 +196,7 @@ struct ExchangeRateWidget: View {
                     index, currency in
                     if let rate = point.rate(for: currency.rawValue) {
                         LineMark(
-                            x: .value("Date", point.date, unit: calendarUnit(for: grouping)),
+                            x: .value("Date", point.date),
                             y: .value("Rate", rate),
                             series: .value("Currency", currency.rawValue)
                         )
@@ -203,7 +205,7 @@ struct ExchangeRateWidget: View {
                         .interpolationMethod(.catmullRom)
 
                         PointMark(
-                            x: .value("Date", point.date, unit: calendarUnit(for: grouping)),
+                            x: .value("Date", point.date),
                             y: .value("Rate", rate)
                         )
                         .foregroundStyle(index == 0 ? currencyAColor : currencyBColor)
@@ -221,17 +223,23 @@ struct ExchangeRateWidget: View {
             }
         }
         .chartYScale(domain: yDomain)
+        .chartXScale(domain: xDomain)
         .chartXAxis {
-            AxisMarks(values: .stride(by: calendarUnit(for: grouping))) { _ in
+            // Smart dynamic X-axis labels (same approach as TrendChartView)
+            AxisMarks(values: smartDates) { value in
                 AxisGridLine().foregroundStyle(.clear)
                 AxisTick().foregroundStyle(.clear)
 
-                if grouping == .day {
-                    AxisValueLabel(format: .dateTime.weekday(.abbreviated), centered: true)
-                } else if grouping == .week {
-                    AxisValueLabel(format: .dateTime.day().month(.abbreviated), centered: true)
-                } else {
-                    AxisValueLabel(format: .dateTime.month(.abbreviated), centered: true)
+                if let date = value.as(Date.self) {
+                    let isLast = date == smartDates.last
+                    let isFirst = date == smartDates.first
+                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+
+                    AxisValueLabel(anchor: anchor) {
+                        Text(smartAxisLabel(for: date, in: data.chartPoints))
+                            .font(.caption2)
+                            .foregroundStyle(Color.netoSecondaryText)
+                    }
                 }
             }
         }
@@ -476,6 +484,38 @@ struct ExchangeRateWidget: View {
         case .week: return .weekOfYear
         case .month: return .month
         }
+    }
+
+    // MARK: - Smart Axis Helpers
+
+    /// Calculate smart axis dates based on actual data range (same approach as TrendChartView)
+    private func calculateSmartAxisDates(for chartPoints: [ExchangeRateChartPoint]) -> [Date] {
+        guard let firstDate = chartPoints.first?.date,
+              let lastDate = chartPoints.last?.date else {
+            return []
+        }
+        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+    }
+
+    /// Calculate X-axis domain from chart points
+    private func calculateXDomain(for chartPoints: [ExchangeRateChartPoint]) -> ClosedRange<Date> {
+        guard let firstDate = chartPoints.first?.date,
+              let lastDate = chartPoints.last?.date else {
+            let now = Date()
+            return now...now
+        }
+        // Add small padding to avoid clipping edge points
+        let padding: TimeInterval = 86400 * 2  // 2 days
+        return firstDate.addingTimeInterval(-padding)...lastDate.addingTimeInterval(padding)
+    }
+
+    /// Format axis label using SmartAxisHelper (shows year when spanning multiple years)
+    private func smartAxisLabel(for date: Date, in chartPoints: [ExchangeRateChartPoint]) -> String {
+        guard let firstDate = chartPoints.first?.date,
+              let lastDate = chartPoints.last?.date else {
+            return ""
+        }
+        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
     }
 }
 

@@ -125,8 +125,11 @@ struct ExchangeRateWidgetHelper {
         let calendar = Calendar.current
         var allRates: [[String: Double]] = []
 
+        // Use <= to include the end date when start == end (edge case for last bucket)
+        let effectiveEnd = max(end, calendar.date(byAdding: .day, value: 1, to: start) ?? start)
+
         var currentDate = start
-        while currentDate < end {
+        while currentDate < effectiveEnd {
             // Try to get rate for this specific date
             if let rate = ExchangeRateService.shared.getRate(for: currentDate, context: context) {
                 let convertedRates = calculateRatesFromPreferred(

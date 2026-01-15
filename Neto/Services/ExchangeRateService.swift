@@ -184,6 +184,38 @@ final class ExchangeRateService {
         }
     }
 
+    /// Gets the oldest exchange rate available (for determining data range).
+    func getOldestRate(context: ModelContext) -> ExchangeRate? {
+        let descriptor = FetchDescriptor<ExchangeRate>(
+            sortBy: [SortDescriptor(\ExchangeRate.dateKey, order: .forward)]
+        )
+
+        do {
+            var fetchDescriptor = descriptor
+            fetchDescriptor.fetchLimit = 1
+            let results = try context.fetch(fetchDescriptor)
+            return results.first
+        } catch {
+            print("ExchangeRateService: Error fetching oldest rate: \(error)")
+            return nil
+        }
+    }
+
+    /// Gets the actual date range of stored exchange rates.
+    /// Returns nil if no rates are stored.
+    func getStoredDateRange(context: ModelContext) -> DateInterval? {
+        guard let oldest = getOldestRate(context: context),
+              let latest = getLatestRate(context: context) else {
+            return nil
+        }
+
+        // Parse dateKey to Date
+        let oldestDate = dateFormatter.date(from: oldest.dateKey) ?? Date()
+        let latestDate = dateFormatter.date(from: latest.dateKey) ?? Date()
+
+        return DateInterval(start: oldestDate, end: latestDate)
+    }
+
     // MARK: - Private Helpers
 
     private func fetchAndPersistRates(from startDate: Date, to endDate: Date, context: ModelContext)
