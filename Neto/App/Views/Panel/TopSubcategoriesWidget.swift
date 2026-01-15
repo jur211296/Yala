@@ -19,11 +19,11 @@ struct TopSubcategoriesWidget: View {
     // "Local" widget filter (controlled by this widget's dropdown)
     @Binding var localCategoryFilterID: PersistentIdentifier?
 
-    // Action when a subcategory is tapped
-    var onSelectSubcategory: ((String) -> Void)?
+    // Action when a subcategory is tapped (now uses PersistentIdentifier)
+    var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
 
-    // Selected Subcategory ID (for dimming others)
-    var selectedSubcategoryID: String?
+    // Selected Subcategory IDs (for dimming others) - uses PersistentIdentifier for uniqueness
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
 
     // Navigation Action
     var onShowMore: (() -> Void)? = nil
@@ -217,8 +217,8 @@ struct TopSubcategoriesWidget: View {
             if let maxAmount = filteredSubcategories.first?.amount {
                 let displayed = Array(filteredSubcategories.prefix(limit))
                 ForEach(displayed) { summary in
-                    let isSelected = selectedSubcategoryID == summary.subcategoryName
-                    let isDimmed = selectedSubcategoryID != nil && !isSelected
+                    let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
+                    let isDimmed = !selectedSubcategoryIDs.isEmpty && !isSelected
 
                     SubcategoryRow(
                         summary: summary,
@@ -228,7 +228,9 @@ struct TopSubcategoriesWidget: View {
                     .opacity(isDimmed ? 0.3 : 1.0)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        onSelectSubcategory?(summary.subcategoryName)
+                        if let persistentID = summary.persistentID {
+                            onSelectSubcategory?(persistentID)
+                        }
                     }
                 }
             }
@@ -284,7 +286,9 @@ struct TopSubcategoriesWidget: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    onSelectSubcategory?(top.subcategoryName)
+                    if let persistentID = top.persistentID {
+                        onSelectSubcategory?(persistentID)
+                    }
                 }
             }
         }

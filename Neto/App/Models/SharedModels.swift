@@ -299,6 +299,11 @@ struct SubcategorySpendingSummary: Identifiable {
     let subcategory: Subcategory?
     // Optional reference to parent category
     let category: Category?
+
+    /// PersistentIdentifier for filtering (nil for "No Subcategory" case)
+    var persistentID: PersistentIdentifier? {
+        subcategory?.persistentModelID
+    }
 }
 
 struct NatureSpendingSummary: Identifiable {

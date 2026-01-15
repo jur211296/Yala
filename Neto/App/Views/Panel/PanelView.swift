@@ -55,6 +55,9 @@ struct PanelView: View {
     /// New Transaction Sheet
     @State private var showNewTransaction = false
 
+    /// Budget Favorites Settings Sheet
+    @State private var showBudgetFavoritesSettings = false
+
     /// Task for debouncing data recalculations
     @State private var calculationTask: Task<Void, Never>?
 
@@ -101,10 +104,14 @@ struct PanelView: View {
                         .presentationDragIndicator(.visible)
                 }
                 .sheet(isPresented: $showNewTransaction) {
+                    // Convert selected subcategory ID back to name for prefill
+                    let prefillSubcategoryName: String? = viewModel.selectedSubcategoryIDs.first.flatMap { subcategoryID in
+                        allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
+                    }
                     NewTransactionView(
                         prefillAccountID: viewModel.selectedAccountID,
                         prefillCategoryID: viewModel.selectedCategoryID,
-                        prefillSubcategoryName: viewModel.selectedSubcategoryID
+                        prefillSubcategoryName: prefillSubcategoryName
                     )
                 }
                 .sheet(isPresented: $showCustomPeriodPicker) {
@@ -113,6 +120,11 @@ struct PanelView: View {
                         maxDate: transactionDateRange.end,
                         currentRange: sessionState.customDateRange
                     )
+                }
+                .sheet(isPresented: $showBudgetFavoritesSettings) {
+                    NavigationStack {
+                        BudgetsFavoritesSettingsView()
+                    }
                 }
         }
         .onAppear {
@@ -152,7 +164,7 @@ struct PanelView: View {
             viewModel.syncToSessionState(sessionState)
             recalculateData()
         }
-        .onChange(of: viewModel.selectedSubcategoryID) {
+        .onChange(of: viewModel.selectedSubcategoryIDs) {
             // Sync to SessionState and recalculate
             viewModel.syncToSessionState(sessionState)
             recalculateData()
@@ -266,7 +278,7 @@ struct PanelView: View {
                 let hasDateFilter = viewModel.focusedDate != nil
                 let hasCategoryFilter = viewModel.selectedCategoryID != nil
                 let hasNatureFilter = viewModel.selectedNature != nil
-                let hasSubcategoryFilter = viewModel.selectedSubcategoryID != nil
+                let hasSubcategoryFilter = !viewModel.selectedSubcategoryIDs.isEmpty
                 let hasTagFilter = !viewModel.selectedTags.isEmpty
                 let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
                 let hasAmountFilter = viewModel.amountCondition.isActive
@@ -305,18 +317,18 @@ struct PanelView: View {
                                 )
                             }
 
-                            // Category Chip (aggregated from selected subcategory names)
+                            // Category Chip (aggregated from selected subcategory IDs)
                             // Skip if all subcategories are selected (= no filter = "Todas")
-                            let selectedSubsByName = allSubcategories.filter {
-                                sessionState.selectedSubcategoryNames.contains($0.name)
+                            let selectedSubsByID = allSubcategories.filter {
+                                sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                             }
                             let isAllSelected =
-                                !selectedSubsByName.isEmpty
-                                && selectedSubsByName.count == allSubcategories.count
+                                !selectedSubsByID.isEmpty
+                                && selectedSubsByID.count == allSubcategories.count
 
-                            if !isAllSelected {
+                            if !isAllSelected && !selectedSubsByID.isEmpty {
                                 let parentCategories = Set(
-                                    selectedSubsByName.compactMap { $0.category })
+                                    selectedSubsByID.compactMap { $0.category })
                                 if let firstCategory = parentCategories.first {
                                     FilterChipView(
                                         categoryName: firstCategory.name,
@@ -325,15 +337,15 @@ struct PanelView: View {
                                         count: parentCategories.count,
                                         onClear: {
                                             viewModel.selectedCategoryID = nil
-                                            viewModel.selectedSubcategoryID = nil
+                                            viewModel.selectedSubcategoryIDs.removeAll()
                                             sessionState.selectedCategoryIDs.removeAll()
-                                            sessionState.selectedSubcategoryNames.removeAll()
+                                            sessionState.selectedSubcategoryIDs.removeAll()
                                         }
                                     )
                                 }
 
-                                // Subcategory Chip (aggregated from selected subcategory names)
-                                if let firstSub = selectedSubsByName.first {
+                                // Subcategory Chip (aggregated from selected subcategory IDs)
+                                if let firstSub = selectedSubsByID.first {
                                     let color =
                                         (firstSub.colorHex?.isEmpty == false
                                             ? firstSub.colorHex : nil)
@@ -342,10 +354,10 @@ struct PanelView: View {
                                         subcategoryName: firstSub.name,
                                         iconName: firstSub.iconName,
                                         colorHex: color,
-                                        count: selectedSubsByName.count,
+                                        count: selectedSubsByID.count,
                                         onClear: {
-                                            viewModel.selectedSubcategoryID = nil
-                                            sessionState.selectedSubcategoryNames.removeAll()
+                                            viewModel.selectedSubcategoryIDs.removeAll()
+                                            sessionState.selectedSubcategoryIDs.removeAll()
                                         }
                                     )
                                 }
@@ -574,7 +586,7 @@ struct PanelView: View {
             .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
                 recalculateData()
             }
-            .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
+            .onChange(of: viewModel.selectedSubcategoryIDs) { _, _ in
                 recalculateData()
             }
             .onChange(of: viewModel.trendType) { _, _ in
@@ -583,7 +595,7 @@ struct PanelView: View {
             .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
                 recalculateData()
             }
-            .onChange(of: viewModel.selectedSubcategoryID) { _, _ in
+            .onChange(of: viewModel.selectedSubcategoryIDs) { _, _ in
                 recalculateData()
             }
             .onChange(of: viewModel.trendType) { _, _ in
@@ -608,10 +620,10 @@ struct PanelView: View {
                 currencyCode: preferredCurrency.rawValue,
                 globalCategoryFilterID: viewModel.selectedCategoryID,
                 localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
-                onSelectSubcategory: { name in
+                onSelectSubcategory: { subcategoryID in
                     withAnimation {
                         viewModel.toggleSubcategoryFilter(
-                            name,
+                            subcategoryID,
                             transactions: transactions,
                             accounts: accounts,
                             defaultCurrencyCode: preferredCurrency.rawValue,
@@ -620,7 +632,7 @@ struct PanelView: View {
                         )
                     }
                 },
-                selectedSubcategoryID: viewModel.selectedSubcategoryID,
+                selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
                 onShowMore: { sessionState.navigateToDetail(.categories) },
                 size: mapWidgetSize(config.size)
             )
@@ -642,11 +654,11 @@ struct PanelView: View {
                 subcategories: viewModel.topSubcategories,
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
-                selectedSubcategoryID: viewModel.selectedSubcategoryID,
-                onSelectSubcategory: { name in
+                selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
+                onSelectSubcategory: { subcategoryID in
                     withAnimation {
                         viewModel.toggleSubcategoryFilter(
-                            name,
+                            subcategoryID,
                             transactions: transactions,
                             accounts: accounts,
                             defaultCurrencyCode: preferredCurrency.rawValue,
@@ -711,6 +723,7 @@ struct PanelView: View {
                     sessionState.applyBudgetFilters(budget)
                 },
                 onShowMore: { sessionState.selectedMainTab = .planning },
+                onEditFavorites: { showBudgetFavoritesSettings = true },
                 size: mapBudgetsWidgetSize(config.size)
             )
         }
@@ -755,7 +768,7 @@ struct PanelView: View {
         viewModel.selectedAccountID = nil
         viewModel.focusedDate = nil
         viewModel.selectedCategoryID = nil
-        viewModel.selectedSubcategoryID = nil
+        viewModel.selectedSubcategoryIDs.removeAll()
         viewModel.selectedNature = nil
         viewModel.selectedTags.removeAll()
         viewModel.selectedCurrencies.removeAll()
@@ -799,7 +812,7 @@ private struct PanelSessionObservers: ViewModifier {
                 syncFromSessionState()
                 recalculateData()
             }
-            .onChange(of: sessionState.selectedSubcategoryNames) {
+            .onChange(of: sessionState.selectedSubcategoryIDs) {
                 syncFromSessionState()
                 recalculateData()
             }

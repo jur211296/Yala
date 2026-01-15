@@ -15,8 +15,11 @@ struct SubcategoriesPieWidget: View {
 
     // Filter State
     var selectedCategoryID: PersistentIdentifier?
-    var selectedSubcategoryID: String?
-    var onSelectSubcategory: ((String) -> Void)?
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
+
+    // Convenience for single-selection logic (pie chart needs one item)
+    private var selectedSubcategoryID: PersistentIdentifier? { selectedSubcategoryIDs.first }
+    var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
 
     var size: WidgetSize = .medium
@@ -29,7 +32,7 @@ struct SubcategoriesPieWidget: View {
     // Filtered total based on selected subcategory
     private var filteredTotalExpense: Double {
         if let selectedID = selectedSubcategoryID,
-            let selectedSubcategory = subcategories.first(where: { $0.id == selectedID })
+            let selectedSubcategory = subcategories.first(where: { $0.persistentID == selectedID })
         {
             return selectedSubcategory.amount
         }
@@ -293,7 +296,7 @@ struct SubcategoriesPieWidget: View {
     // Logic: If selection exists, ONLY show selected. Else, show all > threshold.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
         if let selectedID = selectedSubcategoryID {
-            return item.id == selectedID
+            return item.persistentID == selectedID
         } else {
             return item.percentage > 4.0
         }
@@ -308,7 +311,7 @@ struct SubcategoriesPieWidget: View {
             // 1. Subcategory Labels
             HStack(alignment: .top, spacing: 0) {
                 if let selectedID = selectedSubcategoryID,
-                    let selectedItem = chartData.first(where: { $0.id == selectedID })
+                    let selectedItem = chartData.first(where: { $0.persistentID == selectedID })
                 {
                     // Filtered: Show only selected subcategory (centered)
                     Spacer()
@@ -338,7 +341,9 @@ struct SubcategoriesPieWidget: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        onSelectSubcategory?(selectedItem.id)
+                        if let persistentID = selectedItem.persistentID {
+                            onSelectSubcategory?(persistentID)
+                        }
                     }
                     Spacer()
                 } else {
@@ -370,7 +375,9 @@ struct SubcategoriesPieWidget: View {
                         .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            onSelectSubcategory?(item.id)
+                            if let persistentID = item.persistentID {
+                                onSelectSubcategory?(persistentID)
+                            }
                         }
                     }
                 }
@@ -541,21 +548,26 @@ struct SubcategoriesPieWidget: View {
 
     private func handleTap(_ item: PieChartData) {
         // ViewModel handles toggle logic (select if new, deselect if same)
-        onSelectSubcategory?(item.id)
+        // Only call if the item has a persistentID (skip "Restante" aggregates)
+        if let persistentID = item.persistentID {
+            onSelectSubcategory?(persistentID)
+        }
     }
 
     private func isSelected(_ item: PieChartData) -> Bool {
-        return selectedSubcategoryID == item.id
+        guard let itemPersistentID = item.persistentID else { return false }
+        return selectedSubcategoryID == itemPersistentID
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
         guard let selected = selectedSubcategoryID else { return false }
-        return item.id != selected
+        guard let itemPersistentID = item.persistentID else { return true }  // Dim "Restante" when something is selected
+        return itemPersistentID != selected
     }
 
     private func currentCenterItem() -> PieChartData? {
-        if let id = selectedSubcategoryID {
-            return chartData.first { $0.id == id }
+        if let persistentID = selectedSubcategoryID {
+            return chartData.first { $0.persistentID == persistentID }
         }
         return chartData.first
     }
@@ -569,6 +581,7 @@ struct SubcategoriesPieWidget: View {
         let amount: Double
         let percentage: Double
         let colorHex: String
+        let persistentID: PersistentIdentifier?
         fileprivate var startAngle: Double = 0
         fileprivate var endAngle: Double = 0
 
@@ -597,7 +610,8 @@ struct SubcategoriesPieWidget: View {
                     iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
-                    colorHex: $0.colorHex ?? "#8E8E93"
+                    colorHex: $0.colorHex ?? "#8E8E93",
+                    persistentID: $0.persistentID
                 )
             }
         } else {
@@ -611,7 +625,8 @@ struct SubcategoriesPieWidget: View {
                     iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
-                    colorHex: $0.colorHex ?? "#8E8E93"
+                    colorHex: $0.colorHex ?? "#8E8E93",
+                    persistentID: $0.persistentID
                 )
             }
 
@@ -627,7 +642,8 @@ struct SubcategoriesPieWidget: View {
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,
-                        colorHex: "#8E8E93"
+                        colorHex: "#8E8E93",
+                        persistentID: nil  // "Restante" has no specific subcategory
                     ))
             }
         }

@@ -491,24 +491,9 @@ struct DetailContainerView: View {
         recordsViewModel.selectedCategories = sessionState.selectedCategoryIDs
 
         // Convert subcategory names to PersistentIdentifiers
-        // Using allSubcategories Query instead of category.subcategories to avoid SwiftData lazy loading issues
-        print(
-            "🔍 syncFromSessionState - selectedSubcategoryNames: \(sessionState.selectedSubcategoryNames)"
-        )
-        print("🔍 syncFromSessionState - allSubcategories count: \(allSubcategories.count)")
-        if sessionState.selectedSubcategoryNames.isEmpty {
-            trendsViewModel.selectedSubcategories.removeAll()
-            recordsViewModel.selectedSubcategories.removeAll()
-        } else {
-            print("🔍 All subcategory names: \(allSubcategories.map { $0.name })")
-            let subcategoryIDs =
-                allSubcategories
-                .filter { sessionState.selectedSubcategoryNames.contains($0.name) }
-                .map { $0.persistentModelID }
-            print("🔍 Matched subcategory IDs count: \(subcategoryIDs.count)")
-            trendsViewModel.selectedSubcategories = Set(subcategoryIDs)
-            recordsViewModel.selectedSubcategories = Set(subcategoryIDs)
-        }
+        // Sync subcategory IDs directly (no name-to-ID conversion needed now)
+        trendsViewModel.selectedSubcategories = sessionState.selectedSubcategoryIDs
+        recordsViewModel.selectedSubcategories = sessionState.selectedSubcategoryIDs
 
         trendsViewModel.selectedNatures = sessionState.selectedNatures
         recordsViewModel.selectedNatures = sessionState.selectedNatures
@@ -543,13 +528,8 @@ struct DetailContainerView: View {
         sessionState.selectedCategoryIDs = trendsViewModel.selectedCategories
         sessionState.selectedNatures = trendsViewModel.selectedNatures
 
-        // Convert subcategory PersistentIdentifiers back to names
-        // Using allSubcategories Query for consistency
-        let selectedSubNames =
-            allSubcategories
-            .filter { trendsViewModel.selectedSubcategories.contains($0.persistentModelID) }
-            .map { $0.name }
-        sessionState.selectedSubcategoryNames = Set(selectedSubNames)
+        // Sync subcategory IDs directly (no ID-to-name conversion needed now)
+        sessionState.selectedSubcategoryIDs = trendsViewModel.selectedSubcategories
 
         // Sync tags
         sessionState.selectedTags = trendsViewModel.selectedTags
@@ -693,7 +673,7 @@ private struct DetailContainerObservers: ViewModifier {
             .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedCategoryIDs) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedNatures) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedSubcategoryNames) {
+            .onChange(of: sessionState.selectedSubcategoryIDs) {
                 handleSessionStateFilterChange()
             }
             .onChange(of: sessionState.selectedTags) { handleSessionStateFilterChange() }

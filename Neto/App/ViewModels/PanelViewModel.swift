@@ -41,7 +41,7 @@ final class PanelViewModel {
 
     // Subcategory Widget State
     var topSubcategories: [SubcategorySpendingSummary] = []
-    var selectedSubcategoryID: String?
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
     var subcategoriesWidgetFilter: PersistentIdentifier?
 
     // Nature filter state
@@ -105,7 +105,7 @@ final class PanelViewModel {
 
     // Trend Locking Logic
     var isTrendLockedToExpense: Bool {
-        selectedCategoryID != nil || selectedSubcategoryID != nil || selectedNature != nil
+        selectedCategoryID != nil || !selectedSubcategoryIDs.isEmpty || selectedNature != nil
     }
 
     /// Enforce trend lock logic based on current filters
@@ -147,8 +147,8 @@ final class PanelViewModel {
         // Category (single-select)
         self.selectedCategoryID = sessionState.selectedCategoryIDs.first
 
-        // Subcategory (single-select)
-        self.selectedSubcategoryID = sessionState.selectedSubcategoryNames.first
+        // Subcategories (multi-select for budget filters)
+        self.selectedSubcategoryIDs = sessionState.selectedSubcategoryIDs
 
         // Nature (single-select)
         self.selectedNature = sessionState.selectedNatures.first
@@ -183,11 +183,8 @@ final class PanelViewModel {
             sessionState.selectedCategoryIDs.insert(categoryID)
         }
 
-        // Subcategory
-        sessionState.selectedSubcategoryNames.removeAll()
-        if let subcategoryName = self.selectedSubcategoryID {
-            sessionState.selectedSubcategoryNames.insert(subcategoryName)
-        }
+        // Subcategories
+        sessionState.selectedSubcategoryIDs = self.selectedSubcategoryIDs
 
         // Nature
         sessionState.selectedNatures.removeAll()
@@ -507,11 +504,16 @@ final class PanelViewModel {
         // Track the metric for which data was calculated (prevents stale data rendering)
         self.dataTrendType = self.trendType
 
-        // 4. Calculate Exchange Rate Widget Data (only if period changed - filters don't affect it)
+        // 4. Calculate Exchange Rate Widget Data (only if period changed, has error, or needs refresh)
         let periodChanged = lastExchangeRatePeriod != selectedPeriod
-        let needsExchangeRateData = exchangeRateWidgetData == nil || periodChanged
+        let hasError = exchangeRateWidgetData?.hasError == true
+        let needsRefresh = SessionState.shared.needsExchangeRateWidgetRefresh
+        let needsExchangeRateData = exchangeRateWidgetData == nil || periodChanged || hasError || needsRefresh
         if needsExchangeRateData {
             lastExchangeRatePeriod = selectedPeriod
+            if needsRefresh {
+                SessionState.shared.needsExchangeRateWidgetRefresh = false
+            }
             calculateExchangeRateData(
                 preferredCurrencyCode: defaultCurrencyCode,
                 context: context
@@ -568,17 +570,13 @@ final class PanelViewModel {
                 if transaction.category?.persistentModelID != catID { return false }
             }
 
-            // Subcategory Filter
-            if let subName = selectedSubcategoryID {
-                if let sub = transaction.subcategory {
-                    if sub.name != subName { return false }
-                } else {
-                    if subName == L10n.Subcategory.noSubcategory {
-                        if transaction.subcategory != nil { return false }
-                    } else {
-                        return false
-                    }
+            // Subcategory Filter (supports multiple subcategories by ID)
+            if !selectedSubcategoryIDs.isEmpty {
+                guard let sub = transaction.subcategory else {
+                    // Transactions without subcategory don't match any specific subcategory filter
+                    return false
                 }
+                if !selectedSubcategoryIDs.contains(sub.persistentModelID) { return false }
             }
 
             // Nature Filter
@@ -682,8 +680,11 @@ final class PanelViewModel {
 
         // Pre-compute fully-filtered transactions (nature + subcategory)
         let fullyFiltered: [TransactionItem]
-        if let subID = selectedSubcategoryID {
-            fullyFiltered = natureFiltered.filter { $0.subcategory?.name == subID }
+        if !selectedSubcategoryIDs.isEmpty {
+            fullyFiltered = natureFiltered.filter { tx in
+                guard let subID = tx.subcategory?.persistentModelID else { return false }
+                return selectedSubcategoryIDs.contains(subID)
+            }
         } else {
             fullyFiltered = natureFiltered
         }
@@ -707,7 +708,7 @@ final class PanelViewModel {
             natureGrouping: newNatureGrouping,
             focusedDate: focusedDate,
             selectedCategoryID: selectedCategoryID,
-            selectedSubcategoryID: selectedSubcategoryID,
+            selectedSubcategoryIDs: selectedSubcategoryIDs,
             selectedNature: selectedNature,
             subcategoriesWidgetFilter: subcategoriesWidgetFilter
         )
@@ -852,18 +853,19 @@ final class PanelViewModel {
         }
     }
 
-    // Helper to toggle subcategory
+    // Helper to toggle subcategory (single-select behavior for widget interaction)
+    // Changed from String (name) to PersistentIdentifier to handle duplicate names across categories
     func toggleSubcategoryFilter(
-        _ id: String,
+        _ subcategoryID: PersistentIdentifier,
         transactions: [TransactionItem],
         accounts: [Account],
         defaultCurrencyCode: String,
         context: ModelContext,
         sessionState: SessionState
     ) {
-        if selectedSubcategoryID == id {
-            // Deselect Subcategory
-            selectedSubcategoryID = nil
+        if selectedSubcategoryIDs.contains(subcategoryID) && selectedSubcategoryIDs.count == 1 {
+            // Deselect Subcategory (only if it's the only one selected)
+            selectedSubcategoryIDs.removeAll()
 
             if isCategorySelectionImplicit {
                 // If category was auto-selected (Scenario 1), clear it too -> "All"
@@ -872,11 +874,11 @@ final class PanelViewModel {
             }
             // If category was explicitly selected (Scenario 2), KEEP it -> "Category X"
         } else {
-            // Select New Subcategory
-            selectedSubcategoryID = id
+            // Select New Subcategory (single-select: clear others first)
+            selectedSubcategoryIDs = [subcategoryID]
 
-            // Find parent category for this subcategory
-            if let summary = topSubcategories.first(where: { $0.id == id }),
+            // Find parent category for this subcategory by persistentID
+            if let summary = topSubcategories.first(where: { $0.persistentID == subcategoryID }),
                 let cat = summary.category
             {
 
@@ -977,7 +979,18 @@ final class PanelViewModel {
             exchangeRateGrouping = .month
         }
 
-        let interval = panelDateInterval
+        // For "All Time", use the actual stored data range instead of 10 years
+        // This prevents iterating through years of dates with no data
+        let interval: DateInterval
+        if selectedPeriod == .allTime {
+            if let storedRange = ExchangeRateService.shared.getStoredDateRange(context: context) {
+                interval = storedRange
+            } else {
+                interval = panelDateInterval
+            }
+        } else {
+            interval = panelDateInterval
+        }
 
         // Get the latest rate for current display
         let latestRate = ExchangeRateService.shared.getLatestRate(context: context)
@@ -986,8 +999,7 @@ final class PanelViewModel {
             // No data available
             exchangeRateWidgetData = ExchangeRateWidgetData(
                 preferredCurrency: preferredCurrencyCode,
-                errorMessage:
-                    "No se pudo cargar el tipo de cambio para este periodo. Inténtalo más tarde."
+                errorMessage: L10n.ExchangeRate.loadError
             )
             return
         }

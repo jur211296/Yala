@@ -64,8 +64,9 @@ class SessionState {
     /// Selected category IDs (empty = all categories)
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
 
-    /// Selected subcategory names (empty = all subcategories)
-    var selectedSubcategoryNames: Set<String> = []
+    /// Selected subcategory IDs (empty = all subcategories)
+    /// Changed from names to IDs to handle duplicate subcategory names across categories
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
 
     /// Selected natures (empty = all natures)
     var selectedNatures: Set<SubcategoryNature> = []
@@ -101,7 +102,7 @@ class SessionState {
     /// Check if any global filter is active
     var hasActiveFilters: Bool {
         !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
-            || !selectedSubcategoryNames.isEmpty || !selectedNatures.isEmpty
+            || !selectedSubcategoryIDs.isEmpty || !selectedNatures.isEmpty
             || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
             || amountCondition.isActive || !searchText.isEmpty
     }
@@ -112,7 +113,7 @@ class SessionState {
     func clearFilters() {
         selectedAccountIDs.removeAll()
         selectedCategoryIDs.removeAll()
-        selectedSubcategoryNames.removeAll()
+        selectedSubcategoryIDs.removeAll()
         selectedNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
@@ -137,7 +138,7 @@ class SessionState {
         if selectedCategoryIDs.contains(id) {
             selectedCategoryIDs.remove(id)
             // Clear subcategories when category is deselected
-            selectedSubcategoryNames.removeAll()
+            selectedSubcategoryIDs.removeAll()
         } else {
             selectedCategoryIDs.removeAll()  // Single-select for Panel
             selectedCategoryIDs.insert(id)
@@ -145,12 +146,12 @@ class SessionState {
     }
 
     /// Toggle subcategory filter
-    func toggleSubcategoryFilter(_ name: String) {
-        if selectedSubcategoryNames.contains(name) {
-            selectedSubcategoryNames.remove(name)
+    func toggleSubcategoryFilter(_ id: PersistentIdentifier) {
+        if selectedSubcategoryIDs.contains(id) {
+            selectedSubcategoryIDs.remove(id)
         } else {
-            selectedSubcategoryNames.removeAll()  // Single-select for Panel
-            selectedSubcategoryNames.insert(name)
+            selectedSubcategoryIDs.removeAll()  // Single-select for Panel
+            selectedSubcategoryIDs.insert(id)
         }
     }
 
@@ -206,6 +207,14 @@ class SessionState {
     /// When true, ContentView shows a loading overlay to prevent @Query observers from crashing
     var isWipingData: Bool = false
 
+    /// Flag to trigger exchange rate reload after data wipe
+    /// Set to true after wipe completes, observed by NetoApp to reload rates
+    var needsExchangeRateReload: Bool = false
+
+    /// Flag to trigger exchange rate widget recalculation
+    /// Set to true after exchange rates are loaded/updated
+    var needsExchangeRateWidgetRefresh: Bool = false
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)
@@ -240,9 +249,9 @@ class SessionState {
             selectedAccountIDs = Set(budget.accounts.map { $0.persistentModelID })
         }
 
-        // Apply subcategory filters (use names since that's how they're stored)
+        // Apply subcategory filters (use IDs to handle duplicate names across categories)
         if !budget.subcategories.isEmpty {
-            selectedSubcategoryNames = Set(budget.subcategories.map { $0.name })
+            selectedSubcategoryIDs = Set(budget.subcategories.map { $0.persistentModelID })
         }
 
         // Apply tag filters

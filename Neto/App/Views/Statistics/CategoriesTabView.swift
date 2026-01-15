@@ -39,7 +39,7 @@ struct CategoriesTabView: View {
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var natureTrendPoints: [NatureTrendPoint] = []
     @State private var selectedCategoryID: PersistentIdentifier?
-    @State private var selectedSubcategoryID: String?
+    @State private var selectedSubcategoryID: PersistentIdentifier?
     @State private var selectedNature: SubcategoryNature?
     @State private var carouselIndex: Int? = 0
     @State private var listViewType: ListViewType = .categories
@@ -383,7 +383,7 @@ struct CategoriesTabView: View {
                     subcategories: subcategorySpending,
                     currencyCode: defaultCurrencyCode,
                     selectedCategoryID: selectedCategoryID,
-                    selectedSubcategoryID: selectedSubcategoryID,
+                    selectedSubcategoryIDs: selectedSubcategoryID.map { Set([$0]) } ?? [],
                     onSelectSubcategory: { subcategoryID in
                         if selectedSubcategoryID == subcategoryID {
                             selectedSubcategoryID = nil
@@ -703,8 +703,8 @@ struct CategoriesTabView: View {
         defer { isSyncingFilters = false }
 
         if let subcategoryID = selectedSubcategoryID {
-            // Find the subcategory by name (subcategoryID is actually the name)
-            if let subcategory = subcategorySpending.first(where: { $0.id == subcategoryID })?
+            // Find the subcategory by persistentID
+            if let subcategory = subcategorySpending.first(where: { $0.persistentID == subcategoryID })?
                 .subcategory
             {
                 if !viewModel.selectedSubcategories.contains(subcategory.persistentModelID) {
@@ -750,7 +750,7 @@ struct CategoriesTabView: View {
                     $0.subcategory?.persistentModelID == subcategoryID
                 })
             {
-                selectedSubcategoryID = subcategory.id
+                selectedSubcategoryID = subcategory.persistentID
             }
         } else if viewModel.selectedSubcategories.isEmpty {
             selectedSubcategoryID = nil
@@ -907,11 +907,8 @@ struct CategoriesTabView: View {
 
         // From local selection (if not already added via ViewModel)
         if let localSubcategoryID = selectedSubcategoryID,
-            !viewModel.selectedSubcategories.contains(where: { id in
-                allSubcategories.first(where: { $0.persistentModelID == id })?.name
-                    == localSubcategoryID
-            }),
-            let summary = subcategorySpending.first(where: { $0.id == localSubcategoryID })
+            !viewModel.selectedSubcategories.contains(localSubcategoryID),
+            let summary = subcategorySpending.first(where: { $0.persistentID == localSubcategoryID })
         {
             chips.append(
                 SubcategoryChip(
@@ -1071,10 +1068,10 @@ private struct AllSubcategoriesListContent: View {
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
     var selectedCategoryID: PersistentIdentifier?
-    var selectedSubcategoryID: String?
+    var selectedSubcategoryID: PersistentIdentifier?
     var isExpanded: Bool
     var onToggleExpanded: (() -> Void)?
-    var onSelectSubcategory: ((String) -> Void)?
+    var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
 
     private var displayedSubcategories: [SubcategorySpendingSummary] {
         isExpanded ? subcategories : Array(subcategories.prefix(10))
@@ -1088,7 +1085,7 @@ private struct AllSubcategoriesListContent: View {
         VStack(alignment: .leading, spacing: 16) {
             if let maxAmount = subcategories.first?.amount {
                 ForEach(displayedSubcategories) { summary in
-                    let isSelected = selectedSubcategoryID == summary.id
+                    let isSelected = selectedSubcategoryID == summary.persistentID
                     let isAnySelected = selectedSubcategoryID != nil
 
                     // Check if this subcategory belongs to the selected category
@@ -1109,7 +1106,9 @@ private struct AllSubcategoriesListContent: View {
                     .opacity(shouldDim ? 0.3 : 1.0)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        onSelectSubcategory?(summary.id)
+                        if let persistentID = summary.persistentID {
+                            onSelectSubcategory?(persistentID)
+                        }
                     }
                 }
 

@@ -78,8 +78,8 @@ struct PanelCalculationContext {
     /// Currently selected category filter
     let selectedCategoryID: PersistentIdentifier?
 
-    /// Currently selected subcategory filter (by name)
-    let selectedSubcategoryID: String?
+    /// Currently selected subcategory filters (by PersistentIdentifier, supports multiple)
+    let selectedSubcategoryIDs: Set<PersistentIdentifier>
 
     /// Currently selected nature filter
     let selectedNature: SubcategoryNature?
