@@ -442,6 +442,28 @@ struct ImportIntroSheet: View {
                     try modelContext.save()
                     print("🔵 [IMPORT] Save complete")
 
+                    // Calculate date range of imported transactions for exchange rate fetch
+                    let importedDates = result.drafts.map { $0.date }
+                    let dateRange: DateInterval? = {
+                        guard let minDate = importedDates.min(),
+                              let maxDate = importedDates.max() else { return nil }
+                        return DateInterval(start: minDate, end: maxDate)
+                    }()
+
+                    // Fire background task to fetch exchange rates for imported date range
+                    // This runs after the main import is complete to avoid @Query issues
+                    if let dateRange = dateRange {
+                        Task.detached { @MainActor in
+                            print("🔵 [IMPORT] Fetching exchange rates for date range: \(dateRange)")
+                            await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
+                            // Update any transactions with provisional rates
+                            await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+                            // Trigger widget refresh so Panel recalculates with new data
+                            SessionState.shared.needsExchangeRateWidgetRefresh = true
+                            print("🔵 [IMPORT] Exchange rate fetch complete")
+                        }
+                    }
+
                     // Create result and dismiss (keep button in "Importando" state until sheet closes)
                     let importResult = ImportResult(
                         isSuccess: true,
