@@ -86,11 +86,12 @@ enum L10n {
         static var search: String { NSLocalizedString("tab.search", comment: "") }
     }
 
-    // MARK: - Periods
-
     // MARK: - Period
+
     enum Period {
         static var thisWeek: String { NSLocalizedString("period.thisWeek", comment: "") }
+        static var lastWeek: String { NSLocalizedString("period.lastWeek", comment: "") }
+        static var nextWeek: String { NSLocalizedString("period.nextWeek", comment: "") }
         static var last7Days: String { NSLocalizedString("period.last7Days", comment: "") }
         static var last30Days: String {
             NSLocalizedString("period.last30Days", comment: "Last 30 days")
@@ -101,8 +102,12 @@ enum L10n {
         static var lastMonth: String {
             NSLocalizedString("period.lastMonth", comment: "Last month")
         }
+        static var nextMonth: String {
+            NSLocalizedString("period.nextMonth", comment: "Next month")
+        }
         static var thisYear: String { NSLocalizedString("period.thisYear", comment: "This year") }
         static var lastYear: String { NSLocalizedString("period.lastYear", comment: "Last year") }
+        static var nextYear: String { NSLocalizedString("period.nextYear", comment: "Next year") }
         static var allTime: String { NSLocalizedString("period.allTime", comment: "All time") }
         static var custom: String { NSLocalizedString("period.custom", comment: "Custom period") }
         static var startDate: String {
@@ -938,6 +943,9 @@ enum L10n {
         static var budgets: String { NSLocalizedString("planning.budgets", comment: "") }
         static var goals: String { NSLocalizedString("planning.goals", comment: "") }
         static var comingSoon: String { NSLocalizedString("planning.comingSoon", comment: "") }
+        static var scheduledPayments: String {
+            NSLocalizedString("planning.scheduledPayments", comment: "")
+        }
     }
 
     // MARK: - Profile

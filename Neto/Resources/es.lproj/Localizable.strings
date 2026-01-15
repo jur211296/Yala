@@ -25,11 +25,16 @@
 
 // MARK: - Periods
 
+"period.thisWeek" = "Esta semana";
+"period.lastWeek" = "Semana pasada";
+"period.nextWeek" = "Próxima semana";
 "period.thisMonth" = "Este mes";
 "period.lastMonth" = "Mes pasado";
+"period.nextMonth" = "Próximo mes";
 "period.last30Days" = "Últimos 30 días";
 "period.thisYear" = "Este año";
 "period.lastYear" = "Año pasado";
+"period.nextYear" = "Próximo año";
 "period.allTime" = "Todo el tiempo";
 "period.custom" = "Personalizado";
 
@@ -267,6 +272,7 @@
 "planning.budgets" = "Presupuestos";
 "planning.goals" = "Metas";
 "planning.comingSoon" = "Próximamente";
+"planning.scheduledPayments" = "Pagos planificados";
 
 // MARK: - Budgets
 

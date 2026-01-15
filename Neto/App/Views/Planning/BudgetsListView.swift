@@ -160,13 +160,13 @@ struct BudgetsListView: View {
 
             // Check if it's current, previous, or next week
             if calendar.isDate(selectedWeek, equalTo: currentWeek, toGranularity: .weekOfYear) {
-                return "Esta semana"
+                return L10n.Period.thisWeek
             } else if let previousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeek),
                       calendar.isDate(selectedWeek, equalTo: previousWeek, toGranularity: .weekOfYear) {
-                return "Semana pasada"
+                return L10n.Period.lastWeek
             } else if let nextWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: currentWeek),
                       calendar.isDate(selectedWeek, equalTo: nextWeek, toGranularity: .weekOfYear) {
-                return "Próxima semana"
+                return L10n.Period.nextWeek
             } else {
                 dateFormatter.dateFormat = "d MMM"
                 let start = dateFormatter.string(from: selectedWeek)
@@ -181,13 +181,13 @@ struct BudgetsListView: View {
 
             // Check if it's current, previous, or next month
             if calendar.isDate(selectedMonth, equalTo: currentMonth, toGranularity: .month) {
-                return "Este mes"
+                return L10n.Period.thisMonth
             } else if let previousMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth),
                       calendar.isDate(selectedMonth, equalTo: previousMonth, toGranularity: .month) {
-                return "Mes pasado"
+                return L10n.Period.lastMonth
             } else if let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth),
                       calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
-                return "Próximo mes"
+                return L10n.Period.nextMonth
             } else {
                 dateFormatter.dateFormat = "MMMM yyyy"
                 return dateFormatter.string(from: selectedMonth).capitalized
@@ -199,11 +199,11 @@ struct BudgetsListView: View {
 
             // Check if it's current, previous, or next year
             if selectedYear == currentYear {
-                return "Este año"
+                return L10n.Period.thisYear
             } else if selectedYear == currentYear - 1 {
-                return "Año pasado"
+                return L10n.Period.lastYear
             } else if selectedYear == currentYear + 1 {
-                return "Próximo año"
+                return L10n.Period.nextYear
             } else {
                 return "\(selectedYear)"
             }

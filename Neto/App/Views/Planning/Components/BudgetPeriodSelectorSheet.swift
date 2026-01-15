@@ -265,13 +265,13 @@ struct BudgetPeriodSelectorSheet: View {
                 // Special text for current, previous, and next week
                 let specialText: String
                 if calendar.isDate(weekDate, equalTo: currentWeek, toGranularity: .weekOfYear) {
-                    specialText = "Esta semana"
+                    specialText = L10n.Period.thisWeek
                 } else if let previousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeek),
                           calendar.isDate(weekDate, equalTo: previousWeek, toGranularity: .weekOfYear) {
-                    specialText = "Semana pasada"
+                    specialText = L10n.Period.lastWeek
                 } else if let nextWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: currentWeek),
                           calendar.isDate(weekDate, equalTo: nextWeek, toGranularity: .weekOfYear) {
-                    specialText = "Próxima semana"
+                    specialText = L10n.Period.nextWeek
                 } else {
                     specialText = ""
                 }
@@ -305,13 +305,13 @@ struct BudgetPeriodSelectorSheet: View {
                 // Special text for current, previous, and next month
                 let specialText: String
                 if calendar.isDate(monthDate, equalTo: currentMonth, toGranularity: .month) {
-                    specialText = "Este mes"
+                    specialText = L10n.Period.thisMonth
                 } else if let previousMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth),
                           calendar.isDate(monthDate, equalTo: previousMonth, toGranularity: .month) {
-                    specialText = "Mes pasado"
+                    specialText = L10n.Period.lastMonth
                 } else if let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth),
                           calendar.isDate(monthDate, equalTo: nextMonth, toGranularity: .month) {
-                    specialText = "Próximo mes"
+                    specialText = L10n.Period.nextMonth
                 } else {
                     specialText = ""
                 }
@@ -340,11 +340,11 @@ struct BudgetPeriodSelectorSheet: View {
                 // Special text for current, previous, and next year
                 let specialText: String
                 if year == currentYear {
-                    specialText = "Este año"
+                    specialText = L10n.Period.thisYear
                 } else if year == currentYear - 1 {
-                    specialText = "Año pasado"
+                    specialText = L10n.Period.lastYear
                 } else if year == currentYear + 1 {
-                    specialText = "Próximo año"
+                    specialText = L10n.Period.nextYear
                 } else {
                     specialText = ""
                 }

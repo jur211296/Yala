@@ -18,10 +18,17 @@ struct PlanningView: View {
     // MARK: - Tab Types
 
     enum PlanningTab: String, CaseIterable, Identifiable {
-        case budgets = "Presupuestos"
-        case scheduledPayments = "Pagos planificados"
+        case budgets
+        case scheduledPayments
 
         var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .budgets: return L10n.Planning.budgets
+            case .scheduledPayments: return L10n.Planning.scheduledPayments
+            }
+        }
 
         var icon: String {
             switch self {
@@ -41,7 +48,7 @@ struct PlanningView: View {
                 VStack(spacing: 0) {
                     // Title
                     HStack {
-                        Text("Planificación")
+                        Text(L10n.Planning.title)
                             .font(.largeTitle.weight(.bold))
                             .foregroundStyle(.primary)
                         Spacer()
@@ -106,7 +113,7 @@ struct PlanningView: View {
             HStack(spacing: 6) {
                 Image(systemName: tab.icon)
                     .font(.subheadline)
-                Text(tab.rawValue)
+                Text(tab.displayName)
                     .font(.subheadline.weight(.medium))
             }
             .padding(.horizontal, 16)
@@ -137,10 +144,10 @@ struct PlanningView: View {
                 Image(systemName: "calendar.badge.clock")
                     .font(.system(size: 48))
                     .foregroundStyle(.tertiary)
-                Text("Pagos planificados")
+                Text(L10n.Planning.scheduledPayments)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("Próximamente")
+                Text(L10n.Planning.comingSoon)
                     .font(.subheadline)
                     .foregroundStyle(.tertiary)
             }
