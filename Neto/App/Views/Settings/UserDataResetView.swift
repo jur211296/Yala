@@ -99,7 +99,7 @@ struct UserDataResetView: View {
 
         // Alerta secundaria para errores
         .alert(
-            "Error al eliminar datos",
+            L10n.Settings.deleteDataError,
             isPresented: Binding(
                 get: { errorMessage != nil },
                 set: { newValue in
@@ -109,9 +109,9 @@ struct UserDataResetView: View {
                 }
             )
         ) {
-            Button("Aceptar", role: .cancel) {}
+            Button(L10n.Common.accept, role: .cancel) {}
         } message: {
-            Text(errorMessage ?? "Ha ocurrido un error desconocido al eliminar los datos.")
+            Text(errorMessage ?? L10n.Settings.deleteDataUnknownError)
         }
     }
 

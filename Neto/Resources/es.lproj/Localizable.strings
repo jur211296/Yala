@@ -555,6 +555,11 @@
 "settings.iconNeon" = "Neón";
 "settings.deleteAllDataAction" = "Eliminar definitivamente";
 "settings.deletingData" = "Eliminando datos...";
+"settings.appIconTitle" = "Icono de aplicación";
+"settings.iconNotSupported" = "Este dispositivo no soporta iconos alternativos.";
+"settings.iconChangeFailed" = "No se pudo cambiar el icono: %@";
+"settings.deleteDataError" = "Error al eliminar datos";
+"settings.deleteDataUnknownError" = "Ha ocurrido un error desconocido al eliminar los datos.";
 
 
 "transaction.newTransaction" = "Nuevo registro";

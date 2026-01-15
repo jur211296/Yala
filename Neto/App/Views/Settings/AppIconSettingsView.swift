@@ -100,7 +100,7 @@ struct AppIconSettingsView: View {
                 .padding()
             }
         }
-        .navigationTitle("Icono de aplicación")
+        .navigationTitle(L10n.Settings.appIconTitle)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
@@ -114,8 +114,8 @@ struct AppIconSettingsView: View {
         .onAppear {
             loadCurrentIcon()
         }
-        .alert("Error", isPresented: $showingError) {
-            Button("OK", role: .cancel) {}
+        .alert(L10n.Common.error, isPresented: $showingError) {
+            Button(L10n.Action.done, role: .cancel) {}
         } message: {
             Text(errorMessage)
         }
@@ -197,14 +197,14 @@ struct AppIconSettingsView: View {
 
     private func setAppIcon(_ icon: AppIconOption) {
         guard UIApplication.shared.supportsAlternateIcons else {
-            errorMessage = "Este dispositivo no soporta iconos alternativos."
+            errorMessage = L10n.Settings.iconNotSupported
             showingError = true
             return
         }
 
         UIApplication.shared.setAlternateIconName(icon.iconName) { error in
             if let error = error {
-                errorMessage = "No se pudo cambiar el icono: \(error.localizedDescription)"
+                errorMessage = L10n.Settings.iconChangeFailed(error.localizedDescription)
                 showingError = true
             } else {
                 withAnimation {

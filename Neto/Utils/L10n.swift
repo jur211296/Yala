@@ -712,6 +712,21 @@ enum L10n {
         static var deletingData: String {
             NSLocalizedString("settings.deletingData", comment: "")
         }
+        static var appIconTitle: String {
+            NSLocalizedString("settings.appIconTitle", comment: "")
+        }
+        static var iconNotSupported: String {
+            NSLocalizedString("settings.iconNotSupported", comment: "")
+        }
+        static func iconChangeFailed(_ error: String) -> String {
+            String(format: NSLocalizedString("settings.iconChangeFailed", comment: ""), error)
+        }
+        static var deleteDataError: String {
+            NSLocalizedString("settings.deleteDataError", comment: "")
+        }
+        static var deleteDataUnknownError: String {
+            NSLocalizedString("settings.deleteDataUnknownError", comment: "")
+        }
     }
 
     // MARK: - Profile
