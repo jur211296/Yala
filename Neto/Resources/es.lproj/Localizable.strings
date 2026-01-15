@@ -793,3 +793,6 @@
 "transfer.transferTo" = "Transferencia a %@";
 "transfer.transferFrom" = "Transferencia de %@";
 "transfer.categoryName" = "Transferencia entre cuentas";
+
+// MARK: - More
+"more.sections" = "Secciones";

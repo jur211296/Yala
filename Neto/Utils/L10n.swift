@@ -1299,6 +1299,12 @@ enum L10n {
             NSLocalizedString("transfer.categoryName", comment: "")
         }
     }
+
+    enum More {
+        static var sections: String {
+            NSLocalizedString("more.sections", comment: "")
+        }
+    }
 }
 
 // MARK: - App Locale

@@ -99,31 +99,149 @@ enum AppTab: Hashable {
     case search
 }
 
-// MARK: - More Placeholder View
+// MARK: - More View
 
 struct MorePlaceholderView: View {
+    @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+    @State private var showProfile = false
+
+    private var tabConfig: TabBarConfiguration {
+        TabBarConfiguration.fromJSON(tabConfigJSON)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
 
-                VStack(spacing: 16) {
-                    Image(systemName: "ellipsis.circle.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(.tertiary)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Hidden tabs section
+                        if !tabConfig.inactiveTabs.isEmpty {
+                            hiddenTabsSection
+                        }
 
-                    Text(L10n.Common.moreOptions)
-                        .font(.title2.bold())
-                        .foregroundStyle(.primary)
-
-                    Text(L10n.Common.comingSoon)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                        // Profile button
+                        profileButton
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 24)
                 }
             }
             .navigationTitle(L10n.Tab.more)
             .navigationBarTitleDisplayMode(.inline)
         }
+        .sheet(isPresented: $showProfile) {
+            ProfileView()
+        }
+    }
+
+    // MARK: - Hidden Tabs Section
+
+    private var hiddenTabsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.More.sections)
+                .font(.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, 6)
+
+            VStack(spacing: 0) {
+                ForEach(Array(tabConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
+                    hiddenTabRow(tab)
+
+                    if index < tabConfig.inactiveTabs.count - 1 {
+                        Divider()
+                            .padding(.leading, 52)
+                    }
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.netoCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+        }
+    }
+
+    private func hiddenTabRow(_ tab: ConfigurableTab) -> some View {
+        Button {
+            SessionState.shared.selectedMainTab = tab.appTab
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: tab.iconName)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.electricIndigo)
+                    )
+
+                Text(tab.displayName)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Profile Button
+
+    private var profileButton: some View {
+        VStack(spacing: 0) {
+            Button {
+                showProfile = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.gray)
+                        )
+
+                    Text(L10n.Profile.title)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.netoCard)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+        )
+        .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
     }
 }
 
