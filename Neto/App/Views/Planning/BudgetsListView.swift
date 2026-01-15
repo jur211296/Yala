@@ -28,6 +28,7 @@ struct BudgetsListView: View {
     @State private var viewModel = BudgetsViewModel()
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
+    @State private var showFavoritesSettings = false
     @AppStorage("budgets.hideInactive") private var hideInactive: Bool = false
 
     var body: some View {
@@ -95,6 +96,21 @@ struct BudgetsListView: View {
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showFavoritesSettings) {
+            NavigationStack {
+                BudgetsFavoritesSettingsView()
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showFavoritesSettings = true
+                } label: {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(Color.yellow)
+                }
+            }
         }
         .onAppear {
             refreshData()
