@@ -80,7 +80,7 @@ struct FavoriteEditorView: View {
                         .padding(.bottom, 16)
                 }
             }
-            .navigationTitle(favorite != nil ? "Editar favorito" : "Nuevo favorito")
+            .navigationTitle(favorite != nil ? L10n.Favorites.editTitle : L10n.Favorites.newTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -99,7 +99,7 @@ struct FavoriteEditorView: View {
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $selectedAccount,
-                    title: "Cuenta"
+                    title: L10n.Transaction.account
                 )
             }
             .sheet(isPresented: $showSubcategorySelector) {
@@ -145,7 +145,7 @@ struct FavoriteEditorView: View {
                         selectedSubcategory = nil
                     }
                 } label: {
-                    Text(type == .expense ? "Gasto" : "Ingreso")
+                    Text(type == .expense ? L10n.Transaction.expense : L10n.Transaction.income)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(transactionType == type ? .white : .secondary)
                         .frame(maxWidth: .infinity)
@@ -173,7 +173,7 @@ struct FavoriteEditorView: View {
     private var centralContent: some View {
         VStack(spacing: 24) {
             // Name field
-            TextField("Nombre del favorito", text: $name)
+            TextField(L10n.Favorites.namePlaceholder, text: $name)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
@@ -182,7 +182,7 @@ struct FavoriteEditorView: View {
                 .tint(Color(UIColor.label))
 
             // Description field
-            TextField("Descripción (opcional)", text: $note)
+            TextField(L10n.Favorites.descriptionPlaceholder, text: $note)
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
@@ -254,7 +254,7 @@ struct FavoriteEditorView: View {
                 // Account chip
                 SelectionChip(
                     icon: "creditcard",
-                    text: selectedAccount?.name ?? "Cuenta",
+                    text: selectedAccount?.name ?? L10n.Transaction.account,
                     isSelected: selectedAccount != nil,
                     color: selectedAccount != nil ? Color(hex: selectedAccount!.colorHex) : nil
                 ) {
@@ -264,7 +264,7 @@ struct FavoriteEditorView: View {
                 // Subcategory chip
                 SelectionChip(
                     icon: "tag",
-                    text: selectedSubcategory?.name ?? "Subcategoría",
+                    text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
                     isSelected: selectedSubcategory != nil,
                     color: subcategoryChipColor
                 ) {
@@ -275,7 +275,7 @@ struct FavoriteEditorView: View {
                 if selectedTags.isEmpty {
                     SelectionChip(
                         icon: "number",
-                        text: "Etiquetas",
+                        text: L10n.Transaction.tags,
                         isSelected: false,
                         color: nil
                     ) {

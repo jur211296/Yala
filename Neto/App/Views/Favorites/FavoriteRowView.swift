@@ -105,7 +105,7 @@ struct FavoriteRowView: View {
             favorite.account?.name,
         ].compactMap { $0 }
 
-        let text = parts.isEmpty ? "Sin configurar" : parts.joined(separator: " • ")
+        let text = parts.isEmpty ? L10n.Favorites.notConfigured : parts.joined(separator: " • ")
 
         return Text(text)
             .font(.caption)

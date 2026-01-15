@@ -593,6 +593,36 @@ enum L10n {
         static var createAccountFirst: String {
             NSLocalizedString("import.createAccountFirst", comment: "")
         }
+        static var completed: String {
+            NSLocalizedString("import.completed", comment: "")
+        }
+        static var importError: String {
+            NSLocalizedString("import.error", comment: "")
+        }
+        static var templateGenerated: String {
+            NSLocalizedString("import.templateGenerated", comment: "")
+        }
+        static var templateGeneratedMessage: String {
+            NSLocalizedString("import.templateGeneratedMessage", comment: "")
+        }
+        static var introDescription: String {
+            NSLocalizedString("import.introDescription", comment: "")
+        }
+        static var templateDescription: String {
+            NSLocalizedString("import.templateDescription", comment: "")
+        }
+        static var categoriesDescription: String {
+            NSLocalizedString("import.categoriesDescription", comment: "")
+        }
+        static var selectAccount: String {
+            NSLocalizedString("import.selectAccount", comment: "")
+        }
+        static var fileUrlError: String {
+            NSLocalizedString("import.fileUrlError", comment: "")
+        }
+        static var createAccountBeforeImport: String {
+            NSLocalizedString("import.createAccountBeforeImport", comment: "")
+        }
     }
 
     // MARK: - Export
@@ -622,6 +652,21 @@ enum L10n {
         static var noFavorites: String { NSLocalizedString("favorites.noFavorites", comment: "") }
         static var createTemplate: String {
             NSLocalizedString("favorites.createTemplate", comment: "")
+        }
+        static var newTitle: String {
+            NSLocalizedString("favorites.newTitle", comment: "")
+        }
+        static var editTitle: String {
+            NSLocalizedString("favorites.editTitle", comment: "")
+        }
+        static var namePlaceholder: String {
+            NSLocalizedString("favorites.namePlaceholder", comment: "")
+        }
+        static var notConfigured: String {
+            NSLocalizedString("favorites.notConfigured", comment: "")
+        }
+        static var descriptionPlaceholder: String {
+            NSLocalizedString("favorites.descriptionPlaceholder", comment: "")
         }
     }
 

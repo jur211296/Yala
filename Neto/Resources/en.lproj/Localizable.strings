@@ -197,6 +197,16 @@
 "import.continue" = "Continue";
 "import.noAccountsAvailable" = "No accounts available";
 "import.createAccountFirst" = "Create at least one account before importing transactions.";
+"import.completed" = "Import completed";
+"import.error" = "Import error";
+"import.templateGenerated" = "Template generated";
+"import.templateGeneratedMessage" = "The CSV template was generated successfully. You can now edit it and come back to this screen to import it.";
+"import.introDescription" = "Add your financial transactions in bulk from a CSV file.";
+"import.templateDescription" = "Use our official template to ensure the correct format.";
+"import.categoriesDescription" = "If the file includes categories that don't exist, they will be created automatically.";
+"import.selectAccount" = "Select an account";
+"import.fileUrlError" = "Could not get the URL of the selected file.";
+"import.createAccountBeforeImport" = "Create at least one account before importing transactions.";
 
 // MARK: - Export
 
@@ -216,6 +226,11 @@
 "favorites.edit" = "Edit Favorite";
 "favorites.noFavorites" = "No favorites";
 "favorites.createTemplate" = "Create recurring payment templates to record them faster.";
+"favorites.newTitle" = "New Favorite";
+"favorites.editTitle" = "Edit Favorite";
+"favorites.namePlaceholder" = "Favorite name";
+"favorites.notConfigured" = "Not configured";
+"favorites.descriptionPlaceholder" = "Description (optional)";
 
 // MARK: - Settings
 

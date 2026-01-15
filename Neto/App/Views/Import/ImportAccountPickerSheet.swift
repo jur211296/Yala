@@ -22,9 +22,9 @@ struct ImportAccountPickerSheet: View {
 
                 if accounts.isEmpty {
                     VStack(spacing: 12) {
-                        Text("No hay cuentas disponibles")
+                        Text(L10n.Import.noAccountsAvailable)
                             .font(.headline)
-                        Text("Crea al menos una cuenta antes de importar movimientos.")
+                        Text(L10n.Import.createAccountBeforeImport)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -54,7 +54,7 @@ struct ImportAccountPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle("Selecciona una cuenta")
+            .navigationTitle(L10n.Import.selectAccount)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

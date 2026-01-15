@@ -197,6 +197,16 @@
 "import.continue" = "Continuar";
 "import.noAccountsAvailable" = "No hay cuentas disponibles";
 "import.createAccountFirst" = "Crea al menos una cuenta antes de importar movimientos.";
+"import.completed" = "Importación completada";
+"import.error" = "Error al importar";
+"import.templateGenerated" = "Plantilla generada";
+"import.templateGeneratedMessage" = "La plantilla CSV se generó correctamente. Ahora puedes editarla y volver a esta pantalla para importarla.";
+"import.introDescription" = "Agrega tus movimientos financieros masivamente desde un archivo CSV.";
+"import.templateDescription" = "Usa nuestra plantilla oficial para asegurar que el formato sea correcto.";
+"import.categoriesDescription" = "Si el archivo incluye categorías que no existen, se crearán automáticamente.";
+"import.selectAccount" = "Selecciona una cuenta";
+"import.fileUrlError" = "No se pudo obtener la URL del archivo seleccionado.";
+"import.createAccountBeforeImport" = "Crea al menos una cuenta antes de importar movimientos.";
 
 // MARK: - Export
 
@@ -216,6 +226,11 @@
 "favorites.edit" = "Editar favorito";
 "favorites.noFavorites" = "Sin favoritos";
 "favorites.createTemplate" = "Crea plantillas de pagos recurrentes para registrarlos más rápido.";
+"favorites.newTitle" = "Nuevo favorito";
+"favorites.editTitle" = "Editar favorito";
+"favorites.namePlaceholder" = "Nombre del favorito";
+"favorites.notConfigured" = "Sin configurar";
+"favorites.descriptionPlaceholder" = "Descripción (opcional)";
 
 // MARK: - Settings
 

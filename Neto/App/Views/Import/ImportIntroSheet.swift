@@ -43,7 +43,7 @@ struct ImportResultOverlay: View {
                     .foregroundStyle(result.isSuccess ? Color.financeGreen : Color.red)
 
                 // Title
-                Text(result.isSuccess ? "Importación completada" : "Error al importar")
+                Text(result.isSuccess ? L10n.Import.completed : L10n.Import.importError)
                     .font(Typography.title2)
                     .foregroundStyle(Color.netoPrimaryText)
 
@@ -207,12 +207,10 @@ struct ImportIntroSheet: View {
                 }
             }
         }
-        .alert("Plantilla generada", isPresented: $showTemplateAlert) {
-            Button("Continuar", role: .cancel) {}
+        .alert(L10n.Import.templateGenerated, isPresented: $showTemplateAlert) {
+            Button(L10n.Import.continueBtn, role: .cancel) {}
         } message: {
-            Text(
-                "La plantilla CSV se generó correctamente. Ahora puedes editarla y volver a esta pantalla para importarla."
-            )
+            Text(L10n.Import.templateGeneratedMessage)
         }
     }
 
@@ -229,9 +227,7 @@ struct ImportIntroSheet: View {
                 .font(Typography.title2)
                 .foregroundStyle(Color.netoPrimaryText)
 
-            Text(
-                "Agrega tus movimientos financieros masivamente desde un archivo CSV."
-            )
+            Text(L10n.Import.introDescription)
             .font(Typography.body)
             .foregroundStyle(Color.netoSecondaryText)
             .multilineTextAlignment(.center)
@@ -266,9 +262,7 @@ struct ImportIntroSheet: View {
             }
             .buttonStyle(.plain)
 
-            Text(
-                "Usa nuestra plantilla oficial para asegurar que el formato sea correcto."
-            )
+            Text(L10n.Import.templateDescription)
             .font(Typography.label)
             .foregroundStyle(Color.netoSecondaryText)
             .padding(.horizontal, 4)
@@ -299,9 +293,7 @@ struct ImportIntroSheet: View {
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
 
-            Text(
-                "Si el archivo incluye categorías que no existen, se crearán automáticamente."
-            )
+            Text(L10n.Import.categoriesDescription)
             .font(Typography.label)
             .foregroundStyle(Color.netoSecondaryText)
             .padding(.horizontal, 4)
@@ -315,7 +307,7 @@ struct ImportIntroSheet: View {
             // No hay cuentas activas - dismiss and notify parent
             let result = ImportResult(
                 isSuccess: false,
-                message: "No hay cuentas activas disponibles. Crea una cuenta primero.",
+                message: L10n.Import.createAccountFirst,
                 count: 0
             )
             dismiss()
@@ -409,7 +401,7 @@ struct ImportIntroSheet: View {
             guard let url = urls.first else {
                 let errorResult = ImportResult(
                     isSuccess: false,
-                    message: "No se pudo obtener la URL del archivo seleccionado.",
+                    message: L10n.Import.fileUrlError,
                     count: 0
                 )
                 dismiss()
