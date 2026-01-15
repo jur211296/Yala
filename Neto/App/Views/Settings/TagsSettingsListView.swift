@@ -216,7 +216,12 @@ struct TagsSettingsListView: View {
         HStack(spacing: 12) {
             Circle()
                 .fill(colorForHex(tag.colorHex))
-                .frame(width: 12, height: 12)
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Image(systemName: tag.iconName)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                )
 
             Text(tag.name)
                 .font(.body)

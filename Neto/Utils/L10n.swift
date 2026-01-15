@@ -1042,6 +1042,7 @@ enum L10n {
         static var alias: String { NSLocalizedString("common.alias", comment: "") }
         static var color: String { NSLocalizedString("common.color", comment: "") }
         static var icon: String { NSLocalizedString("common.icon", comment: "") }
+        static var changeIcon: String { NSLocalizedString("common.changeIcon", comment: "") }
         static var search: String { NSLocalizedString("common.search", comment: "") }
         static var loading: String { NSLocalizedString("common.loading", comment: "") }
         static var error: String { NSLocalizedString("common.error", comment: "") }

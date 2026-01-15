@@ -299,6 +299,7 @@
 "common.alias" = "Alias";
 "common.color" = "Color";
 "common.icon" = "Ícono";
+"common.changeIcon" = "Cambiar ícono";
 "common.search" = "Buscar";
 "common.loading" = "Cargando...";
 "common.error" = "Error";

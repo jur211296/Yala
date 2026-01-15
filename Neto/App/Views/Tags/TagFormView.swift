@@ -197,7 +197,7 @@ struct TagFormView: View {
                                 .foregroundStyle(.white)
                         )
 
-                    Text("Cambiar icono")
+                    Text(L10n.Common.changeIcon)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -207,6 +207,7 @@ struct TagFormView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding()
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
