@@ -62,6 +62,10 @@ final class PanelViewModel {
     // Latest Records State
     var latestRecords: [TransactionItem] = []
 
+    // Budgets Widget State
+    var topBudgetSummaries: [BudgetSummary] = []
+    var hasBudgetsButNoFavorites: Bool = false
+
     // MARK: - Exchange Rate Widget State
     var exchangeRateWidgetData: ExchangeRateWidgetData?
     var exchangeRateGrouping: TrendGrouping = .day
@@ -1026,5 +1030,214 @@ final class PanelViewModel {
     func updateComparisonCurrencies(_ currencies: [CurrencyCode]) {
         // Limit to max 2
         selectedComparisonCurrencies = Array(currencies.prefix(2))
+    }
+
+    // MARK: - Budgets Widget Calculation
+
+    /// Calculate budget summaries for the widget (favorite budgets first, then active)
+    func calculateBudgetsWidget(
+        budgets: [Budget],
+        transactions: [TransactionItem],
+        defaultCurrencyCode: String
+    ) {
+        // Check if there are budgets but none are favorites
+        let hasBudgets = !budgets.isEmpty
+        let favoriteBudgets = budgets.filter { $0.isFavorite }
+        hasBudgetsButNoFavorites = hasBudgets && favoriteBudgets.isEmpty
+
+        // Get budgets to display: favorites first (sorted by order), then fill with active non-favorites
+        let sortedFavorites = favoriteBudgets.sorted { $0.favoriteOrder < $1.favoriteOrder }
+
+        // Calculate summaries for favorite budgets
+        let summaries = sortedFavorites.compactMap { budget -> BudgetSummary? in
+            calculateBudgetSummary(
+                budget: budget,
+                transactions: transactions,
+                defaultCurrencyCode: defaultCurrencyCode
+            )
+        }
+
+        topBudgetSummaries = summaries
+    }
+
+    /// Calculate summary for a single budget
+    private func calculateBudgetSummary(
+        budget: Budget,
+        transactions: [TransactionItem],
+        defaultCurrencyCode: String
+    ) -> BudgetSummary? {
+        // Get budget period date interval
+        let interval = getBudgetDateInterval(budget: budget)
+
+        // Filter transactions by date
+        var filtered = transactions.filter { interval.contains($0.date) }
+
+        // Apply budget filters
+
+        // Account filter
+        if !budget.accounts.isEmpty {
+            let accountIDs = Set(budget.accounts.map { $0.persistentModelID })
+            filtered = filtered.filter { transaction in
+                if let accountID = transaction.account?.persistentModelID {
+                    return accountIDs.contains(accountID)
+                }
+                return false
+            }
+        }
+
+        // Subcategory filter
+        if !budget.subcategories.isEmpty {
+            let subIDs = Set(budget.subcategories.map { $0.persistentModelID })
+            filtered = filtered.filter { transaction in
+                if let subID = transaction.subcategory?.persistentModelID {
+                    return subIDs.contains(subID)
+                }
+                return false
+            }
+        }
+
+        // Tag filter
+        if !budget.tags.isEmpty {
+            let tagIDs = Set(budget.tags.map { $0.persistentModelID })
+            filtered = filtered.filter { transaction in
+                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                return !transactionTagIDs.isDisjoint(with: tagIDs)
+            }
+        }
+
+        // Nature filter
+        if let naturesString = budget.natures, !naturesString.isEmpty {
+            let natures = naturesString.split(separator: ",")
+                .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+
+            filtered = filtered.filter { transaction in
+                natures.contains(transaction.effectiveNature)
+            }
+        }
+
+        // Only count expenses (not income)
+        filtered = filtered.filter { $0.category?.isIncome == false }
+
+        // Sum amounts
+        let spent = filtered.reduce(0.0) { sum, transaction in
+            let amount: Double
+            if transaction.preferredCurrencyCode == defaultCurrencyCode {
+                amount = transaction.amountInPreferredCurrency
+            } else {
+                amount = transaction.amount
+            }
+            return sum + abs(amount)
+        }
+
+        let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
+        let daysRemaining = getBudgetDaysRemaining(budget: budget, interval: interval)
+        let status = getBudgetStatus(budget: budget, spending: spent)
+        let (icon, color) = getBudgetDisplayProperties(budget: budget)
+
+        return BudgetSummary(
+            budget: budget,
+            spent: spent,
+            percentage: percentage,
+            daysRemaining: daysRemaining,
+            status: status,
+            icon: icon,
+            color: color
+        )
+    }
+
+    /// Get date interval for a budget period
+    private func getBudgetDateInterval(budget: Budget) -> DateInterval {
+        let calendar = Calendar.current
+
+        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
+            let start = calendar.startOfMonth(for: Date())
+            let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
+            return DateInterval(start: start, end: end)
+        }
+
+        switch periodType {
+        case .weekly:
+            let weekStart = calendar.startOfWeek(for: Date())
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
+            return DateInterval(start: weekStart, end: weekEnd)
+
+        case .monthly:
+            let monthStart = calendar.startOfMonth(for: Date())
+            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
+            return DateInterval(start: monthStart, end: monthEnd)
+
+        case .yearly:
+            let year = calendar.component(.year, from: Date())
+            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
+            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
+            return DateInterval(start: yearStart, end: yearEnd)
+
+        case .unique:
+            guard let start = budget.startDate, let end = budget.endDate else {
+                let monthStart = calendar.startOfMonth(for: Date())
+                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
+                return DateInterval(start: monthStart, end: monthEnd)
+            }
+            return DateInterval(start: start, end: end)
+        }
+    }
+
+    /// Calculate days remaining in budget period
+    private func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
+        let calendar = Calendar.current
+        let today = Date()
+
+        if today > interval.end {
+            return -1  // Period has ended
+        }
+
+        guard interval.contains(today) else { return 0 }
+
+        let components = calendar.dateComponents([.day], from: today, to: interval.end)
+        return max(0, components.day ?? 0)
+    }
+
+    /// Determine budget status
+    private func getBudgetStatus(budget: Budget, spending: Double) -> BudgetStatus {
+        guard budget.isActive else { return .inactive }
+        return spending >= budget.limitAmount ? .exceeded : .active
+    }
+
+    /// Get display properties for budget
+    private func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
+        guard !budget.subcategories.isEmpty else {
+            return ("chart.pie.fill", "#6366F1")
+        }
+
+        if budget.subcategories.count == 1, let subcategory = budget.subcategories.first {
+            let icon = subcategory.iconName ?? subcategory.category.iconName ?? "tag.fill"
+            let color = subcategory.colorHex ?? subcategory.category.colorHex
+            return (icon, color)
+        }
+
+        let uniqueCategories = Set(budget.subcategories.map { $0.category.persistentModelID })
+
+        if uniqueCategories.count == 1, let firstSubcategory = budget.subcategories.first {
+            let category = firstSubcategory.category
+            let icon = category.iconName ?? "tag.fill"
+            let color = category.colorHex
+            return (icon, color)
+        } else {
+            return ("chart.pie.fill", "#6366F1")
+        }
+    }
+}
+
+// MARK: - Calendar Extension for Budget Calculations
+
+private extension Calendar {
+    func startOfWeek(for date: Date) -> Date {
+        let components = dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        return self.date(from: components) ?? date
+    }
+
+    func startOfMonth(for date: Date) -> Date {
+        let components = dateComponents([.year, .month], from: date)
+        return self.date(from: components) ?? date
     }
 }

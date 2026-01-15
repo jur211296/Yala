@@ -30,7 +30,7 @@ struct NetoApp: App {
 
         do {
             return try ModelContainer(
-                for: schema,    
+                for: schema,
                 configurations: configuration
             )
         } catch {

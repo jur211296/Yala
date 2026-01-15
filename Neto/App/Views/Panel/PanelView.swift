@@ -35,6 +35,10 @@ struct PanelView: View {
     @Query(sort: \TransactionItem.date, order: .reverse)
     private var transactions: [TransactionItem]
 
+    // Budgets for widget
+    @Query(filter: #Predicate<Budget> { $0.isActive }, sort: \Budget.createdAt, order: .reverse)
+    private var budgets: [Budget]
+
     @State private var viewModel = PanelViewModel()
 
     @State private var isPresentingSettings = false
@@ -514,6 +518,13 @@ struct PanelView: View {
                 context: modelContext,
                 sessionState: sessionState
             )
+
+            // Calculate budgets widget data
+            viewModel.calculateBudgetsWidget(
+                budgets: budgets,
+                transactions: transactions,
+                defaultCurrencyCode: defaultCurrencyCodeRaw
+            )
         }
     }
 
@@ -690,10 +701,28 @@ struct PanelView: View {
                 grouping: viewModel.exchangeRateGrouping,
                 onShowDetail: nil  // REMOVED CHEVRON
             )
+        } else if config.type == .budgets {
+            BudgetsWidget(
+                budgets: viewModel.topBudgetSummaries,
+                currencyCode: preferredCurrency.rawValue,
+                hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
+                onSelectBudget: { _ in
+                    // TODO: Incremento 5 - aplicar filtros del budget
+                },
+                onShowMore: { sessionState.selectedMainTab = .planning },
+                size: mapBudgetsWidgetSize(config.size)
+            )
         }
     }
 
     private func mapWidgetSize(_ size: WidgetSize) -> TopCategoriesWidget.CardSize {
+        switch size {
+        case .medium: return .medium
+        case .large: return .large
+        }
+    }
+
+    private func mapBudgetsWidgetSize(_ size: WidgetSize) -> BudgetsWidget.CardSize {
         switch size {
         case .medium: return .medium
         case .large: return .large
