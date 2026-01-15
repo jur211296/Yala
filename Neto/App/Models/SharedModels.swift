@@ -286,6 +286,14 @@ struct CategorySpendingSummary: Identifiable {
     var id: PersistentIdentifier { category.persistentModelID }
 }
 
+struct TagSpendingSummary: Identifiable {
+    let tag: Tag
+    let amount: Double
+    let percentage: Double
+
+    var id: PersistentIdentifier { tag.persistentModelID }
+}
+
 struct SubcategorySpendingSummary: Identifiable {
     let subcategoryName: String
     let colorHex: String?

@@ -476,6 +476,7 @@
 "widget.noExpensesSubcategoriesPeriod" = "Aún no hay gastos en subcategorías para este periodo.";
 "widget.distributionByCategory" = "Distribución por categoría";
 "widget.distributionBySubcategory" = "Distribución por subcategoría";
+"widget.distributionByTag" = "Distribución por etiqueta";
 "widget.noDataForPeriod" = "Sin datos para este periodo";
 "widget.selectCurrencies" = "Selecciona hasta 2 divisas para comparar con %@";
 "widget.currenciesToCompare" = "Divisas a comparar";

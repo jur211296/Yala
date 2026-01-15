@@ -1138,6 +1138,9 @@ enum L10n {
         static var distributionBySubcategory: String {
             NSLocalizedString("widget.distributionBySubcategory", comment: "")
         }
+        static var distributionByTag: String {
+            NSLocalizedString("widget.distributionByTag", comment: "")
+        }
         static var noDataForPeriod: String {
             NSLocalizedString("widget.noDataForPeriod", comment: "")
         }
