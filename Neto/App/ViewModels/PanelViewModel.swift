@@ -646,12 +646,12 @@ final class PanelViewModel {
             effectiveInterval = self.panelDateInterval
         }
 
-        // Context transactions for category/subcategory widgets (excludes adjustments)
-        let contextTransactions = transactions.filter { txn in
-            guard let acct = txn.account, eligibleAccountIDs.contains(acct.persistentModelID)
-            else { return false }
-            guard txn.balanceAdjustmentType == nil else { return false }
-            return effectiveInterval.contains(txn.date)
+        // Context transactions for category/subcategory widgets
+        // IMPORTANT: Must apply the same global filters as 'filtered' to ensure consistency
+        // Uses expenseFiltered as base (already has account, date, and all global filters applied)
+        // Then re-filters by effectiveInterval (which may differ from panelDateInterval for AllTime)
+        let contextTransactions = expenseFiltered.filter { txn in
+            effectiveInterval.contains(txn.date)
         }
 
         let finalContextTransactions: [TransactionItem]
