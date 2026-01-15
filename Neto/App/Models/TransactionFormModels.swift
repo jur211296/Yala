@@ -12,11 +12,20 @@ import SwiftUI
 
 /// Tipo de transacción para el formulario de nuevo registro
 enum TransactionType: String, CaseIterable, Identifiable {
-    case expense = "Gasto"
-    case income = "Ingreso"
-    case transfer = "Transferencia"
+    case expense
+    case income
+    case transfer
 
     var id: String { rawValue }
+
+    /// Localized display name
+    var displayName: String {
+        switch self {
+        case .expense: return L10n.Transaction.TransactionType.expense
+        case .income: return L10n.Transaction.TransactionType.income
+        case .transfer: return L10n.Transaction.TransactionType.transfer
+        }
+    }
 
     /// Color principal del tipo (para monto y acentos)
     var color: Color {

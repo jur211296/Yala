@@ -20,7 +20,7 @@ struct DatePickerSheet: View {
 
                 VStack {
                     DatePicker(
-                        "Fecha",
+                        L10n.Common.date,
                         selection: $selectedDate,
                         displayedComponents: [.date]
                     )
@@ -30,7 +30,7 @@ struct DatePickerSheet: View {
                     Spacer()
                 }
             }
-            .navigationTitle("Fecha")
+            .navigationTitle(L10n.Common.date)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

@@ -52,7 +52,7 @@ struct TransactionTypeButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(type.rawValue)
+            Text(type.displayName)
                 .font(.subheadline.weight(isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 16)

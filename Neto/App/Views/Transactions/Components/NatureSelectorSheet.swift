@@ -33,7 +33,7 @@ struct NatureSelectorSheet: View {
                     .padding()
                 }
             }
-            .navigationTitle("Naturaleza")
+            .navigationTitle(L10n.Category.nature)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

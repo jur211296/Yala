@@ -132,6 +132,10 @@
 "transaction.willReceive" = "Recibirá";
 "transaction.createAnother" = "Crear otra transacción";
 "transaction.recents" = "Recientes";
+"transaction.successTitle" = "¡Registro exitoso!";
+"transaction.type.expense" = "Gasto";
+"transaction.type.income" = "Ingreso";
+"transaction.type.transfer" = "Transferencia";
 
 // MARK: - Account
 
@@ -539,6 +543,7 @@
 "transaction.account" = "Cuenta";
 "tag.newTag" = "Nueva etiqueta";
 "tag.editTag" = "Editar etiqueta";
+"tag.createFirstDescription" = "Crea tu primera etiqueta para organizar tus transacciones";
 "tag.deleteConfirmation" = "¿Eliminar etiqueta?";
 "common.selectColor" = "Selecciona un color";
 "common.useThisColor" = "Usar este color";

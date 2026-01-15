@@ -38,7 +38,7 @@ struct TagSelectorSheet: View {
                     .padding(.vertical, 24)
                 }
             }
-            .navigationTitle("Etiquetas")
+            .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -88,7 +88,7 @@ struct TagSelectorSheet: View {
                     .font(.headline)
                     .foregroundStyle(.secondary)
 
-                Text("Crea tu primera etiqueta para organizar tus transacciones")
+                Text(L10n.Tag.createFirstDescription)
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)

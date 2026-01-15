@@ -268,6 +268,21 @@ enum L10n {
             NSLocalizedString("transaction.createAnother", comment: "")
         }
         static var recents: String { NSLocalizedString("transaction.recents", comment: "") }
+        static var successTitle: String {
+            NSLocalizedString("transaction.successTitle", comment: "")
+        }
+
+        enum TransactionType {
+            static var expense: String {
+                NSLocalizedString("transaction.type.expense", comment: "")
+            }
+            static var income: String {
+                NSLocalizedString("transaction.type.income", comment: "")
+            }
+            static var transfer: String {
+                NSLocalizedString("transaction.type.transfer", comment: "")
+            }
+        }
     }
 
     // MARK: - Account
@@ -469,6 +484,9 @@ enum L10n {
         static var edit: String { NSLocalizedString("tag.edit", comment: "") }
         static var newTag: String { NSLocalizedString("tag.newTag", comment: "") }
         static var editTag: String { NSLocalizedString("tag.editTag", comment: "") }
+        static var createFirstDescription: String {
+            NSLocalizedString("tag.createFirstDescription", comment: "")
+        }
         static var delete: String { NSLocalizedString("tag.delete", comment: "") }
         static var deleteConfirmation: String {
             NSLocalizedString("tag.deleteConfirmation", comment: "")

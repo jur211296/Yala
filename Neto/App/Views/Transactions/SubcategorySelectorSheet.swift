@@ -105,7 +105,7 @@ struct SubcategorySelectorSheet: View {
                     .padding(.vertical, 20)
                 }
             }
-            .navigationTitle("Subcategoría")
+            .navigationTitle(L10n.Transaction.subcategory)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

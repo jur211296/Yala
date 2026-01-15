@@ -132,6 +132,10 @@
 "transaction.willReceive" = "Will receive";
 "transaction.createAnother" = "Create another";
 "transaction.recents" = "Recents";
+"transaction.successTitle" = "Transaction saved!";
+"transaction.type.expense" = "Expense";
+"transaction.type.income" = "Income";
+"transaction.type.transfer" = "Transfer";
 
 // MARK: - Account
 
@@ -539,6 +543,7 @@
 "transaction.account" = "Account";
 "tag.newTag" = "New Tag";
 "tag.editTag" = "Edit Tag";
+"tag.createFirstDescription" = "Create your first tag to organize your transactions";
 "tag.deleteConfirmation" = "Delete Tag?";
 "common.selectColor" = "Select a Color";
 "common.useThisColor" = "Use This Color";

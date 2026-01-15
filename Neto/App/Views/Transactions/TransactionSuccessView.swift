@@ -69,7 +69,7 @@ struct TransactionSuccessView: View {
                             .foregroundStyle(data.transactionType.color)
                     }
 
-                    Text("¡Registro exitoso!")
+                    Text(L10n.Transaction.successTitle)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 }

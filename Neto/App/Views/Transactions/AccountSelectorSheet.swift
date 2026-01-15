@@ -18,9 +18,9 @@ struct AccountSelectorSheet: View {
     @Binding var selectedAccount: Account?
     let title: String
 
-    init(selectedAccount: Binding<Account?>, title: String = "Seleccionar cuenta") {
+    init(selectedAccount: Binding<Account?>, title: String? = nil) {
         _selectedAccount = selectedAccount
-        self.title = title
+        self.title = title ?? L10n.Account.selectAccount
     }
 
     var body: some View {
