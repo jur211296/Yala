@@ -15,6 +15,9 @@ struct BudgetsWidget: View {
     /// True if user has budgets but none are marked as favorite
     var hasBudgetsButNoFavorites: Bool = false
 
+    /// Currently selected budget ID for highlighting
+    var selectedBudgetID: PersistentIdentifier?
+
     // Interaction callbacks
     var onSelectBudget: ((Budget) -> Void)?
     var onShowMore: (() -> Void)?
@@ -84,13 +87,20 @@ struct BudgetsWidget: View {
             let displayedBudgets = Array(budgets.prefix(limit))
 
             ForEach(displayedBudgets) { summary in
+                let isSelected = selectedBudgetID == summary.budget.persistentModelID
+                let isAnySelected = selectedBudgetID != nil
+                let shouldDim = isAnySelected && !isSelected
+
                 BudgetWidgetRow(
                     summary: summary,
                     currencyCode: currencyCode
                 )
                 .contentShape(Rectangle())
+                .opacity(shouldDim ? 0.3 : 1.0)
                 .onTapGesture {
-                    onSelectBudget?(summary.budget)
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        onSelectBudget?(summary.budget)
+                    }
                 }
             }
         }

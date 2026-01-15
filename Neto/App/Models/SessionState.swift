@@ -73,6 +73,9 @@ class SessionState {
     /// Selected tags (empty = all tags)
     var selectedTags: Set<PersistentIdentifier> = []
 
+    /// Selected budget ID for widget highlighting (nil = none selected)
+    var selectedBudgetID: PersistentIdentifier?
+
     /// Selected currencies (empty = all currencies)
     var selectedCurrencies: Set<CurrencyCode> = []
 
@@ -113,6 +116,7 @@ class SessionState {
         selectedNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
+        selectedBudgetID = nil
         amountCondition = .any
         searchText = ""
         globalFilters.clearAll()
@@ -214,6 +218,43 @@ class SessionState {
     func navigateToDetail(_ tab: DetailViewTab) {
         selectedDetailTab = tab
         selectedMainTab = .statistics
+    }
+
+    /// Toggle budget filters - if same budget is tapped again, clear filters
+    func applyBudgetFilters(_ budget: Budget) {
+        let budgetID = budget.persistentModelID
+
+        // Toggle: if same budget selected, clear all
+        if selectedBudgetID == budgetID {
+            selectedBudgetID = nil
+            clearFilters()
+            return
+        }
+
+        // Clear existing filters before applying new ones
+        clearFilters()
+        selectedBudgetID = budgetID
+
+        // Apply account filters
+        if !budget.accounts.isEmpty {
+            selectedAccountIDs = Set(budget.accounts.map { $0.persistentModelID })
+        }
+
+        // Apply subcategory filters (use names since that's how they're stored)
+        if !budget.subcategories.isEmpty {
+            selectedSubcategoryNames = Set(budget.subcategories.map { $0.name })
+        }
+
+        // Apply tag filters
+        if !budget.tags.isEmpty {
+            selectedTags = Set(budget.tags.map { $0.persistentModelID })
+        }
+
+        // Apply nature filters (parse comma-separated string)
+        if let naturesString = budget.natures, !naturesString.isEmpty {
+            let natureValues = naturesString.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }
+            selectedNatures = Set(natureValues.compactMap { SubcategoryNature(rawValue: $0) })
+        }
     }
 
     // MARK: - Initialization

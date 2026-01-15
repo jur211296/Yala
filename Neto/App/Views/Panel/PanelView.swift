@@ -706,8 +706,9 @@ struct PanelView: View {
                 budgets: viewModel.topBudgetSummaries,
                 currencyCode: preferredCurrency.rawValue,
                 hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
-                onSelectBudget: { _ in
-                    // TODO: Incremento 5 - aplicar filtros del budget
+                selectedBudgetID: sessionState.selectedBudgetID,
+                onSelectBudget: { budget in
+                    sessionState.applyBudgetFilters(budget)
                 },
                 onShowMore: { sessionState.selectedMainTab = .planning },
                 size: mapBudgetsWidgetSize(config.size)
