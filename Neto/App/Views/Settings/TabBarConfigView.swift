@@ -30,7 +30,10 @@ struct TabBarConfigView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         infoHeader
-                        tabsSection
+                        activeTabsSection
+                        if !localConfig.inactiveTabs.isEmpty {
+                            availableTabsSection
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 24)
@@ -77,20 +80,122 @@ struct TabBarConfigView: View {
         )
     }
 
-    // MARK: - Tabs Section
+    // MARK: - Active Tabs Section (Reorderable)
 
-    private var tabsSection: some View {
+    private var activeTabsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.Settings.tabBarConfigSections)
+            HStack {
+                Text(L10n.Settings.tabBarConfigActive)
+                    .font(.headline)
+                    .foregroundStyle(Color.primary.opacity(0.6))
+
+                Spacer()
+
+                Text("\(localConfig.activeTabs.count)/3")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 6)
+
+            VStack(spacing: 0) {
+                ForEach(Array(localConfig.activeTabs.enumerated()), id: \.element) { index, tab in
+                    activeTabRow(tab, position: index + 1)
+
+                    if index < localConfig.activeTabs.count - 1 {
+                        Divider()
+                            .padding(.leading, 52)
+                    }
+                }
+                .onMove(perform: moveTab)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.netoCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+
+            // Validation message
+            if !canDeactivate {
+                validationMessage(L10n.Settings.tabBarConfigMinWarning, icon: "exclamationmark.circle")
+            }
+
+            // Reorder hint
+            if localConfig.activeTabs.count > 1 {
+                HStack(spacing: 4) {
+                    Image(systemName: "hand.draw")
+                        .font(.caption)
+                    Text(L10n.Settings.tabBarConfigReorderHint)
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+                .padding(.leading, 6)
+                .padding(.top, 4)
+            }
+        }
+    }
+
+    private func activeTabRow(_ tab: ConfigurableTab, position: Int) -> some View {
+        HStack(spacing: 12) {
+            // Position indicator
+            Text("\(position)")
+                .font(.caption.monospacedDigit().bold())
+                .foregroundStyle(Color.electricIndigo)
+                .frame(width: 20)
+
+            // Tab icon
+            Image(systemName: tab.iconName)
+                .font(.body)
+                .foregroundStyle(Color.electricIndigo)
+                .frame(width: 28, height: 28)
+
+            // Tab name
+            Text(tab.displayName)
+                .font(.body)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            // Remove button (if can deactivate)
+            if canDeactivate {
+                Button {
+                    removeTab(tab)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.red.opacity(0.8))
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Drag handle
+            Image(systemName: "line.3.horizontal")
+                .font(.body)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - Available Tabs Section
+
+    private var availableTabsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.Settings.tabBarConfigAvailable)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
             VStack(spacing: 0) {
-                ForEach(Array(ConfigurableTab.allCases.enumerated()), id: \.element) { index, tab in
-                    tabRow(tab)
+                ForEach(Array(localConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
+                    availableTabRow(tab)
 
-                    if index < ConfigurableTab.allCases.count - 1 {
+                    if index < localConfig.inactiveTabs.count - 1 {
                         Divider()
                             .padding(.leading, 52)
                     }
@@ -107,42 +212,39 @@ struct TabBarConfigView: View {
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
 
-            // Validation message
+            // Max warning
             if !canActivate {
                 validationMessage(L10n.Settings.tabBarConfigMaxWarning, icon: "exclamationmark.circle")
-            } else if !canDeactivate {
-                validationMessage(L10n.Settings.tabBarConfigMinWarning, icon: "exclamationmark.circle")
             }
         }
     }
 
-    private func tabRow(_ tab: ConfigurableTab) -> some View {
-        let isActive = localConfig.activeTabs.contains(tab)
-
-        return HStack(spacing: 12) {
+    private func availableTabRow(_ tab: ConfigurableTab) -> some View {
+        HStack(spacing: 12) {
             // Tab icon
             Image(systemName: tab.iconName)
                 .font(.body)
-                .foregroundStyle(isActive ? Color.electricIndigo : Color.secondary)
+                .foregroundStyle(Color.secondary)
                 .frame(width: 28, height: 28)
+                .padding(.leading, 20) // Align with active tabs
 
             // Tab name
             Text(tab.displayName)
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(.secondary)
 
             Spacer()
 
-            // Toggle
-            Toggle("", isOn: Binding(
-                get: { isActive },
-                set: { newValue in
-                    toggleTab(tab, activate: newValue)
-                }
-            ))
-            .labelsHidden()
-            .tint(Color.electricIndigo)
-            .disabled(isActive ? !canDeactivate : !canActivate)
+            // Add button
+            Button {
+                addTab(tab)
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(canActivate ? Color.electricIndigo : Color.secondary.opacity(0.5))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canActivate)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -165,13 +267,21 @@ struct TabBarConfigView: View {
 
     // MARK: - Actions
 
-    private func toggleTab(_ tab: ConfigurableTab, activate: Bool) {
+    private func moveTab(from source: IndexSet, to destination: Int) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            if activate {
-                _ = localConfig.activate(tab)
-            } else {
-                _ = localConfig.deactivate(tab)
-            }
+            localConfig.activeTabs.move(fromOffsets: source, toOffset: destination)
+        }
+    }
+
+    private func addTab(_ tab: ConfigurableTab) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            _ = localConfig.activate(tab)
+        }
+    }
+
+    private func removeTab(_ tab: ConfigurableTab) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            _ = localConfig.deactivate(tab)
         }
     }
 

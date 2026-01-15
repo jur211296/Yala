@@ -17,6 +17,7 @@ struct PersonalizationSettingsView: View {
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
 
     @State private var showingPeriodPicker = false
+    @State private var showingTabBarConfig = false
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
@@ -45,6 +46,39 @@ struct PersonalizationSettingsView: View {
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 32)
+
+                    // Tab Bar Configuration Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button {
+                            showingTabBarConfig = true
+                        } label: {
+                            HStack {
+                                Text(L10n.Settings.tabBarConfig)
+                                    .font(.body)
+                                    .foregroundStyle(Color.netoPrimaryText)
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Color.netoCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Text(L10n.Settings.tabBarConfigInfo)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
 
                     // Default Period Section - Single Row Style
                     VStack(alignment: .leading, spacing: 8) {
@@ -143,6 +177,9 @@ struct PersonalizationSettingsView: View {
                 }
             )
             .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showingTabBarConfig) {
+            TabBarConfigView()
         }
     }
 }

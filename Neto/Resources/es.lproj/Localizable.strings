@@ -276,7 +276,9 @@
 "settings.budgetsFavoritesReorder" = "Ordenar favoritos";
 "settings.tabBarConfig" = "Personalizar navegación";
 "settings.tabBarConfigInfo" = "Elige qué secciones mostrar en la barra inferior. Mínimo 1, máximo 3.";
-"settings.tabBarConfigSections" = "Secciones";
+"settings.tabBarConfigActive" = "Tabs activos";
+"settings.tabBarConfigAvailable" = "Disponibles";
+"settings.tabBarConfigReorderHint" = "Mantén presionado para reordenar";
 "settings.tabBarConfigMinWarning" = "Debes tener al menos una sección";
 "settings.tabBarConfigMaxWarning" = "Máximo 3 secciones";
 "settings.plannedPayments" = "Pagos planificados";

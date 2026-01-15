@@ -880,8 +880,14 @@ enum L10n {
         static var tabBarConfigInfo: String {
             NSLocalizedString("settings.tabBarConfigInfo", comment: "")
         }
-        static var tabBarConfigSections: String {
-            NSLocalizedString("settings.tabBarConfigSections", comment: "")
+        static var tabBarConfigActive: String {
+            NSLocalizedString("settings.tabBarConfigActive", comment: "")
+        }
+        static var tabBarConfigAvailable: String {
+            NSLocalizedString("settings.tabBarConfigAvailable", comment: "")
+        }
+        static var tabBarConfigReorderHint: String {
+            NSLocalizedString("settings.tabBarConfigReorderHint", comment: "")
         }
         static var tabBarConfigMinWarning: String {
             NSLocalizedString("settings.tabBarConfigMinWarning", comment: "")

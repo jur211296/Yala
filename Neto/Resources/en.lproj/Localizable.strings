@@ -276,7 +276,9 @@
 "settings.budgetsFavoritesReorder" = "Reorder favorites";
 "settings.tabBarConfig" = "Customize Navigation";
 "settings.tabBarConfigInfo" = "Choose which sections to show in the bottom bar. Minimum 1, maximum 3.";
-"settings.tabBarConfigSections" = "Sections";
+"settings.tabBarConfigActive" = "Active tabs";
+"settings.tabBarConfigAvailable" = "Available";
+"settings.tabBarConfigReorderHint" = "Long press to reorder";
 "settings.tabBarConfigMinWarning" = "You must have at least one section";
 "settings.tabBarConfigMaxWarning" = "Maximum 3 sections";
 "settings.plannedPayments" = "Planned Payments";
