@@ -360,7 +360,7 @@ struct SearchContentView: View {
                             navigateToRecords = true
                         } label: {
                             HStack(spacing: 4) {
-                                Text("Ver todo")
+                                Text(L10n.Action.viewAll)
                                 Image(systemName: "arrow.right")
                             }
                             .font(.subheadline.weight(.medium))
@@ -394,11 +394,11 @@ struct SearchContentView: View {
                             .font(.system(size: 40))
                             .foregroundStyle(.tertiary)
 
-                        Text("Sin resultados")
+                        Text(L10n.Search.noResults)
                             .font(.headline)
                             .foregroundStyle(.primary)
 
-                        Text("Intenta con otro término de búsqueda")
+                        Text(L10n.Search.tryAnotherTerm)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -481,7 +481,7 @@ struct SearchResultRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(
                         record.note ?? record.subcategory?.name ?? record.category?.name
-                            ?? "Sin categoría"
+                            ?? L10n.Common.uncategorized
                     )
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)

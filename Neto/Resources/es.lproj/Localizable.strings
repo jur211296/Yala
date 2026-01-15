@@ -116,6 +116,11 @@
 "action.viewLess" = "Ver menos";
 "action.multipleEdit" = "Edición múltiple";
 
+// MARK: - Search
+
+"search.noResults" = "Sin resultados";
+"search.tryAnotherTerm" = "Intenta con otro término de búsqueda";
+
 // MARK: - Exchange Rate
 
 "exchangeRate.title" = "Tipo de Cambio";
@@ -368,6 +373,24 @@
 "export.customizeFile" = "Personaliza tu archivo";
 "export.csvGeneratedSuccess" = "El archivo CSV se ha generado y compartido correctamente.";
 "export.confirmExport" = "Confirma tu exportación";
+"export.selectColumns" = "Seleccionar columnas";
+"export.availableColumns" = "Columnas disponibles";
+"export.columnsDescription" = "Elige qué columnas quieres incluir en el archivo CSV exportado. Debes seleccionar al menos una.";
+"export.summaryAndExport" = "Resumen y Exportar";
+"export.summaryDescription" = "Revisa los filtros y columnas seleccionadas antes de generar el archivo CSV.";
+"export.filtersSummary" = "Resumen de filtros";
+"export.columnsToExport" = "Columnas a exportar";
+"export.exportToCSV" = "Exportar a CSV";
+"export.exportError" = "Error de exportación";
+"export.exportCompleted" = "Exportación completada";
+"export.backToSettings" = "Volver a ajustes";
+"export.exportData" = "Exportar datos";
+"export.greaterThan" = "Mayor a";
+"export.lessThan" = "Menor a";
+"export.selectSingleCurrency" = "Selecciona una única moneda para filtrar por monto.";
+"export.allAvailable" = "Todas las disponibles";
+"export.noTagsSelected" = "Sin etiquetas";
+"export.noSubcategorySelected" = "Ninguna subcategoría seleccionada";
 "common.next" = "Siguiente";
 "settings.versionInfo" = "Versión 1.0.0 (Build 1)";
 "tab.panel" = "Panel";

@@ -116,6 +116,11 @@
 "action.viewLess" = "View less";
 "action.multipleEdit" = "Multiple edit";
 
+// MARK: - Search
+
+"search.noResults" = "No results";
+"search.tryAnotherTerm" = "Try a different search term";
+
 // MARK: - Exchange Rate
 
 "exchangeRate.title" = "Exchange Rate";
@@ -368,6 +373,24 @@
 "export.customizeFile" = "Customize your file";
 "export.csvGeneratedSuccess" = "The CSV file has been generated and shared successfully.";
 "export.confirmExport" = "Confirm your export";
+"export.selectColumns" = "Select columns";
+"export.availableColumns" = "Available columns";
+"export.columnsDescription" = "Choose which columns to include in the exported CSV file. You must select at least one.";
+"export.summaryAndExport" = "Summary and Export";
+"export.summaryDescription" = "Review the selected filters and columns before generating the CSV file.";
+"export.filtersSummary" = "Filters summary";
+"export.columnsToExport" = "Columns to export";
+"export.exportToCSV" = "Export to CSV";
+"export.exportError" = "Export error";
+"export.exportCompleted" = "Export completed";
+"export.backToSettings" = "Back to settings";
+"export.exportData" = "Export data";
+"export.greaterThan" = "Greater than";
+"export.lessThan" = "Less than";
+"export.selectSingleCurrency" = "Select a single currency to filter by amount.";
+"export.allAvailable" = "All available";
+"export.noTagsSelected" = "No tags";
+"export.noSubcategorySelected" = "No subcategory selected";
 "common.next" = "Next";
 "settings.versionInfo" = "Version 1.0.0 (Build 1)";
 "tab.panel" = "Home";

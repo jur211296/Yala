@@ -60,9 +60,9 @@ struct ExportSummaryStepView: View {
                 .padding(.horizontal, 16)
             }
         }
-        .navigationTitle("Resumen y Exportar")
+        .navigationTitle(L10n.Export.summaryAndExport)
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Error de exportación", isPresented: $showErrorAlert, presenting: exportError) { _ in
+        .alert(L10n.Export.exportError, isPresented: $showErrorAlert, presenting: exportError) { _ in
             Button("OK", role: .cancel) {}
         } message: { error in
             if let localizedError = error as? LocalizedError {
@@ -71,8 +71,8 @@ struct ExportSummaryStepView: View {
                 Text(error.localizedDescription)
             }
         }
-        .alert("Exportación completada", isPresented: $showSuccessAlert) {
-            Button("Volver a ajustes") {
+        .alert(L10n.Export.exportCompleted, isPresented: $showSuccessAlert) {
+            Button(L10n.Export.backToSettings) {
                 closeToRoot()
             }
         } message: {
@@ -104,9 +104,7 @@ struct ExportSummaryStepView: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            Text(
-                "Revisa los filtros y columnas seleccionadas antes de generar el archivo CSV."
-            )
+            Text(L10n.Export.summaryDescription)
             .font(.body)
             .foregroundStyle(.secondary)
         }
@@ -114,38 +112,38 @@ struct ExportSummaryStepView: View {
     }
 
     private var filtersSummarySection: some View {
-        SectionBox(title: "Resumen de filtros") {
+        SectionBox(title: L10n.Export.filtersSummary) {
             VStack(spacing: 12) {
                 summaryRow(
-                    label: "Cuentas",
+                    label: L10n.Filters.allAccounts,
                     value: accountsSummaryText
                 )
 
                 Divider()
 
                 summaryRow(
-                    label: "Periodo",
+                    label: L10n.Export.period,
                     value: periodSummaryText
                 )
 
                 Divider()
 
                 summaryRow(
-                    label: "Categorías",
+                    label: L10n.Filters.allCategories,
                     value: categoriesSummaryText
                 )
 
                 Divider()
 
                 summaryRow(
-                    label: "Etiquetas",
+                    label: L10n.Transaction.tags,
                     value: tagsSummaryText
                 )
 
                 Divider()
 
                 summaryRow(
-                    label: "Moneda",
+                    label: L10n.Settings.currency,
                     value: currenciesSummaryText
                 )
             }
@@ -155,7 +153,7 @@ struct ExportSummaryStepView: View {
     }
 
     private var columnsSummarySection: some View {
-        SectionBox(title: "Columnas a exportar") {
+        SectionBox(title: L10n.Export.columnsToExport) {
             Text(columnsSummaryText)
                 .font(.body)
                 .foregroundStyle(.secondary)
@@ -175,7 +173,7 @@ struct ExportSummaryStepView: View {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Label("Exportar a CSV", systemImage: "square.and.arrow.up")
+                    Label(L10n.Export.exportToCSV, systemImage: "square.and.arrow.up")
                         .font(.headline)
                 }
             }

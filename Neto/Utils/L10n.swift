@@ -264,6 +264,13 @@ enum L10n {
         static var multipleEdit: String { NSLocalizedString("action.multipleEdit", comment: "") }
     }
 
+    // MARK: - Search
+
+    enum Search {
+        static var noResults: String { NSLocalizedString("search.noResults", comment: "") }
+        static var tryAnotherTerm: String { NSLocalizedString("search.tryAnotherTerm", comment: "") }
+    }
+
     // MARK: - Date Helpers
 
     enum Date {
@@ -689,6 +696,60 @@ enum L10n {
             NSLocalizedString("export.csvGeneratedSuccess", comment: "")
         }
         static var confirmExport: String { NSLocalizedString("export.confirmExport", comment: "") }
+        static var selectColumns: String {
+            NSLocalizedString("export.selectColumns", comment: "")
+        }
+        static var availableColumns: String {
+            NSLocalizedString("export.availableColumns", comment: "")
+        }
+        static var columnsDescription: String {
+            NSLocalizedString("export.columnsDescription", comment: "")
+        }
+        static var summaryAndExport: String {
+            NSLocalizedString("export.summaryAndExport", comment: "")
+        }
+        static var summaryDescription: String {
+            NSLocalizedString("export.summaryDescription", comment: "")
+        }
+        static var filtersSummary: String {
+            NSLocalizedString("export.filtersSummary", comment: "")
+        }
+        static var columnsToExport: String {
+            NSLocalizedString("export.columnsToExport", comment: "")
+        }
+        static var exportToCSV: String {
+            NSLocalizedString("export.exportToCSV", comment: "")
+        }
+        static var exportError: String {
+            NSLocalizedString("export.exportError", comment: "")
+        }
+        static var exportCompleted: String {
+            NSLocalizedString("export.exportCompleted", comment: "")
+        }
+        static var backToSettings: String {
+            NSLocalizedString("export.backToSettings", comment: "")
+        }
+        static var exportData: String {
+            NSLocalizedString("export.exportData", comment: "")
+        }
+        static var greaterThan: String {
+            NSLocalizedString("export.greaterThan", comment: "")
+        }
+        static var lessThan: String {
+            NSLocalizedString("export.lessThan", comment: "")
+        }
+        static var selectSingleCurrency: String {
+            NSLocalizedString("export.selectSingleCurrency", comment: "")
+        }
+        static var allAvailable: String {
+            NSLocalizedString("export.allAvailable", comment: "")
+        }
+        static var noTagsSelected: String {
+            NSLocalizedString("export.noTagsSelected", comment: "")
+        }
+        static var noSubcategorySelected: String {
+            NSLocalizedString("export.noSubcategorySelected", comment: "")
+        }
     }
 
     // MARK: - Favorites

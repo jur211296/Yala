@@ -44,7 +44,7 @@ struct ExportColumnsStepView: View {
                 .padding(.horizontal, 16)
             }
         }
-        .navigationTitle("Seleccionar columnas")
+        .navigationTitle(L10n.Export.selectColumns)
         .navigationBarTitleDisplayMode(.inline)
         // Botón "Atrás" estándar del NavigationStack
         .swipeBack()
@@ -77,9 +77,7 @@ struct ExportColumnsStepView: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            Text(
-                "Elige qué columnas quieres incluir en el archivo CSV exportado. Debes seleccionar al menos una."
-            )
+            Text(L10n.Export.columnsDescription)
             .font(.body)
             .foregroundStyle(.secondary)
         }
@@ -87,7 +85,7 @@ struct ExportColumnsStepView: View {
     }
 
     private var columnsListSection: some View {
-        SectionBox(title: "Columnas disponibles") {
+        SectionBox(title: L10n.Export.availableColumns) {
             VStack(spacing: 0) {
                 ForEach(Array(ExportColumns.defaultOrder.enumerated()), id: \.element.id) {
                     index, column in
