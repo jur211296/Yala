@@ -25,11 +25,15 @@ struct TagFormView: View {
 
     @State private var name: String
     @State private var selectedColorHex: String
+    @State private var selectedIconName: String
     @State private var isActive: Bool
 
     // Custom color picker
     @State private var customColor: Color
     @State private var isPresentingColorPicker: Bool = false
+
+    // Icon picker
+    @State private var isPresentingIconPicker: Bool = false
 
     // Delete confirmation
     @State private var isShowingDeleteConfirmation: Bool = false
@@ -44,6 +48,7 @@ struct TagFormView: View {
         if let tag = tagToEdit {
             _name = State(initialValue: tag.name)
             _selectedColorHex = State(initialValue: tag.colorHex)
+            _selectedIconName = State(initialValue: tag.iconName)
             _isActive = State(initialValue: tag.isActive)
             _customColor = State(initialValue: colorForHex(tag.colorHex))
         } else {
@@ -52,6 +57,7 @@ struct TagFormView: View {
             let defaultColor = Tag.nextAvailableColor(excluding: usedColors)
             _name = State(initialValue: "")
             _selectedColorHex = State(initialValue: defaultColor)
+            _selectedIconName = State(initialValue: "tag.fill")
             _isActive = State(initialValue: true)
             _customColor = State(initialValue: colorForHex(defaultColor))
         }
@@ -91,6 +97,7 @@ struct TagFormView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         generalSection
+                        iconSection
                         colorSection
                         statusSection
 
@@ -145,6 +152,13 @@ struct TagFormView: View {
             } message: {
                 Text(L10n.Common.cannotUndo)
             }
+            .sheet(isPresented: $isPresentingIconPicker) {
+                IconColorPickerSheet(
+                    selectedIconName: $selectedIconName,
+                    selectedColorHex: $selectedColorHex,
+                    supportsColorPicking: false
+                )
+            }
         }
     }
 
@@ -165,6 +179,36 @@ struct TagFormView: View {
                 }
                 .padding()
             }
+        }
+    }
+
+    private var iconSection: some View {
+        SectionBox(title: L10n.Common.icon) {
+            Button {
+                isPresentingIconPicker = true
+            } label: {
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(colorForHex(selectedColorHex))
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Image(systemName: selectedIconName)
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(.white)
+                        )
+
+                    Text("Cambiar icono")
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding()
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -282,11 +326,13 @@ struct TagFormView: View {
         if let tag = tagToEdit {
             tag.name = trimmedName
             tag.colorHex = selectedColorHex
+            tag.iconName = selectedIconName
             tag.isActive = isActive
         } else {
             let newTag = Tag(
                 name: trimmedName,
                 colorHex: selectedColorHex,
+                iconName: selectedIconName,
                 isActive: isActive
             )
             modelContext.insert(newTag)
