@@ -139,20 +139,20 @@ struct GlobalSearchView: View {
                     VStack(spacing: 16) {
                         ProgressView()
                             .scaleEffect(1.2)
-                        Text("Cargando...")
+                        Text(L10n.Common.loading)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-            .navigationTitle("Buscar")
+            .navigationTitle(L10n.Common.search)
             .navigationBarTitleDisplayMode(.large)
         }
         .searchable(
             text: $searchText,
             isPresented: $isSearchActive,
             placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Buscar"
+            prompt: L10n.Common.search
         )
         .task {
             // Delay to let Query load, then reveal content smoothly
@@ -419,13 +419,13 @@ struct SearchDateSectionHeader: View {
 
     private var formattedDate: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = AppLocale.current
 
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
-            return "Hoy"
+            return L10n.Date.today
         } else if calendar.isDateInYesterday(date) {
-            return "Ayer"
+            return L10n.Date.yesterday
         } else {
             formatter.dateFormat = "d MMM yyyy"
             return formatter.string(from: date).replacingOccurrences(of: ".", with: "")
