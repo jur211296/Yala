@@ -13,6 +13,7 @@ struct PlanningView: View {
 
     @State private var selectedTab: PlanningTab = .budgets
     @State private var isPresentingSettings = false
+    @State private var showFavoritesSettings = false
     @Namespace private var tabAnimation
 
     // MARK: - Tab Types
@@ -74,17 +75,36 @@ struct PlanningView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        isPresentingSettings = true
-                    } label: {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(Color.electricIndigo)
+                    HStack(spacing: 16) {
+                        // Favorites button (only for budgets tab)
+                        if selectedTab == .budgets {
+                            Button {
+                                showFavoritesSettings = true
+                            } label: {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(Color.yellow)
+                            }
+                        }
+
+                        // Profile button
+                        Button {
+                            isPresentingSettings = true
+                        } label: {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(Color.electricIndigo)
+                        }
                     }
                 }
             }
             .sheet(isPresented: $isPresentingSettings) {
                 ProfileView()
+            }
+            .sheet(isPresented: $showFavoritesSettings) {
+                NavigationStack {
+                    BudgetsFavoritesSettingsView()
+                }
             }
         }
     }

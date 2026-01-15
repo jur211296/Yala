@@ -178,6 +178,10 @@ struct PanelView: View {
             // Recalculate when transactions change
             recalculateData()
         }
+        .onChange(of: budgets) {
+            // Recalculate when budgets change (favorites toggled, reordered, etc.)
+            recalculateData()
+        }
         .onChange(of: defaultCurrencyCodeRaw) {
             // Recalculate when preferred currency changes
             recalculateData()
