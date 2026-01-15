@@ -157,7 +157,7 @@ struct CategoryDetailView: View {
                 }
                 dismiss()
             }
-            Button("Seguir editando", role: .cancel) {
+            Button(L10n.Alert.keepEditing, role: .cancel) {
                 // El usuario decide seguir editando; no hacemos nada.
             }
         } message: {
@@ -247,7 +247,7 @@ struct CategoryDetailView: View {
             }
             .buttonStyle(.plain)
 
-            Text(name.isEmpty ? "Nueva categoría" : name)
+            Text(name.isEmpty ? L10n.Category.newCategory : name)
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }
@@ -265,12 +265,12 @@ struct CategoryDetailView: View {
     // Sección de nombre y visibilidad
     private var detailsSection: some View {
         VStack(spacing: 16) {
-            SectionBox(title: "Detalles") {
+            SectionBox(title: L10n.Category.details) {
                 VStack(spacing: 0) {
                     HStack(spacing: 12) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
-                        TextField("Nombre de la categoría", text: $name)
+                        TextField(L10n.Category.namePlaceholder, text: $name)
                             .textContentType(.name)
                     }
                     .padding()
@@ -325,7 +325,7 @@ struct CategoryDetailView: View {
             VStack(alignment: .leading, spacing: 8) {
                 // Header with Edit/Done button
                 HStack {
-                    Text("Subcategorías activas")
+                    Text(L10n.Category.activeSubcategories)
                         .font(.headline)
                         .foregroundStyle(Color.primary.opacity(0.6))
                     Spacer()
@@ -422,7 +422,7 @@ struct CategoryDetailView: View {
             // Hidden subcategories section
             if !ocultas.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Subcategorías ocultas")
+                    Text(L10n.Category.hiddenSubcategories)
                         .font(.headline)
                         .foregroundStyle(Color.primary.opacity(0.6))
                         .padding(.leading, 6)

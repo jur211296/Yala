@@ -586,6 +586,11 @@
 "category.hiddenTitle" = "Categoría oculta";
 "category.hiddenDescription" = "La categoría y sus subcategorías dejarán de aparecer en los selectores, pero no se perderán datos históricos.";
 "category.addOneSubcategory" = "Añade al menos una subcategoría";
+"category.newCategory" = "Nueva categoría";
+"category.namePlaceholder" = "Nombre de la categoría";
+"category.activeSubcategories" = "Subcategorías activas";
+"category.hiddenSubcategories" = "Subcategorías ocultas";
+"category.details" = "Detalles";
 "category.delete" = "Eliminar categoría";
 "category.deleteConfirmTitle" = "¿Eliminar categoría?";
 "category.deleteConfirmMessage" = "Se eliminarán la categoría y todas sus subcategorías. Esta acción no se puede deshacer.";
@@ -610,6 +615,9 @@
 "subcategory.selectDestination" = "Seleccionar destino";
 "subcategory.deleteTransactionsConfirmTitle" = "¿Eliminar transacciones?";
 "subcategory.deleteTransactionsConfirm" = "Eliminar";
+"subcategory.details" = "Detalles de la subcategoría";
+"subcategory.namePlaceholder" = "Nombre de la subcategoría";
+"subcategory.unassigned" = "Sin asignar";
 "subcategory.deleteTransactionsConfirmMessage" = "Se eliminarán permanentemente %d transacciones. Esta acción no se puede deshacer.";
 
 

@@ -586,6 +586,11 @@
 "category.hiddenTitle" = "Category Hidden";
 "category.hiddenDescription" = "The category and its subcategories will stop appearing in selectors, but historical data will not be lost.";
 "category.addOneSubcategory" = "Add at least one subcategory";
+"category.newCategory" = "New category";
+"category.namePlaceholder" = "Category name";
+"category.activeSubcategories" = "Active subcategories";
+"category.hiddenSubcategories" = "Hidden subcategories";
+"category.details" = "Details";
 "category.delete" = "Delete Category";
 "category.deleteConfirmTitle" = "Delete Category?";
 "category.deleteConfirmMessage" = "The category and all its subcategories will be deleted. This action cannot be undone.";
@@ -610,6 +615,9 @@
 "subcategory.selectDestination" = "Select destination";
 "subcategory.deleteTransactionsConfirmTitle" = "Delete transactions?";
 "subcategory.deleteTransactionsConfirm" = "Delete";
+"subcategory.details" = "Subcategory details";
+"subcategory.namePlaceholder" = "Subcategory name";
+"subcategory.unassigned" = "Unassigned";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transactions will be permanently deleted. This action cannot be undone.";
 
 

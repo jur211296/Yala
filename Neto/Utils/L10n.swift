@@ -446,6 +446,21 @@ enum L10n {
                 count
             )
         }
+        static var newCategory: String {
+            NSLocalizedString("category.newCategory", comment: "")
+        }
+        static var namePlaceholder: String {
+            NSLocalizedString("category.namePlaceholder", comment: "")
+        }
+        static var activeSubcategories: String {
+            NSLocalizedString("category.activeSubcategories", comment: "")
+        }
+        static var hiddenSubcategories: String {
+            NSLocalizedString("category.hiddenSubcategories", comment: "")
+        }
+        static var details: String {
+            NSLocalizedString("category.details", comment: "")
+        }
     }
 
     // MARK: - Subcategory
@@ -516,6 +531,15 @@ enum L10n {
                 format: NSLocalizedString("subcategory.deleteTransactionsConfirmMessage", comment: ""),
                 count
             )
+        }
+        static var details: String {
+            NSLocalizedString("subcategory.details", comment: "")
+        }
+        static var namePlaceholder: String {
+            NSLocalizedString("subcategory.namePlaceholder", comment: "")
+        }
+        static var unassigned: String {
+            NSLocalizedString("subcategory.unassigned", comment: "")
         }
     }
 

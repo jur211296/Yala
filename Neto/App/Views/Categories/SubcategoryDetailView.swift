@@ -221,12 +221,12 @@ struct SubcategoryDetailView: View {
     // Sección de nombre, naturaleza y visibilidad
     private var detailsSection: some View {
         VStack(spacing: 16) {
-            SectionBox(title: "Detalles de la subcategoría") {
+            SectionBox(title: L10n.Subcategory.details) {
                 VStack(spacing: 0) {
                     HStack(spacing: 12) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
-                        TextField("Nombre de la subcategoría", text: $name)
+                        TextField(L10n.Subcategory.namePlaceholder, text: $name)
                             .textContentType(.name)
                     }
                     .padding()
