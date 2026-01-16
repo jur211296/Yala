@@ -559,6 +559,7 @@
 "statistics.noDataToShow" = "No data to show";
 "statistics.noRecords" = "No records";
 "statistics.ofExpense" = "of expense";
+"statistics.spendingAnalysis" = "Spending Analysis";
 
 
 "settings.organization" = "Organization";

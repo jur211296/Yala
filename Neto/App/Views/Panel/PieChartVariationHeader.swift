@@ -9,8 +9,8 @@ import SwiftUI
 
 /// Header component for pie chart widgets that displays:
 /// - Title and total amount (left)
-/// - Variation chip and M/A selector (right)
-/// - Comparison period text (right, below selector)
+/// - Variation chip (right)
+/// - Comparison period text (right, below chip)
 struct PieChartVariationHeader: View {
 
     // MARK: - Properties
@@ -21,13 +21,9 @@ struct PieChartVariationHeader: View {
     let currencyCode: String
     let period: DetailPeriod
     let customRange: DateInterval?
-    @Binding var comparisonMode: ComparisonMode
+    let comparisonMode: ComparisonMode
 
     var onShowDetail: (() -> Void)?
-
-    // MARK: - Namespace for selector animation
-
-    @Namespace private var selectorNamespace
 
     // MARK: - Computed Properties
 
@@ -46,10 +42,6 @@ struct PieChartVariationHeader: View {
     private var variationColor: Color {
         guard let variation = variation else { return .gray }
         return variation >= 0 ? .electricIndigo : .hotPink
-    }
-
-    private var showSelector: Bool {
-        PreviousPeriodHelper.isSelectorVisible(for: period)
     }
 
     private var previousInterval: DateInterval {
@@ -86,18 +78,10 @@ struct PieChartVariationHeader: View {
 
             Spacer()
 
-            // Right: Variation chip, selector, and comparison text
+            // Right: Variation chip and comparison text
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                // Row with variation chip and selector
-                HStack(spacing: DS.Spacing.sm) {
-                    // Variation chip
-                    variationChip
-
-                    // M/A Selector (only if visible)
-                    if showSelector {
-                        comparisonSelector
-                    }
-                }
+                // Variation chip
+                variationChip
 
                 // Comparison period text
                 if !comparisonText.isEmpty {
@@ -142,46 +126,6 @@ struct PieChartVariationHeader: View {
         )
     }
 
-    // MARK: - Comparison Mode Selector
-
-    private var comparisonSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(ComparisonMode.allCases) { mode in
-                selectorButton(for: mode)
-            }
-        }
-        .padding(DS.Spacing.xxs)
-        .background(Color.netoSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
-    }
-
-    private func selectorButton(for mode: ComparisonMode) -> some View {
-        let isSelected = comparisonMode == mode
-
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                comparisonMode = mode
-            }
-        } label: {
-            Text(mode.shortName)
-                .font(.caption2.weight(.semibold))
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.xs)
-                .foregroundStyle(isSelected ? .white : Color.netoSecondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(Color.electricIndigo)
-                                .matchedGeometryEffect(
-                                    id: "comparisonSelector", in: selectorNamespace)
-                        }
-                    }
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
@@ -193,7 +137,7 @@ struct PieChartVariationHeader: View {
 
 #Preview {
     VStack(spacing: DS.Spacing.xl) {
-        // With selector
+        // With variation
         PieChartVariationHeader(
             title: "Distribución por categoría",
             totalAmount: 5000,
@@ -201,21 +145,21 @@ struct PieChartVariationHeader: View {
             currencyCode: "PEN",
             period: .thisMonth,
             customRange: nil,
-            comparisonMode: .constant(.month)
+            comparisonMode: .month
         )
         .padding()
         .background(Color.netoCard)
         .cornerRadius(DS.Radius.xl)
 
-        // Without selector (year period)
+        // Without previous data (N/A)
         PieChartVariationHeader(
             title: "Distribución por categoría",
             totalAmount: 25000,
-            previousAmount: 30000,
+            previousAmount: nil,
             currencyCode: "PEN",
             period: .thisYear,
             customRange: nil,
-            comparisonMode: .constant(.year)
+            comparisonMode: .year
         )
         .padding()
         .background(Color.netoCard)

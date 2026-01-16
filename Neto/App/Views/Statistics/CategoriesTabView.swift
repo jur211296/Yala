@@ -50,6 +50,7 @@ struct CategoriesTabView: View {
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
     @State private var isSyncingFilters: Bool = false  // Anti-loop flag for sync functions
     @Namespace private var listSelectorNamespace
+    @Namespace private var comparisonSelectorNamespace
 
     // Period Comparison State
     @State private var comparisonMode: ComparisonMode = .month
@@ -86,6 +87,7 @@ struct CategoriesTabView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.xl) {
                 controlBar
+                spendingAnalysisHeader
                 chartsCarousel
                 natureWidget
                 categoriesListSection
@@ -182,11 +184,12 @@ struct CategoriesTabView: View {
                             )
                         }
 
-                        // Category chip (aggregated - one chip max)
+                        // Category chip - show when category selected from pie or via filter
                         if let catChip = aggregatedCategoryChip(
                             selectedSubcategories: viewModel.selectedSubcategories,
                             allSubcategories: allSubcategories
                         ) {
+                            // Chip from subcategory filter (shows parent category)
                             FilterChipView(
                                 categoryName: catChip.name,
                                 iconName: catChip.iconName,
@@ -198,18 +201,45 @@ struct CategoriesTabView: View {
                                     selectedCategoryID = nil
                                 }
                             )
+                        } else if let categoryID = selectedCategoryID,
+                                  let category = categories.first(where: { $0.persistentModelID == categoryID }) {
+                            // Chip from direct category selection (pie chart)
+                            FilterChipView(
+                                categoryName: category.name,
+                                iconName: category.iconName,
+                                colorHex: category.colorHex,
+                                count: 1,
+                                onClear: {
+                                    viewModel.selectedCategories.removeAll()
+                                    selectedCategoryID = nil
+                                }
+                            )
                         }
 
-                        // Subcategory chip (aggregated - one chip max)
+                        // Subcategory chip - show when subcategory selected from pie or via filter
                         if let subChip = aggregatedSubcategoryChip(
                             selectedSubcategories: viewModel.selectedSubcategories,
                             allSubcategories: allSubcategories
                         ) {
+                            // Chip from subcategory filter
                             FilterChipView(
                                 subcategoryName: subChip.name,
                                 iconName: subChip.iconName,
                                 colorHex: subChip.colorHex,
                                 count: subChip.count,
+                                onClear: {
+                                    viewModel.selectedSubcategories.removeAll()
+                                    selectedSubcategoryID = nil
+                                }
+                            )
+                        } else if let subcategoryID = selectedSubcategoryID,
+                                  let subcategory = subcategorySpending.first(where: { $0.persistentID == subcategoryID })?.subcategory {
+                            // Chip from direct subcategory selection (pie chart)
+                            FilterChipView(
+                                subcategoryName: subcategory.name,
+                                iconName: subcategory.iconName,
+                                colorHex: subcategory.colorHex,
+                                count: 1,
                                 onClear: {
                                     viewModel.selectedSubcategories.removeAll()
                                     selectedSubcategoryID = nil
@@ -306,6 +336,69 @@ struct CategoriesTabView: View {
         .equatable()
     }
 
+    // MARK: - Spending Analysis Header
+
+    /// Header with title "Análisis del gasto" and M/A selector
+    /// Placed outside carousel to avoid disappearing when no previous data
+    private var spendingAnalysisHeader: some View {
+        HStack {
+            Text(L10n.Statistics.spendingAnalysis)
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            // M/A Selector (always visible for applicable periods)
+            if showComparisonSelector {
+                comparisonModeSelector
+            }
+        }
+    }
+
+    /// Determines if comparison selector should be visible
+    private var showComparisonSelector: Bool {
+        PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
+    }
+
+    /// Comparison mode selector (M/A toggle)
+    private var comparisonModeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(ComparisonMode.allCases) { mode in
+                comparisonSelectorButton(for: mode)
+            }
+        }
+        .padding(DS.Spacing.xxs)
+        .background(Color.netoSecondaryText.opacity(0.08))
+        .clipShape(Capsule())
+    }
+
+    private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
+        let isSelected = comparisonMode == mode
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                comparisonMode = mode
+            }
+        } label: {
+            Text(mode.shortName)
+                .font(.caption2.weight(.semibold))
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xs)
+                .foregroundStyle(isSelected ? .white : Color.netoSecondaryText)
+                .background(
+                    Group {
+                        if isSelected {
+                            Capsule()
+                                .fill(Color.electricIndigo)
+                                .matchedGeometryEffect(
+                                    id: "comparisonSelector", in: comparisonSelectorNamespace)
+                        }
+                    }
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Charts Carousel
 
     private var chartsCarousel: some View {
@@ -320,14 +413,17 @@ struct CategoriesTabView: View {
                         // Categories Chart
                         categoryChartCard
                             .frame(width: cardWidth)
+                            .id(0)
 
                         // Subcategories Chart
                         subcategoryChartCard
                             .frame(width: cardWidth)
+                            .id(1)
 
                         // Tags Chart
                         tagChartCard
                             .frame(width: cardWidth)
+                            .id(2)
                     }
                     .scrollTargetLayout()
                 }
@@ -380,7 +476,8 @@ struct CategoriesTabView: View {
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
-                    comparisonModeBinding: $comparisonMode
+                    comparisonMode: comparisonMode,
+                    showVariationHeader: true
                 )
             }
         }
@@ -421,7 +518,8 @@ struct CategoriesTabView: View {
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
-                    comparisonModeBinding: $comparisonMode
+                    comparisonMode: comparisonMode,
+                    showVariationHeader: true
                 )
             }
         }
@@ -461,7 +559,8 @@ struct CategoriesTabView: View {
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
-                    comparisonModeBinding: $comparisonMode
+                    comparisonMode: comparisonMode,
+                    showVariationHeader: true
                 )
             }
         }
@@ -690,8 +789,22 @@ struct CategoriesTabView: View {
     private func calculateData() {
         let interval = viewModel.panelDateInterval
 
-        // Build filter criteria
-        let criteria = FilterCriteria(
+        // Build filter criteria for pie charts (WITHOUT category/subcategory filter - show all with dim)
+        let pieChartCriteria = FilterCriteria(
+            selectedAccounts: viewModel.selectedAccounts,
+            selectedCategories: [],  // Don't filter by category - show all in pie with dim
+            selectedSubcategories: [],  // Don't filter by subcategory - show all in pie with dim
+            selectedTags: viewModel.selectedTags,
+            selectedNatures: viewModel.selectedNatures,
+            selectedCurrencies: viewModel.selectedCurrencies,
+            transactionTypeFilter: .all,
+            amountCondition: viewModel.amountCondition,
+            searchText: viewModel.searchText,
+            dateInterval: interval
+        )
+
+        // Build full filter criteria (for other views like records)
+        let fullCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
@@ -704,33 +817,48 @@ struct CategoriesTabView: View {
             dateInterval: interval
         )
 
-        // Filter transactions
-        let filtered = FilterService.filterForTrends(
+        // Filter transactions for pie charts (show all categories/subcategories)
+        let pieFiltered = FilterService.filterForTrends(
             transactions: allTransactions,
             accounts: accounts,
-            criteria: criteria
+            criteria: pieChartCriteria
         )
 
-        // Calculate category spending
+        // Filter transactions for other views (with full filter)
+        let fullFiltered = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: fullCriteria
+        )
+
+        // Calculate category spending (show ALL categories, dim applied in widget)
         categorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
-            transactions: filtered,
+            transactions: pieFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
             context: modelContext
         )
 
-        // Calculate subcategory spending (show ALL subcategories, filter applied via opacity in UI)
+        // Calculate subcategory spending - filter by category if one is selected
+        let subcategoryTransactions: [TransactionItem]
+        if let categoryID = selectedCategoryID {
+            // Filter to only show subcategories of selected category
+            subcategoryTransactions = pieFiltered.filter { $0.category?.persistentModelID == categoryID }
+        } else {
+            subcategoryTransactions = pieFiltered
+        }
+
         subcategorySpending = TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: filtered,
+            transactions: subcategoryTransactions,
             interval: interval,
             currencyCode: defaultCurrencyCode,
-            categoryFilter: nil,  // Don't filter here, show all with opacity
+            categoryFilter: nil,
             context: modelContext
         )
 
-        // Calculate tag spending
+        // Calculate tag spending (show ALL tags, dim applied in widget)
         tagSpending = calculateTagSpending(
-            transactions: filtered,
+            transactions: pieFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode
         )
@@ -738,7 +866,7 @@ struct CategoriesTabView: View {
         // Calculate nature trend data with correct grouping based on period
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
         natureTrendPoints = NatureTrendHelper.calculateTrend(
-            transactions: filtered,
+            transactions: fullFiltered,
             grouping: natureGrouping,
             interval: interval,
             preferredCurrency: preferredCurrency,
@@ -762,11 +890,11 @@ struct CategoriesTabView: View {
             customRange: sessionState.customDateRange
         )
 
-        // Build filter criteria for previous period
+        // Build filter criteria for previous period (WITHOUT category filter - compare all)
         let criteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
-            selectedCategories: viewModel.selectedCategories,
-            selectedSubcategories: viewModel.selectedSubcategories,
+            selectedCategories: [],  // Don't filter by category for comparison
+            selectedSubcategories: [],  // Don't filter by subcategory for comparison
             selectedTags: viewModel.selectedTags,
             selectedNatures: viewModel.selectedNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
@@ -792,9 +920,16 @@ struct CategoriesTabView: View {
         )
         previousCategoryTotal = previousCategorySpending.reduce(0) { $0 + $1.amount }
 
-        // Calculate previous period subcategory spending
+        // Calculate previous period subcategory spending (filter by category if selected)
+        let prevSubcategoryTransactions: [TransactionItem]
+        if let categoryID = selectedCategoryID {
+            prevSubcategoryTransactions = previousFiltered.filter { $0.category?.persistentModelID == categoryID }
+        } else {
+            prevSubcategoryTransactions = previousFiltered
+        }
+
         let previousSubcategorySpending = TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: previousFiltered,
+            transactions: prevSubcategoryTransactions,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,

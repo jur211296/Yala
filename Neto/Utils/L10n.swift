@@ -170,6 +170,9 @@ enum L10n {
         static var ofExpense: String {
             NSLocalizedString("statistics.ofExpense", comment: "")
         }
+        static var spendingAnalysis: String {
+            NSLocalizedString("statistics.spendingAnalysis", comment: "")
+        }
     }
 
     // MARK: - Nature

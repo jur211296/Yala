@@ -24,19 +24,12 @@ struct TagsPieWidget: View {
     var period: DetailPeriod = .thisMonth
     var customRange: DateInterval? = nil
     var previousTotalAmount: Double? = nil
-    var comparisonModeBinding: Binding<ComparisonMode>? = nil
+    var comparisonMode: ComparisonMode = .month
+    var showVariationHeader: Bool = false  // Always show variation header (with N/A if no data)
 
-    // Internal state for comparison mode (used when binding not provided)
-    @State private var internalComparisonMode: ComparisonMode = .month
-
-    // Computed binding that uses external or internal state
-    private var comparisonMode: Binding<ComparisonMode> {
-        comparisonModeBinding ?? $internalComparisonMode
-    }
-
-    // Check if comparison feature is enabled (previousAmount provided)
+    // Check if variation header should be shown
     private var showComparison: Bool {
-        previousTotalAmount != nil
+        showVariationHeader  // Show header even when previousAmount is nil (displays N/A)
     }
 
     // Computed Properties
