@@ -343,16 +343,34 @@ struct PanelView: View {
                                 )
                             }
 
-                            // Category Chip (aggregated from selected subcategory IDs)
-                            // Skip if all subcategories are selected (= no filter = "Todas")
+                            // Category Chip - show when category is directly selected OR when subcategories are selected
                             let selectedSubsByID = allSubcategories.filter {
-                                sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
+                                viewModel.selectedSubcategoryIDs.contains($0.persistentModelID)
                             }
-                            let isAllSelected =
+                            let isAllSubsSelected =
                                 !selectedSubsByID.isEmpty
                                 && selectedSubsByID.count == allSubcategories.count
 
-                            if !isAllSelected && !selectedSubsByID.isEmpty {
+                            // Show category chip if:
+                            // 1. A category is directly selected (from pie chart), OR
+                            // 2. Subcategories are selected (shows parent category)
+                            if let categoryID = viewModel.selectedCategoryID,
+                               let category = viewModel.topSpendingCategories.first(where: { $0.category.persistentModelID == categoryID })?.category {
+                                // Direct category selection (from pie chart)
+                                FilterChipView(
+                                    categoryName: category.name,
+                                    iconName: category.iconName,
+                                    colorHex: category.colorHex,
+                                    count: 1,
+                                    onClear: {
+                                        viewModel.selectedCategoryID = nil
+                                        viewModel.selectedSubcategoryIDs.removeAll()
+                                        sessionState.selectedCategoryIDs.removeAll()
+                                        sessionState.selectedSubcategoryIDs.removeAll()
+                                    }
+                                )
+                            } else if !isAllSubsSelected && !selectedSubsByID.isEmpty {
+                                // Subcategory selection - show parent category
                                 let parentCategories = Set(
                                     selectedSubsByID.compactMap { $0.category })
                                 if let firstCategory = parentCategories.first {
@@ -369,8 +387,10 @@ struct PanelView: View {
                                         }
                                     )
                                 }
+                            }
 
-                                // Subcategory Chip (aggregated from selected subcategory IDs)
+                            // Subcategory Chip (aggregated from selected subcategory IDs)
+                            if !isAllSubsSelected && !selectedSubsByID.isEmpty {
                                 if let firstSub = selectedSubsByID.first {
                                     let color =
                                         (firstSub.colorHex?.isEmpty == false
@@ -642,7 +662,7 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-                showVariationHeader: true
+                showVariationHeader: viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .topSubcategories {
             TopSubcategoriesWidget(
@@ -667,7 +687,7 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-                showVariationHeader: true
+                showVariationHeader: viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .categoriesPie {
             CategoriesPieWidget(
@@ -742,7 +762,11 @@ struct PanelView: View {
                         viewModel.toggleNatureFilter(nature)
                     }
                 },
-                onShowDetail: { navigateToStatistics(.categories) }
+                onShowDetail: { navigateToStatistics(.categories) },
+                period: viewModel.selectedPeriod,
+                previousTotalAmount: viewModel.previousNatureTotalAmount,
+                previousAmountByNature: viewModel.previousNatureAmounts,
+                showVariationHeader: viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .exchangeRate {
             ExchangeRateWidget(

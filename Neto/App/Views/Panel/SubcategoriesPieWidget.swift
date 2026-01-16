@@ -211,6 +211,8 @@ struct SubcategoriesPieWidget: View {
                     .foregroundStyle(.secondary)
             }
             .opacity(isDimmedItem ? 0.4 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
+            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)
         }
         .buttonStyle(.plain)
     }
@@ -407,6 +409,8 @@ struct SubcategoriesPieWidget: View {
                             .fill(Color(hex: item.colorHex))
                             .frame(width: availableWidth * CGFloat(item.percentage / 100))
                             .opacity(isDimmed(item) ? 0.3 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
+                            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)
                             .onTapGesture {
                                 handleTap(item)
                             }
@@ -425,7 +429,7 @@ struct SubcategoriesPieWidget: View {
             if showComparison {
                 PieChartVariationHeader(
                     title: L10n.Widget.distributionBySubcategory,
-                    totalAmount: filteredTotalExpense,
+                    totalAmount: totalExpense,  // Use total (not filtered) for consistent comparison
                     previousAmount: previousTotalAmount,
                     currencyCode: currencyCode,
                     period: period,
@@ -535,6 +539,8 @@ struct SubcategoriesPieWidget: View {
             .id(dataHash)  // Force complete rebuild when data changes
             .chartLegend(.hidden)
             .chartAngleSelection(value: $selectedAngle)
+            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)  // Smooth dimming
+            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)  // Smooth dimming
             .animation(nil, value: dataHash)  // Disable animation to prevent interpolation crashes
             .onChange(of: selectedAngle) {
                 if let angle = selectedAngle {
