@@ -159,7 +159,8 @@ struct TopCategoriesWidget: View {
                     CategoryRow(
                         summary: summary,
                         maxAmount: maxAmount,
-                        currencyCode: currencyCode
+                        currencyCode: currencyCode,
+                        showNAWhenNil: showVariationHeader
                     )
                     .opacity(shouldDim ? 0.3 : 1.0)  // Dimming effect
                     .contentShape(Rectangle())  // Make entire row tappable
@@ -284,6 +285,7 @@ private struct CategoryRow: View {
     let summary: CategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
+    var showNAWhenNil: Bool = false
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -323,7 +325,7 @@ private struct CategoryRow: View {
                         Spacer()
 
                         // Variation chip (aligned to right)
-                        VariationChip(variation: summary.variation, size: .small)
+                        VariationChip(variation: summary.variation, size: .small, showNAWhenNil: showNAWhenNil)
                     }
 
                     // Bar

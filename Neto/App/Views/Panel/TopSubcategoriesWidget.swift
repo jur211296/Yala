@@ -274,7 +274,8 @@ struct TopSubcategoriesWidget: View {
                     SubcategoryRow(
                         summary: summary,
                         maxAmount: maxAmount,
-                        currencyCode: currencyCode
+                        currencyCode: currencyCode,
+                        showNAWhenNil: showVariationHeader
                     )
                     .opacity(isDimmed ? 0.3 : 1.0)
                     .contentShape(Rectangle())
@@ -398,6 +399,7 @@ private struct SubcategoryRow: View {
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
+    var showNAWhenNil: Bool = false
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -454,7 +456,7 @@ private struct SubcategoryRow: View {
                             Spacer()
 
                             // Variation chip (aligned to right)
-                            VariationChip(variation: summary.variation, size: .small)
+                            VariationChip(variation: summary.variation, size: .small, showNAWhenNil: showNAWhenNil)
                         }
 
                         // Bar

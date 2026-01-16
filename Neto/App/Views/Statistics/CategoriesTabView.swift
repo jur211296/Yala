@@ -482,7 +482,7 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
                     comparisonMode: comparisonMode,
-                    showVariationHeader: true
+                    showVariationHeader: viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -524,7 +524,7 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
                     comparisonMode: comparisonMode,
-                    showVariationHeader: true
+                    showVariationHeader: viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -565,7 +565,7 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
                     comparisonMode: comparisonMode,
-                    showVariationHeader: true
+                    showVariationHeader: viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -580,9 +580,33 @@ struct CategoriesTabView: View {
 
     // MARK: - Nature Carousel
 
-    /// Dynamic height based on current carousel page
+    /// Count of natures with data (for dynamic height calculation)
+    private var visibleNatureCount: Int {
+        guard !natureTrendPoints.isEmpty else { return 3 }
+        let essentialTotal = natureTrendPoints.reduce(0) { $0 + $1.essential }
+        let priorityTotal = natureTrendPoints.reduce(0) { $0 + $1.priority }
+        let optionalTotal = natureTrendPoints.reduce(0) { $0 + $1.optional }
+        let unclassifiedTotal = natureTrendPoints.reduce(0) { $0 + $1.unclassified }
+
+        var count = 0
+        if essentialTotal > 0 { count += 1 }
+        if priorityTotal > 0 { count += 1 }
+        if optionalTotal > 0 { count += 1 }
+        if unclassifiedTotal > 0 { count += 1 }
+        return max(count, 3)  // Always show at least 3 bars
+    }
+
+    /// Dynamic height based on current carousel page and visible natures
     private var natureCarouselHeight: CGFloat {
-        (natureCarouselIndex ?? 0) == 0 ? 340 : 260
+        if (natureCarouselIndex ?? 0) == 0 {
+            return 340  // Large chart view
+        } else {
+            // Compact view: dynamic height based on number of visible natures
+            // Each bar ~52 points (row + progress + spacing) + container padding (~56)
+            let barHeight: CGFloat = 52
+            let containerPadding: CGFloat = 56
+            return CGFloat(visibleNatureCount) * barHeight + containerPadding
+        }
     }
 
     private var natureCarousel: some View {
@@ -650,7 +674,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
-            showVariationHeader: true,
+            showVariationHeader: viewModel.detailPeriod != .allTime,
             comparisonMode: comparisonMode
         )
     }
@@ -676,7 +700,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
-            showVariationHeader: true,
+            showVariationHeader: viewModel.detailPeriod != .allTime,
             comparisonMode: comparisonMode
         )
     }
@@ -730,6 +754,7 @@ struct CategoriesTabView: View {
                         currencyCode: defaultCurrencyCode,
                         selectedCategoryID: selectedCategoryID,
                         isExpanded: isListExpanded,
+                        showVariation: viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectCategory: { categoryID in
                             if selectedCategoryID == categoryID {
@@ -755,6 +780,7 @@ struct CategoriesTabView: View {
                         selectedCategoryID: selectedCategoryID,
                         selectedSubcategoryID: selectedSubcategoryID,
                         isExpanded: isListExpanded,
+                        showVariation: viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectSubcategory: { subcategoryID in
                             if selectedSubcategoryID == subcategoryID {
@@ -890,20 +916,6 @@ struct CategoriesTabView: View {
             dateInterval: interval
         )
 
-        // Build full filter criteria (for other views like records)
-        let fullCriteria = FilterCriteria(
-            selectedAccounts: viewModel.selectedAccounts,
-            selectedCategories: viewModel.selectedCategories,
-            selectedSubcategories: viewModel.selectedSubcategories,
-            selectedTags: viewModel.selectedTags,
-            selectedNatures: viewModel.selectedNatures,
-            selectedCurrencies: viewModel.selectedCurrencies,
-            transactionTypeFilter: .all,
-            amountCondition: viewModel.amountCondition,
-            searchText: viewModel.searchText,
-            dateInterval: interval
-        )
-
         // Filter transactions for pie charts (show all categories/subcategories)
         let pieFiltered = FilterService.filterForTrends(
             transactions: allTransactions,
@@ -911,11 +923,25 @@ struct CategoriesTabView: View {
             criteria: pieChartCriteria
         )
 
-        // Filter transactions for other views (with full filter)
-        let fullFiltered = FilterService.filterForTrends(
+        // Create criteria for nature widget (WITHOUT nature filter - show all with dim)
+        let natureCriteria = FilterCriteria(
+            selectedAccounts: viewModel.selectedAccounts,
+            selectedCategories: [],  // Don't filter by category
+            selectedSubcategories: [],  // Don't filter by subcategory
+            selectedTags: viewModel.selectedTags,
+            selectedNatures: [],  // Don't filter by nature - show all with dim
+            selectedCurrencies: viewModel.selectedCurrencies,
+            transactionTypeFilter: .all,
+            amountCondition: viewModel.amountCondition,
+            searchText: viewModel.searchText,
+            dateInterval: interval
+        )
+
+        // Filter transactions for nature widget
+        let natureFiltered = FilterService.filterForTrends(
             transactions: allTransactions,
             accounts: accounts,
-            criteria: fullCriteria
+            criteria: natureCriteria
         )
 
         // Calculate category spending (show ALL categories, dim applied in widget)
@@ -951,9 +977,10 @@ struct CategoriesTabView: View {
         )
 
         // Calculate nature trend data with correct grouping based on period
+        // Uses natureFiltered (no nature filter) so selection = visual dim, not data filter
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
         natureTrendPoints = NatureTrendHelper.calculateTrend(
-            transactions: fullFiltered,
+            transactions: natureFiltered,
             grouping: natureGrouping,
             interval: interval,
             preferredCurrency: preferredCurrency,
@@ -1072,9 +1099,28 @@ struct CategoriesTabView: View {
         }
 
         // Calculate previous period nature trend data
+        // Use separate criteria WITHOUT nature filter for consistent comparison
+        let prevNatureCriteria = FilterCriteria(
+            selectedAccounts: viewModel.selectedAccounts,
+            selectedCategories: [],
+            selectedSubcategories: [],
+            selectedTags: viewModel.selectedTags,
+            selectedNatures: [],  // Don't filter by nature
+            selectedCurrencies: viewModel.selectedCurrencies,
+            transactionTypeFilter: .all,
+            amountCondition: viewModel.amountCondition,
+            searchText: viewModel.searchText,
+            dateInterval: previousInterval
+        )
+        let prevNatureFiltered = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: prevNatureCriteria
+        )
+
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
         let previousNaturePoints = NatureTrendHelper.calculateTrend(
-            transactions: previousFiltered,
+            transactions: prevNatureFiltered,
             grouping: natureGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
@@ -1495,6 +1541,7 @@ private struct AllCategoriesListContent: View {
     let currencyCode: String
     var selectedCategoryID: PersistentIdentifier?
     var isExpanded: Bool
+    var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
 
@@ -1517,7 +1564,8 @@ private struct AllCategoriesListContent: View {
                     CategoryRowView(
                         summary: summary,
                         maxAmount: maxAmount,
-                        currencyCode: currencyCode
+                        currencyCode: currencyCode,
+                        showVariation: showVariation
                     )
                     .opacity(shouldDim ? 0.3 : 1.0)
                     .contentShape(Rectangle())
@@ -1562,6 +1610,7 @@ private struct AllSubcategoriesListContent: View {
     var selectedCategoryID: PersistentIdentifier?
     var selectedSubcategoryID: PersistentIdentifier?
     var isExpanded: Bool
+    var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
 
@@ -1593,7 +1642,8 @@ private struct AllSubcategoriesListContent: View {
                     SubcategoryRowView(
                         summary: summary,
                         maxAmount: maxAmount,
-                        currencyCode: currencyCode
+                        currencyCode: currencyCode,
+                        showVariation: showVariation
                     )
                     .opacity(shouldDim ? 0.3 : 1.0)
                     .contentShape(Rectangle())
@@ -1637,6 +1687,7 @@ private struct CategoryRowView: View {
     let summary: CategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
+    var showVariation: Bool = true
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -1675,8 +1726,10 @@ private struct CategoryRowView: View {
 
                         Spacer()
 
-                        // Variation chip (aligned to right)
-                        VariationChip(variation: summary.variation, size: .small)
+                        // Variation chip (aligned to right) - only show when showVariation is true
+                        if showVariation {
+                            VariationChip(variation: summary.variation, size: .small, showNAWhenNil: true)
+                        }
                     }
 
                     // Bar
@@ -1714,6 +1767,7 @@ private struct SubcategoryRowView: View {
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
+    var showVariation: Bool = true
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -1758,8 +1812,10 @@ private struct SubcategoryRowView: View {
 
                         Spacer()
 
-                        // Variation chip (aligned to right)
-                        VariationChip(variation: summary.variation, size: .small)
+                        // Variation chip (aligned to right) - only show when showVariation is true
+                        if showVariation {
+                            VariationChip(variation: summary.variation, size: .small, showNAWhenNil: true)
+                        }
                     }
 
                     // Bar
