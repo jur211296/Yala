@@ -22,7 +22,7 @@ struct TransactionTypeSelectorView: View {
                         onTypeChange?(type)
                     }
                 } label: {
-                    Text(type.rawValue)
+                    Text(type.displayName)
                         .font(
                             .subheadline.weight(
                                 selectedType == type ? .semibold : .regular)
