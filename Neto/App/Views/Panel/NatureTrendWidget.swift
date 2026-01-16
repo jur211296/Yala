@@ -720,7 +720,7 @@ struct NatureCompactBar: View {
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     Spacer()
                     Text(NetoFormatter.currency(value: amount, currencyCode: currencyCode))
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(DS.Typography.amountSmall)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                 }
 

@@ -420,7 +420,7 @@ struct CashFlowWidget: View {
                                 NetoFormatter.currency(
                                     value: summary.totalIncome, currencyCode: summary.currencyCode)
                             )
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(DS.Typography.amountSmall)
                             .foregroundStyle(Color.netoPrimaryText)
                         }
                         // Bar
@@ -453,7 +453,7 @@ struct CashFlowWidget: View {
                                 NetoFormatter.currency(
                                     value: summary.totalExpense, currencyCode: summary.currencyCode)
                             )
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(DS.Typography.amountSmall)
                         }
                         // Bar
                         GeometryReader { geo in
