@@ -5,6 +5,14 @@ allowed-tools: Bash(cd:*), Bash(xcodebuild:*), Bash(grep:*), Bash(head:*)
 
 Ejecuta build del proyecto y muestra solo errores, warnings y estado.
 
+PASOS:
+
+0. HEALTH CHECK PREVIO:
+   - Ejecuta: swift build --dry-run 2>&1 | grep -E "error"
+   - Si hay errores de sintaxis, detén el proceso y repórtalos inmediatamente
+   - Solo continúa con la compilación completa si este check pasa
+
+1. BUILD COMPLETO:
 !`cd /Users/jur/Desktop/Neto && xcodebuild -scheme Neto -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build 2>&1 | grep -E "(error:|warning:|BUILD SUCCEEDED|BUILD FAILED)" | head -20`
 
 Si aparece BUILD FAILED o errores:

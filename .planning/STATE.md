@@ -18,7 +18,10 @@ Progress: ██████████░░░░ 70% (Fase 5)
 
 ---
 
-## Completed ✅
+## Recent Progress
+<!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+
+## Completed in Current Phase
 
 - **Migración Design System (DS tokens)** a 40+ archivos de vistas
   - Panel/: PanelView, widgets, AccountCardView
@@ -40,13 +43,13 @@ Progress: ██████████░░░░ 70% (Fase 5)
 - **Lista de tags con iconos** en ProfileView (no puntos)
 - **Migración SwiftData** con valor por defecto para iconName
 
-## Next
+## Next Steps
 
 - Migrar vistas restantes a DS tokens (~20 archivos pendientes)
 - Var% vs periodo anterior en barras de tendencia
 - Carrusel naturaleza compacto con variación
 
-## Risks/Notes
+## Parking Lot
 
 - `iconName` en Tag tiene default `"tag.fill"` para migración
 - `TagsPieWidget` sigue patrón de CategoriesPieWidget/SubcategoriesPieWidget
