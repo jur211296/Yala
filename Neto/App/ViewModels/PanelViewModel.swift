@@ -832,12 +832,15 @@ final class PanelViewModel {
     }
 
     /// Calculate top spending categories with period comparison
+    /// Uses natureFilteredTransactions (not fullyFiltered) so that subcategory selection
+    /// only dims categories visually, rather than filtering out other categories' data
     private func calculateCategoriesWidget(context: PanelCalculationContext)
         -> [CategorySpendingSummary]
     {
-        // Calculate current period data
+        // Calculate current period data using nature-filtered transactions
+        // This ensures category pie shows ALL categories (selection = visual dim, not data filter)
         var currentData = TopSpendingCategoriesCalculator.calculateTopSpending(
-            transactions: context.fullyFilteredTransactions,
+            transactions: context.natureFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             context: context.modelContext
@@ -882,6 +885,8 @@ final class PanelViewModel {
     }
 
     /// Calculate top subcategories with period comparison
+    /// Uses natureFilteredTransactions (not fullyFiltered) so that subcategory selection
+    /// only dims subcategories visually, rather than filtering out other subcategories' data
     private func calculateSubcategoriesWidget(context: PanelCalculationContext)
         -> [SubcategorySpendingSummary]
     {
@@ -889,9 +894,10 @@ final class PanelViewModel {
         let effectiveCategoryFilter =
             context.selectedCategoryID ?? context.subcategoriesWidgetFilter
 
-        // Use same base as categories (fullyFilteredTransactions) for consistent totals
+        // Use nature-filtered transactions (category filter applies separately)
+        // This ensures subcategory pie shows ALL subcategories (selection = visual dim, not data filter)
         var currentData = TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: context.fullyFilteredTransactions,
+            transactions: context.natureFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
