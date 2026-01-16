@@ -231,7 +231,7 @@ struct AccountsSettingsListView: View {
             (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
 
         return HStack(spacing: DS.Spacing.md) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(colorForHex(account.colorHex))
                 .frame(width: 44, height: 44)
                 .overlay(
@@ -323,7 +323,7 @@ struct AccountsSettingsListView: View {
 
         HStack(spacing: DS.Spacing.md) {
             // Ícono de la cuenta con color de fondo según configuración
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(colorForHex(account.colorHex))
                 .frame(width: 44, height: 44)
                 .overlay(

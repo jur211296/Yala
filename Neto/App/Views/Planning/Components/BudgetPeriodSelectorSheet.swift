@@ -44,7 +44,7 @@ struct BudgetPeriodSelectorSheet: View {
             // Wheel Picker Style
             ZStack {
                 // Selection highlight
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .strokeBorder(Color.electricIndigo.opacity(0.3), lineWidth: 1.5)
                     .frame(height: 50)
                     .padding(.horizontal, 20)
@@ -161,7 +161,7 @@ struct BudgetPeriodSelectorSheet: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
                     .background(Color.electricIndigo)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 20)

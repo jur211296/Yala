@@ -127,7 +127,7 @@ struct NetoLoadingFullScreen: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: 200)
                 .background(Color.netoCard)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .netoLoading(isLoading, message: "Guardando...")
             }
             .padding()

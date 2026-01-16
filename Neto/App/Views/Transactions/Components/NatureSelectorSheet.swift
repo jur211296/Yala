@@ -86,11 +86,11 @@ private struct NatureOptionRow: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .fill(isSelected ? nature.color.opacity(0.1) : Color.netoCard)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .stroke(isSelected ? nature.color.opacity(0.3) : Color.clear, lineWidth: 1)
             )
         }
