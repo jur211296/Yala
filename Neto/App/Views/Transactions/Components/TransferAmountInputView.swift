@@ -158,11 +158,11 @@ struct TransferAmountInputView: View {
             if let source = viewModel.sourceAccount, let dest = viewModel.destinationAccount {
                 // Explicit label format: "1 DEST ="
                 Text("1 \(isRateInverted ? dest.currencyCode : source.currencyCode) =")
-                    .font(.system(size: 18, weight: .medium))  // Larger, clearer font
+                    .font(DS.Typography.label)
                     .foregroundStyle(.secondary)
 
                 TextField("Rate", text: $exchangeRateString)
-                    .font(.system(size: 18, weight: .medium))  // Matching font size
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .keyboardType(.decimalPad)
                     .focused($isRateFieldFocused)  // Bind focus
@@ -171,7 +171,7 @@ struct TransferAmountInputView: View {
 
                 // Trailing currency code for completeness: "X SOURCE"
                 Text(isRateInverted ? source.currencyCode : dest.currencyCode)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.secondary)
             }
         }
