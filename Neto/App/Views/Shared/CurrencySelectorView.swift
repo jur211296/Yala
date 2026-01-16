@@ -16,7 +16,7 @@ struct CurrencySelectorView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
                         VStack(spacing: 0) {
                             ForEach(Array(CurrencyCode.allCases.enumerated()), id: \.element) {
@@ -30,8 +30,8 @@ struct CurrencySelectorView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
         .navigationTitle(L10n.Settings.preferredCurrency)
@@ -53,11 +53,11 @@ struct CurrencySelectorView: View {
             selectedCurrency = currency
             dismiss()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Text(info.flag)
                     .font(.title3)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(info.name)
                         .font(.body)
                         .foregroundStyle(.primary)
@@ -74,8 +74,8 @@ struct CurrencySelectorView: View {
                         .font(.body.weight(.semibold))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -14,7 +14,7 @@ struct SectionBox<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(.headline)
                 .foregroundStyle(Color.netoSecondaryText)

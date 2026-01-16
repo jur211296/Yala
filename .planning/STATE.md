@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Phase: 5 of 8 (Visualizaciones Categorías)
 Plan: In progress
-Status: Design System migrado a ~40 archivos
+Status: Design System migrado a ~45 archivos
 Last activity: 2026-01-15 — Migración masiva de tokens DS
 
 Progress: ██████████░░░░ 70% (Fase 5)
@@ -26,7 +26,7 @@ Progress: ██████████░░░░ 70% (Fase 5)
   - Settings/: Todas las vistas de configuración
   - Records/: RecordsFiltersView, RecordRowView
   - Transactions/: NewTransactionView, SelectionChip
-  - Shared/: NetoEmptyState, NetoBadge, StandardButtons, NetoLoadingOverlay
+  - Shared/: NetoEmptyState, NetoBadge, StandardButtons, NetoLoadingOverlay, SectionBox, CurrencySelectorView, IconColorPickerSheet, SkeletonView
   - Planning/: PlanningView
   - Profile/: ProfileView
   - Tags/: TagFormView
@@ -56,7 +56,7 @@ Progress: ██████████░░░░ 70% (Fase 5)
 
 ## Session Continuity
 
-Last session: 2026-01-15 18:55
-Stopped at: Migración DS completada (~80% cobertura)
-Next step: Migrar vistas restantes o Var% en tendencias
+Last session: 2026-01-15 19:10
+Stopped at: Shared/ 100% migrado a DS
+Next step: Migrar vistas restantes (~45 archivos) o Var% en tendencias
 Resume file: None

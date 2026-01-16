@@ -211,8 +211,8 @@ struct IconColorPickerSheet: View {
             ]),
     ]
 
-    private let colorColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 8)
-    private let iconColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
+    private let colorColumns = Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.md), count: 8)
+    private let iconColumns = Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.sm), count: 6)
 
     /// True if user has made any changes to icon or color
     private var hasChanges: Bool {
@@ -222,7 +222,7 @@ struct IconColorPickerSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     // Preview
                     previewSection
 
@@ -234,8 +234,8 @@ struct IconColorPickerSheet: View {
                     // Icon Section
                     iconSection
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 20)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xl)
             }
             .background(Color.netoBackground)
             .navigationTitle("Personalizar")
@@ -265,7 +265,7 @@ struct IconColorPickerSheet: View {
     // MARK: - Preview Section
 
     private var previewSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(Color(hex: tempColorHex))
                 .frame(width: 80, height: 80)
@@ -281,18 +281,18 @@ struct IconColorPickerSheet: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
+        .padding(.vertical, DS.Spacing.lg)
     }
 
     // MARK: - Color Section
 
     private var colorSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Common.color)
                 .font(.headline)
                 .foregroundStyle(.primary)
 
-            LazyVGrid(columns: colorColumns, spacing: 12) {
+            LazyVGrid(columns: colorColumns, spacing: DS.Spacing.md) {
                 // Preset colors
                 ForEach(presetColors, id: \.self) { colorHex in
                     colorButton(hex: colorHex)
@@ -338,14 +338,14 @@ struct IconColorPickerSheet: View {
     // MARK: - Icon Section
 
     private var iconSection: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
             ForEach(iconCategories, id: \.name) { category in
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     Text(category.name)
                         .font(.headline)
                         .foregroundStyle(.primary)
 
-                    LazyVGrid(columns: iconColumns, spacing: 12) {
+                    LazyVGrid(columns: iconColumns, spacing: DS.Spacing.md) {
                         ForEach(category.icons, id: \.self) { iconName in
                             iconButton(name: iconName)
                         }

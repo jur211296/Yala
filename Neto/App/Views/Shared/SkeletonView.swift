@@ -13,7 +13,7 @@ struct WidgetSkeleton: View {
     let height: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 16)
+        RoundedRectangle(cornerRadius: DS.Radius.lg)
             .fill(Color.netoSecondaryText.opacity(0.1))
             .frame(height: height)
             .shimmer()
@@ -24,28 +24,28 @@ struct WidgetSkeleton: View {
 
 struct TrendWidgetSkeleton: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             HStack {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: DS.Radius.sm)
                     .fill(Color.netoSecondaryText.opacity(0.15))
                     .frame(width: 120, height: 20)
                 Spacer()
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: DS.Radius.md)
                     .fill(Color.netoSecondaryText.opacity(0.1))
                     .frame(width: 100, height: 28)
             }
 
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoSecondaryText.opacity(0.15))
                 .frame(width: 150, height: 32)
 
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoSecondaryText.opacity(0.1))
                 .frame(height: 180)
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .shimmer()
     }
 }
@@ -54,26 +54,26 @@ struct TrendWidgetSkeleton: View {
 
 struct CashFlowSkeleton: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            RoundedRectangle(cornerRadius: 8)
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoSecondaryText.opacity(0.15))
                 .frame(width: 100, height: 18)
 
-            HStack(spacing: 16) {
+            HStack(spacing: DS.Spacing.lg) {
                 ForEach(0..<2, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm)
                         .fill(Color.netoSecondaryText.opacity(0.1))
                         .frame(height: 60)
                 }
             }
 
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoSecondaryText.opacity(0.1))
                 .frame(height: 120)
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .shimmer()
     }
 }
@@ -82,8 +82,8 @@ struct CashFlowSkeleton: View {
 
 struct LatestRecordsSkeleton: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            RoundedRectangle(cornerRadius: 8)
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoSecondaryText.opacity(0.15))
                 .frame(width: 120, height: 18)
 
@@ -92,16 +92,16 @@ struct LatestRecordsSkeleton: View {
                     Circle()
                         .fill(Color.netoSecondaryText.opacity(0.1))
                         .frame(width: 40, height: 40)
-                    VStack(alignment: .leading, spacing: 4) {
-                        RoundedRectangle(cornerRadius: 4)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
                             .fill(Color.netoSecondaryText.opacity(0.15))
                             .frame(width: 100, height: 14)
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
                             .fill(Color.netoSecondaryText.opacity(0.1))
                             .frame(width: 60, height: 12)
                     }
                     Spacer()
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: DS.Radius.xs)
                         .fill(Color.netoSecondaryText.opacity(0.15))
                         .frame(width: 60, height: 16)
                 }
@@ -109,7 +109,7 @@ struct LatestRecordsSkeleton: View {
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .shimmer()
     }
 }
@@ -118,23 +118,23 @@ struct LatestRecordsSkeleton: View {
 
 struct CategoriesPieSkeleton: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            RoundedRectangle(cornerRadius: 8)
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoSecondaryText.opacity(0.15))
                 .frame(width: 100, height: 18)
 
-            HStack(spacing: 20) {
+            HStack(spacing: DS.Spacing.xl) {
                 Circle()
                     .fill(Color.netoSecondaryText.opacity(0.1))
                     .frame(width: 120, height: 120)
 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     ForEach(0..<4, id: \.self) { _ in
                         HStack {
                             Circle()
                                 .fill(Color.netoSecondaryText.opacity(0.15))
                                 .frame(width: 12, height: 12)
-                            RoundedRectangle(cornerRadius: 4)
+                            RoundedRectangle(cornerRadius: DS.Radius.xs)
                                 .fill(Color.netoSecondaryText.opacity(0.1))
                                 .frame(width: 60, height: 12)
                         }
@@ -144,7 +144,7 @@ struct CategoriesPieSkeleton: View {
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .shimmer()
     }
 }
