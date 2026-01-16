@@ -22,27 +22,12 @@ PASOS:
 
 4. Registra el objetivo de la sesión en el log
 
-5. PLANIFICACIÓN DE INCREMENTOS:
-   - Analiza el objetivo declarado
-   - Divide el trabajo en incrementos pequeños y verificables
-   - Cada incremento debe poder completarse con un /commit-one
-   - Presenta el plan al usuario en formato:
-     ```
-     ## Plan de trabajo para esta sesión:
-     1. [Incremento 1] - [qué se logra]
-     2. [Incremento 2] - [qué se logra]
-     3. [Incremento N] - [qué se logra]
-
-     ¿Comenzamos con el incremento 1?
-     ```
-   - ESPERA confirmación del usuario antes de implementar
-
-6. Guarda la ruta del session file en archivo temporal:
+5. Guarda la ruta del session file en archivo temporal:
    ```bash
    echo $SESSION_FILE > /tmp/current-session
    ```
 
-7. Una vez el usuario confirme, comienza con el primer incremento del plan.
+6. Informa: "Sesión iniciada. Logging automático activado."
 
 FORMATO DEL SESSION LOG:
 ```markdown
