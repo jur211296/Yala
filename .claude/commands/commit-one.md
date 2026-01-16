@@ -10,6 +10,28 @@ Contexto:
 - Diff: !`git diff`
 - Últimos commits: !`git log --oneline -5`
 
+VALIDACIÓN DE ALCANCE:
+1. Cuenta las líneas modificadas: git diff --stat
+2. Cuenta los archivos modificados: git diff --name-only | wc -l
+3. Aplica estas reglas:
+
+   SI archivos > 5 O líneas totales > 300:
+   - ALERTA: "Este cambio parece grande para un commit atómico"
+   - Analiza si realmente es un solo tema o son múltiples temas
+   - Pregunta: "¿Esto debería dividirse en múltiples commits?"
+
+   SI archivos > 10 O líneas > 500:
+   - ALERTA FUERTE: "Este cambio es demasiado grande"
+   - Muestra breakdown por archivo
+   - REQUIERE que el usuario confirme explícitamente o divida el cambio
+
+   SI detectas cambios en archivos no relacionados temáticamente:
+   - Ejemplo: cambios en Model + cambios en Views + cambios en Tests
+   - Sugiere división por capas: "Model changes", "View updates", "Test additions"
+
+4. Si el usuario confirma que es un solo commit grande válido, procede
+5. Si el usuario acepta dividir, guíalo: "Empecemos con los cambios de [capa 1]"
+
 Reglas:
 1) Si el diff tiene más de un tema, divide. Haz solo el primer commit ahora.
 2) Haz git add solo de lo necesario.
