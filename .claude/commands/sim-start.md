@@ -5,18 +5,18 @@ PASOS:
 
 2. Identifica el simulador disponible:
    ```bash
-   xcrun simctl list devices | grep "iPhone 17 Pro Max"
+   xcrun simctl list devices | grep "iPhone 17 Pro"
    ```
 
 3. Si está apagado, enciéndelo:
    ```bash
-   xcrun simctl boot "iPhone 17 Pro Max"
+   xcrun simctl boot "iPhone 17 Pro"
    ```
 
 4. Instala y lanza la app:
    ```bash
    xcodebuild -scheme Neto \
-     -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+     -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
      -derivedDataPath build \
      build
 

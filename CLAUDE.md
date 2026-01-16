@@ -17,6 +17,7 @@ Neto es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - Scheme principal: Neto
 - Unit tests: NetoTests
 - UI tests: NetoUITests
+- **Simulador estándar: iPhone 17 Pro** (SIEMPRE usar este para builds, tests y simulación)
 
 ## SwiftData (fuente de verdad)
 El ModelContainer se configura en NetoApp.swift con estas entidades:

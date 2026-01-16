@@ -10,7 +10,7 @@ PASOS:
 
 3. Opcionalmente apaga el simulador:
    ```bash
-   xcrun simctl shutdown "iPhone 17 Pro Max"
+   xcrun simctl shutdown "iPhone 17 Pro"
    ```
 
 4. Informa: "Simulador detenido, logs guardados en /tmp/neto-sim-logs.txt"
