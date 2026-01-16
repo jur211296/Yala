@@ -7,12 +7,8 @@ Corre Unit Tests del target NetoTests.
 
 DISPOSITIVO ESTÁNDAR: iPhone 17 Pro (NO usar otros para evitar demoras)
 
-OPCIONES DE EJECUCIÓN:
-- Normal: Ejecuta todos los tests
-- Rápido: Solo tests modificados recientemente (si el usuario lo pide)
-
-COMANDO:
-!`cd /Users/jur/Desktop/Neto && xcodebuild -scheme Neto -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -parallel-testing-enabled YES -maximum-concurrent-test-simulator-destinations 2 test -only-testing:NetoTests 2>&1 | grep -E "(Test Suite|Executed|fail|error:|warning:|BUILD SUCCEEDED|BUILD FAILED|\*\*)" | head -80`
+COMANDO (con -quiet para reducir ruido):
+!`cd /Users/jur/Desktop/Neto && xcodebuild -scheme Neto -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet test -only-testing:NetoTests 2>&1 | grep -E "(Test Suite|Test Case|Executed|passed|failed|error:)"`
 
 TIMEOUT:
 - Si después de 3 minutos no hay output, informar al usuario que los tests están tardando
@@ -25,3 +21,5 @@ Si falla:
 
 Si pasa:
 - Muestra resumen: "N tests ejecutados, todos pasaron"
+
+NOTA: Para tests selectivos basados en archivos modificados, usa /test-smart

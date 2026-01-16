@@ -27,8 +27,25 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 1) Plan corto antes de editar (qué cambias y por qué)
 2) Implementar mínimo que compila
 3) Ejecutar /verify-ios
-4) Si aplica, ejecutar /test-ios
+4) Si aplica, ejecutar tests (ver estrategia abajo)
 5) Commit pequeño con /commit-one
+
+## Estrategia de Testing
+Usar el comando apropiado según el tipo de cambio:
+
+| Tipo de cambio | Comando | Cuándo |
+|----------------|---------|--------|
+| Cambio puntual en modelo/servicio | `/test-smart` | Detecta y corre solo tests relevantes |
+| Cambio en UI (Views) | No hay tests UI | Solo /verify-ios |
+| Trabajo completo antes de commit | `/test-ios` | Corre todos los tests |
+| Después de merge o refactor grande | `/test-ios` + `/uitest-ios` | Validación completa |
+
+**Tests disponibles:**
+- `FilterServiceTests` - Lógica de filtrado
+- `CalculatorTests` - Cálculos financieros
+- `TagTests` - Operaciones con tags
+- `TrendProcessingTests` - Procesamiento de tendencias
+- `TrendGroupingTests` - Agrupación de tendencias
 
 ## Reglas de cambio
 - Evitar refactors grandes si no son necesarios para el feature actual
