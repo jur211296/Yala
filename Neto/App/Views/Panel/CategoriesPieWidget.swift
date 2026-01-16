@@ -186,7 +186,7 @@ struct CategoriesPieWidget: View {
 
                 // Category name
                 Text(item.name)
-                    .font(.system(size: 11))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -194,7 +194,7 @@ struct CategoriesPieWidget: View {
 
                 // Percentage
                 Text(formattedPercentage(item.percentage))
-                    .font(.system(size: 11))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
             .opacity(isDimmedItem ? 0.4 : 1.0)
@@ -284,7 +284,7 @@ struct CategoriesPieWidget: View {
 
     private func hoverTooltip(for item: PieChartData) -> some View {
         Text(item.name)
-            .font(.system(size: 14, weight: .semibold))
+            .font(DS.Typography.label)
             .foregroundStyle(.white)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
@@ -324,7 +324,7 @@ struct CategoriesPieWidget: View {
                     VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         // Name (top, colored)
                         Text(selectedItem.name)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color(hex: selectedItem.colorHex))
                             .lineLimit(1)
 
@@ -342,7 +342,7 @@ struct CategoriesPieWidget: View {
                         Text(
                             "\(formattedPercentage(selectedItem.percentage)) (\(formattedAmountCompact(selectedItem.amount)))"
                         )
-                        .font(.system(size: 16, weight: .bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     }
                     .contentShape(Rectangle())
@@ -359,7 +359,7 @@ struct CategoriesPieWidget: View {
                         VStack(alignment: .center, spacing: DS.Spacing.xs) {
                             // Name (top, colored)
                             Text(item.name)
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color(hex: item.colorHex))
                                 .lineLimit(1)
 
@@ -375,7 +375,7 @@ struct CategoriesPieWidget: View {
 
                             // Percentage
                             Text(formattedPercentage(item.percentage))
-                                .font(.system(size: 14, weight: .bold))
+                                .font(DS.Typography.label)
                                 .foregroundStyle(.primary)
                         }
                         .frame(maxWidth: .infinity)
@@ -455,7 +455,7 @@ struct CategoriesPieWidget: View {
                         VStack(spacing: DS.Spacing.xxs) {
                             // Category Name - truncated to fit
                             Text(centerItem.name)
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color(hex: centerItem.colorHex))
                                 .lineLimit(1)
                                 .truncationMode(.tail)
@@ -468,12 +468,12 @@ struct CategoriesPieWidget: View {
 
                             // Percentage
                             Text(formattedPercentage(centerItem.percentage))
-                                .font(.system(size: 16, weight: .bold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(.primary)
 
                             // Amount - truncated to fit
                             Text(formattedAmountCompact(centerItem.amount))
-                                .font(.system(size: 9, weight: .medium))
+                                .font(DS.Typography.labelTiny)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .frame(maxWidth: safeWidth)

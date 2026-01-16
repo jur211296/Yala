@@ -149,14 +149,14 @@ struct TagsPieWidget: View {
                     .frame(width: 8, height: 8)
 
                 Text(item.name)
-                    .font(.system(size: 11))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Spacer()
 
                 Text(formattedPercentage(item.percentage))
-                    .font(.system(size: 11))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
             .opacity(isDimmedItem ? 0.4 : 1.0)
@@ -238,7 +238,7 @@ struct TagsPieWidget: View {
 
     private func hoverTooltip(for item: PieChartData) -> some View {
         Text(item.name)
-            .font(.system(size: 14, weight: .semibold))
+            .font(DS.Typography.label)
             .foregroundStyle(.white)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
@@ -271,7 +271,7 @@ struct TagsPieWidget: View {
                     Spacer()
                     VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         Text(selectedItem.name)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color(hex: selectedItem.colorHex))
                             .lineLimit(1)
 
@@ -287,7 +287,7 @@ struct TagsPieWidget: View {
                         Text(
                             "\(formattedPercentage(selectedItem.percentage)) (\(formattedAmountCompact(selectedItem.amount)))"
                         )
-                        .font(.system(size: 16, weight: .bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     }
                     .contentShape(Rectangle())
@@ -302,7 +302,7 @@ struct TagsPieWidget: View {
                         _, item in
                         VStack(alignment: .center, spacing: DS.Spacing.xs) {
                             Text(item.name)
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color(hex: item.colorHex))
                                 .lineLimit(1)
 
@@ -316,7 +316,7 @@ struct TagsPieWidget: View {
                             .frame(width: 24, height: 24)
 
                             Text(formattedPercentage(item.percentage))
-                                .font(.system(size: 14, weight: .bold))
+                                .font(DS.Typography.label)
                                 .foregroundStyle(.primary)
                         }
                         .frame(maxWidth: .infinity)
