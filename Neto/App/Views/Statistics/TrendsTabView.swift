@@ -519,7 +519,7 @@ struct TrendsTabView: View {
                 metricButton(for: metric)
             }
         }
-        .padding(3)
+        .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
         .animation(.easeInOut(duration: 0.2), value: trendsViewModel.isMetricLockedToExpense)
@@ -617,7 +617,7 @@ struct TrendsTabView: View {
                 cashFlowViewButton(for: viewType)
             }
         }
-        .padding(3)
+        .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
     }

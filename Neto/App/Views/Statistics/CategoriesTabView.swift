@@ -574,7 +574,7 @@ struct CategoriesTabView: View {
                 listViewButton(for: viewType)
             }
         }
-        .padding(3)
+        .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
     }
