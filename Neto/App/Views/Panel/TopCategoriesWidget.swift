@@ -84,7 +84,7 @@ struct TopCategoriesWidget: View {
                     Image(systemName: "chevron.right")
                         .font(.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
-                        .padding(.leading, 4)
+                        .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
             }
@@ -133,7 +133,7 @@ struct TopCategoriesWidget: View {
         // Show only the top 1 category in a focused way
         Group {
             if let topCategory = categories.first {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     // Large Icon
                     ZStack {
                         Circle()
@@ -162,8 +162,8 @@ struct TopCategoriesWidget: View {
                         )
                         .font(.caption2.bold())
                         .foregroundStyle(Color(hex: topCategory.category.colorHex))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.xxs)
                         .background(Color(hex: topCategory.category.colorHex).opacity(0.1))
                         .clipShape(Capsule())
                     }

@@ -118,13 +118,13 @@ struct SubcategoriesPieWidget: View {
     // MARK: - Layouts
 
     private var largeLayout: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             // Header
             headerView
                 .padding(.horizontal, 0)
 
             // Chart (2/3) on left, Legend (1/3) on right
-            HStack(alignment: .center, spacing: 16) {
+            HStack(alignment: .center, spacing: DS.Spacing.lg) {
                 // Left: Original Chart with connector lines and bubbles (2/3 width)
                 GeometryReader { geo in
                     let width = geo.size.width
@@ -166,7 +166,7 @@ struct SubcategoriesPieWidget: View {
     // MARK: - Simple Legend List for Large Layout
 
     private var simpleLegendList: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             ForEach(chartData) { item in
                 simpleLegendRow(for: item)
             }
@@ -179,7 +179,7 @@ struct SubcategoriesPieWidget: View {
         return Button {
             handleTap(item)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 // Color dot
                 Circle()
                     .fill(Color(hex: item.colorHex))
@@ -283,10 +283,10 @@ struct SubcategoriesPieWidget: View {
         Text(item.name)
             .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: DS.Radius.sm)
                     .fill(Color(hex: item.colorHex))
                     .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
             )
@@ -315,7 +315,7 @@ struct SubcategoriesPieWidget: View {
                 {
                     // Filtered: Show only selected subcategory (centered)
                     Spacer()
-                    VStack(alignment: .center, spacing: 4) {
+                    VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         // Name (top, colored)
                         Text(selectedItem.name)
                             .font(.system(size: 11, weight: .semibold))
@@ -350,7 +350,7 @@ struct SubcategoriesPieWidget: View {
                     // Default: Show top 3 subcategories
                     ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
                         _, item in
-                        VStack(alignment: .center, spacing: 4) {
+                        VStack(alignment: .center, spacing: DS.Spacing.xs) {
                             // Name (top, colored)
                             Text(item.name)
                                 .font(.system(size: 9, weight: .semibold))
@@ -391,7 +391,7 @@ struct SubcategoriesPieWidget: View {
 
                 HStack(spacing: segmentSpacing) {
                     ForEach(chartData) { item in
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
                             .fill(Color(hex: item.colorHex))
                             .frame(width: availableWidth * CGFloat(item.percentage / 100))
                             .opacity(isDimmed(item) ? 0.3 : 1.0)
@@ -410,7 +410,7 @@ struct SubcategoriesPieWidget: View {
 
     private var headerView: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Widget.distributionBySubcategory)
                     .font(.headline)
                     .foregroundStyle(.primary)
@@ -446,7 +446,7 @@ struct SubcategoriesPieWidget: View {
                         let innerRadius = chartSize * 0.65 * 0.5  // innerRadiusRatio * radius
                         let safeWidth = innerRadius * 1.4  // 70% of diameter for text
 
-                        VStack(spacing: 2) {
+                        VStack(spacing: DS.Spacing.xxs) {
                             // Subcategory Name - truncated to fit
                             Text(centerItem.name)
                                 .font(.system(size: 9, weight: .semibold))

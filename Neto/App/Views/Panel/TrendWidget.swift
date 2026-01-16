@@ -110,7 +110,7 @@ struct TrendWidget: View {
                 // Triggers SwiftUI re-evaluation
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: type.iconName)
                     .font(.caption.weight(.semibold))
                 // When locked, always show the label since there's only one option
@@ -120,7 +120,7 @@ struct TrendWidget: View {
                 }
             }
             .padding(.horizontal, isSelected || isLocked ? 12 : 10)
-            .padding(.vertical, 8)
+            .padding(.vertical, DS.Spacing.sm)
             .foregroundStyle(isSelected ? .white : type.color)
             .background(
                 Group {

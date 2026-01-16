@@ -338,7 +338,7 @@ struct NatureTrendChartView: View {
                         .position(x: xPos + plotFrame.origin.x, y: plotFrame.midY)
 
                     // Tooltip Card
-                    VStack(spacing: 6) {
+                    VStack(spacing: DS.Spacing.xs) {
                         Text(formatDateFull(selectedData.date, grouping: grouping))
                             .font(.caption2)
                             .foregroundStyle(Color.netoSecondaryText)
@@ -604,7 +604,7 @@ struct CompactLegendChip: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(chipColor(for: nature))
                     .frame(width: 6, height: 6)
@@ -658,7 +658,7 @@ struct CompactNatureLegendView: View {
                 Button {
                     onSelect(nature)
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: DS.Spacing.xs) {
                         Circle()
                             .fill(nature.color)
                             .frame(width: 8, height: 8)
@@ -667,10 +667,10 @@ struct CompactNatureLegendView: View {
                             .font(.caption2)
                             .foregroundStyle(Color.primary)
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, DS.Spacing.xs)
+                    .padding(.vertical, DS.Spacing.xs)
                     .background(
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
                             .fill(isSelected(nature) ? nature.color.opacity(0.15) : Color.clear)
                     )
                     .opacity(isActiveOrNoFilter(nature) ? 1.0 : 0.4)
@@ -713,7 +713,7 @@ struct NatureCompactBar: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 6) {
+            VStack(spacing: DS.Spacing.xs) {
                 HStack {
                     Text(nature.displayName)
                         .font(.subheadline)

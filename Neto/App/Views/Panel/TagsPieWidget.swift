@@ -92,11 +92,11 @@ struct TagsPieWidget: View {
     // MARK: - Layouts
 
     private var largeLayout: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             headerView
                 .padding(.horizontal, 0)
 
-            HStack(alignment: .center, spacing: 16) {
+            HStack(alignment: .center, spacing: DS.Spacing.lg) {
                 GeometryReader { geo in
                     let width = geo.size.width
                     let height = geo.size.height
@@ -130,7 +130,7 @@ struct TagsPieWidget: View {
     }
 
     private var simpleLegendList: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             ForEach(chartData) { item in
                 simpleLegendRow(for: item)
             }
@@ -143,7 +143,7 @@ struct TagsPieWidget: View {
         return Button {
             handleTap(item)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 Circle()
                     .fill(Color(hex: item.colorHex))
                     .frame(width: 8, height: 8)
@@ -240,10 +240,10 @@ struct TagsPieWidget: View {
         Text(item.name)
             .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: DS.Radius.sm)
                     .fill(Color(hex: item.colorHex))
                     .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
             )
@@ -269,7 +269,7 @@ struct TagsPieWidget: View {
                     let selectedItem = chartData.first(where: { $0.id == selectedID })
                 {
                     Spacer()
-                    VStack(alignment: .center, spacing: 4) {
+                    VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         Text(selectedItem.name)
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Color(hex: selectedItem.colorHex))
@@ -300,7 +300,7 @@ struct TagsPieWidget: View {
                 } else {
                     ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
                         _, item in
-                        VStack(alignment: .center, spacing: 4) {
+                        VStack(alignment: .center, spacing: DS.Spacing.xs) {
                             Text(item.name)
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundStyle(Color(hex: item.colorHex))
@@ -337,7 +337,7 @@ struct TagsPieWidget: View {
 
                 HStack(spacing: segmentSpacing) {
                     ForEach(chartData) { item in
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
                             .fill(Color(hex: item.colorHex))
                             .frame(width: availableWidth * CGFloat(item.percentage / 100))
                             .opacity(isDimmed(item) ? 0.3 : 1.0)

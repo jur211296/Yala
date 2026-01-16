@@ -88,7 +88,7 @@ struct TrendChartView: View {
                         y: .value(L10n.Common.amount, point.value)
                     )
                     .symbolSize(0)  // Invisible point just for annotation context
-                    .annotation(position: .top, spacing: 4) {
+                    .annotation(position: .top, spacing: DS.Spacing.xs) {
                         Text(formattedAmountShort(point.value))
                             .font(.caption2.bold())
                             .foregroundStyle(Color.netoSecondaryText)
@@ -115,9 +115,9 @@ struct TrendChartView: View {
                     Text(L10n.Widget.today)
                         .font(.caption2.bold())
                         .foregroundStyle(Color.netoPrimaryText)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(Color.netoCard, in: RoundedRectangle(cornerRadius: 4))
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .background(Color.netoCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
                         .shadow(radius: 1)
                 }
 
@@ -152,7 +152,7 @@ struct TrendChartView: View {
                     position: .top,
                     alignment: tooltipAlignment(for: activeDate)
                 ) {
-                    VStack(alignment: .center, spacing: 4) {
+                    VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         Text(periodLabel(for: activeDate))
                             .font(.caption2)
                             .foregroundStyle(Color.netoSecondaryText)
@@ -160,8 +160,8 @@ struct TrendChartView: View {
                             .font(.caption.bold())
                             .foregroundStyle(Color.netoPrimaryText)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
                             .fill(Color.netoCard.opacity(0.95))

@@ -59,7 +59,7 @@ struct RecentRecordsWidget: View {
                     Image(systemName: "chevron.right")
                         .font(.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
-                        .padding(.leading, 4)
+                        .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
             }
@@ -69,7 +69,7 @@ struct RecentRecordsWidget: View {
     // MARK: - Layout (Medium Style: 5 records)
 
     private var mediumLayout: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: DS.Spacing.md) {
             ForEach(Array(records.prefix(5).enumerated()), id: \.element.persistentModelID) {
                 _, record in
                 recordRow(record)
@@ -80,12 +80,12 @@ struct RecentRecordsWidget: View {
     // MARK: - Record Rows
 
     private func recordRow(_ record: TransactionItem) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: DS.Spacing.md) {
             // Icon
             subcategoryIcon(for: record, size: 36)
 
             // Lines - Note, Subcategory • Account
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 // Line 1: Note (bold) or Subcategory as fallback
                 if let note = record.note, !note.isEmpty {
                     Text(note)
@@ -118,7 +118,7 @@ struct RecentRecordsWidget: View {
             Spacer()
 
             // Right Column: Amount + Nature (matches CompactRecordRow and RecordRowView)
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                 Text(formattedAmount(record.amount, currencyCode: record.currencyCode))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(amountColor(for: record))
@@ -134,7 +134,7 @@ struct RecentRecordsWidget: View {
     // MARK: - Nature Indicator
 
     private func natureIndicator(for nature: SubcategoryNature) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             Circle()
                 .fill(nature.color)
                 .frame(width: 6, height: 6)
@@ -143,8 +143,8 @@ struct RecentRecordsWidget: View {
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
+        .padding(.horizontal, DS.Spacing.xs)
+        .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
                 .fill(nature.color.opacity(0.1))

@@ -397,7 +397,7 @@ struct CategoriesPieWidget: View {
 
                 HStack(spacing: segmentSpacing) {
                     ForEach(chartData) { item in
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
                             .fill(Color(hex: item.colorHex))
                             .frame(width: availableWidth * CGFloat(item.percentage / 100))
                             .opacity(isDimmed(item) ? 0.3 : 1.0)
@@ -416,7 +416,7 @@ struct CategoriesPieWidget: View {
 
     private var headerView: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Widget.distributionByCategory)
                     .font(.headline)
                     .foregroundStyle(.primary)
