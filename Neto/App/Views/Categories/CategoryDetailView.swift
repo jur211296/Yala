@@ -104,13 +104,13 @@ struct CategoryDetailView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     header
                     detailsSection
                     subcategoriesSection
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
         .navigationTitle(L10n.Category.editTitle)
@@ -214,7 +214,7 @@ struct CategoryDetailView: View {
 
     // Encabezado con círculo de color e icono (tappable para editar)
     private var header: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             Button {
                 showIconColorPicker = true
             } label: {
@@ -264,10 +264,10 @@ struct CategoryDetailView: View {
 
     // Sección de nombre y visibilidad
     private var detailsSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: L10n.Category.details) {
                 VStack(spacing: 0) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
                         TextField(L10n.Category.namePlaceholder, text: $name)
@@ -320,9 +320,9 @@ struct CategoryDetailView: View {
         let visibles = subcategories.filter { $0.isVisible }
         let ocultas = subcategories.filter { !$0.isVisible }
 
-        return VStack(spacing: 16) {
+        return VStack(spacing: DS.Spacing.lg) {
             // Active subcategories section
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 // Header with Edit/Done button
                 HStack {
                     Text(L10n.Category.activeSubcategories)
@@ -339,7 +339,7 @@ struct CategoryDetailView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 6)
+                .padding(.horizontal, DS.Spacing.xs)
 
                 VStack(spacing: 0) {
                     if visibles.isEmpty && ocultas.isEmpty {
@@ -361,8 +361,8 @@ struct CategoryDetailView: View {
                                                 .font(.title2)
                                                 .foregroundStyle(.red)
                                         }
-                                        .padding(.leading, 16)
-                                        .padding(.trailing, 8)
+                                        .padding(.leading, DS.Spacing.lg)
+                                        .padding(.trailing, DS.Spacing.sm)
                                     }
 
                                     NavigationLink {
@@ -378,7 +378,7 @@ struct CategoryDetailView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .padding(.horizontal, isEditingSubcategories ? 8 : 16)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, DS.Spacing.sm)
                                 }
 
                                 if index < visibles.count - 1 {
@@ -387,24 +387,24 @@ struct CategoryDetailView: View {
                                 }
                             }
                         }
-                        .padding(.vertical, 6)
+                        .padding(.vertical, DS.Spacing.xs)
                     }
 
                     Divider()
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, DS.Spacing.lg)
 
                     NavigationLink {
                         SubcategoryDetailView(parentCategory: category)
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundStyle(Color.brandPrimary)
                             Text(L10n.Category.addSubcategory)
                                 .foregroundStyle(.primary)
                             Spacer()
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.FormRow.paddingV)
                     }
                 }
                 .background(
@@ -421,11 +421,11 @@ struct CategoryDetailView: View {
 
             // Hidden subcategories section
             if !ocultas.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(L10n.Category.hiddenSubcategories)
                         .font(.headline)
                         .foregroundStyle(Color.primary.opacity(0.6))
-                        .padding(.leading, 6)
+                        .padding(.leading, DS.Spacing.xs)
 
                     VStack(spacing: 0) {
                         ForEach(Array(ocultas.enumerated()), id: \.element.id) {
@@ -439,8 +439,8 @@ struct CategoryDetailView: View {
                                             .font(.title2)
                                             .foregroundStyle(.red)
                                     }
-                                    .padding(.leading, 16)
-                                    .padding(.trailing, 8)
+                                    .padding(.leading, DS.Spacing.lg)
+                                    .padding(.trailing, DS.Spacing.sm)
                                 }
 
                                 NavigationLink {
@@ -456,7 +456,7 @@ struct CategoryDetailView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.horizontal, isEditingSubcategories ? 8 : 16)
-                                .padding(.vertical, 8)
+                                .padding(.vertical, DS.Spacing.sm)
                             }
 
                             if index < ocultas.count - 1 {
@@ -465,7 +465,7 @@ struct CategoryDetailView: View {
                             }
                         }
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, DS.Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .fill(Color.netoCard)
@@ -483,7 +483,7 @@ struct CategoryDetailView: View {
 
     @ViewBuilder
     private func subcategoryRow(_ subcategory: Subcategory) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(Color(hex: colorHex))
                 .frame(width: 36, height: 36)

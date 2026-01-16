@@ -36,15 +36,15 @@ struct AccountFormView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         currencySection
                         adjustmentSection  // Moved above balance per design
                         balanceSection
                         actionsSection
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Account.configure)
@@ -61,7 +61,7 @@ struct AccountFormView: View {
             }
             .sheet(isPresented: $viewModel.isPresentingColorPicker) {
                 NavigationStack {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         ColorPicker(
                             L10n.Common.selectColor,
                             selection: $viewModel.customColor,
@@ -111,7 +111,7 @@ struct AccountFormView: View {
     private var generalSection: some View {
         SectionBox(title: L10n.Common.general) {
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
                     TextField(L10n.Account.accountName, text: $viewModel.name)
@@ -140,7 +140,7 @@ struct AccountFormView: View {
 
                 SubsectionDivider()
 
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "number")
                         .foregroundStyle(.secondary)
                     TextField(L10n.Account.accountNumber, text: $viewModel.accountNumber)
@@ -157,7 +157,7 @@ struct AccountFormView: View {
                 CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
                     .swipeBack()
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Text(currencyInfo(for: viewModel.selectedCurrency).flag)
                         .font(.title3)
 
@@ -251,7 +251,7 @@ struct AccountFormView: View {
                 }
 
                 // Sign selector
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Text(L10n.Account.sign)
                         .font(.subheadline)
                     Spacer()
@@ -268,7 +268,7 @@ struct AccountFormView: View {
                 // Balance input
                 HStack {
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         Text(
                             viewModel.selectedAdjustmentMode == .changeInitialBalance
                                 ? L10n.Account.initialBalance : L10n.Account.newBalance
@@ -358,8 +358,8 @@ struct AccountFormView: View {
     private var colorSection: some View {
         SectionBox(title: L10n.Common.color) {
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    HStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.colorOptions, id: \.self) { hex in
                             Circle()
                                 .fill(colorForHex(hex))

@@ -14,8 +14,8 @@ struct AdjustmentModeSelectorView: View {
     var body: some View {
         List {
             ForEach(AdjustmentMode.allCases) { mode in
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .top, spacing: DS.Spacing.md) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(mode.displayName)
                             .font(.body)
                         Text(mode.description)

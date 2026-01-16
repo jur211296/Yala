@@ -98,12 +98,12 @@ struct SubcategoryDetailView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     header
                     detailsSection
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
 
         }
@@ -168,7 +168,7 @@ struct SubcategoryDetailView: View {
 
     // Encabezado con círculo de color e icono (tappable para editar)
     private var header: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             Button {
                 showIconColorPicker = true
             } label: {
@@ -220,10 +220,10 @@ struct SubcategoryDetailView: View {
 
     // Sección de nombre, naturaleza y visibilidad
     private var detailsSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: L10n.Subcategory.details) {
                 VStack(spacing: 0) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
                         TextField(L10n.Subcategory.namePlaceholder, text: $name)
@@ -236,10 +236,10 @@ struct SubcategoryDetailView: View {
                     Button {
                         isPresentingNatureSelector = true
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "circle.lefthalf.filled")
                                 .foregroundStyle(.secondary)
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                                 Text(L10n.Category.nature)
                                     .foregroundStyle(.primary)
                                 Text(selectedNature.displayName)
