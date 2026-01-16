@@ -228,7 +228,7 @@ extension FilterChipView {
 // MARK: - Preview
 
 #Preview {
-    VStack(spacing: 12) {
+    VStack(spacing: DS.Spacing.md) {
         FilterChipView(accountName: "BCP", onClear: {})
         FilterChipView(accountName: "BCP", count: 3, onClear: {})
         FilterChipView(

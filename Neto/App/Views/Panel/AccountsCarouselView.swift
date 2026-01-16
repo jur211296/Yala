@@ -45,7 +45,7 @@ struct AccountsCarouselView: View {
 
             // Page indicator
             if pageCount > 1 {
-                HStack(spacing: 6) {
+                HStack(spacing: DS.Spacing.xs) {
                     ForEach(0..<pageCount, id: \.self) { page in
                         Circle()
                             .fill(

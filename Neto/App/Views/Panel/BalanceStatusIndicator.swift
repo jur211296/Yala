@@ -11,15 +11,15 @@ struct BalanceStatusIndicator: View {
     let status: BalanceStatus
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             Image(systemName: iconName)
                 .font(.system(size: 12, weight: .bold))
 
             Text(statusText)
                 .font(.caption.weight(.medium))
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
         .background(backgroundColor.opacity(0.2))
         .foregroundStyle(foregroundColor)
         .clipShape(Capsule())

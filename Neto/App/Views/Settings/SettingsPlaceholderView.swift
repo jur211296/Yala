@@ -22,7 +22,7 @@ struct SettingsPlaceholderView: View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: 16) {
+            VStack(spacing: DS.Spacing.lg) {
                 Image(systemName: "clock.badge.exclamationmark")
                     .font(.system(size: 44, weight: .regular))
                     .foregroundStyle(.secondary)

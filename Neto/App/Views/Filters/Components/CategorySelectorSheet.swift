@@ -34,7 +34,7 @@ struct CategorySelectorSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.selectCategories) {
                             VStack(spacing: 0) {
                                 selectAllRow
@@ -62,8 +62,8 @@ struct CategorySelectorSheet: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Filters.selectCategories)
@@ -117,7 +117,7 @@ struct CategorySelectorSheet: View {
     // MARK: - Category Row
 
     private func categoryRow(_ category: Category) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(colorForHex(category.colorHex))
                 .frame(width: 36, height: 36)
@@ -180,7 +180,7 @@ struct CategorySelectorSheet: View {
                 selectedSubcategories.insert(subcategory.persistentModelID)
             }
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Circle()
                     .fill(colorForHex(subcategory.colorHex ?? category.colorHex))
                     .frame(width: 36, height: 36)

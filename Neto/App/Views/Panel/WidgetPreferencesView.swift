@@ -83,9 +83,9 @@ private struct WidgetRow: View {
     let onSizeChange: (WidgetSize) -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             // Header: Icon, Name, Toggle
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Image(systemName: config.type.iconName)
                     .font(.title3)
                     .foregroundStyle(Color.electricIndigo)

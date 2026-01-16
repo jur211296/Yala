@@ -13,14 +13,14 @@ struct PeriodSelectorLabel: View {
     let title: String
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: DS.Spacing.xs) {
             Image(systemName: "calendar")
                 .font(.caption.weight(.medium))
             Text(title)
                 .font(.caption.weight(.semibold))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
         .foregroundStyle(Color.netoPrimaryText)
         .background(
             Capsule()
@@ -36,7 +36,7 @@ struct PeriodSelectorLabel: View {
 }
 
 #Preview {
-    VStack(spacing: 16) {
+    VStack(spacing: DS.Spacing.lg) {
         PeriodSelectorLabel(title: "Este mes")
         PeriodSelectorLabel(title: "Últimos 30 días")
     }

@@ -19,7 +19,7 @@ struct NatureSelectorSheet: View {
                 Color.netoBackground.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 12) {
+                    VStack(spacing: DS.Spacing.md) {
                         ForEach(SubcategoryNature.allCases) { nature in
                             NatureOptionRow(
                                 nature: nature,
@@ -56,14 +56,14 @@ private struct NatureOptionRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 14) {
+            HStack(spacing: DS.Spacing.md) {
                 // Color indicator
                 Circle()
                     .fill(nature.color)
                     .frame(width: 12, height: 12)
 
                 // Text content
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(nature.displayName)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)

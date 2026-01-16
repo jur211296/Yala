@@ -18,12 +18,12 @@ struct TransactionAmountInputView: View {
     @FocusState private var isAmountFocused: Bool
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             // Currency selector
             Button {
                 onCurrencyTap()
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: DS.Spacing.xs) {
                     Text(currencyCode)
                         .font(.headline.weight(.semibold))
 

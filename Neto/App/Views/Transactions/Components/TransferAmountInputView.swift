@@ -25,7 +25,7 @@ struct TransferAmountInputView: View {
     @FocusState private var isRateFieldFocused: Bool
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             // Source Amount (Large)
             sourceAmountField
 
@@ -154,7 +154,7 @@ struct TransferAmountInputView: View {
     // MARK: - Exchange Rate Field
 
     private var exchangeRateField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             if let source = viewModel.sourceAccount, let dest = viewModel.destinationAccount {
                 // Explicit label format: "1 DEST ="
                 Text("1 \(isRateInverted ? dest.currencyCode : source.currencyCode) =")

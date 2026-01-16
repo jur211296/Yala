@@ -192,7 +192,7 @@ struct NetoTextButton: View {
         Divider()
 
         // Text buttons
-        HStack(spacing: 20) {
+        HStack(spacing: DS.Spacing.xl) {
             NetoTextButton("Ver más", icon: "chevron.right") {}
             NetoTextButton("Eliminar", destructive: true) {}
         }

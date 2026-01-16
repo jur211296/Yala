@@ -29,7 +29,7 @@ struct TransactionTypeSegmentedView: View {
                 }
             }
         }
-        .padding(4)
+        .padding(DS.Spacing.xs)
         .background(
             Capsule()
                 .fill(Color.netoCard)
@@ -71,7 +71,7 @@ struct TransactionTypeButton: View {
 }
 
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: DS.Spacing.xl) {
         TransactionTypeSegmentedView(selectedType: .constant(.expense))
         TransactionTypeSegmentedView(selectedType: .constant(.income))
         TransactionTypeSegmentedView(selectedType: .constant(.transfer))

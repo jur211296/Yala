@@ -21,7 +21,7 @@ struct BudgetPeriodSelectorSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header with icon and title
-            VStack(spacing: 16) {
+            VStack(spacing: DS.Spacing.lg) {
                 // Icon
                 ZStack {
                     Circle()

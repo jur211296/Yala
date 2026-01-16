@@ -9,7 +9,7 @@ struct NatureCompactLegendItem: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(nature.color)
                     .frame(width: 8, height: 8)

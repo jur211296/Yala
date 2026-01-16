@@ -15,7 +15,7 @@ struct NatureEditChip: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(nature.color)
                     .frame(width: 6, height: 6)

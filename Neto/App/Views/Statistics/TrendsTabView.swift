@@ -702,7 +702,7 @@ struct TrendsTabView: View {
 
                 // Page indicator
                 if accountIDs.count > 1 {
-                    HStack(spacing: 6) {
+                    HStack(spacing: DS.Spacing.xs) {
                         ForEach(Array(accountIDs.enumerated()), id: \.element) { index, accountID in
                             Circle()
                                 .fill(
@@ -766,7 +766,7 @@ struct TrendsTabView: View {
 
                 // Page indicator
                 if currencyCodes.count > 1 {
-                    HStack(spacing: 6) {
+                    HStack(spacing: DS.Spacing.xs) {
                         ForEach(currencyCodes, id: \.self) { currencyCode in
                             Circle()
                                 .fill(
@@ -1268,8 +1268,8 @@ struct CompactRecordRow: View {
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
+        .padding(.horizontal, DS.Spacing.xs)
+        .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
                 .fill(nature.color.opacity(0.1))

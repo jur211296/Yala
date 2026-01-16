@@ -17,7 +17,7 @@ struct SubcategoryNatureSelectorView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
                         VStack(spacing: 0) {
                             ForEach(Array(SubcategoryNature.allCases.enumerated()), id: \.element) {
@@ -30,7 +30,7 @@ struct SubcategoryNatureSelectorView: View {
                                     selectedNature = nature
                                     dismiss()
                                 } label: {
-                                    HStack(spacing: 12) {
+                                    HStack(spacing: DS.Spacing.md) {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(nature.displayName)
                                                 .font(.body)
@@ -56,8 +56,8 @@ struct SubcategoryNatureSelectorView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
         .navigationTitle(L10n.Nature.title)

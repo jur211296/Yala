@@ -42,15 +42,15 @@ struct SubcategoryTransferSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         // Header con información
                         headerSection
 
                         // Opciones de acción
                         actionsSection
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Subcategory.transferTitle)
@@ -84,7 +84,7 @@ struct SubcategoryTransferSheet: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             // Icono de advertencia
             ZStack {
                 Circle()
@@ -97,7 +97,7 @@ struct SubcategoryTransferSheet: View {
             }
 
             // Mensaje
-            VStack(spacing: 8) {
+            VStack(spacing: DS.Spacing.sm) {
                 Text(L10n.Subcategory.transferHeader)
                     .font(.headline)
                     .multilineTextAlignment(.center)
@@ -108,13 +108,13 @@ struct SubcategoryTransferSheet: View {
                     .multilineTextAlignment(.center)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, DS.Spacing.sm)
     }
 
     // MARK: - Actions Section
 
     private var actionsSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             // Opción 1: Transferir a subcategoría específica
             actionButton(
                 icon: "arrow.right.circle.fill",
@@ -156,7 +156,7 @@ struct SubcategoryTransferSheet: View {
     ) -> some View {
         Button(action: action) {
             SectionBox(title: "") {
-                HStack(spacing: 16) {
+                HStack(spacing: DS.Spacing.lg) {
                     ZStack {
                         Circle()
                             .fill(color.opacity(0.15))
@@ -198,7 +198,7 @@ struct SubcategoryTransferSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: DS.Spacing.lg) {
                         ForEach(availableDestinations, id: \.category.persistentModelID) { group in
                             SectionBox(title: group.category.name) {
                                 VStack(spacing: 0) {
@@ -209,7 +209,7 @@ struct SubcategoryTransferSheet: View {
                                         Button {
                                             transferTransactions(to: subcategory)
                                         } label: {
-                                            HStack(spacing: 12) {
+                                            HStack(spacing: DS.Spacing.md) {
                                                 Circle()
                                                     .fill(
                                                         Color(
@@ -243,8 +243,8 @@ struct SubcategoryTransferSheet: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 20)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xl)
                 }
             }
             .navigationTitle(L10n.Subcategory.selectDestination)
