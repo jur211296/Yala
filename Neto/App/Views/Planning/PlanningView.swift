@@ -54,12 +54,12 @@ struct PlanningView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
 
                     // Tab Chips
                     navigationChipsBar
-                        .padding(.vertical, 12)
+                        .padding(.vertical, DS.Spacing.md)
 
                     // Content
                     Group {
@@ -75,7 +75,7 @@ struct PlanningView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
+                    HStack(spacing: DS.Spacing.lg) {
                         // Favorites button (only for budgets tab)
                         if selectedTab == .budgets {
                             Button {
@@ -113,12 +113,12 @@ struct PlanningView: View {
 
     private var navigationChipsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 ForEach(PlanningTab.allCases) { tab in
                     navigationChipButton(for: tab)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
@@ -130,14 +130,14 @@ struct PlanningView: View {
                 selectedTab = tab
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
                     .font(.subheadline)
                 Text(tab.displayName)
                     .font(.subheadline.weight(.medium))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
@@ -160,7 +160,7 @@ struct PlanningView: View {
     private var scheduledPaymentsContent: some View {
         VStack {
             Spacer()
-            VStack(spacing: 12) {
+            VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "calendar.badge.clock")
                     .font(.system(size: 48))
                     .foregroundStyle(.tertiary)

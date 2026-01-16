@@ -129,14 +129,14 @@ struct PeriodComparisonChartView: View {
                     position: .top,
                     alignment: tooltipAlignment(for: activeDate)
                 ) {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         Text(periodLabel(for: activeDate))
                             .font(.caption2)
                             .foregroundStyle(Color.netoSecondaryText)
                             .frame(maxWidth: .infinity, alignment: .center)
 
                         // Current period value
-                        HStack(spacing: 4) {
+                        HStack(spacing: DS.Spacing.xs) {
                             Circle()
                                 .fill(trendType.color)
                                 .frame(width: 6, height: 6)
@@ -147,7 +147,7 @@ struct PeriodComparisonChartView: View {
 
                         // Previous period value (if exists)
                         if let previousPoint = selectedPreviousPoint {
-                            HStack(spacing: 4) {
+                            HStack(spacing: DS.Spacing.xs) {
                                 Circle()
                                     .fill(Color.netoSecondaryText.opacity(0.5))
                                     .frame(width: 6, height: 6)
@@ -157,8 +157,8 @@ struct PeriodComparisonChartView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
                             .fill(Color.netoCard.opacity(0.95))
@@ -206,9 +206,9 @@ struct PeriodComparisonChartView: View {
         .chartXSelection(value: $draggingDate)
         .frame(height: 220)  // Match TrendChartView height
         .chartLegend(position: .top, alignment: .leading) {
-            HStack(spacing: 16) {
+            HStack(spacing: DS.Spacing.lg) {
                 // Current period legend
-                HStack(spacing: 4) {
+                HStack(spacing: DS.Spacing.xs) {
                     Rectangle()
                         .fill(trendType.color)
                         .frame(width: 20, height: 3)
@@ -218,7 +218,7 @@ struct PeriodComparisonChartView: View {
                 }
 
                 // Previous period legend
-                HStack(spacing: 4) {
+                HStack(spacing: DS.Spacing.xs) {
                     Rectangle()
                         .fill(Color.netoSecondaryText.opacity(0.5))
                         .frame(width: 20, height: 3)

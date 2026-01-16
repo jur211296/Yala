@@ -55,7 +55,7 @@ struct TagsSettingsListView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     if tags.isEmpty {
                         emptyState
                     } else {
@@ -68,8 +68,8 @@ struct TagsSettingsListView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 32)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxxl)
             }
         }
         .navigationTitle(L10n.Settings.tags)
@@ -82,7 +82,7 @@ struct TagsSettingsListView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     NetoToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down")
                     {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -105,7 +105,7 @@ struct TagsSettingsListView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "tag")
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
@@ -126,7 +126,7 @@ struct TagsSettingsListView: View {
     // MARK: - Active Tags Section (List with Drag and Drop)
 
     private var activeTagsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.active)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -171,7 +171,7 @@ struct TagsSettingsListView: View {
     // MARK: - Inactive Tags Section (No reordering)
 
     private var inactiveTagsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.inactive)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -213,7 +213,7 @@ struct TagsSettingsListView: View {
 
     @ViewBuilder
     private func tagRow(_ tag: Tag) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(colorForHex(tag.colorHex))
                 .frame(width: 28, height: 28)

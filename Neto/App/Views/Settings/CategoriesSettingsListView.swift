@@ -59,7 +59,7 @@ struct CategoriesSettingsListView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     if categories.isEmpty {
                         emptyState
                     } else {
@@ -72,8 +72,8 @@ struct CategoriesSettingsListView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 32)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxxl)
             }
         }
         .navigationTitle(L10n.Settings.categories)
@@ -146,7 +146,7 @@ struct CategoriesSettingsListView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "tag")
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
@@ -167,7 +167,7 @@ struct CategoriesSettingsListView: View {
     // MARK: - Active Categories Section
 
     private var activeCategoriesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text(L10n.Common.active)
                     .font(.headline)
@@ -236,7 +236,7 @@ struct CategoriesSettingsListView: View {
     // MARK: - Hidden Categories Section
 
     private var hiddenCategoriesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.hidden)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -296,7 +296,7 @@ struct CategoriesSettingsListView: View {
 
     @ViewBuilder
     private func categoryRow(_ category: Category) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Círculo con color e icono estándar de etiqueta
             Circle()
                 .fill(colorForHex(category.colorHex))

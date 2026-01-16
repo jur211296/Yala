@@ -137,7 +137,7 @@ extension NetoEmptyState {
 
 #Preview {
     ScrollView {
-        VStack(spacing: 40) {
+        VStack(spacing: DS.Spacing.xxxl + DS.Spacing.sm) {
             NetoEmptyState.noTransactions { }
             Divider()
             NetoEmptyState.noResults()

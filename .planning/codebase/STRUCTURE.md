@@ -1,6 +1,6 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-01-13
+**Analysis Date:** 2026-01-15
 
 ## Directory Layout
 
@@ -33,18 +33,21 @@ Neto/
 - Purpose: All SwiftUI views organized by feature
 - Contains: Feature directories with `*View.swift` files
 - Key subdirectories:
-  - `Panel/` - Dashboard widgets (16 views)
+  - `Panel/` - Dashboard widgets (18 views, incl. TagsPieWidget)
   - `Statistics/` - Analytics and charts
   - `Planning/` - Budget management
   - `Transactions/` - Transaction forms
   - `Records/` - Transaction history
   - `Accounts/` - Account management
   - `Filters/` - Filter UI components
-  - `Shared/` - Reusable components
+  - `Shared/` - Reusable components (incl. IconColorPickerSheet)
   - `Import/` - Data import wizard
   - `ExportWizard/` - Data export
   - `Profile/` - User settings
   - `Settings/` - App settings
+  - `Tags/` - Tag management (TagFormView)
+  - `Categories/` - Category detail and management
+  - `Favorites/` - Favorite payments
 
 **Neto/App/ViewModels/:**
 - Purpose: State management classes
@@ -62,7 +65,7 @@ Neto/
 - Contains: SessionState, enums, view-specific types
 - Key files:
   - `SessionState.swift` - Global state
-  - `SharedModels.swift` - Domain enums
+  - `SharedModels.swift` - Domain enums (incl. TagSpendingSummary para pie de tags)
   - `WidgetModels.swift` - Widget state
   - `TransactionFormModels.swift` - Form types
   - `BudgetModels.swift` - Budget types
@@ -85,9 +88,9 @@ Neto/
   - `Category.swift` - Expense/Income categories
   - `Subcategory.swift` - Category subdivisions
   - `Account.swift` - Bank/wallet accounts
-  - `Tag.swift` - Transaction labels
+  - `Tag.swift` - Transaction labels (con iconName, colorHex, paleta de 15 colores)
   - `TransactionItem.swift` - Core transactions
-  - `Budget.swift` - Budget constraints
+  - `Budget.swift` - Budget constraints (relación muchos-a-muchos con Tag)
   - `ExchangeRate.swift` - Currency rates
   - `FavoritePayment.swift` - Payment templates
 
@@ -200,5 +203,5 @@ Neto/
 
 ---
 
-*Structure analysis: 2026-01-13*
+*Structure analysis: 2026-01-15*
 *Update when directory structure changes*

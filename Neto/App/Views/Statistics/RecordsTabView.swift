@@ -37,8 +37,8 @@ struct RecordsTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             controlBar
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.sm)
 
             if viewModel.groupedRecords.isEmpty {
                 emptyState
@@ -76,12 +76,12 @@ struct RecordsTabView: View {
     // MARK: - Control Bar
 
     private var controlBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             periodSelector
 
             if viewModel.hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: DS.Spacing.sm) {
                         // Account chips (with icon)
                         ForEach(selectedAccountChips, id: \.id) { chip in
                             FilterChipView(
@@ -240,7 +240,7 @@ struct RecordsTabView: View {
     // MARK: - Summary Row
 
     private var summaryRow: some View {
-        VStack(alignment: .center, spacing: 4) {
+        VStack(alignment: .center, spacing: DS.Spacing.xs) {
             // Balance (Saldo) - Large and centered
             Text(
                 NetoFormatter.currency(
@@ -250,8 +250,8 @@ struct RecordsTabView: View {
             .foregroundStyle(.primary)
 
             // Income and Expense indicators below
-            HStack(spacing: 12) {
-                HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.md) {
+                HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "arrow.up.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.incomeGraph)
@@ -263,7 +263,7 @@ struct RecordsTabView: View {
                     .foregroundStyle(.secondary)
                 }
 
-                HStack(spacing: 4) {
+                HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "arrow.down.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.expenseGraph)
@@ -277,8 +277,8 @@ struct RecordsTabView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
     }
 
     private var recordsSummary: (balance: Double, income: Double, expense: Double) {
@@ -320,7 +320,7 @@ struct RecordsTabView: View {
 
     private var recordsList: some View {
         ScrollView {
-            LazyVStack(spacing: 8, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
                 ForEach(viewModel.groupedRecords, id: \.date) { group in
                     Section {
                         ForEach(group.records, id: \.persistentModelID) { record in
@@ -337,22 +337,22 @@ struct RecordsTabView: View {
                                     viewModel.toggleSelection(record.persistentModelID)
                                 }
                             )
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, DS.Spacing.lg)
                         }
                     } header: {
                         RecordDateSectionView(date: group.date)
                     }
                 }
             }
-            .padding(.top, 8)
-            .padding(.bottom, viewModel.isSelectionMode ? 80 : 100)
+            .padding(.top, DS.Spacing.sm)
+            .netoSafeBottomPadding()
         }
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             Spacer()
 
             Image(systemName: "list.bullet.rectangle")
@@ -371,7 +371,7 @@ struct RecordsTabView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 40)
+            .padding(.horizontal, DS.Spacing.xxxl + DS.Spacing.sm)
 
             if viewModel.hasActiveFilters {
                 Button {
@@ -382,7 +382,7 @@ struct RecordsTabView: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.electricIndigo)
                 }
-                .padding(.top, 8)
+                .padding(.top, DS.Spacing.sm)
             }
 
             Spacer()

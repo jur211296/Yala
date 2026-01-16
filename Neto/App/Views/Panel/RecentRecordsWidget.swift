@@ -219,11 +219,11 @@ struct RecentRecordsWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "list.bullet.rectangle")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, 4)
+                .padding(.bottom, DS.Spacing.xs)
 
             Text(L10n.Widget.noRecordsForFilters)
                 .font(.subheadline.weight(.medium))
@@ -236,6 +236,6 @@ struct RecentRecordsWidget: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, 24)
+        .padding(.vertical, DS.Spacing.xxl)
     }
 }

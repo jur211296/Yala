@@ -36,7 +36,7 @@ struct BudgetsWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             headerSection
 
             if budgets.isEmpty {
@@ -110,11 +110,11 @@ struct BudgetsWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             Image(systemName: hasBudgetsButNoFavorites ? "star" : "chart.pie.fill")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, 4)
+                .padding(.bottom, DS.Spacing.xs)
 
             if hasBudgetsButNoFavorites {
                 Text(NSLocalizedString("budgets.widget.noFavorites.title", comment: ""))
@@ -137,7 +137,7 @@ struct BudgetsWidget: View {
                             .foregroundStyle(Color.electricIndigo)
                     }
                     .buttonStyle(.plain)
-                    .padding(.top, 8)
+                    .padding(.top, DS.Spacing.sm)
                 }
             } else {
                 Text(NSLocalizedString("budgets.empty.title", comment: ""))
@@ -152,6 +152,6 @@ struct BudgetsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, 24)
+        .padding(.vertical, DS.Spacing.xxl)
     }
 }

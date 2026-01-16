@@ -212,13 +212,13 @@ struct PanelView: View {
             PanelBackgroundView()
 
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     accountsSection
                     totalBalanceSection
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 32)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.xxxl)
             }
 
             // Botón flotante de nuevo registro
@@ -239,15 +239,15 @@ struct PanelView: View {
                     .buttonStyle(.plain)
                     .glassEffect(.regular.interactive())
                     .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 24)
+                    .padding(.trailing, DS.Spacing.xl)
+                    .padding(.bottom, DS.Spacing.xxl)
                 }
             }
         }
     }
 
     private var accountsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Text(L10n.Panel.accounts)
                 .font(.title2.weight(.semibold))
 
@@ -269,10 +269,10 @@ struct PanelView: View {
     }
 
     private var totalBalanceSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
 
             // Unified Period Selector & Filters Row
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: DS.Spacing.md) {
                 TrendsPeriodMenu(
                     selectedPeriod: sessionState.selectedPeriod,
                     customDateRange: sessionState.customDateRange,
@@ -303,7 +303,7 @@ struct PanelView: View {
 
                 if activeFilterCount > 0 {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: DS.Spacing.sm) {
                             // Account Chip
                             if let selectedID = viewModel.selectedAccountID,
                                 let account = accounts.first(where: {
@@ -457,7 +457,7 @@ struct PanelView: View {
                     Spacer()
                 }
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, DS.Spacing.sm)
 
             HStack {
                 Text(L10n.Panel.widgets)
@@ -476,14 +476,14 @@ struct PanelView: View {
             .padding(.trailing, 4)
 
             // Custom Grid Layout (VStack of Rows)
-            VStack(spacing: 16) {
+            VStack(spacing: DS.Spacing.lg) {
                 ForEach(viewModel.layoutRows) { row in
                     switch row.type {
                     case .fullWidth(let config):
                         widgetView(for: config)
                             .clipped()  // Prevent content overflow
                     case .halfWidthPair(let left, let right):
-                        HStack(spacing: 16) {
+                        HStack(spacing: DS.Spacing.lg) {
                             widgetView(for: left)
                                 .frame(maxWidth: .infinity)
                                 .clipped()  // Prevent content overflow

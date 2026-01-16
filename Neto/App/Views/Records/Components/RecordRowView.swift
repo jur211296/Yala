@@ -81,7 +81,7 @@ struct RecordRowView: View {
                 Spacer()
 
                 // Right column: Amount + Nature
-                VStack(alignment: .trailing, spacing: 4) {
+                VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     // Amount with currency
                     Text(formattedAmount)
                         .font(.subheadline.weight(.semibold))
@@ -161,7 +161,7 @@ struct RecordRowView: View {
     // MARK: - Tags Row
 
     private var tagsRow: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             ForEach(Array(record.tags.prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(.caption2.weight(.medium))
@@ -185,7 +185,7 @@ struct RecordRowView: View {
     // MARK: - Nature Indicator
 
     private func natureIndicator(for nature: SubcategoryNature) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             Circle()
                 .fill(nature.color)
                 .frame(width: 6, height: 6)
@@ -221,7 +221,7 @@ struct RecordRowView: View {
         Color.gray.opacity(0.1)
             .ignoresSafeArea()
 
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             Text("RecordRowView Preview")
                 .font(.headline)
         }

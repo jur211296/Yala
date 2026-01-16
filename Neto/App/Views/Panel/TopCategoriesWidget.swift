@@ -31,7 +31,7 @@ struct TopCategoriesWidget: View {
     var limit: Int? = nil  // nil = show all
 
     var body: some View {
-        VStack(alignment: .leading, spacing: size == .small ? 12 : 16) {
+        VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
             headerSection
 
             if categories.isEmpty {
@@ -69,7 +69,7 @@ struct TopCategoriesWidget: View {
 
     private var headerSection: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
                     .font(.headline)
                     .foregroundStyle(.primary)
@@ -145,7 +145,7 @@ struct TopCategoriesWidget: View {
                             .foregroundStyle(.white)
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(topCategory.category.name)
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
@@ -169,7 +169,7 @@ struct TopCategoriesWidget: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 8)
+                .padding(.bottom, DS.Spacing.sm)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     onSelectCategory?(topCategory.category.persistentModelID)
@@ -181,7 +181,7 @@ struct TopCategoriesWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             if size == .small {
                 Spacer()  // Push down
                 Image(systemName: "creditcard")
@@ -195,7 +195,7 @@ struct TopCategoriesWidget: View {
                 Image(systemName: "creditcard")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
-                    .padding(.bottom, 4)
+                    .padding(.bottom, DS.Spacing.xs)
 
                 Text(L10n.Widget.noExpensesPeriod)
                     .font(.subheadline.weight(.medium))
@@ -209,7 +209,7 @@ struct TopCategoriesWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)  // Fill available space
-        .padding(.vertical, size == .small ? 0 : 24)
+        .padding(.vertical, size == .small ? 0 : DS.Spacing.xxl)
     }
 
     // Helpers (moved inside View to be accessible)
@@ -233,7 +233,7 @@ private struct CategoryRow: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Icon Circle
             ZStack {
                 Circle()
@@ -245,7 +245,7 @@ private struct CategoryRow: View {
                     .foregroundStyle(.white)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name and Amount
                 HStack {
                     Text(summary.category.name)
@@ -260,7 +260,7 @@ private struct CategoryRow: View {
                 }
 
                 // Bar and Percentage
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     // Percentage Text
                     Text("\(formattedPercentage(summary.percentage)) \(L10n.Widget.ofExpense)")
                         .font(.caption2)

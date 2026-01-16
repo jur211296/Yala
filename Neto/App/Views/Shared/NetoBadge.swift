@@ -184,7 +184,7 @@ struct NetoTagBadge: View {
 }
 
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: DS.Spacing.xl) {
         // Standard badges
         HStack {
             NetoBadge("Nuevo", style: .filled)

@@ -143,7 +143,7 @@ struct DetailContainerView: View {
 
             VStack(spacing: 0) {
                 navigationChipsBar
-                    .padding(.vertical, 8)
+                    .padding(.vertical, DS.Spacing.sm)
 
                 Group {
                     switch selectedTab {
@@ -187,12 +187,12 @@ struct DetailContainerView: View {
 
     private var navigationChipsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 ForEach(DetailViewTab.allCases) { tab in
                     navigationChipButton(for: tab)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
@@ -204,14 +204,14 @@ struct DetailContainerView: View {
                 selectedTab = tab
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
                     .font(.subheadline)
                 Text(tab.title)
                     .font(.subheadline.weight(.medium))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
@@ -230,7 +230,7 @@ struct DetailContainerView: View {
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: 16) {
+            HStack(spacing: DS.Spacing.lg) {
                 // Selection button (only for Records)
                 if selectedTab == .records {
                     Button {
@@ -315,8 +315,8 @@ struct DetailContainerView: View {
                 .glassEffect(.regular.interactive())
                 .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
-            .padding(.trailing, 20)
-            .padding(.bottom, 24)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
     }
 
@@ -330,7 +330,7 @@ struct DetailContainerView: View {
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
-                    VStack(spacing: 4) {
+                    VStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "trash")
                         Text(L10n.Tag.delete)
                             .font(.caption2)
@@ -345,7 +345,7 @@ struct DetailContainerView: View {
                 Button {
                     handleEditAction()
                 } label: {
-                    VStack(spacing: 4) {
+                    VStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "pencil")
                         Text(L10n.Favorites.edit)
                             .font(.caption2)
@@ -353,8 +353,8 @@ struct DetailContainerView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 20)
+            .padding(.vertical, DS.Spacing.md)
+            .padding(.horizontal, DS.Spacing.xl)
             .background(.ultraThinMaterial)
         }
     }

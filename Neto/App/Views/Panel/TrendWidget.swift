@@ -37,7 +37,7 @@ struct TrendWidget: View {
                 period: viewModel.currentPeriod,
                 chartHeight: 160  // Fixed compact size
             )
-            .padding(.top, 8)
+            .padding(.top, DS.Spacing.sm)
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)

@@ -95,7 +95,7 @@ struct TagFormView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         iconSection
                         colorSection
@@ -105,8 +105,8 @@ struct TagFormView: View {
                             deleteSection
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(isEditing ? L10n.Tag.editTag : L10n.Tag.newTag)
@@ -187,7 +187,7 @@ struct TagFormView: View {
             Button {
                 isPresentingIconPicker = true
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Circle()
                         .fill(colorForHex(selectedColorHex))
                         .frame(width: 40, height: 40)
@@ -216,10 +216,10 @@ struct TagFormView: View {
     private var colorSection: some View {
         SectionBox(title: L10n.Tag.color) {
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     LazyVGrid(
-                        columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 8),
-                        spacing: 12
+                        columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.md), count: 8),
+                        spacing: DS.Spacing.md
                     ) {
                         ForEach(Tag.defaultColors, id: \.self) { hex in
                             Circle()

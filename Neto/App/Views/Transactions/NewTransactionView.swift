@@ -93,7 +93,7 @@ struct NewTransactionView: View {
                 VStack(spacing: 0) {
                     // Transaction type selector
                     transactionTypeSelector
-                        .padding(.top, 8)
+                        .padding(.top, DS.Spacing.sm)
 
                     Spacer()
 
@@ -104,14 +104,14 @@ struct NewTransactionView: View {
 
                     // Bottom selection chips
                     bottomChips
-                        .padding(.bottom, 16)
+                        .padding(.bottom, DS.Spacing.lg)
 
                     // Exchange rate section removed - integrated into centralContent
 
                     // Register button
                     registerButton
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 24)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(
@@ -236,20 +236,20 @@ struct NewTransactionView: View {
     // MARK: - Central Content
 
     private var centralContent: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xxl) {
             // Date chip - above description
             Button {
                 viewModel.showDatePicker = true
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "calendar")
                         .font(.system(size: 14, weight: .medium))
                     Text(dateChipText)
                         .font(.subheadline.weight(.medium))
                 }
                 .foregroundStyle(.primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.FormRow.paddingV)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(Color(UIColor.label).opacity(0.08))
@@ -297,7 +297,7 @@ struct NewTransactionView: View {
                 ) {
                     viewModel.showNatureSelector = true
                 }
-                .padding(.top, 8)
+                .padding(.top, DS.Spacing.sm)
             }
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
@@ -311,7 +311,7 @@ struct NewTransactionView: View {
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             Text(currencySymbol)
                 .font(.system(size: 28, weight: .medium, design: .rounded))
                 .foregroundStyle(viewModel.amountColor.opacity(0.7))
@@ -399,7 +399,7 @@ struct NewTransactionView: View {
 
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: DS.Spacing.sm) {
                 // Account chip (or source/dest for transfers)
                 if viewModel.isTransfer {
                     // Source account chip - pink
@@ -478,7 +478,7 @@ struct NewTransactionView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, DS.Spacing.xl)
         }
     }
 
@@ -569,12 +569,12 @@ struct NewTransactionView: View {
 
     /// Content for the autocomplete popover - clean list style (max 5 items)
     private var autocompletePopoverContent: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             ForEach(Array(autocompleteSuggestions.prefix(5))) { suggestion in
                 Button {
                     handleAutocompleteSuggestion(suggestion)
                 } label: {
-                    HStack(spacing: 10) {
+                    HStack(spacing: DS.Spacing.sm) {
                         Circle()
                             .fill(Color(hex: suggestion.colorHex))
                             .frame(width: 10, height: 10)
@@ -585,14 +585,14 @@ struct NewTransactionView: View {
 
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.sm)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, DS.Spacing.sm)
         .frame(width: 220)
         .background(Color.netoCard)
     }

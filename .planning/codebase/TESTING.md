@@ -1,6 +1,6 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-01-13
+**Analysis Date:** 2026-01-15
 
 ## Test Framework
 
@@ -39,7 +39,8 @@ NetoTests/
 ├── CalculatorTests.swift        # Business logic tests
 ├── FilterServiceTests.swift     # Filter service tests
 ├── TrendGroupingTests.swift     # Grouping helper tests
-└── TrendProcessingTests.swift   # Trend processing tests
+├── TrendProcessingTests.swift   # Trend processing tests
+└── TagTests.swift               # Tag model static methods (added 2026-01-15)
 
 NetoUITests/
 ├── NetoUITests.swift            # Main UI tests
@@ -155,9 +156,9 @@ let date = calendar.date(from: components)!
 - Focus on critical paths
 
 **Current Coverage:**
-- 6 test files with meaningful tests
-- ~388 lines total test code
-- Main gaps: Import service, ViewModels
+- 7 test files with meaningful tests
+- ~460 lines total test code
+- Main gaps: Import service, ViewModels, ExchangeRateService
 
 **Untested Critical Areas:**
 - `TransactionCSVImportService` (733 lines, complex parsing)
@@ -259,5 +260,5 @@ final class NetoUITests: XCTestCase {
 
 ---
 
-*Testing analysis: 2026-01-13*
+*Testing analysis: 2026-01-15*
 *Update when test patterns change*

@@ -29,11 +29,11 @@ struct TransactionFormRow<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.FormRow.iconSpacing) {
             Image(systemName: icon)
                 .font(.system(size: 18))
                 .foregroundStyle(hasError ? .red : .secondary)
-                .frame(width: 28)
+                .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
                 .font(.body)
@@ -44,11 +44,11 @@ struct TransactionFormRow<Trailing: View>: View {
             trailing()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.FormRow.paddingH)
+        .padding(.vertical, DS.FormRow.paddingV)
         .background(Color.netoCard)
         .contentShape(Rectangle())
     }
@@ -65,21 +65,21 @@ struct AccountFormRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.FormRow.iconSpacing) {
                 if let account = account {
                     Circle()
                         .fill(Color(hex: account.colorHex))
                         .frame(width: 28, height: 28)
                         .overlay(
                             Image(systemName: displayIconName(for: account))
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                                 .foregroundStyle(.white)
                         )
                 } else {
                     Image(systemName: "building.columns.fill")
                         .font(.system(size: 18))
                         .foregroundStyle(hasError ? .red : .secondary)
-                        .frame(width: 28)
+                        .frame(width: DS.FormRow.iconWidth)
                 }
 
                 Text(title)
@@ -99,11 +99,11 @@ struct AccountFormRow: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(Color.netoCard)
             .contentShape(Rectangle())
         }
@@ -121,7 +121,7 @@ struct SubcategoryFormRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.FormRow.iconSpacing) {
                 if let subcategory = subcategory {
                     Circle()
                         .fill(Color(hex: effectiveColor(for: subcategory)))
@@ -135,7 +135,7 @@ struct SubcategoryFormRow: View {
                     Image(systemName: "tag.fill")
                         .font(.system(size: 18))
                         .foregroundStyle(hasError ? .red : .secondary)
-                        .frame(width: 28)
+                        .frame(width: DS.FormRow.iconWidth)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -168,11 +168,11 @@ struct SubcategoryFormRow: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(Color.netoCard)
             .contentShape(Rectangle())
         }
@@ -194,8 +194,8 @@ struct NatureChip: View {
         Text(nature.displayName)
             .font(.caption2.weight(.medium))
             .foregroundStyle(nature.color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xxs)
             .background(
                 Capsule()
                     .fill(nature.color.opacity(0.15))
@@ -212,11 +212,11 @@ struct DateFormRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: "calendar")
                     .font(.system(size: 18))
                     .foregroundStyle(.secondary)
-                    .frame(width: 28)
+                    .frame(width: DS.FormRow.iconWidth)
 
                 Text(L10n.Transaction.date)
                     .font(.body)
@@ -229,11 +229,11 @@ struct DateFormRow: View {
                     .foregroundStyle(.secondary)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(Color.netoCard)
             .contentShape(Rectangle())
         }
@@ -260,11 +260,11 @@ struct TagsFormRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: "tag")
                     .font(.system(size: 18))
                     .foregroundStyle(.secondary)
-                    .frame(width: 28)
+                    .frame(width: DS.FormRow.iconWidth)
 
                 Text(L10n.Transaction.tags)
                     .font(.body)
@@ -277,13 +277,13 @@ struct TagsFormRow: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
-                    HStack(spacing: 6) {
+                    HStack(spacing: DS.Chip.spacing) {
                         ForEach(tags.prefix(3)) { tag in
                             Text(tag.name)
                                 .font(.caption)
                                 .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xs)
                                 .background(
                                     Capsule()
                                         .fill(Color(hex: tag.colorHex))
@@ -298,11 +298,11 @@ struct TagsFormRow: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(Color.netoCard)
             .contentShape(Rectangle())
         }
@@ -317,17 +317,17 @@ struct NoteFormRow: View {
     @Binding var note: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.FormRow.iconSpacing) {
             Image(systemName: "note.text")
                 .font(.system(size: 18))
                 .foregroundStyle(.secondary)
-                .frame(width: 28)
+                .frame(width: DS.FormRow.iconWidth)
 
             TextField(L10n.Transaction.notePlaceholder, text: $note)
                 .font(.body)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.FormRow.paddingH)
+        .padding(.vertical, DS.FormRow.paddingV)
         .background(Color.netoCard)
     }
 }

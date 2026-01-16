@@ -36,11 +36,11 @@ struct CurrencySettingsView: View {
                 VStack(spacing: DS.Spacing.xxl) {
 
                     // Header
-                    VStack(spacing: 8) {
+                    VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 48))
                             .foregroundStyle(Color.brandPrimary)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)
                             .font(Typography.title2)
@@ -51,15 +51,15 @@ struct CurrencySettingsView: View {
                             .foregroundStyle(Color.netoSecondaryText)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.top, 32)
+                    .padding(.top, DS.Spacing.xxxl)
 
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         preferredCurrencySection
                         exchangeRatesSection
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
             .blur(radius: isUpdating ? 3 : 0)
             .disabled(isUpdating)
@@ -82,9 +82,9 @@ struct CurrencySettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.8))
                 }
-                .padding(24)
+                .padding(DS.Spacing.xxl)
                 .background(.ultraThinMaterial)
-                .cornerRadius(16)
+                .cornerRadius(DS.Radius.lg)
             }
         }
         .navigationTitle(L10n.Settings.currencyAndExchange)
@@ -115,11 +115,11 @@ struct CurrencySettingsView: View {
         Button {
             updatePreferredCurrency(to: currency)
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Text(info.flag)
                     .font(.title3)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(info.name.capitalized)
                         .font(.body)
                         .foregroundStyle(.primary)
@@ -136,8 +136,8 @@ struct CurrencySettingsView: View {
                         .font(.body.weight(.semibold))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -175,7 +175,7 @@ struct CurrencySettingsView: View {
     // MARK: - Exchange Rates Section
 
     private var exchangeRatesSection: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             SectionBox(title: L10n.Settings.exchangeRate) {
                 VStack(spacing: 0) {
                     ForEach(Array(displayedCurrencies.enumerated()), id: \.element) {

@@ -64,7 +64,7 @@ struct ProfileView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         // Header
                         profileHeader
 
@@ -82,7 +82,7 @@ struct ProfileView: View {
                             .foregroundStyle(.tertiary)
                             .padding(.top, 8)
                     }
-                    .padding(.vertical, 24)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Profile.title)
@@ -171,7 +171,7 @@ struct ProfileView: View {
     // MARK: - Header
 
     private var profileHeader: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             ZStack {
                 Circle()
                     .stroke(
@@ -249,7 +249,7 @@ struct ProfileView: View {
                 )
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var preferenciasSection: some View {
@@ -277,7 +277,7 @@ struct ProfileView: View {
                     destination: .notifications)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var datosSection: some View {
@@ -315,7 +315,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var seguridadSection: some View {
@@ -338,7 +338,7 @@ struct ProfileView: View {
                     iconColor: .yellow, destination: .placeholder("Calificar"))
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var ayudaSection: some View {
@@ -357,7 +357,7 @@ struct ProfileView: View {
                     iconColor: .teal, destination: .placeholder("Contacta"))
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var legalSection: some View {
@@ -372,7 +372,7 @@ struct ProfileView: View {
                     iconColor: .gray, destination: .placeholder("Términos"))
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Reference Builder
@@ -396,7 +396,7 @@ struct ProfileView: View {
         iconColor: Color = .gray,
         textColor: Color = .primary
     ) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Conditionally show colored or plain icons based on setting
             if colorfulIcons {
                 // iOS-style colored icon with rounded square background
@@ -426,8 +426,8 @@ struct ProfileView: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle())
     }
 }

@@ -59,14 +59,14 @@ struct FilterControlBar<PeriodView: View>: View {
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Period dropdown on the left
             periodSelector
 
             // Filter chips scrollable area
             if hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: DS.Spacing.sm) {
                         // Account chips - "First +x" format
                         if let chipText = accountsChipText {
                             FilterChipView(text: chipText, onClear: onClearAccounts)

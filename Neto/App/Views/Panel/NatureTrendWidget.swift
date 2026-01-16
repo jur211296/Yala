@@ -42,7 +42,7 @@ struct NatureTrendWidget: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Header
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Nature.title)
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
@@ -69,7 +69,7 @@ struct NatureTrendWidget: View {
                             .font(.headline)
                             .foregroundStyle(Color.secondary.opacity(0.7))
                     }
-                    .padding(.top, 4)
+                    .padding(.top, DS.Spacing.xs)
                 }
             }
 
@@ -343,7 +343,7 @@ struct NatureTrendChartView: View {
                             .font(.caption2)
                             .foregroundStyle(Color.netoSecondaryText)
 
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                             if selectedData.essential > 0 {
                                 TooltipRow(
                                     nature: .essential, amount: selectedData.essential,
@@ -379,7 +379,7 @@ struct NatureTrendChartView: View {
                             }
                         }
                     }
-                    .padding(8)
+                    .padding(DS.Spacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
                             .fill(Color.netoCard)
@@ -518,7 +518,7 @@ struct NatureLegendView: View {
         let total = essentials + priorities + optionals + unclassified
 
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 CompactLegendChip(
                     nature: .essential, amount: essentials, total: total,
                     isSelected: selectedNature == .essential || selectedNature == nil,
@@ -551,7 +551,7 @@ struct LegendItem: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 Circle()
                     .fill(extensionColor(for: nature))
                     .frame(width: 8, height: 8)
@@ -567,9 +567,9 @@ struct LegendItem: View {
                 }
                 Spacer()
             }
-            .padding(8)
+            .padding(DS.Spacing.sm)
             .background(isSelected ? Color.netoBackground : Color.clear)
-            .cornerRadius(8)
+            .cornerRadius(DS.Radius.sm)
             .opacity(isSelected ? 1.0 : 0.4)
         }
     }
@@ -617,10 +617,10 @@ struct CompactLegendChip: View {
                     .font(.caption2)
                     .foregroundStyle(Color.secondary)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
             .background(isSelected ? Color.netoBackground.opacity(0.5) : Color.clear)
-            .cornerRadius(12)
+            .cornerRadius(DS.Radius.md)
             .opacity(isSelected ? 1.0 : 0.4)
         }
     }
@@ -653,7 +653,7 @@ struct CompactNatureLegendView: View {
     private let allNatures: [SubcategoryNature] = [.essential, .priority, .optional, .unclassified]
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             ForEach(allNatures, id: \.self) { nature in
                 Button {
                     onSelect(nature)

@@ -103,7 +103,7 @@ struct AccountCardView: View {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(isSelected ? Color.white : Color.netoPrimaryText)
-                        .padding(6)
+                        .padding(DS.Spacing.xs)
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .buttonStyle(.plain)

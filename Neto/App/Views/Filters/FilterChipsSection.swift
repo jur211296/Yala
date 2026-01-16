@@ -35,26 +35,26 @@ struct FilterChipsSection<Item: Identifiable, ChipContent: View>: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: icon,
                 title: title,
                 status: status
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
 
             // Chips
             if !items.isEmpty {
-                FlowLayout(spacing: 8) {
+                FlowLayout(spacing: DS.Spacing.sm) {
                     ForEach(items) { item in
                         chipContent(item)
                     }
                 }
                 .padding(.leading, 52)
-                .padding(.trailing, 16)
-                .padding(.bottom, 12)
+                .padding(.trailing, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.md)
             } else if showEmptyPlaceholder {
                 // Minimal spacer to maintain layout consistency
                 Color.clear.frame(height: 12)
@@ -79,8 +79,8 @@ struct FilterChipButton: View {
                 .font(.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(isSelected ? selectedColor : Color(.tertiarySystemFill))
@@ -103,7 +103,7 @@ struct FilterChipWithIndicator: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(isSelected ? Color.white : indicatorColor)
                     .frame(width: 8, height: 8)
@@ -113,8 +113,8 @@ struct FilterChipWithIndicator: View {
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(isSelected ? selectedColor : Color(.tertiarySystemFill))

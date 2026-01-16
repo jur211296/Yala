@@ -12,7 +12,7 @@ struct BudgetWidgetRow: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Icon badge
             ZStack {
                 Circle()
@@ -24,7 +24,7 @@ struct BudgetWidgetRow: View {
                     .foregroundStyle(.white)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name and Amount row
                 HStack {
                     Text(summary.budget.name)
@@ -40,7 +40,7 @@ struct BudgetWidgetRow: View {
                 }
 
                 // Status info
-                HStack(spacing: 4) {
+                HStack(spacing: DS.Spacing.xs) {
                     Text(percentText)
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .secondary)

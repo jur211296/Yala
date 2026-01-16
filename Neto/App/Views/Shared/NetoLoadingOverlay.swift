@@ -108,7 +108,7 @@ struct NetoLoadingFullScreen: View {
         @State private var isLoading = true
 
         var body: some View {
-            VStack(spacing: 30) {
+            VStack(spacing: DS.Spacing.xxxl) {
                 // Toggle
                 Toggle("Loading", isOn: $isLoading)
                     .padding()

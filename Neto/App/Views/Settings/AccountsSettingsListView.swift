@@ -66,7 +66,7 @@ struct AccountsSettingsListView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     if accounts.isEmpty {
                         emptyState
                     } else {
@@ -79,8 +79,8 @@ struct AccountsSettingsListView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 32)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxxl)
             }
         }
         .navigationTitle(L10n.Settings.accounts)
@@ -94,7 +94,7 @@ struct AccountsSettingsListView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     NetoToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down")
                     {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -124,7 +124,7 @@ struct AccountsSettingsListView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "creditcard")
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
@@ -145,7 +145,7 @@ struct AccountsSettingsListView: View {
     // Caja blanca de sección para cuentas archivadas
     @ViewBuilder
     private func accountsSection(title: String, accounts: [Account]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -180,7 +180,7 @@ struct AccountsSettingsListView: View {
     // MARK: - Active Accounts Section (List with Drag and Drop)
 
     private var listBasedSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.active)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -230,7 +230,7 @@ struct AccountsSettingsListView: View {
         let primaryText =
             (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
 
-        return HStack(spacing: 12) {
+        return HStack(spacing: DS.Spacing.md) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(colorForHex(account.colorHex))
                 .frame(width: 44, height: 44)
@@ -239,7 +239,7 @@ struct AccountsSettingsListView: View {
                         .foregroundStyle(.white)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(primaryText)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -257,7 +257,7 @@ struct AccountsSettingsListView: View {
 
             Spacer()
 
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(formattedBalance(for: account))
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -321,7 +321,7 @@ struct AccountsSettingsListView: View {
         let primaryText =
             (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
 
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Ícono de la cuenta con color de fondo según configuración
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(colorForHex(account.colorHex))
@@ -332,7 +332,7 @@ struct AccountsSettingsListView: View {
                 )
 
             // Texto central (3 líneas)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(primaryText)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -349,7 +349,7 @@ struct AccountsSettingsListView: View {
             Spacer()
 
             // Monto + chevron a la derecha
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(formattedBalance(for: account))
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)

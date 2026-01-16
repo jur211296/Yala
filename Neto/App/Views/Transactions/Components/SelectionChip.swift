@@ -20,7 +20,7 @@ struct SelectionChip: View {
         Button {
             action()
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
                     .font(.system(size: 14, weight: .medium))
 
@@ -29,8 +29,8 @@ struct SelectionChip: View {
                     .lineLimit(1)
             }
             .foregroundStyle(isSelected ? (color ?? Color.electricIndigo) : .secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, DS.FormRow.paddingV)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(

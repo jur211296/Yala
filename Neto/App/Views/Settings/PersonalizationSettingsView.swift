@@ -30,11 +30,11 @@ struct PersonalizationSettingsView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     // Header
-                    VStack(spacing: 8) {
+                    VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "slider.horizontal.3")
                             .font(.system(size: 48))
                             .foregroundStyle(Color.brandPrimary)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.personalization)
                             .font(.title2.bold())
@@ -45,10 +45,10 @@ struct PersonalizationSettingsView: View {
                             .foregroundStyle(Color.netoSecondaryText)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.top, 32)
+                    .padding(.top, DS.Spacing.xxxl)
 
                     // Tab Bar Configuration Section
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         Button {
                             showingTabBarConfig = true
                         } label: {
@@ -63,8 +63,8 @@ struct PersonalizationSettingsView: View {
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.tertiary)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.FormRow.paddingV)
                             .background(Color.netoCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
@@ -81,7 +81,7 @@ struct PersonalizationSettingsView: View {
                     }
 
                     // Default Period Section - Single Row Style
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         // Period Row
                         Button {
                             showingPeriodPicker = true
@@ -101,8 +101,8 @@ struct PersonalizationSettingsView: View {
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.tertiary)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.FormRow.paddingV)
                             .background(Color.netoCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
@@ -122,7 +122,7 @@ struct PersonalizationSettingsView: View {
                     }
 
                     // Colorful Icons Toggle Section
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         HStack {
                             Text(L10n.Settings.colorfulIcons)
                                 .font(.body)
@@ -134,8 +134,8 @@ struct PersonalizationSettingsView: View {
                                 .labelsHidden()
                                 .tint(Color.brandPrimary)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.Spacing.sm)
                         .background(Color.netoCard)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                         .overlay(
@@ -243,15 +243,15 @@ private struct PeriodPickerSheet: View {
                         .font(.body.weight(.semibold))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
 
         if period != DetailPeriod.allCases.last {
             Divider()
-                .padding(.leading, 16)
+                .padding(.leading, DS.Spacing.lg)
         }
     }
 }

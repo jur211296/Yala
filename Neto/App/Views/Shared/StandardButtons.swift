@@ -160,9 +160,9 @@ struct NetoTextButton: View {
 }
 
 #Preview("Buttons") {
-    VStack(spacing: 20) {
+    VStack(spacing: DS.Spacing.xl) {
         // Toolbar buttons
-        HStack(spacing: 20) {
+        HStack(spacing: DS.Spacing.xl) {
             NetoToolbarButton(systemName: "chevron.left") {}
             NetoToolbarButton(systemName: "xmark") {}
             NetoToolbarButton(systemName: "plus") {}
@@ -173,7 +173,7 @@ struct NetoTextButton: View {
         Divider()
 
         // Primary buttons
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             NetoPrimaryButton("Guardar", icon: "checkmark") {}
             NetoPrimaryButton("Cargando...", isLoading: true) {}
             NetoPrimaryButton("Deshabilitado", isDisabled: true) {}
@@ -183,7 +183,7 @@ struct NetoTextButton: View {
         Divider()
 
         // Secondary buttons
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             NetoSecondaryButton("Cancelar") {}
             NetoSecondaryButton("Eliminar", icon: "trash", destructive: true) {}
         }

@@ -1,6 +1,6 @@
 # Architecture
 
-**Analysis Date:** 2026-01-13
+**Analysis Date:** 2026-01-15
 
 ## Pattern Overview
 
@@ -76,6 +76,15 @@
 3. Statistics view observes `SessionState` via `@Environment`
 4. Both views automatically sync period & filters
 5. Calculators recompute derived data
+
+**Pie Chart Interactivity Flow (Tags/Categories):**
+
+1. User taps segment in pie chart (e.g., TagsPieWidget)
+2. Widget updates local selection and triggers filter sync
+3. `isSyncingFilters` flag prevents infinite loops
+4. `SessionState.globalFilters` updated with selected tag/category
+5. All views (CategoriesTabView, RecordsTabView) reflect filter
+6. Tapping same segment again clears the filter
 
 **State Management:**
 - Global: `SessionState` (`@Observable`) passed via `.environment()`
@@ -159,5 +168,5 @@
 
 ---
 
-*Architecture analysis: 2026-01-13*
+*Architecture analysis: 2026-01-15*
 *Update when major patterns change*

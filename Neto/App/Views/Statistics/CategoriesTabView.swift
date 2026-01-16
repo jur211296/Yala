@@ -328,7 +328,7 @@ struct CategoriesTabView: View {
             .frame(height: 340)
 
             // Page indicator
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.sm) {
                 ForEach(0..<3, id: \.self) { page in
                     Circle()
                         .fill(
@@ -594,8 +594,8 @@ struct CategoriesTabView: View {
         } label: {
             Image(systemName: viewType.iconName)
                 .font(.caption.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.netoSecondaryText)
                 .background(
                     Group {
@@ -915,7 +915,7 @@ struct CategoriesTabView: View {
     }
 
     private var emptyRecordsState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.title2)
                 .foregroundStyle(.tertiary)
@@ -924,7 +924,7 @@ struct CategoriesTabView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, DS.Spacing.xl)
     }
 
     private func clearAllFilters() {
@@ -1138,7 +1138,7 @@ private struct AllCategoriesListContent: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if let maxAmount = categories.first?.amount {
                 ForEach(displayedCategories) { summary in
                     let isSelected = selectedCategoryID == summary.category.persistentModelID
@@ -1169,10 +1169,10 @@ private struct AllCategoriesListContent: View {
                                 .font(.caption)
                             Spacer()
                         }
-                        .padding(.vertical, 12)
+                        .padding(.vertical, DS.Spacing.md)
                         .foregroundStyle(Color.electricIndigo)
                         .background(Color.electricIndigo.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }
@@ -1205,7 +1205,7 @@ private struct AllSubcategoriesListContent: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if let maxAmount = subcategories.first?.amount {
                 ForEach(displayedSubcategories) { summary in
                     let isSelected = selectedSubcategoryID == summary.persistentID
@@ -1247,10 +1247,10 @@ private struct AllSubcategoriesListContent: View {
                                 .font(.caption)
                             Spacer()
                         }
-                        .padding(.vertical, 12)
+                        .padding(.vertical, DS.Spacing.md)
                         .foregroundStyle(Color.electricIndigo)
                         .background(Color.electricIndigo.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }
@@ -1270,7 +1270,7 @@ private struct CategoryRowView: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Icon Circle
             ZStack {
                 Circle()
@@ -1282,7 +1282,7 @@ private struct CategoryRowView: View {
                     .foregroundStyle(.white)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name and Amount
                 HStack {
                     Text(summary.category.name)
@@ -1297,7 +1297,7 @@ private struct CategoryRowView: View {
                 }
 
                 // Bar and Percentage
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     // Percentage Text
                     Text("\(formattedPercentage(summary.percentage)) \(L10n.Statistics.ofExpense)")
                         .font(.caption2)
@@ -1340,7 +1340,7 @@ private struct SubcategoryRowView: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Icon Circle
             ZStack {
                 Circle()
@@ -1358,7 +1358,7 @@ private struct SubcategoryRowView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name and Amount
                 HStack {
                     Text(summary.subcategoryName)
@@ -1373,7 +1373,7 @@ private struct SubcategoryRowView: View {
                 }
 
                 // Bar and Percentage
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     // Percentage Text
                     Text("\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Statistics.ofExpense)")
                         .font(.caption2)

@@ -17,11 +17,11 @@ struct ThemeSettingsView: View {
 
             VStack(spacing: DS.Spacing.xxl) {
                 // Header / Intro
-                VStack(spacing: 8) {
+                VStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "paintpalette.fill")
                         .font(.system(size: 48))
                         .foregroundStyle(Color.brandPrimary)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, DS.Spacing.sm)
 
                     Text(L10n.Profile.appearance)
                         .font(.title2.bold())
@@ -32,10 +32,10 @@ struct ThemeSettingsView: View {
                         .foregroundStyle(Color.netoSecondaryText)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.top, 32)
+                .padding(.top, DS.Spacing.xxxl)
 
                 // Selection
-                VStack(spacing: 16) {
+                VStack(spacing: DS.Spacing.lg) {
                     ForEach(AppTheme.allCases) { theme in
                         themeRow(for: theme)
                     }
@@ -89,7 +89,7 @@ struct ThemeSettingsView: View {
                         .font(.title3)
                 }
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, DS.Spacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -73,21 +73,21 @@ struct RecordsFiltersView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: 0) {
                                 accountsContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 tagsContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 naturesContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 amountContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 noteContent
                             }
                         }
@@ -102,14 +102,14 @@ struct RecordsFiltersView: View {
                                 .font(.body.weight(.semibold))
                                 .foregroundStyle(Color.electricIndigo)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
+                                .padding(.vertical, DS.FormRow.paddingV)
                                 .background(Color.white)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.vertical, 24)
-                    .padding(.horizontal, 16)
+                    .padding(.vertical, DS.Spacing.xxl)
+                    .padding(.horizontal, DS.Spacing.lg)
                 }
             }
             .navigationTitle("Filtros")
@@ -164,8 +164,8 @@ struct RecordsFiltersView: View {
                 .font(.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(
@@ -205,8 +205,8 @@ struct RecordsFiltersView: View {
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
         .onTapGesture {
             showCategoriesSheet = true
@@ -279,7 +279,7 @@ struct RecordsFiltersView: View {
                 viewModel.selectedTags.insert(tag.persistentModelID)
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.sm) {
                 Circle()
                     .fill(isSelected ? Color.white : Color(hex: tag.colorHex))
                     .frame(width: 8, height: 8)
@@ -289,8 +289,8 @@ struct RecordsFiltersView: View {
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -317,25 +317,25 @@ struct RecordsFiltersView: View {
     // MARK: - Natures Content
 
     private var naturesContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "leaf.fill",
                 title: "Naturaleza",
                 status: selectedNaturesText
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
 
             // Chips
-            FlowLayout(spacing: 8) {
+            FlowLayout(spacing: DS.Spacing.sm) {
                 ForEach(SubcategoryNature.allCases, id: \.self) { nature in
                     natureChip(nature)
                 }
             }
             .padding(.leading, 52)
-            .padding(.trailing, 16)
-            .padding(.bottom, 12)
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
     }
 
@@ -349,14 +349,14 @@ struct RecordsFiltersView: View {
                 viewModel.selectedNatures.insert(nature)
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.sm) {
                 Text(nature.displayName)
                     .font(.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -371,25 +371,25 @@ struct RecordsFiltersView: View {
     }
 
     private var currencyContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "arrow.triangle.2.circlepath",
                 title: "Moneda",
                 status: selectedCurrenciesText
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
 
             // Chips - aligned after icon
-            FlowLayout(spacing: 8) {
+            FlowLayout(spacing: DS.Spacing.sm) {
                 ForEach(CurrencyCode.allCases) { currency in
                     currencyChip(currency)
                 }
             }
             .padding(.leading, 52)
-            .padding(.trailing, 16)
-            .padding(.bottom, 12)
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
         .onAppear {
             syncCurrenciesSelection()
@@ -410,8 +410,8 @@ struct RecordsFiltersView: View {
                 .font(.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -444,7 +444,7 @@ struct RecordsFiltersView: View {
     }
 
     private var noteContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: "note.text")
                 .font(.body)
                 .foregroundStyle(.primary)
@@ -452,8 +452,8 @@ struct RecordsFiltersView: View {
 
             TextField(L10n.Filters.noteContains, text: $viewModel.searchText)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
     }
 
     // MARK: - Accounts Sheet

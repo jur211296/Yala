@@ -1,6 +1,6 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-01-13
+**Analysis Date:** 2026-01-15
 
 ## Tech Debt
 
@@ -151,11 +151,12 @@ Potential issues observed:
 - Impact: Orphaned records possible; cascade delete unclear
 - Recommendation: Add inverse relationships or `.deleteRule(.cascade)`
 
-**No Migration Strategy:**
+**Migration Strategy - Partially Addressed:**
 - Issue: No version tracking or migration handlers documented
 - File: `Neto/App/NetoApp.swift:16-40`
 - Impact: Future schema changes risky
-- Recommendation: Document migration approach
+- Recent: `Tag.iconName` added with default `"tag.fill"` for safe migration
+- Recommendation: Document formal migration approach for future changes
 
 **Provisional Exchange Rate Flag:**
 - Issue: `isExchangeRateProvisional` set but no UI indicator
@@ -163,7 +164,12 @@ Potential issues observed:
 - Impact: Users unaware rates may be estimates
 - Recommendation: Show visual indicator for provisional rates
 
+**Tag-Budget Relationship:**
+- Status: ✅ Implemented (2026-01-15)
+- Relationship: Many-to-many via `budgets: [Budget]` in Tag
+- No cascade delete issues detected
+
 ---
 
-*Concerns audit: 2026-01-13*
+*Concerns audit: 2026-01-15*
 *Update as issues are fixed or new ones discovered*

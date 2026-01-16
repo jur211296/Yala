@@ -116,15 +116,15 @@ struct TrendsTabView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 20) {
+            VStack(spacing: DS.Spacing.xl) {
                 controlBar
                 trendChartsCarousel
                 cashFlowWidget
                 recentRecordsSection
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 100)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.sm)
+            .netoSafeBottomPadding()
         }
         .onAppear {
             // Sync metric from SessionState on appear
@@ -193,12 +193,12 @@ struct TrendsTabView: View {
     // MARK: - Control Bar
 
     private var controlBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             periodSelector
 
             if trendsViewModel.hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: DS.Spacing.sm) {
                         // Account chips (with icon)
                         ForEach(selectedAccountChips, id: \.id) { chip in
                             FilterChipView(
@@ -335,7 +335,7 @@ struct TrendsTabView: View {
     // MARK: - Trend Charts Carousel
 
     private var trendChartsCarousel: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             TabView(selection: $trendChartsCarouselPosition) {
                 // Trends Chart Card (Page 0)
                 chartCard
@@ -352,7 +352,7 @@ struct TrendsTabView: View {
 
             // Page indicators (centered)
             if trendsViewModel.detailPeriod != .allTime {
-                HStack(spacing: 8) {
+                HStack(spacing: DS.Spacing.sm) {
                     ForEach(0..<2, id: \.self) { index in
                         Circle()
                             .fill(
@@ -370,7 +370,7 @@ struct TrendsTabView: View {
     }
 
     private var chartCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             chartHeader
 
             TrendChartView(
@@ -385,7 +385,7 @@ struct TrendsTabView: View {
                 period: trendsViewModel.detailPeriod,
                 chartHeight: 220
             )
-            .padding(.top, 8)
+            .padding(.top, DS.Spacing.sm)
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
@@ -398,9 +398,9 @@ struct TrendsTabView: View {
     }
 
     private var periodComparisonCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             // Header
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(L10n.Statistics.periodComparison)
                     .font(.headline)
                     .foregroundStyle(Color.netoPrimaryText)
@@ -421,7 +421,7 @@ struct TrendsTabView: View {
                 trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
                 chartHeight: 220
             )
-            .padding(.top, 8)
+            .padding(.top, DS.Spacing.sm)
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
@@ -494,7 +494,7 @@ struct TrendsTabView: View {
 
     private var chartHeader: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(chartTitle)
                     .font(.headline)
                     .foregroundStyle(Color.netoPrimaryText)
@@ -544,7 +544,7 @@ struct TrendsTabView: View {
                 trendsViewModel.setMetricManually(metric)
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: metric.iconName)
                     .font(.caption.weight(.semibold))
                 if isSelected {
@@ -829,7 +829,7 @@ struct TrendsTabView: View {
     // MARK: - Recent Records Section
 
     private var recentRecordsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
                 .font(.headline)
                 .foregroundStyle(Color.netoPrimaryText)
@@ -854,7 +854,7 @@ struct TrendsTabView: View {
                         .font(.caption)
                     Spacer()
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, DS.Spacing.md)
                 .foregroundStyle(Color.electricIndigo)
                 .background(Color.electricIndigo.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -867,7 +867,7 @@ struct TrendsTabView: View {
     }
 
     private var emptyRecordsState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.title2)
                 .foregroundStyle(.tertiary)
@@ -1208,12 +1208,12 @@ struct CompactRecordRow: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: DS.Spacing.sm) {
             // Icon
             subcategoryIcon(size: 36)
 
             // Left column: Note/Category and Date
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 // Line 1: Note (bold) or Subcategory as fallback
                 if let note = record.note, !note.isEmpty {
                     Text(note)
@@ -1243,7 +1243,7 @@ struct CompactRecordRow: View {
             Spacer()
 
             // Right column: Amount + Nature
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                 Text(formattedAmount)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(amountColor)
@@ -1259,7 +1259,7 @@ struct CompactRecordRow: View {
     // MARK: - Nature Indicator
 
     private func natureIndicator(for nature: SubcategoryNature) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             Circle()
                 .fill(nature.color)
                 .frame(width: 6, height: 6)

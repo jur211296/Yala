@@ -71,7 +71,7 @@ struct ExchangeRateWidget: View {
 
     private var headerView: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.ExchangeRate.title)
                     .font(.headline)
                     .foregroundStyle(.primary)
@@ -114,7 +114,7 @@ struct ExchangeRateWidget: View {
                     Image(systemName: "chevron.right")
                         .font(.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
-                        .padding(.leading, 8)
+                        .padding(.leading, DS.Spacing.sm)
                 }
                 .buttonStyle(.plain)
             }
@@ -125,13 +125,13 @@ struct ExchangeRateWidget: View {
 
     @ViewBuilder
     private func currentRatesView(data: ExchangeRateWidgetData) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             ForEach(Array(selectedCurrencies.enumerated()), id: \.element.rawValue) {
                 index, currency in
                 if currency.rawValue != preferredCurrency,
                     let rate = data.currentRates[currency.rawValue]
                 {
-                    HStack(spacing: 4) {
+                    HStack(spacing: DS.Spacing.xs) {
                         Circle()
                             .fill(index == 0 ? currencyAColor : currencyBColor)
                             .frame(width: 6, height: 6)
@@ -143,7 +143,7 @@ struct ExchangeRateWidget: View {
                 }
             }
         }
-        .padding(.top, 4)
+        .padding(.top, DS.Spacing.xs)
     }
 
     // MARK: - Content View
@@ -369,16 +369,16 @@ struct ExchangeRateWidget: View {
     private func tooltipView(point: ExchangeRateChartPoint, activeCurrencies: [CurrencyCode])
         -> some View
     {
-        VStack(spacing: 4) {
+        VStack(spacing: DS.Spacing.xs) {
             Text(formatTooltipDate(point.date))
                 .font(.caption2)
                 .foregroundStyle(Color.netoSecondaryText)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 ForEach(Array(activeCurrencies.enumerated()), id: \.element.rawValue) {
                     index, currency in
                     if let rate = point.rate(for: currency.rawValue) {
-                        HStack(spacing: 4) {
+                        HStack(spacing: DS.Spacing.xs) {
                             Circle()
                                 .fill(index == 0 ? currencyAColor : currencyBColor)
                                 .frame(width: 5, height: 5)
@@ -392,7 +392,7 @@ struct ExchangeRateWidget: View {
                 }
             }
         }
-        .padding(8)
+        .padding(DS.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(Color.netoCard)
@@ -433,7 +433,7 @@ struct ExchangeRateWidget: View {
     }
 
     private func errorView(message: String) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.title2)
                 .foregroundStyle(.orange)
@@ -534,14 +534,14 @@ struct CurrencySelectorSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
+            VStack(spacing: DS.Spacing.lg) {
                 Text(L10n.Widget.selectCurrencies(preferredCurrency))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                VStack(spacing: 12) {
+                VStack(spacing: DS.Spacing.md) {
                     ForEach(availableCurrencies) { currency in
                         currencyRow(currency: currency)
                     }
@@ -574,11 +574,11 @@ struct CurrencySelectorSheet: View {
         Button {
             toggleCurrency(currency)
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Text(info.flag)
                     .font(.title)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(info.code)
                         .font(.headline)
                         .foregroundStyle(.primary)
@@ -593,8 +593,8 @@ struct CurrencySelectorSheet: View {
                     .font(.title2)
                     .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
                     .fill(isSelected ? Color.electricIndigo.opacity(0.1) : Color.netoCard)
