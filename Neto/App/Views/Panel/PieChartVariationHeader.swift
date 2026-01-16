@@ -111,21 +111,15 @@ struct PieChartVariationHeader: View {
     // MARK: - Variation Chip
 
     private var variationChip: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Circle()
-                .fill(variationColor)
-                .frame(width: 6, height: 6)
-
-            Text(variationText)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(variationColor)
-        }
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xs)
-        .background(
-            Capsule()
-                .fill(variationColor.opacity(0.1))
-        )
+        Text(variationText)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(variationColor)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(
+                Capsule()
+                    .fill(variationColor.opacity(0.1))
+            )
     }
 
     // MARK: - Helpers

@@ -12,11 +12,15 @@ struct VariationChip: View {
 
     // MARK: - Properties
 
-    /// The variation percentage (nil shows "N/A")
+    /// The variation percentage (nil shows "N/A" or hides based on showNAWhenNil)
     let variation: Double?
 
     /// Size of the chip
     var size: ChipSize = .small
+
+    /// If true, shows "N/A" when variation is nil. If false, hides completely.
+    /// Use true for row items (categories, etc.), false for headers.
+    var showNAWhenNil: Bool = false
 
     // MARK: - Size Configuration
 
@@ -54,17 +58,17 @@ struct VariationChip: View {
 
     private var variationColor: Color {
         guard let variation = variation else { return .gray }
-        // For expenses: negative variation (spending less) is good (green/indigo)
-        // positive variation (spending more) is bad (red/pink)
-        return variation >= 0 ? .hotPink : .electricIndigo
+        // For expenses: positive variation (spending more) = purple
+        // negative variation (spending less) = pink
+        return variation >= 0 ? .electricIndigo : .hotPink
     }
 
     // MARK: - Body
 
     @ViewBuilder
     var body: some View {
-        // Hide completely when no variation data (e.g., "All Time" period)
         if let variation = variation {
+            // Show formatted variation percentage
             Text(PreviousPeriodHelper.formatVariationValue(variation))
                 .font(size.font)
                 .foregroundStyle(variationColor)
@@ -74,7 +78,19 @@ struct VariationChip: View {
                     Capsule()
                         .fill(variationColor.opacity(0.1))
                 )
+        } else if showNAWhenNil {
+            // Show "N/A" for items without previous data (when comparison is active)
+            Text("N/A")
+                .font(size.font)
+                .foregroundStyle(Color.gray)
+                .padding(.horizontal, size.horizontalPadding)
+                .padding(.vertical, size.verticalPadding)
+                .background(
+                    Capsule()
+                        .fill(Color.gray.opacity(0.1))
+                )
         }
+        // When variation is nil and showNAWhenNil is false, show nothing (for headers)
     }
 }
 
@@ -82,12 +98,13 @@ struct VariationChip: View {
 
 extension VariationChip {
     /// Create chip from current and previous amounts
-    init(currentAmount: Double, previousAmount: Double?, size: ChipSize = .small) {
+    init(currentAmount: Double, previousAmount: Double?, size: ChipSize = .small, showNAWhenNil: Bool = false) {
         self.variation = PreviousPeriodHelper.calculateVariation(
             currentAmount: currentAmount,
             previousAmount: previousAmount ?? 0
         )
         self.size = size
+        self.showNAWhenNil = showNAWhenNil
     }
 }
 
