@@ -1,3 +1,7 @@
+---
+description: Detiene la captura de logs y cierra el simulador.
+---
+
 Detiene la captura de logs y cierra el simulador.
 
 PASOS:

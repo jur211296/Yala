@@ -1,3 +1,7 @@
+---
+description: Guarda progreso intermedio de trabajo sin hacer commit permanente.
+---
+
 Guarda progreso intermedio de trabajo sin hacer commit permanente.
 
 CONTEXTO:

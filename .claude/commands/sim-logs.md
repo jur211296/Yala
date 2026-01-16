@@ -1,3 +1,7 @@
+---
+description: Muestra logs recientes del simulador filtrados por severidad.
+---
+
 Muestra logs recientes del simulador filtrados por severidad.
 
 PARÁMETROS OPCIONALES:

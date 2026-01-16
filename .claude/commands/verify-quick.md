@@ -1,3 +1,7 @@
+---
+description: Ejecuta una verificación rápida del proyecto sin compilación completa.
+---
+
 Ejecuta una verificación rápida del proyecto sin compilación completa.
 
 PASOS OBLIGATORIOS:

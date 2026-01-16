@@ -1,3 +1,7 @@
+---
+description: Ejecuta un checkpoint completo del proyecto: verifica, commitea, actualiza documentación y prepar...
+---
+
 Ejecuta un checkpoint completo del proyecto: verifica, commitea, actualiza documentación y prepara para continuar con tokens frescos.
 
 PROPÓSITO:

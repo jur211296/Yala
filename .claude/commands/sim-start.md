@@ -1,3 +1,7 @@
+---
+description: Inicia el simulador con la app y captura logs en tiempo real.
+---
+
 Inicia el simulador con la app y captura logs en tiempo real.
 
 PASOS:

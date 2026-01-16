@@ -1,3 +1,7 @@
+---
+description: Inicia una nueva sesión de trabajo con logging automático.
+---
+
 Inicia una nueva sesión de trabajo con logging automático.
 
 PASOS:
