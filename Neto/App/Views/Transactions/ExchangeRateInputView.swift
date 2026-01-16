@@ -33,7 +33,7 @@ struct ExchangeRateInputView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tipo de cambio
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.left.arrow.right")
                     .font(.system(size: 18))
                     .foregroundStyle(.secondary)
@@ -45,7 +45,7 @@ struct ExchangeRateInputView: View {
 
                 Spacer()
 
-                HStack(spacing: 4) {
+                HStack(spacing: DS.Spacing.xs) {
                     Text("1 \(sourceCurrency) =")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -69,14 +69,14 @@ struct ExchangeRateInputView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(Color.netoCard)
 
             SubsectionDivider()
 
             // Monto destino
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "banknote")
                     .font(.system(size: 18))
                     .foregroundStyle(.secondary)
@@ -88,7 +88,7 @@ struct ExchangeRateInputView: View {
 
                 Spacer()
 
-                HStack(spacing: 4) {
+                HStack(spacing: DS.Spacing.xs) {
                     TextField("0.00", text: $destinationAmountText)
                         .font(.subheadline.weight(.medium))
                         .keyboardType(.decimalPad)
@@ -109,8 +109,8 @@ struct ExchangeRateInputView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(Color.netoCard)
         }
         .onAppear {

@@ -52,13 +52,13 @@ struct TransactionSuccessView: View {
                     Button(L10n.Action.edit, action: onEdit)
                         .buttonStyle(.bordered)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.lg)
 
                 Spacer()
 
                 // Success icon and title
-                VStack(spacing: 16) {
+                VStack(spacing: DS.Spacing.lg) {
                     ZStack {
                         Circle()
                             .fill(data.transactionType.color.opacity(0.15))
@@ -73,16 +73,16 @@ struct TransactionSuccessView: View {
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, DS.Spacing.xxxl)
 
                 // Transaction details
                 detailsSection
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, DS.Spacing.xl)
 
                 Spacer()
 
                 // Action buttons - native iOS style
-                VStack(spacing: 12) {
+                VStack(spacing: DS.Spacing.md) {
                     // Primary: Accept
                     Button(action: onAccept) {
                         Text(L10n.Common.accept)
@@ -101,8 +101,8 @@ struct TransactionSuccessView: View {
                     .tint(Color.electricIndigo)
                     .controlSize(.large)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxxl)
             }
         }
     }
@@ -157,9 +157,9 @@ struct TransactionSuccessView: View {
                 tagsRow
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, DS.Spacing.sm)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(Color.netoCard)
         )
     }
@@ -182,12 +182,12 @@ struct TransactionSuccessView: View {
             .font(.title.weight(.bold))
             .foregroundStyle(data.transactionType.color)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.lg)
     }
 
     private var typeRow: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: data.transactionType.iconName)
                 .font(.subheadline)
                 .foregroundStyle(data.transactionType.color)
@@ -203,8 +203,8 @@ struct TransactionSuccessView: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(data.transactionType.color)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
     }
 
     private var formattedDate: String {
@@ -215,7 +215,7 @@ struct TransactionSuccessView: View {
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -232,12 +232,12 @@ struct TransactionSuccessView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
     }
 
     private var accountRow: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: "creditcard")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -249,7 +249,7 @@ struct TransactionSuccessView: View {
 
             Spacer()
 
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(Color(hex: data.accountColorHex))
                     .frame(width: 8, height: 8)
@@ -258,14 +258,14 @@ struct TransactionSuccessView: View {
                     .foregroundStyle(.primary)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
     }
 
     private var transferAccountsRow: some View {
         VStack(spacing: 0) {
             // Source account
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.up.circle")
                     .font(.subheadline)
                     .foregroundStyle(Color.hotPink)
@@ -277,7 +277,7 @@ struct TransactionSuccessView: View {
 
                 Spacer()
 
-                HStack(spacing: 6) {
+                HStack(spacing: DS.Spacing.xs) {
                     Circle()
                         .fill(Color(hex: data.accountColorHex))
                         .frame(width: 8, height: 8)
@@ -286,14 +286,14 @@ struct TransactionSuccessView: View {
                         .foregroundStyle(.primary)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
 
             // Destination account
             if let destName = data.destinationAccountName,
                 let destColor = data.destinationAccountColorHex
             {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "arrow.down.circle")
                         .font(.subheadline)
                         .foregroundStyle(Color.electricIndigo)
@@ -305,7 +305,7 @@ struct TransactionSuccessView: View {
 
                     Spacer()
 
-                    HStack(spacing: 6) {
+                    HStack(spacing: DS.Spacing.xs) {
                         Circle()
                             .fill(Color(hex: destColor))
                             .frame(width: 8, height: 8)
@@ -325,14 +325,14 @@ struct TransactionSuccessView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
             }
         }
     }
 
     private var categoryRow: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -344,9 +344,9 @@ struct TransactionSuccessView: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                 if let subcatName = data.subcategoryName {
-                    HStack(spacing: 6) {
+                    HStack(spacing: DS.Spacing.xs) {
                         Circle()
                             .fill(
                                 Color(
@@ -366,12 +366,12 @@ struct TransactionSuccessView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
     }
 
     private func natureRow(nature: SubcategoryNature) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: "leaf")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -383,7 +383,7 @@ struct TransactionSuccessView: View {
 
             Spacer()
 
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(nature.color)
                     .frame(width: 6, height: 6)
@@ -392,18 +392,18 @@ struct TransactionSuccessView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
             .background(
                 Capsule().fill(nature.color.opacity(0.1))
             )
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
     }
 
     private var tagsRow: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: DS.Spacing.md) {
             Image(systemName: "number")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -416,9 +416,9 @@ struct TransactionSuccessView: View {
             Spacer()
 
             // Tags as chips - right aligned
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 ForEach(data.tags, id: \.name) { tag in
-                    HStack(spacing: 4) {
+                    HStack(spacing: DS.Spacing.xs) {
                         Circle()
                             .fill(Color(hex: tag.colorHex))
                             .frame(width: 6, height: 6)
@@ -426,8 +426,8 @@ struct TransactionSuccessView: View {
                             .font(.caption)
                             .foregroundStyle(.primary)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xs)
                     .background(
                         Capsule()
                             .fill(Color(UIColor.label).opacity(0.08))
@@ -435,8 +435,8 @@ struct TransactionSuccessView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
     }
 }
 

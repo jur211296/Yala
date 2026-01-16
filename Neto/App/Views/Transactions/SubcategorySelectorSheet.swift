@@ -26,10 +26,10 @@ struct SubcategorySelectorSheet: View {
     let transactionType: TransactionType
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: DS.Spacing.md),
+        GridItem(.flexible(), spacing: DS.Spacing.md),
+        GridItem(.flexible(), spacing: DS.Spacing.md),
+        GridItem(.flexible(), spacing: DS.Spacing.md),
     ]
 
     var body: some View {
@@ -38,10 +38,10 @@ struct SubcategorySelectorSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: DS.Spacing.xl) {
                         if groupedSubcategories.isEmpty {
                             // Empty state
-                            VStack(spacing: 16) {
+                            VStack(spacing: DS.Spacing.lg) {
                                 Image(systemName: "tag.slash")
                                     .font(.system(size: 48))
                                     .foregroundStyle(.secondary)
@@ -54,8 +54,8 @@ struct SubcategorySelectorSheet: View {
                         } else {
                             // Recientes section (if any)
                             if !recentSubcategories.isEmpty {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    HStack(spacing: 8) {
+                                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                                    HStack(spacing: DS.Spacing.sm) {
                                         Image(systemName: "clock.arrow.circlepath")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
@@ -63,9 +63,9 @@ struct SubcategorySelectorSheet: View {
                                             .font(.subheadline.weight(.semibold))
                                             .foregroundStyle(.secondary)
                                     }
-                                    .padding(.leading, 4)
+                                    .padding(.leading, DS.Spacing.xs)
 
-                                    LazyVGrid(columns: columns, spacing: 12) {
+                                    LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
                                         ForEach(recentSubcategories, id: \.persistentModelID) {
                                             subcategory in
                                             SubcategoryGridItem(
@@ -82,7 +82,7 @@ struct SubcategorySelectorSheet: View {
                                 }
 
                                 Divider()
-                                    .padding(.vertical, 4)
+                                    .padding(.vertical, DS.Spacing.xs)
                             }
 
                             // All categories
@@ -101,8 +101,8 @@ struct SubcategorySelectorSheet: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 20)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xl)
                 }
             }
             .navigationTitle(L10n.Transaction.subcategory)
@@ -199,9 +199,9 @@ struct SubcategoryGridSection: View {
     let onSelect: (Subcategory) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Category header
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 Circle()
                     .fill(Color(hex: category.colorHex))
                     .frame(width: 10, height: 10)
@@ -209,10 +209,10 @@ struct SubcategoryGridSection: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .padding(.leading, 4)
+            .padding(.leading, DS.Spacing.xs)
 
             // Subcategories grid
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
                 ForEach(subcategories, id: \.persistentModelID) { subcategory in
                     SubcategoryGridItem(
                         subcategory: subcategory,
@@ -241,7 +241,7 @@ struct SubcategoryGridItem: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            VStack(spacing: DS.Spacing.xs) {
                 ZStack {
                     Circle()
                         .fill(Color(hex: effectiveColor).opacity(isSelected ? 1 : 0.15))

@@ -138,7 +138,7 @@ struct SubcategoryFormRow: View {
                         .frame(width: DS.FormRow.iconWidth)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Transaction.subcategory)
                         .font(.body)
                         .foregroundStyle(hasError ? .red : .primary)
@@ -153,7 +153,7 @@ struct SubcategoryFormRow: View {
                 Spacer()
 
                 if let subcategory = subcategory {
-                    HStack(spacing: 8) {
+                    HStack(spacing: DS.Spacing.sm) {
                         // Chip de naturaleza
                         NatureChip(nature: subcategory.nature)
 

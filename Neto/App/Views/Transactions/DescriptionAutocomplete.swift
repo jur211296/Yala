@@ -109,12 +109,12 @@ struct AutocompleteSuggestionsView: View {
     var body: some View {
         if !suggestions.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: DS.Spacing.sm) {
                     ForEach(suggestions) { suggestion in
                         Button {
                             onSelect(suggestion)
                         } label: {
-                            HStack(spacing: 6) {
+                            HStack(spacing: DS.Spacing.xs) {
                                 Circle()
                                     .fill(Color(hex: suggestion.colorHex))
                                     .frame(width: 8, height: 8)
@@ -123,8 +123,8 @@ struct AutocompleteSuggestionsView: View {
                                     .font(.subheadline.weight(.medium))
                                     .lineLimit(1)
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, DS.Spacing.md)
+                            .padding(.vertical, DS.Spacing.sm)
                             .background(
                                 Capsule()
                                     .fill(Color.netoCard)
@@ -138,7 +138,7 @@ struct AutocompleteSuggestionsView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, DS.Spacing.lg)
             }
             .frame(height: 44)
         }

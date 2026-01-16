@@ -104,7 +104,7 @@ struct KeypadButtonView: View {
         } label: {
             ZStack {
                 if isPressed {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm)
                         .fill(Color.electricIndigo.opacity(0.15))
                 }
 

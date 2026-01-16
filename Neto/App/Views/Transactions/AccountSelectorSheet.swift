@@ -29,7 +29,7 @@ struct AccountSelectorSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: "") {
                             VStack(spacing: 0) {
                                 ForEach(
@@ -51,8 +51,8 @@ struct AccountSelectorSheet: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(title)
@@ -87,7 +87,7 @@ struct AccountSelectorRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 Circle()
                     .fill(Color(hex: account.colorHex))
                     .frame(width: 36, height: 36)
@@ -97,7 +97,7 @@ struct AccountSelectorRow: View {
                             .foregroundStyle(.white)
                     )
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(account.name)
                         .font(.body)
                         .foregroundStyle(.primary)
@@ -115,8 +115,8 @@ struct AccountSelectorRow: View {
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -27,15 +27,15 @@ struct TagSelectorSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         if activeTags.isEmpty {
                             emptyState
                         } else {
                             tagsList
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Settings.tags)
@@ -78,8 +78,8 @@ struct TagSelectorSheet: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.lg) {
+            VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "tag.slash")
                     .font(.system(size: 40))
                     .foregroundStyle(.secondary)
@@ -102,7 +102,7 @@ struct TagSelectorSheet: View {
     }
 
     private var tagsList: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: "") {
                 VStack(spacing: 0) {
                     ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) {
@@ -128,15 +128,15 @@ struct TagSelectorSheet: View {
                 tagCountBeforeSheet = activeTags.count
                 showNewTagSheet = true
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(Color.electricIndigo)
                     Text(L10n.Tag.newTag)
                         .foregroundStyle(.primary)
                     Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -167,7 +167,7 @@ struct TagSelectorRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 // Color circle
                 Circle()
                     .fill(Color(hex: tag.colorHex))
@@ -190,8 +190,8 @@ struct TagSelectorRow: View {
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
