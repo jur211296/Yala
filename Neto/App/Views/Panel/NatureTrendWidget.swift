@@ -261,7 +261,7 @@ struct NatureTrendChartView: View {
                             y: .value("Monto", item.amount)
                         )
                         .foregroundStyle(item.nature.color.gradient)
-                        .cornerRadius(4)
+                        .cornerRadius(DS.Radius.xs)
                     }
                 } else {
                     BarMark(
@@ -269,7 +269,7 @@ struct NatureTrendChartView: View {
                         y: .value("Monto", item.amount)
                     )
                     .foregroundStyle(item.nature.color.gradient)
-                    .cornerRadius(4)
+                    .cornerRadius(DS.Radius.xs)
                 }
             }
         }

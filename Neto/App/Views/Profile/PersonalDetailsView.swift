@@ -140,7 +140,7 @@ struct PersonalDetailsView: View {
                             .multilineTextAlignment(.trailing)
                             .foregroundStyle(.primary)
                     }
-                    .padding(16)
+                    .padding(DS.Spacing.lg)
 
                     // Character count
                     if !editedName.isEmpty {
@@ -149,8 +149,8 @@ struct PersonalDetailsView: View {
                             .foregroundStyle(
                                 editedName.count >= maxNameLength ? .orange : .secondary
                             )
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 12)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.bottom, DS.Spacing.md)
                     }
                 }
 
@@ -168,7 +168,7 @@ struct PersonalDetailsView: View {
                             .autocapitalization(.none)
                             .autocorrectionDisabled()
                     }
-                    .padding(16)
+                    .padding(DS.Spacing.lg)
 
                     // Validation message
                     if !editedAlias.isEmpty {

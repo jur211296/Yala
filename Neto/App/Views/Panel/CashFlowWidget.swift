@@ -238,7 +238,7 @@ struct CashFlowWidget: View {
                                 y: .value("Expense", data.expense)
                             )
                             .foregroundStyle(Color.expenseGraph.gradient)
-                            .cornerRadius(4)
+                            .cornerRadius(DS.Radius.xs)
                         } else if hasOnlyIncome {
                             // Only income mode: show income bars upward (teal)
                             BarMark(
@@ -246,7 +246,7 @@ struct CashFlowWidget: View {
                                 y: .value("Income", data.income)
                             )
                             .foregroundStyle(Color.incomeGraph.gradient)
-                            .cornerRadius(4)
+                            .cornerRadius(DS.Radius.xs)
                         } else {
                             // Default bidirectional mode
                             // Income (Up) - Teal bars
@@ -255,7 +255,7 @@ struct CashFlowWidget: View {
                                 y: .value("Income", data.income)
                             )
                             .foregroundStyle(Color.incomeGraph.gradient)
-                            .cornerRadius(4)
+                            .cornerRadius(DS.Radius.xs)
 
                             // Expense (Down)
                             BarMark(
@@ -263,7 +263,7 @@ struct CashFlowWidget: View {
                                 y: .value("Expense", -data.expense)
                             )
                             .foregroundStyle(Color.expenseGraph.gradient)
-                            .cornerRadius(4)
+                            .cornerRadius(DS.Radius.xs)
 
                             // Net Flow Line - Purple line
                             if grouping == .month {

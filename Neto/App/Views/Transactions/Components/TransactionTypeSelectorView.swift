@@ -37,8 +37,8 @@ struct TransactionTypeSelectorView: View {
                 }
             }
         }
-        .padding(4)
+        .padding(DS.Spacing.xs)
         .background(Capsule().fill(Color.netoCard))
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 }

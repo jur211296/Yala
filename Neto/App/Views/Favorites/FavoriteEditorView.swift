@@ -160,7 +160,7 @@ struct FavoriteEditorView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
+        .padding(DS.Spacing.xs)
         .background(
             Capsule()
                 .fill(Color(UIColor.label).opacity(0.08))

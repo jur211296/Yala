@@ -398,7 +398,7 @@ struct TagsPieWidget: View {
                     innerRadius: .ratio(innerRadiusRatio),
                     angularInset: 1.5
                 )
-                .cornerRadius(5)
+                .cornerRadius(DS.Radius.xs)
                 .foregroundStyle(Color(hex: item.colorHex))
                 .opacity(isDimmed(item) ? 0.3 : 1.0)
             }
