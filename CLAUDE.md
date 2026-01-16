@@ -1,5 +1,12 @@
 # Neto (iOS)
 
+## Decisiones Recientes (TTL: hasta cierre de fase)
+
+Esta sección contiene decisiones de diseño tomadas en la fase actual del ROADMAP.
+Al cerrar la fase, este contenido se archiva en DECISIONS.md.
+
+[Aquí irán decisiones temporales con formato: [FECHA] Decisión breve]
+
 ## Producto
 Neto es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, presupuestos y reportes con claridad.
 
