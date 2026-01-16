@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Phase: 5 of 8 (Visualizaciones Categorías)
 Plan: In progress
-Status: Design System migrado a ~45 archivos
-Last activity: 2026-01-15 — Migración masiva de tokens DS
+Status: Migración DS completada, pendiente Var% y carrusel naturaleza
+Last activity: 2026-01-16 — Migración DS 100% completada
 
-Progress: ██████████░░░░ 70% (Fase 5)
+Progress: ███████████░░░ 80% (Fase 5)
 
 ---
 
@@ -23,7 +23,7 @@ Progress: ██████████░░░░ 70% (Fase 5)
 
 ## Completed in Current Phase
 
-- **Migración Design System (DS tokens)** a 40+ archivos de vistas
+- **Migración Design System (DS tokens)** completa en todas las vistas
   - Panel/: PanelView, widgets, AccountCardView
   - Statistics/: TrendsTabView, RecordsTabView, CategoriesTabView, DetailContainerView
   - Settings/: Todas las vistas de configuración
@@ -45,8 +45,7 @@ Progress: ██████████░░░░ 70% (Fase 5)
 
 ## Next Steps
 
-- Migrar vistas restantes a DS tokens (~20 archivos pendientes)
-- Var% vs periodo anterior en barras de tendencia
+- **[IN PROGRESS]** Var% vs periodo anterior en pie charts de CategoriesTabView
 - Carrusel naturaleza compacto con variación
 
 ## Parking Lot
@@ -59,7 +58,7 @@ Progress: ██████████░░░░ 70% (Fase 5)
 
 ## Session Continuity
 
-Last session: 2026-01-15 19:10
-Stopped at: Shared/ 100% migrado a DS
-Next step: Migrar vistas restantes (~45 archivos) o Var% en tendencias
+Last session: 2026-01-16
+Stopped at: Migración DS 100% completada
+Next step: Var% en barras de tendencia o Carrusel naturaleza compacto
 Resume file: None

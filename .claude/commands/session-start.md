@@ -22,14 +22,24 @@ PASOS:
 
 4. Registra el objetivo de la sesión en el log
 
-5. Guarda la ruta del session file en archivo temporal:
-   ```bash
+5. Guarda la ruta del session file en variable de entorno o archivo temporal:
+```bash
    echo $SESSION_FILE > /tmp/current-session
-   ```
+```
 
-6. Informa: "Sesión iniciada. Logging automático activado."
+6. PRESENTA CONFIRMACIÓN Y DETENTE:
+   Informa al usuario:
+   - "Sesión iniciada y registrada"
+   - "Objetivo: [el objetivo que declaró el usuario]"
+   - "Session log creado en: [ruta del archivo]"
+   - "Listo para empezar. ¿Qué incremento quieres que implemente?"
+   
+   CRÍTICO: NO EMPEZAR A IMPLEMENTAR AUTOMÁTICAMENTE
+   - Esperar instrucción explícita del usuario
+   - El usuario dirá algo como "Implementa Incremento 1" o "Implementa el primer incremento"
+   - SOLO después de esa instrucción explícita proceder con implementación
 
-FORMATO DEL SESSION LOG:
+FORMATO DEL LOG:
 ```markdown
 # Session Started: [timestamp ISO]
 
@@ -50,13 +60,7 @@ FORMATO DEL SESSION LOG:
 [Se llenará al final con session-end]
 ```
 
-SESSION LOGGING (para otros comandos):
-En /verify-ios, /test-ios, /commit-one:
-1. Verifica si existe /tmp/current-session
-2. Si existe, lee la ruta del session file
-3. Agrega entrada al log:
-   ```bash
-   echo "[$(date -Iseconds)] [COMANDO] [resultado] [detalles breves]" >> $SESSION_FILE
-   ```
-
-De esta forma cada acción importante queda registrada automáticamente sin esfuerzo adicional.
+REGLAS:
+- Este comando SOLO registra el inicio de sesión, NO implementa código
+- La implementación comienza cuando el usuario lo indique explícitamente
+- Si el usuario ya tiene un plan de incrementos de /gsd:next, debe referirse a ellos por número
