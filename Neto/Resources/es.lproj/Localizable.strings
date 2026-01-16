@@ -542,6 +542,8 @@
 "listViewType.categories" = "Categorías";
 "listViewType.subcategories" = "Subcategorías";
 
+"comparison.month" = "Mes";
+"comparison.year" = "Año";
 
 "statistics.noRecordsFiltered" = "No se encontraron registros con los filtros aplicados.";
 "statistics.noRecordsDescription" = "Cuando registres movimientos, aparecerán aquí.";

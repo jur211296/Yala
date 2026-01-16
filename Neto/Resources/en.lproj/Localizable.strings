@@ -542,6 +542,8 @@
 "listViewType.categories" = "Categories";
 "listViewType.subcategories" = "Subcategories";
 
+"comparison.month" = "Month";
+"comparison.year" = "Year";
 
 "statistics.noRecordsFiltered" = "No records found with the applied filters.";
 "statistics.noRecordsDescription" = "When you add transactions, they will appear here.";

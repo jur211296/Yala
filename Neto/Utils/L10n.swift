@@ -1273,6 +1273,13 @@ enum L10n {
         }
     }
 
+    // MARK: - Comparison Mode
+
+    enum Comparison {
+        static var month: String { NSLocalizedString("comparison.month", comment: "Month comparison") }
+        static var year: String { NSLocalizedString("comparison.year", comment: "Year comparison") }
+    }
+
     // MARK: - Validation
 
     enum Validation {
