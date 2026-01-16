@@ -33,3 +33,12 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 - Evitar refactors grandes si no son necesarios para el feature actual
 - No introducir dependencias nuevas sin justificación
 - Mantener separación clara entre UI, lógica y capa SwiftData
+
+## System Files Structure
+- CLAUDE.md: Operational memory (current context)
+- .planning/PROJECT.md: Product definition and constraints
+- .planning/ROADMAP.md: Phased delivery plan
+- .planning/STATE.md: Living memory of progress and decisions
+- .planning/DECISIONS.md: Architectural decisions record
+- .claude/commands/: Automation macros
+- .claude/sessions/: Session logs (git-ignored)
