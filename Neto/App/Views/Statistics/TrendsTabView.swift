@@ -857,7 +857,7 @@ struct TrendsTabView: View {
                 .padding(.vertical, DS.Spacing.md)
                 .foregroundStyle(Color.electricIndigo)
                 .background(Color.electricIndigo.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .buttonStyle(.plain)
         }
