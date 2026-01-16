@@ -339,12 +339,12 @@ struct NatureSpendingSummary: Identifiable {
 
     var id: String { nature.rawValue }
 
-    // Color helper
+    // Color helper - uses distinct nature colors (not brand colors)
     var color: Color {
         switch nature {
-        case .essential: return .electricIndigo
-        case .priority: return .priorityNature
-        case .optional: return .hotPink
+        case .essential: return .essentialNature    // Amber
+        case .priority: return .priorityNatureNew   // Violet
+        case .optional: return .optionalNature      // Rose
         case .unclassified: return .gray.opacity(0.5)
         }
     }

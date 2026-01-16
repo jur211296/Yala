@@ -57,6 +57,11 @@ struct CategoriesTabView: View {
     @State private var previousCategoryTotal: Double? = nil
     @State private var previousSubcategoryTotal: Double? = nil
     @State private var previousTagTotal: Double? = nil
+    @State private var previousNatureTotal: Double? = nil
+    @State private var previousNatureAmounts: [SubcategoryNature: Double] = [:]
+
+    // Nature Carousel State
+    @State private var natureCarouselIndex: Int? = 0
 
     // MARK: - List View Type
 
@@ -89,7 +94,7 @@ struct CategoriesTabView: View {
                 controlBar
                 spendingAnalysisHeader
                 chartsCarousel
-                natureWidget
+                natureCarousel
                 categoriesListSection
                 recentRecordsSection
             }
@@ -573,9 +578,52 @@ struct CategoriesTabView: View {
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
-    // MARK: - Nature Widget
+    // MARK: - Nature Carousel
 
-    private var natureWidget: some View {
+    private var natureCarousel: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            GeometryReader { geo in
+                let totalWidth = geo.size.width
+                let spacing: CGFloat = DS.Spacing.md
+                let cardWidth = totalWidth
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: spacing) {
+                        // Slide 1: Large (Chart + Legend)
+                        natureWidgetLarge
+                            .frame(width: cardWidth)
+                            .id(0)
+
+                        // Slide 2: Medium (Compact Bars)
+                        natureWidgetCompact
+                            .frame(width: cardWidth)
+                            .id(1)
+                    }
+                    .scrollTargetLayout()
+                }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $natureCarouselIndex)
+                .frame(width: totalWidth)
+            }
+            .frame(height: 340)
+
+            // Page indicator
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(0..<2, id: \.self) { page in
+                    Circle()
+                        .fill(
+                            page == (natureCarouselIndex ?? 0)
+                                ? Color.netoPrimaryText.opacity(0.3)
+                                : Color.netoSecondaryText.opacity(0.2)
+                        )
+                        .frame(width: 6, height: 6)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+    }
+
+    private var natureWidgetLarge: some View {
         NatureTrendWidget(
             trendPoints: natureTrendPoints,
             selectedNature: selectedNature,
@@ -590,7 +638,36 @@ struct CategoriesTabView: View {
                     selectedNature = nature
                 }
             },
-            onShowDetail: nil
+            onShowDetail: nil,
+            period: viewModel.detailPeriod,
+            previousTotalAmount: previousNatureTotal,
+            previousAmountByNature: previousNatureAmounts,
+            showVariationHeader: true,
+            comparisonMode: comparisonMode
+        )
+    }
+
+    private var natureWidgetCompact: some View {
+        NatureTrendWidget(
+            trendPoints: natureTrendPoints,
+            selectedNature: selectedNature,
+            currencyCode: defaultCurrencyCode,
+            size: .medium,
+            grouping: natureGrouping,
+            interval: viewModel.panelDateInterval,
+            onSelectNature: { nature in
+                if selectedNature == nature {
+                    selectedNature = nil
+                } else {
+                    selectedNature = nature
+                }
+            },
+            onShowDetail: nil,
+            period: viewModel.detailPeriod,
+            previousTotalAmount: previousNatureTotal,
+            previousAmountByNature: previousNatureAmounts,
+            showVariationHeader: true,
+            comparisonMode: comparisonMode
         )
     }
 
@@ -888,6 +965,8 @@ struct CategoriesTabView: View {
             previousCategoryTotal = nil
             previousSubcategoryTotal = nil
             previousTagTotal = nil
+            previousNatureTotal = nil
+            previousNatureAmounts = [:]
             return
         }
 
@@ -981,6 +1060,29 @@ struct CategoriesTabView: View {
         for index in tagSpending.indices {
             tagSpending[index].previousAmount = prevTagAmounts[tagSpending[index].tag.persistentModelID]
         }
+
+        // Calculate previous period nature trend data
+        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
+        let previousNaturePoints = NatureTrendHelper.calculateTrend(
+            transactions: previousFiltered,
+            grouping: natureGrouping,
+            interval: previousInterval,
+            preferredCurrency: preferredCurrency,
+            context: modelContext
+        )
+
+        // Calculate totals by nature for previous period
+        var prevNatureAmounts: [SubcategoryNature: Double] = [:]
+        var prevNatureTotal: Double = 0
+        for point in previousNaturePoints {
+            prevNatureAmounts[.essential, default: 0] += point.essential
+            prevNatureAmounts[.priority, default: 0] += point.priority
+            prevNatureAmounts[.optional, default: 0] += point.optional
+            prevNatureAmounts[.unclassified, default: 0] += point.unclassified
+            prevNatureTotal += point.total
+        }
+        previousNatureAmounts = prevNatureAmounts
+        previousNatureTotal = prevNatureTotal > 0 ? prevNatureTotal : nil
 
         // Handle case where there's no data in previous period
         if previousCategoryTotal == 0 { previousCategoryTotal = nil }

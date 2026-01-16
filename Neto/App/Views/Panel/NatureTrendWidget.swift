@@ -18,6 +18,47 @@ struct NatureTrendWidget: View {
     let onSelectNature: (SubcategoryNature) -> Void
     let onShowDetail: (() -> Void)?
 
+    // MARK: - Period Comparison
+
+    var period: DetailPeriod = .thisMonth
+    var previousTotalAmount: Double? = nil
+    var previousAmountByNature: [SubcategoryNature: Double] = [:]
+    var showVariationHeader: Bool = false
+    var comparisonMode: ComparisonMode = .month
+
+    private var totalAmount: Double {
+        trendPoints.reduce(0) { $0 + $1.total }
+    }
+
+    private var variation: Double? {
+        guard let previous = previousTotalAmount else { return nil }
+        return PreviousPeriodHelper.calculateVariation(
+            currentAmount: totalAmount,
+            previousAmount: previous
+        )
+    }
+
+    private var previousInterval: DateInterval {
+        PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: nil)
+    }
+
+    private var comparisonText: String {
+        PreviousPeriodHelper.formatComparisonText(
+            previousInterval: previousInterval,
+            period: period,
+            mode: comparisonMode
+        )
+    }
+
+    /// Calculate variation for a specific nature
+    private func variationForNature(_ nature: SubcategoryNature, currentAmount: Double) -> Double? {
+        guard let previousAmount = previousAmountByNature[nature] else { return nil }
+        return PreviousPeriodHelper.calculateVariation(
+            currentAmount: currentAmount,
+            previousAmount: previousAmount
+        )
+    }
+
     init(
         trendPoints: [NatureTrendPoint],
         selectedNature: SubcategoryNature?,
@@ -26,7 +67,12 @@ struct NatureTrendWidget: View {
         grouping: TrendGrouping,
         interval: DateInterval,
         onSelectNature: @escaping (SubcategoryNature) -> Void,
-        onShowDetail: (() -> Void)? = nil
+        onShowDetail: (() -> Void)? = nil,
+        period: DetailPeriod = .thisMonth,
+        previousTotalAmount: Double? = nil,
+        previousAmountByNature: [SubcategoryNature: Double] = [:],
+        showVariationHeader: Bool = false,
+        comparisonMode: ComparisonMode = .month
     ) {
         self.trendPoints = trendPoints
         self.selectedNature = selectedNature
@@ -36,29 +82,46 @@ struct NatureTrendWidget: View {
         self.interval = interval
         self.onSelectNature = onSelectNature
         self.onShowDetail = onShowDetail
+        self.period = period
+        self.previousTotalAmount = previousTotalAmount
+        self.previousAmountByNature = previousAmountByNature
+        self.showVariationHeader = showVariationHeader
+        self.comparisonMode = comparisonMode
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Header
             HStack(alignment: .top) {
+                // Left: Title and total amount
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Nature.title)
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
 
-                    // Total amount summary or Period subtitle
-                    // "Este mes", etc. logic is usually outside, but here we can sum
-                    let total = trendPoints.reduce(0) { $0 + $1.total }
+                    // Total amount (always shown)
                     Text(
                         NetoFormatter.currency(
-                            value: total, currencyCode: currencyCode)
+                            value: totalAmount, currencyCode: currencyCode)
                     )
                     .font(.title3.weight(.bold))
                     .foregroundStyle(Color.netoPrimaryText)
                 }
 
                 Spacer()
+
+                // Right: Variation chip and comparison text (only when showVariationHeader)
+                if showVariationHeader && !trendPoints.isEmpty {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                        VariationChip(variation: variation, size: .medium)
+
+                        if !comparisonText.isEmpty {
+                            Text(comparisonText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
 
                 // Navigation / Detail
                 if onShowDetail != nil {
@@ -130,7 +193,8 @@ struct NatureTrendWidget: View {
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
                         isSelected: selectedNature == nil || selectedNature == .essential,
-                        onTap: { onSelectNature(.essential) }
+                        onTap: { onSelectNature(.essential) },
+                        variation: variationForNature(.essential, currentAmount: essentialTotal)
                     )
 
                     // Priority Bar
@@ -140,7 +204,8 @@ struct NatureTrendWidget: View {
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
                         isSelected: selectedNature == nil || selectedNature == .priority,
-                        onTap: { onSelectNature(.priority) }
+                        onTap: { onSelectNature(.priority) },
+                        variation: variationForNature(.priority, currentAmount: priorityTotal)
                     )
 
                     // Optional Bar
@@ -150,7 +215,8 @@ struct NatureTrendWidget: View {
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
                         isSelected: selectedNature == nil || selectedNature == .optional,
-                        onTap: { onSelectNature(.optional) }
+                        onTap: { onSelectNature(.optional) },
+                        variation: variationForNature(.optional, currentAmount: optionalTotal)
                     )
 
                     // Unclassified Bar (only if has value)
@@ -161,7 +227,8 @@ struct NatureTrendWidget: View {
                             maxAmount: maxVal,
                             currencyCode: currencyCode,
                             isSelected: selectedNature == nil || selectedNature == .unclassified,
-                            onTap: { onSelectNature(.unclassified) }
+                            onTap: { onSelectNature(.unclassified) },
+                            variation: variationForNature(.unclassified, currentAmount: unclassifiedTotal)
                         )
                     }
                 }
@@ -276,9 +343,9 @@ struct NatureTrendChartView: View {
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([
-            L10n.Nature.essential: Color.electricIndigo,
-            L10n.Nature.priority: Color.priorityNature,
-            L10n.Nature.optional: Color.hotPink,
+            L10n.Nature.essential: Color.essentialNature,
+            L10n.Nature.priority: Color.priorityNatureNew,
+            L10n.Nature.optional: Color.optionalNature,
             L10n.Nature.unclassified: Color.gray,
         ])
         .chartLegend(.hidden)
@@ -575,12 +642,7 @@ struct LegendItem: View {
     }
 
     private func extensionColor(for nature: SubcategoryNature) -> Color {
-        switch nature {
-        case .essential: return .electricIndigo
-        case .priority: return .priorityNature
-        case .optional: return .hotPink
-        case .unclassified: return .gray
-        }
+        nature.color
     }
 
     private func formattedPercent(_ value: Double, _ total: Double) -> String {
@@ -626,12 +688,7 @@ struct CompactLegendChip: View {
     }
 
     private func chipColor(for nature: SubcategoryNature) -> Color {
-        switch nature {
-        case .essential: return .electricIndigo
-        case .priority: return .priorityNature
-        case .optional: return .hotPink
-        case .unclassified: return .gray
-        }
+        nature.color
     }
 
     private func formattedPercent(_ value: Double, _ total: Double) -> String {
@@ -690,12 +747,13 @@ struct CompactNatureLegendView: View {
 }
 
 // Extension to map nature to color in View
+// Uses distinct colors from brand palette to avoid confusion
 extension SubcategoryNature {
     var color: Color {
         switch self {
-        case .essential: return .electricIndigo
-        case .priority: return .priorityNature
-        case .optional: return .hotPink
+        case .essential: return .essentialNature    // Amber
+        case .priority: return .priorityNatureNew   // Violet
+        case .optional: return .optionalNature      // Rose
         case .unclassified: return .gray
         }
     }
@@ -710,10 +768,12 @@ struct NatureCompactBar: View {
     let currencyCode: String
     let isSelected: Bool
     let onTap: () -> Void
+    var variation: Double? = nil
 
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: DS.Spacing.xs) {
+                // Name and Amount + Variation
                 HStack {
                     Text(nature.displayName)
                         .font(.subheadline)
@@ -722,6 +782,9 @@ struct NatureCompactBar: View {
                     Text(NetoFormatter.currency(value: amount, currencyCode: currencyCode))
                         .font(DS.Typography.amountSmall)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+
+                    // Variation chip (aligned right of amount)
+                    VariationChip(variation: variation, size: .small)
                 }
 
                 // Progress Bar

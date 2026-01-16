@@ -11,18 +11,22 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Phase: 5 of 8 (Visualizaciones Categorías)
 Plan: In progress
-Status: Migración DS completada, pendiente Var% y carrusel naturaleza
-Last activity: 2026-01-16 — Migración DS 100% completada
+Status: Var% completado, pendiente carrusel naturaleza
+Last activity: 2026-01-16 — Fix Var% y selector fuera del carrusel
 
-Progress: ███████████░░░ 80% (Fase 5)
+Progress: ████████████░░ 85% (Fase 5)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-16T15:08:52-05:00] fb30c65 feat: Add period comparison variation (Var%) to statistics widgets
+- [2026-01-16] 59de1fa fix: Move comparison selector outside carousel and fix filtering
+- [2026-01-16] 8553e97 chore: Fix project path in command files
 
 ## Completed in Current Phase
 
+- **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas; selector M/A; chips inline alineados derecha; N/A para All Time
 - **Migración Design System (DS tokens)** completa en todas las vistas
   - Panel/: PanelView, widgets, AccountCardView
   - Statistics/: TrendsTabView, RecordsTabView, CategoriesTabView, DetailContainerView
@@ -45,7 +49,6 @@ Progress: ███████████░░░ 80% (Fase 5)
 
 ## Next Steps
 
-- **[IN PROGRESS]** Var% vs periodo anterior en pie charts de CategoriesTabView
 - Carrusel naturaleza compacto con variación
 
 ## Parking Lot

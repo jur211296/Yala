@@ -150,6 +150,17 @@ extension Color {
     /// Priority Nature: Softer Cyan for „Priority" expenses.
     static let priorityNature = Color(hex: "00C2CB")
 
+    // MARK: - Nature Colors (Distinct from brand colors)
+
+    /// Essential Nature: Warm amber for basic necessities
+    static let essentialNature = Color(hex: "F59E0B")
+
+    /// Priority Nature (Violet): Attention-grabbing but not urgent
+    static let priorityNatureNew = Color(hex: "8B5CF6")
+
+    /// Optional Nature: Soft rose for discretionary spending
+    static let optionalNature = Color(hex: "FB7185")
+
     /// Tag Chip Color: Darker teal in light mode for visibility, bright cyan in dark mode.
     static var tagChipColor: Color {
         #if canImport(UIKit)
