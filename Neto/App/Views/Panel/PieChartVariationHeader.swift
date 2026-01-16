@@ -78,16 +78,18 @@ struct PieChartVariationHeader: View {
 
             Spacer()
 
-            // Right: Variation chip and comparison text
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                // Variation chip
-                variationChip
+            // Right: Variation chip and comparison text (only when there's comparison data)
+            if variation != nil {
+                VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                    // Variation chip
+                    variationChip
 
-                // Comparison period text
-                if !comparisonText.isEmpty {
-                    Text(comparisonText)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    // Comparison period text
+                    if !comparisonText.isEmpty {
+                        Text(comparisonText)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 

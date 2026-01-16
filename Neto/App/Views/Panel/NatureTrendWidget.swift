@@ -110,8 +110,8 @@ struct NatureTrendWidget: View {
 
                 Spacer()
 
-                // Right: Variation chip and comparison text (only when showVariationHeader)
-                if showVariationHeader && !trendPoints.isEmpty {
+                // Right: Variation chip and comparison text (only when showVariationHeader and has data)
+                if showVariationHeader && !trendPoints.isEmpty && variation != nil {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         VariationChip(variation: variation, size: .medium)
 

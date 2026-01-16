@@ -116,8 +116,8 @@ struct TopCategoriesWidget: View {
 
             Spacer()
 
-            // Right: Variation chip and comparison text (only when showVariationHeader)
-            if showVariationHeader && size != .small && !categories.isEmpty {
+            // Right: Variation chip and comparison text (only when showVariationHeader and has data)
+            if showVariationHeader && size != .small && !categories.isEmpty && variation != nil {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     VariationChip(variation: variation, size: .medium)
 

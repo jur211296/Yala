@@ -580,6 +580,11 @@ struct CategoriesTabView: View {
 
     // MARK: - Nature Carousel
 
+    /// Dynamic height based on current carousel page
+    private var natureCarouselHeight: CGFloat {
+        (natureCarouselIndex ?? 0) == 0 ? 340 : 260
+    }
+
     private var natureCarousel: some View {
         VStack(spacing: DS.Spacing.sm) {
             GeometryReader { geo in
@@ -605,7 +610,8 @@ struct CategoriesTabView: View {
                 .scrollPosition(id: $natureCarouselIndex)
                 .frame(width: totalWidth)
             }
-            .frame(height: 340)
+            .frame(height: natureCarouselHeight)
+            .animation(.easeInOut(duration: 0.3), value: natureCarouselIndex)
 
             // Page indicator
             HStack(spacing: DS.Spacing.sm) {
@@ -632,10 +638,12 @@ struct CategoriesTabView: View {
             grouping: natureGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNature: { nature in
-                if selectedNature == nature {
-                    selectedNature = nil
-                } else {
-                    selectedNature = nature
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if selectedNature == nature {
+                        selectedNature = nil
+                    } else {
+                        selectedNature = nature
+                    }
                 }
             },
             onShowDetail: nil,
@@ -656,10 +664,12 @@ struct CategoriesTabView: View {
             grouping: natureGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNature: { nature in
-                if selectedNature == nature {
-                    selectedNature = nil
-                } else {
-                    selectedNature = nature
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if selectedNature == nature {
+                        selectedNature = nil
+                    } else {
+                        selectedNature = nature
+                    }
                 }
             },
             onShowDetail: nil,
@@ -1197,15 +1207,11 @@ struct CategoriesTabView: View {
         defer { isSyncingFilters = false }
 
         if let nature = selectedNature {
-            // Add to ViewModel's selected natures if not already there
-            if !viewModel.selectedNatures.contains(nature) {
-                viewModel.selectedNatures.insert(nature)
-            }
+            // Replace all selected natures with the new one (single selection)
+            viewModel.selectedNatures = [nature]
         } else {
-            // If deselected, remove from ViewModel
-            if viewModel.selectedNatures.count == 1 {
-                viewModel.selectedNatures.removeAll()
-            }
+            // Clear all when deselected
+            viewModel.selectedNatures.removeAll()
         }
     }
 

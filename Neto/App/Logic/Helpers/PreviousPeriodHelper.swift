@@ -229,7 +229,13 @@ enum PreviousPeriodHelper {
     /// - Returns: Formatted string with sign and 1 decimal max (e.g., "+12.5%", "-3.2%")
     static func formatVariation(_ variation: Double?) -> String {
         guard let variation = variation else { return "N/A" }
+        return formatVariationValue(variation)
+    }
 
+    /// Formats a non-nil variation percentage for display
+    /// - Parameter variation: The variation percentage (non-optional)
+    /// - Returns: Formatted string with sign and 1 decimal max (e.g., "+12.5%", "-3.2%")
+    static func formatVariationValue(_ variation: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 1

@@ -61,16 +61,20 @@ struct VariationChip: View {
 
     // MARK: - Body
 
+    @ViewBuilder
     var body: some View {
-        Text(variationText)
-            .font(size.font)
-            .foregroundStyle(variationColor)
-            .padding(.horizontal, size.horizontalPadding)
-            .padding(.vertical, size.verticalPadding)
-            .background(
-                Capsule()
-                    .fill(variationColor.opacity(0.1))
-            )
+        // Hide completely when no variation data (e.g., "All Time" period)
+        if let variation = variation {
+            Text(PreviousPeriodHelper.formatVariationValue(variation))
+                .font(size.font)
+                .foregroundStyle(variationColor)
+                .padding(.horizontal, size.horizontalPadding)
+                .padding(.vertical, size.verticalPadding)
+                .background(
+                    Capsule()
+                        .fill(variationColor.opacity(0.1))
+                )
+        }
     }
 }
 
