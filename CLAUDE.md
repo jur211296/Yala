@@ -52,6 +52,30 @@ Usar el comando apropiado según el tipo de cambio:
 - No introducir dependencias nuevas sin justificación
 - Mantener separación clara entre UI, lógica y capa SwiftData
 
+## Control de Ejecución de Comandos
+
+**CRÍTICO:** Consultar EXECUTION-RULES.md para saber qué comandos requieren instrucción explícita del usuario vs cuáles pueden ejecutarse automáticamente.
+
+**Patrón fundamental después de implementar código:**
+1. Mostrar resumen de cambios realizados
+2. Sugerir el siguiente paso (típicamente /verify-ios)
+3. DETENERSE y esperar instrucción del usuario
+4. NO ejecutar verificaciones o commits automáticamente
+
+**Optimización de comandos Git:**
+- Ejecutar cada comando git de lectura (status, diff, log) UNA SOLA VEZ
+- Guardar el output en variable
+- Reutilizar ese output para todo el análisis posterior
+- NUNCA ejecutar el mismo comando git múltiples veces
+- NUNCA ejecutar comandos git en paralelo
+- SIEMPRE ejecutar comandos git de forma secuencial
+
+**Prevención de corrupción de git index:**
+- Un solo comando git a la vez
+- Esperar que termine completamente antes del siguiente
+- No crear shells en background para operaciones git
+- No matar shells que están ejecutando comandos git
+
 ## Design System (OBLIGATORIO para cambios UI)
 **Antes de modificar cualquier vista, LEER:** `.planning/UI-PATTERNS.md`
 
