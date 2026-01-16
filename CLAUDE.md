@@ -43,6 +43,11 @@ Reglas críticas:
 - SIEMPRE usar colores semánticos (`Color.netoCard`, `Color.electricIndigo`, etc.)
 - SIEMPRE usar componentes estándar: `NetoPrimaryButton`, `NetoEmptyState`, `NetoSectionHeader`, etc.
 
+**Mantenimiento de UI-PATTERNS.md:**
+- Cuando el usuario mencione una regla o patrón UI importante, PROPONER agregarlo a UI-PATTERNS.md
+- Preguntar: "¿Quieres que agregue esta regla a UI-PATTERNS.md para que siempre se respete?"
+- Si el usuario confirma, actualizar el archivo en la sección correspondiente
+
 ## System Files Structure
 - CLAUDE.md: Operational memory (current context)
 - .planning/PROJECT.md: Product definition and constraints
