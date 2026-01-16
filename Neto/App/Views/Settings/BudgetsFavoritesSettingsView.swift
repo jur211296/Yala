@@ -157,12 +157,12 @@ struct BudgetsFavoritesSettingsView: View {
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.netoCard)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
@@ -236,12 +236,12 @@ struct BudgetsFavoritesSettingsView: View {
             .scrollDisabled(true)
             .frame(height: CGFloat(favoriteBudgets.count) * 52)
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.netoCard)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)

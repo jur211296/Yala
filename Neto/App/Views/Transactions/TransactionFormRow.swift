@@ -362,7 +362,7 @@ struct NoteFormRow: View {
         NoteFormRow(note: .constant(""))
     }
     .background(Color.netoCard)
-    .clipShape(RoundedRectangle(cornerRadius: 24))
+    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
     .padding()
     .background(Color.netoBackground)
 }

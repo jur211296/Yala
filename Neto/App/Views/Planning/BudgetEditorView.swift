@@ -470,11 +470,11 @@ struct BudgetEditorView: View {
             }
             .padding(.vertical, DS.Spacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.red.opacity(0.1))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.red.opacity(0.2), lineWidth: 1)
             )
         }
