@@ -34,11 +34,21 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 - No introducir dependencias nuevas sin justificación
 - Mantener separación clara entre UI, lógica y capa SwiftData
 
+## Design System (OBLIGATORIO para cambios UI)
+**Antes de modificar cualquier vista, LEER:** `.planning/UI-PATTERNS.md`
+
+Reglas críticas:
+- SIEMPRE usar tokens de `DS.Spacing`, `DS.Radius`, `DS.Typography` - NUNCA valores hardcodeados
+- SIEMPRE hacer filas completas clicables con `Button` + `contentShape(Rectangle())`
+- SIEMPRE usar colores semánticos (`Color.netoCard`, `Color.electricIndigo`, etc.)
+- SIEMPRE usar componentes estándar: `NetoPrimaryButton`, `NetoEmptyState`, `NetoSectionHeader`, etc.
+
 ## System Files Structure
 - CLAUDE.md: Operational memory (current context)
 - .planning/PROJECT.md: Product definition and constraints
 - .planning/ROADMAP.md: Phased delivery plan
 - .planning/STATE.md: Living memory of progress and decisions
 - .planning/DECISIONS.md: Architectural decisions record
+- .planning/UI-PATTERNS.md: Design system rules and UI patterns (OBLIGATORIO para UI)
 - .claude/commands/: Automation macros
 - .claude/sessions/: Session logs (git-ignored)
