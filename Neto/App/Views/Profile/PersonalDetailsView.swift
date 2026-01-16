@@ -34,7 +34,7 @@ struct PersonalDetailsView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         // Avatar header with photo picker
                         avatarHeader
 
@@ -44,9 +44,9 @@ struct PersonalDetailsView: View {
                         // Privacy disclaimer
                         privacyDisclaimer
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 24)
-                    .padding(.bottom, 32)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.xxl)
+                    .padding(.bottom, DS.Spacing.xxxl)
                 }
             }
             .navigationTitle(L10n.Profile.personalDetails)
@@ -86,7 +86,7 @@ struct PersonalDetailsView: View {
     // MARK: - Avatar Header
 
     private var avatarHeader: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                 ZStack {
                     if let profileImage {
@@ -122,7 +122,7 @@ struct PersonalDetailsView: View {
                 .font(.subheadline)
                 .foregroundStyle(Color.electricIndigo)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, DS.Spacing.sm)
     }
 
     // MARK: - Details Section
@@ -202,7 +202,7 @@ struct PersonalDetailsView: View {
     // MARK: - Privacy Disclaimer
 
     private var privacyDisclaimer: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Profile.privacyTitle)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.primary)
@@ -216,9 +216,9 @@ struct PersonalDetailsView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .italic()
-                .padding(.top, 8)
+                .padding(.top, DS.Spacing.sm)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, DS.Spacing.sm)
     }
 
     // MARK: - Helpers

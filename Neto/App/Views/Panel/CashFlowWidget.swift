@@ -337,13 +337,13 @@ struct CashFlowWidget: View {
                             }),
                             let xPos = proxy.position(forX: selectedData.date)
                         {
-                            VStack(spacing: 6) {
+                            VStack(spacing: DS.Spacing.xs) {
                                 Text(formatTooltipDate(selectedData.date, grouping: grouping))
                                     .font(.caption2)
                                     .foregroundStyle(Color.netoSecondaryText)
 
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 6) {
+                                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                                    HStack(spacing: DS.Spacing.xs) {
                                         Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
                                         Text(
                                             NetoFormatter.currency(
@@ -353,7 +353,7 @@ struct CashFlowWidget: View {
                                         .font(.caption2.bold())
                                         .foregroundStyle(.primary)
                                     }
-                                    HStack(spacing: 6) {
+                                    HStack(spacing: DS.Spacing.xs) {
                                         Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
                                         Text(
                                             NetoFormatter.currency(
@@ -364,7 +364,7 @@ struct CashFlowWidget: View {
                                         .foregroundStyle(.primary)
                                     }
                                     Divider()
-                                    HStack(spacing: 6) {
+                                    HStack(spacing: DS.Spacing.xs) {
                                         Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
                                         Text(
                                             NetoFormatter.currency(
@@ -376,7 +376,7 @@ struct CashFlowWidget: View {
                                     }
                                 }
                             }
-                            .padding(8)
+                            .padding(DS.Spacing.sm)
                             .background(
                                 RoundedRectangle(cornerRadius: DS.Radius.sm)
                                     .fill(Color.netoCard)
@@ -410,7 +410,7 @@ struct CashFlowWidget: View {
 
                 VStack(spacing: DS.Spacing.md) {
                     // Income Group
-                    VStack(spacing: 6) {
+                    VStack(spacing: DS.Spacing.xs) {
                         HStack {
                             Text(L10n.CashFlow.income)
                                 .font(.subheadline)
@@ -443,7 +443,7 @@ struct CashFlowWidget: View {
                     }
 
                     // Expense Group
-                    VStack(spacing: 6) {
+                    VStack(spacing: DS.Spacing.xs) {
                         HStack {
                             Text(L10n.Transaction.expense)
                                 .font(.subheadline)
@@ -530,9 +530,9 @@ struct CashFlowLegendView: View {
     let showNet: Bool
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: DS.Spacing.lg) {
             // Income
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(Color.incomeGraph)
                     .frame(width: 6, height: 6)
@@ -542,7 +542,7 @@ struct CashFlowLegendView: View {
             }
 
             // Expense
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(Color.expenseGraph)
                     .frame(width: 6, height: 6)
@@ -553,7 +553,7 @@ struct CashFlowLegendView: View {
 
             // Net (only for monthly grouping)
             if showNet {
-                HStack(spacing: 4) {
+                HStack(spacing: DS.Spacing.xs) {
                     Circle()
                         .fill(Color.brandPrimary)
                         .frame(width: 6, height: 6)

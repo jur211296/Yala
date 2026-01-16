@@ -123,7 +123,7 @@ struct TagFormView: View {
             }
             .sheet(isPresented: $isPresentingColorPicker) {
                 NavigationStack {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         ColorPicker(
                             L10n.Common.selectColor,
                             selection: $customColor,
@@ -167,7 +167,7 @@ struct TagFormView: View {
     private var generalSection: some View {
         SectionBox(title: L10n.Common.general) {
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "tag")
                         .foregroundStyle(.secondary)
                     TextField(L10n.Tag.namePlaceholder, text: $name)

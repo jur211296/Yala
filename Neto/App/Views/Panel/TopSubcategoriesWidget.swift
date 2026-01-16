@@ -35,7 +35,7 @@ struct TopSubcategoriesWidget: View {
     @Query(sort: \Category.name) private var allCategories: [Category]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: size == .small ? 12 : 16) {
+        VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
             headerSection
 
             if subcategories.isEmpty {
@@ -59,7 +59,7 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Row 1: Title + Chevron
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -242,7 +242,7 @@ struct TopSubcategoriesWidget: View {
     private var smallCardContent: some View {
         Group {
             if let top = subcategories.first {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     // Icon
                     ZStack {
                         Circle()
@@ -297,7 +297,7 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             if size == .small {
                 Image(systemName: "list.bullet.rectangle.portrait")
                     .font(.largeTitle)
@@ -324,7 +324,7 @@ struct TopSubcategoriesWidget: View {
         }
         .frame(maxWidth: .infinity)
         .frame(minHeight: size == .small ? 120 : 180)
-        .padding(.vertical, size == .small ? 12 : 24)
+        .padding(.vertical, size == .small ? DS.Spacing.md : DS.Spacing.xxl)
     }
 
     // MARK: - Formatters
@@ -349,10 +349,10 @@ private struct SubcategoryRow: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             VStack(alignment: .leading, spacing: 4) {
                 // Name + Amount
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     // Icon (Default placeholder as requested)
                     ZStack {
                         Circle()
@@ -382,7 +382,7 @@ private struct SubcategoryRow: View {
                         }
 
                         // Percentages logic
-                        HStack(spacing: 8) {
+                        HStack(spacing: DS.Spacing.sm) {
                             Text(
                                 "\(formattedPercentage(summary.percentageOfCategory)) \(String(format: L10n.Widget.of, summary.category?.name ?? L10n.Widget.categoryAbbr))"
                             )

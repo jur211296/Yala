@@ -17,14 +17,14 @@ struct BudgetRowView: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 // Top row: Icon + Name + Amount
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     // Icon badge
                     budgetIcon
 
                     // Budget name
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(summary.budget.name)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.primary)
@@ -37,7 +37,7 @@ struct BudgetRowView: View {
                     Spacer()
 
                     // Amount (right-aligned)
-                    VStack(alignment: .trailing, spacing: 2) {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                         Text(formattedSpent)
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)

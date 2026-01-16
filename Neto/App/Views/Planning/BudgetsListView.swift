@@ -37,29 +37,29 @@ struct BudgetsListView: View {
             VStack(spacing: 0) {
                 // Period type segmented control
                 periodTypeSegmentedControl
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.md)
+                    .padding(.bottom, DS.Spacing.sm)
 
                 // Period selector button and hide inactive toggle (hidden for "Unique" mode)
                 if selectedSegment != 3 {
-                    HStack(spacing: 12) {
+                    HStack(spacing: DS.Spacing.md) {
                         periodSelectorButton
 
                         Spacer()
 
                         hideInactiveButton
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.md)
                 } else {
                     // For unique mode, only show the hide inactive button
                     HStack {
                         Spacer()
                         hideInactiveButton
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.md)
                 }
 
                 // Budgets list or empty state
@@ -134,7 +134,7 @@ struct BudgetsListView: View {
         Button {
             showPeriodSelector = true
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(currentPeriodText)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
@@ -143,8 +143,8 @@ struct BudgetsListView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
         }
         .buttonStyle(.plain)
     }
@@ -249,7 +249,7 @@ struct BudgetsListView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xxl) {
             Spacer()
 
             ZStack {
@@ -268,7 +268,7 @@ struct BudgetsListView: View {
                     )
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: DS.Spacing.sm) {
                 Text(NSLocalizedString("budgets.empty.title", comment: ""))
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -288,14 +288,14 @@ struct BudgetsListView: View {
 
     private var budgetsList: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                 ForEach(viewModel.groupedBudgets, id: \.status) { section in
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
                         // Section header
                         Text(section.status.localizedName)
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, DS.Spacing.lg)
 
                         // Budget cards
                         ForEach(section.budgets) { summary in
@@ -306,12 +306,12 @@ struct BudgetsListView: View {
                                 viewModel.editingBudget = summary.budget
                                 viewModel.showBudgetEditor = true
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, DS.Spacing.lg)
                         }
                     }
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, DS.Spacing.sm)
             .padding(.bottom, 100)  // Space for FAB
         }
     }
