@@ -51,6 +51,11 @@ struct PanelCalculationContext {
     /// Nature-filtered transactions with subcategory filter pre-applied
     let fullyFilteredTransactions: [TransactionItem]
 
+    /// Transactions with all filters EXCEPT date (for previous period comparison)
+    /// Has: account, category, subcategory, nature, tags, currency, amount filters
+    /// Does NOT have: date filter
+    let transactionsWithoutDateFilter: [TransactionItem]
+
     // MARK: - Period & Interval
 
     /// The selected display period

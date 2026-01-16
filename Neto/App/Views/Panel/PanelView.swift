@@ -68,6 +68,21 @@ struct PanelView: View {
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
         .rawValue
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
+    @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+
+    /// Check if Statistics tab is visible
+    private var isStatisticsVisible: Bool {
+        TabBarConfiguration.fromJSON(tabConfigJSON).activeTabs.contains(.statistics)
+    }
+
+    /// Navigate to Statistics detail, setting temporary tab if needed
+    private func navigateToStatistics(_ detailTab: DetailViewTab) {
+        if !isStatisticsVisible {
+            // Set Statistics as temporary tab (like selecting from "More")
+            sessionState.temporaryTab = .statistics
+        }
+        sessionState.navigateToDetail(detailTab)
+    }
 
     var body: some View {
         NavigationStack {
@@ -623,8 +638,11 @@ struct PanelView: View {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
-                onShowMore: { sessionState.navigateToDetail(.categories) },
-                size: mapWidgetSize(config.size)
+                onShowMore: { navigateToStatistics(.categories) },
+                size: mapWidgetSize(config.size),
+                period: viewModel.selectedPeriod,
+                previousTotalAmount: viewModel.previousCategoriesTotalAmount,
+                showVariationHeader: true
             )
         } else if config.type == .topSubcategories {
             TopSubcategoriesWidget(
@@ -645,8 +663,11 @@ struct PanelView: View {
                     }
                 },
                 selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
-                onShowMore: { sessionState.navigateToDetail(.categories) },
-                size: mapWidgetSize(config.size)
+                onShowMore: { navigateToStatistics(.categories) },
+                size: mapWidgetSize(config.size),
+                period: viewModel.selectedPeriod,
+                previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
+                showVariationHeader: true
             )
         } else if config.type == .categoriesPie {
             CategoriesPieWidget(
@@ -658,8 +679,11 @@ struct PanelView: View {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
-                onShowDetail: { sessionState.navigateToDetail(.categories) },
-                size: config.size
+                onShowDetail: { navigateToStatistics(.categories) },
+                size: config.size,
+                period: viewModel.selectedPeriod,
+                previousTotalAmount: viewModel.previousCategoriesTotalAmount,
+                showVariationHeader: true
             )
         } else if config.type == .subcategoriesPie {
             SubcategoriesPieWidget(
@@ -679,8 +703,11 @@ struct PanelView: View {
                         )
                     }
                 },
-                onShowDetail: { sessionState.navigateToDetail(.categories) },
-                size: config.size
+                onShowDetail: { navigateToStatistics(.categories) },
+                size: config.size,
+                period: viewModel.selectedPeriod,
+                previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
+                showVariationHeader: true
             )
         } else if config.type == .cashFlow {
             if let summary = viewModel.cashFlowSummary {
@@ -690,7 +717,7 @@ struct PanelView: View {
                     period: viewModel.selectedPeriod.rawValue,
                     grouping: viewModel.cashFlowGrouping,
                     interval: viewModel.currentInterval,
-                    onShowDetail: { sessionState.navigateToDetail(.trends) },
+                    onShowDetail: { navigateToStatistics(.trends) },
                     displayMode: viewModel.trendType
                 )
             } else {
@@ -700,7 +727,7 @@ struct PanelView: View {
             RecentRecordsWidget(
                 records: viewModel.latestRecords,
                 currencyCode: preferredCurrency.rawValue,
-                onShowMore: { sessionState.navigateToDetail(.records) }
+                onShowMore: { navigateToStatistics(.records) }
             )
         } else if config.type == .expensesByNature {
             NatureTrendWidget(
@@ -715,7 +742,7 @@ struct PanelView: View {
                         viewModel.toggleNatureFilter(nature)
                     }
                 },
-                onShowDetail: { sessionState.navigateToDetail(.categories) }
+                onShowDetail: { navigateToStatistics(.categories) }
             )
         } else if config.type == .exchangeRate {
             ExchangeRateWidget(

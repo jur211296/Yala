@@ -282,16 +282,28 @@ struct CategorySpendingSummary: Identifiable {
     let category: Category
     let amount: Double
     let percentage: Double
+    var previousAmount: Double? = nil  // For period comparison
 
     var id: PersistentIdentifier { category.persistentModelID }
+
+    /// Variation percentage vs previous period
+    var variation: Double? {
+        PreviousPeriodHelper.calculateVariation(currentAmount: amount, previousAmount: previousAmount ?? 0)
+    }
 }
 
 struct TagSpendingSummary: Identifiable {
     let tag: Tag
     let amount: Double
     let percentage: Double
+    var previousAmount: Double? = nil  // For period comparison
 
     var id: PersistentIdentifier { tag.persistentModelID }
+
+    /// Variation percentage vs previous period
+    var variation: Double? {
+        PreviousPeriodHelper.calculateVariation(currentAmount: amount, previousAmount: previousAmount ?? 0)
+    }
 }
 
 struct SubcategorySpendingSummary: Identifiable {
@@ -300,6 +312,7 @@ struct SubcategorySpendingSummary: Identifiable {
     let amount: Double
     let percentageOfTotal: Double
     let percentageOfCategory: Double
+    var previousAmount: Double? = nil  // For period comparison
 
     var id: String { subcategoryName }
 
@@ -311,6 +324,11 @@ struct SubcategorySpendingSummary: Identifiable {
     /// PersistentIdentifier for filtering (nil for "No Subcategory" case)
     var persistentID: PersistentIdentifier? {
         subcategory?.persistentModelID
+    }
+
+    /// Variation percentage vs previous period
+    var variation: Double? {
+        PreviousPeriodHelper.calculateVariation(currentAmount: amount, previousAmount: previousAmount ?? 0)
     }
 }
 

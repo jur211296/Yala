@@ -542,6 +542,10 @@
 "listViewType.categories" = "Categorie";
 "listViewType.subcategories" = "Sottocategorie";
 
+"comparison.month" = "Mese";
+"comparison.year" = "Anno";
+"comparison.monthShort" = "-1P";
+"comparison.yearShort" = "-1A";
 
 "statistics.noRecordsFiltered" = "Nessuna registrazione trovata con i filtri applicati.";
 "statistics.noRecordsDescription" = "Quando registrerai transazioni, appariranno qui.";

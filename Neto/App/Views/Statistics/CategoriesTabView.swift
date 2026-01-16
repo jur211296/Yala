@@ -883,6 +883,14 @@ struct CategoriesTabView: View {
     // MARK: - Previous Period Calculation
 
     private func calculatePreviousPeriodTotals() {
+        // Skip previous period calculation for "All Time" (no meaningful comparison)
+        guard viewModel.detailPeriod != .allTime else {
+            previousCategoryTotal = nil
+            previousSubcategoryTotal = nil
+            previousTagTotal = nil
+            return
+        }
+
         // Get previous period interval based on comparison mode
         let previousInterval = PreviousPeriodHelper.previousInterval(
             for: viewModel.detailPeriod,
@@ -920,6 +928,14 @@ struct CategoriesTabView: View {
         )
         previousCategoryTotal = previousCategorySpending.reduce(0) { $0 + $1.amount }
 
+        // Populate previousAmount on each category item
+        let prevCategoryAmounts = Dictionary(
+            uniqueKeysWithValues: previousCategorySpending.map { ($0.category.persistentModelID, $0.amount) }
+        )
+        for index in categorySpending.indices {
+            categorySpending[index].previousAmount = prevCategoryAmounts[categorySpending[index].category.persistentModelID]
+        }
+
         // Calculate previous period subcategory spending (filter by category if selected)
         let prevSubcategoryTransactions: [TransactionItem]
         if let categoryID = selectedCategoryID {
@@ -937,6 +953,19 @@ struct CategoriesTabView: View {
         )
         previousSubcategoryTotal = previousSubcategorySpending.reduce(0) { $0 + $1.amount }
 
+        // Populate previousAmount on each subcategory item
+        let prevSubcategoryAmounts = Dictionary(
+            uniqueKeysWithValues: previousSubcategorySpending.compactMap { summary -> (PersistentIdentifier, Double)? in
+                guard let id = summary.persistentID else { return nil }
+                return (id, summary.amount)
+            }
+        )
+        for index in subcategorySpending.indices {
+            if let id = subcategorySpending[index].persistentID {
+                subcategorySpending[index].previousAmount = prevSubcategoryAmounts[id]
+            }
+        }
+
         // Calculate previous period tag spending
         let previousTagSpending = calculateTagSpending(
             transactions: previousFiltered,
@@ -944,6 +973,14 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode
         )
         previousTagTotal = previousTagSpending.reduce(0) { $0 + $1.amount }
+
+        // Populate previousAmount on each tag item
+        let prevTagAmounts = Dictionary(
+            uniqueKeysWithValues: previousTagSpending.map { ($0.tag.persistentModelID, $0.amount) }
+        )
+        for index in tagSpending.indices {
+            tagSpending[index].previousAmount = prevTagAmounts[tagSpending[index].tag.persistentModelID]
+        }
 
         // Handle case where there's no data in previous period
         if previousCategoryTotal == 0 { previousCategoryTotal = nil }
@@ -1522,10 +1559,17 @@ private struct CategoryRowView: View {
 
                 // Bar and Percentage
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    // Percentage Text
-                    Text("\(formattedPercentage(summary.percentage)) \(L10n.Statistics.ofExpense)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    // Percentage Text + Variation Chip (inline, chip aligned right)
+                    HStack(spacing: DS.Spacing.sm) {
+                        Text("\(formattedPercentage(summary.percentage)) \(L10n.Statistics.ofExpense)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        // Variation chip (aligned to right)
+                        VariationChip(variation: summary.variation, size: .small)
+                    }
 
                     // Bar
                     GeometryReader { geo in
@@ -1598,10 +1642,17 @@ private struct SubcategoryRowView: View {
 
                 // Bar and Percentage
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    // Percentage Text
-                    Text("\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Statistics.ofExpense)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    // Percentage Text + Variation Chip (inline, chip aligned right)
+                    HStack(spacing: DS.Spacing.sm) {
+                        Text("\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Statistics.ofExpense)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        // Variation chip (aligned to right)
+                        VariationChip(variation: summary.variation, size: .small)
+                    }
 
                     // Bar
                     GeometryReader { geo in

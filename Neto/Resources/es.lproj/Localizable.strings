@@ -544,6 +544,8 @@
 
 "comparison.month" = "Mes";
 "comparison.year" = "Año";
+"comparison.monthShort" = "-1P";
+"comparison.yearShort" = "-1A";
 
 "statistics.noRecordsFiltered" = "No se encontraron registros con los filtros aplicados.";
 "statistics.noRecordsDescription" = "Cuando registres movimientos, aparecerán aquí.";

@@ -544,6 +544,8 @@
 
 "comparison.month" = "Month";
 "comparison.year" = "Year";
+"comparison.monthShort" = "-1P";
+"comparison.yearShort" = "-1Y";
 
 "statistics.noRecordsFiltered" = "No records found with the applied filters.";
 "statistics.noRecordsDescription" = "When you add transactions, they will appear here.";

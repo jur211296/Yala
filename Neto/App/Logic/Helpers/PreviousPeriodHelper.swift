@@ -25,8 +25,8 @@ enum ComparisonMode: String, CaseIterable, Identifiable {
 
     var shortName: String {
         switch self {
-        case .month: return "M"
-        case .year: return "A"
+        case .month: return L10n.Comparison.monthShort
+        case .year: return L10n.Comparison.yearShort
         }
     }
 }

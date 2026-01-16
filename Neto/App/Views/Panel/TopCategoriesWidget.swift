@@ -30,6 +30,36 @@ struct TopCategoriesWidget: View {
     var size: CardSize = .large
     var limit: Int? = nil  // nil = show all
 
+    // MARK: - Period Comparison
+
+    var period: DetailPeriod = .thisMonth
+    var previousTotalAmount: Double? = nil
+    var showVariationHeader: Bool = false
+
+    private var totalAmount: Double {
+        categories.reduce(0) { $0 + $1.amount }
+    }
+
+    private var variation: Double? {
+        guard let previous = previousTotalAmount else { return nil }
+        return PreviousPeriodHelper.calculateVariation(
+            currentAmount: totalAmount,
+            previousAmount: previous
+        )
+    }
+
+    private var previousInterval: DateInterval {
+        PreviousPeriodHelper.previousInterval(for: period, mode: .month, customRange: nil)
+    }
+
+    private var comparisonText: String {
+        PreviousPeriodHelper.formatComparisonText(
+            previousInterval: previousInterval,
+            period: period,
+            mode: .month
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
             headerSection
@@ -69,13 +99,36 @@ struct TopCategoriesWidget: View {
 
     private var headerSection: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            // Left: Title and total amount
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
+
+                // Total amount (only for medium/large with variation header)
+                if showVariationHeader && size != .small && !categories.isEmpty {
+                    Text(NetoFormatter.currency(value: totalAmount, currencyCode: currencyCode))
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.primary)
+                }
             }
+
             Spacer()
+
+            // Right: Variation chip and comparison text (only when showVariationHeader)
+            if showVariationHeader && size != .small && !categories.isEmpty {
+                VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                    VariationChip(variation: variation, size: .medium)
+
+                    if !comparisonText.isEmpty {
+                        Text(comparisonText)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
             // Chevron for Detail View
             if onShowMore != nil {
                 Button {
@@ -261,10 +314,17 @@ private struct CategoryRow: View {
 
                 // Bar and Percentage
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    // Percentage Text
-                    Text("\(formattedPercentage(summary.percentage)) \(L10n.Widget.ofExpense)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    // Percentage Text + Variation Chip (inline, chip aligned right)
+                    HStack(spacing: DS.Spacing.sm) {
+                        Text("\(formattedPercentage(summary.percentage)) \(L10n.Widget.ofExpense)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        // Variation chip (aligned to right)
+                        VariationChip(variation: summary.variation, size: .small)
+                    }
 
                     // Bar
                     GeometryReader { geo in

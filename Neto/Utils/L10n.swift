@@ -1281,6 +1281,8 @@ enum L10n {
     enum Comparison {
         static var month: String { NSLocalizedString("comparison.month", comment: "Month comparison") }
         static var year: String { NSLocalizedString("comparison.year", comment: "Year comparison") }
+        static var monthShort: String { NSLocalizedString("comparison.monthShort", comment: "Short for previous period") }
+        static var yearShort: String { NSLocalizedString("comparison.yearShort", comment: "Short for previous year") }
     }
 
     // MARK: - Validation

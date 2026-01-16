@@ -39,6 +39,17 @@ final class PanelViewModel {
     var topSpendingCategories: [CategorySpendingSummary] = []
     var chartTransactions: [ChartTransaction] = []
 
+    // Previous period totals (for widget headers)
+    var previousCategoriesTotalAmount: Double? {
+        let sum = topSpendingCategories.compactMap { $0.previousAmount }.reduce(0, +)
+        return sum > 0 ? sum : nil
+    }
+
+    var previousSubcategoriesTotalAmount: Double? {
+        let sum = topSubcategories.compactMap { $0.previousAmount }.reduce(0, +)
+        return sum > 0 ? sum : nil
+    }
+
     // Subcategory Widget State
     var topSubcategories: [SubcategorySpendingSummary] = []
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
@@ -625,6 +636,49 @@ final class PanelViewModel {
             return true
         }
 
+        // Transactions filtered by all criteria EXCEPT date (for previous period comparison)
+        // Excludes adjustments like expenseFiltered does
+        let transactionsWithoutDateFilter = transactions.filter { transaction in
+            // Exclude adjustments
+            guard transaction.balanceAdjustmentType == nil else { return false }
+
+            guard let account = transaction.account else { return false }
+            if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
+            // NO DATE FILTER HERE - that's the point
+
+            // Category Filter - NO category filter for comparison (compare all categories)
+            // Subcategory Filter - NO subcategory filter for comparison (compare all)
+            // Nature Filter - NO nature filter for comparison (compare all)
+
+            // Tag Filter
+            if !selectedTags.isEmpty {
+                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+            }
+
+            // Currency Filter
+            if !selectedCurrencies.isEmpty {
+                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                    return false
+                }
+                if !selectedCurrencies.contains(txCurrency) { return false }
+            }
+
+            // Amount Filter
+            if amountCondition.isActive {
+                let amountDecimal = Decimal(transaction.amount)
+                if !amountCondition.matches(amountDecimal) { return false }
+            }
+
+            // Search/Note Filter
+            if !searchText.isEmpty {
+                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
+                if !noteMatches { return false }
+            }
+
+            return true
+        }
+
         // Expense-filtered transactions (excludes adjustments and initial balances)
         let expenseFiltered = filtered.filter { $0.balanceAdjustmentType == nil }
 
@@ -701,6 +755,7 @@ final class PanelViewModel {
             contextTransactions: finalContextTransactions,
             natureFilteredTransactions: natureFiltered,
             fullyFilteredTransactions: fullyFiltered,
+            transactionsWithoutDateFilter: transactionsWithoutDateFilter,
             period: selectedPeriod,
             effectiveInterval: effectiveInterval,
             trendGrouping: newTrendGrouping,
@@ -776,20 +831,57 @@ final class PanelViewModel {
         return (processedPoints, yDomain)
     }
 
-    /// Calculate top spending categories
+    /// Calculate top spending categories with period comparison
     private func calculateCategoriesWidget(context: PanelCalculationContext)
         -> [CategorySpendingSummary]
     {
-        // Use pre-filtered transactions from context (nature + subcategory already applied)
-        return TopSpendingCategoriesCalculator.calculateTopSpending(
+        // Calculate current period data
+        var currentData = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: context.fullyFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             context: context.modelContext
         )
+
+        // Skip previous period calculation for "All Time" (no meaningful comparison)
+        guard context.period != .allTime else {
+            return currentData
+        }
+
+        // Calculate previous period data for comparison
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: .month,  // Default to -1 period comparison
+            customRange: nil
+        )
+
+        // Filter transactions for previous period (using date-independent filter)
+        let previousTransactions = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+
+        let previousData = TopSpendingCategoriesCalculator.calculateTopSpending(
+            transactions: previousTransactions,
+            interval: previousInterval,
+            currencyCode: context.defaultCurrencyCode,
+            context: context.modelContext
+        )
+
+        // Create lookup dictionary for previous amounts by category ID
+        let previousAmounts = Dictionary(
+            uniqueKeysWithValues: previousData.map { ($0.category.persistentModelID, $0.amount) }
+        )
+
+        // Assign previousAmount to current data
+        for index in currentData.indices {
+            let categoryID = currentData[index].category.persistentModelID
+            currentData[index].previousAmount = previousAmounts[categoryID]
+        }
+
+        return currentData
     }
 
-    /// Calculate top subcategories
+    /// Calculate top subcategories with period comparison
     private func calculateSubcategoriesWidget(context: PanelCalculationContext)
         -> [SubcategorySpendingSummary]
     {
@@ -797,13 +889,56 @@ final class PanelViewModel {
         let effectiveCategoryFilter =
             context.selectedCategoryID ?? context.subcategoriesWidgetFilter
 
-        return TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: context.natureFilteredTransactions,
+        // Use same base as categories (fullyFilteredTransactions) for consistent totals
+        var currentData = TopSubcategoriesCalculator.calculateTopSubcategories(
+            transactions: context.fullyFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
             context: context.modelContext
         )
+
+        // Skip previous period calculation for "All Time" (no meaningful comparison)
+        guard context.period != .allTime else {
+            return currentData
+        }
+
+        // Calculate previous period data for comparison
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: .month,  // Default to -1 period comparison
+            customRange: nil
+        )
+
+        // Filter transactions for previous period (using date-independent filter)
+        let previousTransactions = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+
+        let previousData = TopSubcategoriesCalculator.calculateTopSubcategories(
+            transactions: previousTransactions,
+            interval: previousInterval,
+            currencyCode: context.defaultCurrencyCode,
+            categoryFilter: effectiveCategoryFilter,
+            context: context.modelContext
+        )
+
+        // Create lookup dictionary for previous amounts by subcategory ID (more reliable than name)
+        let previousAmounts = Dictionary(
+            uniqueKeysWithValues: previousData.compactMap { summary -> (PersistentIdentifier, Double)? in
+                guard let id = summary.persistentID else { return nil }
+                return (id, summary.amount)
+            }
+        )
+
+        // Assign previousAmount to current data
+        for index in currentData.indices {
+            if let id = currentData[index].persistentID {
+                currentData[index].previousAmount = previousAmounts[id]
+            }
+        }
+
+        return currentData
     }
 
     /// Calculate cash flow summary (excludes adjustments/initial balances)

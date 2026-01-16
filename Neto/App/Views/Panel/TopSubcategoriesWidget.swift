@@ -31,6 +31,36 @@ struct TopSubcategoriesWidget: View {
     // Size config
     var size: TopCategoriesWidget.CardSize = .large
 
+    // MARK: - Period Comparison
+
+    var period: DetailPeriod = .thisMonth
+    var previousTotalAmount: Double? = nil
+    var showVariationHeader: Bool = false
+
+    private var totalAmount: Double {
+        subcategories.reduce(0) { $0 + $1.amount }
+    }
+
+    private var variation: Double? {
+        guard let previous = previousTotalAmount else { return nil }
+        return PreviousPeriodHelper.calculateVariation(
+            currentAmount: totalAmount,
+            previousAmount: previous
+        )
+    }
+
+    private var previousInterval: DateInterval {
+        PreviousPeriodHelper.previousInterval(for: period, mode: .month, customRange: nil)
+    }
+
+    private var comparisonText: String {
+        PreviousPeriodHelper.formatComparisonText(
+            previousInterval: previousInterval,
+            period: period,
+            mode: .month
+        )
+    }
+
     // Fetch all categories for the dropdown
     @Query(sort: \Category.name) private var allCategories: [Category]
 
@@ -60,9 +90,10 @@ struct TopSubcategoriesWidget: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Row 1: Title + Chevron
+            // Row 1: Title + Variation + Chevron
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
+                // Left: Title and total amount
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     if size == .small {
                         Text(L10n.Widget.subcategories)
                             .font(.headline)
@@ -73,10 +104,30 @@ struct TopSubcategoriesWidget: View {
                             .font(.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
+
+                        // Total amount (only with variation header)
+                        if showVariationHeader && !subcategories.isEmpty {
+                            Text(NetoFormatter.currency(value: totalAmount, currencyCode: currencyCode))
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(.primary)
+                        }
                     }
                 }
 
                 Spacer()
+
+                // Right: Variation chip and comparison text (only when showVariationHeader)
+                if showVariationHeader && size != .small && !subcategories.isEmpty {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                        VariationChip(variation: variation, size: .medium)
+
+                        if !comparisonText.isEmpty {
+                            Text(comparisonText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
 
                 // Chevron (conditionally shown)
                 if onShowMore != nil {
@@ -368,6 +419,7 @@ private struct SubcategoryRow: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
+                        // Name and Amount
                         HStack {
                             Text(summary.subcategoryName)
                                 .font(.subheadline.weight(.semibold))
@@ -381,7 +433,7 @@ private struct SubcategoryRow: View {
                             .foregroundStyle(.primary)
                         }
 
-                        // Percentages logic
+                        // Percentages + Variation Chip (inline, chip aligned right)
                         HStack(spacing: DS.Spacing.sm) {
                             Text(
                                 "\(formattedPercentage(summary.percentageOfCategory)) \(String(format: L10n.Widget.of, summary.category?.name ?? L10n.Widget.categoryAbbr))"
@@ -398,6 +450,11 @@ private struct SubcategoryRow: View {
                             )
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+
+                            Spacer()
+
+                            // Variation chip (aligned to right)
+                            VariationChip(variation: summary.variation, size: .small)
                         }
 
                         // Bar
