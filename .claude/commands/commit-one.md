@@ -28,7 +28,7 @@ LIMPIEZA DE COMMITS WIP:
 - Luego procede normalmente con el análisis de diff y creación del commit atómico final
 
 POST-COMMIT: ACTUALIZACIÓN AUTOMÁTICA DE STATE:
-1. Después de crear el commit exitosamente, lee el archivo STATE.md actual
+1. Después de crear el commit exitosamente, lee el archivo .planning/STATE.md actual
 2. Localiza la sección "Recent Progress" (créala si no existe)
 3. Agrega una nueva entrada con este formato:
    - [timestamp ISO] [commit-hash corto] [mensaje del commit]
