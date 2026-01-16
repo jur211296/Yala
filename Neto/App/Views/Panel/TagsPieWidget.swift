@@ -20,6 +20,25 @@ struct TagsPieWidget: View {
 
     var size: WidgetSize = .medium
 
+    // Period Comparison (optional - for use in CategoriesTabView)
+    var period: DetailPeriod = .thisMonth
+    var customRange: DateInterval? = nil
+    var previousTotalAmount: Double? = nil
+    var comparisonModeBinding: Binding<ComparisonMode>? = nil
+
+    // Internal state for comparison mode (used when binding not provided)
+    @State private var internalComparisonMode: ComparisonMode = .month
+
+    // Computed binding that uses external or internal state
+    private var comparisonMode: Binding<ComparisonMode> {
+        comparisonModeBinding ?? $internalComparisonMode
+    }
+
+    // Check if comparison feature is enabled (previousAmount provided)
+    private var showComparison: Bool {
+        previousTotalAmount != nil
+    }
+
     // Computed Properties
     private var totalExpense: Double {
         tags.reduce(0) { $0 + $1.amount }
@@ -355,27 +374,43 @@ struct TagsPieWidget: View {
     // MARK: - Header
 
     private var headerView: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.Widget.distributionByTag)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .padding(.bottom, 2)
+        Group {
+            if showComparison {
+                PieChartVariationHeader(
+                    title: L10n.Widget.distributionByTag,
+                    totalAmount: filteredTotalExpense,
+                    previousAmount: previousTotalAmount,
+                    currencyCode: currencyCode,
+                    period: period,
+                    customRange: customRange,
+                    comparisonMode: comparisonMode,
+                    onShowDetail: onShowDetail
+                )
+            } else {
+                // Original header without comparison
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.Widget.distributionByTag)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .padding(.bottom, 2)
 
-                Text(formattedCurrency(filteredTotalExpense))
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.primary)
-            }
-            Spacer()
-            if onShowDetail != nil {
-                Button {
-                    onShowDetail?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        Text(formattedCurrency(filteredTotalExpense))
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.primary)
+                    }
+                    Spacer()
+                    if onShowDetail != nil {
+                        Button {
+                            onShowDetail?()
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.headline)
+                                .foregroundStyle(Color.gray.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
             }
         }
     }

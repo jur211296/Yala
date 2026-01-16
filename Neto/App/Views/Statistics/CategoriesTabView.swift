@@ -51,6 +51,12 @@ struct CategoriesTabView: View {
     @State private var isSyncingFilters: Bool = false  // Anti-loop flag for sync functions
     @Namespace private var listSelectorNamespace
 
+    // Period Comparison State
+    @State private var comparisonMode: ComparisonMode = .month
+    @State private var previousCategoryTotal: Double? = nil
+    @State private var previousSubcategoryTotal: Double? = nil
+    @State private var previousTagTotal: Double? = nil
+
     // MARK: - List View Type
 
     enum ListViewType: String, CaseIterable, Identifiable {
@@ -134,6 +140,10 @@ struct CategoriesTabView: View {
             // Sync custom date range and recalculate
             viewModel.syncCustomRangeFromSessionState(sessionState)
             calculateData()
+        }
+        .onChange(of: comparisonMode) {
+            // Recalculate previous period data when comparison mode changes
+            calculatePreviousPeriodTotals()
         }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
@@ -366,7 +376,11 @@ struct CategoriesTabView: View {
                             selectedCategoryID = categoryID
                         }
                     },
-                    size: .large
+                    size: .large,
+                    period: viewModel.detailPeriod,
+                    customRange: sessionState.customDateRange,
+                    previousTotalAmount: previousCategoryTotal,
+                    comparisonModeBinding: $comparisonMode
                 )
             }
         }
@@ -403,7 +417,11 @@ struct CategoriesTabView: View {
                             selectedSubcategoryID = subcategoryID
                         }
                     },
-                    size: .large
+                    size: .large,
+                    period: viewModel.detailPeriod,
+                    customRange: sessionState.customDateRange,
+                    previousTotalAmount: previousSubcategoryTotal,
+                    comparisonModeBinding: $comparisonMode
                 )
             }
         }
@@ -439,7 +457,11 @@ struct CategoriesTabView: View {
                             selectedTagID = tagID
                         }
                     },
-                    size: .large
+                    size: .large,
+                    period: viewModel.detailPeriod,
+                    customRange: sessionState.customDateRange,
+                    previousTotalAmount: previousTagTotal,
+                    comparisonModeBinding: $comparisonMode
                 )
             }
         }
@@ -725,6 +747,73 @@ struct CategoriesTabView: View {
 
         // Apply list view lock logic after data calculation
         enforceListViewLock()
+
+        // Calculate previous period totals for comparison
+        calculatePreviousPeriodTotals()
+    }
+
+    // MARK: - Previous Period Calculation
+
+    private func calculatePreviousPeriodTotals() {
+        // Get previous period interval based on comparison mode
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: viewModel.detailPeriod,
+            mode: comparisonMode,
+            customRange: sessionState.customDateRange
+        )
+
+        // Build filter criteria for previous period
+        let criteria = FilterCriteria(
+            selectedAccounts: viewModel.selectedAccounts,
+            selectedCategories: viewModel.selectedCategories,
+            selectedSubcategories: viewModel.selectedSubcategories,
+            selectedTags: viewModel.selectedTags,
+            selectedNatures: viewModel.selectedNatures,
+            selectedCurrencies: viewModel.selectedCurrencies,
+            transactionTypeFilter: .all,
+            amountCondition: viewModel.amountCondition,
+            searchText: viewModel.searchText,
+            dateInterval: previousInterval
+        )
+
+        // Filter transactions for previous period
+        let previousFiltered = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: criteria
+        )
+
+        // Calculate previous period category spending
+        let previousCategorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
+            transactions: previousFiltered,
+            interval: previousInterval,
+            currencyCode: defaultCurrencyCode,
+            context: modelContext
+        )
+        previousCategoryTotal = previousCategorySpending.reduce(0) { $0 + $1.amount }
+
+        // Calculate previous period subcategory spending
+        let previousSubcategorySpending = TopSubcategoriesCalculator.calculateTopSubcategories(
+            transactions: previousFiltered,
+            interval: previousInterval,
+            currencyCode: defaultCurrencyCode,
+            categoryFilter: nil,
+            context: modelContext
+        )
+        previousSubcategoryTotal = previousSubcategorySpending.reduce(0) { $0 + $1.amount }
+
+        // Calculate previous period tag spending
+        let previousTagSpending = calculateTagSpending(
+            transactions: previousFiltered,
+            interval: previousInterval,
+            currencyCode: defaultCurrencyCode
+        )
+        previousTagTotal = previousTagSpending.reduce(0) { $0 + $1.amount }
+
+        // Handle case where there's no data in previous period
+        if previousCategoryTotal == 0 { previousCategoryTotal = nil }
+        if previousSubcategoryTotal == 0 { previousSubcategoryTotal = nil }
+        if previousTagTotal == 0 { previousTagTotal = nil }
     }
 
     // MARK: - Filter Synchronization
