@@ -40,15 +40,9 @@ final class PanelViewModel {
     var chartTransactions: [ChartTransaction] = []
 
     // Previous period totals (for widget headers)
-    var previousCategoriesTotalAmount: Double? {
-        let sum = topSpendingCategories.compactMap { $0.previousAmount }.reduce(0, +)
-        return sum > 0 ? sum : nil
-    }
-
-    var previousSubcategoriesTotalAmount: Double? {
-        let sum = topSubcategories.compactMap { $0.previousAmount }.reduce(0, +)
-        return sum > 0 ? sum : nil
-    }
+    // These are the ACTUAL totals from the previous period, not derived from current items
+    var previousCategoriesTotalAmount: Double? = nil
+    var previousSubcategoriesTotalAmount: Double? = nil
 
     // Subcategory Widget State
     var topSubcategories: [SubcategorySpendingSummary] = []
@@ -66,6 +60,8 @@ final class PanelViewModel {
 
     // Nature Widget State
     var natureTrendPoints: [NatureTrendPoint] = []
+    var previousNatureTotalAmount: Double? = nil
+    var previousNatureAmounts: [SubcategoryNature: Double] = [:]
 
     // Cash Flow State
     var cashFlowSummary: CashFlowSummary?
@@ -479,10 +475,14 @@ final class PanelViewModel {
         newTrendFinalBalance = result.finalBalance
 
         // Categories - used by both topSpending and categoriesPie widgets
-        let newTopSpendingCategories = calculateCategoriesWidget(context: calcContext)
+        let categoriesResult = calculateCategoriesWidget(context: calcContext)
+        let newTopSpendingCategories = categoriesResult.categories
+        let newPreviousCategoriesTotal = categoriesResult.previousTotal
 
         // Subcategories - used by both topSubcategories and subcategoriesPie widgets
-        let newTopSubcategories = calculateSubcategoriesWidget(context: calcContext)
+        let subcategoriesResult = calculateSubcategoriesWidget(context: calcContext)
+        let newTopSubcategories = subcategoriesResult.subcategories
+        let newPreviousSubcategoriesTotal = subcategoriesResult.previousTotal
 
         // Cash Flow
         let newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
@@ -491,7 +491,10 @@ final class PanelViewModel {
         let newLatestRecords = calculateLatestRecordsWidget(context: calcContext)
 
         // Nature Trend
-        let newNatureTrendPoints = calculateNatureWidget(context: calcContext)
+        let natureResult = calculateNatureWidget(context: calcContext)
+        let newNatureTrendPoints = natureResult.points
+        let newPreviousNatureTotal = natureResult.previousTotal
+        let newPreviousNatureAmounts = natureResult.previousAmounts
 
         // 3. BATCH STATE UPDATE - Single render cycle
         enforceTrendLock(sessionState: sessionState)
@@ -500,10 +503,14 @@ final class PanelViewModel {
         self.cashFlowGrouping = calcContext.cashFlowGrouping
         self.natureGrouping = calcContext.natureGrouping
         self.topSpendingCategories = newTopSpendingCategories
+        self.previousCategoriesTotalAmount = newPreviousCategoriesTotal
         self.topSubcategories = newTopSubcategories
+        self.previousSubcategoriesTotalAmount = newPreviousSubcategoriesTotal
         self.cashFlowSummary = newCashFlowSummary
         self.latestRecords = newLatestRecords
         self.natureTrendPoints = newNatureTrendPoints
+        self.previousNatureTotalAmount = newPreviousNatureTotal
+        self.previousNatureAmounts = newPreviousNatureAmounts
         self.processedTrendPoints = newProcessedData.points
         self.rawTrendPoints = newProcessedData.rawPoints
         self.processedYDomain = newProcessedData.yDomain
@@ -578,16 +585,14 @@ final class PanelViewModel {
 
             // Category Filter
             if let catID = selectedCategoryID {
-                if transaction.category?.persistentModelID != catID { return false }
+                guard transaction.category?.persistentModelID == catID else { return false }
             }
 
-            // Subcategory Filter (supports multiple subcategories by ID)
+            // Subcategory Filter
             if !selectedSubcategoryIDs.isEmpty {
-                guard let sub = transaction.subcategory else {
-                    // Transactions without subcategory don't match any specific subcategory filter
-                    return false
-                }
-                if !selectedSubcategoryIDs.contains(sub.persistentModelID) { return false }
+                guard let subID = transaction.subcategory?.persistentModelID,
+                    selectedSubcategoryIDs.contains(subID)
+                else { return false }
             }
 
             // Nature Filter
@@ -700,10 +705,7 @@ final class PanelViewModel {
             effectiveInterval = self.panelDateInterval
         }
 
-        // Context transactions for category/subcategory widgets
-        // IMPORTANT: Must apply the same global filters as 'filtered' to ensure consistency
-        // Uses expenseFiltered as base (already has account, date, and all global filters applied)
-        // Then re-filters by effectiveInterval (which may differ from panelDateInterval for AllTime)
+        // Context transactions for other widgets (respects all filters including category/subcategory)
         let contextTransactions = expenseFiltered.filter { txn in
             effectiveInterval.contains(txn.date)
         }
@@ -717,11 +719,65 @@ final class PanelViewModel {
             finalContextTransactions = contextTransactions
         }
 
-        // Pre-compute nature-filtered transactions (efficiency optimization)
-        // This avoids duplicate filtering in calculateCategoriesWidget and calculateSubcategoriesWidget
+        // Pie chart transactions: filtered WITHOUT category/subcategory (for dimming behavior)
+        // These transactions are used by pie widgets to show ALL categories with visual dimming
+        let pieContextTransactions = transactions.filter { transaction in
+            guard let account = transaction.account else { return false }
+            if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
+            if !effectiveInterval.contains(transaction.date) { return false }
+            guard transaction.balanceAdjustmentType == nil else { return false }
+
+            // Focused Date Filter
+            if let focus = focusedDate {
+                if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
+            }
+
+            // NOTE: Category and Subcategory filters EXCLUDED here
+            // This allows pie widgets to show ALL categories and apply visual dimming
+
+            // Nature Filter (still applies to pie charts)
+            if let nature = selectedNature {
+                if let sub = transaction.subcategory {
+                    if sub.nature != nature { return false }
+                } else {
+                    if nature != .unclassified { return false }
+                }
+            }
+
+            // Tag Filter
+            if !selectedTags.isEmpty {
+                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+            }
+
+            // Currency Filter
+            if !selectedCurrencies.isEmpty {
+                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                    return false
+                }
+                if !selectedCurrencies.contains(txCurrency) { return false }
+            }
+
+            // Amount Filter
+            if amountCondition.isActive {
+                let amountDecimal = Decimal(transaction.amount)
+                if !amountCondition.matches(amountDecimal) { return false }
+            }
+
+            // Search/Note Filter
+            if !searchText.isEmpty {
+                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
+                if !noteMatches { return false }
+            }
+
+            return true
+        }
+
+        // Pre-compute nature-filtered transactions for pie widgets
+        // Uses pieContextTransactions (excludes category/subcategory filters) for dimming behavior
         let natureFiltered: [TransactionItem]
         if let nature = selectedNature {
-            natureFiltered = finalContextTransactions.filter { txn in
+            natureFiltered = pieContextTransactions.filter { txn in
                 if let sub = txn.subcategory {
                     return sub.nature == nature
                 } else {
@@ -729,7 +785,7 @@ final class PanelViewModel {
                 }
             }
         } else {
-            natureFiltered = finalContextTransactions
+            natureFiltered = pieContextTransactions
         }
 
         // Pre-compute fully-filtered transactions (nature + subcategory)
@@ -741,6 +797,12 @@ final class PanelViewModel {
             }
         } else {
             fullyFiltered = natureFiltered
+        }
+
+        // Transactions for nature widget - has cat/subcat filters but NO nature filter
+        // This allows the nature widget to show ALL natures with visual dimming
+        let natureWidgetTxns = expenseFiltered.filter { txn in
+            effectiveInterval.contains(txn.date)
         }
 
         return PanelCalculationContext(
@@ -755,6 +817,7 @@ final class PanelViewModel {
             contextTransactions: finalContextTransactions,
             natureFilteredTransactions: natureFiltered,
             fullyFilteredTransactions: fullyFiltered,
+            natureWidgetTransactions: natureWidgetTxns,
             transactionsWithoutDateFilter: transactionsWithoutDateFilter,
             period: selectedPeriod,
             effectiveInterval: effectiveInterval,
@@ -834,8 +897,9 @@ final class PanelViewModel {
     /// Calculate top spending categories with period comparison
     /// Uses natureFilteredTransactions (not fullyFiltered) so that subcategory selection
     /// only dims categories visually, rather than filtering out other categories' data
+    /// Returns: (categories, previousPeriodTotal)
     private func calculateCategoriesWidget(context: PanelCalculationContext)
-        -> [CategorySpendingSummary]
+        -> (categories: [CategorySpendingSummary], previousTotal: Double?)
     {
         // Calculate current period data using nature-filtered transactions
         // This ensures category pie shows ALL categories (selection = visual dim, not data filter)
@@ -848,7 +912,7 @@ final class PanelViewModel {
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard context.period != .allTime else {
-            return currentData
+            return (currentData, nil)
         }
 
         // Calculate previous period data for comparison
@@ -870,6 +934,9 @@ final class PanelViewModel {
             context: context.modelContext
         )
 
+        // Calculate the ACTUAL previous period total (sum of ALL categories from previous period)
+        let previousTotal = previousData.reduce(0) { $0 + $1.amount }
+
         // Create lookup dictionary for previous amounts by category ID
         let previousAmounts = Dictionary(
             uniqueKeysWithValues: previousData.map { ($0.category.persistentModelID, $0.amount) }
@@ -881,14 +948,15 @@ final class PanelViewModel {
             currentData[index].previousAmount = previousAmounts[categoryID]
         }
 
-        return currentData
+        return (currentData, previousTotal > 0 ? previousTotal : nil)
     }
 
     /// Calculate top subcategories with period comparison
     /// Uses natureFilteredTransactions (not fullyFiltered) so that subcategory selection
     /// only dims subcategories visually, rather than filtering out other subcategories' data
+    /// Returns: (subcategories, previousPeriodTotal)
     private func calculateSubcategoriesWidget(context: PanelCalculationContext)
-        -> [SubcategorySpendingSummary]
+        -> (subcategories: [SubcategorySpendingSummary], previousTotal: Double?)
     {
         // Use pre-filtered transactions from context (nature already applied)
         let effectiveCategoryFilter =
@@ -906,7 +974,7 @@ final class PanelViewModel {
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard context.period != .allTime else {
-            return currentData
+            return (currentData, nil)
         }
 
         // Calculate previous period data for comparison
@@ -929,6 +997,9 @@ final class PanelViewModel {
             context: context.modelContext
         )
 
+        // Calculate the ACTUAL previous period total (sum of ALL subcategories from previous period)
+        let previousTotal = previousData.reduce(0) { $0 + $1.amount }
+
         // Create lookup dictionary for previous amounts by subcategory ID (more reliable than name)
         let previousAmounts = Dictionary(
             uniqueKeysWithValues: previousData.compactMap { summary -> (PersistentIdentifier, Double)? in
@@ -944,7 +1015,7 @@ final class PanelViewModel {
             }
         }
 
-        return currentData
+        return (currentData, previousTotal > 0 ? previousTotal : nil)
     }
 
     /// Calculate cash flow summary (excludes adjustments/initial balances)
@@ -969,15 +1040,60 @@ final class PanelViewModel {
         )
     }
 
-    /// Calculate nature trend points (excludes adjustments/initial balances)
-    private func calculateNatureWidget(context: PanelCalculationContext) -> [NatureTrendPoint] {
-        return NatureTrendHelper.calculateTrend(
-            transactions: context.expenseFilteredTransactions,
+    /// Calculate nature trend points with period comparison
+    /// Uses natureWidgetTransactions (has cat/subcat filters but NO nature filter)
+    /// This allows the nature widget to show ALL natures with visual dimming
+    /// Returns: (points, previousTotal, previousAmountsByNature)
+    private func calculateNatureWidget(context: PanelCalculationContext)
+        -> (points: [NatureTrendPoint], previousTotal: Double?, previousAmounts: [SubcategoryNature: Double])
+    {
+        let preferredCurrency = CurrencyCode(rawValue: context.defaultCurrencyCode) ?? .pen
+
+        let currentPoints = NatureTrendHelper.calculateTrend(
+            transactions: context.natureWidgetTransactions,
             grouping: context.natureGrouping,
             interval: context.effectiveInterval,
-            preferredCurrency: CurrencyCode(rawValue: context.defaultCurrencyCode) ?? .pen,
+            preferredCurrency: preferredCurrency,
             context: context.modelContext
         )
+
+        // Skip previous period calculation for "All Time" (no meaningful comparison)
+        guard context.period != .allTime else {
+            return (currentPoints, nil, [:])
+        }
+
+        // Calculate previous period data for comparison
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: .month,
+            customRange: nil
+        )
+
+        // Filter transactions for previous period
+        let previousTransactions = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+
+        let previousPoints = NatureTrendHelper.calculateTrend(
+            transactions: previousTransactions,
+            grouping: context.natureGrouping,
+            interval: previousInterval,
+            preferredCurrency: preferredCurrency,
+            context: context.modelContext
+        )
+
+        // Calculate totals by nature for previous period
+        var prevNatureAmounts: [SubcategoryNature: Double] = [:]
+        var prevNatureTotal: Double = 0
+        for point in previousPoints {
+            prevNatureAmounts[.essential, default: 0] += point.essential
+            prevNatureAmounts[.priority, default: 0] += point.priority
+            prevNatureAmounts[.optional, default: 0] += point.optional
+            prevNatureAmounts[.unclassified, default: 0] += point.unclassified
+            prevNatureTotal += point.total
+        }
+
+        return (currentPoints, prevNatureTotal > 0 ? prevNatureTotal : nil, prevNatureAmounts)
     }
 
     // State for Filter Logic

@@ -194,7 +194,8 @@ struct NatureTrendWidget: View {
                         currencyCode: currencyCode,
                         isSelected: selectedNature == nil || selectedNature == .essential,
                         onTap: { onSelectNature(.essential) },
-                        variation: variationForNature(.essential, currentAmount: essentialTotal)
+                        variation: variationForNature(.essential, currentAmount: essentialTotal),
+                        showNAWhenNil: showVariationHeader
                     )
 
                     // Priority Bar
@@ -205,7 +206,8 @@ struct NatureTrendWidget: View {
                         currencyCode: currencyCode,
                         isSelected: selectedNature == nil || selectedNature == .priority,
                         onTap: { onSelectNature(.priority) },
-                        variation: variationForNature(.priority, currentAmount: priorityTotal)
+                        variation: variationForNature(.priority, currentAmount: priorityTotal),
+                        showNAWhenNil: showVariationHeader
                     )
 
                     // Optional Bar
@@ -216,7 +218,8 @@ struct NatureTrendWidget: View {
                         currencyCode: currencyCode,
                         isSelected: selectedNature == nil || selectedNature == .optional,
                         onTap: { onSelectNature(.optional) },
-                        variation: variationForNature(.optional, currentAmount: optionalTotal)
+                        variation: variationForNature(.optional, currentAmount: optionalTotal),
+                        showNAWhenNil: showVariationHeader
                     )
 
                     // Unclassified Bar (only if has value)
@@ -228,7 +231,8 @@ struct NatureTrendWidget: View {
                             currencyCode: currencyCode,
                             isSelected: selectedNature == nil || selectedNature == .unclassified,
                             onTap: { onSelectNature(.unclassified) },
-                            variation: variationForNature(.unclassified, currentAmount: unclassifiedTotal)
+                            variation: variationForNature(.unclassified, currentAmount: unclassifiedTotal),
+                            showNAWhenNil: showVariationHeader
                         )
                     }
                 }
@@ -769,6 +773,7 @@ struct NatureCompactBar: View {
     let isSelected: Bool
     let onTap: () -> Void
     var variation: Double? = nil
+    var showNAWhenNil: Bool = false
 
     var body: some View {
         Button(action: onTap) {
@@ -784,7 +789,7 @@ struct NatureCompactBar: View {
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
 
                     // Variation chip (aligned right of amount)
-                    VariationChip(variation: variation, size: .small)
+                    VariationChip(variation: variation, size: .small, showNAWhenNil: showNAWhenNil)
                 }
 
                 // Progress Bar

@@ -51,6 +51,10 @@ struct PanelCalculationContext {
     /// Nature-filtered transactions with subcategory filter pre-applied
     let fullyFilteredTransactions: [TransactionItem]
 
+    /// Transactions for nature widget - has cat/subcat filters but NO nature filter
+    /// Allows nature widget to show ALL natures with dimming behavior
+    let natureWidgetTransactions: [TransactionItem]
+
     /// Transactions with all filters EXCEPT date (for previous period comparison)
     /// Has: account, category, subcategory, nature, tags, currency, amount filters
     /// Does NOT have: date filter
