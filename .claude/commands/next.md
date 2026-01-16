@@ -1,3 +1,7 @@
+---
+description: Analiza STATE y ROADMAP para proponer automáticamente el siguiente incremento de trabajo.
+---
+
 Analiza STATE y ROADMAP para proponer automáticamente el siguiente incremento de trabajo.
 
 PASOS OBLIGATORIOS:

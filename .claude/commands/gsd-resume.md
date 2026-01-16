@@ -1,3 +1,7 @@
+---
+description: Lee la última sesión y presenta resumen para continuar trabajo.
+---
+
 Lee la última sesión y presenta resumen para continuar trabajo.
 
 PASOS:

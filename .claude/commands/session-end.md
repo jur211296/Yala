@@ -1,3 +1,7 @@
+---
+description: Finaliza la sesión actual y genera resumen.
+---
+
 Finaliza la sesión actual y genera resumen.
 
 PASOS:

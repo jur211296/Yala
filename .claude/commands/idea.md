@@ -1,3 +1,7 @@
+---
+description: Captura rápidamente una idea con contexto mínimo y clasificación automática.
+---
+
 Captura rápidamente una idea con contexto mínimo y clasificación automática.
 
 PROPÓSITO:

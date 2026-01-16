@@ -1,3 +1,7 @@
+---
+description: Revisa y prioriza items del Parking Lot para decidir qué incorporar al ROADMAP.
+---
+
 Revisa y prioriza items del Parking Lot para decidir qué incorporar al ROADMAP.
 
 CUÁNDO USAR:
