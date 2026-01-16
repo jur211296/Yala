@@ -26,3 +26,34 @@ LIMPIEZA DE COMMITS WIP:
   "Detecté N commits wip: previos relacionados. ¿Quieres que los combine en este commit final?"
 - Si el usuario confirma, ejecuta: git reset --soft HEAD~N (donde N es el número de commits wip)
 - Luego procede normalmente con el análisis de diff y creación del commit atómico final
+
+POST-COMMIT: ACTUALIZACIÓN AUTOMÁTICA DE STATE:
+1. Después de crear el commit exitosamente, lee el archivo STATE.md actual
+2. Localiza la sección "Recent Progress" (créala si no existe)
+3. Agrega una nueva entrada con este formato:
+   - [timestamp ISO] [commit-hash corto] [mensaje del commit]
+   - Ejemplo: "2025-01-16T14:30 a3f8b2c feat: Add category filtering to transaction list"
+4. Mantén solo las últimas 10 entradas en Recent Progress (borra las más antiguas)
+5. Si el commit completa un item de la sección "Next Steps", muévelo a "Completed in Current Phase"
+6. Informa al usuario: "STATE actualizado automáticamente con este commit"
+
+FORMATO DE STATE.md ESPERADO:
+```markdown
+# Project State
+
+## Recent Progress
+- [timestamp] [hash] [mensaje]
+...
+
+## Completed in Current Phase
+- [item completado]
+...
+
+## Next Steps
+- [item pendiente]
+...
+
+## Parking Lot
+- [ideas para después]
+...
+```
