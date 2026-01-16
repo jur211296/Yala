@@ -359,8 +359,8 @@ struct AccountsSettingsListView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
         .contentShape(Rectangle())
     }
 

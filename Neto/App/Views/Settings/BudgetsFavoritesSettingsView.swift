@@ -55,7 +55,7 @@ struct BudgetsFavoritesSettingsView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     // Info header
                     infoHeader
 
@@ -71,8 +71,8 @@ struct BudgetsFavoritesSettingsView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
         .navigationTitle(L10n.Settings.budgetsFavorites)
@@ -99,7 +99,7 @@ struct BudgetsFavoritesSettingsView: View {
     // MARK: - Info Header
 
     private var infoHeader: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
                 .font(.body)
                 .foregroundStyle(Color.electricIndigo)
@@ -108,10 +108,10 @@ struct BudgetsFavoritesSettingsView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-        .padding(16)
+        .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(Color.electricIndigo.opacity(0.1))
         )
     }
@@ -119,7 +119,7 @@ struct BudgetsFavoritesSettingsView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "chart.pie")
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
@@ -140,7 +140,7 @@ struct BudgetsFavoritesSettingsView: View {
     // MARK: - Period Section
 
     private func periodSection(periodType: BudgetPeriodType, budgets: [Budget]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(periodType.localizedName)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -172,7 +172,7 @@ struct BudgetsFavoritesSettingsView: View {
     // MARK: - Budget Row
 
     private func budgetRow(_ budget: Budget) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Favorite toggle
             Button {
                 toggleFavorite(budget)
@@ -185,7 +185,7 @@ struct BudgetsFavoritesSettingsView: View {
             .buttonStyle(.plain)
 
             // Budget info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(budget.name)
                     .font(.body)
                     .foregroundStyle(.primary)
@@ -205,15 +205,15 @@ struct BudgetsFavoritesSettingsView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
     }
 
     // MARK: - Reorder Section (Edit Mode)
 
     private var reorderSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.budgetsFavoritesReorder)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -250,7 +250,7 @@ struct BudgetsFavoritesSettingsView: View {
     }
 
     private func reorderRow(_ budget: Budget, position: Int) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Text("#\(position)")
                 .font(.caption.monospacedDigit().bold())
                 .foregroundStyle(Color.electricIndigo)

@@ -75,7 +75,7 @@ struct FavoritesListView: View {
 
             // Toolbar trailing buttons
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 16) {
+                HStack(spacing: DS.Spacing.lg) {
                     // Edit/Done button
                     if mode == .manage && !favorites.isEmpty {
                         if editMode?.wrappedValue.isEditing == true {
@@ -122,7 +122,7 @@ struct FavoritesListView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xxl) {
             Spacer()
 
             ZStack {
@@ -141,7 +141,7 @@ struct FavoritesListView: View {
                     )
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: DS.Spacing.sm) {
                 Text(L10n.Favorites.noFavorites)
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.primary)

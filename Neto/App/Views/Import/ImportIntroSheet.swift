@@ -217,11 +217,11 @@ struct ImportIntroSheet: View {
     // MARK: - Secciones de contenido
 
     private var introSection: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "square.and.arrow.down")
                 .font(.system(size: 48))
                 .foregroundStyle(Color.brandPrimary)
-                .padding(.bottom, 8)
+                .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)
                 .font(Typography.title2)
@@ -232,11 +232,11 @@ struct ImportIntroSheet: View {
             .foregroundStyle(Color.netoSecondaryText)
             .multilineTextAlignment(.center)
         }
-        .padding(.top, 32)
+        .padding(.top, DS.Spacing.xxxl)
     }
 
     private var templateSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Button {
                 generateTemplate()
             } label: {
@@ -251,8 +251,8 @@ struct ImportIntroSheet: View {
                         .font(.body)
                         .foregroundStyle(Color.brandPrimary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
                 .background(Color.netoCard)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .overlay(
@@ -270,7 +270,7 @@ struct ImportIntroSheet: View {
     }
 
     private var toggleSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
 
             // Toggle Container
             HStack {
@@ -284,8 +284,8 @@ struct ImportIntroSheet: View {
                     .labelsHidden()
                     .tint(Color.brandPrimary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(Color.netoCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(

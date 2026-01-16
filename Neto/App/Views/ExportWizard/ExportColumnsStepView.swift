@@ -35,13 +35,13 @@ struct ExportColumnsStepView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     headerSection
 
                     columnsListSection
                 }
-                .padding(.vertical, 24)
-                .padding(.horizontal, 16)
+                .padding(.vertical, DS.Spacing.xxl)
+                .padding(.horizontal, DS.Spacing.lg)
             }
         }
         .navigationTitle(L10n.Export.selectColumns)
@@ -72,7 +72,7 @@ struct ExportColumnsStepView: View {
     // MARK: - Sections
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Export.customizeFile)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
@@ -111,7 +111,7 @@ struct ExportColumnsStepView: View {
                 }
             )
         ) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(column.displayName)
                     .font(.body.weight(.medium))
                     .foregroundStyle(.primary)
@@ -120,10 +120,10 @@ struct ExportColumnsStepView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, DS.Spacing.md)
         }
         .toggleStyle(SwitchToggleStyle(tint: Color.brandPrimary))
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 }
 

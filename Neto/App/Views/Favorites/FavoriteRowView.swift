@@ -19,7 +19,7 @@ struct FavoriteRowView: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 // Icon with category color
                 favoriteIcon
 
@@ -43,7 +43,7 @@ struct FavoriteRowView: View {
                 Spacer()
 
                 // Right column: Amount + Nature (if set)
-                VStack(alignment: .trailing, spacing: 4) {
+                VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     if let amount = favorite.amount, amount > 0 {
                         Text(formattedAmount)
                             .font(.subheadline.weight(.semibold))
@@ -55,8 +55,8 @@ struct FavoriteRowView: View {
                     }
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 14)
+            .padding(.vertical, DS.Spacing.md)
+            .padding(.horizontal, DS.FormRow.paddingV)
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
             .background(cardBackground)
@@ -114,7 +114,7 @@ struct FavoriteRowView: View {
     }
 
     private var tagsRow: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             ForEach(Array(favorite.tags.prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(.caption2.weight(.medium))
@@ -136,7 +136,7 @@ struct FavoriteRowView: View {
     }
 
     private func natureIndicator(for nature: SubcategoryNature) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             Circle()
                 .fill(nature.color)
                 .frame(width: 6, height: 6)

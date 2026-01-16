@@ -47,7 +47,7 @@ struct BudgetEditorView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     // Basic Information Section
                     basicInfoSection
 
@@ -70,8 +70,8 @@ struct BudgetEditorView: View {
                         deleteSection
                     }
                 }
-                .padding(.vertical, 24)
-                .padding(.horizontal, 16)
+                .padding(.vertical, DS.Spacing.xxl)
+                .padding(.horizontal, DS.Spacing.lg)
             }
             .background(PanelBackgroundView())
             .alert(
@@ -117,7 +117,7 @@ struct BudgetEditorView: View {
         SectionBox(title: NSLocalizedString("budgets.editor.basic.info", comment: "")) {
             VStack(spacing: 0) {
                 // Name Field
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
                     TextField(
@@ -133,7 +133,7 @@ struct BudgetEditorView: View {
                 // Amount Field (Large and prominent like AccountFormView)
                 HStack {
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         Text(defaultCurrencyCode)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -169,7 +169,7 @@ struct BudgetEditorView: View {
         SectionBox(title: NSLocalizedString("budgets.editor.date.range", comment: "")) {
             VStack(spacing: 0) {
                 // Start Date
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar")
                         .font(.body)
                         .foregroundStyle(.secondary)
@@ -193,7 +193,7 @@ struct BudgetEditorView: View {
                 SubsectionDivider()
 
                 // End Date
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar")
                         .font(.body)
                         .foregroundStyle(.secondary)
@@ -272,8 +272,8 @@ struct BudgetEditorView: View {
                 .font(.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(
@@ -309,8 +309,8 @@ struct BudgetEditorView: View {
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
         .onTapGesture {
             showCategoriesSheet = true
@@ -368,7 +368,7 @@ struct BudgetEditorView: View {
                 selectedTags.insert(tag.persistentModelID)
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(isSelected ? Color.white : Color(hex: tag.colorHex))
                     .frame(width: 8, height: 8)
@@ -378,8 +378,8 @@ struct BudgetEditorView: View {
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -401,25 +401,25 @@ struct BudgetEditorView: View {
     // MARK: - Natures Content
 
     private var naturesContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "leaf.fill",
                 title: NSLocalizedString("nature.title", comment: ""),
                 status: selectedNaturesText
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
 
             // Chips
-            FlowLayout(spacing: 8) {
+            FlowLayout(spacing: DS.Spacing.sm) {
                 ForEach(SubcategoryNature.allCases, id: \.self) { nature in
                     natureChip(nature)
                 }
             }
             .padding(.leading, 52)
-            .padding(.trailing, 16)
-            .padding(.bottom, 12)
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
     }
 
@@ -433,14 +433,14 @@ struct BudgetEditorView: View {
                 selectedNatures.insert(nature)
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(nature.displayName)
                     .font(.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -468,7 +468,7 @@ struct BudgetEditorView: View {
                     .font(.body.weight(.medium))
                 Spacer()
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, DS.Spacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(Color.red.opacity(0.1))

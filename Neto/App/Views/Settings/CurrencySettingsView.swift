@@ -69,7 +69,7 @@ struct CurrencySettingsView: View {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
 
-                VStack(spacing: 16) {
+                VStack(spacing: DS.Spacing.lg) {
                     ProgressView(value: updateProgress, total: 1.0)
                         .progressViewStyle(.linear)
                         .frame(width: 200)
@@ -223,11 +223,11 @@ struct CurrencySettingsView: View {
         let rate = getDisplayRate(from: currency, to: preferredCurrency)
         let preferredInfo = currencyInfo(for: preferredCurrency)
 
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Text(info.flag)
                 .font(.title3)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text("1 \(info.code)")
                     .font(.body.weight(.medium))
                     .foregroundStyle(.primary)
@@ -248,8 +248,8 @@ struct CurrencySettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle())
     }
 

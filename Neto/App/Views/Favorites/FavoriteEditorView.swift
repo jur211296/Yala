@@ -171,7 +171,7 @@ struct FavoriteEditorView: View {
     // MARK: - Central Content
 
     private var centralContent: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xxl) {
             // Name field
             TextField(L10n.Favorites.namePlaceholder, text: $name)
                 .font(.headline)

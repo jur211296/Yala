@@ -28,15 +28,15 @@ struct TabBarConfigView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         infoHeader
                         activeTabsSection
                         if !localConfig.inactiveTabs.isEmpty {
                             availableTabsSection
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Settings.tabBarConfig)
@@ -63,7 +63,7 @@ struct TabBarConfigView: View {
     // MARK: - Info Header
 
     private var infoHeader: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
                 .font(.body)
                 .foregroundStyle(Color.electricIndigo)
@@ -72,10 +72,10 @@ struct TabBarConfigView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-        .padding(16)
+        .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(Color.electricIndigo.opacity(0.1))
         )
     }
@@ -83,7 +83,7 @@ struct TabBarConfigView: View {
     // MARK: - Active Tabs Section (Reorderable)
 
     private var activeTabsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text(L10n.Settings.tabBarConfigActive)
                     .font(.headline)
@@ -130,7 +130,7 @@ struct TabBarConfigView: View {
     }
 
     private func activeTabRow(_ tab: ConfigurableTab, position: Int) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Position indicator
             Text("\(position)")
                 .font(.caption.monospacedDigit().bold())
@@ -162,15 +162,15 @@ struct TabBarConfigView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
     }
 
     // MARK: - Available Tabs Section
 
     private var availableTabsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.tabBarConfigAvailable)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
@@ -205,7 +205,7 @@ struct TabBarConfigView: View {
     }
 
     private func availableTabRow(_ tab: ConfigurableTab) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             // Tab icon
             Image(systemName: tab.iconName)
                 .font(.body)
@@ -231,13 +231,13 @@ struct TabBarConfigView: View {
             .buttonStyle(.plain)
             .disabled(!canActivate)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
     }
 
     private func validationMessage(_ text: String, icon: String) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DS.Spacing.sm) {
             Image(systemName: icon)
                 .font(.caption)
                 .foregroundStyle(.orange)
@@ -247,7 +247,7 @@ struct TabBarConfigView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.leading, 6)
-        .padding(.top, 4)
+        .padding(.top, DS.Spacing.xs)
     }
 
     // MARK: - Actions

@@ -21,7 +21,7 @@ struct ImportAccountPickerSheet: View {
                 PanelBackgroundView()
 
                 if accounts.isEmpty {
-                    VStack(spacing: 12) {
+                    VStack(spacing: DS.Spacing.md) {
                         Text(L10n.Import.noAccountsAvailable)
                             .font(.headline)
                         Text(L10n.Import.createAccountBeforeImport)
@@ -31,7 +31,7 @@ struct ImportAccountPickerSheet: View {
                     .padding()
                 } else {
                     ScrollView {
-                        VStack(spacing: 24) {
+                        VStack(spacing: DS.Spacing.xxl) {
                             SectionBox(title: "") {
                                 VStack(spacing: 0) {
                                     ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
@@ -49,8 +49,8 @@ struct ImportAccountPickerSheet: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 24)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.xxl)
                     }
                 }
             }
@@ -83,8 +83,8 @@ struct ImportAccountPickerSheet: View {
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let info = currencyInfo(for: currency)
 
-        HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+        HStack(spacing: DS.Spacing.md) {
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(colorForHex(account.colorHex))
                 .frame(width: 40, height: 40)
                 .overlay(
@@ -92,7 +92,7 @@ struct ImportAccountPickerSheet: View {
                         .foregroundStyle(.white)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(account.name)
                     .font(.body.weight(.semibold))
                 Text(info.name.capitalized)
@@ -110,8 +110,8 @@ struct ImportAccountPickerSheet: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
     }
 }

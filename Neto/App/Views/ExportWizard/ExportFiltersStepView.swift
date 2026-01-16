@@ -131,7 +131,7 @@ struct ExportFiltersStepView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: 0) {
                                 periodRow
@@ -152,8 +152,8 @@ struct ExportFiltersStepView: View {
                             }
                         }
                     }
-                    .padding(.vertical, 24)
-                    .padding(.horizontal, 16)
+                    .padding(.vertical, DS.Spacing.xxl)
+                    .padding(.horizontal, DS.Spacing.lg)
                 }
             }
             .navigationTitle(L10n.Export.exportData)
@@ -295,8 +295,8 @@ struct ExportFiltersStepView: View {
                 .font(.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(
@@ -320,8 +320,8 @@ struct ExportFiltersStepView: View {
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
         .onTapGesture {
             showCategoriesSheet = true
@@ -359,7 +359,7 @@ struct ExportFiltersStepView: View {
                 selectedTags.insert(tag.persistentModelID)
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(isSelected ? Color.white : Color(hex: tag.colorHex))
                     .frame(width: 8, height: 8)
@@ -369,8 +369,8 @@ struct ExportFiltersStepView: View {
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -380,25 +380,25 @@ struct ExportFiltersStepView: View {
     }
 
     private var currencyContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "arrow.triangle.2.circlepath",
                 title: L10n.Settings.currency,
                 status: selectedCurrenciesText
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
 
             // Chips
-            FlowLayout(spacing: 8) {
+            FlowLayout(spacing: DS.Spacing.sm) {
                 ForEach(availableCurrencies) { currency in
                     currencyChip(currency)
                 }
             }
             .padding(.leading, 52)
-            .padding(.trailing, 16)
-            .padding(.bottom, 12)
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
     }
 
@@ -416,8 +416,8 @@ struct ExportFiltersStepView: View {
                 .font(.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -439,25 +439,25 @@ struct ExportFiltersStepView: View {
     // MARK: - Natures Content
 
     private var naturesContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "leaf.fill",
                 title: L10n.Nature.label,
                 status: selectedNaturesText
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
 
             // Chips
-            FlowLayout(spacing: 8) {
+            FlowLayout(spacing: DS.Spacing.sm) {
                 ForEach(SubcategoryNature.allCases, id: \.self) { nature in
                     natureChip(nature)
                 }
             }
             .padding(.leading, 52)
-            .padding(.trailing, 16)
-            .padding(.bottom, 12)
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
     }
 
@@ -471,14 +471,14 @@ struct ExportFiltersStepView: View {
                 selectedNatures.insert(nature)
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(nature.displayName)
                     .font(.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
@@ -538,15 +538,15 @@ struct ExportFiltersStepView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     private var noteContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: "note.text")
                 .font(.body)
                 .foregroundStyle(.primary)
@@ -554,8 +554,8 @@ struct ExportFiltersStepView: View {
 
             TextField(L10n.Filters.noteContains, text: $noteContains)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
     }
 }
 
@@ -619,8 +619,8 @@ private struct ExportPeriodPickerSheet: View {
                         .font(.body.weight(.semibold))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

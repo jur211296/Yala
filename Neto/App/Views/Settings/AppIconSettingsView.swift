@@ -59,8 +59,8 @@ struct AppIconSettingsView: View {
     @State private var errorMessage = ""
 
     private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: DS.Spacing.lg),
+        GridItem(.flexible(), spacing: DS.Spacing.lg),
     ]
 
     var body: some View {
@@ -70,11 +70,11 @@ struct AppIconSettingsView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     // Header
-                    VStack(spacing: 8) {
+                    VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "app.fill")
                             .font(.system(size: 48))
                             .foregroundStyle(Color.brandPrimary)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.appIcon)
                             .font(.title2.bold())
@@ -85,15 +85,15 @@ struct AppIconSettingsView: View {
                             .foregroundStyle(Color.netoSecondaryText)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.top, 32)
+                    .padding(.top, DS.Spacing.xxxl)
 
                     // Icon Grid
-                    LazyVGrid(columns: columns, spacing: 16) {
+                    LazyVGrid(columns: columns, spacing: DS.Spacing.lg) {
                         ForEach(AppIconOption.allCases) { icon in
                             iconCell(for: icon)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, DS.Spacing.lg)
 
                     Spacer()
                 }
@@ -129,7 +129,7 @@ struct AppIconSettingsView: View {
         Button {
             setAppIcon(icon)
         } label: {
-            VStack(spacing: 12) {
+            VStack(spacing: DS.Spacing.md) {
                 // Icon Preview - Load from bundle using UIImage
                 if let uiImage = UIImage(named: icon.previewImageName) {
                     Image(uiImage: uiImage)
@@ -154,7 +154,7 @@ struct AppIconSettingsView: View {
                 }
 
                 // Label
-                HStack(spacing: 6) {
+                HStack(spacing: DS.Spacing.xs) {
                     Text(icon.displayName)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.netoPrimaryText)
@@ -167,7 +167,7 @@ struct AppIconSettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, DS.Spacing.lg)
             .background(Color.netoCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(

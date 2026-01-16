@@ -47,7 +47,7 @@ struct ExportSummaryStepView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     headerSection
 
                     filtersSummarySection
@@ -56,8 +56,8 @@ struct ExportSummaryStepView: View {
 
                     exportButtonSection
                 }
-                .padding(.vertical, 24)
-                .padding(.horizontal, 16)
+                .padding(.vertical, DS.Spacing.xxl)
+                .padding(.horizontal, DS.Spacing.lg)
             }
         }
         .navigationTitle(L10n.Export.summaryAndExport)
@@ -99,7 +99,7 @@ struct ExportSummaryStepView: View {
     // MARK: - Sections
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Export.confirmExport)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
@@ -113,7 +113,7 @@ struct ExportSummaryStepView: View {
 
     private var filtersSummarySection: some View {
         SectionBox(title: L10n.Export.filtersSummary) {
-            VStack(spacing: 12) {
+            VStack(spacing: DS.Spacing.md) {
                 summaryRow(
                     label: L10n.Filters.allAccounts,
                     value: accountsSummaryText
@@ -147,9 +147,9 @@ struct ExportSummaryStepView: View {
                     value: currenciesSummaryText
                 )
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, DS.Spacing.lg)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
     private var columnsSummarySection: some View {
@@ -158,8 +158,8 @@ struct ExportSummaryStepView: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 16)
-                .padding(.horizontal, 16)
+                .padding(.vertical, DS.Spacing.lg)
+                .padding(.horizontal, DS.Spacing.lg)
         }
         .padding(.vertical, 4)
     }
@@ -181,7 +181,7 @@ struct ExportSummaryStepView: View {
             .padding()
             .background(Color.brandPrimary)
             .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
         .disabled(isExporting)
         .padding(.top, 16)
@@ -201,7 +201,7 @@ struct ExportSummaryStepView: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Summary Text Generators

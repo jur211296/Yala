@@ -31,10 +31,10 @@ struct UserDataResetView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: L10n.Settings.resetData) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                                 Text(L10n.Settings.resetAllData)
                                     .font(.title3)
                                     .fontWeight(.semibold)
@@ -45,8 +45,8 @@ struct UserDataResetView: View {
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.top, 16)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.top, DS.Spacing.lg)
 
                             SubsectionDivider()
 
@@ -64,14 +64,14 @@ struct UserDataResetView: View {
 
                                     Spacer()
                                 }
-                                .padding(16)
+                                .padding(DS.Spacing.lg)
                             }
                             .disabled(isProcessing)
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
         .navigationTitle(L10n.Settings.resetData)

@@ -16,7 +16,7 @@ struct FilterSectionHeader: View {
     let status: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(.body)
                 .foregroundStyle(.primary)
@@ -41,7 +41,7 @@ struct FilterSelectionRow: View {
     let icon: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(.body)
                 .foregroundStyle(.primary)
@@ -61,8 +61,8 @@ struct FilterSelectionRow: View {
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
     }
 }
@@ -132,7 +132,7 @@ struct AmountFilterView: View {
 
     // Campo de monto grande con estilo "New Account" (Saldo actual)
     private func largeAmountField(text: Binding<String>) -> some View {
-        VStack(alignment: .trailing, spacing: 4) {
+        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let code = currencyCode {
                 Text(code.rawValue)
                     .font(.caption)
@@ -148,13 +148,13 @@ struct AmountFilterView: View {
                     updateCondition(newType: selectedType)
                 }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, DS.Spacing.sm)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             if currencyCode == nil {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
                     Text(L10n.Export.selectSingleCurrency)
@@ -181,7 +181,7 @@ struct AmountFilterView: View {
 
                     switch selectedType {
                     case .between:
-                        HStack(spacing: 24) {
+                        HStack(spacing: DS.Spacing.xxl) {
                             largeAmountField(text: $value1)
 
                             // Separador visual
@@ -200,8 +200,8 @@ struct AmountFilterView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
             // Determinar el tipo inicial basado en condition
@@ -228,7 +228,7 @@ struct DateFilterView: View {
     @Binding var customDateTo: Date?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Menu para seleccionar el periodo
             Menu {
                 Section("Periodos") {
@@ -248,7 +248,7 @@ struct DateFilterView: View {
                 }
             } label: {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(displayName(for: period))
                             .foregroundStyle(.primary)
 
@@ -265,8 +265,8 @@ struct DateFilterView: View {
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -309,7 +309,7 @@ struct DateFilterView: View {
     }
 
     private func customRangeRow() -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DS.Spacing.md) {
             let fromBinding = Binding<Date>(
                 get: { customDateFrom ?? Date() },
                 set: { customDateFrom = $0 }
@@ -330,7 +330,7 @@ struct DateFilterView: View {
     }
 
     private func datePill(label: String, date: Binding<Date>) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
