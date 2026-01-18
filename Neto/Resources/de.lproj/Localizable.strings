@@ -19,6 +19,7 @@
 
 // MARK: - Trend Widget
 
+"trend.title" = "Trends";
 "trend.balance.title" = "Saldoentwicklung";
 "trend.income.title" = "Einnahmenentwicklung";
 "trend.expense.title" = "Ausgabenentwicklung";
@@ -544,8 +545,8 @@
 
 "comparison.month" = "Monat";
 "comparison.year" = "Jahr";
-"comparison.monthShort" = "-1P";
-"comparison.yearShort" = "-1J";
+"comparison.monthShort" = "P-1";
+"comparison.yearShort" = "J-1";
 
 "statistics.noRecordsFiltered" = "Keine Einträge mit den angewandten Filtern gefunden.";
 "statistics.noRecordsDescription" = "Wenn du Transaktionen erfasst, erscheinen sie hier.";

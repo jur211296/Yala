@@ -219,9 +219,10 @@ enum PreviousPeriodHelper {
     ///   - currentAmount: The current period amount
     ///   - previousAmount: The previous period amount
     /// - Returns: The percentage variation (positive or negative), or nil if previous is zero
+    /// - Note: Uses abs(previousAmount) to correctly handle negative balances
     static func calculateVariation(currentAmount: Double, previousAmount: Double) -> Double? {
         guard previousAmount != 0 else { return nil }
-        return ((currentAmount - previousAmount) / previousAmount) * 100
+        return ((currentAmount - previousAmount) / abs(previousAmount)) * 100
     }
 
     /// Formats the variation percentage for display

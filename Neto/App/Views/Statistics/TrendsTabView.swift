@@ -80,6 +80,15 @@ struct TrendsTabView: View {
     @State private var previousPeriodPoints: [BarPoint] = []
     @State private var comparisonYDomain: ClosedRange<Double> = 0...1
 
+    // Variation Totals (for VariationChip)
+    @State private var currentPeriodTotal: Double = 0
+    @State private var previousPeriodTotal: Double? = nil
+
+    // CashFlow Previous Period (for VariationChip)
+    @State private var previousCashFlowSummary: CashFlowSummary?
+    @State private var previousCashFlowByAccount: [PersistentIdentifier: CashFlowSummary] = [:]
+    @State private var previousCashFlowByCurrency: [String: CashFlowSummary] = [:]
+
     // Trend charts carousel state
     @State private var trendChartsCarouselPosition: Int = 0
 
@@ -118,6 +127,7 @@ struct TrendsTabView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.xl) {
                 controlBar
+                trendsHeader
                 trendChartsCarousel
                 cashFlowWidget
                 recentRecordsSection
@@ -170,6 +180,11 @@ struct TrendsTabView: View {
         .onChange(of: sessionState.customDateRange) {
             // Sync custom date range and recalculate
             trendsViewModel.syncCustomRangeFromSessionState(sessionState)
+        }
+        .onChange(of: sessionState.comparisonMode) {
+            // Recalculate when comparison mode changes (P-1 vs A-1)
+            calculateCashFlowData()
+            calculatePeriodComparisonData()
         }
         // NOTE: Removed .onChange(of: allTransactions) - it caused crashes during data wipe
         // CashFlow updates via other onChange triggers (period, filters, etc.)
@@ -330,7 +345,67 @@ struct TrendsTabView: View {
         .equatable()
     }
 
-    // MARK: - Chart Card
+    // MARK: - Trends Header
+
+    /// Header with title "Tendencias", metric selector (balance/ing/gas), and comparison mode selector (P-1/A-1)
+    /// Placed outside carousel, similar to CategoriesTabView
+    private var trendsHeader: some View {
+        HStack {
+            Text(L10n.Trend.title)
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            metricSelector
+
+            // Comparison mode selector (hidden for periods where only one mode makes sense)
+            if PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
+                comparisonModeSelector
+            }
+        }
+    }
+
+    // MARK: - Comparison Mode Selector
+
+    private var comparisonModeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(ComparisonMode.allCases) { mode in
+                comparisonSelectorButton(for: mode)
+            }
+        }
+        .padding(DS.Spacing.xxs)
+        .background(Color.netoSecondaryText.opacity(0.08))
+        .clipShape(Capsule())
+    }
+
+    @Namespace private var comparisonNamespace
+
+    private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
+        let isSelected = sessionState.comparisonMode == mode
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                sessionState.comparisonMode = mode
+            }
+        } label: {
+            Text(mode.shortName)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .foregroundStyle(isSelected ? .white : Color.netoSecondaryText)
+                .background(
+                    Group {
+                        if isSelected {
+                            Capsule()
+                                .fill(Color.electricIndigo)
+                                .matchedGeometryEffect(id: "comparisonSelector", in: comparisonNamespace)
+                        }
+                    }
+                )
+        }
+        .buttonStyle(.plain)
+    }
 
     // MARK: - Trend Charts Carousel
 
@@ -371,7 +446,29 @@ struct TrendsTabView: View {
 
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            chartHeader
+            // Header with variation chip
+            HStack(alignment: .top) {
+                chartHeader
+
+                Spacer()
+
+                // Variation chip with "vs period" text below (hidden for All Time)
+                if trendsViewModel.detailPeriod != .allTime {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                        VariationChip(
+                            currentAmount: currentPeriodTotal,
+                            previousAmount: previousPeriodTotal,
+                            size: .medium,
+                            showNAWhenNil: true,
+                            isExpenseContext: trendsViewModel.selectedMetric == .expense
+                        )
+
+                        Text(comparisonPeriodText)
+                            .font(.caption2)
+                            .foregroundStyle(Color.netoSecondaryText)
+                    }
+                }
+            }
 
             TrendChartView(
                 trendPoints: trendsViewModel.trendPoints,
@@ -399,15 +496,44 @@ struct TrendsTabView: View {
 
     private var periodComparisonCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(L10n.Statistics.periodComparison)
-                    .font(.headline)
-                    .foregroundStyle(Color.netoPrimaryText)
+            // Header with KPI and variation chip (same style as chartCard)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text(L10n.Statistics.periodComparison)
+                        .font(.headline)
+                        .foregroundStyle(Color.netoPrimaryText)
 
-                Text(comparisonSubtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.netoSecondaryText)
+                    // KPI value with "vs" previous (same as chartHeader)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        Text(currentKPIValue)
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(Color.netoPrimaryText)
+
+                        if let prevTotal = previousPeriodTotal {
+                            Text("vs \(NetoFormatter.number(value: prevTotal))")
+                                .font(.caption)
+                                .foregroundStyle(Color.netoSecondaryText)
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+
+                Spacer()
+
+                // Variation chip with "vs period" text below
+                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                    VariationChip(
+                        currentAmount: currentPeriodTotal,
+                        previousAmount: previousPeriodTotal,
+                        size: .medium,
+                        showNAWhenNil: true,
+                        isExpenseContext: trendsViewModel.selectedMetric == .expense
+                    )
+
+                    Text(comparisonPeriodText)
+                        .font(.caption2)
+                        .foregroundStyle(Color.netoSecondaryText)
+                }
             }
 
             // Chart
@@ -433,82 +559,45 @@ struct TrendsTabView: View {
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
-    private var comparisonSubtitle: String {
-        let currentInterval = trendsViewModel.currentInterval
-        let previousInterval = getPreviousPeriodInterval(for: trendsViewModel.detailPeriod)
+    /// Short comparison period text (e.g., "vs Nov 25") for display below chips
+    private var comparisonPeriodText: String {
+        guard trendsViewModel.detailPeriod != .allTime else { return "" }
 
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: trendsViewModel.detailPeriod,
+            mode: sessionState.comparisonMode,
+            customRange: sessionState.customDateRange
+        )
 
-        let period = trendsViewModel.detailPeriod
-
-        switch period {
-        case .thisWeek, .last7Days:
-            // Format: "5-11 dic vs 28 nov-4 dic"
-            formatter.dateFormat = "d MMM"
-            let currentStart = formatter.string(from: currentInterval.start).replacingOccurrences(
-                of: ".", with: "")
-            formatter.dateFormat = "d MMM"
-            let currentEnd = formatter.string(from: currentInterval.end).replacingOccurrences(
-                of: ".", with: "")
-            let previousStart = formatter.string(from: previousInterval.start).replacingOccurrences(
-                of: ".", with: "")
-            formatter.dateFormat = "d MMM"
-            let previousEnd = formatter.string(from: previousInterval.end).replacingOccurrences(
-                of: ".", with: "")
-            return "\(currentStart)-\(currentEnd) vs \(previousStart)-\(previousEnd)"
-
-        case .thisMonth, .lastMonth:
-            // Format: "Diciembre 25 vs Noviembre 25"
-            formatter.dateFormat = "MMMM yy"
-            let currentMonth = formatter.string(from: currentInterval.start).capitalized
-                .replacingOccurrences(of: ".", with: "")
-            let previousMonth = formatter.string(from: previousInterval.start).capitalized
-                .replacingOccurrences(of: ".", with: "")
-            return "\(currentMonth) vs \(previousMonth)"
-
-        case .thisYear, .lastYear:
-            // Format: "2025 vs 2024"
-            formatter.dateFormat = "yyyy"
-            let currentYear = formatter.string(from: currentInterval.start)
-            let previousYear = formatter.string(from: previousInterval.start)
-            return "\(currentYear) vs \(previousYear)"
-
-        case .last30Days:
-            // Format: "5 dic-3 ene vs 6 nov-5 dic"
-            formatter.dateFormat = "d MMM"
-            let currentStart = formatter.string(from: currentInterval.start).replacingOccurrences(
-                of: ".", with: "")
-            let currentEnd = formatter.string(from: currentInterval.end).replacingOccurrences(
-                of: ".", with: "")
-            let previousStart = formatter.string(from: previousInterval.start).replacingOccurrences(
-                of: ".", with: "")
-            let previousEnd = formatter.string(from: previousInterval.end).replacingOccurrences(
-                of: ".", with: "")
-            return "\(currentStart)-\(currentEnd) vs \(previousStart)-\(previousEnd)"
-
-        case .allTime, .custom:
-            return ""
-        }
+        return PreviousPeriodHelper.formatComparisonText(
+            previousInterval: previousInterval,
+            period: trendsViewModel.detailPeriod,
+            mode: sessionState.comparisonMode
+        )
     }
 
     private var chartHeader: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(chartTitle)
-                    .font(.headline)
-                    .foregroundStyle(Color.netoPrimaryText)
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(chartTitle)
+                .font(.headline)
+                .foregroundStyle(Color.netoPrimaryText)
 
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
                 Text(currentKPIValue)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(Color.netoPrimaryText)
-                    .padding(.top, 4)
+
+                // Show previous period value for comparison (hidden for All Time)
+                if trendsViewModel.detailPeriod != .allTime,
+                   let prevTotal = previousPeriodTotal {
+                    Text("vs \(NetoFormatter.number(value: prevTotal))")
+                        .font(.caption)
+                        .foregroundStyle(Color.netoSecondaryText)
+                }
             }
-
-            Spacer()
-
-            metricSelector
+            .padding(.top, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var metricSelector: some View {
@@ -544,26 +633,21 @@ struct TrendsTabView: View {
                 trendsViewModel.setMetricManually(metric)
             }
         } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: metric.iconName)
-                    .font(.caption.weight(.semibold))
-                if isSelected {
-                    Text(metric.displayName)
-                        .font(.caption.weight(.semibold))
-                }
-            }
-            .padding(.horizontal, isSelected ? 12 : 10)
-            .padding(.vertical, 8)
-            .foregroundStyle(isSelected ? .white : metric.color)
-            .background(
-                Group {
-                    if isSelected {
-                        Capsule()
-                            .fill(metric.color)
-                            .matchedGeometryEffect(id: "metricSelector", in: metricNamespace)
+            // Icon only (compact version for TrendsTabView header)
+            Image(systemName: metric.iconName)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .foregroundStyle(isSelected ? .white : metric.color)
+                .background(
+                    Group {
+                        if isSelected {
+                            Capsule()
+                                .fill(metric.color)
+                                .matchedGeometryEffect(id: "metricSelector", in: metricNamespace)
+                        }
                     }
-                }
-            )
+                )
         }
         .buttonStyle(.plain)
     }
@@ -590,15 +674,11 @@ struct TrendsTabView: View {
             switch cashFlowViewType {
             case .total:
                 if let summary = cashFlowSummary {
-                    CashFlowWidget(
+                    cashFlowCard(
                         summary: summary,
-                        size: .large,
-                        period: trendsViewModel.detailPeriod.rawValue,
-                        grouping: cashFlowGrouping,
-                        interval: trendsViewModel.panelDateInterval,
-                        onShowDetail: nil,
-                        customTitle: "Total",
-                        displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric)
+                        previousSummary: previousCashFlowSummary,
+                        title: "Total",
+                        currencyCode: defaultCurrencyCode
                     )
                 }
 
@@ -688,6 +768,7 @@ struct TrendsTabView: View {
                             {
                                 cashFlowCard(
                                     summary: summary,
+                                    previousSummary: previousCashFlowByAccount[accountID],
                                     title: account.name,
                                     currencyCode: account.currencyCode
                                 )
@@ -751,6 +832,7 @@ struct TrendsTabView: View {
                             if let summary = cashFlowByCurrency[currencyCode] {
                                 cashFlowCard(
                                     summary: summary,
+                                    previousSummary: previousCashFlowByCurrency[currencyCode],
                                     title: Locale.current.localizedString(
                                         forCurrencyCode: currencyCode)?.capitalized ?? currencyCode,
                                     currencyCode: currencyCode
@@ -789,10 +871,27 @@ struct TrendsTabView: View {
         }
     }
 
-    private func cashFlowCard(summary: CashFlowSummary, title: String, currencyCode: String)
-        -> some View
-    {
-        CashFlowWidget(
+    private func cashFlowCard(
+        summary: CashFlowSummary,
+        previousSummary: CashFlowSummary?,
+        title: String,
+        currencyCode: String
+    ) -> some View {
+        // Calculate previous total based on selected metric
+        let previousTotal: Double? = {
+            guard trendsViewModel.detailPeriod != .allTime else { return nil }
+            guard let prev = previousSummary else { return nil }
+            switch trendsViewModel.selectedMetric {
+            case .balance:
+                return prev.netFlow
+            case .income:
+                return prev.totalIncome > 0 ? prev.totalIncome : nil
+            case .expense:
+                return prev.totalExpense > 0 ? prev.totalExpense : nil
+            }
+        }()
+
+        return CashFlowWidget(
             summary: summary,
             size: .large,
             period: trendsViewModel.detailPeriod.rawValue,
@@ -800,7 +899,9 @@ struct TrendsTabView: View {
             interval: trendsViewModel.panelDateInterval,
             onShowDetail: nil,
             customTitle: title,
-            displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric)
+            displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric),
+            previousAmount: previousTotal,
+            comparisonPeriodText: trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil
         )
     }
 
@@ -1130,6 +1231,96 @@ struct TrendsTabView: View {
             byCurrency[currencyCode] = summary
         }
         cashFlowByCurrency = byCurrency
+
+        // 4. Calculate PREVIOUS period cash flow for variation chip
+        calculatePreviousCashFlow(fetchedTransactions: fetchedTransactions ?? [])
+    }
+
+    /// Calculate previous period cash flow summary for VariationChip
+    private func calculatePreviousCashFlow(fetchedTransactions: [TransactionItem]) {
+        // Skip for All Time period
+        guard trendsViewModel.detailPeriod != .allTime else {
+            previousCashFlowSummary = nil
+            previousCashFlowByAccount = [:]
+            previousCashFlowByCurrency = [:]
+            return
+        }
+
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: trendsViewModel.detailPeriod,
+            mode: sessionState.comparisonMode,
+            customRange: sessionState.customDateRange
+        )
+
+        // Build filter criteria for previous period (same filters as current period)
+        let previousCriteria = FilterCriteria(
+            selectedAccounts: trendsViewModel.selectedAccounts,
+            selectedCategories: trendsViewModel.selectedCategories,
+            selectedSubcategories: trendsViewModel.selectedSubcategories,
+            selectedTags: trendsViewModel.selectedTags,
+            selectedNatures: trendsViewModel.selectedNatures,
+            selectedCurrencies: trendsViewModel.selectedCurrencies,
+            transactionTypeFilter: .all,
+            amountCondition: trendsViewModel.amountCondition,
+            searchText: trendsViewModel.searchText,
+            dateInterval: previousInterval
+        )
+
+        // Filter transactions for previous period
+        let previousFiltered = FilterService.filterForTrends(
+            transactions: fetchedTransactions,
+            accounts: accounts,
+            criteria: previousCriteria
+        )
+
+        // 1. Calculate TOTAL previous period cash flow
+        previousCashFlowSummary = CashFlowCalculator.calculateCashFlow(
+            transactions: previousFiltered,
+            interval: previousInterval,
+            grouping: cashFlowGrouping,
+            currencyCode: defaultCurrencyCode,
+            context: modelContext
+        )
+
+        // 2. Calculate previous period cash flow BY ACCOUNT
+        var byAccount: [PersistentIdentifier: CashFlowSummary] = [:]
+        for account in accounts {
+            let accountTransactions = previousFiltered.filter { tx in
+                tx.account?.persistentModelID == account.persistentModelID
+            }
+
+            let summary = CashFlowCalculator.calculateCashFlow(
+                transactions: accountTransactions,
+                interval: previousInterval,
+                grouping: cashFlowGrouping,
+                currencyCode: account.currencyCode,
+                context: modelContext
+            )
+
+            byAccount[account.persistentModelID] = summary
+        }
+        previousCashFlowByAccount = byAccount
+
+        // 3. Calculate previous period cash flow BY CURRENCY
+        var byCurrency: [String: CashFlowSummary] = [:]
+        let currencies = Set(previousFiltered.map { $0.currencyCode })
+
+        for currencyCode in currencies {
+            let currencyTransactions = previousFiltered.filter { tx in
+                tx.currencyCode == currencyCode
+            }
+
+            let summary = CashFlowCalculator.calculateCashFlow(
+                transactions: currencyTransactions,
+                interval: previousInterval,
+                grouping: cashFlowGrouping,
+                currencyCode: currencyCode,
+                context: modelContext
+            )
+
+            byCurrency[currencyCode] = summary
+        }
+        previousCashFlowByCurrency = byCurrency
     }
 
     // MARK: - Period Comparison Data Calculation
@@ -1140,16 +1331,56 @@ struct TrendsTabView: View {
             currentPeriodPoints = []
             previousPeriodPoints = []
             comparisonYDomain = 0...1
+            currentPeriodTotal = 0
+            previousPeriodTotal = nil
             return
         }
 
         let currentInterval = trendsViewModel.panelDateInterval
-        let previousInterval = getPreviousPeriodInterval(for: trendsViewModel.detailPeriod)
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: trendsViewModel.detailPeriod,
+            mode: sessionState.comparisonMode,
+            customRange: sessionState.customDateRange
+        )
+
+        // Get eligible accounts (same as StatisticsViewModel)
+        let eligibleAccounts = accounts.filter { account in
+            !account.isArchived
+                && !account.excludeFromStatistics
+                && (trendsViewModel.selectedAccounts.isEmpty
+                    || trendsViewModel.selectedAccounts.contains(account.persistentModelID))
+        }
+
+        // For balance: we need ALL transactions (no date filter) to calculate running balance
+        // For income/expense: we only need transactions in the period
+        let isBalanceMetric = trendsViewModel.selectedMetric == .balance
+
+        // Base criteria WITHOUT date interval (for balance) or WITH date interval (for income/expense)
+        let baseCriteria = FilterCriteria(
+            selectedAccounts: trendsViewModel.selectedAccounts,
+            selectedCategories: trendsViewModel.selectedCategories,
+            selectedSubcategories: trendsViewModel.selectedSubcategories,
+            selectedTags: trendsViewModel.selectedTags,
+            selectedNatures: trendsViewModel.selectedNatures,
+            selectedCurrencies: [],
+            transactionTypeFilter: .all,
+            amountCondition: .any,
+            searchText: "",
+            dateInterval: isBalanceMetric ? nil : currentInterval
+        )
+
+        // For balance: filter by account/category but NOT by date, pass ALL transactions
+        // For income/expense: filter by date too
+        let filteredTransactions = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: baseCriteria
+        )
 
         // Calculate current period data
         let currentResult = TrendDataProcessor.processTrendData(
-            transactions: allTransactions,
-            accounts: accounts,
+            transactions: filteredTransactions,
+            accounts: eligibleAccounts,
             metric: convertMetricToTrendType(trendsViewModel.selectedMetric),
             period: trendsViewModel.detailPeriod,
             grouping: .day,
@@ -1158,10 +1389,36 @@ struct TrendsTabView: View {
             context: modelContext
         )
 
+        // For previous period with income/expense, we need separate filtering
+        let previousFiltered: [TransactionItem]
+        if isBalanceMetric {
+            // Same transactions, processor will use different interval
+            previousFiltered = filteredTransactions
+        } else {
+            // Filter for previous period date range
+            let previousCriteria = FilterCriteria(
+                selectedAccounts: trendsViewModel.selectedAccounts,
+                selectedCategories: trendsViewModel.selectedCategories,
+                selectedSubcategories: trendsViewModel.selectedSubcategories,
+                selectedTags: trendsViewModel.selectedTags,
+                selectedNatures: trendsViewModel.selectedNatures,
+                selectedCurrencies: [],
+                transactionTypeFilter: .all,
+                amountCondition: .any,
+                searchText: "",
+                dateInterval: previousInterval
+            )
+            previousFiltered = FilterService.filterForTrends(
+                transactions: allTransactions,
+                accounts: accounts,
+                criteria: previousCriteria
+            )
+        }
+
         // Calculate previous period data
         let previousResult = TrendDataProcessor.processTrendData(
-            transactions: allTransactions,
-            accounts: accounts,
+            transactions: previousFiltered,
+            accounts: eligibleAccounts,
             metric: convertMetricToTrendType(trendsViewModel.selectedMetric),
             period: trendsViewModel.detailPeriod,
             grouping: .day,
@@ -1173,6 +1430,12 @@ struct TrendsTabView: View {
         // Update state
         currentPeriodPoints = currentResult.points
         previousPeriodPoints = previousResult.points
+
+        // Calculate totals for VariationChip
+        // All metrics use cumulative values, so last point is the total
+        currentPeriodTotal = currentResult.points.last?.value ?? 0
+        let prevTotal = previousResult.points.last?.value ?? 0
+        previousPeriodTotal = previousResult.points.isEmpty ? nil : prevTotal
 
         // Calculate combined Y domain
         let allValues =

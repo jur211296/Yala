@@ -60,6 +60,11 @@ struct PanelCalculationContext {
     /// Does NOT have: date filter
     let transactionsWithoutDateFilter: [TransactionItem]
 
+    /// Transactions for balance calculation (includes adjustments, no date filter)
+    /// Same filters as filteredTransactions but without date filter
+    /// INCLUDES adjustments (needed for running balance calculation)
+    let balanceTransactions: [TransactionItem]
+
     // MARK: - Period & Interval
 
     /// The selected display period

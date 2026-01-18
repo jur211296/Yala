@@ -18,6 +18,10 @@ struct CashFlowWidget: View {
     let customTitle: String?
     let displayMode: TrendType?
 
+    // Period Comparison (optional)
+    let previousAmount: Double?
+    let comparisonPeriodText: String?
+
     init(
         summary: CashFlowSummary,
         size: WidgetSize,
@@ -26,7 +30,9 @@ struct CashFlowWidget: View {
         interval: DateInterval,
         onShowDetail: (() -> Void)? = nil,
         customTitle: String? = nil,
-        displayMode: TrendType? = nil
+        displayMode: TrendType? = nil,
+        previousAmount: Double? = nil,
+        comparisonPeriodText: String? = nil
     ) {
         self.summary = summary
         self.size = size
@@ -36,6 +42,8 @@ struct CashFlowWidget: View {
         self.onShowDetail = onShowDetail
         self.customTitle = customTitle
         self.displayMode = displayMode
+        self.previousAmount = previousAmount
+        self.comparisonPeriodText = comparisonPeriodText
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -179,16 +187,45 @@ struct CashFlowWidget: View {
                         .foregroundStyle(.primary)
                         .padding(.bottom, 2)
 
-                    Text(
-                        NetoFormatter.currency(
-                            value: kpiValue, currencyCode: summary.currencyCode,
-                            forceSign: displayMode == .balance || displayMode == .none)
-                    )
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.primary)
+                    // KPI with "vs previous amount"
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        Text(
+                            NetoFormatter.currency(
+                                value: kpiValue, currencyCode: summary.currencyCode,
+                                forceSign: displayMode == .balance || displayMode == .none)
+                        )
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.primary)
+
+                        // Show previous period value for comparison
+                        if let prevAmount = previousAmount {
+                            Text("vs \(NetoFormatter.number(value: prevAmount))")
+                                .font(.caption)
+                                .foregroundStyle(Color.netoSecondaryText)
+                        }
+                    }
                 }
 
                 Spacer()
+
+                // Variation chip and comparison text (when previousAmount is available)
+                if previousAmount != nil {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                        VariationChip(
+                            currentAmount: kpiValue,
+                            previousAmount: previousAmount,
+                            size: .medium,
+                            showNAWhenNil: true,
+                            isExpenseContext: displayMode == .expense
+                        )
+
+                        if let periodText = comparisonPeriodText, !periodText.isEmpty {
+                            Text(periodText)
+                                .font(.caption2)
+                                .foregroundStyle(Color.netoSecondaryText)
+                        }
+                    }
+                }
 
                 if onShowDetail != nil {
                     Button(action: { onShowDetail?() }) {

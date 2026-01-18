@@ -31,6 +31,9 @@ enum L10n {
     // MARK: - Trend
 
     enum Trend {
+        static var title: String {
+            NSLocalizedString("trend.title", comment: "Trends section title")
+        }
         static var balanceTitle: String {
             NSLocalizedString("trend.balance.title", comment: "Balance trend title")
         }

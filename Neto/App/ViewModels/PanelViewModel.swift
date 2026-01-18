@@ -459,8 +459,12 @@ final class PanelViewModel {
         var newTrendTotalIncome = trendTotalIncome
         var newTrendTotalExpense = trendTotalExpense
         var newTrendFinalBalance = trendFinalBalance
+        // For balance, use all transactions (no date filter) to calculate running balance
+        let transactionsForTrend = trendType == .balance
+            ? calcContext.balanceTransactions
+            : calcContext.filteredTransactions
         let result = TrendDataProcessor.processTrendData(
-            transactions: calcContext.filteredTransactions,
+            transactions: transactionsForTrend,
             accounts: calcContext.eligibleAccounts,
             metric: trendType,
             period: calcContext.period,
@@ -684,6 +688,72 @@ final class PanelViewModel {
             return true
         }
 
+        // Balance transactions: same filters as filtered BUT without date filter
+        // INCLUDES adjustments (needed for running balance calculation)
+        let balanceTransactions = transactions.filter { transaction in
+            guard let account = transaction.account else { return false }
+            if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
+            // NO DATE FILTER - balance needs all historical transactions
+
+            // Focused Date Filter - skip for balance (need all history)
+            // Category Filter
+            if let catID = selectedCategoryID {
+                guard transaction.category?.persistentModelID == catID else { return false }
+            }
+
+            // Subcategory Filter
+            if !selectedSubcategoryIDs.isEmpty {
+                guard let subID = transaction.subcategory?.persistentModelID,
+                    selectedSubcategoryIDs.contains(subID)
+                else { return false }
+            }
+
+            // Nature Filter
+            if let nature = selectedNature {
+                if let sub = transaction.subcategory {
+                    if sub.nature != nature { return false }
+                } else {
+                    if nature == .unclassified {
+                        if transaction.subcategory != nil
+                            && transaction.subcategory!.nature != .unclassified
+                        {
+                            return false
+                        }
+                    } else {
+                        return false
+                    }
+                }
+            }
+
+            // Tag Filter
+            if !selectedTags.isEmpty {
+                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+            }
+
+            // Currency Filter
+            if !selectedCurrencies.isEmpty {
+                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                    return false
+                }
+                if !selectedCurrencies.contains(txCurrency) { return false }
+            }
+
+            // Amount Filter
+            if amountCondition.isActive {
+                let amountDecimal = Decimal(transaction.amount)
+                if !amountCondition.matches(amountDecimal) { return false }
+            }
+
+            // Search/Note Filter
+            if !searchText.isEmpty {
+                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
+                if !noteMatches { return false }
+            }
+
+            return true
+        }
+
         // Expense-filtered transactions (excludes adjustments and initial balances)
         let expenseFiltered = filtered.filter { $0.balanceAdjustmentType == nil }
 
@@ -819,6 +889,7 @@ final class PanelViewModel {
             fullyFilteredTransactions: fullyFiltered,
             natureWidgetTransactions: natureWidgetTxns,
             transactionsWithoutDateFilter: transactionsWithoutDateFilter,
+            balanceTransactions: balanceTransactions,
             period: selectedPeriod,
             effectiveInterval: effectiveInterval,
             trendGrouping: newTrendGrouping,

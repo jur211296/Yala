@@ -302,4 +302,15 @@ struct NetoFormatter {
     static func compactCurrency(value: Double) -> String {
         value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
     }
+
+    /// Formats a number with standard format: `20,000.00` or `-20,000.00` (no currency)
+    /// - Parameter value: The numeric value to format
+    /// - Returns: Formatted string like "20,000.00" or "-20,000.00"
+    static func number(value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
+    }
 }

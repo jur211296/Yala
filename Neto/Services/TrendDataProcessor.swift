@@ -55,13 +55,16 @@ struct TrendDataProcessor {
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
 
-        // 1. Single pass to calculate totals AND date range (performance optimization)
+        // 1. Filter transactions to interval first, then calculate totals and date range
+        // This ensures min/max dates don't include transactions outside the interval
+        let intervalTransactions = transactions.filter { interval.contains($0.date) }
+
         var totalIncome: Double = 0
         var totalExpense: Double = 0
         var minDate: Date?
         var maxDate: Date?
 
-        for transaction in transactions {
+        for transaction in intervalTransactions {
             let amount = transaction.amountInPreferredCurrency
 
             // Exclude balance adjustments from income/expense totals
@@ -124,11 +127,12 @@ struct TrendDataProcessor {
         let effectiveInterval = DateInterval(start: bucketStartDate, end: effectiveEnd)
 
         // 3. Build date buckets only for actual data range
+        // Use < instead of <= because interval.end is exclusive
         var buckets: [Date: Double] = [:]
         var current = bucketStartDate
         let endDate = effectiveEnd
 
-        while current <= endDate {
+        while current < endDate {
             buckets[current] = 0
             if let next = calendar.date(byAdding: grouping.calendarComponent, value: 1, to: current)
             {

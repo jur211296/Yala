@@ -27,23 +27,6 @@ struct PieChartVariationHeader: View {
 
     // MARK: - Computed Properties
 
-    private var variation: Double? {
-        guard let previous = previousAmount else { return nil }
-        return PreviousPeriodHelper.calculateVariation(
-            currentAmount: totalAmount,
-            previousAmount: previous
-        )
-    }
-
-    private var variationText: String {
-        PreviousPeriodHelper.formatVariation(variation)
-    }
-
-    private var variationColor: Color {
-        guard let variation = variation else { return .gray }
-        return variation >= 0 ? .electricIndigo : .hotPink
-    }
-
     private var previousInterval: DateInterval {
         PreviousPeriodHelper.previousInterval(
             for: period,
@@ -71,18 +54,34 @@ struct PieChartVariationHeader: View {
                     .foregroundStyle(.primary)
                     .padding(.bottom, 2)
 
-                Text(formattedCurrency(totalAmount))
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.primary)
+                // KPI with "vs previous amount"
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    Text(formattedCurrency(totalAmount))
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.primary)
+
+                    // Show previous period value for comparison
+                    if let prevAmount = previousAmount {
+                        Text("vs \(NetoFormatter.number(value: prevAmount))")
+                            .font(.caption)
+                            .foregroundStyle(Color.netoSecondaryText)
+                    }
+                }
             }
 
             Spacer()
 
-            // Right: Variation chip and comparison text (only when there's comparison data)
-            if variation != nil {
-                VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            // Right: Variation chip and comparison text (show when previousAmount exists)
+            if previousAmount != nil {
+                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     // Variation chip
-                    variationChip
+                    VariationChip(
+                        currentAmount: totalAmount,
+                        previousAmount: previousAmount,
+                        size: .medium,
+                        showNAWhenNil: true,
+                        isExpenseContext: true
+                    )
 
                     // Comparison period text
                     if !comparisonText.isEmpty {
@@ -106,20 +105,6 @@ struct PieChartVariationHeader: View {
                 .padding(.leading, DS.Spacing.sm)
             }
         }
-    }
-
-    // MARK: - Variation Chip
-
-    private var variationChip: some View {
-        Text(variationText)
-            .font(.caption2.weight(.medium))
-            .foregroundStyle(variationColor)
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.xs)
-            .background(
-                Capsule()
-                    .fill(variationColor.opacity(0.1))
-            )
     }
 
     // MARK: - Helpers

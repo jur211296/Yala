@@ -99,13 +99,22 @@ struct NatureTrendWidget: View {
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
 
-                    // Total amount (always shown)
-                    Text(
-                        NetoFormatter.currency(
-                            value: totalAmount, currencyCode: currencyCode)
-                    )
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.netoPrimaryText)
+                    // Total amount with "vs previous" comparison
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        Text(
+                            NetoFormatter.currency(
+                                value: totalAmount, currencyCode: currencyCode)
+                        )
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Color.netoPrimaryText)
+
+                        // Show previous period value for comparison
+                        if let prevAmount = previousTotalAmount {
+                            Text("vs \(NetoFormatter.number(value: prevAmount))")
+                                .font(.caption)
+                                .foregroundStyle(Color.netoSecondaryText)
+                        }
+                    }
                 }
 
                 Spacer()

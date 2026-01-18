@@ -49,6 +49,7 @@ struct PeriodComparisonChartView: View {
     }
 
     // Filter previous period points to only show those that fit within current period domain
+    // IMPORTANT: Sort by date after adjustment to prevent line from looping back
     private var clippedPreviousPoints: [BarPoint] {
         let domain = dataXDomain
         return filteredPreviousPoints.compactMap { point in
@@ -58,7 +59,7 @@ struct PeriodComparisonChartView: View {
                 return nil
             }
             return BarPoint(date: adjustedDate, value: point.value)
-        }
+        }.sorted { $0.date < $1.date }
     }
 
     var body: some View {
@@ -233,9 +234,39 @@ struct PeriodComparisonChartView: View {
     // MARK: - Helpers
 
     /// Adjust previous period dates to align with current period on X-axis
+    /// Uses calendar-based alignment to correctly handle months with different lengths
     private func adjustDateToCurrent(_ previousDate: Date) -> Date {
-        let duration = interval.duration
-        return previousDate.addingTimeInterval(duration)
+        let calendar = Calendar.current
+
+        // Get day-of-month from previous date
+        let dayOfMonth = calendar.component(.day, from: previousDate)
+
+        // Create date in current period with same day-of-month
+        var components = calendar.dateComponents([.year, .month], from: interval.start)
+        components.day = dayOfMonth
+
+        // If day doesn't exist in current month (e.g., Nov 30 → Feb 30), clamp to last day
+        if let adjustedDate = calendar.date(from: components) {
+            // Check if the date is within the current interval
+            if adjustedDate >= interval.start && adjustedDate < interval.end {
+                return adjustedDate
+            }
+        }
+
+        // Fallback: use proportional mapping for edge cases
+        // Calculate position in previous period and map to current period
+        let previousInterval = DateInterval(
+            start: calendar.date(byAdding: .month, value: -1, to: interval.start) ?? previousDate,
+            end: interval.start
+        )
+
+        let previousDuration = previousInterval.duration
+        let currentDuration = interval.duration
+
+        guard previousDuration > 0 else { return previousDate }
+
+        let relativePosition = previousDate.timeIntervalSince(previousInterval.start) / previousDuration
+        return interval.start.addingTimeInterval(relativePosition * currentDuration)
     }
 
     /// Format currency value for Y-axis (shortened) - matches TrendChartView format

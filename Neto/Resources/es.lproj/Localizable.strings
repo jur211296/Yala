@@ -19,6 +19,7 @@
 
 // MARK: - Trend Widget
 
+"trend.title" = "Tendencias";
 "trend.balance.title" = "Tendencia de Saldo";
 "trend.income.title" = "Tendencia de Ingresos";
 "trend.expense.title" = "Tendencia de Gastos";
@@ -544,8 +545,8 @@
 
 "comparison.month" = "Mes";
 "comparison.year" = "Año";
-"comparison.monthShort" = "-1P";
-"comparison.yearShort" = "-1A";
+"comparison.monthShort" = "P-1";
+"comparison.yearShort" = "A-1";
 
 "statistics.noRecordsFiltered" = "No se encontraron registros con los filtros aplicados.";
 "statistics.noRecordsDescription" = "Cuando registres movimientos, aparecerán aquí.";

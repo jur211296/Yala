@@ -22,6 +22,11 @@ struct VariationChip: View {
     /// Use true for row items (categories, etc.), false for headers.
     var showNAWhenNil: Bool = false
 
+    /// If true, colors are inverted for expense context:
+    /// - Expense context: +% = pink (bad, spent more), -% = purple (good, spent less)
+    /// - Income/Balance context: +% = purple (good, earned more), -% = pink (bad, earned less)
+    var isExpenseContext: Bool = true
+
     // MARK: - Size Configuration
 
     enum ChipSize {
@@ -58,9 +63,14 @@ struct VariationChip: View {
 
     private var variationColor: Color {
         guard let variation = variation else { return .gray }
-        // For expenses: positive variation (spending more) = purple
-        // negative variation (spending less) = pink
-        return variation >= 0 ? .electricIndigo : .hotPink
+
+        if isExpenseContext {
+            // Expense context: +% = pink (bad, spent more), -% = purple (good, spent less)
+            return variation >= 0 ? .hotPink : .electricIndigo
+        } else {
+            // Income/Balance context: +% = purple (good, earned more), -% = pink (bad, earned less)
+            return variation >= 0 ? .electricIndigo : .hotPink
+        }
     }
 
     // MARK: - Body
@@ -98,13 +108,20 @@ struct VariationChip: View {
 
 extension VariationChip {
     /// Create chip from current and previous amounts
-    init(currentAmount: Double, previousAmount: Double?, size: ChipSize = .small, showNAWhenNil: Bool = false) {
+    init(
+        currentAmount: Double,
+        previousAmount: Double?,
+        size: ChipSize = .small,
+        showNAWhenNil: Bool = false,
+        isExpenseContext: Bool = true
+    ) {
         self.variation = PreviousPeriodHelper.calculateVariation(
             currentAmount: currentAmount,
             previousAmount: previousAmount ?? 0
         )
         self.size = size
         self.showNAWhenNil = showNAWhenNil
+        self.isExpenseContext = isExpenseContext
     }
 }
 

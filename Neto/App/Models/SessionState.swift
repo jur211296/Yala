@@ -56,6 +56,12 @@ class SessionState {
     /// Used to determine if we should auto-reset to Balance when filters are cleared
     var isExpenseAutomatic: Bool = false
 
+    // MARK: - Comparison Mode State
+
+    /// Comparison mode for variation chips (P-1 vs A-1), synchronized across Statistics tabs
+    /// P-1 = Compare with previous period, A-1 = Compare with same period last year
+    var comparisonMode: ComparisonMode = .month
+
     // MARK: - Global Filter State (shared between Panel and Statistics)
 
     /// Selected account IDs (empty = all accounts)

@@ -262,6 +262,10 @@ final class StatisticsViewModel: Filterable {
         currentInterval = interval
 
         // Build FilterCriteria from current state
+        // For balance: NO date filter - processor needs all transactions to calculate running balance
+        // For income/expense: WITH date filter - we only want transactions in the period
+        let isBalanceMetric = selectedMetric == .balance
+
         let criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
             selectedCategories: selectedCategories,
@@ -272,7 +276,7 @@ final class StatisticsViewModel: Filterable {
             transactionTypeFilter: .all,  // TrendsView handles metric filtering separately
             amountCondition: amountCondition,
             searchText: searchText,
-            dateInterval: interval
+            dateInterval: isBalanceMetric ? nil : interval
         )
 
         // Use FilterService for filtering with account eligibility

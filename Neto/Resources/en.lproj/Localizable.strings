@@ -19,6 +19,7 @@
 
 // MARK: - Trend Widget
 
+"trend.title" = "Trends";
 "trend.balance.title" = "Balance Trend";
 "trend.income.title" = "Income Trend";
 "trend.expense.title" = "Expense Trend";
@@ -544,8 +545,8 @@
 
 "comparison.month" = "Month";
 "comparison.year" = "Year";
-"comparison.monthShort" = "-1P";
-"comparison.yearShort" = "-1Y";
+"comparison.monthShort" = "P-1";
+"comparison.yearShort" = "Y-1";
 
 "statistics.noRecordsFiltered" = "No records found with the applied filters.";
 "statistics.noRecordsDescription" = "When you add transactions, they will appear here.";

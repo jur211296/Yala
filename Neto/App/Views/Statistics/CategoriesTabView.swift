@@ -52,8 +52,7 @@ struct CategoriesTabView: View {
     @Namespace private var listSelectorNamespace
     @Namespace private var comparisonSelectorNamespace
 
-    // Period Comparison State
-    @State private var comparisonMode: ComparisonMode = .month
+    // Period Comparison State (comparisonMode is in SessionState for sync across tabs)
     @State private var previousCategoryTotal: Double? = nil
     @State private var previousSubcategoryTotal: Double? = nil
     @State private var previousTagTotal: Double? = nil
@@ -148,7 +147,7 @@ struct CategoriesTabView: View {
             viewModel.syncCustomRangeFromSessionState(sessionState)
             calculateData()
         }
-        .onChange(of: comparisonMode) {
+        .onChange(of: sessionState.comparisonMode) {
             // Recalculate previous period data when comparison mode changes
             calculatePreviousPeriodTotals()
         }
@@ -378,17 +377,17 @@ struct CategoriesTabView: View {
     }
 
     private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
-        let isSelected = comparisonMode == mode
+        let isSelected = sessionState.comparisonMode == mode
 
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                comparisonMode = mode
+                sessionState.comparisonMode = mode
             }
         } label: {
             Text(mode.shortName)
                 .font(.caption2.weight(.semibold))
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.xs)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
                 .foregroundStyle(isSelected ? .white : Color.netoSecondaryText)
                 .background(
                     Group {
@@ -481,7 +480,7 @@ struct CategoriesTabView: View {
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
-                    comparisonMode: comparisonMode,
+                    comparisonMode: sessionState.comparisonMode,
                     showVariationHeader: viewModel.detailPeriod != .allTime
                 )
             }
@@ -523,7 +522,7 @@ struct CategoriesTabView: View {
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
-                    comparisonMode: comparisonMode,
+                    comparisonMode: sessionState.comparisonMode,
                     showVariationHeader: viewModel.detailPeriod != .allTime
                 )
             }
@@ -564,7 +563,7 @@ struct CategoriesTabView: View {
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
-                    comparisonMode: comparisonMode,
+                    comparisonMode: sessionState.comparisonMode,
                     showVariationHeader: viewModel.detailPeriod != .allTime
                 )
             }
@@ -675,7 +674,7 @@ struct CategoriesTabView: View {
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
             showVariationHeader: viewModel.detailPeriod != .allTime,
-            comparisonMode: comparisonMode
+            comparisonMode: sessionState.comparisonMode
         )
     }
 
@@ -701,7 +700,7 @@ struct CategoriesTabView: View {
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
             showVariationHeader: viewModel.detailPeriod != .allTime,
-            comparisonMode: comparisonMode
+            comparisonMode: sessionState.comparisonMode
         )
     }
 
@@ -1010,7 +1009,7 @@ struct CategoriesTabView: View {
         // Get previous period interval based on comparison mode
         let previousInterval = PreviousPeriodHelper.previousInterval(
             for: viewModel.detailPeriod,
-            mode: comparisonMode,
+            mode: sessionState.comparisonMode,
             customRange: sessionState.customDateRange
         )
 
