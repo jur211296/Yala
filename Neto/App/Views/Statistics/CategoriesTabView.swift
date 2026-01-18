@@ -623,7 +623,7 @@ struct CategoriesTabView: View {
                             .id(0)
 
                         // Slide 2: Medium (Compact Bars)
-                        natureWidgetCompact
+                        natureWidgetCompact 
                             .frame(width: cardWidth)
                             .id(1)
                     }

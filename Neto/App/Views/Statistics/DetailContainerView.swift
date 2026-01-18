@@ -141,37 +141,11 @@ struct DetailContainerView: View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: 0) {
-                navigationChipsBar
-                    .padding(.vertical, DS.Spacing.sm)
-
-                Group {
-                    switch selectedTab {
-                    case .trends:
-                        TrendsTabView(
-                            trendsViewModel: trendsViewModel,
-                            defaultCurrencyCode: defaultCurrencyCode,
-                            onNavigateToRecords: { selectedTab = .records }
-                        )
-                    case .categories:
-                        CategoriesTabView(
-                            viewModel: trendsViewModel,
-                            defaultCurrencyCode: defaultCurrencyCode,
-                            onNavigateToRecords: { selectedTab = .records }
-                        )
-                    case .records:
-                        RecordsTabView(
-                            viewModel: recordsViewModel,
-                            accounts: accounts,
-                            categories: categories,
-                            tags: tags,
-                            defaultCurrencyCode: defaultCurrencyCode,
-                            onFilterChange: { refreshRecordsData() }
-                        )
-                    }
+            tabContent
+                .safeAreaInset(edge: .top) {
+                    navigationChipsBar
+                        .padding(.vertical, DS.Spacing.sm)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
 
             if selectedTab == .records && !recordsViewModel.isSelectionMode {
                 newRecordFAB
@@ -180,6 +154,33 @@ struct DetailContainerView: View {
             if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
                 selectionActionBar
             }
+        }
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .trends:
+            TrendsTabView(
+                trendsViewModel: trendsViewModel,
+                defaultCurrencyCode: defaultCurrencyCode,
+                onNavigateToRecords: { selectedTab = .records }
+            )
+        case .categories:
+            CategoriesTabView(
+                viewModel: trendsViewModel,
+                defaultCurrencyCode: defaultCurrencyCode,
+                onNavigateToRecords: { selectedTab = .records }
+            )
+        case .records:
+            RecordsTabView(
+                viewModel: recordsViewModel,
+                accounts: accounts,
+                categories: categories,
+                tags: tags,
+                defaultCurrencyCode: defaultCurrencyCode,
+                onFilterChange: { refreshRecordsData() }
+            )
         }
     }
 
@@ -196,10 +197,11 @@ struct DetailContainerView: View {
         }
     }
 
+    @ViewBuilder
     private func navigationChipButton(for tab: DetailViewTab) -> some View {
         let isSelected = selectedTab == tab
 
-        return Button {
+        Button {
             withAnimation(.easeInOut(duration: 0.2)) {
                 selectedTab = tab
             }
@@ -217,10 +219,7 @@ struct DetailContainerView: View {
                 Capsule()
                     .fill(isSelected ? Color.electricIndigo : Color.clear)
             )
-            .overlay(
-                Capsule()
-                    .stroke(Color.netoSecondaryText.opacity(0.2), lineWidth: isSelected ? 0 : 1)
-            )
+            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
     }
