@@ -22,22 +22,42 @@ PASOS:
 
 4. Registra el objetivo de la sesión en el log
 
-5. Guarda la ruta del session file en variable de entorno o archivo temporal:
-```bash
-   echo $SESSION_FILE > /tmp/current-session
-```
+5. PLANIFICACIÓN DE INCREMENTOS:
+   - Analiza el objetivo declarado
+   - Divide el trabajo en incrementos pequeños y verificables
+   - Cada incremento debe poder completarse con un /commit-one
+   - Presenta el plan al usuario en formato:
+     ```
+     ## Plan de trabajo para esta sesión:
+     1. [Incremento 1] - [qué se logra]
+     2. [Incremento 2] - [qué se logra]
+     3. [Incremento N] - [qué se logra]
 
-6. PRESENTA CONFIRMACIÓN Y DETENTE:
-   Informa al usuario:
-   - "Sesión iniciada y registrada"
-   - "Objetivo: [el objetivo que declaró el usuario]"
-   - "Session log creado en: [ruta del archivo]"
-   - "Listo para empezar. ¿Qué incremento quieres que implemente?"
-   
-   CRÍTICO: NO EMPEZAR A IMPLEMENTAR AUTOMÁTICAMENTE
-   - Esperar instrucción explícita del usuario
-   - El usuario dirá algo como "Implementa Incremento 1" o "Implementa el primer incremento"
-   - SOLO después de esa instrucción explícita proceder con implementación
+     ¿Comenzamos con el incremento 1?
+     ```
+   - ESPERA confirmación del usuario antes de implementar
+
+6. Guarda la ruta del session file en archivo temporal:
+   ```bash
+   echo $SESSION_FILE > /tmp/current-session
+   ```
+
+7. CICLO POR CADA INCREMENTO:
+   a) Implementa el incremento actual
+   b) Ejecuta /verify-ios (o /verify-quick si es apropiado)
+   c) Si hay tests relevantes, ejecuta /test-smart
+   d) PRESENTA resultado al usuario:
+      ```
+      ✓ Incremento [N] implementado
+      - Build: OK/Error
+      - Tests: OK/Error/N/A
+
+      ¿Validaste que funciona correctamente? (sí/no/ajustes)
+      ```
+   e) ESPERA confirmación del usuario:
+      - Si "sí": procede a commit con /commit-one, luego pasa al siguiente incremento
+      - Si "no" o "ajustes": el usuario indica qué corregir, vuelve a (a)
+   f) NUNCA marcar como completado sin confirmación explícita del usuario
 
 FORMATO DEL LOG:
 ```markdown
