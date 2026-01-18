@@ -46,33 +46,14 @@ struct PlanningView: View {
             ZStack {
                 PanelBackgroundView()
 
-                VStack(spacing: 0) {
-                    // Title
-                    HStack {
-                        Text(L10n.Planning.title)
-                            .font(.largeTitle.weight(.bold))
-                            .foregroundStyle(.primary)
-                        Spacer()
+                tabContent
+                    .safeAreaInset(edge: .top) {
+                        navigationChipsBar
+                            .padding(.vertical, DS.Spacing.sm)
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.sm)
-
-                    // Tab Chips
-                    navigationChipsBar
-                        .padding(.vertical, DS.Spacing.md)
-
-                    // Content
-                    Group {
-                        switch selectedTab {
-                        case .budgets:
-                            budgetsContent
-                        case .scheduledPayments:
-                            scheduledPaymentsContent
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
             }
+            .navigationTitle(L10n.Planning.title)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: DS.Spacing.lg) {
@@ -109,6 +90,18 @@ struct PlanningView: View {
         }
     }
 
+    // MARK: - Tab Content
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .budgets:
+            budgetsContent
+        case .scheduledPayments:
+            scheduledPaymentsContent
+        }
+    }
+
     // MARK: - Navigation Chips Bar
 
     private var navigationChipsBar: some View {
@@ -122,10 +115,11 @@ struct PlanningView: View {
         }
     }
 
+    @ViewBuilder
     private func navigationChipButton(for tab: PlanningTab) -> some View {
         let isSelected = selectedTab == tab
 
-        return Button {
+        Button {
             withAnimation(.easeInOut(duration: 0.2)) {
                 selectedTab = tab
             }
@@ -143,10 +137,7 @@ struct PlanningView: View {
                 Capsule()
                     .fill(isSelected ? Color.electricIndigo : Color.clear)
             )
-            .overlay(
-                Capsule()
-                    .stroke(Color.netoSecondaryText.opacity(0.2), lineWidth: isSelected ? 0 : 1)
-            )
+            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
     }

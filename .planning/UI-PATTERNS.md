@@ -205,6 +205,106 @@ VStack {
 
 ---
 
+## Estructura de Vistas Principales
+
+### Título Nativo Animado (OBLIGATORIO)
+Todas las vistas principales del TabView DEBEN usar el título nativo de iOS que se anima al toolbar al scrollear.
+
+```swift
+// ✅ CORRECTO: Título nativo con animación automática
+NavigationStack {
+    ZStack {
+        PanelBackgroundView()
+
+        // Contenido con ScrollView como elemento principal
+        contentView
+            .safeAreaInset(edge: .top) {
+                // Solo chips de navegación aquí (si existen)
+                navigationChipsBar
+            }
+    }
+    .navigationTitle("Título")
+    .navigationBarTitleDisplayMode(.large)
+}
+
+// ❌ INCORRECTO: Título manual que no se anima
+NavigationStack {
+    VStack {
+        Text("Título").font(.largeTitle)  // NO hacer esto
+        ScrollView { ... }
+    }
+}
+```
+
+### Reglas de Scroll
+- **ScrollView debe ser el contenido principal** para que iOS detecte el scroll y anime el título
+- **Solo chips de navegación** van en `safeAreaInset(edge: .top)` y flotan
+- **Todo lo demás scrollea**: control bars, filtros, period selectors, headers de contenido
+- **Empty states** dentro del ScrollView: usar padding en lugar de Spacers
+
+```swift
+// ✅ CORRECTO: Control bar scrollea con contenido
+ScrollView {
+    VStack(spacing: 0) {
+        controlBar          // Scrollea
+        periodSelector      // Scrollea
+        filterChips         // Scrollea
+        contentList         // Scrollea
+    }
+}
+
+// ❌ INCORRECTO: Control bar fijo
+contentList
+    .safeAreaInset(edge: .top) {
+        controlBar  // Se queda fijo - NO hacer esto
+    }
+```
+
+---
+
+## Chips de Navegación y Filtro
+
+### Estilo Liquid Glass (OBLIGATORIO)
+Todos los chips de navegación y filtro DEBEN usar el estilo liquid glass de iOS 26.
+
+```swift
+// ✅ CORRECTO: Chip con liquid glass
+Button {
+    selectedTab = tab
+} label: {
+    HStack(spacing: DS.Spacing.sm) {
+        Image(systemName: tab.icon)
+        Text(tab.displayName)
+    }
+    .padding(.horizontal, DS.Spacing.lg)
+    .padding(.vertical, DS.Spacing.sm)
+    .foregroundStyle(isSelected ? .white : .primary)
+    .background(
+        Capsule()
+            .fill(isSelected ? Color.electricIndigo : Color.clear)
+    )
+    .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+}
+.buttonStyle(.plain)
+
+// ❌ INCORRECTO: Fondo sólido sin glass
+HStack { ... }
+    .background(Color.gray.opacity(0.2))  // NO hacer esto
+```
+
+### Reglas de Chips
+- **Sin fondo general**: Los chips flotan sin rectángulo de fondo detrás
+- **Glass effect en no seleccionados**: `.glassEffect(.regular.interactive(), in: .capsule)`
+- **Clear glass en seleccionados**: `.glassEffect(.clear, ...)` para que el color sólido se vea
+- **Period Selector**: Mismo estilo glass que los chips
+
+### Chips de Filtro (FilterChipView)
+- Siguen el mismo patrón visual
+- Incluyen botón de clear (X)
+- Muestran count cuando hay múltiples selecciones
+
+---
+
 ## Animaciones
 
 | Tipo | Duración | Uso |
@@ -232,6 +332,9 @@ Antes de commitear cambios de UI, verificar:
 - [ ] ¿Los estados vacíos usan `NetoEmptyState`?
 - [ ] ¿Los loading states usan componentes estándar?
 - [ ] ¿Los botones usan componentes estándar (`NetoPrimaryButton`, etc.)?
+- [ ] ¿Las vistas principales usan `.navigationTitle()` con `.large` para título animado?
+- [ ] ¿Los chips de navegación/filtro usan `.glassEffect()` sin fondo general?
+- [ ] ¿Solo chips de navegación están en `safeAreaInset`? (control bars deben scrollear)
 
 ---
 

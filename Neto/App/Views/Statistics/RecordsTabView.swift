@@ -35,19 +35,18 @@ struct RecordsTabView: View {
     @State private var showCustomPeriodPicker: Bool = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            controlBar
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.sm)
+        ScrollView {
+            VStack(spacing: 0) {
+                controlBar
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.sm)
 
-            if viewModel.groupedRecords.isEmpty {
-                emptyState
-            } else {
-                VStack(spacing: 0) {
-                    // Summary above records
+                if viewModel.groupedRecords.isEmpty {
+                    emptyStateContent
+                } else {
                     summaryRow
 
-                    recordsList
+                    recordsListContent
                 }
             }
         }
@@ -316,45 +315,41 @@ struct RecordsTabView: View {
         return (balance, income, expense)
     }
 
-    // MARK: - Records List
+    // MARK: - Records List Content
 
-    private var recordsList: some View {
-        ScrollView {
-            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
-                ForEach(viewModel.groupedRecords, id: \.date) { group in
-                    Section {
-                        ForEach(group.records, id: \.persistentModelID) { record in
-                            RecordRowView(
-                                record: record,
-                                currencyCode: defaultCurrencyCode,
-                                isSelectionMode: viewModel.isSelectionMode,
-                                isSelected: viewModel.selectedRecordIDs.contains(
-                                    record.persistentModelID),
-                                onTap: {
-                                    viewModel.editRecord(record)
-                                },
-                                onToggleSelection: {
-                                    viewModel.toggleSelection(record.persistentModelID)
-                                }
-                            )
-                            .padding(.horizontal, DS.Spacing.lg)
-                        }
-                    } header: {
-                        RecordDateSectionView(date: group.date)
+    private var recordsListContent: some View {
+        LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
+            ForEach(viewModel.groupedRecords, id: \.date) { group in
+                Section {
+                    ForEach(group.records, id: \.persistentModelID) { record in
+                        RecordRowView(
+                            record: record,
+                            currencyCode: defaultCurrencyCode,
+                            isSelectionMode: viewModel.isSelectionMode,
+                            isSelected: viewModel.selectedRecordIDs.contains(
+                                record.persistentModelID),
+                            onTap: {
+                                viewModel.editRecord(record)
+                            },
+                            onToggleSelection: {
+                                viewModel.toggleSelection(record.persistentModelID)
+                            }
+                        )
+                        .padding(.horizontal, DS.Spacing.lg)
                     }
+                } header: {
+                    RecordDateSectionView(date: group.date)
                 }
             }
-            .padding(.top, DS.Spacing.sm)
-            .netoSafeBottomPadding()
         }
+        .padding(.top, DS.Spacing.sm)
+        .netoSafeBottomPadding()
     }
 
-    // MARK: - Empty State
+    // MARK: - Empty State Content
 
-    private var emptyState: some View {
+    private var emptyStateContent: some View {
         VStack(spacing: DS.Spacing.lg) {
-            Spacer()
-
             Image(systemName: "list.bullet.rectangle")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
@@ -384,9 +379,9 @@ struct RecordsTabView: View {
                 }
                 .padding(.top, DS.Spacing.sm)
             }
-
-            Spacer()
         }
+        .frame(maxWidth: .infinity)
+        .padding(.top, DS.Spacing.xxxl * 2)
     }
 
     // MARK: - Chip Data Structures

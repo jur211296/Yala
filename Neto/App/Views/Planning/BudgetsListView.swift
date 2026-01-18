@@ -34,39 +34,11 @@ struct BudgetsListView: View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: 0) {
-                // Period type segmented control
-                periodTypeSegmentedControl
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.md)
-                    .padding(.bottom, DS.Spacing.sm)
+            ScrollView {
+                VStack(spacing: 0) {
+                    controlsBar
 
-                // Period selector button and hide inactive toggle (hidden for "Unique" mode)
-                if selectedSegment != 3 {
-                    HStack(spacing: DS.Spacing.md) {
-                        periodSelectorButton
-
-                        Spacer()
-
-                        hideInactiveButton
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.bottom, DS.Spacing.md)
-                } else {
-                    // For unique mode, only show the hide inactive button
-                    HStack {
-                        Spacer()
-                        hideInactiveButton
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.bottom, DS.Spacing.md)
-                }
-
-                // Budgets list or empty state
-                if viewModel.groupedBudgets.isEmpty {
-                    emptyState
-                } else {
-                    budgetsList
+                    listContent
                 }
             }
 
@@ -98,6 +70,50 @@ struct BudgetsListView: View {
         }
         .onAppear {
             refreshData()
+        }
+    }
+
+    // MARK: - Controls Bar
+
+    private var controlsBar: some View {
+        VStack(spacing: 0) {
+            // Period type segmented control
+            periodTypeSegmentedControl
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
+                .padding(.bottom, DS.Spacing.sm)
+
+            // Period selector button and hide inactive toggle (hidden for "Unique" mode)
+            if selectedSegment != 3 {
+                HStack(spacing: DS.Spacing.md) {
+                    periodSelectorButton
+
+                    Spacer()
+
+                    hideInactiveButton
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.md)
+            } else {
+                // For unique mode, only show the hide inactive button
+                HStack {
+                    Spacer()
+                    hideInactiveButton
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.md)
+            }
+        }
+    }
+
+    // MARK: - List Content
+
+    @ViewBuilder
+    private var listContent: some View {
+        if viewModel.groupedBudgets.isEmpty {
+            emptyState
+        } else {
+            budgetsList
         }
     }
 
@@ -250,8 +266,6 @@ struct BudgetsListView: View {
 
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            Spacer()
-
             ZStack {
                 Circle()
                     .fill(Color.electricIndigo.opacity(0.1))
@@ -279,41 +293,39 @@ struct BudgetsListView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
-
-            Spacer()
         }
+        .frame(maxWidth: .infinity)
+        .padding(.top, DS.Spacing.xxxl * 2)
     }
 
     // MARK: - Budgets List
 
     private var budgetsList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                ForEach(viewModel.groupedBudgets, id: \.status) { section in
-                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                        // Section header
-                        Text(section.status.localizedName)
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .padding(.horizontal, DS.Spacing.lg)
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            ForEach(viewModel.groupedBudgets, id: \.status) { section in
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    // Section header
+                    Text(section.status.localizedName)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, DS.Spacing.lg)
 
-                        // Budget cards
-                        ForEach(section.budgets) { summary in
-                            BudgetRowView(
-                                summary: summary,
-                                currencyCode: defaultCurrencyCode
-                            ) {
-                                viewModel.editingBudget = summary.budget
-                                viewModel.showBudgetEditor = true
-                            }
-                            .padding(.horizontal, DS.Spacing.lg)
+                    // Budget cards
+                    ForEach(section.budgets) { summary in
+                        BudgetRowView(
+                            summary: summary,
+                            currencyCode: defaultCurrencyCode
+                        ) {
+                            viewModel.editingBudget = summary.budget
+                            viewModel.showBudgetEditor = true
                         }
+                        .padding(.horizontal, DS.Spacing.lg)
                     }
                 }
             }
-            .padding(.top, DS.Spacing.sm)
-            .padding(.bottom, 100)  // Space for FAB
         }
+        .padding(.top, DS.Spacing.sm)
+        .padding(.bottom, 100)  // Space for FAB
     }
 
     // MARK: - New Budget FAB
