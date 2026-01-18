@@ -65,6 +65,10 @@ Progress: █████████████░ 90% (Fase 5)
 
 ## Parking Lot
 
+- [2026-01-18] [Tech Debt] [Performance] [Medium]: Revisar y optimizar cálculos en vistas de gráficas
+  Contexto: Se han hecho muchos cambios en TrendsTabView, CategoriesTabView, PanelView y widgets. Hay oportunidad de eficientar código y reaprovechar lógica de cálculos de variación, filtrado de transacciones y procesamiento de datos entre vistas.
+  Áreas: previousPeriod calculations, balance transactions filtering, variation chip logic
+
 - [2026-01-18] [Improvement] [UI/UX + Business Logic] [Medium]: Importación multimoneda con asignación de cuenta por divisa
   Contexto: Actualmente el importador fuerza elegir una única cuenta (una moneda). Permitir que al cargar archivo con múltiples monedas (ej: PEN y USD), el usuario asigne cada divisa a su cuenta correspondiente.
   Dependencias: Ya existe detección de moneda y validaciones, hay que adecuar el flujo de selección de cuenta.
