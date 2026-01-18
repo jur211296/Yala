@@ -45,11 +45,7 @@ struct FilterChipView: View {
         }
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(
-            Capsule()
-                .stroke(Color.primary.opacity(DS.Chip.borderOpacity), lineWidth: 1)
-        )
+        .glassEffect(.regular.interactive(), in: .capsule)
     }
 
     @ViewBuilder

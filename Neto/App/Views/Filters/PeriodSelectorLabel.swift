@@ -22,10 +22,7 @@ struct PeriodSelectorLabel: View {
         .padding(.horizontal, DS.Spacing.md)
         .padding(.vertical, DS.Spacing.sm)
         .foregroundStyle(Color.netoPrimaryText)
-        .background(
-            Capsule()
-                .fill(Color.netoSecondaryText.opacity(0.08))
-        )
+        .glassEffect(.regular.interactive(), in: .capsule)
         // Ensure entire capsule is tappable
         .contentShape(Capsule())
         // CRITICAL: Prevent truncation even if parent animates/constrains width

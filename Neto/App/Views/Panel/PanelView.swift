@@ -485,6 +485,7 @@ struct PanelView: View {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.secondary)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
