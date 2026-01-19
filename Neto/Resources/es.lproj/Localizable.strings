@@ -475,6 +475,10 @@
 "scheduled.widget.daysAgo" = "Hace %d días";
 "scheduled.widget.tomorrow" = "Mañana";
 "scheduled.widget.inDays" = "En %d días";
+"scheduled.payments.count" = "%d pagos activos";
+"scheduled.calendar.show.all" = "Ver todo";
+"scheduled.calendar.day.empty" = "Sin pagos este día";
+"scheduled.calendar.month.empty" = "Sin pagos este mes";
 
 "widget.sizeLabel" = "Tamaño";
 

@@ -474,6 +474,10 @@
 "scheduled.widget.daysAgo" = "Vor %d Tagen";
 "scheduled.widget.tomorrow" = "Morgen";
 "scheduled.widget.inDays" = "In %d Tagen";
+"scheduled.payments.count" = "%d aktive Zahlungen";
+"scheduled.calendar.show.all" = "Alle anzeigen";
+"scheduled.calendar.day.empty" = "Keine Zahlungen an diesem Tag";
+"scheduled.calendar.month.empty" = "Keine Zahlungen in diesem Monat";
 
 "widget.sizeLabel" = "Größe";
 

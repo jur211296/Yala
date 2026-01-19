@@ -474,6 +474,10 @@
 "scheduled.widget.daysAgo" = "Ha %d dias";
 "scheduled.widget.tomorrow" = "Amanha";
 "scheduled.widget.inDays" = "Em %d dias";
+"scheduled.payments.count" = "%d pagamentos ativos";
+"scheduled.calendar.show.all" = "Ver tudo";
+"scheduled.calendar.day.empty" = "Sem pagamentos neste dia";
+"scheduled.calendar.month.empty" = "Sem pagamentos neste mes";
 
 "widget.sizeLabel" = "Tamanho";
 
