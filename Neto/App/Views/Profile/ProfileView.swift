@@ -151,7 +151,7 @@ struct ProfileView: View {
                 case .budgetsFavorites:
                     BudgetsFavoritesSettingsView()
                 case .planned:
-                    SettingsPlaceholderView(title: L10n.Settings.plannedPayments)
+                    ScheduledPaymentsSettingsView()
                 case .userDataReset:
                     UserDataResetView(onUserDataWiped: {
                         dismiss()

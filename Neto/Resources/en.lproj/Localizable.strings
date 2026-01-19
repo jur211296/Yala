@@ -865,6 +865,7 @@
 
 // Editor Sections
 "scheduled.editor.basic.info" = "Basic information";
+"scheduled.editor.options" = "Options";
 "scheduled.editor.name.placeholder" = "Payment name";
 "scheduled.editor.note.placeholder" = "Note (optional)";
 "scheduled.editor.type" = "Transaction type";
@@ -880,6 +881,43 @@
 "scheduled.notify.on.due" = "Notify on due date";
 "scheduled.notify.days.before" = "Notify days before";
 "scheduled.select.subcategory" = "Select subcategory";
+"scheduled.is.subscription" = "Is this a subscription?";
+
+// Recurrence - New logic
+"scheduled.recurrence.onetime" = "One-time";
+"scheduled.recurrence.recurring" = "Recurring";
+"scheduled.recurrence.daily" = "Daily";
+"scheduled.recurrence.day" = "Day";
+"scheduled.recurrence.week" = "Week";
+"scheduled.recurrence.month" = "Month";
+"scheduled.recurrence.year" = "Year";
+"scheduled.recurrence.days" = "Days";
+"scheduled.recurrence.weeks" = "Weeks";
+"scheduled.recurrence.months" = "Months";
+"scheduled.recurrence.years" = "Years";
+"scheduled.every" = "Every";
+"scheduled.which.days" = "Which days?";
+"scheduled.payment.date" = "Payment date";
+"scheduled.start.date" = "Start date";
+"scheduled.has.end.date" = "Has end date";
+"scheduled.end.date" = "End date";
+"scheduled.yearly.date" = "Annual date";
+
+// Scheduled Payments - Settings & Detail
+"settings.scheduled.payments" = "Recurring payments";
+"scheduled.empty.settings.hint" = "Create recurring payments to remember your regular expenses and income.";
+"scheduled.inactive" = "Inactive";
+"scheduled.status.inactive" = "Payment inactive";
+"scheduled.detail.frequency" = "Frequency";
+"scheduled.detail.next.date" = "Next date";
+"scheduled.detail.end.date" = "End date";
+"scheduled.detail.upcoming" = "Upcoming";
+"scheduled.detail.history" = "History";
+"scheduled.detail.info.note" = "This history shows estimated payment dates based on the recurrence settings.";
+"scheduled.detail.not.found" = "Payment not found";
+"scheduled.next.first" = "Next payment";
+"scheduled.next.second" = "Second payment";
+"scheduled.next.third" = "Third payment";
 
 // Weekdays
 "weekday.sunday" = "Sunday";
@@ -890,9 +928,19 @@
 "weekday.friday" = "Friday";
 "weekday.saturday" = "Saturday";
 
+// Weekdays - Short
+"weekday.short.sunday" = "S";
+"weekday.short.monday" = "M";
+"weekday.short.tuesday" = "T";
+"weekday.short.wednesday" = "W";
+"weekday.short.thursday" = "T";
+"weekday.short.friday" = "F";
+"weekday.short.saturday" = "S";
+
 // Common (if not already present)
 "common.select" = "Select";
 "common.disabled" = "Disabled";
+"common.none" = "None";
 "filters.none" = "None";
 "filters.transaction.type" = "Transaction type";
 "filters.title" = "Filters";
