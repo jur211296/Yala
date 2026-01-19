@@ -466,6 +466,15 @@
 "widgetType.expensesByNature" = "Gastos por naturaleza";
 "widgetType.exchangeRate" = "Tipo de cambio";
 "widgetType.budgets" = "Presupuestos";
+"widgetType.scheduledPayments" = "Pagos planificados";
+
+// MARK: - Scheduled Payments Widget
+"scheduled.widget.count" = "%d pagos activos";
+"scheduled.widget.empty.title" = "Sin pagos";
+"scheduled.widget.empty.message" = "Agrega pagos planificados para verlos aquí";
+"scheduled.widget.daysAgo" = "Hace %d días";
+"scheduled.widget.tomorrow" = "Mañana";
+"scheduled.widget.inDays" = "En %d días";
 
 "widget.sizeLabel" = "Tamaño";
 

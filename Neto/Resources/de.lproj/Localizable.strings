@@ -465,6 +465,15 @@
 "widgetType.expensesByNature" = "Ausgaben nach Art";
 "widgetType.exchangeRate" = "Wechselkurs";
 "widgetType.budgets" = "Budgets";
+"widgetType.scheduledPayments" = "Geplante Zahlungen";
+
+// MARK: - Scheduled Payments Widget
+"scheduled.widget.count" = "%d aktive Zahlungen";
+"scheduled.widget.empty.title" = "Keine Zahlungen";
+"scheduled.widget.empty.message" = "Füge geplante Zahlungen hinzu um sie hier zu sehen";
+"scheduled.widget.daysAgo" = "Vor %d Tagen";
+"scheduled.widget.tomorrow" = "Morgen";
+"scheduled.widget.inDays" = "In %d Tagen";
 
 "widget.sizeLabel" = "Größe";
 

@@ -466,6 +466,15 @@
 "widgetType.expensesByNature" = "Expenses by Nature";
 "widgetType.exchangeRate" = "Exchange Rate";
 "widgetType.budgets" = "Budgets";
+"widgetType.scheduledPayments" = "Scheduled Payments";
+
+// MARK: - Scheduled Payments Widget
+"scheduled.widget.count" = "%d active payments";
+"scheduled.widget.empty.title" = "No payments";
+"scheduled.widget.empty.message" = "Add scheduled payments to see them here";
+"scheduled.widget.daysAgo" = "%d days ago";
+"scheduled.widget.tomorrow" = "Tomorrow";
+"scheduled.widget.inDays" = "In %d days";
 
 "widget.sizeLabel" = "Size";
 
