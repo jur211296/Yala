@@ -48,10 +48,10 @@ final class ScheduledPaymentsViewModel {
     /// Whether to hide inactive payments
     var hideInactive: Bool = false
 
-    // MARK: - Subscriptions Tab State
+    // MARK: - View Mode State
 
-    /// View mode for subscriptions tab (list or calendar)
-    var subscriptionsViewMode: SubscriptionsViewMode = .list
+    /// View mode for payments tabs (list or calendar) - applies to all tabs
+    var paymentsViewMode: PaymentsViewMode = .list
 
     /// Currently displayed month in calendar view
     var calendarDisplayedMonth: Date = Date()
@@ -390,7 +390,7 @@ final class ScheduledPaymentsViewModel {
 
 // MARK: - Subscriptions View Mode
 
-enum SubscriptionsViewMode: String, CaseIterable, Identifiable {
+enum PaymentsViewMode: String, CaseIterable, Identifiable {
     case list
     case calendar
 

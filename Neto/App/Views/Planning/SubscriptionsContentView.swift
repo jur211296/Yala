@@ -31,7 +31,7 @@ struct SubscriptionsContentView: View {
             viewModeHeader
 
             // Content based on view mode
-            if viewModel.subscriptionsViewMode == .list {
+            if viewModel.paymentsViewMode == .list {
                 listContent
             } else {
                 calendarContent
@@ -122,7 +122,7 @@ struct SubscriptionsContentView: View {
 
     private var viewModeSelector: some View {
         HStack(spacing: 0) {
-            ForEach(SubscriptionsViewMode.allCases) { mode in
+            ForEach(PaymentsViewMode.allCases) { mode in
                 viewModeButton(for: mode)
             }
         }
@@ -131,12 +131,12 @@ struct SubscriptionsContentView: View {
         .clipShape(Capsule())
     }
 
-    private func viewModeButton(for mode: SubscriptionsViewMode) -> some View {
-        let isSelected = viewModel.subscriptionsViewMode == mode
+    private func viewModeButton(for mode: PaymentsViewMode) -> some View {
+        let isSelected = viewModel.paymentsViewMode == mode
 
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                viewModel.subscriptionsViewMode = mode
+                viewModel.paymentsViewMode = mode
             }
         } label: {
             Image(systemName: mode.iconName)
