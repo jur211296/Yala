@@ -169,9 +169,6 @@ struct TrendsTabView: View {
         }
         .onChange(of: trendsViewModel.selectedMetric) {
             calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedMetric) {
-            // Sync metric to SessionState when it changes
             trendsViewModel.syncMetricToSessionState(sessionState)
         }
         .onChange(of: sessionState.selectedTrendMetric) {
