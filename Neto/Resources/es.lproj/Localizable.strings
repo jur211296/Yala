@@ -236,6 +236,13 @@
 "import.fileUrlError" = "No se pudo obtener la URL del archivo seleccionado.";
 "import.createAccountBeforeImport" = "Crea al menos una cuenta antes de importar movimientos.";
 
+// Multi-currency import
+"import.multiCurrencyDetected" = "Múltiples monedas detectadas";
+"import.assignAccountPerCurrency" = "Asigna una cuenta para cada moneda encontrada en el archivo.";
+"import.selectAccountForCurrency" = "Seleccionar cuenta";
+"import.currenciesDetected" = "%d monedas detectadas";
+"import.recordsImportedMultiCurrency" = "%d registros importados en %d monedas.";
+
 // MARK: - Export
 
 "export.title" = "Exportar";

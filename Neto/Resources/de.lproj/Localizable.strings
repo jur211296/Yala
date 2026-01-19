@@ -235,6 +235,13 @@
 "import.fileUrlError" = "Die URL der ausgewählten Datei konnte nicht abgerufen werden.";
 "import.createAccountBeforeImport" = "Erstelle mindestens ein Konto, bevor du Transaktionen importierst.";
 
+// Multi-currency import
+"import.multiCurrencyDetected" = "Mehrere Währungen erkannt";
+"import.assignAccountPerCurrency" = "Weise jeder in der Datei gefundenen Währung ein Konto zu.";
+"import.selectAccountForCurrency" = "Konto auswählen";
+"import.currenciesDetected" = "%d Währungen erkannt";
+"import.recordsImportedMultiCurrency" = "%d Datensätze in %d Währungen importiert.";
+
 // MARK: - Export
 
 "export.title" = "Exportieren";

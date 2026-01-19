@@ -747,6 +747,23 @@ enum L10n {
         static var createAccountBeforeImport: String {
             NSLocalizedString("import.createAccountBeforeImport", comment: "")
         }
+
+        // Multi-currency import
+        static var multiCurrencyDetected: String {
+            NSLocalizedString("import.multiCurrencyDetected", comment: "")
+        }
+        static var assignAccountPerCurrency: String {
+            NSLocalizedString("import.assignAccountPerCurrency", comment: "")
+        }
+        static var selectAccountForCurrency: String {
+            NSLocalizedString("import.selectAccountForCurrency", comment: "")
+        }
+        static func currenciesDetected(_ count: Int) -> String {
+            String(format: NSLocalizedString("import.currenciesDetected", comment: ""), count)
+        }
+        static func recordsImportedMultiCurrency(_ count: Int, _ currencies: Int) -> String {
+            String(format: NSLocalizedString("import.recordsImportedMultiCurrency", comment: ""), count, currencies)
+        }
     }
 
     // MARK: - Export
