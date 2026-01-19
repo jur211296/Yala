@@ -51,20 +51,30 @@ final class ScheduledPayment {
 
     // MARK: - Recurrence
 
-    /// Recurrence type: "weekly", "monthly", "yearly"
+    /// Whether this is a recurring payment (false = one-time)
+    var isRecurring: Bool
+
+    /// Recurrence type: "daily", "weekly", "monthly", "yearly" (only if isRecurring)
     var recurrenceType: String
 
-    /// Next due date for this payment
+    /// Recurrence interval: "every X days/weeks/months/years" (default 1)
+    var recurrenceInterval: Int
+
+    /// Payment date (for one-time) or next due date (for recurring)
     var nextDueDate: Date
 
     /// Day of month for monthly recurrence (1-31)
     var dayOfMonth: Int?
 
-    /// Day of week for weekly recurrence (1=Sunday, 7=Saturday)
-    var dayOfWeek: Int?
+    /// Selected weekdays for weekly recurrence (comma-separated: "1,3,5" = Sun,Tue,Thu)
+    var selectedWeekdays: String?
 
-    /// Month of year for yearly recurrence (1-12)
-    var monthOfYear: Int?
+    /// Yearly payment date (month and day)
+    var yearlyMonth: Int?
+    var yearlyDay: Int?
+
+    /// Optional end date for recurring payments
+    var endDate: Date?
 
     // MARK: - Payment Category
 
@@ -102,11 +112,15 @@ final class ScheduledPayment {
         subcategory: Subcategory? = nil,
         tags: [Tag] = [],
         natureOverride: String? = nil,
+        isRecurring: Bool = true,
         recurrenceType: String = "monthly",
+        recurrenceInterval: Int = 1,
         nextDueDate: Date,
         dayOfMonth: Int? = nil,
-        dayOfWeek: Int? = nil,
-        monthOfYear: Int? = nil,
+        selectedWeekdays: String? = nil,
+        yearlyMonth: Int? = nil,
+        yearlyDay: Int? = nil,
+        endDate: Date? = nil,
         paymentCategory: String = "recurring",
         notifyOnDueDate: Bool = true,
         notifyDaysBefore: Int = 3,
@@ -121,11 +135,15 @@ final class ScheduledPayment {
         self.subcategory = subcategory
         self.tags = tags
         self.natureOverride = natureOverride
+        self.isRecurring = isRecurring
         self.recurrenceType = recurrenceType
+        self.recurrenceInterval = recurrenceInterval
         self.nextDueDate = nextDueDate
         self.dayOfMonth = dayOfMonth
-        self.dayOfWeek = dayOfWeek
-        self.monthOfYear = monthOfYear
+        self.selectedWeekdays = selectedWeekdays
+        self.yearlyMonth = yearlyMonth
+        self.yearlyDay = yearlyDay
+        self.endDate = endDate
         self.paymentCategory = paymentCategory
         self.notifyOnDueDate = notifyOnDueDate
         self.notifyDaysBefore = notifyDaysBefore

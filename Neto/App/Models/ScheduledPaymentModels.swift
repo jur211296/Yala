@@ -11,6 +11,7 @@ import SwiftData
 // MARK: - Recurrence Type
 
 enum RecurrenceType: String, CaseIterable, Identifiable {
+    case daily = "daily"
     case weekly = "weekly"
     case monthly = "monthly"
     case yearly = "yearly"
@@ -19,12 +20,42 @@ enum RecurrenceType: String, CaseIterable, Identifiable {
 
     var localizedName: String {
         switch self {
+        case .daily:
+            return NSLocalizedString("scheduled.recurrence.daily", comment: "Daily recurrence")
         case .weekly:
             return NSLocalizedString("scheduled.recurrence.weekly", comment: "Weekly recurrence")
         case .monthly:
             return NSLocalizedString("scheduled.recurrence.monthly", comment: "Monthly recurrence")
         case .yearly:
             return NSLocalizedString("scheduled.recurrence.yearly", comment: "Yearly recurrence")
+        }
+    }
+
+    /// Singular form for "every 1 day/week/month/year"
+    var localizedNameSingular: String {
+        switch self {
+        case .daily:
+            return NSLocalizedString("scheduled.recurrence.day", comment: "Day")
+        case .weekly:
+            return NSLocalizedString("scheduled.recurrence.week", comment: "Week")
+        case .monthly:
+            return NSLocalizedString("scheduled.recurrence.month", comment: "Month")
+        case .yearly:
+            return NSLocalizedString("scheduled.recurrence.year", comment: "Year")
+        }
+    }
+
+    /// Plural form for "every X days/weeks/months/years"
+    var localizedNamePlural: String {
+        switch self {
+        case .daily:
+            return NSLocalizedString("scheduled.recurrence.days", comment: "Days")
+        case .weekly:
+            return NSLocalizedString("scheduled.recurrence.weeks", comment: "Weeks")
+        case .monthly:
+            return NSLocalizedString("scheduled.recurrence.months", comment: "Months")
+        case .yearly:
+            return NSLocalizedString("scheduled.recurrence.years", comment: "Years")
         }
     }
 }
