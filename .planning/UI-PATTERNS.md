@@ -305,6 +305,39 @@ HStack { ... }
 
 ---
 
+## Gráficas (Charts)
+
+### Hover/Tooltip Labels
+Los tooltips de gráficas DEBEN usar posicionamiento dinámico para evitar que se corten en los bordes.
+
+```swift
+// ✅ CORRECTO: Posición dinámica basada en altura del punto
+.annotation(
+    position: tooltipShouldBeBelow(for: value) ? .bottom : .top,
+    alignment: tooltipAlignment(for: date)
+) {
+    // Tooltip content
+}
+.offset(y: tooltipShouldBeBelow(for: value) ? -30 : -30)
+
+// Función helper
+private func tooltipShouldBeBelow(for value: Double) -> Bool {
+    let range = yDomain.upperBound - yDomain.lowerBound
+    guard range > 0 else { return false }
+    let normalizedValue = (value - yDomain.lowerBound) / range
+    return normalizedValue > 0.70  // 70% superior = tooltip abajo
+}
+
+// ❌ INCORRECTO: Posición fija que se corta
+.annotation(position: .top, ...) {  // Se corta cuando punto está arriba
+```
+
+**Regla:** Si el punto está en el 70% superior del rango Y, el tooltip va debajo; si no, arriba.
+
+**Aplica a:** TrendChartView, PeriodComparisonChartView, y cualquier chart con hover interactivo.
+
+---
+
 ## Animaciones
 
 | Tipo | Duración | Uso |

@@ -14,7 +14,8 @@ App iOS de finanzas personales. V1.0 estabiliza el core, añade automatización,
 - [x] **Fase 2: Periodos y Filtros** - Infraestructura de filtrado para toda la app ✅
 - [x] **Fase 3: Gestión Categorías** - Mantenimiento eficiente de categorías ✅
 - [x] **Fase 4: Panel y Navegación** - Navegabilidad y widgets del Panel ✅
-- [ ] **Fase 5: Visualizaciones Categorías** - Comparativas y detalles en gráficas ← Siguiente
+- [x] **Fase 5: Visualizaciones Categorías** - Comparativas y detalles en gráficas ✅
+- [ ] **Fase 5.1: Correcciones y Mejoras** - Bugs, UX y tech debt acumulado ← Siguiente
 - [ ] **Fase 6: Pagos Planificados** - Nuevo módulo de suscripciones y pagos futuros
 - [ ] **Fase 7: Registro Inteligente** - Entrada de transacciones con IA
 - [ ] **Fase 8: Plataforma y Polish** - Integración iOS y refinamiento final
@@ -99,9 +100,39 @@ DoD:
 - Barras muestran variación porcentual
 - Carrusel naturaleza con comparativa
 
+### Fase 5.1: Correcciones y Mejoras
+**Goal**: Resolver bugs, mejorar UX y limpiar tech debt antes de nuevas features
+**Depends on**: Fase 5
+**Research**: Likely (relaciones SwiftData para tags en FavoritePayment)
+**Plans**: TBD
+
+Incluye:
+
+**Bugs UI:**
+- Etiqueta hover en gráficas se corta en borde superior (TrendChartView)
+- Teclado debe cerrarse al tocar fuera en todos los formularios
+
+**Mejoras UX:**
+- Filtro Ingresos/Gastos en Statistics filter section (DetailContainerView)
+- Importación multimoneda con asignación de cuenta por divisa
+
+**Cambios estructurales:**
+- Pagos favoritos con múltiples etiquetas (cambio de relación 1:1 → N:N en FavoritePayment ↔ Tag)
+
+**Tech Debt:**
+- Optimizar cálculos en vistas de gráficas (TrendsTabView, CategoriesTabView, PanelView)
+
+DoD:
+- Hover labels visibles en todo el rango de la gráfica
+- Teclado se cierra consistentemente en formularios
+- Filtro ingreso/gasto funcional en Statistics
+- Importador soporta múltiples monedas
+- FavoritePayment soporta múltiples tags
+- Cálculos de variación optimizados y reutilizables
+
 ### Fase 6: Pagos Planificados
 **Goal**: Nuevo módulo para suscripciones y pagos futuros
-**Depends on**: Fase 2, Fase 4
+**Depends on**: Fase 2, Fase 4, Fase 5.1
 **Research**: Likely (nuevo modelo SwiftData, diseño de recurrencia)
 **Research topics**: Patrón de recurrencia, modelo ScheduledPayment, integración con widgets
 **Plans**: TBD
@@ -167,7 +198,8 @@ DoD:
 | 2 | Periodos y Filtros | N/A | ✅ Done | 2026-01-14 |
 | 3 | Gestión Categorías | N/A | ✅ Done | 2026-01-14 |
 | 4 | Panel y Navegación | N/A | ✅ Done | 2026-01-15 |
-| 5 | Visualizaciones Categorías | TBD | Not started | - |
+| 5 | Visualizaciones Categorías | N/A | ✅ Done | 2026-01-18 |
+| 5.1 | Correcciones y Mejoras | TBD | Not started | - |
 | 6 | Pagos Planificados | TBD | Not started | - |
 | 7 | Registro Inteligente | TBD | Not started | - |
 | 8 | Plataforma y Polish | TBD | Not started | - |

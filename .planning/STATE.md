@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 5 — Visualizaciones Categorías
+**Current focus:** Fase 5.1 — Correcciones y Mejoras
 
 ## Current Position
 
-Phase: 5 of 8 (Visualizaciones Categorías)
-Plan: In progress
-Status: Var% completo en todas las vistas, balance fix aplicado
-Last activity: 2026-01-18 — Enhanced period comparison with vs-amount text
+Phase: 5.1 of 8 (Correcciones y Mejoras)
+Plan: Not started
+Status: Fase 5 cerrada, preparando correcciones y mejoras
+Last activity: 2026-01-18 — Closed phase 5, created phase 5.1
 
-Progress: █████████████░ 90% (Fase 5)
+Progress: ░░░░░░░░░░░░░░ 0% (Fase 5.1)
 
 ---
 
@@ -60,23 +60,12 @@ Progress: █████████████░ 90% (Fase 5)
 
 ## Next Steps
 
-- Revisar y cerrar fase 5 (Visualizaciones Categorías)
-- Considerar items del Parking Lot antes de fase 6
+- Planificar Fase 5.1 (Correcciones y Mejoras)
+- Investigar cambio de relación FavoritePayment ↔ Tag (1:1 → N:N)
 
 ## Parking Lot
 
-- [2026-01-18] [Tech Debt] [Performance] [Medium]: Revisar y optimizar cálculos en vistas de gráficas
-  Contexto: Se han hecho muchos cambios en TrendsTabView, CategoriesTabView, PanelView y widgets. Hay oportunidad de eficientar código y reaprovechar lógica de cálculos de variación, filtrado de transacciones y procesamiento de datos entre vistas.
-  Áreas: previousPeriod calculations, balance transactions filtering, variation chip logic
-
-- [2026-01-18] [Improvement] [UI/UX + Business Logic] [Medium]: Importación multimoneda con asignación de cuenta por divisa
-  Contexto: Actualmente el importador fuerza elegir una única cuenta (una moneda). Permitir que al cargar archivo con múltiples monedas (ej: PEN y USD), el usuario asigne cada divisa a su cuenta correspondiente.
-  Dependencias: Ya existe detección de moneda y validaciones, hay que adecuar el flujo de selección de cuenta.
-
-- [2026-01-18] [Bug] [UI/UX] [High]: Etiqueta de hover en gráficas se corta cuando el punto está muy arriba
-  Contexto: En PanelView y TrendsTabView, cuando el punto de la gráfica está cerca del borde superior, la etiqueta se recorta para no invadir el título
-  Afecta: TrendChartView (usado en PanelView y TrendsTabView)
-  Solución: Hacer que la etiqueta se sobreponga a todo (zIndex) o que se desplace hacia abajo dinámicamente
+(Items movidos a Fase 5.1)
 
 - `iconName` en Tag tiene default `"tag.fill"` para migración
 - `TagsPieWidget` sigue patrón de CategoriesPieWidget/SubcategoriesPieWidget
@@ -87,6 +76,6 @@ Progress: █████████████░ 90% (Fase 5)
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Period comparison enhancements complete
-Next step: Review phase 5 completion or address Parking Lot items
+Stopped at: Phase 5 closed, Phase 5.1 created
+Next step: Plan and execute Phase 5.1 (Correcciones y Mejoras)
 Resume file: None
