@@ -24,6 +24,9 @@ final class Tag {
     /// Relación inversa con budgets (muchos-a-muchos)
     var budgets: [Budget] = []
 
+    /// Relación inversa con pagos favoritos (muchos-a-muchos)
+    var favoritePayments: [FavoritePayment] = []
+
     /// Paleta de 15 colores visibles en light y dark mode (evita negros/blancos)
     static let defaultColors: [String] = [
         "#FF9F0A",  // Naranja
