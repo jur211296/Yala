@@ -125,9 +125,9 @@ struct PeriodComparisonChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(Color.netoCard)
 
-                // Tooltip showing both values
+                // Tooltip showing both values - dynamic position based on point height
                 .annotation(
-                    position: .top,
+                    position: tooltipShouldBeBelow(for: selectedCurrentPoint.value) ? .bottom : .top,
                     alignment: tooltipAlignment(for: activeDate)
                 ) {
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -165,7 +165,7 @@ struct PeriodComparisonChartView: View {
                             .fill(Color.netoCard.opacity(0.95))
                             .shadow(radius: 2)
                     )
-                    .offset(y: -30)
+                    .offset(y: tooltipShouldBeBelow(for: selectedCurrentPoint.value) ? -30 : -30)
                 }
             }
         }
@@ -322,6 +322,16 @@ struct PeriodComparisonChartView: View {
         } else {
             return .center
         }
+    }
+
+    /// Determines if tooltip should be below the point (when point is in upper portion of chart)
+    private func tooltipShouldBeBelow(for value: Double) -> Bool {
+        let range = yDomain.upperBound - yDomain.lowerBound
+        guard range > 0 else { return false }
+
+        let normalizedValue = (value - yDomain.lowerBound) / range
+        // If point is in upper 30% of chart, put tooltip below
+        return normalizedValue > 0.70
     }
 
     /// Format period label for tooltip
