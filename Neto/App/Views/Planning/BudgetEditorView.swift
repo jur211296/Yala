@@ -41,8 +41,10 @@ struct BudgetEditorView: View {
 
     // Sheet states
     @State private var showCategoriesSheet = false
-    @State private var isFocused = false
     @State private var showDeleteConfirmation = false
+
+    // Focus state
+    @FocusState private var isNameFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -114,6 +116,12 @@ struct BudgetEditorView: View {
             }
             .onAppear {
                 loadBudgetData()
+                // Auto-focus name field for new budgets
+                if budget == nil {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isNameFieldFocused = true
+                    }
+                }
             }
         }
     }
@@ -132,6 +140,7 @@ struct BudgetEditorView: View {
                         text: $name
                     )
                     .textContentType(.name)
+                    .focused($isNameFieldFocused)
                 }
                 .padding()
 

@@ -31,6 +31,9 @@ struct SubcategoryDetailView: View {
     @State private var showTransferSheet: Bool = false
     @State private var transactionCount: Int = 0
 
+    // Focus state
+    @FocusState private var isNameFieldFocused: Bool
+
     private let initialName: String
     private let initialNature: SubcategoryNature
     private let initialIsVisible: Bool
@@ -174,6 +177,14 @@ struct SubcategoryDetailView: View {
         .onChange(of: showIconColorPicker) { _, isPresenting in
             if isPresenting { dismissKeyboard() }
         }
+        .onAppear {
+            // Auto-focus name field for new subcategories
+            if !isEditing {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isNameFieldFocused = true
+                }
+            }
+        }
     }
 
     // Encabezado con círculo de color e icono (tappable para editar)
@@ -238,6 +249,7 @@ struct SubcategoryDetailView: View {
                             .foregroundStyle(.secondary)
                         TextField(L10n.Subcategory.namePlaceholder, text: $name)
                             .textContentType(.name)
+                            .focused($isNameFieldFocused)
                     }
                     .padding()
 

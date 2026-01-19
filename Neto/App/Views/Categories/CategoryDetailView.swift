@@ -34,6 +34,9 @@ struct CategoryDetailView: View {
     @State private var showSubcategoryDeleteConfirmation: Bool = false
     @State private var subcategoryForTransfer: Subcategory?
 
+    // Focus state
+    @FocusState private var isNameFieldFocused: Bool
+
     private let initialName: String
     private let initialIsVisible: Bool
     private let initialIconName: String
@@ -215,6 +218,14 @@ struct CategoryDetailView: View {
         .onChange(of: showIconColorPicker) { _, isPresenting in
             if isPresenting { dismissKeyboard() }
         }
+        .onAppear {
+            // Auto-focus name field for new categories
+            if isNewCategory {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isNameFieldFocused = true
+                }
+            }
+        }
     }
 
     // Encabezado con círculo de color e icono (tappable para editar)
@@ -277,6 +288,7 @@ struct CategoryDetailView: View {
                             .foregroundStyle(.secondary)
                         TextField(L10n.Category.namePlaceholder, text: $name)
                             .textContentType(.name)
+                            .focused($isNameFieldFocused)
                     }
                     .padding()
 

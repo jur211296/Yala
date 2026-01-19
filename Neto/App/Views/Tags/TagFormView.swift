@@ -38,6 +38,9 @@ struct TagFormView: View {
     // Delete confirmation
     @State private var isShowingDeleteConfirmation: Bool = false
 
+    // Focus state
+    @FocusState private var isNameFieldFocused: Bool
+
     private var isEditing: Bool {
         tagToEdit != nil
     }
@@ -167,6 +170,14 @@ struct TagFormView: View {
             .onChange(of: isPresentingIconPicker) { _, isPresenting in
                 if isPresenting { dismissKeyboard() }
             }
+            .onAppear {
+                // Auto-focus name field for new tags
+                if !isEditing {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isNameFieldFocused = true
+                    }
+                }
+            }
         }
     }
 
@@ -179,6 +190,7 @@ struct TagFormView: View {
                     Image(systemName: "tag")
                         .foregroundStyle(.secondary)
                     TextField(L10n.Tag.namePlaceholder, text: $name)
+                        .focused($isNameFieldFocused)
                         .onChange(of: name) { oldValue, newValue in
                             if newValue.count > 20 {
                                 name = String(newValue.prefix(20))
