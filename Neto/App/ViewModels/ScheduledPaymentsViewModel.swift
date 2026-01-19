@@ -264,6 +264,42 @@ final class ScheduledPaymentsViewModel {
         return filtered
     }
 
+    /// Get all recurring payments (non-subscription, filtered)
+    func getRecurringPayments(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
+        var filtered = payments.filter { $0.paymentCategory == PaymentCategory.recurring.rawValue }
+
+        // Apply same filters as subscriptions
+        if hideInactive {
+            filtered = filtered.filter { $0.isActive }
+        }
+        if !selectedAccounts.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let accountID = payment.account?.persistentModelID else { return false }
+                return selectedAccounts.contains(accountID)
+            }
+        }
+        if !selectedSubcategories.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let subID = payment.subcategory?.persistentModelID else { return false }
+                return selectedSubcategories.contains(subID)
+            }
+        }
+        if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                return selectedCategories.contains(catID)
+            }
+        }
+        if !selectedTags.isEmpty {
+            filtered = filtered.filter { payment in
+                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                return !paymentTagIDs.isDisjoint(with: selectedTags)
+            }
+        }
+
+        return filtered
+    }
+
     /// Calculate total monthly subscription spending for a given month
     func calculateMonthlyTotal(subscriptions: [ScheduledPayment], for month: Date) -> Double {
         var total: Double = 0

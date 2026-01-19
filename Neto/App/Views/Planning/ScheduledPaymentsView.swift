@@ -41,22 +41,14 @@ struct ScheduledPaymentsView: View {
                         .padding(.top, DS.Spacing.md)
                         .padding(.bottom, DS.Spacing.md)
 
-                    // Content based on selected tab
-                    if viewModel.selectedTab == .subscriptions {
-                        // Subscriptions tab has its own custom view
-                        SubscriptionsContentView(
-                            viewModel: viewModel,
-                            subscriptions: viewModel.getSubscriptions(from: allPayments),
-                            currencyCode: defaultCurrencyCode
-                        )
-                    } else {
-                        // Recurring and All tabs use the standard list view
-                        ScheduledPaymentsListView(
-                            viewModel: viewModel,
-                            currencyCode: defaultCurrencyCode,
-                            onRefresh: { refreshData() }
-                        )
-                    }
+                    // Content - unified view for all tabs
+                    ScheduledPaymentsListView(
+                        viewModel: viewModel,
+                        payments: filteredPaymentsForCurrentTab,
+                        tab: viewModel.selectedTab,
+                        currencyCode: defaultCurrencyCode,
+                        onRefresh: { refreshData() }
+                    )
                 }
             }
 
@@ -128,6 +120,19 @@ struct ScheduledPaymentsView: View {
             }
             .padding(.trailing, 20)
             .padding(.bottom, 24)
+        }
+    }
+
+    // MARK: - Filtered Payments
+
+    private var filteredPaymentsForCurrentTab: [ScheduledPayment] {
+        switch viewModel.selectedTab {
+        case .all:
+            return allPayments
+        case .recurring:
+            return viewModel.getRecurringPayments(from: allPayments)
+        case .subscriptions:
+            return viewModel.getSubscriptions(from: allPayments)
         }
     }
 
