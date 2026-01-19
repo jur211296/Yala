@@ -303,25 +303,27 @@ struct BudgetEditorView: View {
     // MARK: - Categories Content
 
     private var categoriesContent: some View {
-        HStack(spacing: 0) {
-            FilterSectionHeader(
-                icon: "tag",
-                title: NSLocalizedString("subcategories.title", comment: ""),
-                status: selectedCategoriesText
-            )
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             showCategoriesSheet = true
+        } label: {
+            HStack(spacing: 0) {
+                FilterSectionHeader(
+                    icon: "tag",
+                    title: NSLocalizedString("subcategories.title", comment: ""),
+                    status: selectedCategoriesText
+                )
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
     private var selectedCategoriesText: String {
