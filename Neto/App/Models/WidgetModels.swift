@@ -18,6 +18,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     case expensesByNature = "gastos_por_naturaleza"
     case exchangeRate = "tipo_cambio"
     case budgets = "presupuestos"
+    case scheduledPayments = "pagos_planificados"
 
     var id: String { rawValue }
 
@@ -33,6 +34,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .expensesByNature: return L10n.WidgetType.expensesByNature
         case .exchangeRate: return L10n.WidgetType.exchangeRate
         case .budgets: return L10n.WidgetType.budgets
+        case .scheduledPayments: return L10n.WidgetType.scheduledPayments
         }
     }
 
@@ -48,6 +50,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .expensesByNature: return "chart.bar.xaxis"
         case .exchangeRate: return "arrow.left.arrow.right"
         case .budgets: return "chart.pie.fill"
+        case .scheduledPayments: return "calendar.badge.clock"
         }
     }
 
@@ -63,6 +66,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .expensesByNature: return [.medium, .large]
         case .exchangeRate: return [.medium]  // Tamaño único
         case .budgets: return [.medium, .large]  // Top 3 / Top 5
+        case .scheduledPayments: return [.medium, .large]  // Resumen-Lista / Calendario
         }
     }
 
@@ -75,6 +79,8 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
             return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
         case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate:
             return nil  // Single size, no name needed
+        case .scheduledPayments:
+            return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         }
     }
 }
@@ -107,6 +113,50 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
             WidgetConfig(id: UUID(), type: .latestRecords, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .budgets, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .scheduledPayments, isVisible: false, size: .medium),
         ]
+    }
+}
+
+// MARK: - Scheduled Payments Widget Enums
+
+/// View mode for scheduled payments widget (Medium size only)
+enum ScheduledPaymentsWidgetMode: String, CaseIterable, Identifiable {
+    case summary
+    case list
+
+    var id: String { rawValue }
+
+    var iconName: String {
+        switch self {
+        case .summary: return "square.text.square"
+        case .list: return "list.bullet"
+        }
+    }
+}
+
+/// Filter for scheduled payments widget
+enum ScheduledPaymentsWidgetFilter: String, CaseIterable, Identifiable {
+    case all
+    case recurring
+    case subscriptions
+
+    var id: String { rawValue }
+
+    var iconName: String {
+        switch self {
+        case .all: return "list.bullet"
+        case .recurring: return "arrow.trianglehead.2.clockwise.rotate.90"
+        case .subscriptions: return "creditcard.and.123"
+        }
+    }
+
+    /// Maps to PaymentCategory rawValue for filtering
+    var paymentCategoryFilter: String? {
+        switch self {
+        case .all: return nil
+        case .recurring: return "recurring"
+        case .subscriptions: return "subscription"
+        }
     }
 }

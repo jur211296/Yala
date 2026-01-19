@@ -1246,6 +1246,9 @@ enum L10n {
         static var budgets: String {
             NSLocalizedString("widgetType.budgets", comment: "")
         }
+        static var scheduledPayments: String {
+            NSLocalizedString("widgetType.scheduledPayments", comment: "")
+        }
     }
 
     // MARK: - Budgets
