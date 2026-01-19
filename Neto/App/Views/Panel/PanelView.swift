@@ -39,6 +39,10 @@ struct PanelView: View {
     @Query(filter: #Predicate<Budget> { $0.isActive }, sort: \Budget.createdAt, order: .reverse)
     private var budgets: [Budget]
 
+    // Scheduled payments for widget
+    @Query(sort: \ScheduledPayment.nextDueDate)
+    private var scheduledPayments: [ScheduledPayment]
+
     @State private var viewModel = PanelViewModel()
 
     @State private var isPresentingSettings = false
@@ -806,6 +810,16 @@ struct PanelView: View {
                 onShowMore: { sessionState.selectedMainTab = .planning },
                 onEditFavorites: { showBudgetFavoritesSettings = true },
                 size: mapBudgetsWidgetSize(config.size)
+            )
+        } else if config.type == .scheduledPayments {
+            ScheduledPaymentsWidget(
+                payments: scheduledPayments,
+                currencyCode: preferredCurrency.rawValue,
+                size: config.size,
+                currentMonth: viewModel.scheduledPaymentsWidgetMonth,
+                filter: $viewModel.scheduledPaymentsWidgetFilter,
+                viewMode: $viewModel.scheduledPaymentsWidgetMode,
+                onShowMore: { sessionState.selectedMainTab = .planning }
             )
         }
     }

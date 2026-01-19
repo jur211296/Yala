@@ -74,6 +74,11 @@ final class PanelViewModel {
     var topBudgetSummaries: [BudgetSummary] = []
     var hasBudgetsButNoFavorites: Bool = false
 
+    // Scheduled Payments Widget State
+    var scheduledPaymentsWidgetFilter: ScheduledPaymentsWidgetFilter = .all
+    var scheduledPaymentsWidgetMode: ScheduledPaymentsWidgetMode = .summary
+    var scheduledPaymentsWidgetMonth: Date = Date()
+
     // MARK: - Exchange Rate Widget State
     var exchangeRateWidgetData: ExchangeRateWidgetData?
     var exchangeRateGrouping: TrendGrouping = .day
