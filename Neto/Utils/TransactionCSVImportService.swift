@@ -330,6 +330,11 @@ enum TransactionCSVImportService {
                 String($0).trimmingCharacters(in: .whitespacesAndNewlines)
             }
 
+            // Eliminar columnas vacías del final (trailing semicolons)
+            while columns.last?.isEmpty == true {
+                columns.removeLast()
+            }
+
             // Si hay columna de nota y el número de columnas es mayor,
             // asumimos que los delimitadores extra pertenecen a la nota
             // y los recombinamos.
@@ -1037,6 +1042,11 @@ enum TransactionCSVImportService {
 
             let rawColumns = trimmedLine.split(separator: delimiter, omittingEmptySubsequences: false)
             var columns = rawColumns.map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+
+            // Eliminar columnas vacías del final (trailing semicolons)
+            while columns.last?.isEmpty == true {
+                columns.removeLast()
+            }
 
             // Recombinar nota si tiene delimitadores extra
             if hasNoteColumn && columns.count > expectedColumnCount {
