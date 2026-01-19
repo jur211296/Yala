@@ -27,6 +27,9 @@ final class Tag {
     /// Relación inversa con pagos favoritos (muchos-a-muchos)
     var favoritePayments: [FavoritePayment] = []
 
+    /// Relación inversa con pagos planificados (muchos-a-muchos)
+    var scheduledPayments: [ScheduledPayment] = []
+
     /// Paleta de 15 colores visibles en light y dark mode (evita negros/blancos)
     static let defaultColors: [String] = [
         "#FF9F0A",  // Naranja

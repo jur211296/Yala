@@ -23,6 +23,7 @@ struct NetoApp: App {
             Budget.self,
             ExchangeRate.self,
             FavoritePayment.self,
+            ScheduledPayment.self,
         ])
 
         // Nombre lógico del contenedor / base de datos
