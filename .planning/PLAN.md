@@ -1,121 +1,164 @@
-# Plan: Auditoría de Localización
+# Plan: Optimización de Cálculos en Vistas con Gráficos
 
-## Objetivo
-Revisar todos los archivos Swift del proyecto para encontrar y corregir textos hardcodeados que deberían estar localizados (español e inglés).
+## Contexto
 
-## Metodología
-1. Revisar archivos por carpeta/grupo
-2. Identificar strings hardcodeados en UI (Text(), placeholder, title, message, etc.)
-3. Agregar entradas a Localizable.strings (es/en) y L10n.swift
-4. Build + verify después de cada grupo
-5. Commit atómico por grupo
+Fase 5.1 — Último item pendiente: optimizar cálculos en PanelView, TrendsTabView, CategoriesTabView, RecordsTabView.
 
-## Grupos de Trabajo (por orden)
+**Análisis realizado:** Se identificaron problemas de rendimiento con ganancia potencial de 5-10× en velocidad de cálculo.
 
-### Grupo 1: Views/Transactions + Components (~15 archivos)
-- NewTransactionView.swift
-- TransactionSuccessView.swift
-- TransactionFormRow.swift
-- AccountSelectorSheet.swift
-- SubcategorySelectorSheet.swift
-- TagSelectorSheet.swift
-- ExchangeRateInputView.swift
-- Components/*.swift
+## Problemas Identificados (por severidad)
 
-### Grupo 2: Views/Panel (~12 archivos)
-- PanelView.swift
-- AccountCardView.swift
-- AccountsCarouselView.swift
-- CategoriesPieWidget.swift
-- SubcategoriesPieWidget.swift
-- TopCategoriesWidget.swift
-- TopSubcategoriesWidget.swift
-- NatureTrendWidget.swift
-- CashFlowWidget.swift
-- RecentRecordsWidget.swift
-- ExchangeRateWidget.swift
-- WidgetPreferencesView.swift
+### CRÍTICO - N+1 Queries
+- TrendsTabView filtra transactions una vez, luego re-filtra en loop por cada account/currency
+- Costo: O(a×n) + O(c×n) en lugar de O(n)
+- Impacto: 10× más lento de lo necesario
 
-### Grupo 3: Views/Statistics (~5 archivos)
-- StatisticsView.swift
-- DetailContainerView.swift
-- TrendsTabView.swift
-- CategoriesTabView.swift
-- RecordsTabView.swift
+### ALTO - Duplicación de Cálculos Previous Period
+- CategoriesTabView.calculatePreviousPeriodTotals() tiene 160 líneas duplicando calculateData()
+- Llama TopSpendingCategoriesCalculator, TopSubcategoriesCalculator, NatureTrendHelper 2 veces
+- Impacto: 100% overhead en cada cambio de periodo
 
-### Grupo 4: Views/Settings (~10 archivos)
-- CategoriesSettingsListView.swift
-- AccountsSettingsListView.swift
-- TagsSettingsListView.swift
-- ThemeSettingsView.swift
-- CurrencySettingsView.swift
-- PersonalizationSettingsView.swift
-- AppIconSettingsView.swift
-- UserDataResetView.swift
-- SettingsPlaceholderView.swift
+### ALTO - Tag Calculator Inconsistente
+- calculateTagSpending() es implementación ad-hoc (no servicio)
+- Patrón diferente a TopSpendingCategoriesCalculator
+- Se calcula 2 veces (current + previous)
 
-### Grupo 5: Views/Categories + Tags (~6 archivos)
-- CategoryDetailView.swift
-- SubcategoryDetailView.swift
-- SubcategoryTransferSheet.swift
-- SubcategoryNatureSelectorView.swift
-- TagFormView.swift
+### MEDIO - Computed Properties Sin Cache
+- RecordsTabView.recordsSummary recalcula en cada render
+- Loop O(n×m) sin memoización
 
-### Grupo 6: Views/Planning (~5 archivos)
-- PlanningView.swift
-- BudgetEditorView.swift
-- BudgetRowView.swift
-- Components/*.swift
+### MEDIO - onChange Handlers Excesivos
+- PanelView: 20+ triggers llaman recalculateData()
+- TrendsTabView: onChange duplicados para misma propiedad
 
-### Grupo 7: Views/Favorites + Import + Export (~8 archivos)
-- FavoritesListView.swift
-- FavoriteEditorView.swift
-- FavoriteRowView.swift
-- ImportIntroSheet.swift
-- ImportAccountPickerSheet.swift
-- ExportFiltersStepView.swift
-- ExportColumnsStepView.swift
-- ExportSummaryStepView.swift
+## Plan de Ejecución
 
-### Grupo 8: Views/Accounts + Profile + Shared (~10 archivos)
-- AccountFormView.swift
-- AdjustmentModeSelectorView.swift
-- AccountTypeSelectorView.swift
-- ProfileView.swift
-- PersonalDetailsView.swift
-- Shared/*.swift (SectionBox, IconColorPickerSheet, etc.)
+### Incremento 1: Eliminar N+1 en TrendsTabView
+**Archivos:** TrendsTabView.swift
+**Cambio:** Reemplazar loops con filter() por Dictionary(grouping:)
 
-### Grupo 9: Views/Filters + Records (~8 archivos)
-- FilterControlBar.swift
-- FilterChipsSection.swift
-- FilterChipView.swift
-- PeriodSelectorLabel.swift
-- CategorySelectorSheet.swift
-- RecordRowView.swift
-- RecordDateSectionView.swift
+```swift
+// ANTES (O(a×n))
+for account in accounts {
+    let accountTransactions = filtered.filter { $0.account?.persistentModelID == account.persistentModelID }
+}
 
-### Grupo 10: ContentView + Main + Otros (~5 archivos)
-- ContentView.swift
-- MainTabView (en ContentView)
-- GlobalSearchView.swift
-- Otros archivos restantes
+// DESPUÉS (O(n))
+let groupedByAccount = Dictionary(grouping: filtered) { $0.account?.persistentModelID }
+for (accountID, transactions) in groupedByAccount { ... }
+```
 
-## Criterios de Búsqueda
-Buscar patterns como:
-- `Text("...")`  donde el string no es L10n
-- `placeholder: "..."`
-- `title: "..."`
-- `.navigationTitle("...")`
-- `.alert("...")`
-- `Button("...")`
-- Cualquier string literal visible al usuario
+**DoD:**
+- calculateCashFlowData() usa Dictionary(grouping:) para accounts y currencies
+- Sin cambio en comportamiento visible
+- /verify-ios pasa
 
-## Exclusiones
-- Strings técnicos (keys, identifiers)
-- SF Symbols names
-- Format strings que ya usan variables
-- Strings en Preview/Debug code
+---
 
-## Commits
-Un commit por grupo completado con formato:
-`chore(l10n): Localizar textos en [NombreGrupo]`
+### Incremento 2: Crear TagSpendingCalculator Service
+**Archivos:** Nuevo TagSpendingCalculator.swift, CategoriesTabView.swift
+**Cambio:** Extraer calculateTagSpending() a servicio reutilizable
+
+```swift
+struct TagSpendingCalculator {
+    static func calculateTopSpending(
+        transactions: [TransactionItem],
+        interval: DateInterval,
+        currencyCode: String,
+        transactionNatures: Set<TransactionNature>?,
+        context: ModelContext
+    ) -> [TagSpendingSummary]
+}
+```
+
+**DoD:**
+- TagSpendingCalculator.swift creado siguiendo patrón de TopSpendingCategoriesCalculator
+- CategoriesTabView usa el nuevo servicio
+- Tests existentes pasan
+
+---
+
+### Incremento 3: Consolidar Cálculo de Previous Period
+**Archivos:** CategoriesTabView.swift
+**Cambio:** Unificar calculateData() + calculatePreviousPeriodTotals() en función única que retorna ambos periodos
+
+```swift
+struct PeriodComparisonResult<T> {
+    let current: [T]
+    let previousTotal: Double?
+    let previousAmounts: [PersistentIdentifier: Double]
+}
+
+private func calculateWithComparison() {
+    // Un solo pass de FilterService
+    // Calcular current y previous en paralelo
+    // Retornar resultado consolidado
+}
+```
+
+**DoD:**
+- calculatePreviousPeriodTotals() eliminado o reducido a <20 líneas
+- Mismo comportamiento visual
+- Reducción de ~140 líneas de código
+
+---
+
+### Incremento 4: Cache en RecordsTabView
+**Archivos:** RecordsTabView.swift
+**Cambio:** Mover recordsSummary a ViewModel con cache
+
+```swift
+// En ViewModel
+@Published var cachedSummary: (balance: Double, income: Double, expense: Double)?
+
+func updateSummaryIfNeeded(groupedRecords: [GroupedRecords]) {
+    // Solo recalcular si groupedRecords cambió
+}
+```
+
+**DoD:**
+- recordsSummary no recalcula en cada render
+- Mismo comportamiento visual
+
+---
+
+### Incremento 5: Optimizar onChange Handlers
+**Archivos:** PanelView.swift, TrendsTabView.swift
+**Cambio:** Consolidar handlers relacionados, eliminar duplicados
+
+**DoD:**
+- TrendsTabView: sin onChange duplicados
+- PanelView: handlers agrupados lógicamente
+- Mismo comportamiento funcional
+
+---
+
+## Orden de Ejecución
+
+| # | Incremento | Ganancia Esperada | Riesgo | Dependencias |
+|---|------------|-------------------|--------|--------------|
+| 1 | N+1 TrendsTabView | 10× en cálculo CashFlow | Bajo | Ninguna |
+| 2 | TagSpendingCalculator | Código limpio, testeable | Bajo | Ninguna |
+| 3 | Previous Period | 50% reducción cálculos | Medio | Ninguna |
+| 4 | Cache RecordsTabView | Menor overhead renders | Bajo | Ninguna |
+| 5 | onChange Handlers | Código más limpio | Bajo | Ninguna |
+
+## Restricciones
+
+- NO cambiar comportamiento visible al usuario
+- NO modificar modelos SwiftData
+- NO agregar nuevas dependencias
+- Mantener compatibilidad con filtros existentes
+- Cada incremento debe compilar y pasar tests antes del siguiente
+
+## Verificación
+
+Después de cada incremento:
+1. /verify-ios
+2. /test-ios (si aplica)
+3. /commit-one
+
+Al finalizar:
+- Todos los tests pasan
+- App funciona igual visualmente
+- Código más limpio y mantenible

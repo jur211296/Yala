@@ -1238,15 +1238,11 @@ struct TrendsTabView: View {
             context: modelContext
         )
 
-        // 2. Calculate cash flow BY ACCOUNT
+        // 2. Calculate cash flow BY ACCOUNT (single-pass grouping: O(n) instead of O(a×n))
+        let groupedByAccount = Dictionary(grouping: filtered) { $0.account?.persistentModelID }
         var byAccount: [PersistentIdentifier: CashFlowSummary] = [:]
         for account in accounts {
-            // Filter transactions for this specific account
-            let accountTransactions = filtered.filter { tx in
-                tx.account?.persistentModelID == account.persistentModelID
-            }
-
-            // Calculate cash flow for this account in its native currency
+            let accountTransactions = groupedByAccount[account.persistentModelID] ?? []
             let summary = CashFlowCalculator.calculateCashFlow(
                 transactions: accountTransactions,
                 interval: interval,
@@ -1254,24 +1250,14 @@ struct TrendsTabView: View {
                 currencyCode: account.currencyCode,
                 context: modelContext
             )
-
             byAccount[account.persistentModelID] = summary
         }
         cashFlowByAccount = byAccount
 
-        // 3. Calculate cash flow BY CURRENCY
+        // 3. Calculate cash flow BY CURRENCY (single-pass grouping: O(n) instead of O(c×n))
+        let groupedByCurrency = Dictionary(grouping: filtered) { $0.currencyCode }
         var byCurrency: [String: CashFlowSummary] = [:]
-
-        // Get unique currencies from filtered transactions
-        let currencies = Set(filtered.map { $0.currencyCode })
-
-        for currencyCode in currencies {
-            // Filter transactions for this specific currency
-            let currencyTransactions = filtered.filter { tx in
-                tx.currencyCode == currencyCode
-            }
-
-            // Calculate cash flow for this currency
+        for (currencyCode, currencyTransactions) in groupedByCurrency {
             let summary = CashFlowCalculator.calculateCashFlow(
                 transactions: currencyTransactions,
                 interval: interval,
@@ -1279,7 +1265,6 @@ struct TrendsTabView: View {
                 currencyCode: currencyCode,
                 context: modelContext
             )
-
             byCurrency[currencyCode] = summary
         }
         cashFlowByCurrency = byCurrency
@@ -1334,13 +1319,11 @@ struct TrendsTabView: View {
             context: modelContext
         )
 
-        // 2. Calculate previous period cash flow BY ACCOUNT
+        // 2. Calculate previous period cash flow BY ACCOUNT (single-pass grouping)
+        let prevGroupedByAccount = Dictionary(grouping: previousFiltered) { $0.account?.persistentModelID }
         var byAccount: [PersistentIdentifier: CashFlowSummary] = [:]
         for account in accounts {
-            let accountTransactions = previousFiltered.filter { tx in
-                tx.account?.persistentModelID == account.persistentModelID
-            }
-
+            let accountTransactions = prevGroupedByAccount[account.persistentModelID] ?? []
             let summary = CashFlowCalculator.calculateCashFlow(
                 transactions: accountTransactions,
                 interval: previousInterval,
@@ -1348,20 +1331,14 @@ struct TrendsTabView: View {
                 currencyCode: account.currencyCode,
                 context: modelContext
             )
-
             byAccount[account.persistentModelID] = summary
         }
         previousCashFlowByAccount = byAccount
 
-        // 3. Calculate previous period cash flow BY CURRENCY
+        // 3. Calculate previous period cash flow BY CURRENCY (single-pass grouping)
+        let prevGroupedByCurrency = Dictionary(grouping: previousFiltered) { $0.currencyCode }
         var byCurrency: [String: CashFlowSummary] = [:]
-        let currencies = Set(previousFiltered.map { $0.currencyCode })
-
-        for currencyCode in currencies {
-            let currencyTransactions = previousFiltered.filter { tx in
-                tx.currencyCode == currencyCode
-            }
-
+        for (currencyCode, currencyTransactions) in prevGroupedByCurrency {
             let summary = CashFlowCalculator.calculateCashFlow(
                 transactions: currencyTransactions,
                 interval: previousInterval,
@@ -1369,7 +1346,6 @@ struct TrendsTabView: View {
                 currencyCode: currencyCode,
                 context: modelContext
             )
-
             byCurrency[currencyCode] = summary
         }
         previousCashFlowByCurrency = byCurrency

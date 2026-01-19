@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Phase: 5.1 of 8 (Correcciones y Mejoras)
 Plan: In progress
-Status: Gráficas de ingresos completas - última tarea grande de Fase 5.1
-Last activity: 2026-01-19 — Gráficas de ingresos con selector unificado, widgets adaptativos, localizaciones
+Status: FavoritePayment ↔ Tag N:N completado - queda optimización de cálculos
+Last activity: 2026-01-19 — Fix relación N:N FavoritePayment ↔ Tag
 
-Progress: ████████░░░░░░ 60% (Fase 5.1)
+Progress: ██████████░░░░ 75% (Fase 5.1)
 
 ---
 
@@ -64,12 +64,13 @@ Progress: ████████░░░░░░ 60% (Fase 5.1)
 - **Auto-focus completo** - Todos los formularios de creación con auto-focus en campo nombre
 - **Filtro Ingresos/Gastos completo** - Chips inline, sincronización bidireccional SessionState, totales clicables en RecordsTabView con dimming, chip visible en PanelView
 - **Gráficas de ingresos completas** - Selector unificado (chip = fuente de verdad), calculadores parametrizados, CategoriesTabView adapta pie charts y lista, PanelView widgets adaptativos, NatureTrendWidget muestra mensaje en modo ingresos, CashFlowWidget con color teal y dimming, título dinámico "Análisis del ingreso", localizaciones completas (6 idiomas)
+- **Importación multimoneda** - Auto-detecta monedas en CSV, permite asignar cuenta por divisa, fix parsing de campos con newlines embebidos
+- **Primer día de semana** - Nueva preferencia en Personalización (Domingo/Lunes)
+- **FavoritePayment ↔ Tag N:N** - Relación muchos-a-muchos correcta con @Relationship(inverse:), fix DataWipeService
 
 ## Next Steps
 
 ### Otras tareas
-- Importación multimoneda
-- Investigar cambio de relación FavoritePayment ↔ Tag (1:1 → N:N)
 - Optimizar cálculos en gráficas
 
 ## Parking Lot
@@ -81,10 +82,11 @@ Progress: ████████░░░░░░ 60% (Fase 5.1)
 - Sincronización bidireccional pie ↔ filtros usa flag `isSyncingFilters`
 - Tags existentes migran automáticamente con icono por defecto
 - Design System (DS) en `DesignTokens.swift` con: Spacing, Radius, FormRow, ListRow, Typography
+- SwiftData N:N requiere `@Relationship(inverse:)` explícito en un lado; arrays sin inverse se tratan como 1:N
 
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Filtro Ingresos/Gastos completo con sincronización
-Next step: Estudiar enfoque para gráficas de ingresos (última tarea grande de Fase 5.1)
+Stopped at: FavoritePayment ↔ Tag N:N fix completado
+Next step: Optimizar cálculos en gráficas (último item de Fase 5.1)
 Resume file: None
