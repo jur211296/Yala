@@ -1028,7 +1028,7 @@ struct CategoriesTabView: View {
         )
 
         // Calculate tag spending (show ALL tags, dim applied in widget)
-        tagSpending = calculateTagSpending(
+        tagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: pieFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
@@ -1150,7 +1150,7 @@ struct CategoriesTabView: View {
         }
 
         // Calculate previous period tag spending
-        let previousTagSpending = calculateTagSpending(
+        let previousTagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: previousFiltered,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
@@ -1564,47 +1564,6 @@ struct CategoriesTabView: View {
         guard !viewModel.selectedNatures.isEmpty else { return nil }
         let names = viewModel.selectedNatures.map { $0.displayName }
         return names.count == 1 ? names.first : "\(names.first ?? "") +\(names.count - 1)"
-    }
-
-    // MARK: - Tag Spending Calculator
-
-    private func calculateTagSpending(
-        transactions: [TransactionItem],
-        interval: DateInterval,
-        currencyCode: String,
-        transactionNatures: Set<TransactionNature>? = nil
-    ) -> [TagSpendingSummary] {
-        // Determine which natures to include (default: expense only)
-        let naturesToInclude = transactionNatures ?? [.expense]
-
-        let filteredTransactions = transactions.filter { transaction in
-            guard let category = transaction.category else { return false }
-            let nature: TransactionNature = category.isIncome ? .income : .expense
-            guard naturesToInclude.contains(nature) else { return false }
-            guard !transaction.tags.isEmpty else { return false }
-            return interval.contains(transaction.date)
-        }
-
-        var tagTotals: [PersistentIdentifier: Double] = [:]
-        var tagMap: [PersistentIdentifier: Tag] = [:]
-
-        for transaction in filteredTransactions {
-            let absAmount = abs(transaction.amountInPreferredCurrency)
-            for tag in transaction.tags {
-                let tagID = tag.persistentModelID
-                tagTotals[tagID, default: 0] += absAmount
-                tagMap[tagID] = tag
-            }
-        }
-
-        let totalExpense = tagTotals.values.reduce(0, +)
-        let sortedTags = tagTotals.sorted { $0.value > $1.value }
-
-        return sortedTags.compactMap { (id, amount) -> TagSpendingSummary? in
-            guard let tag = tagMap[id] else { return nil }
-            let percentage = totalExpense > 0 ? (amount / totalExpense) * 100 : 0
-            return TagSpendingSummary(tag: tag, amount: amount, percentage: percentage)
-        }
     }
 }
 
