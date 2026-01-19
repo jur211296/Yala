@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 5.1 — Correcciones y Mejoras
+**Current focus:** Fase 6 — Pagos Planificados
 
 ## Current Position
 
-Phase: 5.1 of 8 (Correcciones y Mejoras)
-Plan: In progress
-Status: FavoritePayment ↔ Tag N:N completado - queda optimización de cálculos
-Last activity: 2026-01-19 — Fix relación N:N FavoritePayment ↔ Tag
+Phase: 6 of 8 (Pagos Planificados)
+Plan: Not started
+Status: Fase 5.1 completada - listo para Fase 6
+Last activity: 2026-01-19 — Optimización de cálculos completada
 
-Progress: ██████████░░░░ 75% (Fase 5.1)
+Progress: ██████████████ 100% (Fase 5.1) → Ready for Fase 6
 
 ---
 
@@ -67,11 +67,15 @@ Progress: ██████████░░░░ 75% (Fase 5.1)
 - **Importación multimoneda** - Auto-detecta monedas en CSV, permite asignar cuenta por divisa, fix parsing de campos con newlines embebidos
 - **Primer día de semana** - Nueva preferencia en Personalización (Domingo/Lunes)
 - **FavoritePayment ↔ Tag N:N** - Relación muchos-a-muchos correcta con @Relationship(inverse:), fix DataWipeService
+- **Optimización de cálculos** - N+1 queries eliminados en TrendsTabView, TagSpendingCalculator extraído como servicio, recordsSummary cacheado en ViewModel, onChange handlers consolidados
 
 ## Next Steps
 
-### Otras tareas
-- Optimizar cálculos en gráficas
+### Fase 6: Pagos Planificados
+- Diseñar modelo ScheduledPayment (SwiftData)
+- CRUD de pagos planificados con SegmentedControl (suscripciones vs otros)
+- Widget Medium: 3 pagos siguientes
+- Widget Large: calendario por periodo
 
 ## Parking Lot
 
@@ -87,6 +91,6 @@ Progress: ██████████░░░░ 75% (Fase 5.1)
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: FavoritePayment ↔ Tag N:N fix completado
-Next step: Optimizar cálculos en gráficas (último item de Fase 5.1)
+Stopped at: Fase 5.1 completada - optimización de cálculos
+Next step: Iniciar Fase 6 (Pagos Planificados)
 Resume file: None

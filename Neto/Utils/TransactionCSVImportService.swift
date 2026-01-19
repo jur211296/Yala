@@ -331,7 +331,8 @@ enum TransactionCSVImportService {
             }
 
             // Eliminar columnas vacías del final (trailing semicolons)
-            while columns.last?.isEmpty == true {
+            // pero solo si tenemos más columnas de las esperadas
+            while columns.count > expectedColumnCount && columns.last?.isEmpty == true {
                 columns.removeLast()
             }
 
@@ -1044,7 +1045,8 @@ enum TransactionCSVImportService {
             var columns = rawColumns.map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
 
             // Eliminar columnas vacías del final (trailing semicolons)
-            while columns.last?.isEmpty == true {
+            // pero solo si tenemos más columnas de las esperadas
+            while columns.count > expectedColumnCount && columns.last?.isEmpty == true {
                 columns.removeLast()
             }
 
