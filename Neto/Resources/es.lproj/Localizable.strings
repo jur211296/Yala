@@ -771,6 +771,7 @@
 
 
 "nature.title" = "Naturaleza";
+"nature.incomeNotApplicable" = "La clasificación por naturaleza solo aplica a gastos";
 
 // MARK: - Balance Adjustments
 

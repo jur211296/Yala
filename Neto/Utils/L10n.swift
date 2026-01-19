@@ -210,6 +210,12 @@ enum L10n {
         static var unclassifiedDesc: String {
             NSLocalizedString("nature.unclassified.desc", comment: "")
         }
+        static var incomeNotApplicable: String {
+            NSLocalizedString(
+                "nature.incomeNotApplicable",
+                comment: "Message shown when income filter is active - nature classification doesn't apply"
+            )
+        }
     }
 
     // MARK: - Records

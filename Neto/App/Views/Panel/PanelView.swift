@@ -782,7 +782,8 @@ struct PanelView: View {
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousNatureTotalAmount,
                 previousAmountByNature: viewModel.previousNatureAmounts,
-                showVariationHeader: viewModel.selectedPeriod != .allTime
+                showVariationHeader: viewModel.selectedPeriod != .allTime,
+                isIncomeMode: viewModel.selectedTransactionNatures == [.income]
             )
         } else if config.type == .exchangeRate {
             ExchangeRateWidget(

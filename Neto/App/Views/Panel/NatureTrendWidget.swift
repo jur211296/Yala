@@ -26,6 +26,9 @@ struct NatureTrendWidget: View {
     var showVariationHeader: Bool = false
     var comparisonMode: ComparisonMode = .month
 
+    /// When true, shows a message that nature classification doesn't apply to income
+    var isIncomeMode: Bool = false
+
     private var totalAmount: Double {
         trendPoints.reduce(0) { $0 + $1.total }
     }
@@ -72,7 +75,8 @@ struct NatureTrendWidget: View {
         previousTotalAmount: Double? = nil,
         previousAmountByNature: [SubcategoryNature: Double] = [:],
         showVariationHeader: Bool = false,
-        comparisonMode: ComparisonMode = .month
+        comparisonMode: ComparisonMode = .month,
+        isIncomeMode: Bool = false
     ) {
         self.trendPoints = trendPoints
         self.selectedNature = selectedNature
@@ -87,40 +91,43 @@ struct NatureTrendWidget: View {
         self.previousAmountByNature = previousAmountByNature
         self.showVariationHeader = showVariationHeader
         self.comparisonMode = comparisonMode
+        self.isIncomeMode = isIncomeMode
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Header
+            // Header - simplified when in income mode (no KPI makes sense)
             HStack(alignment: .top) {
-                // Left: Title and total amount
+                // Left: Title and total amount (hide KPI in income mode)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Nature.title)
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
 
-                    // Total amount with "vs previous" comparison
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                        Text(
-                            NetoFormatter.currency(
-                                value: totalAmount, currencyCode: currencyCode)
-                        )
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(Color.netoPrimaryText)
+                    // Total amount with "vs previous" comparison - only show when NOT in income mode
+                    if !isIncomeMode {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                            Text(
+                                NetoFormatter.currency(
+                                    value: totalAmount, currencyCode: currencyCode)
+                            )
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(Color.netoPrimaryText)
 
-                        // Show previous period value for comparison
-                        if let prevAmount = previousTotalAmount {
-                            Text("vs \(NetoFormatter.number(value: prevAmount))")
-                                .font(.caption)
-                                .foregroundStyle(Color.netoSecondaryText)
+                            // Show previous period value for comparison
+                            if let prevAmount = previousTotalAmount {
+                                Text("vs \(NetoFormatter.number(value: prevAmount))")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.netoSecondaryText)
+                            }
                         }
                     }
                 }
 
                 Spacer()
 
-                // Right: Variation chip and comparison text (only when showVariationHeader and has data)
-                if showVariationHeader && !trendPoints.isEmpty && variation != nil {
+                // Right: Variation chip and comparison text (only when showVariationHeader and has data, not in income mode)
+                if !isIncomeMode && showVariationHeader && !trendPoints.isEmpty && variation != nil {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         VariationChip(variation: variation, size: .medium)
 
@@ -146,7 +153,22 @@ struct NatureTrendWidget: View {
             }
 
             // Content
-            if trendPoints.isEmpty {
+            if isIncomeMode {
+                // Income mode: nature classification doesn't apply
+                // Show centered message without KPI (header already hidden via conditional)
+                Spacer()
+                VStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "info.circle")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.Nature.incomeNotApplicable)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                Spacer()
+            } else if trendPoints.isEmpty {
                 Spacer()
                 Text(L10n.Widget.noExpensesNaturePeriod)
                     .font(.caption)

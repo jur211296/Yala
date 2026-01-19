@@ -43,7 +43,7 @@ struct CategoriesTabView: View {
     @State private var selectedSubcategoryID: PersistentIdentifier?
     @State private var selectedTagID: PersistentIdentifier?
     @State private var selectedNature: SubcategoryNature?
-    @State private var carouselIndex: Int? = 0
+    @State private var chartsCarouselPosition: String? = "category"
     @State private var listViewType: ListViewType = .categories
     @State private var isListExpanded: Bool = false
     @State private var isSubcategoriesAutomatic: Bool = false  // Track if switch was automatic
@@ -87,13 +87,21 @@ struct CategoriesTabView: View {
 
     // MARK: - Body
 
+    /// Check if income-only filter is active (nature carousel not applicable)
+    private var isIncomeMode: Bool {
+        viewModel.selectedTransactionNatures == [.income]
+    }
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.xl) {
                 controlBar
                 spendingAnalysisHeader
                 chartsCarousel
-                natureCarousel
+                // Nature carousel only shows for expenses (nature classification doesn't apply to income)
+                if !isIncomeMode {
+                    natureCarousel
+                }
                 categoriesListSection
                 recentRecordsSection
             }
@@ -157,6 +165,9 @@ struct CategoriesTabView: View {
         .onChange(of: sessionState.selectedTransactionNatures) {
             // Sync transaction nature filter from SessionState and recalculate
             viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+            enforceListViewLock()
+            // Reset carousel to first valid page when income mode changes
+            chartsCarouselPosition = isIncomeMode ? "subcategory" : "category"
             calculateData()
         }
         .sheet(isPresented: $showCustomPeriodPicker) {
@@ -427,6 +438,11 @@ struct CategoriesTabView: View {
 
     // MARK: - Charts Carousel
 
+    /// Number of pages in carousel (2 when income mode, 3 otherwise)
+    private var carouselPageCount: Int {
+        isIncomeMode ? 2 : 3
+    }
+
     private var chartsCarousel: some View {
         VStack(spacing: DS.Spacing.sm) {
             GeometryReader { geo in
@@ -436,35 +452,38 @@ struct CategoriesTabView: View {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: spacing) {
-                        // Categories Chart
-                        categoryChartCard
-                            .frame(width: cardWidth)
-                            .id(0)
+                        // Categories Chart - hidden in income mode
+                        if !isIncomeMode {
+                            categoryChartCard
+                                .frame(width: cardWidth)
+                                .id("category")
+                        }
 
                         // Subcategories Chart
                         subcategoryChartCard
                             .frame(width: cardWidth)
-                            .id(1)
+                            .id("subcategory")
 
                         // Tags Chart
                         tagChartCard
                             .frame(width: cardWidth)
-                            .id(2)
+                            .id("tags")
                     }
                     .scrollTargetLayout()
                 }
                 .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $carouselIndex)
+                .scrollPosition(id: $chartsCarouselPosition)
                 .frame(width: totalWidth)
             }
             .frame(height: 340)
 
-            // Page indicator
+            // Page indicator - dynamic count based on income mode
             HStack(spacing: DS.Spacing.sm) {
-                ForEach(0..<3, id: \.self) { page in
+                ForEach(0..<carouselPageCount, id: \.self) { page in
+                    let pageId = carouselPageIds[page]
                     Circle()
                         .fill(
-                            page == (carouselIndex ?? 0)
+                            chartsCarouselPosition == pageId
                                 ? Color.netoPrimaryText.opacity(0.3)
                                 : Color.netoSecondaryText.opacity(0.2)
                         )
@@ -473,6 +492,11 @@ struct CategoriesTabView: View {
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }
+    }
+
+    /// IDs for carousel pages based on income mode
+    private var carouselPageIds: [String] {
+        isIncomeMode ? ["subcategory", "tags"] : ["category", "subcategory", "tags"]
     }
 
     // MARK: - Category Chart Card
@@ -696,7 +720,8 @@ struct CategoriesTabView: View {
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
             showVariationHeader: viewModel.detailPeriod != .allTime,
-            comparisonMode: sessionState.comparisonMode
+            comparisonMode: sessionState.comparisonMode,
+            isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
     }
 
@@ -722,7 +747,8 @@ struct CategoriesTabView: View {
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
             showVariationHeader: viewModel.detailPeriod != .allTime,
-            comparisonMode: sessionState.comparisonMode
+            comparisonMode: sessionState.comparisonMode,
+            isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
     }
 
@@ -871,8 +897,10 @@ struct CategoriesTabView: View {
     // MARK: - List View Auto-switching Logic
 
     /// Determines if list view should be locked to subcategories
+    /// - When a category filter is applied (show only subcategories of that category)
+    /// - When income mode is active (category breakdown not useful for income)
     private var shouldLockToSubcategories: Bool {
-        !viewModel.selectedCategories.isEmpty
+        !viewModel.selectedCategories.isEmpty || isIncomeMode
     }
 
     /// Enforce list view lock logic based on current category filter
