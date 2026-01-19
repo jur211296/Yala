@@ -20,6 +20,7 @@ Progress: ████░░░░░░░░░░ 35% (Fase 5.1)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-18T21:30:00-05:00] d7b0b55 feat(filters): Add income/expense filter chips in Statistics
 - [2026-01-18T20:52:00-05:00] 5e10a22 feat(ux): Auto-focus name field on remaining creation forms
 - [2026-01-18T20:45:00-05:00] 0fc1085 feat(ux): Auto-focus name field on creation forms
 - [2026-01-18T20:36:00-05:00] c439763 fix(ux): Replace onTapGesture with Button for category filter rows
@@ -66,7 +67,17 @@ Progress: ████░░░░░░░░░░ 35% (Fase 5.1)
 - **Auto-focus completo** - Todos los formularios de creación con auto-focus en campo nombre
 
 ## Next Steps
-- Filtro Ingresos/Gastos en Statistics
+
+### Ajustes pendientes: Filtro Ingresos/Gastos
+1. **CategoriesTabView no actualiza** - El chip del filtro al ponerlo/quitarlo no refresca las gráficas automáticamente
+2. **Posición del filtro** - Debe ir segundo (después de cuentas), no primero en RecordsFiltersView
+3. **Chip falta en PanelView** - El chip del filtro persiste pero NO se ve en PanelView, debe verse como el resto
+4. **Resumen clicable en RecordsTabView** - Los totales de Gastos/Ingresos deben ser clicables para aplicar filtro (y dimmear el otro)
+
+### Tarea grande (última de Fase 5.1)
+5. **Gráficas de ingresos** - SOLO si hay filtro de Ingresos aplicado, las gráficas que son solo de gastos (pie charts, tops) deberían mostrar subcategorías de ingresos. Estudiar enfoque.
+
+### Otras tareas
 - Importación multimoneda
 - Investigar cambio de relación FavoritePayment ↔ Tag (1:1 → N:N)
 - Optimizar cálculos en gráficas
@@ -84,6 +95,6 @@ Progress: ████░░░░░░░░░░ 35% (Fase 5.1)
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Auto-focus completo en todos los formularios de creación
-Next step: Filtro Ingresos/Gastos en Statistics o siguiente item de Next Steps
+Stopped at: Filtro Ingresos/Gastos implementado, pendiente ajustes (5 items en Next Steps)
+Next step: Completar ajustes 1-4 del filtro Ingresos/Gastos
 Resume file: None
