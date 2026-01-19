@@ -231,13 +231,139 @@ struct ScheduledPaymentsWidget: View {
     // MARK: - List Content (Medium - List Mode)
 
     private var listContent: some View {
-        // Placeholder - will be implemented in Increment 3
-        VStack(spacing: DS.Spacing.md) {
-            Text("Lista de pagos")
-                .font(.subheadline)
+        let upcomingPayments = getUpcomingPayments(limit: 3)
+
+        return VStack(spacing: DS.Spacing.md) {
+            if upcomingPayments.isEmpty {
+                emptyListState
+            } else {
+                ForEach(upcomingPayments, id: \.payment.persistentModelID) { item in
+                    paymentRow(item)
+                }
+            }
+        }
+    }
+
+    private var emptyListState: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "calendar.badge.clock")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary.opacity(0.5))
+                .padding(.bottom, DS.Spacing.xs)
+
+            Text(NSLocalizedString("scheduled.widget.empty.title", comment: ""))
+                .font(.subheadline.weight(.medium))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.primary)
+
+            Text(NSLocalizedString("scheduled.widget.empty.message", comment: ""))
+                .font(.caption)
+                .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.vertical, DS.Spacing.xl)
+    }
+
+    private func paymentRow(_ item: UpcomingPaymentItem) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            // Icon circle
+            ZStack {
+                Circle()
+                    .fill(Color(hex: item.color))
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: item.icon)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white)
+            }
+
+            // Info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.payment.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(item.dueDateLabel)
+                    .font(.caption)
+                    .foregroundStyle(item.dueStatus == .past ? Color.hotPink : .secondary)
+            }
+
+            Spacer()
+
+            // Amount
+            Text(NetoFormatter.currency(value: item.payment.amount, currencyCode: currencyCode))
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.primary)
+        }
+    }
+
+    // MARK: - Upcoming Payments Helper
+
+    private struct UpcomingPaymentItem {
+        let payment: ScheduledPayment
+        let icon: String
+        let color: String
+        let dueStatus: DueStatus
+        let dueDateLabel: String
+    }
+
+    private func getUpcomingPayments(limit: Int) -> [UpcomingPaymentItem] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        return filteredPayments
+            .sorted { $0.nextDueDate < $1.nextDueDate }
+            .prefix(limit)
+            .map { payment in
+                let dueDate = calendar.startOfDay(for: payment.nextDueDate)
+                let days = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+
+                let dueStatus: DueStatus
+                if days < 0 {
+                    dueStatus = .past
+                } else if days == 0 {
+                    dueStatus = .today
+                } else {
+                    dueStatus = .upcoming
+                }
+
+                let icon = payment.subcategory?.iconName
+                    ?? payment.subcategory?.category.iconName
+                    ?? "creditcard.fill"
+                let color = payment.subcategory?.colorHex
+                    ?? payment.subcategory?.category.colorHex
+                    ?? "#6366F1"
+
+                let dueDateLabel = formatDueDate(days: days, date: payment.nextDueDate)
+
+                return UpcomingPaymentItem(
+                    payment: payment,
+                    icon: icon,
+                    color: color,
+                    dueStatus: dueStatus,
+                    dueDateLabel: dueDateLabel
+                )
+            }
+    }
+
+    private func formatDueDate(days: Int, date: Date) -> String {
+        if days < 0 {
+            let format = NSLocalizedString("scheduled.widget.daysAgo", comment: "")
+            return String(format: format, abs(days))
+        } else if days == 0 {
+            return NSLocalizedString("date.today", comment: "")
+        } else if days == 1 {
+            return NSLocalizedString("scheduled.widget.tomorrow", comment: "")
+        } else if days <= 7 {
+            let format = NSLocalizedString("scheduled.widget.inDays", comment: "")
+            return String(format: format, days)
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM"
+            return formatter.string(from: date)
+        }
     }
 
     // MARK: - Calendar Content (Large)
