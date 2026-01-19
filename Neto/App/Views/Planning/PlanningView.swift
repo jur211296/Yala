@@ -149,20 +149,6 @@ struct PlanningView: View {
     }
 
     private var scheduledPaymentsContent: some View {
-        VStack {
-            Spacer()
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.tertiary)
-                Text(L10n.Planning.scheduledPayments)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(L10n.Planning.comingSoon)
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-            }
-            Spacer()
-        }
+        ScheduledPaymentsView()
     }
 }

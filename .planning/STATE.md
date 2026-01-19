@@ -10,16 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 ## Current Position
 
 Phase: 6 of 8 (Pagos Planificados)
-Plan: Not started
-Status: Fase 5.1 completada - listo para Fase 6
-Last activity: 2026-01-19 — Optimización de cálculos completada
+Plan: In progress (Mini-Fase 6.1 completada)
+Status: Backend de ScheduledPayment listo
+Last activity: 2026-01-19 — Modelo ScheduledPayment creado
 
-Progress: ██████████████ 100% (Fase 5.1) → Ready for Fase 6
+Progress: █░░░░░░░░░░░░░ 10% (Fase 6)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-19T14:42:00-05:00] ab9c874 feat(scheduled): Add ScheduledPayment model and supporting enums
 - [2026-01-19T09:17:00-05:00] 45b9a69 feat(income): Add dynamic title, teal color, and dimming for income mode
 - [2026-01-19T08:26:00-05:00] abe34ae feat(statistics): Hide nature widgets and category chart in income mode
 - [2026-01-19T08:21:00-05:00] 4b9b8ca feat(panel): Widgets respect income/expense filter
@@ -29,7 +30,6 @@ Progress: ██████████████ 100% (Fase 5.1) → Ready f
 - [2026-01-19T06:55:00-05:00] 7f90398 fix(filters): Complete income/expense filter sync and UX improvements
 - [2026-01-18T21:30:00-05:00] d7b0b55 feat(filters): Add income/expense filter chips in Statistics
 - [2026-01-18T20:52:00-05:00] 5e10a22 feat(ux): Auto-focus name field on remaining creation forms
-- [2026-01-18T20:45:00-05:00] 0fc1085 feat(ux): Auto-focus name field on creation forms
 
 ## Completed in Current Phase
 
@@ -72,8 +72,8 @@ Progress: ██████████████ 100% (Fase 5.1) → Ready f
 ## Next Steps
 
 ### Fase 6: Pagos Planificados
-- Diseñar modelo ScheduledPayment (SwiftData)
-- CRUD de pagos planificados con SegmentedControl (suscripciones vs otros)
+- ~~Diseñar modelo ScheduledPayment (SwiftData)~~ ✅
+- CRUD de pagos planificados con SegmentedControl (suscripciones vs otros) ← En progreso
 - Widget Medium: 3 pagos siguientes
 - Widget Large: calendario por periodo
 
