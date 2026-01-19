@@ -22,6 +22,9 @@ struct CashFlowWidget: View {
     let previousAmount: Double?
     let comparisonPeriodText: String?
 
+    // Filter state for dimming non-selected bars
+    let selectedTransactionNatures: Set<TransactionNature>
+
     init(
         summary: CashFlowSummary,
         size: WidgetSize,
@@ -32,7 +35,8 @@ struct CashFlowWidget: View {
         customTitle: String? = nil,
         displayMode: TrendType? = nil,
         previousAmount: Double? = nil,
-        comparisonPeriodText: String? = nil
+        comparisonPeriodText: String? = nil,
+        selectedTransactionNatures: Set<TransactionNature> = []
     ) {
         self.summary = summary
         self.size = size
@@ -44,6 +48,7 @@ struct CashFlowWidget: View {
         self.displayMode = displayMode
         self.previousAmount = previousAmount
         self.comparisonPeriodText = comparisonPeriodText
+        self.selectedTransactionNatures = selectedTransactionNatures
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -115,6 +120,18 @@ struct CashFlowWidget: View {
         let totalIncome = nonEmptyChartData.reduce(0) { $0 + $1.income }
         let totalExpense = nonEmptyChartData.reduce(0) { $0 + $1.expense }
         return totalExpense == 0 && totalIncome > 0
+    }
+
+    // MARK: - Compact Bar Dimming Logic
+
+    /// Whether income bar should be dimmed (expense filter is active)
+    private var isIncomeDimmed: Bool {
+        selectedTransactionNatures == [.expense]
+    }
+
+    /// Whether expense bar should be dimmed (income filter is active)
+    private var isExpenseDimmed: Bool {
+        selectedTransactionNatures == [.income]
     }
 
     /// Calculate smart axis dates for chart X-axis
@@ -468,16 +485,17 @@ struct CashFlowWidget: View {
                                     .fill(Color.netoPrimaryText.opacity(0.05))
                                     .frame(height: 8)
 
-                                // Fill
+                                // Fill - teal color for income
                                 let width =
                                     maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
                                 Capsule()
-                                    .fill(Color.brandPrimary)
+                                    .fill(Color.incomeGraph)
                                     .frame(width: max(width, 6), height: 8)
                             }
                         }
                         .frame(height: 8)
                     }
+                    .opacity(isIncomeDimmed ? 0.4 : 1.0)
 
                     // Expense Group
                     VStack(spacing: DS.Spacing.xs) {
@@ -511,6 +529,7 @@ struct CashFlowWidget: View {
                         }
                         .frame(height: 8)
                     }
+                    .opacity(isExpenseDimmed ? 0.4 : 1.0)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

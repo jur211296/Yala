@@ -564,6 +564,7 @@
 "statistics.noRecords" = "Sin registros";
 "statistics.ofExpense" = "del gasto";
 "statistics.spendingAnalysis" = "Análisis del gasto";
+"statistics.incomeAnalysis" = "Análisis del ingreso";
 
 
 "settings.organization" = "Organización";

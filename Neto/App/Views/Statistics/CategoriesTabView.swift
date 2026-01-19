@@ -375,11 +375,11 @@ struct CategoriesTabView: View {
 
     // MARK: - Spending Analysis Header
 
-    /// Header with title "Análisis del gasto" and M/A selector
+    /// Header with dynamic title based on income/expense mode
     /// Placed outside carousel to avoid disappearing when no previous data
     private var spendingAnalysisHeader: some View {
         HStack {
-            Text(L10n.Statistics.spendingAnalysis)
+            Text(isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis)
                 .font(.headline)
                 .foregroundStyle(.primary)
 

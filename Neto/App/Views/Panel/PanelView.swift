@@ -754,7 +754,8 @@ struct PanelView: View {
                     grouping: viewModel.cashFlowGrouping,
                     interval: viewModel.currentInterval,
                     onShowDetail: { navigateToStatistics(.trends) },
-                    displayMode: viewModel.trendType
+                    displayMode: viewModel.trendType,
+                    selectedTransactionNatures: viewModel.selectedTransactionNatures
                 )
             } else {
                 EmptyView()

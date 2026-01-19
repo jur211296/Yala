@@ -562,6 +562,10 @@
 "statistics.noDataToShow" = "Keine Daten zum Anzeigen";
 "statistics.noRecords" = "Keine Einträge";
 "statistics.ofExpense" = "der Ausgaben";
+"statistics.spendingAnalysis" = "Ausgabenanalyse";
+"statistics.incomeAnalysis" = "Einnahmenanalyse";
+"trend.filterBlockedMessage" = "Entferne zuerst Kategorie- oder Naturfilter";
+"nature.incomeNotApplicable" = "Die Naturklassifizierung gilt nur für Ausgaben";
 
 
 "settings.organization" = "Organisation";

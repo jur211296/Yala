@@ -562,6 +562,10 @@
 "statistics.noDataToShow" = "Aucune donnee a afficher";
 "statistics.noRecords" = "Aucun enregistrement";
 "statistics.ofExpense" = "de la depense";
+"statistics.spendingAnalysis" = "Analyse des dépenses";
+"statistics.incomeAnalysis" = "Analyse des revenus";
+"trend.filterBlockedMessage" = "Supprimez d'abord les filtres de catégorie ou de nature";
+"nature.incomeNotApplicable" = "La classification par nature ne s'applique qu'aux dépenses";
 
 
 "settings.organization" = "Organisation";
