@@ -95,6 +95,12 @@ struct AccountFormView: View {
                 viewModel.allTransactions = allTransactions
                 // Initialize balance field with existing initial balance (needs transactions loaded)
                 viewModel.initializeBalanceIfNeeded()
+                // Auto-focus name field for new accounts
+                if !viewModel.isEditing {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        focusedField = .name
+                    }
+                }
             }
             .onChange(of: allTransactions) { _, newTransactions in
                 viewModel.allTransactions = newTransactions

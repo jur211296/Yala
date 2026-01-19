@@ -150,6 +150,12 @@ struct FavoriteEditorView: View {
         .tint(Color.electricIndigo)
         .onAppear {
             loadFavoriteData()
+            // Auto-focus name field for new favorites
+            if favorite == nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isNameFieldFocused = true
+                }
+            }
         }
         .onChange(of: selectedSubcategory) { _, newSubcategory in
             if let subcategory = newSubcategory {
