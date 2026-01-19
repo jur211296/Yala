@@ -101,6 +101,12 @@ struct ImportIntroSheet: View {
     // Template alert (separate from import flow)
     @State private var showTemplateAlert: Bool = false
 
+    // Multi-currency import state
+    @State private var selectedFileURL: URL?
+    @State private var detectedCurrencies: Set<String> = []
+    @State private var isShowingCurrencyMapping: Bool = false
+    @State private var filteredCurrencyForAccountPicker: String?
+
     /// Callback to notify parent with import result. Parent handles display.
     let onImportCompleted: ((ImportResult) -> Void)?
 
@@ -118,6 +124,11 @@ struct ImportIntroSheet: View {
         accounts
             .filter { !$0.isArchived }
             .sorted(by: { $0.name < $1.name })
+    }
+
+    /// Accounts filtered by a specific currency (for single-currency import)
+    private func accountsForCurrency(_ currencyCode: String) -> [Account] {
+        activeAccounts.filter { normalizeCurrencyCode($0.currencyCode) == currencyCode }
     }
 
     var body: some View {
@@ -140,7 +151,7 @@ struct ImportIntroSheet: View {
                     // Bottom Action Button
                     VStack {
                         Button {
-                            startAccountSelection()
+                            startImportFlow()
                         } label: {
                             HStack(spacing: DS.Spacing.sm) {
                                 if isImporting {
@@ -180,12 +191,28 @@ struct ImportIntroSheet: View {
         // Sheets & Alerts
         .sheet(isPresented: $isShowingAccountPicker) {
             ImportAccountPickerSheet(
-                accounts: activeAccounts,
+                accounts: filteredCurrencyForAccountPicker != nil
+                    ? accountsForCurrency(filteredCurrencyForAccountPicker!)
+                    : activeAccounts,
                 selectedAccount: $selectedAccount
             ) { account in
                 selectedAccount = account
                 isShowingAccountPicker = false
-                isShowingFileImporter = true
+                // Import directly since file was already selected
+                if let url = selectedFileURL {
+                    performImport(from: url, into: account)
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingCurrencyMapping) {
+            ImportCurrencyMappingSheet(
+                detectedCurrencies: detectedCurrencies,
+                accounts: activeAccounts
+            ) { currencyAccountMap in
+                isShowingCurrencyMapping = false
+                if let url = selectedFileURL {
+                    performMultiCurrencyImport(from: url, with: currencyAccountMap)
+                }
             }
         }
         .fileImporter(
@@ -302,7 +329,7 @@ struct ImportIntroSheet: View {
 
     // MARK: - Actions
 
-    private func startAccountSelection() {
+    private func startImportFlow() {
         if activeAccounts.isEmpty {
             // No hay cuentas activas - dismiss and notify parent
             let result = ImportResult(
@@ -314,12 +341,9 @@ struct ImportIntroSheet: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.onImportCompleted?(result)
             }
-        } else if activeAccounts.count == 1 {
-            // Solo hay una cuenta, seleccionarla automáticamente
-            selectedAccount = activeAccounts.first
-            isShowingFileImporter = true
         } else {
-            isShowingAccountPicker = true
+            // Open file picker first - currencies will be detected after file selection
+            isShowingFileImporter = true
         }
     }
 
@@ -411,11 +435,62 @@ struct ImportIntroSheet: View {
                 return
             }
 
-            guard let account = selectedAccount else {
-                return
-            }
+            // Scan currencies from CSV
+            do {
+                let currencies = try TransactionCSVImportService.scanCurrencies(from: url)
+                selectedFileURL = url
+                detectedCurrencies = currencies
 
-            performImport(from: url, into: account)
+                if currencies.count == 1, let singleCurrency = currencies.first {
+                    // Single currency - route to account picker or direct import
+                    let matchingAccounts = accountsForCurrency(singleCurrency)
+
+                    if matchingAccounts.isEmpty {
+                        // No accounts for this currency
+                        let errorResult = ImportResult(
+                            isSuccess: false,
+                            message: "No hay cuentas en \(singleCurrency). Crea una cuenta en esta moneda primero.",
+                            count: 0
+                        )
+                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            self.onImportCompleted?(errorResult)
+                        }
+                    } else if matchingAccounts.count == 1 {
+                        // Only one account matches - import directly
+                        selectedAccount = matchingAccounts.first
+                        performImport(from: url, into: matchingAccounts.first!)
+                    } else {
+                        // Multiple accounts - show picker filtered by currency
+                        filteredCurrencyForAccountPicker = singleCurrency
+                        isShowingAccountPicker = true
+                    }
+                } else if currencies.count > 1 {
+                    // Multiple currencies - show currency mapping sheet
+                    isShowingCurrencyMapping = true
+                } else {
+                    // No currencies found (empty file or invalid)
+                    let errorResult = ImportResult(
+                        isSuccess: false,
+                        message: "No se detectaron monedas válidas en el archivo.",
+                        count: 0
+                    )
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.onImportCompleted?(errorResult)
+                    }
+                }
+            } catch {
+                let errorResult = ImportResult(
+                    isSuccess: false,
+                    message: error.localizedDescription,
+                    count: 0
+                )
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.onImportCompleted?(errorResult)
+                }
+            }
         }
     }
     private func performImport(from url: URL, into account: Account) {
@@ -495,6 +570,81 @@ struct ImportIntroSheet: View {
                 }
             }
         }  // End DispatchQueue.asyncAfter
+    }
+
+    // MARK: - Multi-Currency Import
+
+    private func performMultiCurrencyImport(from url: URL, with currencyAccountMap: [String: Account]) {
+        print("🔵 [IMPORT-MULTI] Starting multi-currency import, setting isImporting = true")
+        isImporting = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            Task { @MainActor in
+                do {
+                    print("🔵 [IMPORT-MULTI] Calling TransactionCSVImportService.importCSVMultiCurrency")
+                    let result = try await TransactionCSVImportService.importCSVMultiCurrency(
+                        from: url,
+                        currencyAccountMap: currencyAccountMap,
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories
+                    )
+
+                    let createdCount = result.createdCount
+                    let currencyCount = currencyAccountMap.count
+                    print("🔵 [IMPORT-MULTI] Import complete, count = \(createdCount) in \(currencyCount) currencies")
+
+                    // Save to persist transactions
+                    try modelContext.save()
+                    print("🔵 [IMPORT-MULTI] Save complete")
+
+                    // Calculate date range for exchange rate fetch
+                    let importedDates = result.drafts.map { $0.date }
+                    let dateRange: DateInterval? = {
+                        guard let minDate = importedDates.min(),
+                              let maxDate = importedDates.max() else { return nil }
+                        return DateInterval(start: minDate, end: maxDate)
+                    }()
+
+                    // Fire background task to fetch exchange rates
+                    if let dateRange = dateRange {
+                        Task.detached { @MainActor in
+                            print("🔵 [IMPORT-MULTI] Fetching exchange rates for date range: \(dateRange)")
+                            await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
+                            await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+                            SessionState.shared.needsExchangeRateWidgetRefresh = true
+                            print("🔵 [IMPORT-MULTI] Exchange rate fetch complete")
+                        }
+                    }
+
+                    // Create result with multi-currency message
+                    let importResult = ImportResult(
+                        isSuccess: true,
+                        message: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
+                        count: createdCount
+                    )
+                    print("🔵 [IMPORT-MULTI] Dismissing sheet and notifying parent")
+
+                    dismiss()
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.onImportCompleted?(importResult)
+                    }
+
+                } catch {
+                    print("🔴 [IMPORT-MULTI] ERROR: \(error.localizedDescription)")
+                    isImporting = false
+                    let errorResult = ImportResult(
+                        isSuccess: false,
+                        message: error.localizedDescription,
+                        count: 0
+                    )
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.onImportCompleted?(errorResult)
+                    }
+                }
+            }
+        }
     }
 }
 
