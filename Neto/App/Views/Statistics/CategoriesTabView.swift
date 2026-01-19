@@ -968,10 +968,16 @@ struct CategoriesTabView: View {
         )
 
         // Calculate category spending (show ALL categories, dim applied in widget)
+        // Pass transactionNatures filter - empty means show expenses only (default)
+        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
+            ? nil  // Default: expense only
+            : viewModel.selectedTransactionNatures
+
         categorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: pieFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
+            transactionNatures: naturesFilter,
             context: modelContext
         )
 
@@ -989,6 +995,7 @@ struct CategoriesTabView: View {
             interval: interval,
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
+            transactionNatures: naturesFilter,
             context: modelContext
         )
 
@@ -996,7 +1003,8 @@ struct CategoriesTabView: View {
         tagSpending = calculateTagSpending(
             transactions: pieFiltered,
             interval: interval,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            transactionNatures: naturesFilter
         )
 
         // Calculate nature trend data with correct grouping based on period
@@ -1060,10 +1068,16 @@ struct CategoriesTabView: View {
         )
 
         // Calculate previous period category spending
+        // Use same nature filter as current period for consistent comparison
+        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
+            ? nil
+            : viewModel.selectedTransactionNatures
+
         let previousCategorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: previousFiltered,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
+            transactionNatures: naturesFilter,
             context: modelContext
         )
         previousCategoryTotal = previousCategorySpending.reduce(0) { $0 + $1.amount }
@@ -1089,6 +1103,7 @@ struct CategoriesTabView: View {
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
+            transactionNatures: naturesFilter,
             context: modelContext
         )
         previousSubcategoryTotal = previousSubcategorySpending.reduce(0) { $0 + $1.amount }
@@ -1110,7 +1125,8 @@ struct CategoriesTabView: View {
         let previousTagSpending = calculateTagSpending(
             transactions: previousFiltered,
             interval: previousInterval,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            transactionNatures: naturesFilter
         )
         previousTagTotal = previousTagSpending.reduce(0) { $0 + $1.amount }
 
@@ -1527,10 +1543,16 @@ struct CategoriesTabView: View {
     private func calculateTagSpending(
         transactions: [TransactionItem],
         interval: DateInterval,
-        currencyCode: String
+        currencyCode: String,
+        transactionNatures: Set<TransactionNature>? = nil
     ) -> [TagSpendingSummary] {
-        let expenseTransactions = transactions.filter { transaction in
-            guard let category = transaction.category, !category.isIncome else { return false }
+        // Determine which natures to include (default: expense only)
+        let naturesToInclude = transactionNatures ?? [.expense]
+
+        let filteredTransactions = transactions.filter { transaction in
+            guard let category = transaction.category else { return false }
+            let nature: TransactionNature = category.isIncome ? .income : .expense
+            guard naturesToInclude.contains(nature) else { return false }
             guard !transaction.tags.isEmpty else { return false }
             return interval.contains(transaction.date)
         }
@@ -1538,7 +1560,7 @@ struct CategoriesTabView: View {
         var tagTotals: [PersistentIdentifier: Double] = [:]
         var tagMap: [PersistentIdentifier: Tag] = [:]
 
-        for transaction in expenseTransactions {
+        for transaction in filteredTransactions {
             let absAmount = abs(transaction.amountInPreferredCurrency)
             for tag in transaction.tags {
                 let tagID = tag.persistentModelID
