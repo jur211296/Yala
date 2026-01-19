@@ -331,39 +331,9 @@ struct RecordsTabView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
+    /// Summary from ViewModel (cached, calculated once per filter change instead of per render)
     private var recordsSummary: (balance: Double, income: Double, expense: Double) {
-        var income: Double = 0
-        var expense: Double = 0
-        var balance: Double = 0
-
-        for group in viewModel.groupedRecords {
-            for record in group.records {
-                // Skip transactions without account or from archived/excluded accounts (matches Panel/Trends)
-                guard let account = record.account else { continue }
-                if account.isArchived || account.excludeFromStatistics {
-                    continue
-                }
-
-                // Always use amountInPreferredCurrency (matches TrendDataProcessor calculation)
-                let amount = record.amountInPreferredCurrency
-
-                // Balance includes ALL transactions (initial balance, adjustments, income, expense)
-                balance += amount
-
-                // Income/Expense exclude balance adjustments (initial_balance and adjustment)
-                let isBalanceAdjustment = record.balanceAdjustmentType != nil
-
-                if !isBalanceAdjustment {
-                    if amount > 0 {
-                        income += amount
-                    } else {
-                        expense += abs(amount)
-                    }
-                }
-            }
-        }
-
-        return (balance, income, expense)
+        viewModel.recordsSummary
     }
 
     // MARK: - Records List Content

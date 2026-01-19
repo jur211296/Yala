@@ -84,6 +84,9 @@ final class RecordsViewModel: Filterable {
     /// Grouped records by date (pre-computed for performance)
     var groupedRecords: [(date: Date, records: [TransactionItem])] = []
 
+    /// Cached summary (balance, income, expense) - updated when groupedRecords changes
+    var recordsSummary: (balance: Double, income: Double, expense: Double) = (0, 0, 0)
+
     /// Total count of filtered records
     var filteredCount: Int {
         groupedRecords.reduce(0) { $0 + $1.records.count }
@@ -176,6 +179,37 @@ final class RecordsViewModel: Filterable {
             transactions: transactions,
             criteria: criteria
         )
+
+        // Update cached summary (calculated once per filter change, not per render)
+        calculateSummary()
+    }
+
+    /// Calculate summary from grouped records (called once when data changes)
+    private func calculateSummary() {
+        var income: Double = 0
+        var expense: Double = 0
+        var balance: Double = 0
+
+        for group in groupedRecords {
+            for record in group.records {
+                guard let account = record.account else { continue }
+                if account.isArchived || account.excludeFromStatistics { continue }
+
+                let amount = record.amountInPreferredCurrency
+                balance += amount
+
+                let isBalanceAdjustment = record.balanceAdjustmentType != nil
+                if !isBalanceAdjustment {
+                    if amount > 0 {
+                        income += amount
+                    } else {
+                        expense += abs(amount)
+                    }
+                }
+            }
+        }
+
+        recordsSummary = (balance, income, expense)
     }
 
     /// Get effective date interval from current period
