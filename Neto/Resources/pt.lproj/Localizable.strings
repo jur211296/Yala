@@ -823,3 +823,78 @@
 
 // MARK: - More
 "more.sections" = "Secoes";
+
+// MARK: - Scheduled Payments
+
+// Recurrence Types
+"scheduled.recurrence.weekly" = "Semanal";
+"scheduled.recurrence.monthly" = "Mensal";
+"scheduled.recurrence.yearly" = "Anual";
+
+// Payment Categories
+"scheduled.category.recurring" = "Recorrente";
+"scheduled.category.subscription" = "Assinatura";
+
+// Due Status
+"scheduled.status.past" = "Vencidos";
+"scheduled.status.today" = "Hoje";
+"scheduled.status.upcoming" = "Proximos";
+
+// Tabs
+"scheduled.tab.recurring" = "Recorrentes";
+"scheduled.tab.subscriptions" = "Assinaturas";
+"scheduled.tab.all" = "Todos";
+
+// Empty State
+"scheduled.empty.title" = "Sem pagamentos agendados";
+"scheduled.empty.message" = "Crie lembretes para seus pagamentos recorrentes e assinaturas.";
+
+// Due Text
+"scheduled.due.yesterday" = "Ontem";
+"scheduled.due.today" = "Hoje";
+"scheduled.due.tomorrow" = "Amanha";
+"scheduled.due.days.ago" = "Ha %d dias";
+"scheduled.due.in.days" = "Em %d dias";
+
+// Actions
+"scheduled.new" = "Novo pagamento agendado";
+"scheduled.edit" = "Editar pagamento agendado";
+"scheduled.delete" = "Excluir pagamento";
+"scheduled.delete.confirm.title" = "Excluir pagamento agendado?";
+"scheduled.delete.confirm.message" = "Esta acao nao pode ser desfeita.";
+
+// Editor Sections
+"scheduled.editor.basic.info" = "Informacoes basicas";
+"scheduled.editor.name.placeholder" = "Nome do pagamento";
+"scheduled.editor.note.placeholder" = "Nota (opcional)";
+"scheduled.editor.type" = "Tipo de transacao";
+"scheduled.editor.payment.category" = "Categoria de pagamento";
+"scheduled.editor.classification" = "Classificacao";
+"scheduled.editor.account" = "Conta";
+"scheduled.editor.subcategory" = "Subcategoria";
+"scheduled.editor.recurrence" = "Recorrencia";
+"scheduled.editor.next.due" = "Proximo vencimento";
+"scheduled.editor.day.of.month" = "Dia do mes";
+"scheduled.editor.day.of.week" = "Dia da semana";
+"scheduled.editor.notifications" = "Notificacoes";
+"scheduled.notify.on.due" = "Notificar no vencimento";
+"scheduled.notify.days.before" = "Notificar dias antes";
+"scheduled.select.subcategory" = "Selecionar subcategoria";
+
+// Weekdays
+"weekday.sunday" = "Domingo";
+"weekday.monday" = "Segunda-feira";
+"weekday.tuesday" = "Terca-feira";
+"weekday.wednesday" = "Quarta-feira";
+"weekday.thursday" = "Quinta-feira";
+"weekday.friday" = "Sexta-feira";
+"weekday.saturday" = "Sabado";
+
+// Common (if not already present)
+"common.select" = "Selecionar";
+"common.disabled" = "Desativado";
+"filters.none" = "Nenhum";
+"filters.transaction.type" = "Tipo de transacao";
+"filters.title" = "Filtros";
+"filters.clear" = "Limpar";
+"action.close" = "Fechar";

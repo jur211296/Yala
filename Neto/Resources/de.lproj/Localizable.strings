@@ -823,3 +823,78 @@
 
 // MARK: - More
 "more.sections" = "Bereiche";
+
+// MARK: - Scheduled Payments
+
+// Recurrence Types
+"scheduled.recurrence.weekly" = "Wöchentlich";
+"scheduled.recurrence.monthly" = "Monatlich";
+"scheduled.recurrence.yearly" = "Jährlich";
+
+// Payment Categories
+"scheduled.category.recurring" = "Wiederkehrend";
+"scheduled.category.subscription" = "Abonnement";
+
+// Due Status
+"scheduled.status.past" = "Überfällig";
+"scheduled.status.today" = "Heute";
+"scheduled.status.upcoming" = "Bevorstehend";
+
+// Tabs
+"scheduled.tab.recurring" = "Wiederkehrend";
+"scheduled.tab.subscriptions" = "Abonnements";
+"scheduled.tab.all" = "Alle";
+
+// Empty State
+"scheduled.empty.title" = "Keine geplanten Zahlungen";
+"scheduled.empty.message" = "Erstelle Erinnerungen für deine wiederkehrenden Zahlungen und Abonnements.";
+
+// Due Text
+"scheduled.due.yesterday" = "Gestern";
+"scheduled.due.today" = "Heute";
+"scheduled.due.tomorrow" = "Morgen";
+"scheduled.due.days.ago" = "Vor %d Tagen";
+"scheduled.due.in.days" = "In %d Tagen";
+
+// Actions
+"scheduled.new" = "Neue geplante Zahlung";
+"scheduled.edit" = "Geplante Zahlung bearbeiten";
+"scheduled.delete" = "Zahlung löschen";
+"scheduled.delete.confirm.title" = "Geplante Zahlung löschen?";
+"scheduled.delete.confirm.message" = "Diese Aktion kann nicht rückgängig gemacht werden.";
+
+// Editor Sections
+"scheduled.editor.basic.info" = "Grundinformationen";
+"scheduled.editor.name.placeholder" = "Zahlungsname";
+"scheduled.editor.note.placeholder" = "Notiz (optional)";
+"scheduled.editor.type" = "Transaktionstyp";
+"scheduled.editor.payment.category" = "Zahlungskategorie";
+"scheduled.editor.classification" = "Klassifizierung";
+"scheduled.editor.account" = "Konto";
+"scheduled.editor.subcategory" = "Unterkategorie";
+"scheduled.editor.recurrence" = "Wiederholung";
+"scheduled.editor.next.due" = "Nächstes Fälligkeitsdatum";
+"scheduled.editor.day.of.month" = "Tag des Monats";
+"scheduled.editor.day.of.week" = "Wochentag";
+"scheduled.editor.notifications" = "Benachrichtigungen";
+"scheduled.notify.on.due" = "Am Fälligkeitstag benachrichtigen";
+"scheduled.notify.days.before" = "Tage vorher benachrichtigen";
+"scheduled.select.subcategory" = "Unterkategorie auswählen";
+
+// Weekdays
+"weekday.sunday" = "Sonntag";
+"weekday.monday" = "Montag";
+"weekday.tuesday" = "Dienstag";
+"weekday.wednesday" = "Mittwoch";
+"weekday.thursday" = "Donnerstag";
+"weekday.friday" = "Freitag";
+"weekday.saturday" = "Samstag";
+
+// Common (if not already present)
+"common.select" = "Auswählen";
+"common.disabled" = "Deaktiviert";
+"filters.none" = "Keine";
+"filters.transaction.type" = "Transaktionstyp";
+"filters.title" = "Filter";
+"filters.clear" = "Löschen";
+"action.close" = "Schließen";

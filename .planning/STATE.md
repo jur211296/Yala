@@ -10,16 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 ## Current Position
 
 Phase: 6 of 8 (Pagos Planificados)
-Plan: In progress (Mini-Fase 6.1 completada)
-Status: Backend de ScheduledPayment listo
-Last activity: 2026-01-19 — Modelo ScheduledPayment creado
+Plan: In progress (Mini-Fase 6.2 completada)
+Status: UI de pagos planificados lista, faltan localizaciones
+Last activity: 2026-01-19 — Vista CRUD de pagos planificados
 
-Progress: █░░░░░░░░░░░░░ 10% (Fase 6)
+Progress: ███░░░░░░░░░░░ 25% (Fase 6)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-19T15:02:00-05:00] dc488b5 feat(scheduled): Add scheduled payments UI with CRUD and filters
 - [2026-01-19T14:42:00-05:00] ab9c874 feat(scheduled): Add ScheduledPayment model and supporting enums
 - [2026-01-19T09:17:00-05:00] 45b9a69 feat(income): Add dynamic title, teal color, and dimming for income mode
 - [2026-01-19T08:26:00-05:00] abe34ae feat(statistics): Hide nature widgets and category chart in income mode
@@ -29,7 +30,6 @@ Progress: █░░░░░░░░░░░░░ 10% (Fase 6)
 - [2026-01-19T07:58:00-05:00] d5369bc feat(charts): Unify metric selector with chip filter system
 - [2026-01-19T06:55:00-05:00] 7f90398 fix(filters): Complete income/expense filter sync and UX improvements
 - [2026-01-18T21:30:00-05:00] d7b0b55 feat(filters): Add income/expense filter chips in Statistics
-- [2026-01-18T20:52:00-05:00] 5e10a22 feat(ux): Auto-focus name field on remaining creation forms
 
 ## Completed in Current Phase
 

@@ -823,3 +823,78 @@
 
 // MARK: - More
 "more.sections" = "Sections";
+
+// MARK: - Scheduled Payments
+
+// Recurrence Types
+"scheduled.recurrence.weekly" = "Weekly";
+"scheduled.recurrence.monthly" = "Monthly";
+"scheduled.recurrence.yearly" = "Yearly";
+
+// Payment Categories
+"scheduled.category.recurring" = "Recurring";
+"scheduled.category.subscription" = "Subscription";
+
+// Due Status
+"scheduled.status.past" = "Overdue";
+"scheduled.status.today" = "Today";
+"scheduled.status.upcoming" = "Upcoming";
+
+// Tabs
+"scheduled.tab.recurring" = "Recurring";
+"scheduled.tab.subscriptions" = "Subscriptions";
+"scheduled.tab.all" = "All";
+
+// Empty State
+"scheduled.empty.title" = "No scheduled payments";
+"scheduled.empty.message" = "Create reminders for your recurring payments and subscriptions.";
+
+// Due Text
+"scheduled.due.yesterday" = "Yesterday";
+"scheduled.due.today" = "Today";
+"scheduled.due.tomorrow" = "Tomorrow";
+"scheduled.due.days.ago" = "%d days ago";
+"scheduled.due.in.days" = "In %d days";
+
+// Actions
+"scheduled.new" = "New scheduled payment";
+"scheduled.edit" = "Edit scheduled payment";
+"scheduled.delete" = "Delete payment";
+"scheduled.delete.confirm.title" = "Delete scheduled payment?";
+"scheduled.delete.confirm.message" = "This action cannot be undone.";
+
+// Editor Sections
+"scheduled.editor.basic.info" = "Basic information";
+"scheduled.editor.name.placeholder" = "Payment name";
+"scheduled.editor.note.placeholder" = "Note (optional)";
+"scheduled.editor.type" = "Transaction type";
+"scheduled.editor.payment.category" = "Payment category";
+"scheduled.editor.classification" = "Classification";
+"scheduled.editor.account" = "Account";
+"scheduled.editor.subcategory" = "Subcategory";
+"scheduled.editor.recurrence" = "Recurrence";
+"scheduled.editor.next.due" = "Next due date";
+"scheduled.editor.day.of.month" = "Day of month";
+"scheduled.editor.day.of.week" = "Day of week";
+"scheduled.editor.notifications" = "Notifications";
+"scheduled.notify.on.due" = "Notify on due date";
+"scheduled.notify.days.before" = "Notify days before";
+"scheduled.select.subcategory" = "Select subcategory";
+
+// Weekdays
+"weekday.sunday" = "Sunday";
+"weekday.monday" = "Monday";
+"weekday.tuesday" = "Tuesday";
+"weekday.wednesday" = "Wednesday";
+"weekday.thursday" = "Thursday";
+"weekday.friday" = "Friday";
+"weekday.saturday" = "Saturday";
+
+// Common (if not already present)
+"common.select" = "Select";
+"common.disabled" = "Disabled";
+"filters.none" = "None";
+"filters.transaction.type" = "Transaction type";
+"filters.title" = "Filters";
+"filters.clear" = "Clear";
+"action.close" = "Close";
