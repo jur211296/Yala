@@ -100,4 +100,7 @@ struct PanelCalculationContext {
 
     /// Subcategories widget category filter
     let subcategoriesWidgetFilter: PersistentIdentifier?
+
+    /// Currently selected transaction natures filter (income/expense)
+    let selectedTransactionNatures: Set<TransactionNature>
 }

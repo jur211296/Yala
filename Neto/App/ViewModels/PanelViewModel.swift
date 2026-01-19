@@ -57,6 +57,7 @@ final class PanelViewModel {
     var selectedCurrencies: Set<CurrencyCode> = []
     var amountCondition: AmountFilterCondition = .any
     var searchText: String = ""
+    var selectedTransactionNatures: Set<TransactionNature> = []
 
     // Nature Widget State
     var natureTrendPoints: [NatureTrendPoint] = []
@@ -170,6 +171,7 @@ final class PanelViewModel {
         self.selectedCurrencies = sessionState.selectedCurrencies
         self.amountCondition = sessionState.amountCondition
         self.searchText = sessionState.searchText
+        self.selectedTransactionNatures = sessionState.selectedTransactionNatures
 
         // Trend Metric - convert TrendMetric to TrendType
         self.trendType = convertMetricToTrendType(sessionState.selectedTrendMetric)
@@ -904,7 +906,8 @@ final class PanelViewModel {
             selectedCategoryID: selectedCategoryID,
             selectedSubcategoryIDs: selectedSubcategoryIDs,
             selectedNature: selectedNature,
-            subcategoriesWidgetFilter: subcategoriesWidgetFilter
+            subcategoriesWidgetFilter: subcategoriesWidgetFilter,
+            selectedTransactionNatures: selectedTransactionNatures
         )
     }
 
@@ -979,10 +982,16 @@ final class PanelViewModel {
     {
         // Calculate current period data using nature-filtered transactions
         // This ensures category pie shows ALL categories (selection = visual dim, not data filter)
+        // Pass transactionNatures filter - empty means show expenses only (default)
+        let naturesFilter: Set<TransactionNature>? = context.selectedTransactionNatures.isEmpty
+            ? nil
+            : context.selectedTransactionNatures
+
         var currentData = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: context.natureFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
+            transactionNatures: naturesFilter,
             context: context.modelContext
         )
 
@@ -1007,6 +1016,7 @@ final class PanelViewModel {
             transactions: previousTransactions,
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
+            transactionNatures: naturesFilter,
             context: context.modelContext
         )
 
@@ -1040,11 +1050,17 @@ final class PanelViewModel {
 
         // Use nature-filtered transactions (category filter applies separately)
         // This ensures subcategory pie shows ALL subcategories (selection = visual dim, not data filter)
+        // Pass transactionNatures filter - empty means show expenses only (default)
+        let naturesFilter: Set<TransactionNature>? = context.selectedTransactionNatures.isEmpty
+            ? nil
+            : context.selectedTransactionNatures
+
         var currentData = TopSubcategoriesCalculator.calculateTopSubcategories(
             transactions: context.natureFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
+            transactionNatures: naturesFilter,
             context: context.modelContext
         )
 
@@ -1070,6 +1086,7 @@ final class PanelViewModel {
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
+            transactionNatures: naturesFilter,
             context: context.modelContext
         )
 
