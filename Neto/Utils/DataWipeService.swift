@@ -59,6 +59,18 @@ final class DataWipeService {
         // Eliminar todos los presupuestos
         try deleteAll(Budget.self, in: context)
 
+        // Clear FavoritePayment many-to-many relationships before deletion
+        let favoriteDescriptor = FetchDescriptor<FavoritePayment>()
+        let allFavorites = try context.fetch(favoriteDescriptor)
+        for favorite in allFavorites {
+            favorite.tags = []
+        }
+        for tag in allTags {
+            tag.favoritePayments = []
+        }
+        try context.save()
+        try deleteAll(FavoritePayment.self, in: context)
+
         // Clear Tag budget relationships and delete
         for tag in allTags {
             tag.budgets = []

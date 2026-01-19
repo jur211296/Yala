@@ -31,7 +31,8 @@ final class FavoritePayment {
     /// Optional linked subcategory
     var subcategory: Subcategory?
 
-    /// Optional linked tags
+    /// Optional linked tags (many-to-many)
+    @Relationship(inverse: \Tag.favoritePayments)
     var tags: [Tag]
 
     /// Optional nature override (nil = use subcategory's nature)
