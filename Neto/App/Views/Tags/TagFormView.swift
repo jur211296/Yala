@@ -93,6 +93,7 @@ struct TagFormView: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
+                    .dismissKeyboardOnTap()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -108,6 +109,7 @@ struct TagFormView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(isEditing ? L10n.Tag.editTag : L10n.Tag.newTag)
             .navigationBarTitleDisplayMode(.inline)
@@ -158,6 +160,12 @@ struct TagFormView: View {
                     selectedColorHex: $selectedColorHex,
                     supportsColorPicking: false
                 )
+            }
+            .onChange(of: isPresentingColorPicker) { _, isPresenting in
+                if isPresenting { dismissKeyboard() }
+            }
+            .onChange(of: isPresentingIconPicker) { _, isPresenting in
+                if isPresenting { dismissKeyboard() }
             }
         }
     }

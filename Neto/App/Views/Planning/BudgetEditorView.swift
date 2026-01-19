@@ -73,7 +73,11 @@ struct BudgetEditorView: View {
                 .padding(.vertical, DS.Spacing.xxl)
                 .padding(.horizontal, DS.Spacing.lg)
             }
-            .background(PanelBackgroundView())
+            .scrollDismissesKeyboard(.interactively)
+            .background(
+                PanelBackgroundView()
+                    .dismissKeyboardOnTap()
+            )
             .alert(
                 NSLocalizedString("budgets.delete.confirm.title", comment: ""),
                 isPresented: $showDeleteConfirmation
@@ -104,6 +108,9 @@ struct BudgetEditorView: View {
             }
             .sheet(isPresented: $showCategoriesSheet) {
                 categoriesSheetView
+            }
+            .onChange(of: showCategoriesSheet) { _, isPresenting in
+                if isPresenting { dismissKeyboard() }
             }
             .onAppear {
                 loadBudgetData()

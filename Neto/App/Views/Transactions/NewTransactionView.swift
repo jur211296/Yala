@@ -88,7 +88,9 @@ struct NewTransactionView: View {
     private var transactionFormView: some View {
         NavigationStack {
             ZStack {
-                Color.netoBackground.ignoresSafeArea()
+                Color.netoBackground
+                    .ignoresSafeArea()
+                    .dismissKeyboardOnTap()
 
                 VStack(spacing: 0) {
                     // Transaction type selector
@@ -194,6 +196,54 @@ struct NewTransactionView: View {
                     )
                 )
                 .presentationDetents([.medium])
+            }
+            .onChange(of: viewModel.showAccountSelector) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: viewModel.showSourceAccountSelector) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: viewModel.showDestinationAccountSelector) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: viewModel.showSubcategorySelector) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: viewModel.showTagSelector) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: viewModel.showFavoritesSheet) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: viewModel.showDatePicker) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: viewModel.showNatureSelector) { _, isPresenting in
+                if isPresenting {
+                    isNoteFieldFocused = false
+                    isAmountFieldFocused = false
+                }
             }
         }
         .tint(Color.electricIndigo)

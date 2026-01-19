@@ -18,7 +18,11 @@ struct AccountFormView: View {
     @Query private var allTransactions: [TransactionItem]
 
     @State private var viewModel: AccountFormViewModel
-    @FocusState private var isBalanceFieldFocused: Bool
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case name, accountNumber, balance
+    }
 
     init(existingNames: [String], accountToEdit: Account? = nil) {
         _viewModel = State(
@@ -34,6 +38,7 @@ struct AccountFormView: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
+                    .dismissKeyboardOnTap()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -46,6 +51,7 @@ struct AccountFormView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(L10n.Account.configure)
             .navigationBarTitleDisplayMode(.inline)
@@ -80,6 +86,9 @@ struct AccountFormView: View {
                     .navigationTitle(L10n.Common.newColor)
                     .navigationBarTitleDisplayMode(.inline)
                 }
+            }
+            .onChange(of: viewModel.isPresentingColorPicker) { _, isPresenting in
+                if isPresenting { focusedField = nil }
             }
             .onAppear {
                 // Pass transactions to view model for balance calculation
@@ -116,6 +125,7 @@ struct AccountFormView: View {
                         .foregroundStyle(.secondary)
                     TextField(L10n.Account.accountName, text: $viewModel.name)
                         .textContentType(.name)
+                        .focused($focusedField, equals: .name)
                 }
                 .padding()
 
@@ -137,6 +147,7 @@ struct AccountFormView: View {
                     .padding()
                 }
                 .buttonStyle(.plain)
+                .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
 
                 SubsectionDivider()
 
@@ -145,6 +156,7 @@ struct AccountFormView: View {
                         .foregroundStyle(.secondary)
                     TextField(L10n.Account.accountNumber, text: $viewModel.accountNumber)
                         .keyboardType(.numbersAndPunctuation)
+                        .focused($focusedField, equals: .accountNumber)
                 }
                 .padding()
             }
@@ -177,6 +189,7 @@ struct AccountFormView: View {
                 .padding()
             }
             .buttonStyle(.plain)
+            .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
         }
     }
 
@@ -201,6 +214,7 @@ struct AccountFormView: View {
                     .padding()
                 }
                 .buttonStyle(.plain)
+                .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
 
                 SubsectionDivider()
 
@@ -288,9 +302,10 @@ struct AccountFormView: View {
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
                                 .font(.system(size: 28, weight: .bold))
-                                .focused($isBalanceFieldFocused)
+                                .focused($focusedField, equals: .balance)
                         }
-                        .onChange(of: isBalanceFieldFocused) { _, isFocused in
+                        .onChange(of: focusedField) { _, newField in
+                            let isFocused = newField == .balance
                             // When field gains focus, clear placeholder values
                             if isFocused
                                 && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00")

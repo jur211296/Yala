@@ -96,6 +96,7 @@ struct SubcategoryDetailView: View {
     var body: some View {
         ZStack {
             PanelBackgroundView()
+                .dismissKeyboardOnTap()
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
@@ -105,7 +106,7 @@ struct SubcategoryDetailView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-
+            .scrollDismissesKeyboard(.interactively)
         }
         .navigationTitle(isEditing ? L10n.Subcategory.editTitle : L10n.Subcategory.newTitle)
         .swipeBack()
@@ -163,6 +164,15 @@ struct SubcategoryDetailView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
+        }
+        .onChange(of: isPresentingNatureSelector) { _, isPresenting in
+            if isPresenting { dismissKeyboard() }
+        }
+        .onChange(of: showTransferSheet) { _, isPresenting in
+            if isPresenting { dismissKeyboard() }
+        }
+        .onChange(of: showIconColorPicker) { _, isPresenting in
+            if isPresenting { dismissKeyboard() }
         }
     }
 

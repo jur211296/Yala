@@ -338,6 +338,81 @@ private func tooltipShouldBeBelow(for value: Double) -> Bool {
 
 ---
 
+## Formularios con Campos de Texto
+
+### Cierre de Teclado (OBLIGATORIO)
+Todos los formularios con campos de texto DEBEN implementar cierre correcto del teclado.
+
+**Requisitos:**
+1. **Tap fuera del campo**: El teclado debe cerrarse al tocar cualquier área fuera del campo de texto
+2. **Scroll**: El teclado debe cerrarse al scrollear
+3. **Sheets/NavigationLinks**: El teclado debe cerrarse antes de abrir sheets o navegar
+
+```swift
+// ✅ CORRECTO: Implementación completa de cierre de teclado
+struct MyFormView: View {
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case name, amount, note  // Todos los campos de texto
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+                    .dismissKeyboardOnTap()  // 1. Tap fuera cierra teclado
+
+                ScrollView {
+                    // Contenido
+                }
+                .scrollDismissesKeyboard(.interactively)  // 2. Scroll cierra teclado
+            }
+            .sheet(isPresented: $showSheet) { ... }
+            .onChange(of: showSheet) { _, isPresenting in
+                if isPresenting { focusedField = nil }  // 3. Cierra antes de sheet
+            }
+        }
+    }
+}
+
+// Para NavigationLinks, usar simultaneousGesture:
+NavigationLink {
+    DestinationView()
+} label: {
+    // ...
+}
+.buttonStyle(.plain)
+.simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
+```
+
+**Reglas clave:**
+- **SIEMPRE usar `@FocusState`** con enum para múltiples campos
+- **NUNCA usar solo `dismissKeyboard()`** en onChange - debe resetear el `@FocusState`
+- **NavigationLinks** requieren `.simultaneousGesture` porque no tienen `isPresented` binding
+- **Sheets** deben usar `.onChange(of: showSheet)` para limpiar focus state
+
+### Auto-Focus en Formularios de Creación
+Los formularios de **creación** (NO edición) DEBEN auto-posicionar el cursor en el primer campo al abrirse.
+
+```swift
+// ✅ CORRECTO: Auto-focus en primer campo (solo creación)
+.onAppear {
+    if !isEditing {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            focusedField = .name  // Primer campo
+        }
+    }
+}
+
+// ❌ INCORRECTO: Auto-focus en edición (el usuario quiere ver datos primero)
+.onAppear {
+    focusedField = .name  // NO hacer en edición
+}
+```
+
+---
+
 ## Animaciones
 
 | Tipo | Duración | Uso |
@@ -368,6 +443,10 @@ Antes de commitear cambios de UI, verificar:
 - [ ] ¿Las vistas principales usan `.navigationTitle()` con `.large` para título animado?
 - [ ] ¿Los chips de navegación/filtro usan `.glassEffect()` sin fondo general?
 - [ ] ¿Solo chips de navegación están en `safeAreaInset`? (control bars deben scrollear)
+- [ ] ¿Los formularios con texto implementan cierre de teclado correcto (tap, scroll, sheets)?
+- [ ] ¿Se usa `@FocusState` con enum (no solo `dismissKeyboard()`) para manejar focus?
+- [ ] ¿Las filas con chevron son completamente clicables (`contentShape(Rectangle())`)?
+- [ ] ¿Los formularios de creación auto-focus en el primer campo?
 
 ---
 

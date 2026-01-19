@@ -32,6 +32,7 @@ struct PersonalDetailsView: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
+                    .dismissKeyboardOnTap()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -48,6 +49,7 @@ struct PersonalDetailsView: View {
                     .padding(.top, DS.Spacing.xxl)
                     .padding(.bottom, DS.Spacing.xxxl)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(L10n.Profile.personalDetails)
             .navigationBarTitleDisplayMode(.inline)

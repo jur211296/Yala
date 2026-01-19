@@ -218,6 +218,45 @@ extension View {
     }
 }
 
+// MARK: - Dismiss Keyboard on Tap
+
+/// Global function to dismiss keyboard from anywhere
+func dismissKeyboard() {
+    UIApplication.shared.sendAction(
+        #selector(UIResponder.resignFirstResponder),
+        to: nil,
+        from: nil,
+        for: nil
+    )
+}
+
+/// Modifier that dismisses keyboard when tapping outside text fields
+struct DismissKeyboardOnTapModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .onTapGesture {
+                dismissKeyboard()
+            }
+    }
+}
+
+extension View {
+    /// Dismisses keyboard when tapping anywhere on this view
+    func dismissKeyboardOnTap() -> some View {
+        modifier(DismissKeyboardOnTapModifier())
+    }
+
+    /// Hides the keyboard programmatically
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Card Modifiers") {

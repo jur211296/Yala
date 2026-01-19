@@ -102,6 +102,7 @@ struct CategoryDetailView: View {
     var body: some View {
         ZStack {
             PanelBackgroundView()
+                .dismissKeyboardOnTap()
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
@@ -112,6 +113,7 @@ struct CategoryDetailView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .navigationTitle(L10n.Category.editTitle)
         .swipeBack()
@@ -209,6 +211,9 @@ struct CategoryDetailView: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+        }
+        .onChange(of: showIconColorPicker) { _, isPresenting in
+            if isPresenting { dismissKeyboard() }
         }
     }
 

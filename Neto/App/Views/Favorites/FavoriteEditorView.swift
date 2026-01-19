@@ -61,7 +61,9 @@ struct FavoriteEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.netoBackground.ignoresSafeArea()
+                Color.netoBackground
+                    .ignoresSafeArea()
+                    .dismissKeyboardOnTap()
 
                 VStack(spacing: 0) {
                     // Transaction type selector (without transfer)
@@ -119,6 +121,30 @@ struct FavoriteEditorView: View {
                     )
                 )
                 .presentationDetents([.medium])
+            }
+            .onChange(of: showAccountSelector) { _, isPresenting in
+                if isPresenting {
+                    isNameFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: showSubcategorySelector) { _, isPresenting in
+                if isPresenting {
+                    isNameFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: showTagSelector) { _, isPresenting in
+                if isPresenting {
+                    isNameFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: showNatureSelector) { _, isPresenting in
+                if isPresenting {
+                    isNameFieldFocused = false
+                    isAmountFieldFocused = false
+                }
             }
         }
         .tint(Color.electricIndigo)

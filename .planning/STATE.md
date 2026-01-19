@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 ## Current Position
 
 Phase: 5.1 of 8 (Correcciones y Mejoras)
-Plan: Not started
-Status: Fase 5 cerrada, preparando correcciones y mejoras
-Last activity: 2026-01-18 — Closed phase 5, created phase 5.1
+Plan: In progress
+Status: Keyboard dismiss en formularios completo
+Last activity: 2026-01-18 — Keyboard dismiss behavior en formularios
 
-Progress: ░░░░░░░░░░░░░░ 0% (Fase 5.1)
+Progress: ███░░░░░░░░░░░ 20% (Fase 5.1)
 
 ---
 
@@ -57,11 +57,17 @@ Progress: ░░░░░░░░░░░░░░ 0% (Fase 5.1)
 - **Filter chips muestran icono** del tag (no solo color)
 - **Lista de tags con iconos** en ProfileView (no puntos)
 - **Migración SwiftData** con valor por defecto para iconName
+- **Tooltip dinámico en gráficas** - Posición arriba/abajo según altura del punto (evita clipping)
+- **Keyboard dismiss en formularios** - Tap fuera, scroll, sheets/NavigationLinks cierran teclado correctamente
 
 ## Next Steps
 
-- Planificar Fase 5.1 (Correcciones y Mejoras)
+- Validar filas con chevron clickables en toda la fila (contentShape(Rectangle()))
+- Auto-focus en primer campo para formularios de creación (no edición)
+- Filtro Ingresos/Gastos en Statistics
+- Importación multimoneda
 - Investigar cambio de relación FavoritePayment ↔ Tag (1:1 → N:N)
+- Optimizar cálculos en gráficas
 
 ## Parking Lot
 
