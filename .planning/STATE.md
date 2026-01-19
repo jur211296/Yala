@@ -11,15 +11,16 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Phase: 5.1 of 8 (Correcciones y Mejoras)
 Plan: In progress
-Status: Auto-focus en formularios de creación (parcial)
-Last activity: 2026-01-18 — Auto-focus en AccountFormView y FavoriteEditorView
+Status: Auto-focus en formularios de creación completo
+Last activity: 2026-01-18 — Auto-focus en todos los formularios de creación
 
-Progress: ███░░░░░░░░░░░ 30% (Fase 5.1)
+Progress: ████░░░░░░░░░░ 35% (Fase 5.1)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-18T20:52:00-05:00] 5e10a22 feat(ux): Auto-focus name field on remaining creation forms
 - [2026-01-18T20:45:00-05:00] 0fc1085 feat(ux): Auto-focus name field on creation forms
 - [2026-01-18T20:36:00-05:00] c439763 fix(ux): Replace onTapGesture with Button for category filter rows
 - [2026-01-18T17:26:00-05:00] d92b6ec feat: Enhance period comparison with vs-amount text and fix balance calculation
@@ -62,11 +63,9 @@ Progress: ███░░░░░░░░░░░ 30% (Fase 5.1)
 - **Tooltip dinámico en gráficas** - Posición arriba/abajo según altura del punto (evita clipping)
 - **Keyboard dismiss en formularios** - Tap fuera, scroll, sheets/NavigationLinks cierran teclado correctamente
 - **Filas clickables con Button** - categoriesContent en filtros convertido de onTapGesture a Button
-- **Auto-focus parcial** - AccountFormView y FavoriteEditorView con auto-focus en creación
+- **Auto-focus completo** - Todos los formularios de creación con auto-focus en campo nombre
 
 ## Next Steps
-
-- Auto-focus en formularios restantes (TagFormView, BudgetEditorView, CategoryDetailView, SubcategoryDetailView)
 - Filtro Ingresos/Gastos en Statistics
 - Importación multimoneda
 - Investigar cambio de relación FavoritePayment ↔ Tag (1:1 → N:N)
@@ -85,6 +84,6 @@ Progress: ███░░░░░░░░░░░ 30% (Fase 5.1)
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Auto-focus implementado en AccountFormView y FavoriteEditorView
-Next step: Continuar auto-focus en formularios restantes o siguiente item de Next Steps
+Stopped at: Auto-focus completo en todos los formularios de creación
+Next step: Filtro Ingresos/Gastos en Statistics o siguiente item de Next Steps
 Resume file: None
