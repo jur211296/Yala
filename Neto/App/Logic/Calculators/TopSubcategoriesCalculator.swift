@@ -9,12 +9,13 @@ import Foundation
 import SwiftData
 
 struct TopSubcategoriesCalculator {
-    /// Calculates top spending subcategories
+    /// Calculates top subcategories by amount
     /// - Parameters:
-    ///   - transactions: List of transactions (should already be filtered by account/validity if needed, but we check expenses)
+    ///   - transactions: List of transactions
     ///   - interval: Date interval for filtering
     ///   - currencyCode: Target currency code
     ///   - categoryFilter: Optional parent Category ID to filter by
+    ///   - transactionNatures: Filter by transaction nature (nil = expense only for backwards compatibility)
     ///   - context: ModelContext for fetching exchange rates
     /// - Returns: Sorted list of SubcategorySpendingSummary
     static func calculateTopSubcategories(
@@ -22,18 +23,26 @@ struct TopSubcategoriesCalculator {
         interval: DateInterval,
         currencyCode: String,
         categoryFilter: PersistentIdentifier? = nil,
+        transactionNatures: Set<TransactionNature>? = nil,
         context: ModelContext
     ) -> [SubcategorySpendingSummary] {
 
+        // Determine which natures to include
+        let naturesToInclude = transactionNatures ?? [.expense]
+
         // 1. Filter Transactions
         // - Within interval
-        // - Is Expense
+        // - Matches requested transaction natures
         // - Has Category
         // - If categoryFilter is present, must match parent category
 
         let validTransactions = transactions.filter { transaction in
-            // Basic validity
-            guard let category = transaction.category, !category.isIncome else { return false }
+            // Basic validity - must have category
+            guard let category = transaction.category else { return false }
+
+            // Nature check
+            let nature: TransactionNature = category.isIncome ? .income : .expense
+            guard naturesToInclude.contains(nature) else { return false }
 
             // Interval check
             if !interval.contains(transaction.date) { return false }

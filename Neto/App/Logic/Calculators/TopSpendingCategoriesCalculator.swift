@@ -9,20 +9,33 @@ import Foundation
 import SwiftData
 
 struct TopSpendingCategoriesCalculator {
-    /// Calculates the top 5 spending categories for a given set of transactions and time interval.
+    /// Calculates the top spending categories for a given set of transactions and time interval.
+    /// - Parameters:
+    ///   - transactions: List of transactions
+    ///   - interval: Date interval for filtering
+    ///   - currencyCode: Target currency code
+    ///   - transactionNatures: Filter by transaction nature (nil = expense only for backwards compatibility)
+    ///   - context: ModelContext for fetching exchange rates
+    /// - Returns: Sorted list of CategorySpendingSummary
     static func calculateTopSpending(
         transactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
+        transactionNatures: Set<TransactionNature>? = nil,
         context: ModelContext
     ) -> [CategorySpendingSummary] {
+
+        // Determine which natures to include
+        let naturesToInclude = transactionNatures ?? [.expense]
 
         // 1. Filter Transactions
         // - Within interval
         // - Has a category
-        // - Category is an expense (isIncome == false)
-        let expenseTransactions = transactions.filter { transaction in
-            guard let category = transaction.category, !category.isIncome else { return false }
+        // - Matches requested transaction natures
+        let filteredTransactions = transactions.filter { transaction in
+            guard let category = transaction.category else { return false }
+            let nature: TransactionNature = category.isIncome ? .income : .expense
+            guard naturesToInclude.contains(nature) else { return false }
             return interval.contains(transaction.date)
         }
 
@@ -35,7 +48,7 @@ struct TopSpendingCategoriesCalculator {
         var categoryTotals: [PersistentIdentifier: Double] = [:]
         var categoryMap: [PersistentIdentifier: Category] = [:]
 
-        for transaction in expenseTransactions {
+        for transaction in filteredTransactions {
             guard let category = transaction.category else { continue }
 
             // Use absolute value for expense
