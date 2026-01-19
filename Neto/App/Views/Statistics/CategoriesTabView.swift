@@ -154,6 +154,11 @@ struct CategoriesTabView: View {
             // Recalculate previous period data when comparison mode changes
             calculatePreviousPeriodTotals()
         }
+        .onChange(of: sessionState.selectedTransactionNatures) {
+            // Sync transaction nature filter from SessionState and recalculate
+            viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+            calculateData()
+        }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,

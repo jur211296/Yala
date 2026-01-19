@@ -23,6 +23,7 @@
 "trend.balance.title" = "Tendencia de Saldo";
 "trend.income.title" = "Tendencia de Ingresos";
 "trend.expense.title" = "Tendencia de Gastos";
+"trend.filterBlockedMessage" = "Primero quita los filtros de categorías o naturaleza";
 
 // MARK: - Periods
 

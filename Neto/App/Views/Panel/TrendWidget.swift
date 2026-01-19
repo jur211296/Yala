@@ -16,6 +16,14 @@ struct TrendWidget: View {
     var currentBalance: Double
 
     @Namespace private var animationNamespace
+    @State private var showFilterBlockedMessage: Bool = false
+
+    /// Check if expense-only filters are active (category/subcategory/nature)
+    private var hasExpenseOnlyFilters: Bool {
+        !sessionState.selectedCategoryIDs.isEmpty
+            || !sessionState.selectedSubcategoryIDs.isEmpty
+            || !sessionState.selectedNatures.isEmpty
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
@@ -47,6 +55,23 @@ struct TrendWidget: View {
                 .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
         .dsCardShadow()
+        .overlay(alignment: .top) {
+            if showFilterBlockedMessage {
+                Text(L10n.Trend.filterBlockedMessage)
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(Color.netoSecondaryText.opacity(0.9))
+                    .clipShape(Capsule())
+                    .padding(.top, DS.Spacing.sm)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .onTapGesture {
+                        showFilterBlockedMessage = false
+                    }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: showFilterBlockedMessage)
     }
 
     // MARK: - Components
@@ -74,54 +99,53 @@ struct TrendWidget: View {
 
     private var metricSelector: some View {
         HStack(spacing: 0) {
-            // When locked to expense (filters applied), only show expense button
-            // Otherwise show all options
-            ForEach(availableMetricTypes) { type in
+            // Always show all options - user can switch freely
+            ForEach(TrendType.allCases) { type in
                 metricButton(for: type)
             }
         }
         .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isTrendLockedToExpense)
-    }
-
-    /// Returns available metric types based on filter state
-    private var availableMetricTypes: [TrendType] {
-        if viewModel.isTrendLockedToExpense {
-            return [.expense]  // Only expense when filters are applied
-        }
-        return TrendType.allCases
     }
 
     private func metricButton(for type: TrendType) -> some View {
         let isSelected = viewModel.trendType == type
-        let isLocked = viewModel.isTrendLockedToExpense
+        // Block balance/income when expense-only filters are active
+        let isBlocked = hasExpenseOnlyFilters && type != .expense
 
         return Button {
-            // Only allow change if not locked
-            guard !isLocked else { return }
-
-            // Change metric manually (marks as user selection, not automatic)
-            viewModel.setTrendTypeManually(type, sessionState: sessionState)
-
-            // Apply smooth animation for UI transition
-            withAnimation(.interpolatingSpring(stiffness: 300, damping: 30)) {
-                // Triggers SwiftUI re-evaluation
+            if isBlocked {
+                // Show help message instead of changing
+                showFilterBlockedMessage = true
+                // Auto-hide after 3 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    showFilterBlockedMessage = false
+                }
+            } else {
+                // Set global transaction nature filter - metric auto-adjusts via enforceTrendLock()
+                switch type {
+                case .balance:
+                    sessionState.selectedTransactionNatures.removeAll()
+                case .income:
+                    sessionState.selectedTransactionNatures = [.income]
+                case .expense:
+                    sessionState.selectedTransactionNatures = [.expense]
+                }
             }
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: type.iconName)
                     .font(.caption.weight(.semibold))
-                // When locked, always show the label since there's only one option
-                if isSelected || isLocked {
+                // Show label only when selected
+                if isSelected {
                     Text(title(for: type))
                         .font(.caption.weight(.semibold))
                 }
             }
-            .padding(.horizontal, isSelected || isLocked ? 12 : 10)
+            .padding(.horizontal, isSelected ? 12 : 14)
             .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? .white : type.color)
+            .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))
             .background(
                 Group {
                     if isSelected {

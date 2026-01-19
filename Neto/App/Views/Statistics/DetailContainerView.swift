@@ -689,9 +689,25 @@ private struct DetailContainerObservers: ViewModifier {
         content
             .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
             .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedCategoryIDs) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedNatures) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedCategoryIDs) {
+                // Auto-create expense chip when category filter applied
+                if !sessionState.selectedCategoryIDs.isEmpty {
+                    sessionState.selectedTransactionNatures = [.expense]
+                }
+                handleSessionStateFilterChange()
+            }
+            .onChange(of: sessionState.selectedNatures) {
+                // Auto-create expense chip when nature filter applied
+                if !sessionState.selectedNatures.isEmpty {
+                    sessionState.selectedTransactionNatures = [.expense]
+                }
+                handleSessionStateFilterChange()
+            }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
+                // Auto-create expense chip when subcategory filter applied
+                if !sessionState.selectedSubcategoryIDs.isEmpty {
+                    sessionState.selectedTransactionNatures = [.expense]
+                }
                 handleSessionStateFilterChange()
             }
             .onChange(of: sessionState.selectedTags) { handleSessionStateFilterChange() }

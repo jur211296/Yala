@@ -68,6 +68,7 @@ struct TrendsTabView: View {
 
     @Namespace private var metricNamespace
     @Namespace private var cashFlowSelectorNamespace
+    @State private var showFilterBlockedMessage: Bool = false
     @State private var cashFlowSummary: CashFlowSummary?
     @State private var cashFlowByAccount: [PersistentIdentifier: CashFlowSummary] = [:]
     @State private var cashFlowByCurrency: [String: CashFlowSummary] = [:]
@@ -183,6 +184,12 @@ struct TrendsTabView: View {
         }
         .onChange(of: sessionState.comparisonMode) {
             // Recalculate when comparison mode changes (P-1 vs A-1)
+            calculateCashFlowData()
+            calculatePeriodComparisonData()
+        }
+        .onChange(of: sessionState.selectedTransactionNatures) {
+            // Sync transaction nature filter from SessionState and recalculate
+            trendsViewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
@@ -614,53 +621,76 @@ struct TrendsTabView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Check if expense-only filters are active (category/subcategory/nature)
+    private var hasExpenseOnlyFilters: Bool {
+        !sessionState.selectedCategoryIDs.isEmpty
+            || !sessionState.selectedSubcategoryIDs.isEmpty
+            || !sessionState.selectedNatures.isEmpty
+    }
+
     private var metricSelector: some View {
         HStack(spacing: 0) {
-            // When locked (filters applied), only show the locked metric
-            // Otherwise show all options
-            ForEach(availableMetrics) { metric in
+            // Always show all options - user can switch freely
+            ForEach(TrendMetric.allCases) { metric in
                 metricButton(for: metric)
             }
         }
         .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
-        .animation(.easeInOut(duration: 0.2), value: trendsViewModel.metricLockState)
-    }
-
-    /// Returns available metrics based on filter state
-    private var availableMetrics: [TrendMetric] {
-        switch trendsViewModel.metricLockState {
-        case .lockedExpense:
-            return [.expense]
-        case .lockedIncome:
-            return [.income]
-        case .none:
-            return TrendMetric.allCases
+        .overlay(alignment: .bottom) {
+            if showFilterBlockedMessage {
+                Text(L10n.Trend.filterBlockedMessage)
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(Color.netoSecondaryText.opacity(0.9))
+                    .clipShape(Capsule())
+                    .offset(y: 36)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .onTapGesture {
+                        showFilterBlockedMessage = false
+                    }
+            }
         }
-    }
-
-    /// Whether the metric selector is locked (no user interaction allowed)
-    private var isMetricLocked: Bool {
-        trendsViewModel.metricLockState != .none
+        .animation(.easeInOut(duration: 0.2), value: showFilterBlockedMessage)
     }
 
     private func metricButton(for metric: TrendMetric) -> some View {
         let isSelected = trendsViewModel.selectedMetric == metric
+        // Block balance/income when expense-only filters are active
+        let isBlocked = hasExpenseOnlyFilters && metric != .expense
 
         return Button {
-            // Only allow change if not locked
-            if !isMetricLocked {
-                // Change metric manually (marks as user selection, not automatic)
-                trendsViewModel.setMetricManually(metric)
+            if isBlocked {
+                // Show help message instead of changing
+                showFilterBlockedMessage = true
+                // Auto-hide after 3 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    showFilterBlockedMessage = false
+                }
+            } else {
+                // Set global transaction nature filter - metric auto-adjusts via enforceMetricLock()
+                switch metric {
+                case .balance:
+                    sessionState.selectedTransactionNatures.removeAll()
+                    trendsViewModel.selectedTransactionNatures.removeAll()
+                case .income:
+                    sessionState.selectedTransactionNatures = [.income]
+                    trendsViewModel.selectedTransactionNatures = [.income]
+                case .expense:
+                    sessionState.selectedTransactionNatures = [.expense]
+                    trendsViewModel.selectedTransactionNatures = [.expense]
+                }
             }
         } label: {
             // Icon only (compact version for TrendsTabView header)
             Image(systemName: metric.iconName)
                 .font(.caption.weight(.semibold))
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .foregroundStyle(isSelected ? .white : metric.color)
+                .foregroundStyle(isSelected ? .white : (isBlocked ? metric.color.opacity(0.4) : metric.color))
                 .background(
                     Group {
                         if isSelected {

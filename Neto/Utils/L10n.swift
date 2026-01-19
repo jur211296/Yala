@@ -43,6 +43,12 @@ enum L10n {
         static var expenseTitle: String {
             NSLocalizedString("trend.expense.title", comment: "Expense trend title")
         }
+        static var filterBlockedMessage: String {
+            NSLocalizedString(
+                "trend.filterBlockedMessage",
+                comment: "Message shown when user tries to select balance/income with category filters active"
+            )
+        }
     }
 
     // MARK: - Trend Types

@@ -885,14 +885,26 @@ private struct PanelSessionObservers: ViewModifier {
                 recalculateData()
             }
             .onChange(of: sessionState.selectedCategoryIDs) {
+                // Auto-create expense chip when category filter applied
+                if !sessionState.selectedCategoryIDs.isEmpty {
+                    sessionState.selectedTransactionNatures = [.expense]
+                }
                 syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedNatures) {
+                // Auto-create expense chip when nature filter applied
+                if !sessionState.selectedNatures.isEmpty {
+                    sessionState.selectedTransactionNatures = [.expense]
+                }
                 syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
+                // Auto-create expense chip when subcategory filter applied
+                if !sessionState.selectedSubcategoryIDs.isEmpty {
+                    sessionState.selectedTransactionNatures = [.expense]
+                }
                 syncFromSessionState()
                 recalculateData()
             }

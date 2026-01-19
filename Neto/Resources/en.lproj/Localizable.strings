@@ -23,6 +23,7 @@
 "trend.balance.title" = "Balance Trend";
 "trend.income.title" = "Income Trend";
 "trend.expense.title" = "Expense Trend";
+"trend.filterBlockedMessage" = "First remove category or nature filters";
 
 // MARK: - Periods
 

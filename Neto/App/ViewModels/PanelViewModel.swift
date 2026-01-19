@@ -110,26 +110,31 @@ final class PanelViewModel {
     // Loading State - tracks when heavy calculations are in progress
     var isCalculating: Bool = false
 
-    // Trend Locking Logic
-    var isTrendLockedToExpense: Bool {
+    // Check if category/subcategory/nature filters require expense mode
+    var hasExpenseOnlyFilters: Bool {
         selectedCategoryID != nil || !selectedSubcategoryIDs.isEmpty || selectedNature != nil
     }
 
-    /// Enforce trend lock logic based on current filters
-    /// Now uses SessionState.isExpenseAutomatic for cross-view synchronization
+    /// Enforce trend logic based on filters
+    /// Simple rule: chip is source of truth, category/nature filters auto-create expense chip
     private func enforceTrendLock(sessionState: SessionState) {
-        if isTrendLockedToExpense {
-            // Lock to expense when filters are applied (automatic)
-            if trendType != .expense {
+        // Category/subcategory/nature filters auto-create expense chip (if not already set)
+        if hasExpenseOnlyFilters {
+            if !sessionState.selectedTransactionNatures.contains(.expense) {
+                sessionState.selectedTransactionNatures = [.expense]
+            }
+        }
+
+        // Derive trendType from chip (single source of truth)
+        if sessionState.selectedTransactionNatures.count == 1 {
+            if sessionState.selectedTransactionNatures.contains(.income) {
+                trendType = .income
+            } else if sessionState.selectedTransactionNatures.contains(.expense) {
                 trendType = .expense
-                sessionState.isExpenseAutomatic = true
             }
-        } else {
-            // When filters are cleared, reset to balance ONLY if expense was automatic
-            if trendType == .expense && sessionState.isExpenseAutomatic {
-                trendType = .balance
-                sessionState.isExpenseAutomatic = false
-            }
+        } else if sessionState.selectedTransactionNatures.isEmpty {
+            // No chip = balance
+            trendType = .balance
         }
     }
 

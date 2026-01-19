@@ -36,67 +36,31 @@ final class StatisticsViewModel: Filterable {
         case lockedExpense  // Locked to expense (category/nature filters or only expense filter)
     }
 
-    /// Determines if and how metric should be locked due to active filters
-    var metricLockState: MetricLockState {
-        // Category/subcategory/nature filters always lock to expense (existing behavior)
-        if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNatures.isEmpty
-        {
-            return .lockedExpense
-        }
+    // Check if category/subcategory/nature filters require expense mode
+    var hasExpenseOnlyFilters: Bool {
+        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNatures.isEmpty
+    }
 
-        // Transaction nature filter: lock only when exactly 1 selected
+    /// Enforce metric logic based on filters
+    /// Simple rule: chip is source of truth, category/nature filters auto-create expense chip
+    private func enforceMetricLock() {
+        // Derive selectedMetric from selectedTransactionNatures (single source of truth)
         if selectedTransactionNatures.count == 1 {
             if selectedTransactionNatures.contains(.income) {
-                return .lockedIncome
-            } else if selectedTransactionNatures.contains(.expense) {
-                return .lockedExpense
-            }
-        }
-
-        // No lock when: empty, or both selected
-        return .none
-    }
-
-    /// Backward compatibility: true when locked to expense
-    var isMetricLockedToExpense: Bool {
-        metricLockState == .lockedExpense
-    }
-
-    /// True when locked to income
-    var isMetricLockedToIncome: Bool {
-        metricLockState == .lockedIncome
-    }
-
-    /// Track if the current metric selection was automatic (due to filters) or manual (user click)
-    private var isMetricAutomatic: Bool = false
-
-    /// Enforce metric lock: switch to appropriate metric when filters applied
-    private func enforceMetricLock() {
-        switch metricLockState {
-        case .lockedExpense:
-            if selectedMetric != .expense {
-                selectedMetric = .expense
-                isMetricAutomatic = true
-            }
-        case .lockedIncome:
-            if selectedMetric != .income {
                 selectedMetric = .income
-                isMetricAutomatic = true
+            } else if selectedTransactionNatures.contains(.expense) {
+                selectedMetric = .expense
             }
-        case .none:
-            // When filters are cleared, reset to balance ONLY if selection was automatic
-            if isMetricAutomatic && (selectedMetric == .expense || selectedMetric == .income) {
-                selectedMetric = .balance
-                isMetricAutomatic = false
-            }
+        } else if selectedTransactionNatures.isEmpty && !hasExpenseOnlyFilters {
+            // No chip and no expense-only filters = balance
+            selectedMetric = .balance
         }
+        // Note: if hasExpenseOnlyFilters, the chip should have been set by the view's onChange
     }
 
-    /// Called when user manually selects a metric
+    /// Called when user manually selects a metric (legacy - selector now sets chips directly)
     func setMetricManually(_ metric: TrendMetric) {
         selectedMetric = metric
-        // Mark as manual selection (not automatic)
-        isMetricAutomatic = false
     }
 
     // MARK: - Filter State
