@@ -1009,6 +1009,18 @@ enum L10n {
         static var colorfulIconsDescription: String {
             NSLocalizedString("settings.colorfulIconsDescription", comment: "")
         }
+        static var firstWeekday: String {
+            NSLocalizedString("settings.firstWeekday", comment: "")
+        }
+        static var firstWeekdayDescription: String {
+            NSLocalizedString("settings.firstWeekdayDescription", comment: "")
+        }
+        static var sunday: String {
+            NSLocalizedString("settings.sunday", comment: "")
+        }
+        static var monday: String {
+            NSLocalizedString("settings.monday", comment: "")
+        }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
             NSLocalizedString("settings.resetDataDescription", comment: "")

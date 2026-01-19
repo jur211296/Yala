@@ -647,6 +647,10 @@
 "settings.defaultPeriodDescription" = "Dieser Zeitraum wird standardmäßig bei jedem App-Start angewendet. Du kannst ihn jederzeit über die Zeitraumauswahl vorübergehend ändern.";
 "settings.colorfulIcons" = "Farbige Symbole";
 "settings.colorfulIconsDescription" = "Zeigt farbige Symbole im Profilbereich an, im Stil der iOS-Einstellungen.";
+"settings.firstWeekday" = "Erster Wochentag";
+"settings.firstWeekdayDescription" = "Lege fest, welcher Tag als Wochenbeginn gilt für Filter wie 'Diese Woche'.";
+"settings.sunday" = "Sonntag";
+"settings.monday" = "Montag";
 "settings.resetData" = "Daten löschen";
 "settings.resetDataDescription" = "Dieser Vorgang löscht dauerhaft deine Konten, Transaktionen, Budgets, Wechselkurse, Kategorien und alle anderen mit deinem Neto-Profil verbundenen Daten. Nach dem Löschen kehrt die App in einen Anfangszustand zurück.";
 "settings.deleteAllData" = "Alle deine Daten löschen";

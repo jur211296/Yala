@@ -646,6 +646,10 @@
 "settings.defaultPeriodDescription" = "This period will be applied by default every time you open the app. You can temporarily change it from the period selector at any time.";
 "settings.colorfulIcons" = "Colorful Icons";
 "settings.colorfulIconsDescription" = "Show colored icons in the profile section, iOS Settings style.";
+"settings.firstWeekday" = "First day of week";
+"settings.firstWeekdayDescription" = "Set which day to consider as start of week for filters like 'This Week'.";
+"settings.sunday" = "Sunday";
+"settings.monday" = "Monday";
 "settings.resetData" = "Reset Data";
 "settings.resetDataDescription" = "This operation will permanently delete your accounts, transactions, budgets, exchange rates, categories, and any other data associated with your Neto profile. After deletion, the app will return to a state similar to initial setup.";
 "settings.deleteAllData" = "Delete All Data";

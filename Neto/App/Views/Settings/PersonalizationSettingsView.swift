@@ -15,12 +15,18 @@ struct PersonalizationSettingsView: View {
         .rawValue
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
+    @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
 
     @State private var showingPeriodPicker = false
     @State private var showingTabBarConfig = false
+    @State private var showingWeekdayPicker = false
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
+    }
+
+    private var selectedWeekday: FirstWeekday {
+        FirstWeekday(rawValue: firstWeekdayRaw) ?? .monday
     }
 
     var body: some View {
@@ -151,6 +157,43 @@ struct PersonalizationSettingsView: View {
                         .padding(.horizontal, 4)
                     }
 
+                    // First Weekday Section
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Button {
+                            showingWeekdayPicker = true
+                        } label: {
+                            HStack {
+                                Text(L10n.Settings.firstWeekday)
+                                    .font(.body)
+                                    .foregroundStyle(Color.netoPrimaryText)
+
+                                Spacer()
+
+                                Text(selectedWeekday.displayName)
+                                    .font(.body)
+                                    .foregroundStyle(.secondary)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.FormRow.paddingV)
+                            .background(Color.netoCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Text(L10n.Settings.firstWeekdayDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
+
                     Spacer()
                 }
                 .padding()
@@ -179,6 +222,19 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingTabBarConfig) {
             TabBarConfigView()
+        }
+        .sheet(isPresented: $showingWeekdayPicker) {
+            WeekdayPickerSheet(
+                selectedWeekday: selectedWeekday,
+                onSelect: { weekday in
+                    firstWeekdayRaw = weekday.rawValue
+                    // Force recalculation of dateInterval with new firstWeekday
+                    let currentPeriod = sessionState.selectedPeriod
+                    sessionState.selectedPeriod = currentPeriod
+                    showingWeekdayPicker = false
+                }
+            )
+            .presentationDetents([.height(280)])
         }
     }
 }
@@ -250,6 +306,79 @@ private struct PeriodPickerSheet: View {
         .buttonStyle(.plain)
 
         if period != DetailPeriod.allCases.last {
+            Divider()
+                .padding(.leading, DS.Spacing.lg)
+        }
+    }
+}
+
+// MARK: - Weekday Picker Sheet
+
+private struct WeekdayPickerSheet: View {
+    let selectedWeekday: FirstWeekday
+    let onSelect: (FirstWeekday) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(FirstWeekday.allCases) { weekday in
+                            weekdayRow(for: weekday)
+                        }
+                    }
+                    .background(Color.netoCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                    .padding()
+                }
+            }
+            .navigationTitle(L10n.Settings.firstWeekday)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NetoToolbarButton(systemName: "xmark") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func weekdayRow(for weekday: FirstWeekday) -> some View {
+        let isSelected = selectedWeekday == weekday
+
+        Button {
+            onSelect(weekday)
+        } label: {
+            HStack {
+                Text(weekday.displayName)
+                    .font(.body)
+                    .foregroundStyle(Color.netoPrimaryText)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Color.brandPrimary)
+                        .font(.body.weight(.semibold))
+                }
+            }
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        if weekday != FirstWeekday.allCases.last {
             Divider()
                 .padding(.leading, DS.Spacing.lg)
         }

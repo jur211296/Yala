@@ -2,6 +2,32 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+// MARK: - User Calendar Preferences
+
+/// Returns a Calendar configured with the user's preferred first day of week
+func userConfiguredCalendar() -> Calendar {
+    var calendar = Calendar.current
+    // 1 = Sunday, 2 = Monday (default to Monday if not set)
+    let firstWeekday = UserDefaults.standard.integer(forKey: "firstWeekday")
+    calendar.firstWeekday = firstWeekday > 0 ? firstWeekday : 2  // Default to Monday
+    return calendar
+}
+
+/// Enum for first day of week selection
+enum FirstWeekday: Int, CaseIterable, Identifiable {
+    case sunday = 1
+    case monday = 2
+
+    var id: Int { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .sunday: return L10n.Settings.sunday
+        case .monday: return L10n.Settings.monday
+        }
+    }
+}
+
 /// Naturaleza de subcategoría para FIN-45
 enum SubcategoryNature: String, CaseIterable, Identifiable {
     case essential = "esencial"
@@ -146,7 +172,7 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     /// Get the date interval for this period
     /// - Parameter customRange: Optional custom date range for .custom period
     func dateInterval(customRange: DateInterval? = nil) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
 

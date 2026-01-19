@@ -647,6 +647,10 @@
 "settings.defaultPeriodDescription" = "Questo periodo verra applicato per impostazione predefinita ogni volta che apri l'app. Puoi cambiarlo temporaneamente dal selettore di periodo in qualsiasi momento.";
 "settings.colorfulIcons" = "Icone colorate";
 "settings.colorfulIconsDescription" = "Mostra icone colorate nella sezione profilo, stile Impostazioni iOS.";
+"settings.firstWeekday" = "Primo giorno della settimana";
+"settings.firstWeekdayDescription" = "Imposta quale giorno considerare come inizio settimana per filtri come 'Questa settimana'.";
+"settings.sunday" = "Domenica";
+"settings.monday" = "Lunedi";
 "settings.resetData" = "Cancella dati";
 "settings.resetDataDescription" = "Questa operazione eliminera permanentemente i tuoi conti, transazioni, budget, tassi di cambio, categorie e qualsiasi altro dato associato al tuo profilo Neto. Dopo l'eliminazione, l'app tornera a uno stato simile a quello iniziale.";
 "settings.deleteAllData" = "Elimina tutti i tuoi dati";
