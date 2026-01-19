@@ -33,6 +33,9 @@ struct FilterCriteria: Equatable {
     /// Selected natures for filtering (empty = all natures)
     var selectedNatures: Set<SubcategoryNature> = []
 
+    /// Selected transaction natures for filtering (empty = all, income/expense)
+    var selectedTransactionNatures: Set<TransactionNature> = []
+
     /// Selected currencies for filtering (empty = all currencies)
     var selectedCurrencies: Set<CurrencyCode> = []
 
@@ -54,6 +57,11 @@ struct FilterCriteria: Equatable {
 
     // MARK: - Computed Properties
 
+    /// Whether transaction nature filter is active (exactly 1 selected)
+    var hasTransactionNatureFilter: Bool {
+        selectedTransactionNatures.count == 1
+    }
+
     /// Whether any filter is active (for UI indicator)
     var hasActiveFilters: Bool {
         !selectedAccounts.isEmpty
@@ -65,6 +73,7 @@ struct FilterCriteria: Equatable {
             || amountCondition.isActive
             || !selectedCurrencies.isEmpty
             || !searchText.isEmpty
+            || hasTransactionNatureFilter
     }
 
     /// Number of active filter types (for badge)
@@ -77,6 +86,7 @@ struct FilterCriteria: Equatable {
         if transactionTypeFilter != .all { count += 1 }
         if amountCondition.isActive { count += 1 }
         if !selectedCurrencies.isEmpty { count += 1 }
+        if hasTransactionNatureFilter { count += 1 }
         return count
     }
 
@@ -93,6 +103,7 @@ struct FilterCriteria: Equatable {
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
         selectedNatures.removeAll()
+        selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
         transactionTypeFilter = .all
@@ -235,6 +246,18 @@ struct FilterService {
         case .transfer:
             // Transfers don't have a category, or have special handling
             break
+        }
+
+        // Transaction nature filter (income/expense chips)
+        // Empty = all, both selected = all, exactly 1 = filter
+        if criteria.selectedTransactionNatures.count == 1 {
+            if criteria.selectedTransactionNatures.contains(.income) {
+                // Only income: positive amounts (category.isIncome == true)
+                guard transaction.category?.isIncome == true else { return false }
+            } else if criteria.selectedTransactionNatures.contains(.expense) {
+                // Only expense: negative amounts (category.isIncome == false)
+                guard transaction.category?.isIncome == false else { return false }
+            }
         }
 
         // Amount filter (absolute value)

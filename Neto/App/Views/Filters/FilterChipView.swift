@@ -143,6 +143,19 @@ extension FilterChipView {
         self.onClear = onClear
     }
 
+    // MARK: - Transaction Nature chip (income/expense with color dot)
+
+    /// Transaction nature filter chip with color dot
+    /// - Shows "Ingresos" or "Gastos" with teal/pink dot
+    init(
+        transactionNature: TransactionNature,
+        onClear: @escaping () -> Void
+    ) {
+        self.text = transactionNature.displayName
+        self.indicator = .colorDot(transactionNature.color)
+        self.onClear = onClear
+    }
+
     // MARK: - Tag chip (icon + color, always individual)
 
     /// Tag filter chip with icon and color

@@ -152,6 +152,20 @@ struct RecordsTabView: View {
                             )
                         }
 
+                        // Transaction nature chip (income/expense with color dot)
+                        // Only show when exactly 1 selected
+                        if viewModel.selectedTransactionNatures.count == 1,
+                            let nature = viewModel.selectedTransactionNatures.first
+                        {
+                            FilterChipView(
+                                transactionNature: nature,
+                                onClear: {
+                                    viewModel.selectedTransactionNatures.removeAll()
+                                    onFilterChange()
+                                }
+                            )
+                        }
+
                         // Transaction type chip
                         if viewModel.transactionTypeFilter != .all {
                             FilterChipView(text: viewModel.transactionTypeFilter.displayName) {

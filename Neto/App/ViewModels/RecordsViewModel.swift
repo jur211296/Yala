@@ -30,6 +30,10 @@ final class RecordsViewModel: Filterable {
     /// Selected natures for filtering
     var selectedNatures: Set<SubcategoryNature> = []
 
+    /// Selected transaction natures for filtering (empty = all)
+    /// Used for income/expense filter chips
+    var selectedTransactionNatures: Set<TransactionNature> = []
+
     /// Selected tags for filtering
     var selectedTags: Set<PersistentIdentifier> = []
 
@@ -93,6 +97,12 @@ final class RecordsViewModel: Filterable {
             || !selectedNatures.isEmpty || !selectedTags.isEmpty || transactionTypeFilter != .all
             || amountCondition.isActive
             || !selectedCurrencies.isEmpty || !searchText.isEmpty
+            || hasTransactionNatureFilter
+    }
+
+    /// Whether transaction nature filter shows a chip (exactly 1 selected)
+    var hasTransactionNatureFilter: Bool {
+        selectedTransactionNatures.count == 1
     }
 
     /// Number of active filter types (for badge)
@@ -107,6 +117,7 @@ final class RecordsViewModel: Filterable {
         // Exclude period from filters count as it's a primary control
         // if period != .thisMonth { count += 1 }
         if !selectedCurrencies.isEmpty { count += 1 }
+        if hasTransactionNatureFilter { count += 1 }
         return count
     }
 
@@ -152,6 +163,7 @@ final class RecordsViewModel: Filterable {
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
             selectedNatures: selectedNatures,
+            selectedTransactionNatures: selectedTransactionNatures,
             selectedCurrencies: selectedCurrencies,
             transactionTypeFilter: transactionTypeFilter,
             amountCondition: amountCondition,
@@ -245,6 +257,7 @@ final class RecordsViewModel: Filterable {
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
         selectedNatures.removeAll()
+        selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
         transactionTypeFilter = .all
         amountCondition = .any

@@ -273,6 +273,19 @@ struct CategoriesTabView: View {
                             )
                         }
 
+                        // Transaction nature chip (income/expense with color dot)
+                        // Only show when exactly 1 selected
+                        if viewModel.selectedTransactionNatures.count == 1,
+                            let nature = viewModel.selectedTransactionNatures.first
+                        {
+                            FilterChipView(
+                                transactionNature: nature,
+                                onClear: {
+                                    viewModel.selectedTransactionNatures.removeAll()
+                                }
+                            )
+                        }
+
                         // Currency chips
                         ForEach(Array(viewModel.selectedCurrencies), id: \.self) { currency in
                             FilterChipView(
@@ -908,6 +921,7 @@ struct CategoriesTabView: View {
             selectedSubcategories: [],  // Don't filter by subcategory - show all in pie with dim
             selectedTags: viewModel.selectedTags,
             selectedNatures: viewModel.selectedNatures,
+            selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
@@ -929,6 +943,7 @@ struct CategoriesTabView: View {
             selectedSubcategories: [],  // Don't filter by subcategory
             selectedTags: viewModel.selectedTags,
             selectedNatures: [],  // Don't filter by nature - show all with dim
+            selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
@@ -1020,6 +1035,7 @@ struct CategoriesTabView: View {
             selectedSubcategories: [],  // Don't filter by subcategory for comparison
             selectedTags: viewModel.selectedTags,
             selectedNatures: viewModel.selectedNatures,
+            selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
@@ -1105,6 +1121,7 @@ struct CategoriesTabView: View {
             selectedSubcategories: [],
             selectedTags: viewModel.selectedTags,
             selectedNatures: [],  // Don't filter by nature
+            selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,

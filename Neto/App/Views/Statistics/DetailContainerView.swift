@@ -439,6 +439,11 @@ struct DetailContainerView: View {
         if trendsViewModel.searchText != recordsViewModel.searchText {
             trendsViewModel.searchText = recordsViewModel.searchText
         }
+        if trendsViewModel.selectedTransactionNatures != recordsViewModel.selectedTransactionNatures
+        {
+            trendsViewModel.selectedTransactionNatures =
+                recordsViewModel.selectedTransactionNatures
+        }
     }
 
     private func syncFiltersToRecords() {
@@ -468,6 +473,11 @@ struct DetailContainerView: View {
         }
         if recordsViewModel.searchText != trendsViewModel.searchText {
             recordsViewModel.searchText = trendsViewModel.searchText
+        }
+        if recordsViewModel.selectedTransactionNatures != trendsViewModel.selectedTransactionNatures
+        {
+            recordsViewModel.selectedTransactionNatures =
+                trendsViewModel.selectedTransactionNatures
         }
     }
 

@@ -76,6 +76,8 @@ struct RecordsFiltersView: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: 0) {
+                                transactionNaturesContent
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 accountsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
@@ -314,6 +316,63 @@ struct RecordsFiltersView: View {
             return "Todas"
         }
         return "\(viewModel.selectedTags.count)/\(activeTags.count)"
+    }
+
+    // MARK: - Transaction Natures Content (Income/Expense)
+
+    private var transactionNaturesContent: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Header
+            FilterSectionHeader(
+                icon: "arrow.up.arrow.down",
+                title: "Tipo",
+                status: selectedTransactionNaturesText
+            )
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
+
+            // Chips
+            FlowLayout(spacing: DS.Spacing.sm) {
+                ForEach(TransactionNature.allCases, id: \.self) { nature in
+                    transactionNatureChip(nature)
+                }
+            }
+            .padding(.leading, 52)
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
+        }
+    }
+
+    private func transactionNatureChip(_ nature: TransactionNature) -> some View {
+        let isSelected = viewModel.selectedTransactionNatures.contains(nature)
+
+        return Button {
+            if isSelected {
+                viewModel.selectedTransactionNatures.remove(nature)
+            } else {
+                viewModel.selectedTransactionNatures.insert(nature)
+            }
+        } label: {
+            Text(nature.displayName)
+                .font(.subheadline)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .lineLimit(1)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? nature.color : Color(.tertiarySystemFill))
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var selectedTransactionNaturesText: String {
+        if viewModel.selectedTransactionNatures.isEmpty { return "Todos" }
+        if viewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
+            return "Todos"
+        }
+        return viewModel.selectedTransactionNatures.first?.displayName ?? "Todos"
     }
 
     // MARK: - Natures Content

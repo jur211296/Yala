@@ -44,6 +44,9 @@ struct FilterControlBar<PeriodView: View>: View {
     /// Selected natures
     let selectedNatures: Set<SubcategoryNature>
 
+    /// Selected transaction natures (income/expense filter)
+    let selectedTransactionNatures: Set<TransactionNature>
+
     /// Transaction type filter (optional, only for Records)
     let transactionTypeFilter: TransactionTypeFilter?
 
@@ -53,6 +56,7 @@ struct FilterControlBar<PeriodView: View>: View {
     let onClearCategories: () -> Void
     let onClearTags: () -> Void
     let onClearNatures: () -> Void
+    let onClearTransactionNature: (() -> Void)?
     let onClearTransactionType: (() -> Void)?
     let onClearAll: () -> Void
 
@@ -85,6 +89,15 @@ struct FilterControlBar<PeriodView: View>: View {
                         // Nature chips - "First +x" format
                         if let chipText = naturesChipText {
                             FilterChipView(text: chipText, onClear: onClearNatures)
+                        }
+
+                        // Transaction nature chip (income/expense with color dot)
+                        // Only show when exactly 1 selected
+                        if selectedTransactionNatures.count == 1,
+                            let nature = selectedTransactionNatures.first,
+                            let onClear = onClearTransactionNature
+                        {
+                            FilterChipView(transactionNature: nature, onClear: onClear)
                         }
 
                         // Transaction type chip (only for Records)
@@ -187,10 +200,12 @@ extension FilterControlBar {
         selectedTags: Set<PersistentIdentifier>,
         allTags: [Tag],
         selectedNatures: Set<SubcategoryNature>,
+        selectedTransactionNatures: Set<TransactionNature> = [],
         onClearAccounts: @escaping () -> Void,
         onClearCategories: @escaping () -> Void,
         onClearTags: @escaping () -> Void,
         onClearNatures: @escaping () -> Void,
+        onClearTransactionNature: (() -> Void)? = nil,
         onClearAll: @escaping () -> Void
     ) {
         self.periodSelector = periodSelector
@@ -204,11 +219,13 @@ extension FilterControlBar {
         self.selectedTags = selectedTags
         self.allTags = allTags
         self.selectedNatures = selectedNatures
+        self.selectedTransactionNatures = selectedTransactionNatures
         self.transactionTypeFilter = nil
         self.onClearAccounts = onClearAccounts
         self.onClearCategories = onClearCategories
         self.onClearTags = onClearTags
         self.onClearNatures = onClearNatures
+        self.onClearTransactionNature = onClearTransactionNature
         self.onClearTransactionType = nil
         self.onClearAll = onClearAll
     }

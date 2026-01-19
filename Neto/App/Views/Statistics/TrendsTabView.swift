@@ -281,6 +281,19 @@ struct TrendsTabView: View {
                             )
                         }
 
+                        // Transaction nature chip (income/expense with color dot)
+                        // Only show when exactly 1 selected
+                        if trendsViewModel.selectedTransactionNatures.count == 1,
+                            let nature = trendsViewModel.selectedTransactionNatures.first
+                        {
+                            FilterChipView(
+                                transactionNature: nature,
+                                onClear: {
+                                    trendsViewModel.selectedTransactionNatures.removeAll()
+                                }
+                            )
+                        }
+
                         // Currency chips
                         ForEach(Array(trendsViewModel.selectedCurrencies), id: \.self) { currency in
                             FilterChipView(
@@ -602,7 +615,7 @@ struct TrendsTabView: View {
 
     private var metricSelector: some View {
         HStack(spacing: 0) {
-            // When locked to expense (filters applied), only show expense button
+            // When locked (filters applied), only show the locked metric
             // Otherwise show all options
             ForEach(availableMetrics) { metric in
                 metricButton(for: metric)
@@ -611,24 +624,32 @@ struct TrendsTabView: View {
         .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
-        .animation(.easeInOut(duration: 0.2), value: trendsViewModel.isMetricLockedToExpense)
+        .animation(.easeInOut(duration: 0.2), value: trendsViewModel.metricLockState)
     }
 
     /// Returns available metrics based on filter state
     private var availableMetrics: [TrendMetric] {
-        if trendsViewModel.isMetricLockedToExpense {
-            return [.expense]  // Only expense when filters are applied
+        switch trendsViewModel.metricLockState {
+        case .lockedExpense:
+            return [.expense]
+        case .lockedIncome:
+            return [.income]
+        case .none:
+            return TrendMetric.allCases
         }
-        return TrendMetric.allCases
+    }
+
+    /// Whether the metric selector is locked (no user interaction allowed)
+    private var isMetricLocked: Bool {
+        trendsViewModel.metricLockState != .none
     }
 
     private func metricButton(for metric: TrendMetric) -> some View {
         let isSelected = trendsViewModel.selectedMetric == metric
-        let isLocked = trendsViewModel.isMetricLockedToExpense
 
         return Button {
             // Only allow change if not locked
-            if !isLocked {
+            if !isMetricLocked {
                 // Change metric manually (marks as user selection, not automatic)
                 trendsViewModel.setMetricManually(metric)
             }

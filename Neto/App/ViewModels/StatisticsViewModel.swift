@@ -29,27 +29,65 @@ final class StatisticsViewModel: Filterable {
 
     // MARK: - Trend Locking Logic
 
-    /// Determines if metric should be locked to expense due to active filters
-    var isMetricLockedToExpense: Bool {
-        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNatures.isEmpty
+    /// Metric lock state based on active filters
+    enum MetricLockState {
+        case none           // No lock, user can select any metric
+        case lockedIncome   // Locked to income (only income filter selected)
+        case lockedExpense  // Locked to expense (category/nature filters or only expense filter)
     }
 
-    /// Track if the current expense selection was automatic (due to filters) or manual (user click)
-    private var isExpenseAutomatic: Bool = false
+    /// Determines if and how metric should be locked due to active filters
+    var metricLockState: MetricLockState {
+        // Category/subcategory/nature filters always lock to expense (existing behavior)
+        if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNatures.isEmpty
+        {
+            return .lockedExpense
+        }
 
-    /// Enforce metric lock: switch to expense when filters applied
+        // Transaction nature filter: lock only when exactly 1 selected
+        if selectedTransactionNatures.count == 1 {
+            if selectedTransactionNatures.contains(.income) {
+                return .lockedIncome
+            } else if selectedTransactionNatures.contains(.expense) {
+                return .lockedExpense
+            }
+        }
+
+        // No lock when: empty, or both selected
+        return .none
+    }
+
+    /// Backward compatibility: true when locked to expense
+    var isMetricLockedToExpense: Bool {
+        metricLockState == .lockedExpense
+    }
+
+    /// True when locked to income
+    var isMetricLockedToIncome: Bool {
+        metricLockState == .lockedIncome
+    }
+
+    /// Track if the current metric selection was automatic (due to filters) or manual (user click)
+    private var isMetricAutomatic: Bool = false
+
+    /// Enforce metric lock: switch to appropriate metric when filters applied
     private func enforceMetricLock() {
-        if isMetricLockedToExpense {
-            // Lock to expense when filters are applied (automatic)
+        switch metricLockState {
+        case .lockedExpense:
             if selectedMetric != .expense {
                 selectedMetric = .expense
-                isExpenseAutomatic = true
+                isMetricAutomatic = true
             }
-        } else {
-            // When filters are cleared, reset to balance ONLY if expense was automatic
-            if selectedMetric == .expense && isExpenseAutomatic {
+        case .lockedIncome:
+            if selectedMetric != .income {
+                selectedMetric = .income
+                isMetricAutomatic = true
+            }
+        case .none:
+            // When filters are cleared, reset to balance ONLY if selection was automatic
+            if isMetricAutomatic && (selectedMetric == .expense || selectedMetric == .income) {
                 selectedMetric = .balance
-                isExpenseAutomatic = false
+                isMetricAutomatic = false
             }
         }
     }
@@ -58,7 +96,7 @@ final class StatisticsViewModel: Filterable {
     func setMetricManually(_ metric: TrendMetric) {
         selectedMetric = metric
         // Mark as manual selection (not automatic)
-        isExpenseAutomatic = false
+        isMetricAutomatic = false
     }
 
     // MARK: - Filter State
@@ -77,6 +115,10 @@ final class StatisticsViewModel: Filterable {
 
     /// Selected natures for filtering
     var selectedNatures: Set<SubcategoryNature> = []
+
+    /// Selected transaction natures for filtering (empty = all)
+    /// Used for income/expense filter chips in Statistics
+    var selectedTransactionNatures: Set<TransactionNature> = []
 
     /// Selected currencies for filtering (empty = all)
     var selectedCurrencies: Set<CurrencyCode> = []
@@ -206,6 +248,12 @@ final class StatisticsViewModel: Filterable {
             || !selectedCurrencies.isEmpty
             || !searchText.isEmpty
             || amountCondition.isActive
+            || hasTransactionNatureFilter
+    }
+
+    /// Whether transaction nature filter shows a chip (exactly 1 selected)
+    var hasTransactionNatureFilter: Bool {
+        selectedTransactionNatures.count == 1
     }
 
     /// Number of active filter types
@@ -218,6 +266,7 @@ final class StatisticsViewModel: Filterable {
         if !selectedCurrencies.isEmpty { count += 1 }
         if !searchText.isEmpty { count += 1 }
         if amountCondition.isActive { count += 1 }
+        if hasTransactionNatureFilter { count += 1 }
         return count
     }
 
@@ -228,6 +277,7 @@ final class StatisticsViewModel: Filterable {
         selectedSubcategories.removeAll()
         selectedTags.removeAll()
         selectedNatures.removeAll()
+        selectedTransactionNatures.removeAll()
         selectedCurrencies.removeAll()
         searchText = ""
         amountCondition = .any
@@ -628,6 +678,7 @@ final class StatisticsViewModel: Filterable {
         selectedSubcategories.removeAll()
         selectedTags.removeAll()
         selectedNatures.removeAll()
+        selectedTransactionNatures.removeAll()
     }
 
     /// Build filter context for RecordsListView navigation
