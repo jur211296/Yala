@@ -10,26 +10,26 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 ## Current Position
 
 Phase: 6 of 8 (Pagos Planificados)
-Plan: In progress (Mini-Fase 6.2 completada)
-Status: UI de pagos planificados lista, faltan localizaciones
-Last activity: 2026-01-19 — Vista CRUD de pagos planificados
+Plan: In progress (Mini-Fase 6.3+ completada)
+Status: Suscripciones con calendario, campos requeridos, iconos subcategoría, fix parpadeo
+Last activity: 2026-01-19 — Subscriptions calendar view, UX improvements
 
-Progress: ███░░░░░░░░░░░ 25% (Fase 6)
+Progress: ██████░░░░░░░░ 50% (Fase 6)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-19T17:05:00-05:00] 1937184 feat(scheduled): Add subscriptions calendar view and UX improvements
+- [2026-01-19T16:45:00-05:00] b40ccf3 feat(scheduled): Add settings view in Profile for payment management
+- [2026-01-19T16:44:00-05:00] f06a17f feat(scheduled): Add detail view with payment history
+- [2026-01-19T16:43:00-05:00] 91b2a0b feat(scheduled): Redesign recurrence with one-time/recurring toggle
+- [2026-01-19T16:30:00-05:00] db09829 feat(i18n): Add scheduled payments localizations for 6 languages
 - [2026-01-19T15:02:00-05:00] dc488b5 feat(scheduled): Add scheduled payments UI with CRUD and filters
 - [2026-01-19T14:42:00-05:00] ab9c874 feat(scheduled): Add ScheduledPayment model and supporting enums
 - [2026-01-19T09:17:00-05:00] 45b9a69 feat(income): Add dynamic title, teal color, and dimming for income mode
 - [2026-01-19T08:26:00-05:00] abe34ae feat(statistics): Hide nature widgets and category chart in income mode
 - [2026-01-19T08:21:00-05:00] 4b9b8ca feat(panel): Widgets respect income/expense filter
-- [2026-01-19T08:11:00-05:00] 92d78a7 feat(statistics): CategoriesTabView respects income/expense filter
-- [2026-01-19T08:04:00-05:00] 4fdd604 feat(calculators): Add transactionNatures parameter for income support
-- [2026-01-19T07:58:00-05:00] d5369bc feat(charts): Unify metric selector with chip filter system
-- [2026-01-19T06:55:00-05:00] 7f90398 fix(filters): Complete income/expense filter sync and UX improvements
-- [2026-01-18T21:30:00-05:00] d7b0b55 feat(filters): Add income/expense filter chips in Statistics
 
 ## Completed in Current Phase
 
@@ -73,9 +73,17 @@ Progress: ███░░░░░░░░░░░ 25% (Fase 6)
 
 ### Fase 6: Pagos Planificados
 - ~~Diseñar modelo ScheduledPayment (SwiftData)~~ ✅
-- CRUD de pagos planificados con SegmentedControl (suscripciones vs otros) ← En progreso
+- ~~CRUD de pagos planificados con SegmentedControl~~ ✅
+- ~~Vista detalle con historial de pagos~~ ✅
+- ~~Vista de gestión en Perfil~~ ✅
+- ~~Rediseño de recurrencia (one-time/recurring toggle)~~ ✅
+- ~~Suscripciones con calendario interactivo~~ ✅
+- ~~Campos requeridos (cuenta, subcategoría, nombre, monto)~~ ✅
+- ~~Iconos/colores de subcategoría en listas~~ ✅
+- ~~Fix parpadeo de título en navegación~~ ✅
 - Widget Medium: 3 pagos siguientes
 - Widget Large: calendario por periodo
+- Notificaciones push (UNNotificationCenter)
 
 ## Parking Lot
 
