@@ -919,6 +919,15 @@
 "scheduled.next.second" = "Segundo pago";
 "scheduled.next.third" = "Tercer pago";
 
+// Subscriptions View
+"subscriptions.title" = "Suscripciones";
+"subscriptions.count" = "%d suscripciones activas";
+"subscriptions.empty.title" = "Sin suscripciones";
+"subscriptions.empty.message" = "Agrega tus servicios de suscripción como Netflix, Spotify, etc.";
+"subscriptions.calendar.empty" = "Sin suscripciones este mes";
+"subscriptions.day.empty" = "Sin suscripciones este día";
+"subscriptions.show.all" = "Ver todo";
+
 // Weekdays
 "weekday.sunday" = "Domingo";
 "weekday.monday" = "Lunes";

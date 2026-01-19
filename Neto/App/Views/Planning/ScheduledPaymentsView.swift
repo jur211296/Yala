@@ -41,20 +41,27 @@ struct ScheduledPaymentsView: View {
                         .padding(.top, DS.Spacing.md)
                         .padding(.bottom, DS.Spacing.md)
 
-                    // List content
-                    ScheduledPaymentsListView(
-                        viewModel: viewModel,
-                        currencyCode: defaultCurrencyCode,
-                        onRefresh: { refreshData() }
-                    )
+                    // Content based on selected tab
+                    if viewModel.selectedTab == .subscriptions {
+                        // Subscriptions tab has its own custom view
+                        SubscriptionsContentView(
+                            viewModel: viewModel,
+                            subscriptions: viewModel.getSubscriptions(from: allPayments),
+                            currencyCode: defaultCurrencyCode
+                        )
+                    } else {
+                        // Recurring and All tabs use the standard list view
+                        ScheduledPaymentsListView(
+                            viewModel: viewModel,
+                            currencyCode: defaultCurrencyCode,
+                            onRefresh: { refreshData() }
+                        )
+                    }
                 }
             }
 
             // FAB button for new payment
             newPaymentFAB
-        }
-        .toolbar {
-            toolbarContent
         }
         .sheet(isPresented: $viewModel.showPaymentEditor) {
             if let payment = viewModel.editingPayment {
@@ -72,12 +79,6 @@ struct ScheduledPaymentsView: View {
                         refreshData()
                     }
             }
-        }
-        .sheet(isPresented: $viewModel.showFiltersSheet) {
-            ScheduledPaymentsFiltersView(viewModel: viewModel, accounts: accounts, categories: categories, tags: tags)
-                .onDisappear {
-                    refreshData()
-                }
         }
         .onAppear {
             refreshData()
@@ -101,31 +102,6 @@ struct ScheduledPaymentsView: View {
         .pickerStyle(.segmented)
     }
 
-    // MARK: - Toolbar
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.lg) {
-                // Filter button
-                Button {
-                    viewModel.showFiltersSheet = true
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if viewModel.hasActiveFilters {
-                        Circle()
-                            .fill(Color.hotPink)
-                            .frame(width: 8, height: 8)
-                            .offset(x: 2, y: -2)
-                    }
-                }
-            }
-        }
-    }
 
     // MARK: - New Payment FAB
 

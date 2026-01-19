@@ -202,7 +202,10 @@ struct DetailContainerView: View {
         let isSelected = selectedTab == tab
 
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            // Disable animations to prevent navigation title flickering
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
                 selectedTab = tab
             }
         } label: {

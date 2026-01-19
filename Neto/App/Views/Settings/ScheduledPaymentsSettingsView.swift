@@ -18,18 +18,45 @@ struct ScheduledPaymentsSettingsView: View {
 
     @State private var showEditor = false
     @State private var paymentToEdit: ScheduledPayment?
+    @State private var selectedTab: ScheduledPaymentsTab = .all
+
+    /// Payments filtered by selected tab
+    private var filteredPayments: [ScheduledPayment] {
+        switch selectedTab {
+        case .all:
+            return allPayments
+        case .recurring:
+            return allPayments.filter { $0.paymentCategory == PaymentCategory.recurring.rawValue }
+        case .subscriptions:
+            return allPayments.filter { $0.paymentCategory == PaymentCategory.subscription.rawValue }
+        }
+    }
 
     var body: some View {
         ZStack {
             PanelBackgroundView()
 
-            if allPayments.isEmpty {
-                emptyState
-            } else {
-                paymentsList
+            VStack(spacing: 0) {
+                // Tab selector
+                Picker("Tab", selection: $selectedTab) {
+                    ForEach(ScheduledPaymentsTab.allCases) { tab in
+                        Text(tab.localizedName).tag(tab)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
+                .padding(.bottom, DS.Spacing.md)
+
+                // Content
+                if filteredPayments.isEmpty {
+                    emptyState
+                } else {
+                    paymentsList
+                }
             }
         }
-        .navigationTitle(NSLocalizedString("settings.scheduled.payments", comment: ""))
+        .navigationTitle(NSLocalizedString("settings.plannedPayments", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
@@ -46,7 +73,10 @@ struct ScheduledPaymentsSettingsView: View {
             }
         }
         .sheet(isPresented: $showEditor) {
-            ScheduledPaymentEditorView(payment: paymentToEdit)
+            ScheduledPaymentEditorView(
+                payment: paymentToEdit,
+                defaultCategory: selectedTab.categoryFilter
+            )
         }
     }
 
@@ -92,7 +122,7 @@ struct ScheduledPaymentsSettingsView: View {
 
     private var paymentsList: some View {
         List {
-            ForEach(allPayments, id: \.persistentModelID) { payment in
+            ForEach(filteredPayments, id: \.persistentModelID) { payment in
                 paymentRow(payment)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -105,20 +135,24 @@ struct ScheduledPaymentsSettingsView: View {
     }
 
     private func paymentRow(_ payment: ScheduledPayment) -> some View {
-        Button {
+        // Get icon and color from subcategory
+        let iconName = payment.subcategory?.iconName ?? payment.subcategory?.category.iconName ?? "creditcard.fill"
+        let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
+
+        return Button {
             paymentToEdit = payment
             showEditor = true
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                // Icon
+                // Icon from subcategory
                 ZStack {
                     Circle()
-                        .fill(payment.isActive ? Color.electricIndigo.opacity(0.15) : Color.gray.opacity(0.1))
+                        .fill(payment.isActive ? Color(hex: colorHex).opacity(0.15) : Color.gray.opacity(0.1))
                         .frame(width: 44, height: 44)
 
-                    Image(systemName: payment.isRecurring ? "repeat" : "calendar")
+                    Image(systemName: iconName)
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(payment.isActive ? Color.electricIndigo : Color.gray)
+                        .foregroundStyle(payment.isActive ? Color(hex: colorHex) : Color.gray)
                 }
 
                 // Info
@@ -181,7 +215,7 @@ struct ScheduledPaymentsSettingsView: View {
 
     private func deletePayments(at offsets: IndexSet) {
         for index in offsets {
-            let payment = allPayments[index]
+            let payment = filteredPayments[index]
             modelContext.delete(payment)
         }
         try? modelContext.save()

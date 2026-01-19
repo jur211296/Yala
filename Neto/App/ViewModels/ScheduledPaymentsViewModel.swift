@@ -48,6 +48,14 @@ final class ScheduledPaymentsViewModel {
     /// Whether to hide inactive payments
     var hideInactive: Bool = false
 
+    // MARK: - Subscriptions Tab State
+
+    /// View mode for subscriptions tab (list or calendar)
+    var subscriptionsViewMode: SubscriptionsViewMode = .list
+
+    /// Currently displayed month in calendar view
+    var calendarDisplayedMonth: Date = Date()
+
     // MARK: - Computed Data
 
     /// Payments grouped by due status
@@ -216,5 +224,182 @@ final class ScheduledPaymentsViewModel {
     func editPayment(_ payment: ScheduledPayment) {
         editingPayment = payment
         showPaymentEditor = true
+    }
+
+    // MARK: - Subscriptions Calendar
+
+    /// Get all subscriptions (filtered)
+    func getSubscriptions(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
+        var filtered = payments.filter { $0.paymentCategory == PaymentCategory.subscription.rawValue }
+
+        // Apply filters
+        if hideInactive {
+            filtered = filtered.filter { $0.isActive }
+        }
+        if !selectedAccounts.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let accountID = payment.account?.persistentModelID else { return false }
+                return selectedAccounts.contains(accountID)
+            }
+        }
+        if !selectedSubcategories.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let subID = payment.subcategory?.persistentModelID else { return false }
+                return selectedSubcategories.contains(subID)
+            }
+        }
+        if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                return selectedCategories.contains(catID)
+            }
+        }
+        if !selectedTags.isEmpty {
+            filtered = filtered.filter { payment in
+                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                return !paymentTagIDs.isDisjoint(with: selectedTags)
+            }
+        }
+
+        return filtered
+    }
+
+    /// Calculate total monthly subscription spending for a given month
+    func calculateMonthlyTotal(subscriptions: [ScheduledPayment], for month: Date) -> Double {
+        var total: Double = 0
+
+        for subscription in subscriptions where subscription.isActive {
+            // Calculate how many times this subscription occurs in the month
+            let occurrences = getPaymentDatesInMonth(payment: subscription, month: month)
+            total += subscription.amount * Double(occurrences.count)
+        }
+
+        return total
+    }
+
+    /// Get payment dates for a subscription in a given month
+    func getPaymentDatesInMonth(payment: ScheduledPayment, month: Date) -> [Date] {
+        let calendar = Calendar.current
+        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
+
+        var dates: [Date] = []
+
+        // For one-time payments
+        if !payment.isRecurring {
+            let paymentDate = calendar.startOfDay(for: payment.nextDueDate)
+            if monthInterval.contains(paymentDate) {
+                dates.append(paymentDate)
+            }
+            return dates
+        }
+
+        // For recurring payments
+        guard let recurrenceType = RecurrenceType(rawValue: payment.recurrenceType) else { return [] }
+
+        switch recurrenceType {
+        case .daily:
+            // Daily: every interval days
+            var date = calendar.startOfDay(for: payment.nextDueDate)
+            // Go back to find the first occurrence in or before this month
+            while date > monthInterval.start {
+                date = calendar.date(byAdding: .day, value: -payment.recurrenceInterval, to: date) ?? date
+            }
+            // Now iterate forward
+            while date < monthInterval.end {
+                if date >= monthInterval.start {
+                    dates.append(date)
+                }
+                date = calendar.date(byAdding: .day, value: payment.recurrenceInterval, to: date) ?? monthInterval.end
+            }
+
+        case .weekly:
+            // Weekly: specific weekdays
+            let weekdays = parseWeekdays(payment.selectedWeekdays)
+            if weekdays.isEmpty { return dates }
+
+            // Iterate through each day of the month
+            var date = monthInterval.start
+            while date < monthInterval.end {
+                let weekday = calendar.component(.weekday, from: date)
+                if weekdays.contains(weekday) {
+                    dates.append(date)
+                }
+                date = calendar.date(byAdding: .day, value: 1, to: date) ?? monthInterval.end
+            }
+
+        case .monthly:
+            // Monthly: specific day of month
+            let dayOfMonth = payment.dayOfMonth ?? calendar.component(.day, from: payment.nextDueDate)
+            let monthComponents = calendar.dateComponents([.year, .month], from: month)
+            if var paymentDate = calendar.date(from: DateComponents(
+                year: monthComponents.year,
+                month: monthComponents.month,
+                day: min(dayOfMonth, calendar.range(of: .day, in: .month, for: month)?.count ?? 28)
+            )) {
+                paymentDate = calendar.startOfDay(for: paymentDate)
+                if monthInterval.contains(paymentDate) {
+                    dates.append(paymentDate)
+                }
+            }
+
+        case .yearly:
+            // Yearly: specific month and day
+            let targetMonth = payment.yearlyMonth ?? calendar.component(.month, from: payment.nextDueDate)
+            let targetDay = payment.yearlyDay ?? calendar.component(.day, from: payment.nextDueDate)
+            let monthComponents = calendar.dateComponents([.year, .month], from: month)
+
+            if monthComponents.month == targetMonth {
+                if let paymentDate = calendar.date(from: DateComponents(
+                    year: monthComponents.year,
+                    month: targetMonth,
+                    day: targetDay
+                )) {
+                    let startOfPayment = calendar.startOfDay(for: paymentDate)
+                    if monthInterval.contains(startOfPayment) {
+                        dates.append(startOfPayment)
+                    }
+                }
+            }
+        }
+
+        return dates
+    }
+
+    /// Parse weekdays string "1,3,5" into set of weekday integers
+    private func parseWeekdays(_ weekdaysString: String?) -> Set<Int> {
+        guard let string = weekdaysString, !string.isEmpty else { return [] }
+        return Set(string.split(separator: ",").compactMap { Int($0) })
+    }
+
+    /// Move calendar to previous month
+    func previousMonth() {
+        let calendar = Calendar.current
+        if let newMonth = calendar.date(byAdding: .month, value: -1, to: calendarDisplayedMonth) {
+            calendarDisplayedMonth = newMonth
+        }
+    }
+
+    /// Move calendar to next month
+    func nextMonth() {
+        let calendar = Calendar.current
+        if let newMonth = calendar.date(byAdding: .month, value: 1, to: calendarDisplayedMonth) {
+            calendarDisplayedMonth = newMonth
+        }
+    }
+}
+
+// MARK: - Subscriptions View Mode
+
+enum SubscriptionsViewMode: String, CaseIterable, Identifiable {
+    case list
+    case calendar
+
+    var id: String { rawValue }
+
+    var iconName: String {
+        switch self {
+        case .list: return "list.bullet"
+        case .calendar: return "calendar"
+        }
     }
 }

@@ -273,19 +273,6 @@ struct ScheduledPaymentEditorView: View {
 
     private var accountRow: some View {
         Menu {
-            Button {
-                selectedAccount = nil
-            } label: {
-                HStack {
-                    Text(NSLocalizedString("common.none", comment: ""))
-                    if selectedAccount == nil {
-                        Image(systemName: "checkmark")
-                    }
-                }
-            }
-
-            Divider()
-
             ForEach(activeAccounts) { account in
                 Button {
                     selectedAccount = account
@@ -319,7 +306,7 @@ struct ScheduledPaymentEditorView: View {
                     }
                 } else {
                     Text(NSLocalizedString("common.select", comment: ""))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.hotPink.opacity(0.8))
                 }
 
                 Image(systemName: "chevron.up.chevron.down")
@@ -356,7 +343,7 @@ struct ScheduledPaymentEditorView: View {
                     }
                 } else {
                     Text(NSLocalizedString("common.select", comment: ""))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.hotPink.opacity(0.8))
                 }
 
                 Image(systemName: "chevron.right")
@@ -796,7 +783,11 @@ struct ScheduledPaymentEditorView: View {
     // MARK: - Validation
 
     private var canSave: Bool {
-        !name.isEmpty && !amount.isEmpty && Double(amount) != nil
+        !name.isEmpty &&
+        !amount.isEmpty &&
+        Double(amount) != nil &&
+        selectedAccount != nil &&
+        selectedSubcategory != nil
     }
 
     // MARK: - Data Management

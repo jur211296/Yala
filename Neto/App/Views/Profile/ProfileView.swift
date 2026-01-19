@@ -234,10 +234,6 @@ struct ProfileView: View {
                     destination: .tags)
                 SubsectionDivider()
                 profileRow(
-                    icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
-                    destination: .favorites)
-                SubsectionDivider()
-                profileRow(
                     icon: "chart.pie.fill", title: L10n.Settings.budgetsFavorites,
                     iconColor: .mint,
                     destination: .budgetsFavorites)
@@ -247,6 +243,10 @@ struct ProfileView: View {
                     iconColor: .cyan,
                     destination: .planned
                 )
+                SubsectionDivider()
+                profileRow(
+                    icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
+                    destination: .favorites)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
