@@ -235,7 +235,7 @@ enum TransactionCSVImportService {
         }
 
         // 3. Dividir en líneas y limpiar vacías finales
-        var lines = rawContents.components(separatedBy: .newlines)
+        var lines = splitCSVIntoRows(rawContents)
         while let last = lines.last, last.trimmingCharacters(in: .whitespaces).isEmpty {
             lines.removeLast()
         }
@@ -755,6 +755,43 @@ enum TransactionCSVImportService {
         return normalizeCurrencyCode(canonical)
     }
 
+    // MARK: - CSV Line Parsing (RFC 4180 compliant)
+
+    /// Splits CSV content into logical rows, correctly handling quoted fields with embedded newlines.
+    /// RFC 4180: Fields containing line breaks must be enclosed in double-quotes.
+    private static func splitCSVIntoRows(_ content: String) -> [String] {
+        var rows: [String] = []
+        var currentRow = ""
+        var insideQuotes = false
+
+        for char in content {
+            if char == "\"" {
+                insideQuotes.toggle()
+                currentRow.append(char)
+            } else if char == "\n" || char == "\r" {
+                if insideQuotes {
+                    // Newline inside quoted field - keep it in current row
+                    currentRow.append(char)
+                } else {
+                    // End of logical row
+                    if !currentRow.isEmpty {
+                        rows.append(currentRow)
+                    }
+                    currentRow = ""
+                }
+            } else {
+                currentRow.append(char)
+            }
+        }
+
+        // Don't forget the last row if file doesn't end with newline
+        if !currentRow.trimmingCharacters(in: .whitespaces).isEmpty {
+            rows.append(currentRow)
+        }
+
+        return rows
+    }
+
     // MARK: - Escaneo de monedas (para importación multimoneda)
 
     /// Escanea un archivo CSV y devuelve el conjunto de monedas únicas encontradas.
@@ -785,7 +822,7 @@ enum TransactionCSVImportService {
         }
 
         // Dividir en líneas
-        var lines = rawContents.components(separatedBy: .newlines)
+        var lines = splitCSVIntoRows(rawContents)
         while let last = lines.last, last.trimmingCharacters(in: .whitespaces).isEmpty {
             lines.removeLast()
         }
@@ -940,7 +977,7 @@ enum TransactionCSVImportService {
         }
 
         // 4. Dividir en líneas
-        var lines = rawContents.components(separatedBy: .newlines)
+        var lines = splitCSVIntoRows(rawContents)
         while let last = lines.last, last.trimmingCharacters(in: .whitespaces).isEmpty {
             lines.removeLast()
         }
