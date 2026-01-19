@@ -11,15 +11,17 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Phase: 5.1 of 8 (Correcciones y Mejoras)
 Plan: In progress
-Status: Keyboard dismiss en formularios completo
-Last activity: 2026-01-18 — Keyboard dismiss behavior en formularios
+Status: Auto-focus en formularios de creación (parcial)
+Last activity: 2026-01-18 — Auto-focus en AccountFormView y FavoriteEditorView
 
-Progress: ███░░░░░░░░░░░ 20% (Fase 5.1)
+Progress: ███░░░░░░░░░░░ 30% (Fase 5.1)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-18T20:45:00-05:00] 0fc1085 feat(ux): Auto-focus name field on creation forms
+- [2026-01-18T20:36:00-05:00] c439763 fix(ux): Replace onTapGesture with Button for category filter rows
 - [2026-01-18T17:26:00-05:00] d92b6ec feat: Enhance period comparison with vs-amount text and fix balance calculation
 - [2026-01-16T17:58:53-05:00] 85fa1ac fix: Capitalize transaction type labels in segmented control
 - [2026-01-16T17:23:35-05:00] b540af3 fix: Show category filter chip when clicking pie chart in PanelView
@@ -59,11 +61,12 @@ Progress: ███░░░░░░░░░░░ 20% (Fase 5.1)
 - **Migración SwiftData** con valor por defecto para iconName
 - **Tooltip dinámico en gráficas** - Posición arriba/abajo según altura del punto (evita clipping)
 - **Keyboard dismiss en formularios** - Tap fuera, scroll, sheets/NavigationLinks cierran teclado correctamente
+- **Filas clickables con Button** - categoriesContent en filtros convertido de onTapGesture a Button
+- **Auto-focus parcial** - AccountFormView y FavoriteEditorView con auto-focus en creación
 
 ## Next Steps
 
-- Validar filas con chevron clickables en toda la fila (contentShape(Rectangle()))
-- Auto-focus en primer campo para formularios de creación (no edición)
+- Auto-focus en formularios restantes (TagFormView, BudgetEditorView, CategoryDetailView, SubcategoryDetailView)
 - Filtro Ingresos/Gastos en Statistics
 - Importación multimoneda
 - Investigar cambio de relación FavoritePayment ↔ Tag (1:1 → N:N)
@@ -82,6 +85,6 @@ Progress: ███░░░░░░░░░░░ 20% (Fase 5.1)
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Phase 5 closed, Phase 5.1 created
-Next step: Plan and execute Phase 5.1 (Correcciones y Mejoras)
+Stopped at: Auto-focus implementado en AccountFormView y FavoriteEditorView
+Next step: Continuar auto-focus en formularios restantes o siguiente item de Next Steps
 Resume file: None
