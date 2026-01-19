@@ -161,6 +161,7 @@ struct RecordsTabView: View {
                                 transactionNature: nature,
                                 onClear: {
                                     viewModel.selectedTransactionNatures.removeAll()
+                                    sessionState.selectedTransactionNatures.removeAll()
                                     onFilterChange()
                                 }
                             )
@@ -253,7 +254,11 @@ struct RecordsTabView: View {
     // MARK: - Summary Row
 
     private var summaryRow: some View {
-        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+        let isIncomeFiltered = viewModel.selectedTransactionNatures == [.income]
+        let isExpenseFiltered = viewModel.selectedTransactionNatures == [.expense]
+        let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
+
+        return VStack(alignment: .center, spacing: DS.Spacing.xs) {
             // Balance (Saldo) - Large and centered
             Text(
                 NetoFormatter.currency(
@@ -262,31 +267,63 @@ struct RecordsTabView: View {
             .font(.title.weight(.bold))
             .foregroundStyle(.primary)
 
-            // Income and Expense indicators below
+            // Income and Expense indicators below (tappable to filter)
             HStack(spacing: DS.Spacing.md) {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "arrow.up.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.incomeGraph)
-                    Text(
-                        NetoFormatter.currency(
-                            value: recordsSummary.income, currencyCode: defaultCurrencyCode)
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                // Income button
+                Button {
+                    withAnimation {
+                        if isIncomeFiltered {
+                            viewModel.selectedTransactionNatures.removeAll()
+                            sessionState.selectedTransactionNatures.removeAll()
+                        } else {
+                            viewModel.selectedTransactionNatures = [.income]
+                            sessionState.selectedTransactionNatures = [.income]
+                        }
+                        onFilterChange()
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.incomeGraph)
+                        Text(
+                            NetoFormatter.currency(
+                                value: recordsSummary.income, currencyCode: defaultCurrencyCode)
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
+                    .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
                 }
+                .buttonStyle(.plain)
 
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "arrow.down.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.expenseGraph)
-                    Text(
-                        NetoFormatter.currency(
-                            value: recordsSummary.expense, currencyCode: defaultCurrencyCode)
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                // Expense button
+                Button {
+                    withAnimation {
+                        if isExpenseFiltered {
+                            viewModel.selectedTransactionNatures.removeAll()
+                            sessionState.selectedTransactionNatures.removeAll()
+                        } else {
+                            viewModel.selectedTransactionNatures = [.expense]
+                            sessionState.selectedTransactionNatures = [.expense]
+                        }
+                        onFilterChange()
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.down.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.expenseGraph)
+                        Text(
+                            NetoFormatter.currency(
+                                value: recordsSummary.expense, currencyCode: defaultCurrencyCode)
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
+                    .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
                 }
+                .buttonStyle(.plain)
             }
         }
         .frame(maxWidth: .infinity)

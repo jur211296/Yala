@@ -309,11 +309,13 @@ struct PanelView: View {
                 let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
                 let hasAmountFilter = viewModel.amountCondition.isActive
                 let hasNoteFilter = !viewModel.searchText.isEmpty
+                let hasTransactionNatureFilter = sessionState.selectedTransactionNatures.count == 1
 
                 let activeFilterCount = [
                     hasAccountFilter, hasDateFilter, hasCategoryFilter,
                     hasNatureFilter, hasSubcategoryFilter, hasTagFilter,
                     hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
+                    hasTransactionNatureFilter,
                 ].filter { $0 }.count
 
                 if activeFilterCount > 0 {
@@ -409,12 +411,25 @@ struct PanelView: View {
                                 }
                             }
 
-                            // Nature Chip
+                            // Nature Chip (Subcategory Nature: essential/priority/optional)
                             if let nature = viewModel.selectedNature {
                                 FilterChipView(
                                     nature: nature,
                                     onClear: {
                                         withAnimation { viewModel.selectedNature = nil }
+                                    }
+                                )
+                            }
+
+                            // Transaction Nature Chip (Income/Expense)
+                            if sessionState.selectedTransactionNatures.count == 1,
+                               let transactionNature = sessionState.selectedTransactionNatures.first {
+                                FilterChipView(
+                                    transactionNature: transactionNature,
+                                    onClear: {
+                                        withAnimation {
+                                            sessionState.selectedTransactionNatures.removeAll()
+                                        }
                                     }
                                 )
                             }
@@ -838,6 +853,7 @@ struct PanelView: View {
         viewModel.selectedCurrencies.removeAll()
         viewModel.amountCondition = .any
         viewModel.searchText = ""
+        sessionState.selectedTransactionNatures.removeAll()
         viewModel.syncToSessionState(sessionState)
     }
 }
@@ -885,6 +901,10 @@ private struct PanelSessionObservers: ViewModifier {
                 recalculateData()
             }
             .onChange(of: sessionState.selectedCurrencies) {
+                syncFromSessionState()
+                recalculateData()
+            }
+            .onChange(of: sessionState.selectedTransactionNatures) {
                 syncFromSessionState()
                 recalculateData()
             }

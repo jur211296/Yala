@@ -86,6 +86,9 @@ class SessionState {
     /// Selected currencies (empty = all currencies)
     var selectedCurrencies: Set<CurrencyCode> = []
 
+    /// Selected transaction natures for filtering income/expense (empty = all)
+    var selectedTransactionNatures: Set<TransactionNature> = []
+
     /// Amount filter condition
     var amountCondition: AmountFilterCondition = .any
 
@@ -110,6 +113,7 @@ class SessionState {
         !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
             || !selectedSubcategoryIDs.isEmpty || !selectedNatures.isEmpty
             || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
+            || !selectedTransactionNatures.isEmpty
             || amountCondition.isActive || !searchText.isEmpty
     }
 
@@ -123,6 +127,7 @@ class SessionState {
         selectedNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
+        selectedTransactionNatures.removeAll()
         selectedBudgetID = nil
         amountCondition = .any
         searchText = ""

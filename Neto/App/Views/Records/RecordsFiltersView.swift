@@ -76,9 +76,9 @@ struct RecordsFiltersView: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: 0) {
-                                transactionNaturesContent
-                                Divider().padding(.leading, DS.Spacing.lg)
                                 accountsContent
+                                Divider().padding(.leading, DS.Spacing.lg)
+                                transactionNaturesContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
                                 Divider().padding(.leading, DS.Spacing.lg)

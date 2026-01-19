@@ -523,6 +523,10 @@ struct DetailContainerView: View {
         trendsViewModel.searchText = sessionState.searchText
         recordsViewModel.searchText = sessionState.searchText
 
+        // Sync transaction natures (income/expense)
+        trendsViewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+        recordsViewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+
         // Sync trend metric from SessionState
         trendsViewModel.selectedMetric = sessionState.selectedTrendMetric
     }
@@ -552,6 +556,9 @@ struct DetailContainerView: View {
         // Sync search text
         sessionState.searchText = trendsViewModel.searchText
 
+        // Sync transaction natures (income/expense)
+        sessionState.selectedTransactionNatures = trendsViewModel.selectedTransactionNatures
+
         // Sync trend metric to SessionState
         sessionState.selectedTrendMetric = trendsViewModel.selectedMetric
     }
@@ -578,6 +585,7 @@ extension View {
             .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
             .onChange(of: viewModel.selectedTags) { _, _ in action() }
             .onChange(of: viewModel.selectedNatures) { _, _ in action() }
+            .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
             .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
             .onChange(of: viewModel.amountCondition) { _, _ in action() }
             .onChange(of: viewModel.searchText) { _, _ in action() }
@@ -595,6 +603,7 @@ extension View {
             .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
             .onChange(of: viewModel.selectedTags) { _, _ in action() }
             .onChange(of: viewModel.selectedNatures) { _, _ in action() }
+            .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
             .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
             .onChange(of: viewModel.amountCondition) { _, _ in action() }
             .onChange(of: viewModel.searchText) { _, _ in action() }
@@ -687,6 +696,7 @@ private struct DetailContainerObservers: ViewModifier {
             }
             .onChange(of: sessionState.selectedTags) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedCurrencies) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedTransactionNatures) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.amountCondition) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.searchText) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedTrendMetric) {

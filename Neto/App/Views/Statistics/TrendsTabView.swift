@@ -290,6 +290,7 @@ struct TrendsTabView: View {
                                 transactionNature: nature,
                                 onClear: {
                                     trendsViewModel.selectedTransactionNatures.removeAll()
+                                    sessionState.selectedTransactionNatures.removeAll()
                                 }
                             )
                         }

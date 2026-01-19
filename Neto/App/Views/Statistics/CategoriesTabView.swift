@@ -126,6 +126,9 @@ struct CategoriesTabView: View {
             calculateData()
             syncNatureFilterToSelection()
         }
+        .onChange(of: viewModel.selectedTransactionNatures) {
+            calculateData()
+        }
         .onChange(of: selectedCategoryID) {
             syncSelectionToCategoryFilter()
             calculateData()
@@ -282,6 +285,7 @@ struct CategoriesTabView: View {
                                 transactionNature: nature,
                                 onClear: {
                                     viewModel.selectedTransactionNatures.removeAll()
+                                    sessionState.selectedTransactionNatures.removeAll()
                                 }
                             )
                         }
