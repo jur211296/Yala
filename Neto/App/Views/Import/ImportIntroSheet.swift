@@ -449,7 +449,7 @@ struct ImportIntroSheet: View {
                         // No accounts for this currency
                         let errorResult = ImportResult(
                             isSuccess: false,
-                            message: "No hay cuentas en \(singleCurrency). Crea una cuenta en esta moneda primero.",
+                            message: L10n.Import.noAccountsForCurrency(singleCurrency),
                             count: 0
                         )
                         dismiss()
@@ -472,7 +472,7 @@ struct ImportIntroSheet: View {
                     // No currencies found (empty file or invalid)
                     let errorResult = ImportResult(
                         isSuccess: false,
-                        message: "No se detectaron monedas válidas en el archivo.",
+                        message: L10n.Import.noCurrenciesDetected,
                         count: 0
                     )
                     dismiss()

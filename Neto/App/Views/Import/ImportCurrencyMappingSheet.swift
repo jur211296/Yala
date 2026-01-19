@@ -164,7 +164,7 @@ struct ImportCurrencyMappingSheet: View {
                         .padding(.horizontal, DS.Spacing.lg)
 
                     if availableAccounts.isEmpty {
-                        Text("No hay cuentas en \(currencyCode)")
+                        Text(L10n.Import.noAccountsForCurrency(currencyCode))
                             .font(Typography.caption)
                             .foregroundStyle(Color.netoSecondaryText)
                             .padding(.vertical, DS.Spacing.md)
@@ -229,7 +229,7 @@ struct ImportCurrencyMappingSheet: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "square.and.arrow.down")
-                    Text("Importar")
+                    Text(L10n.Import.importAction)
                 }
                 .font(Typography.bodyLarge)
                 .frame(maxWidth: .infinity)

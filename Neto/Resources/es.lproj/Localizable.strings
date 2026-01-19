@@ -242,6 +242,9 @@
 "import.selectAccountForCurrency" = "Seleccionar cuenta";
 "import.currenciesDetected" = "%d monedas detectadas";
 "import.recordsImportedMultiCurrency" = "%d registros importados en %d monedas.";
+"import.noAccountsForCurrency" = "No hay cuentas en %@. Crea una cuenta en esta moneda primero.";
+"import.noCurrenciesDetected" = "No se detectaron monedas válidas en el archivo.";
+"import.importAction" = "Importar";
 
 // MARK: - Export
 

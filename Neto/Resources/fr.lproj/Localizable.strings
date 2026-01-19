@@ -241,6 +241,9 @@
 "import.selectAccountForCurrency" = "Selectionner un compte";
 "import.currenciesDetected" = "%d devises detectees";
 "import.recordsImportedMultiCurrency" = "%d enregistrements importes dans %d devises.";
+"import.noAccountsForCurrency" = "Aucun compte en %@. Creez d'abord un compte dans cette devise.";
+"import.noCurrenciesDetected" = "Aucune devise valide detectee dans le fichier.";
+"import.importAction" = "Importer";
 
 // MARK: - Export
 
