@@ -11,12 +11,11 @@ import SwiftUI
 struct ScheduledPaymentRowView: View {
     let summary: ScheduledPaymentSummary
     let currencyCode: String
-    let onTap: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        Button(action: onTap) {
+        NavigationLink(value: summary.payment.persistentModelID) {
             HStack(spacing: DS.Spacing.md) {
                 // Icon badge
                 paymentIcon
@@ -59,7 +58,6 @@ struct ScheduledPaymentRowView: View {
                 y: 3
             )
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Components

@@ -103,9 +103,7 @@ struct ScheduledPaymentsListView: View {
                         ScheduledPaymentRowView(
                             summary: summary,
                             currencyCode: currencyCode
-                        ) {
-                            viewModel.editPayment(summary.payment)
-                        }
+                        )
                         .padding(.horizontal, DS.Spacing.lg)
                     }
                 }
