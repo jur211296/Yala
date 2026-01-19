@@ -368,14 +368,131 @@ struct ScheduledPaymentsWidget: View {
 
     // MARK: - Calendar Content (Large)
 
+    /// First day of week from app settings (1 = Sunday, 2 = Monday, etc.)
+    @AppStorage("firstWeekday") private var appFirstWeekday: Int = 2
+
     private var calendarContent: some View {
-        // Placeholder - will be implemented in Increment 4
-        VStack(spacing: DS.Spacing.md) {
-            Text("Calendario")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(spacing: DS.Spacing.sm) {
+            // Weekday headers
+            weekdayHeaders
+
+            // Calendar grid
+            calendarGrid
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var weekdayHeaders: some View {
+        let symbols = Calendar.current.veryShortWeekdaySymbols
+        let startIndex = appFirstWeekday - 1
+        let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
+
+        return HStack(spacing: 2) {
+            ForEach(Array(reorderedSymbols.enumerated()), id: \.offset) { _, symbol in
+                Text(symbol)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var calendarGrid: some View {
+        let calendar = Calendar.current
+        let daysInMonth = calendar.range(of: .day, in: .month, for: currentMonth)?.count ?? 30
+
+        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
+        let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
+        let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
+
+        // Build payment dates map
+        var paymentsByDay: [Int: [ScheduledPayment]] = [:]
+        for payment in filteredPayments {
+            let dates = getPaymentDatesInMonth(payment: payment, month: currentMonth)
+            for date in dates {
+                let day = calendar.component(.day, from: date)
+                paymentsByDay[day, default: []].append(payment)
+            }
+        }
+
+        // Build cell data array
+        var cellData: [Int?] = []
+        for _ in 0..<emptyCellsCount {
+            cellData.append(nil)
+        }
+        for day in 1...daysInMonth {
+            cellData.append(day)
+        }
+
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 2) {
+            ForEach(Array(cellData.enumerated()), id: \.offset) { _, dayOrNil in
+                if let day = dayOrNil {
+                    calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
+                } else {
+                    Color.clear
+                        .frame(minHeight: 44)
+                }
+            }
+        }
+    }
+
+    private func calendarDayCell(day: Int, payments: [ScheduledPayment]) -> some View {
+        let isToday = isCurrentDay(day)
+        let hasPayments = !payments.isEmpty
+
+        return VStack(alignment: .leading, spacing: 1) {
+            // Day number
+            Text("\(day)")
+                .font(.caption2.weight(isToday ? .bold : .medium))
+                .foregroundStyle(isToday ? Color.electricIndigo : .secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Payment indicators (show up to 2 dots)
+            if hasPayments {
+                HStack(spacing: 2) {
+                    ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
+                        let color = payment.subcategory?.colorHex
+                            ?? payment.subcategory?.category.colorHex
+                            ?? "#6366F1"
+                        Circle()
+                            .fill(Color(hex: color))
+                            .frame(width: 5, height: 5)
+                    }
+                    if payments.count > 2 {
+                        Text("+\(payments.count - 2)")
+                            .font(.system(size: 7, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(2)
+        .frame(minHeight: 44)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
+                .fill(backgroundColor(isToday: isToday, hasPayments: hasPayments))
+        )
+    }
+
+    private func backgroundColor(isToday: Bool, hasPayments: Bool) -> Color {
+        if isToday {
+            return Color.electricIndigo.opacity(0.12)
+        } else if hasPayments {
+            return Color(.tertiarySystemFill).opacity(0.7)
+        } else {
+            return Color(.tertiarySystemFill).opacity(0.3)
+        }
+    }
+
+    private func isCurrentDay(_ day: Int) -> Bool {
+        let calendar = Calendar.current
+        let today = Date()
+
+        return calendar.component(.day, from: today) == day &&
+               calendar.component(.month, from: today) == calendar.component(.month, from: currentMonth) &&
+               calendar.component(.year, from: today) == calendar.component(.year, from: currentMonth)
     }
 
     // MARK: - Payment Date Calculation
