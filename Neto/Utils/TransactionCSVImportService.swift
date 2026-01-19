@@ -768,7 +768,7 @@ enum TransactionCSVImportService {
             if char == "\"" {
                 insideQuotes.toggle()
                 currentRow.append(char)
-            } else if char == "\n" || char == "\r" {
+            } else if char.isNewline {
                 if insideQuotes {
                     // Newline inside quoted field - keep it in current row
                     currentRow.append(char)
@@ -823,6 +823,7 @@ enum TransactionCSVImportService {
 
         // Dividir en líneas
         var lines = splitCSVIntoRows(rawContents)
+
         while let last = lines.last, last.trimmingCharacters(in: .whitespaces).isEmpty {
             lines.removeLast()
         }
