@@ -114,6 +114,13 @@ struct TopCategoriesWidget: View {
                 }
             }
 
+            if size != .small {
+                InfoHintButton(
+                    title: L10n.WidgetType.topSpending,
+                    message: L10n.Widget.Hint.topCategories
+                )
+            }
+
             Spacer()
 
             // Right: Variation chip and comparison text (only when showVariationHeader and has data)
@@ -238,7 +245,7 @@ struct TopCategoriesWidget: View {
         VStack(spacing: DS.Spacing.sm) {
             if size == .small {
                 Spacer()  // Push down
-                Image(systemName: "creditcard")
+                Image(systemName: "folder.fill")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
                 Text(L10n.Empty.noExpenses)
@@ -246,7 +253,7 @@ struct TopCategoriesWidget: View {
                     .foregroundStyle(.secondary)
                 Spacer()  // Push up
             } else {
-                Image(systemName: "creditcard")
+                Image(systemName: "folder.fill")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
                     .padding(.bottom, DS.Spacing.xs)

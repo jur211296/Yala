@@ -373,6 +373,11 @@ struct TrendsTabView: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
 
+            InfoHintButton(
+                title: L10n.Trend.title,
+                message: L10n.Widget.Hint.trend
+            )
+
             Spacer()
 
             metricSelector
@@ -462,6 +467,11 @@ struct TrendsTabView: View {
         }
     }
 
+    /// Check if there's no trend data to display
+    private var hasTrendData: Bool {
+        !trendsViewModel.trendPoints.isEmpty
+    }
+
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             // Header with variation chip
@@ -470,8 +480,8 @@ struct TrendsTabView: View {
 
                 Spacer()
 
-                // Variation chip with "vs period" text below (hidden for All Time)
-                if trendsViewModel.detailPeriod != .allTime {
+                // Variation chip with "vs period" text below (hidden for All Time or when no data)
+                if trendsViewModel.detailPeriod != .allTime && hasTrendData {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                         VariationChip(
                             currentAmount: currentPeriodTotal,
@@ -488,19 +498,23 @@ struct TrendsTabView: View {
                 }
             }
 
-            TrendChartView(
-                trendPoints: trendsViewModel.trendPoints,
-                rawPoints: trendsViewModel.rawTrendPoints,
-                yDomain: trendsViewModel.yDomain,
-                grouping: .day,
-                interval: trendsViewModel.currentInterval,
-                currencyCode: defaultCurrencyCode,
-                trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                focusedDate: $trendsViewModel.focusedDate,
-                period: trendsViewModel.detailPeriod,
-                chartHeight: 220
-            )
-            .padding(.top, DS.Spacing.sm)
+            if hasTrendData {
+                TrendChartView(
+                    trendPoints: trendsViewModel.trendPoints,
+                    rawPoints: trendsViewModel.rawTrendPoints,
+                    yDomain: trendsViewModel.yDomain,
+                    grouping: .day,
+                    interval: trendsViewModel.currentInterval,
+                    currencyCode: defaultCurrencyCode,
+                    trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
+                    focusedDate: $trendsViewModel.focusedDate,
+                    period: trendsViewModel.detailPeriod,
+                    chartHeight: 220
+                )
+                .padding(.top, DS.Spacing.sm)
+            } else {
+                trendEmptyState
+            }
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
@@ -510,6 +524,21 @@ struct TrendsTabView: View {
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+    }
+
+    private var trendEmptyState: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Spacer()
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.system(size: 32))
+                .foregroundStyle(.secondary)
+            Text(L10n.Empty.noData)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 220)
     }
 
     private var periodComparisonCard: some View {
@@ -635,23 +664,11 @@ struct TrendsTabView: View {
         .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
-        .overlay(alignment: .bottom) {
-            if showFilterBlockedMessage {
-                Text(L10n.Trend.filterBlockedMessage)
-                    .font(.caption)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .background(Color.netoSecondaryText.opacity(0.9))
-                    .clipShape(Capsule())
-                    .offset(y: 36)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                    .onTapGesture {
-                        showFilterBlockedMessage = false
-                    }
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: showFilterBlockedMessage)
+        .filterBlockedPopover(
+            isPresented: $showFilterBlockedMessage,
+            title: L10n.Trend.filterBlockedTitle,
+            message: L10n.Trend.filterBlockedMessage
+        )
     }
 
     private func metricButton(for metric: TrendMetric) -> some View {
@@ -661,12 +678,8 @@ struct TrendsTabView: View {
 
         return Button {
             if isBlocked {
-                // Show help message instead of changing
+                // Show popover explaining why option is blocked
                 showFilterBlockedMessage = true
-                // Auto-hide after 3 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    showFilterBlockedMessage = false
-                }
             } else {
                 // Set global transaction nature filter - metric auto-adjusts via enforceMetricLock()
                 switch metric {
@@ -729,15 +742,48 @@ struct TrendsTabView: View {
                         title: "Total",
                         currencyCode: defaultCurrencyCode
                     )
+                } else {
+                    cashFlowEmptyState
                 }
 
             case .byAccount:
-                cashFlowByAccountCarousel
+                if cashFlowByAccount.isEmpty {
+                    cashFlowEmptyState
+                } else {
+                    cashFlowByAccountCarousel
+                }
 
             case .byCurrency:
-                cashFlowByCurrencyCarousel
+                if cashFlowByCurrency.isEmpty {
+                    cashFlowEmptyState
+                } else {
+                    cashFlowByCurrencyCarousel
+                }
             }
         }
+    }
+
+    private var cashFlowEmptyState: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Spacer()
+            Image(systemName: "chart.bar.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(.secondary)
+            Text(L10n.Empty.noData)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 200)
+        .padding(DS.Card.padding)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     private var cashFlowViewSelector: some View {

@@ -65,6 +65,11 @@ struct BudgetsWidget: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
+            InfoHintButton(
+                title: L10n.WidgetType.budgets,
+                message: L10n.Widget.Hint.budgets
+            )
+
             Spacer()
 
             if onShowMore != nil {

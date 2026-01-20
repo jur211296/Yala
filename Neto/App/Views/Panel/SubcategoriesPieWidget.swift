@@ -88,16 +88,37 @@ struct SubcategoriesPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "chart.pie")
-                .font(.system(size: 32))
-                .foregroundStyle(.secondary)
-            Text(L10n.Widget.noExpensesSubcategoriesPeriod)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header (same as content)
+            HStack {
+                Text(L10n.Widget.subcategories)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                InfoHintButton(
+                    title: L10n.WidgetType.subcategoriesPie,
+                    message: L10n.Widget.Hint.subcategoriesPie
+                )
+
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.lg)
+
+            // Empty content
+            VStack(spacing: DS.Spacing.md) {
+                Spacer()
+                Image(systemName: "list.bullet.indent")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.secondary)
+                Text(L10n.Empty.noExpenses)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Content Switcher
@@ -120,6 +141,12 @@ struct SubcategoriesPieWidget: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+
+            InfoHintButton(
+                title: L10n.WidgetType.subcategoriesPie,
+                message: L10n.Widget.Hint.subcategoriesPie
+            )
+
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.headline)

@@ -96,16 +96,16 @@ struct NatureTrendWidget: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Header - simplified when in income mode (no KPI makes sense)
+            // Header - simplified when in income mode or no data (no KPI makes sense)
             HStack(alignment: .top) {
-                // Left: Title and total amount (hide KPI in income mode)
+                // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Nature.title)
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
 
-                    // Total amount with "vs previous" comparison - only show when NOT in income mode
-                    if !isIncomeMode {
+                    // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
+                    if !isIncomeMode && !trendPoints.isEmpty {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
                             Text(
                                 NetoFormatter.currency(
@@ -123,6 +123,11 @@ struct NatureTrendWidget: View {
                         }
                     }
                 }
+
+                InfoHintButton(
+                    title: L10n.WidgetType.expensesByNature,
+                    message: L10n.Widget.Hint.natureTrend
+                )
 
                 Spacer()
 
@@ -170,11 +175,15 @@ struct NatureTrendWidget: View {
                 Spacer()
             } else if trendPoints.isEmpty {
                 Spacer()
-                Text(L10n.Widget.noExpensesNaturePeriod)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+                VStack(spacing: DS.Spacing.md) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.secondary)
+                    Text(L10n.Empty.noExpenses)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
                 Spacer()
             } else {
                 chartView

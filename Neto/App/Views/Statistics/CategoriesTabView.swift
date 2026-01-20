@@ -383,6 +383,11 @@ struct CategoriesTabView: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
 
+            InfoHintButton(
+                title: isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis,
+                message: isIncomeMode ? L10n.Widget.Hint.incomeAnalysis : L10n.Widget.Hint.spendingAnalysis
+            )
+
             Spacer()
 
             // M/A Selector (always visible for applicable periods)

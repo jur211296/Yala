@@ -16,6 +16,7 @@ struct PersonalizationSettingsView: View {
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
+    @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
 
     @State private var showingPeriodPicker = false
     @State private var showingTabBarConfig = false
@@ -189,6 +190,34 @@ struct PersonalizationSettingsView: View {
                         .buttonStyle(.plain)
 
                         Text(L10n.Settings.firstWeekdayDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
+
+                    // Widget Hints Toggle Section
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Text(L10n.Settings.widgetHints)
+                                .font(.body)
+                                .foregroundStyle(Color.netoPrimaryText)
+
+                            Spacer()
+
+                            Toggle("", isOn: $showWidgetHints)
+                                .labelsHidden()
+                                .tint(Color.brandPrimary)
+                        }
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(Color.netoCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                        )
+
+                        Text(L10n.Settings.widgetHintsDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 4)

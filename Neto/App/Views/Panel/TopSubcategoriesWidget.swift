@@ -114,6 +114,13 @@ struct TopSubcategoriesWidget: View {
                     }
                 }
 
+                if size != .small {
+                    InfoHintButton(
+                        title: L10n.WidgetType.topSubcategories,
+                        message: L10n.Widget.Hint.topSubcategories
+                    )
+                }
+
                 Spacer()
 
                 // Right: Variation chip and comparison text (only when showVariationHeader and has data)
@@ -351,14 +358,14 @@ struct TopSubcategoriesWidget: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.sm) {
             if size == .small {
-                Image(systemName: "list.bullet.rectangle.portrait")
+                Image(systemName: "list.bullet.indent")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
                 Text(L10n.Empty.noExpenses)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Image(systemName: "list.bullet.rectangle.portrait")
+                Image(systemName: "list.bullet.indent")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
                     .padding(.bottom, 4)

@@ -88,15 +88,37 @@ struct CategoriesPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "chart.pie")
-                .font(.system(size: 32))
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header (same as content)
+            HStack {
+                Text(L10n.Widget.categories)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                InfoHintButton(
+                    title: L10n.WidgetType.categoriesPie,
+                    message: L10n.Widget.Hint.categoriesPie
+                )
+
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.lg)
+
+            // Empty content
+            VStack(spacing: DS.Spacing.md) {
+                Spacer()
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.secondary)
+                Text(L10n.Empty.noExpenses)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Content Switcher
@@ -119,6 +141,12 @@ struct CategoriesPieWidget: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+
+            InfoHintButton(
+                title: L10n.WidgetType.categoriesPie,
+                message: L10n.Widget.Hint.categoriesPie
+            )
+
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.headline)

@@ -93,6 +93,11 @@ struct ScheduledPaymentsWidget: View {
                     .foregroundStyle(.secondary)
             }
 
+            InfoHintButton(
+                title: L10n.WidgetType.scheduledPayments,
+                message: L10n.Widget.Hint.scheduledPayments
+            )
+
             Spacer()
 
             HStack(spacing: DS.Spacing.xs) {

@@ -79,7 +79,7 @@ struct TagsPieWidget: View {
 
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "tag")
+            Image(systemName: "tag.fill")
                 .font(.system(size: 32))
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
@@ -369,16 +369,23 @@ struct TagsPieWidget: View {
     private var headerView: some View {
         Group {
             if showComparison {
-                PieChartVariationHeader(
-                    title: L10n.Widget.distributionByTag,
-                    totalAmount: filteredTotalExpense,
-                    previousAmount: previousTotalAmount,
-                    currencyCode: currencyCode,
-                    period: period,
-                    customRange: customRange,
-                    comparisonMode: comparisonMode,
-                    onShowDetail: onShowDetail
-                )
+                HStack(alignment: .top) {
+                    PieChartVariationHeader(
+                        title: L10n.Widget.distributionByTag,
+                        totalAmount: filteredTotalExpense,
+                        previousAmount: previousTotalAmount,
+                        currencyCode: currencyCode,
+                        period: period,
+                        customRange: customRange,
+                        comparisonMode: comparisonMode,
+                        onShowDetail: onShowDetail
+                    )
+
+                    InfoHintButton(
+                        title: L10n.WidgetType.expensesByNature,
+                        message: L10n.Widget.Hint.tagsPie
+                    )
+                }
             } else {
                 // Original header without comparison
                 HStack(alignment: .top) {
@@ -392,6 +399,12 @@ struct TagsPieWidget: View {
                             .font(.title3.weight(.bold))
                             .foregroundStyle(.primary)
                     }
+
+                    InfoHintButton(
+                        title: L10n.WidgetType.expensesByNature,
+                        message: L10n.Widget.Hint.tagsPie
+                    )
+
                     Spacer()
                     if onShowDetail != nil {
                         Button {

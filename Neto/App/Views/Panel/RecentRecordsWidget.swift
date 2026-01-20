@@ -49,6 +49,11 @@ struct RecentRecordsWidget: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
+            InfoHintButton(
+                title: L10n.WidgetType.latestRecords,
+                message: L10n.Widget.Hint.recentRecords
+            )
+
             Spacer()
 
             // Chevron always visible if action exists (since M size always has it)

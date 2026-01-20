@@ -25,27 +25,37 @@ struct TrendWidget: View {
             || !sessionState.selectedNatures.isEmpty
     }
 
+    /// Check if we have no data to display
+    private var hasNoData: Bool {
+        viewModel.processedTrendPoints.isEmpty
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header with KPI
+            // Header - simplified when no data
             chartHeader
 
-            // Chart using TrendChartView
-            // Always use dataTrendType for color to ensure data and color are always in sync
-            // This eliminates the need for loading indicators during metric transitions
-            TrendChartView(
-                trendPoints: viewModel.processedTrendPoints,
-                rawPoints: viewModel.rawTrendPoints,
-                yDomain: viewModel.processedYDomain,
-                grouping: viewModel.trendGrouping,
-                interval: viewModel.currentInterval,
-                currencyCode: currencyCode,
-                trendType: viewModel.dataTrendType,  // Use dataTrendType for guaranteed color sync
-                focusedDate: $viewModel.focusedDate,
-                period: viewModel.currentPeriod,
-                chartHeight: 160  // Fixed compact size
-            )
-            .padding(.top, DS.Spacing.sm)
+            if hasNoData {
+                // Empty state
+                emptyStateView
+            } else {
+                // Chart using TrendChartView
+                // Always use dataTrendType for color to ensure data and color are always in sync
+                // This eliminates the need for loading indicators during metric transitions
+                TrendChartView(
+                    trendPoints: viewModel.processedTrendPoints,
+                    rawPoints: viewModel.rawTrendPoints,
+                    yDomain: viewModel.processedYDomain,
+                    grouping: viewModel.trendGrouping,
+                    interval: viewModel.currentInterval,
+                    currencyCode: currencyCode,
+                    trendType: viewModel.dataTrendType,  // Use dataTrendType for guaranteed color sync
+                    focusedDate: $viewModel.focusedDate,
+                    period: viewModel.currentPeriod,
+                    chartHeight: 160  // Fixed compact size
+                )
+                .padding(.top, DS.Spacing.sm)
+            }
         }
         .padding(DS.Card.padding)
         .background(Color.netoCard)
@@ -55,23 +65,6 @@ struct TrendWidget: View {
                 .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
         .dsCardShadow()
-        .overlay(alignment: .top) {
-            if showFilterBlockedMessage {
-                Text(L10n.Trend.filterBlockedMessage)
-                    .font(.caption)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .background(Color.netoSecondaryText.opacity(0.9))
-                    .clipShape(Capsule())
-                    .padding(.top, DS.Spacing.sm)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                    .onTapGesture {
-                        showFilterBlockedMessage = false
-                    }
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: showFilterBlockedMessage)
     }
 
     // MARK: - Components
@@ -83,18 +76,40 @@ struct TrendWidget: View {
                     .font(.headline)
                     .foregroundStyle(Color.netoPrimaryText)
 
-                // Prominent KPI Value
-                Text(currentKPIValue)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(Color.netoPrimaryText)
-                    .padding(.top, DS.Spacing.xs)
+                // Prominent KPI Value - only show when we have data
+                if !hasNoData {
+                    Text(currentKPIValue)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(Color.netoPrimaryText)
+                        .padding(.top, DS.Spacing.xs)
+                }
             }
+
+            InfoHintButton(
+                title: L10n.WidgetType.trend,
+                message: L10n.Widget.Hint.trend
+            )
 
             Spacer()
 
             // Metric selector
             metricSelector
         }
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Spacer()
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.system(size: 32))
+                .foregroundStyle(.secondary)
+            Text(L10n.Empty.noData)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 160)
     }
 
     private var metricSelector: some View {
@@ -107,6 +122,11 @@ struct TrendWidget: View {
         .padding(DS.Spacing.xxs)
         .background(Color.netoSecondaryText.opacity(0.08))
         .clipShape(Capsule())
+        .filterBlockedPopover(
+            isPresented: $showFilterBlockedMessage,
+            title: L10n.Trend.filterBlockedTitle,
+            message: L10n.Trend.filterBlockedMessage
+        )
     }
 
     private func metricButton(for type: TrendType) -> some View {
@@ -116,12 +136,8 @@ struct TrendWidget: View {
 
         return Button {
             if isBlocked {
-                // Show help message instead of changing
+                // Show popover explaining why option is blocked
                 showFilterBlockedMessage = true
-                // Auto-hide after 3 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    showFilterBlockedMessage = false
-                }
             } else {
                 // Set global transaction nature filter - metric auto-adjusts via enforceTrendLock()
                 switch type {
@@ -134,27 +150,21 @@ struct TrendWidget: View {
                 }
             }
         } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: type.iconName)
-                    .font(.caption.weight(.semibold))
-                // Show label only when selected
-                if isSelected {
-                    Text(title(for: type))
-                        .font(.caption.weight(.semibold))
-                }
-            }
-            .padding(.horizontal, isSelected ? 12 : 14)
-            .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))
-            .background(
-                Group {
-                    if isSelected {
-                        Capsule()
-                            .fill(type.color)
-                            .matchedGeometryEffect(id: "metricSelector", in: animationNamespace)
+            // Icon only (compact version like TrendsTabView)
+            Image(systemName: type.iconName)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 14)
+                .padding(.vertical, DS.Spacing.sm)
+                .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))
+                .background(
+                    Group {
+                        if isSelected {
+                            Capsule()
+                                .fill(type.color)
+                                .matchedGeometryEffect(id: "metricSelector", in: animationNamespace)
+                        }
                     }
-                }
-            )
+                )
         }
         .buttonStyle(.plain)
     }

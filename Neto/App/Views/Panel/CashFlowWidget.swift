@@ -53,6 +53,11 @@ struct CashFlowWidget: View {
 
     @Environment(\.colorScheme) var colorScheme
 
+    /// Check if we have no data to display
+    private var hasNoData: Bool {
+        summary.totalIncome == 0 && summary.totalExpense == 0
+    }
+
     // MARK: - KPI Value Logic
 
     /// KPI value based on display mode
@@ -204,29 +209,36 @@ struct CashFlowWidget: View {
                         .foregroundStyle(.primary)
                         .padding(.bottom, 2)
 
-                    // KPI with "vs previous amount"
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                        Text(
-                            NetoFormatter.currency(
-                                value: kpiValue, currencyCode: summary.currencyCode,
-                                forceSign: displayMode == .balance || displayMode == .none)
-                        )
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.primary)
+                    // KPI with "vs previous amount" - only show when we have data
+                    if !hasNoData {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                            Text(
+                                NetoFormatter.currency(
+                                    value: kpiValue, currencyCode: summary.currencyCode,
+                                    forceSign: displayMode == .balance || displayMode == .none)
+                            )
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.primary)
 
-                        // Show previous period value for comparison
-                        if let prevAmount = previousAmount {
-                            Text("vs \(NetoFormatter.number(value: prevAmount))")
-                                .font(.caption)
-                                .foregroundStyle(Color.netoSecondaryText)
+                            // Show previous period value for comparison
+                            if let prevAmount = previousAmount {
+                                Text("vs \(NetoFormatter.number(value: prevAmount))")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.netoSecondaryText)
+                            }
                         }
                     }
                 }
 
+                InfoHintButton(
+                    title: L10n.WidgetType.cashFlow,
+                    message: L10n.Widget.Hint.cashFlow
+                )
+
                 Spacer()
 
-                // Variation chip and comparison text (when previousAmount is available)
-                if previousAmount != nil {
+                // Variation chip and comparison text (when previousAmount is available and has data)
+                if !hasNoData && previousAmount != nil {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                         VariationChip(
                             currentAmount: kpiValue,
@@ -256,7 +268,11 @@ struct CashFlowWidget: View {
             .padding([.horizontal, .top], DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
 
-            contentView
+            if hasNoData {
+                emptyStateView
+            } else {
+                contentView
+            }
         }
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
@@ -535,6 +551,23 @@ struct CashFlowWidget: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.xl)
         }
+    }
+
+    // Empty state view
+    private var emptyStateView: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Spacer()
+            Image(systemName: "chart.bar.xaxis")
+                .font(.system(size: 32))
+                .foregroundStyle(.secondary)
+            Text(L10n.Empty.noData)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.xl)
     }
 
     // Consistent Widget Background Logic
