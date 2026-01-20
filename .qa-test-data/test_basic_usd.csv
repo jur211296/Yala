@@ -1,0 +1,9 @@
+date,amount,currency,category,subcategory,note
+2026-01-15,-12.50,USD,Alimentación,Restaurantes,Coffee shop
+2026-01-14,-45.00,USD,Compras,Tecnología y accesorios,Amazon purchase
+2026-01-13,-8.99,USD,Entretenimiento,Streaming y plataformas,Spotify premium
+2026-01-12,850.00,USD,Ingresos,Facturación y freelance,Client payment
+2026-01-11,-25.00,USD,Transporte,Taxis y apps,Uber rides
+2026-01-10,-120.00,USD,Personal,Educación y desarrollo,Online course
+2026-01-09,-15.00,USD,Alimentación,Supermercados y bodegas,Groceries
+2026-01-08,200.00,USD,Ingresos,Intereses y dividendos,Stock dividend

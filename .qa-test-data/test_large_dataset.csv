@@ -1,0 +1,144 @@
+date,amount,currency,category,subcategory,note
+2026-01-20,-85.00,PEN,Alimentación,Supermercados y bodegas,Compra 1
+2026-01-20,-42.00,PEN,Alimentación,Restaurantes,Almuerzo
+2026-01-19,-18.50,PEN,Transporte,Taxis y apps,Uber
+2026-01-19,-35.00,PEN,Entretenimiento,Streaming y plataformas,Netflix
+2026-01-18,-29.90,PEN,Personal,Telefonía y comunicaciones,Celular
+2026-01-18,4500.00,PEN,Ingresos,Salario,Sueldo
+2026-01-17,-250.00,PEN,Hogar,Servicios del hogar,Servicios
+2026-01-17,-120.00,PEN,Vehículo,Combustible,Gasolina
+2026-01-16,-65.00,PEN,Personal,Fitness y actividad física,Gym
+2026-01-16,-28.00,PEN,Alimentación,Delivery,Delivery
+2026-01-15,-180.00,PEN,Compras,Ropa y calzado,Ropa
+2026-01-15,-45.00,PEN,Entretenimiento,Bares y salidas sociales,Bar
+2026-01-14,-95.00,PEN,Personal,Salud y atención médica,Médico
+2026-01-14,-22.00,PEN,Alimentación,Restaurantes,Café
+2026-01-13,-350.00,PEN,Hogar,Alquiler o hipoteca,Hipoteca
+2026-01-13,-55.00,PEN,Compras,Farmacia y botiquín,Farmacia
+2026-01-12,850.00,PEN,Ingresos,Facturación y freelance,Freelance
+2026-01-12,-75.00,PEN,Entretenimiento,Espectáculos y eventos,Cine
+2026-01-11,-38.00,PEN,Alimentación,Supermercados y bodegas,Frutas
+2026-01-11,-150.00,PEN,Finanzas,Seguros,Seguro
+2026-01-10,-25.00,PEN,Transporte,Transporte público,Metro
+2026-01-10,-190.00,PEN,Personal,Educación y desarrollo,Curso
+2026-01-09,-62.00,PEN,Mascotas y animales,Alimentación de mascotas,Mascota
+2026-01-09,-48.00,PEN,Alimentación,Restaurantes,Brunch
+2026-01-08,-35.00,PEN,Compras,Cuidado personal y belleza,Peluquería
+2026-01-08,300.00,PEN,Ingresos,Reembolsos,Reembolso
+2026-01-07,-88.00,PEN,Hogar,Mantenimiento y reparaciones,Reparación
+2026-01-07,-15.00,PEN,Transporte,Taxis y apps,Taxi
+2026-01-06,-210.00,PEN,Compras,Tecnología y accesorios,Tech
+2026-01-06,-32.00,PEN,Alimentación,Delivery,Comida
+2026-01-05,-125.00,PEN,Vehículo,Estacionamientos,Parking
+2026-01-05,-78.00,PEN,Entretenimiento,Hobbies y gaming,Gaming
+2026-01-04,-42.00,PEN,Alimentación,Restaurantes,Restaurante
+2026-01-04,1200.00,PEN,Ingresos,Alquileres recibidos,Alquiler
+2026-01-03,-95.00,PEN,Personal,Belleza y estética,Spa
+2026-01-03,-165.00,PEN,Alimentación,Supermercados y bodegas,Mercado
+2026-01-02,-55.00,PEN,Finanzas,Comisiones y cargos,Banco
+2026-01-02,-280.00,PEN,Entretenimiento,Viajes y vacaciones,Viaje
+2026-01-01,-90.00,PEN,Alimentación,Restaurantes,Año nuevo
+2026-01-01,500.00,PEN,Ingresos,Regalos y otros ingresos,Regalo
+2025-12-31,-320.00,PEN,Entretenimiento,Fiestas y vida nocturna,Fiesta
+2025-12-30,-75.00,PEN,Alimentación,Supermercados y bodegas,Compras
+2025-12-30,-45.00,PEN,Transporte,Taxis y apps,Uber
+2025-12-29,-28.00,PEN,Alimentación,Delivery,Rappi
+2025-12-29,-120.00,PEN,Compras,Regalos y detalles,Regalos
+2025-12-28,-85.00,PEN,Personal,Salud y atención médica,Farmacia
+2025-12-28,4200.00,PEN,Ingresos,Salario,Sueldo dic
+2025-12-27,-200.00,PEN,Hogar,Servicios del hogar,Servicios
+2025-12-27,-65.00,PEN,Alimentación,Restaurantes,Cena
+2025-12-26,-150.00,PEN,Compras,Tecnología y accesorios,Gadget
+2025-12-26,-35.00,PEN,Entretenimiento,Streaming y plataformas,Disney+
+2025-12-25,-250.00,PEN,Alimentación,Restaurantes,Navidad
+2025-12-25,-180.00,PEN,Compras,Regalos y detalles,Navidad
+2025-12-24,-95.00,PEN,Alimentación,Supermercados y bodegas,Cena navidad
+2025-12-24,-42.00,PEN,Transporte,Taxis y apps,Taxi
+2025-12-23,-68.00,PEN,Personal,Cuidado personal y belleza,Estética
+2025-12-23,-25.00,PEN,Alimentación,Delivery,Delivery
+2025-12-22,-350.00,PEN,Hogar,Alquiler o hipoteca,Hipoteca
+2025-12-22,-55.00,PEN,Finanzas,Comisiones y cargos,Banco
+2025-12-21,-78.00,PEN,Entretenimiento,Bares y salidas sociales,Bar
+2025-12-21,-32.00,PEN,Alimentación,Restaurantes,Almuerzo
+2025-12-20,-120.00,PEN,Vehículo,Combustible,Gasolina
+2025-12-20,-45.00,PEN,Personal,Telefonía y comunicaciones,Celular
+2025-12-19,-85.00,PEN,Compras,Farmacia y botiquín,Medicinas
+2025-12-19,750.00,PEN,Ingresos,Facturación y freelance,Proyecto
+2025-12-18,-62.00,PEN,Mascotas y animales,Salud veterinaria,Veterinario
+2025-12-18,-28.00,PEN,Alimentación,Supermercados y bodegas,Frutas
+2025-12-17,-95.00,PEN,Personal,Fitness y actividad física,Gym
+2025-12-17,-35.00,PEN,Transporte,Transporte público,Metro
+2025-12-16,-150.00,PEN,Entretenimiento,Espectáculos y eventos,Concierto
+2025-12-16,-48.00,PEN,Alimentación,Restaurantes,Cena
+2025-12-15,-200.00,PEN,Compras,Ropa y calzado,Zapatos
+2025-12-15,4500.00,PEN,Ingresos,Salario,Sueldo
+2025-12-14,-75.00,PEN,Hogar,Mantenimiento y reparaciones,Electricista
+2025-12-14,-22.00,PEN,Alimentación,Delivery,PedidosYa
+2025-12-13,-180.00,PEN,Finanzas,Seguros,Seguro auto
+2025-12-13,-55.00,PEN,Personal,Educación y desarrollo,Libro
+2025-12-12,-42.00,PEN,Entretenimiento,Hobbies y gaming,Juego
+2025-12-12,-85.00,PEN,Alimentación,Supermercados y bodegas,Mercado
+2025-12-11,-65.00,PEN,Compras,Cuidado personal y belleza,Productos
+2025-12-11,-28.00,PEN,Transporte,Taxis y apps,Beat
+2025-12-10,-120.00,PEN,Vehículo,Mantenimiento del vehículo,Lavado
+2025-12-10,300.00,PEN,Ingresos,Reembolsos,Devolución
+2025-12-09,-95.00,PEN,Personal,Salud y atención médica,Doctor
+2025-12-09,-35.00,PEN,Alimentación,Restaurantes,Café
+2025-12-08,-250.00,PEN,Hogar,Servicios del hogar,Internet
+2025-12-08,-48.00,PEN,Entretenimiento,Streaming y plataformas,HBO
+2025-12-07,-78.00,PEN,Compras,Hogar y decoración,Decoración
+2025-12-07,-32.00,PEN,Alimentación,Delivery,Uber Eats
+2025-12-06,-150.00,PEN,Finanzas,Préstamos y créditos,Cuota
+2025-12-06,-45.00,PEN,Personal,Asesorías y trámites,Trámite
+2025-12-05,-85.00,PEN,Alimentación,Supermercados y bodegas,Compras
+2025-12-05,-25.00,PEN,Transporte,Movilidad ocasional,Scooter
+2025-12-04,-120.00,PEN,Entretenimiento,Salidas en pareja,Cena romántica
+2025-12-04,1100.00,PEN,Ingresos,Alquileres recibidos,Renta
+2025-12-03,-68.00,PEN,Compras,Tecnología y accesorios,Cable
+2025-12-03,-42.00,PEN,Alimentación,Restaurantes,Almuerzo
+2025-12-02,-350.00,PEN,Hogar,Alquiler o hipoteca,Hipoteca
+2025-12-02,-55.00,PEN,Personal,Suscripciones de utilidad,Software
+2025-12-01,-95.00,PEN,Mascotas y animales,Servicios y cuidados,Grooming
+2025-12-01,-28.00,PEN,Alimentación,Supermercados y bodegas,Verduras
+2025-11-30,-180.00,PEN,Vehículo,Combustible,Gasolina
+2025-11-30,4200.00,PEN,Ingresos,Salario,Sueldo nov
+2025-11-29,-75.00,PEN,Entretenimiento,Viajes y vacaciones,Bus
+2025-11-29,-35.00,PEN,Transporte,Taxis y apps,Uber
+2025-11-28,-120.00,PEN,Compras,Ropa y calzado,Camisa
+2025-11-28,-48.00,PEN,Alimentación,Restaurantes,Ceviche
+2025-11-27,-200.00,PEN,Hogar,Personal de apoyo,Limpieza
+2025-11-27,-22.00,PEN,Alimentación,Delivery,Delivery
+2025-11-26,-85.00,PEN,Personal,Telefonía y comunicaciones,Internet
+2025-11-26,-65.00,PEN,Finanzas,Impuestos,ITF
+2025-11-25,-150.00,PEN,Entretenimiento,Deportes y recreación,Fútbol
+2025-11-25,-32.00,PEN,Alimentación,Supermercados y bodegas,Pan
+2025-11-24,-95.00,PEN,Compras,Farmacia y botiquín,Vitaminas
+2025-11-24,650.00,PEN,Ingresos,Facturación y freelance,Consultoría
+2025-11-23,-78.00,PEN,Personal,Belleza y estética,Tratamiento
+2025-11-23,-45.00,PEN,Transporte,Transporte público,Recarga
+2025-11-22,-280.00,PEN,Hogar,Seguro del hogar,Seguro
+2025-11-22,-28.00,PEN,Alimentación,Restaurantes,Snack
+2025-11-21,-120.00,PEN,Vehículo,Seguro vehicular,SOAT
+2025-11-21,-55.00,PEN,Entretenimiento,Streaming y plataformas,Prime
+2025-11-20,-85.00,PEN,Alimentación,Supermercados y bodegas,Compra semanal
+2025-11-20,-35.00,PEN,Personal,Fitness y actividad física,Clase
+2025-11-19,-150.00,PEN,Compras,Otros,Misceláneos
+2025-11-19,-42.00,PEN,Transporte,Taxis y apps,DiDi
+2025-11-18,-200.00,PEN,Finanzas,Pensiones y aportes,AFP
+2025-11-18,250.00,PEN,Ingresos,Regalos y otros ingresos,Cumpleaños
+2025-11-17,-65.00,PEN,Alimentación,Suplementos alimenticios,Proteína
+2025-11-17,-350.00,PEN,Hogar,Alquiler o hipoteca,Hipoteca
+2025-11-16,-95.00,PEN,Entretenimiento,Bares y salidas sociales,Happy hour
+2025-11-16,-28.00,PEN,Alimentación,Delivery,Glovo
+2025-11-15,4500.00,PEN,Ingresos,Salario,Quincena
+2025-11-15,-78.00,PEN,Personal,Salud y atención médica,Análisis
+2025-11-14,-120.00,PEN,Compras,Tecnología y accesorios,Mouse
+2025-11-14,-45.00,PEN,Alimentación,Restaurantes,Sushi
+2025-11-13,-180.00,PEN,Vehículo,Mantenimiento del vehículo,Service
+2025-11-13,-32.00,PEN,Transporte,Taxis y apps,Uber
+2025-11-12,-250.00,PEN,Hogar,Servicios del hogar,Gas
+2025-11-12,-55.00,PEN,Entretenimiento,Hobbies y gaming,DLC
+2025-11-11,-85.00,PEN,Alimentación,Supermercados y bodegas,Carnes
+2025-11-11,-65.00,PEN,Personal,Educación y desarrollo,Workshop
+2025-11-10,-150.00,PEN,Finanzas,Comisiones y cargos,Transferencia
+2025-11-10,800.00,PEN,Ingresos,Ventas,Venta usado

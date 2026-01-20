@@ -1,0 +1,8 @@
+date,amount,currency,category,subcategory,note
+2026-01-15,-45.50,PEN,Alimentación,Supermercados y bodegas,Fila válida
+invalid-date,-30.00,PEN,Alimentación,Restaurantes,Error: fecha inválida
+2026-01-14,abc,PEN,Transporte,Taxis y apps,Error: monto no numérico
+2026-01-13,-25.00,XXX,Alimentación,Delivery,Error: moneda inválida
+2026-01-12,-50.00,PEN,,Supermercados,Error: categoría vacía
+2026-01-11,-35.00,PEN,Alimentación,,Error: subcategoría vacía
+2026-01-10,-20.00,PEN,CategoríaInventada,SubInventada,Error: categoría inexistente

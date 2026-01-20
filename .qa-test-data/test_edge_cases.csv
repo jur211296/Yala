@@ -1,0 +1,13 @@
+date,amount,currency,category,subcategory,note
+2026-01-15,-0.01,PEN,Alimentación,Supermercados y bodegas,Monto mínimo
+2026-01-14,-999999.99,PEN,Compras,Tecnología y accesorios,Monto máximo
+2026-01-13,-45.50,PEN,Alimentación,Restaurantes,"Nota con comas, punto y coma; y otros símbolos: @#$%"
+2026-01-12,-30.00,PEN,Transporte,Taxis y apps,Emoji en nota 🚗🎉
+2026-01-11,-25.00,PEN,Entretenimiento,Streaming y plataformas,"Nota muy larga que tiene más de cien caracteres para probar que el sistema maneja correctamente textos extensos sin problemas"
+01/01/2026,-50.00,PEN,Hogar,Servicios del hogar,Formato fecha dd/MM/yyyy
+15/01/26,-35.00,PEN,Personal,Telefonía y comunicaciones,Formato fecha dd/MM/yy
+2026-01-09,-1234.56,PEN,Finanzas,Seguros,Monto con decimales
+2026-01-08,-1.234,56,PEN,Vehículo,Combustible,Formato europeo (coma decimal)
+29/02/2024,-100.00,PEN,Alimentación,Delivery,Año bisiesto
+31/12/2025,-200.00,PEN,Entretenimiento,Fiestas y vida nocturna,Fin de año
+01/01/2025,5000.00,PEN,Ingresos,Salario,Inicio de año
