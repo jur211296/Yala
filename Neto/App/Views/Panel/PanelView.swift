@@ -815,11 +815,11 @@ struct PanelView: View {
             ScheduledPaymentsWidget(
                 payments: scheduledPayments,
                 currencyCode: preferredCurrency.rawValue,
-                size: config.size,
-                currentMonth: viewModel.scheduledPaymentsWidgetMonth,
+                period: viewModel.selectedPeriod,
+                customDateRange: sessionState.customDateRange,
+                mode: config.scheduledPaymentsMode,
                 filter: $viewModel.scheduledPaymentsWidgetFilter,
-                viewMode: $viewModel.scheduledPaymentsWidgetMode,
-                onShowMore: { sessionState.selectedMainTab = .planning }
+                onShowMore: { sessionState.navigateToScheduledPayments() }
             )
         }
     }

@@ -7,7 +7,36 @@
 
 import SwiftUI
 
+// MARK: - Planning Tab Enum
+
+enum PlanningTab: String, CaseIterable, Identifiable {
+    case budgets
+    case scheduledPayments
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .budgets: return L10n.Planning.budgets
+        case .scheduledPayments: return L10n.Planning.scheduledPayments
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .budgets: return "chart.pie.fill"
+        case .scheduledPayments: return "calendar.badge.clock"
+        }
+    }
+}
+
+// MARK: - Planning View
+
 struct PlanningView: View {
+
+    // MARK: - Environment
+
+    @Environment(SessionState.self) private var sessionState
 
     // MARK: - State
 
@@ -15,29 +44,6 @@ struct PlanningView: View {
     @State private var isPresentingSettings = false
     @State private var showFavoritesSettings = false
     @Namespace private var tabAnimation
-
-    // MARK: - Tab Types
-
-    enum PlanningTab: String, CaseIterable, Identifiable {
-        case budgets
-        case scheduledPayments
-
-        var id: String { rawValue }
-
-        var displayName: String {
-            switch self {
-            case .budgets: return L10n.Planning.budgets
-            case .scheduledPayments: return L10n.Planning.scheduledPayments
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .budgets: return "chart.pie.fill"
-            case .scheduledPayments: return "calendar.badge.clock"
-            }
-        }
-    }
 
     // MARK: - Body
 
@@ -86,6 +92,14 @@ struct PlanningView: View {
                 NavigationStack {
                     BudgetsFavoritesSettingsView()
                 }
+            }
+            .onAppear {
+                // Sync with SessionState on appear
+                selectedTab = sessionState.selectedPlanningTab
+            }
+            .onChange(of: selectedTab) { _, newValue in
+                // Keep SessionState in sync
+                sessionState.selectedPlanningTab = newValue
             }
         }
     }

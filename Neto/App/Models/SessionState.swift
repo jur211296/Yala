@@ -248,10 +248,19 @@ class SessionState {
     /// Currently selected detail tab within Statistics (Trends, Categories, Records)
     var selectedDetailTab: DetailViewTab = .trends
 
+    /// Currently selected tab within Planning (Budgets, Scheduled Payments)
+    var selectedPlanningTab: PlanningTab = .budgets
+
     /// Navigate to a specific detail view from any tab
     func navigateToDetail(_ tab: DetailViewTab) {
         selectedDetailTab = tab
         selectedMainTab = .statistics
+    }
+
+    /// Navigate to Scheduled Payments in Planning
+    func navigateToScheduledPayments() {
+        selectedPlanningTab = .scheduledPayments
+        selectedMainTab = .planning
     }
 
     /// Toggle budget filters - if same budget is tapped again, clear filters

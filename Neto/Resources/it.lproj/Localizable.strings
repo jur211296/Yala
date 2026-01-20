@@ -453,6 +453,9 @@
 "widget.expanded" = "Espanso";
 "widget.top3" = "Top 3";
 "widget.top5" = "Top 5";
+"widget.summary" = "Riepilogo";
+"widget.list" = "Elenco";
+"widget.calendar" = "Calendario";
 
 // Widget Types
 "widgetType.trend" = "Tendenze";

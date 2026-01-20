@@ -122,6 +122,14 @@ final class WidgetConfigManager {
         }
     }
 
+    /// Updates the scheduled payments widget mode
+    func updateScheduledPaymentsMode(id: UUID, mode: ScheduledPaymentsWidgetMode) {
+        if let index = configs.firstIndex(where: { $0.id == id }) {
+            configs[index].scheduledPaymentsMode = mode
+            save()
+        }
+    }
+
     /// Moves a widget in the order
     func move(from source: IndexSet, to destination: Int) {
         var newConfigs = configs

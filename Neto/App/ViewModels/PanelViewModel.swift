@@ -76,8 +76,6 @@ final class PanelViewModel {
 
     // Scheduled Payments Widget State
     var scheduledPaymentsWidgetFilter: ScheduledPaymentsWidgetFilter = .all
-    var scheduledPaymentsWidgetMode: ScheduledPaymentsWidgetMode = .summary
-    var scheduledPaymentsWidgetMonth: Date = Date()
 
     // MARK: - Exchange Rate Widget State
     var exchangeRateWidgetData: ExchangeRateWidgetData?
@@ -270,6 +268,10 @@ final class PanelViewModel {
 
     func updateWidgetSize(id: UUID, newSize: WidgetSize) {
         widgetConfig.updateSize(id: id, newSize: newSize)
+    }
+
+    func updateScheduledPaymentsMode(id: UUID, mode: ScheduledPaymentsWidgetMode) {
+        widgetConfig.updateScheduledPaymentsMode(id: id, mode: mode)
     }
 
     func moveWidget(from source: IndexSet, to destination: Int) {

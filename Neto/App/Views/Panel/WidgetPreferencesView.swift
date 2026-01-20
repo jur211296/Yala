@@ -35,6 +35,11 @@ struct WidgetPreferencesView: View {
                                 withAnimation {
                                     viewModel.updateWidgetSize(id: config.id, newSize: newSize)
                                 }
+                            },
+                            onScheduledPaymentsModeChange: { mode in
+                                withAnimation {
+                                    viewModel.updateScheduledPaymentsMode(id: config.id, mode: mode)
+                                }
                             }
                         )
                         .listRowSeparator(.hidden)
@@ -81,6 +86,7 @@ private struct WidgetRow: View {
     let config: WidgetConfig
     let onToggle: () -> Void
     let onSizeChange: (WidgetSize) -> Void
+    let onScheduledPaymentsModeChange: (ScheduledPaymentsWidgetMode) -> Void
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
@@ -107,6 +113,11 @@ private struct WidgetRow: View {
                         Text(L10n.Common.hidden)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                    } else if config.type == .scheduledPayments {
+                        // Show mode name for scheduled payments
+                        Text(String(format: L10n.Widget.size, config.scheduledPaymentsMode.displayName))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     } else if let sizeName = config.type.displaySizeName(for: config.size) {
                         Text(String(format: L10n.Widget.size, sizeName))
                             .font(.caption2)
@@ -130,9 +141,25 @@ private struct WidgetRow: View {
                 .tint(Color.electricIndigo)
             }
 
-            // Size Controls (Only if visible and not locked)
-            // Custom condition: Hide size picker if only 1 size is supported
-            if config.isVisible && !config.isLocked && availableSizes(for: config.type).count > 1 {
+            // Mode picker for scheduled payments widget
+            if config.isVisible && !config.isLocked && config.type == .scheduledPayments {
+                Picker(
+                    L10n.Widget.sizeLabel,
+                    selection: Binding(
+                        get: { config.scheduledPaymentsMode },
+                        set: { onScheduledPaymentsModeChange($0) }
+                    )
+                ) {
+                    ForEach(ScheduledPaymentsWidgetMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.leading, 44)  // Indent to align with text
+            }
+
+            // Size Controls (Only if visible, not locked, and has multiple sizes)
+            if config.isVisible && !config.isLocked && config.type != .scheduledPayments && availableSizes(for: config.type).count > 1 {
                 Picker(
                     L10n.Widget.sizeLabel,
                     selection: Binding(

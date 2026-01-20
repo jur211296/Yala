@@ -453,6 +453,9 @@
 "widget.expanded" = "Erweitert";
 "widget.top3" = "Top 3";
 "widget.top5" = "Top 5";
+"widget.summary" = "Zusammenfassung";
+"widget.list" = "Liste";
+"widget.calendar" = "Kalender";
 
 // Widget Types
 "widgetType.trend" = "Trends";

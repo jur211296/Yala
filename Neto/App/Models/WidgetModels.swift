@@ -66,7 +66,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .expensesByNature: return [.medium, .large]
         case .exchangeRate: return [.medium]  // Tamaño único
         case .budgets: return [.medium, .large]  // Top 3 / Top 5
-        case .scheduledPayments: return [.medium, .large]  // Resumen-Lista / Calendario
+        case .scheduledPayments: return [.medium]  // Single size, mode selected in preferences
         }
     }
 
@@ -77,10 +77,8 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
             return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         case .topSpending, .topSubcategories, .budgets:
             return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
-        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate:
+        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments:
             return nil  // Single size, no name needed
-        case .scheduledPayments:
-            return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         }
     }
 }
@@ -99,6 +97,9 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
     var size: WidgetSize
 
     var isLocked: Bool = false
+
+    /// Mode for scheduled payments widget (only used when type == .scheduledPayments)
+    var scheduledPaymentsMode: ScheduledPaymentsWidgetMode = .summary
 
     // Default configs generator
     static func defaultConfigs() -> [WidgetConfig] {
@@ -120,10 +121,11 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
 
 // MARK: - Scheduled Payments Widget Enums
 
-/// View mode for scheduled payments widget (Medium size only)
-enum ScheduledPaymentsWidgetMode: String, CaseIterable, Identifiable {
+/// View mode for scheduled payments widget (selected in preferences)
+enum ScheduledPaymentsWidgetMode: String, Codable, CaseIterable, Identifiable {
     case summary
     case list
+    case calendar
 
     var id: String { rawValue }
 
@@ -131,6 +133,15 @@ enum ScheduledPaymentsWidgetMode: String, CaseIterable, Identifiable {
         switch self {
         case .summary: return "square.text.square"
         case .list: return "list.bullet"
+        case .calendar: return "calendar"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .summary: return L10n.Widget.summary
+        case .list: return L10n.Widget.list
+        case .calendar: return L10n.Widget.calendar
         }
     }
 }

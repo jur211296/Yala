@@ -1158,6 +1158,9 @@ enum L10n {
         static var expanded: String { NSLocalizedString("widget.expanded", comment: "") }
         static var top3: String { NSLocalizedString("widget.top3", comment: "") }
         static var top5: String { NSLocalizedString("widget.top5", comment: "") }
+        static var summary: String { NSLocalizedString("widget.summary", comment: "") }
+        static var list: String { NSLocalizedString("widget.list", comment: "") }
+        static var calendar: String { NSLocalizedString("widget.calendar", comment: "") }
         static var preferencesDescription: String {
             NSLocalizedString("widget.preferences.description", comment: "")
         }

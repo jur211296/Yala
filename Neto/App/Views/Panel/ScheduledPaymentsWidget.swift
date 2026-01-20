@@ -11,33 +11,50 @@ import SwiftUI
 struct ScheduledPaymentsWidget: View {
     let payments: [ScheduledPayment]
     let currencyCode: String
-    let size: WidgetSize
-    let currentMonth: Date
+    let period: DetailPeriod
+    let customDateRange: DateInterval?
+    let mode: ScheduledPaymentsWidgetMode
 
     /// Filter state (all/recurring/subscriptions)
     @Binding var filter: ScheduledPaymentsWidgetFilter
-
-    /// View mode for medium size (summary/list)
-    @Binding var viewMode: ScheduledPaymentsWidgetMode
 
     /// Callback when user taps to show more
     var onShowMore: (() -> Void)?
 
     @Namespace private var filterNamespace
 
+    /// Computed month based on period selection (intelligent mapping)
+    private var displayMonth: Date {
+        let calendar = Calendar.current
+        let now = Date()
+
+        switch period {
+        case .thisWeek, .last7Days, .last30Days, .thisMonth:
+            return now
+        case .lastMonth:
+            return calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        case .thisYear:
+            return now
+        case .lastYear:
+            return calendar.date(byAdding: .year, value: -1, to: now) ?? now
+        case .allTime:
+            return now
+        case .custom:
+            return customDateRange?.start ?? now
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             headerSection
 
-            if size == .large {
+            switch mode {
+            case .summary:
+                summaryContent
+            case .list:
+                listContent
+            case .calendar:
                 calendarContent
-            } else {
-                // Medium size: summary or list based on viewMode
-                if viewMode == .summary {
-                    summaryContent
-                } else {
-                    listContent
-                }
             }
         }
         .padding(DS.Spacing.xl)
@@ -64,19 +81,21 @@ struct ScheduledPaymentsWidget: View {
 
     private var headerSection: some View {
         HStack(alignment: .center) {
-            Text(L10n.WidgetType.scheduledPayments)
-                .font(.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L10n.WidgetType.scheduledPayments)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                // Period label
+                Text(periodLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
 
             Spacer()
 
             HStack(spacing: DS.Spacing.xs) {
-                // View mode selector (only for medium size)
-                if size == .medium {
-                    viewModeSelector
-                }
-
                 // Filter selector
                 filterSelector
 
@@ -96,40 +115,11 @@ struct ScheduledPaymentsWidget: View {
         }
     }
 
-    private var viewModeSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(ScheduledPaymentsWidgetMode.allCases) { mode in
-                viewModeButton(for: mode)
-            }
-        }
-        .padding(DS.Spacing.xxs)
-        .background(Color.netoSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
-    }
-
-    private func viewModeButton(for mode: ScheduledPaymentsWidgetMode) -> some View {
-        let isSelected = viewMode == mode
-
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                viewMode = mode
-            }
-        } label: {
-            Image(systemName: mode.iconName)
-                .font(.caption2.weight(.semibold))
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.xs)
-                .foregroundStyle(isSelected ? .white : Color.netoSecondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(Color.electricIndigo)
-                        }
-                    }
-                )
-        }
-        .buttonStyle(.plain)
+    /// Formatted period label for display
+    private var periodLabel: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: displayMonth).capitalized
     }
 
     private var filterSelector: some View {
@@ -152,9 +142,9 @@ struct ScheduledPaymentsWidget: View {
             }
         } label: {
             Image(systemName: filterOption.iconName)
-                .font(.caption2.weight(.semibold))
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.xs)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .foregroundStyle(isSelected ? .white : Color.netoSecondaryText)
                 .background(
                     Group {
@@ -169,18 +159,13 @@ struct ScheduledPaymentsWidget: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Summary Content (Medium - Summary Mode)
+    // MARK: - Summary Content
 
     private var summaryContent: some View {
         let monthlyTotal = calculateMonthlyTotal()
         let activeCount = filteredPayments.count
 
         return VStack(spacing: DS.Spacing.md) {
-            // Month label
-            Text(monthYearLabel)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
-
             // Amount
             Text(NetoFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
                 .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -201,12 +186,6 @@ struct ScheduledPaymentsWidget: View {
         .padding(.vertical, DS.Spacing.lg)
     }
 
-    private var monthYearLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: currentMonth).capitalized
-    }
-
     private func paymentCountLabel(_ count: Int) -> String {
         let format = NSLocalizedString("scheduled.widget.count", comment: "")
         return String(format: format, count)
@@ -214,14 +193,14 @@ struct ScheduledPaymentsWidget: View {
 
     private func calculateMonthlyTotal() -> Double {
         let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentMonth) else {
+        guard calendar.dateInterval(of: .month, for: displayMonth) != nil else {
             return 0
         }
 
         var total: Double = 0
 
         for payment in filteredPayments {
-            let occurrences = getPaymentDatesInMonth(payment: payment, month: currentMonth)
+            let occurrences = getPaymentDatesInMonth(payment: payment, month: displayMonth)
             total += payment.amount * Double(occurrences.count)
         }
 
@@ -366,7 +345,7 @@ struct ScheduledPaymentsWidget: View {
         }
     }
 
-    // MARK: - Calendar Content (Large)
+    // MARK: - Calendar Content
 
     /// First day of week from app settings (1 = Sunday, 2 = Monday, etc.)
     @AppStorage("firstWeekday") private var appFirstWeekday: Int = 2
@@ -398,16 +377,16 @@ struct ScheduledPaymentsWidget: View {
 
     private var calendarGrid: some View {
         let calendar = Calendar.current
-        let daysInMonth = calendar.range(of: .day, in: .month, for: currentMonth)?.count ?? 30
+        let daysInMonth = calendar.range(of: .day, in: .month, for: displayMonth)?.count ?? 30
 
-        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
+        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: displayMonth))!
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
 
         // Build payment dates map
         var paymentsByDay: [Int: [ScheduledPayment]] = [:]
         for payment in filteredPayments {
-            let dates = getPaymentDatesInMonth(payment: payment, month: currentMonth)
+            let dates = getPaymentDatesInMonth(payment: payment, month: displayMonth)
             for date in dates {
                 let day = calendar.component(.day, from: date)
                 paymentsByDay[day, default: []].append(payment)
@@ -429,7 +408,7 @@ struct ScheduledPaymentsWidget: View {
                     calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
                 } else {
                     Color.clear
-                        .frame(minHeight: 44)
+                        .frame(minHeight: 56)
                 }
             }
         }
@@ -446,20 +425,19 @@ struct ScheduledPaymentsWidget: View {
                 .foregroundStyle(isToday ? Color.electricIndigo : .secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Payment indicators (show up to 2 dots)
+            // Payment names (show up to 2 with truncation)
             if hasPayments {
-                HStack(spacing: 2) {
+                VStack(alignment: .leading, spacing: 2) {
                     ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
-                        let color = payment.subcategory?.colorHex
-                            ?? payment.subcategory?.category.colorHex
-                            ?? "#6366F1"
-                        Circle()
-                            .fill(Color(hex: color))
-                            .frame(width: 5, height: 5)
+                        Text(payment.name)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                     if payments.count > 2 {
                         Text("+\(payments.count - 2)")
-                            .font(.system(size: 7, weight: .medium))
+                            .font(.system(size: 9, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -467,8 +445,8 @@ struct ScheduledPaymentsWidget: View {
 
             Spacer(minLength: 0)
         }
-        .padding(2)
-        .frame(minHeight: 44)
+        .padding(3)
+        .frame(minHeight: 56)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
@@ -491,8 +469,8 @@ struct ScheduledPaymentsWidget: View {
         let today = Date()
 
         return calendar.component(.day, from: today) == day &&
-               calendar.component(.month, from: today) == calendar.component(.month, from: currentMonth) &&
-               calendar.component(.year, from: today) == calendar.component(.year, from: currentMonth)
+               calendar.component(.month, from: today) == calendar.component(.month, from: displayMonth) &&
+               calendar.component(.year, from: today) == calendar.component(.year, from: displayMonth)
     }
 
     // MARK: - Payment Date Calculation
