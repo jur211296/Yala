@@ -24,6 +24,7 @@
 "trend.income.title" = "Income Trend";
 "trend.expense.title" = "Expense Trend";
 "trend.filterBlockedMessage" = "First remove category or nature filters";
+"trend.filterBlockedTitle" = "Option not available";
 
 // MARK: - Periods
 
@@ -124,6 +125,8 @@
 "action.viewAll" = "View all";
 "action.viewLess" = "View less";
 "action.multipleEdit" = "Multiple edit";
+"action.back" = "Back";
+"action.next" = "Next";
 
 // MARK: - Search
 
@@ -138,13 +141,13 @@
 
 // MARK: - Empty States
 
-"empty.noData" = "No data";
-"empty.noTransactions" = "No transactions";
-"empty.noFavorites" = "No favorites";
-"empty.noTags" = "No tags";
-"empty.noAccounts" = "No accounts";
-"empty.noCategories" = "No categories";
-"empty.noSubcategories" = "No subcategories available";
+"empty.noData" = "No data to display yet";
+"empty.noTransactions" = "No transactions yet";
+"empty.noFavorites" = "No favorites yet";
+"empty.noTags" = "No tags yet";
+"empty.noAccounts" = "No accounts yet";
+"empty.noCategories" = "No categories yet";
+"empty.noSubcategories" = "No subcategories yet";
 
 // MARK: - Transaction
 
@@ -398,8 +401,8 @@
 "profile.personalDetails" = "Personal Details";
 "profile.dataManagement" = "Data Management";
 "profile.appearance" = "Appearance";
-"empty.noExpenses" = "No expenses";
-"empty.noSubcategories" = "No subcategories available";
+"empty.noExpenses" = "No expenses recorded yet";
+"empty.noSubcategories" = "No subcategories yet";
 "common.recent" = "Recent";
 "tag.new" = "New Tag";
 "tag.edit" = "Edit Tag";
@@ -638,6 +641,8 @@
 "settings.currencyDescription" = "Choose your main currency and check updated exchange rates.";
 "settings.preferredCurrency" = "Preferred Currency";
 "settings.exchangeRate" = "Exchange Rate";
+"settings.secondaryCurrencies" = "Secondary Currencies";
+"settings.secondaryCurrenciesHint" = "Select up to 2 currencies to compare with your preferred currency in the exchange rate widget.";
 "common.lastUpdate" = "Last update:";
 
 
@@ -977,3 +982,38 @@
 "filters.title" = "Filters";
 "filters.clear" = "Clear";
 "action.close" = "Close";
+
+// MARK: - Widget Hints
+
+"settings.widgetHints" = "Help hints";
+"settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
+
+"widget.hint.trend" = "Shows the evolution of your balance, income, or expenses in the selected period.";
+"widget.hint.topCategories" = "The categories where you spent the most this period.";
+"widget.hint.topSubcategories" = "The subcategories with highest spending, filtered by category.";
+"widget.hint.categoriesPie" = "Percentage distribution of spending by category.";
+"widget.hint.subcategoriesPie" = "Percentage distribution of spending by subcategory.";
+"widget.hint.tagsPie" = "Distribution of spending by assigned tags.";
+"widget.hint.natureTrend" = "Classifies your expenses as essential, priority, or optional.";
+"widget.hint.cashFlow" = "Compare your income and expenses to see the net flow.";
+"widget.hint.recentRecords" = "Your most recent transactions.";
+"widget.hint.budgets" = "Status of your active budgets.";
+"widget.hint.exchangeRate" = "Updated exchange rates for your preferred currency.";
+"widget.hint.scheduledPayments" = "Upcoming scheduled payments and subscriptions.";
+"widget.hint.spendingAnalysis" = "Spending breakdown by categories, subcategories, tags and expense type.";
+"widget.hint.incomeAnalysis" = "Income breakdown by categories, subcategories and tags.";
+
+// MARK: - Onboarding
+
+"onboarding.welcomeTitle" = "Welcome to Neto";
+"onboarding.welcomeSubtitle" = "Set up your personal finance app in seconds.";
+"onboarding.nameLabel" = "What's your name?";
+"onboarding.namePlaceholder" = "Your name";
+"onboarding.currencyTitle" = "Main currency";
+"onboarding.currencySubtitle" = "Select the currency you use most frequently.";
+"onboarding.secondaryTitle" = "Secondary currencies";
+"onboarding.secondarySubtitle" = "Do you use other currencies? Select up to 2 to see exchange rates.";
+"onboarding.secondaryHint" = "%d of %d selected";
+"onboarding.periodTitle" = "Default period";
+"onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
+"onboarding.finish" = "Get Started";

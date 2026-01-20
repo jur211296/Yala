@@ -14,9 +14,19 @@ struct CurrencySettingsView: View {
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
+    @AppStorage("secondaryCurrencies") private var secondaryCurrenciesRaw: String = ""
 
     private var preferredCurrency: CurrencyCode {
         CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
+    }
+
+    /// Parsed secondary currencies from storage
+    private var secondaryCurrencies: Set<CurrencyCode> {
+        Set(
+            secondaryCurrenciesRaw
+                .split(separator: ",")
+                .compactMap { CurrencyCode(rawValue: String($0)) }
+        )
     }
 
     /// All currencies to show in exchange rate section (all except the preferred one)
@@ -55,6 +65,7 @@ struct CurrencySettingsView: View {
 
                     VStack(spacing: DS.Spacing.xxl) {
                         preferredCurrencySection
+                        secondaryCurrenciesSection
                         exchangeRatesSection
                     }
                 }
@@ -141,6 +152,78 @@ struct CurrencySettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Secondary Currencies Section
+
+    private var secondaryCurrenciesSection: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            SectionBox(title: L10n.Settings.secondaryCurrencies) {
+                VStack(spacing: 0) {
+                    ForEach(Array(displayedCurrencies.enumerated()), id: \.element) {
+                        index, currency in
+                        if index > 0 {
+                            SubsectionDivider()
+                        }
+                        secondaryCurrencyRow(currency: currency)
+                    }
+                }
+            }
+
+            // Hint text
+            Text(L10n.Settings.secondaryCurrenciesHint)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+    }
+
+    @ViewBuilder
+    private func secondaryCurrencyRow(currency: CurrencyCode) -> some View {
+        let info = currencyInfo(for: currency)
+        let isSelected = secondaryCurrencies.contains(currency)
+        let canSelect = isSelected || secondaryCurrencies.count < 2
+
+        Button {
+            toggleSecondaryCurrency(currency)
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Text(info.flag)
+                    .font(.title3)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(info.name.capitalized)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                    Text(info.code)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
+            }
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .opacity(canSelect ? 1.0 : 0.5)
+        .disabled(!canSelect)
+    }
+
+    private func toggleSecondaryCurrency(_ currency: CurrencyCode) {
+        var current = secondaryCurrencies
+        if current.contains(currency) {
+            current.remove(currency)
+        } else if current.count < 2 {
+            current.insert(currency)
+        }
+        // Save back to storage
+        secondaryCurrenciesRaw = current.map { $0.rawValue }.joined(separator: ",")
     }
 
     private func updatePreferredCurrency(to newCurrency: CurrencyCode) {

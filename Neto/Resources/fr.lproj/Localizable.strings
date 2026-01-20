@@ -123,6 +123,8 @@
 "action.viewAll" = "Voir tout";
 "action.viewLess" = "Voir moins";
 "action.multipleEdit" = "Edition multiple";
+"action.back" = "Retour";
+"action.next" = "Suivant";
 
 // MARK: - Search
 
@@ -137,13 +139,13 @@
 
 // MARK: - Empty States
 
-"empty.noData" = "Aucune donnee";
-"empty.noTransactions" = "Aucune transaction";
-"empty.noFavorites" = "Aucun favori";
-"empty.noTags" = "Aucune etiquette";
-"empty.noAccounts" = "Aucun compte";
-"empty.noCategories" = "Aucune categorie";
-"empty.noSubcategories" = "Aucune sous-categorie disponible";
+"empty.noData" = "Pas encore de données à afficher";
+"empty.noTransactions" = "Pas encore de transactions";
+"empty.noFavorites" = "Pas encore de favoris";
+"empty.noTags" = "Pas encore d'étiquettes";
+"empty.noAccounts" = "Pas encore de comptes";
+"empty.noCategories" = "Pas encore de catégories";
+"empty.noSubcategories" = "Pas encore de sous-catégories";
 
 // MARK: - Transaction
 
@@ -397,8 +399,8 @@
 "profile.personalDetails" = "Donnees personnelles";
 "profile.dataManagement" = "Gestion des donnees";
 "profile.appearance" = "Apparence";
-"empty.noExpenses" = "Aucune depense";
-"empty.noSubcategories" = "Aucune sous-categorie disponible";
+"empty.noExpenses" = "Pas encore de dépenses enregistrées";
+"empty.noSubcategories" = "Pas encore de sous-catégories";
 "common.recent" = "Recents";
 "tag.new" = "Nouvelle etiquette";
 "tag.edit" = "Modifier l'etiquette";
@@ -592,6 +594,7 @@
 "statistics.spendingAnalysis" = "Analyse des dépenses";
 "statistics.incomeAnalysis" = "Analyse des revenus";
 "trend.filterBlockedMessage" = "Supprimez d'abord les filtres de catégorie ou de nature";
+"trend.filterBlockedTitle" = "Option non disponible";
 "nature.incomeNotApplicable" = "La classification par nature ne s'applique qu'aux dépenses";
 
 
@@ -639,6 +642,8 @@
 "settings.currencyDescription" = "Choisissez votre devise principale et consultez les taux de change actualises.";
 "settings.preferredCurrency" = "Devise preferee";
 "settings.exchangeRate" = "Taux de change";
+"settings.secondaryCurrencies" = "Devises secondaires";
+"settings.secondaryCurrenciesHint" = "Selectionnez jusqu'a 2 devises a comparer avec votre devise preferee dans le widget de taux de change.";
 "common.lastUpdate" = "Derniere mise a jour:";
 
 
@@ -977,3 +982,38 @@
 "filters.title" = "Filtres";
 "filters.clear" = "Effacer";
 "action.close" = "Fermer";
+
+// MARK: - Widget Hints
+
+"settings.widgetHints" = "Textes d'aide";
+"settings.widgetHintsDescription" = "Afficher des boutons d'info sur les widgets avec des explications sur chaque graphique.";
+
+"widget.hint.trend" = "Affiche l'evolution de votre solde, revenus ou depenses sur la periode selectionnee.";
+"widget.hint.topCategories" = "Les categories ou vous avez le plus depense cette periode.";
+"widget.hint.topSubcategories" = "Les sous-categories avec les depenses les plus elevees, filtrees par categorie.";
+"widget.hint.categoriesPie" = "Repartition en pourcentage des depenses par categorie.";
+"widget.hint.subcategoriesPie" = "Repartition en pourcentage des depenses par sous-categorie.";
+"widget.hint.tagsPie" = "Repartition des depenses par etiquettes assignees.";
+"widget.hint.natureTrend" = "Classe vos depenses en essentielles, prioritaires ou optionnelles.";
+"widget.hint.cashFlow" = "Comparez vos revenus et depenses pour voir le flux net.";
+"widget.hint.recentRecords" = "Vos transactions les plus recentes.";
+"widget.hint.budgets" = "Etat de vos budgets actifs.";
+"widget.hint.exchangeRate" = "Taux de change mis a jour pour votre devise preferee.";
+"widget.hint.scheduledPayments" = "Prochains paiements programmes et abonnements.";
+"widget.hint.spendingAnalysis" = "Répartition des dépenses par catégories, sous-catégories, tags et type de dépense.";
+"widget.hint.incomeAnalysis" = "Répartition des revenus par catégories, sous-catégories et tags.";
+
+// MARK: - Onboarding
+
+"onboarding.welcomeTitle" = "Bienvenue sur Neto";
+"onboarding.welcomeSubtitle" = "Configurez votre application de finances personnelles en quelques secondes.";
+"onboarding.nameLabel" = "Comment vous appelez-vous ?";
+"onboarding.namePlaceholder" = "Votre nom";
+"onboarding.currencyTitle" = "Devise principale";
+"onboarding.currencySubtitle" = "Sélectionnez la devise que vous utilisez le plus souvent.";
+"onboarding.secondaryTitle" = "Devises secondaires";
+"onboarding.secondarySubtitle" = "Utilisez-vous d'autres devises ? Sélectionnez jusqu'à 2 pour voir les taux de change.";
+"onboarding.secondaryHint" = "%d sur %d sélectionnées";
+"onboarding.periodTitle" = "Période par défaut";
+"onboarding.periodSubtitle" = "Quelle plage de temps préférez-vous voir à l'ouverture de l'application ?";
+"onboarding.finish" = "Commencer";

@@ -24,7 +24,8 @@ final class ExchangeRateService {
 
     private let provider: ExchangeRateProviderProtocol
     private let baseCurrency = "USD"
-    private let supportedSymbols = ["USD", "PEN", "EUR"]
+    // All supported currencies (matches CurrencyCode enum)
+    private let supportedSymbols = ["USD", "PEN", "EUR", "MXN", "COP", "BRL", "GBP"]
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()

@@ -49,6 +49,9 @@ enum L10n {
                 comment: "Message shown when user tries to select balance/income with category filters active"
             )
         }
+        static var filterBlockedTitle: String {
+            NSLocalizedString("trend.filterBlockedTitle", comment: "")
+        }
     }
 
     // MARK: - Trend Types
@@ -305,6 +308,8 @@ enum L10n {
         static var viewAll: String { NSLocalizedString("action.viewAll", comment: "") }
         static var viewLess: String { NSLocalizedString("action.viewLess", comment: "") }
         static var multipleEdit: String { NSLocalizedString("action.multipleEdit", comment: "") }
+        static var back: String { NSLocalizedString("action.back", comment: "") }
+        static var next: String { NSLocalizedString("action.next", comment: "") }
     }
 
     // MARK: - Search
@@ -973,6 +978,12 @@ enum L10n {
             NSLocalizedString("settings.preferredCurrency", comment: "")
         }
         static var exchangeRate: String { NSLocalizedString("settings.exchangeRate", comment: "") }
+        static var secondaryCurrencies: String {
+            NSLocalizedString("settings.secondaryCurrencies", comment: "")
+        }
+        static var secondaryCurrenciesHint: String {
+            NSLocalizedString("settings.secondaryCurrenciesHint", comment: "")
+        }
 
         static var versionInfo: String { NSLocalizedString("settings.versionInfo", comment: "") }
 
@@ -1025,6 +1036,12 @@ enum L10n {
         }
         static var monday: String {
             NSLocalizedString("settings.monday", comment: "")
+        }
+        static var widgetHints: String {
+            NSLocalizedString("settings.widgetHints", comment: "")
+        }
+        static var widgetHintsDescription: String {
+            NSLocalizedString("settings.widgetHintsDescription", comment: "")
         }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
@@ -1225,6 +1242,52 @@ enum L10n {
             NSLocalizedString("widget.recordsWillAppear", comment: "")
         }
         static var total: String { NSLocalizedString("widget.total", comment: "") }
+
+        // Widget Hints
+        enum Hint {
+            static var trend: String {
+                NSLocalizedString("widget.hint.trend", comment: "")
+            }
+            static var topCategories: String {
+                NSLocalizedString("widget.hint.topCategories", comment: "")
+            }
+            static var topSubcategories: String {
+                NSLocalizedString("widget.hint.topSubcategories", comment: "")
+            }
+            static var categoriesPie: String {
+                NSLocalizedString("widget.hint.categoriesPie", comment: "")
+            }
+            static var subcategoriesPie: String {
+                NSLocalizedString("widget.hint.subcategoriesPie", comment: "")
+            }
+            static var tagsPie: String {
+                NSLocalizedString("widget.hint.tagsPie", comment: "")
+            }
+            static var natureTrend: String {
+                NSLocalizedString("widget.hint.natureTrend", comment: "")
+            }
+            static var cashFlow: String {
+                NSLocalizedString("widget.hint.cashFlow", comment: "")
+            }
+            static var recentRecords: String {
+                NSLocalizedString("widget.hint.recentRecords", comment: "")
+            }
+            static var budgets: String {
+                NSLocalizedString("widget.hint.budgets", comment: "")
+            }
+            static var exchangeRate: String {
+                NSLocalizedString("widget.hint.exchangeRate", comment: "")
+            }
+            static var scheduledPayments: String {
+                NSLocalizedString("widget.hint.scheduledPayments", comment: "")
+            }
+            static var spendingAnalysis: String {
+                NSLocalizedString("widget.hint.spendingAnalysis", comment: "")
+            }
+            static var incomeAnalysis: String {
+                NSLocalizedString("widget.hint.incomeAnalysis", comment: "")
+            }
+        }
     }
 
     // MARK: - Widget Types
@@ -1393,6 +1456,47 @@ enum L10n {
     enum More {
         static var sections: String {
             NSLocalizedString("more.sections", comment: "")
+        }
+    }
+
+    // MARK: - Onboarding
+
+    enum Onboarding {
+        static var welcomeTitle: String {
+            NSLocalizedString("onboarding.welcomeTitle", comment: "")
+        }
+        static var welcomeSubtitle: String {
+            NSLocalizedString("onboarding.welcomeSubtitle", comment: "")
+        }
+        static var nameLabel: String {
+            NSLocalizedString("onboarding.nameLabel", comment: "")
+        }
+        static var namePlaceholder: String {
+            NSLocalizedString("onboarding.namePlaceholder", comment: "")
+        }
+        static var currencyTitle: String {
+            NSLocalizedString("onboarding.currencyTitle", comment: "")
+        }
+        static var currencySubtitle: String {
+            NSLocalizedString("onboarding.currencySubtitle", comment: "")
+        }
+        static var secondaryTitle: String {
+            NSLocalizedString("onboarding.secondaryTitle", comment: "")
+        }
+        static var secondarySubtitle: String {
+            NSLocalizedString("onboarding.secondarySubtitle", comment: "")
+        }
+        static func secondaryHint(_ count: Int, _ max: Int) -> String {
+            String(format: NSLocalizedString("onboarding.secondaryHint", comment: ""), count, max)
+        }
+        static var periodTitle: String {
+            NSLocalizedString("onboarding.periodTitle", comment: "")
+        }
+        static var periodSubtitle: String {
+            NSLocalizedString("onboarding.periodSubtitle", comment: "")
+        }
+        static var finish: String {
+            NSLocalizedString("onboarding.finish", comment: "")
         }
     }
 }

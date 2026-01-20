@@ -94,6 +94,11 @@ struct ExchangeRateWidget: View {
                 }
             }
 
+            InfoHintButton(
+                title: L10n.WidgetType.exchangeRate,
+                message: L10n.Widget.Hint.exchangeRate
+            )
+
             Spacer()
 
             // Currency selector button
@@ -526,10 +531,19 @@ struct CurrencySelectorSheet: View {
     @Binding var selectedCurrencies: [CurrencyCode]
     let onDismiss: () -> Void
 
-    private let allCurrencies: [CurrencyCode] = [.pen, .usd, .eur]
+    // Read user's secondary currencies from onboarding
+    @AppStorage("secondaryCurrencies") private var secondaryCurrenciesRaw: String = ""
 
+    /// Currencies available for comparison (user's secondary currencies, excluding preferred)
     private var availableCurrencies: [CurrencyCode] {
-        allCurrencies.filter { $0.rawValue != preferredCurrency }
+        // Parse secondary currencies from stored string
+        let secondaryCodes = secondaryCurrenciesRaw
+            .split(separator: ",")
+            .compactMap { CurrencyCode(rawValue: String($0)) }
+
+        // If user has secondary currencies, use those; otherwise show all except preferred
+        let currencies = secondaryCodes.isEmpty ? CurrencyCode.allCases : secondaryCodes
+        return currencies.filter { $0.rawValue != preferredCurrency }
     }
 
     var body: some View {

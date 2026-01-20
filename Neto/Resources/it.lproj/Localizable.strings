@@ -123,6 +123,8 @@
 "action.viewAll" = "Vedi tutto";
 "action.viewLess" = "Vedi meno";
 "action.multipleEdit" = "Modifica multipla";
+"action.back" = "Indietro";
+"action.next" = "Avanti";
 
 // MARK: - Search
 
@@ -137,13 +139,13 @@
 
 // MARK: - Empty States
 
-"empty.noData" = "Nessun dato";
-"empty.noTransactions" = "Nessuna transazione";
-"empty.noFavorites" = "Nessun preferito";
-"empty.noTags" = "Nessuna etichetta";
-"empty.noAccounts" = "Nessun conto";
-"empty.noCategories" = "Nessuna categoria";
-"empty.noSubcategories" = "Nessuna sottocategoria disponibile";
+"empty.noData" = "Ancora nessun dato da mostrare";
+"empty.noTransactions" = "Ancora nessuna transazione";
+"empty.noFavorites" = "Ancora nessun preferito";
+"empty.noTags" = "Ancora nessuna etichetta";
+"empty.noAccounts" = "Ancora nessun conto";
+"empty.noCategories" = "Ancora nessuna categoria";
+"empty.noSubcategories" = "Ancora nessuna sottocategoria";
 
 // MARK: - Transaction
 
@@ -397,8 +399,8 @@
 "profile.personalDetails" = "Dati personali";
 "profile.dataManagement" = "Gestione dati";
 "profile.appearance" = "Aspetto";
-"empty.noExpenses" = "Nessuna spesa";
-"empty.noSubcategories" = "Nessuna sottocategoria disponibile";
+"empty.noExpenses" = "Ancora nessuna spesa registrata";
+"empty.noSubcategories" = "Ancora nessuna sottocategoria";
 "common.recent" = "Recenti";
 "tag.new" = "Nuova etichetta";
 "tag.edit" = "Modifica etichetta";
@@ -592,6 +594,7 @@
 "statistics.spendingAnalysis" = "Analisi delle spese";
 "statistics.incomeAnalysis" = "Analisi delle entrate";
 "trend.filterBlockedMessage" = "Rimuovi prima i filtri di categoria o natura";
+"trend.filterBlockedTitle" = "Opzione non disponibile";
 "nature.incomeNotApplicable" = "La classificazione per natura si applica solo alle spese";
 
 
@@ -639,6 +642,8 @@
 "settings.currencyDescription" = "Scegli la tua valuta principale e consulta i tassi di cambio aggiornati.";
 "settings.preferredCurrency" = "Valuta preferita";
 "settings.exchangeRate" = "Tasso di cambio";
+"settings.secondaryCurrencies" = "Valute secondarie";
+"settings.secondaryCurrenciesHint" = "Seleziona fino a 2 valute da confrontare con la tua valuta preferita nel widget dei tassi di cambio.";
 "common.lastUpdate" = "Ultimo aggiornamento:";
 
 
@@ -977,3 +982,38 @@
 "filters.title" = "Filtri";
 "filters.clear" = "Cancella";
 "action.close" = "Chiudi";
+
+// MARK: - Widget Hints
+
+"settings.widgetHints" = "Testi di aiuto";
+"settings.widgetHintsDescription" = "Mostra pulsanti info sui widget con spiegazioni su ogni grafico.";
+
+"widget.hint.trend" = "Mostra l'evoluzione del tuo saldo, entrate o spese nel periodo selezionato.";
+"widget.hint.topCategories" = "Le categorie in cui hai speso di piu in questo periodo.";
+"widget.hint.topSubcategories" = "Le sottocategorie con la spesa piu alta, filtrate per categoria.";
+"widget.hint.categoriesPie" = "Distribuzione percentuale della spesa per categoria.";
+"widget.hint.subcategoriesPie" = "Distribuzione percentuale della spesa per sottocategoria.";
+"widget.hint.tagsPie" = "Distribuzione della spesa per etichette assegnate.";
+"widget.hint.natureTrend" = "Classifica le tue spese come essenziali, prioritarie o opzionali.";
+"widget.hint.cashFlow" = "Confronta le tue entrate e spese per vedere il flusso netto.";
+"widget.hint.recentRecords" = "Le tue transazioni piu recenti.";
+"widget.hint.budgets" = "Stato dei tuoi budget attivi.";
+"widget.hint.exchangeRate" = "Tassi di cambio aggiornati per la tua valuta preferita.";
+"widget.hint.scheduledPayments" = "Prossimi pagamenti programmati e abbonamenti.";
+"widget.hint.spendingAnalysis" = "Distribuzione delle spese per categorie, sottocategorie, tag e tipo di spesa.";
+"widget.hint.incomeAnalysis" = "Distribuzione delle entrate per categorie, sottocategorie e tag.";
+
+// MARK: - Onboarding
+
+"onboarding.welcomeTitle" = "Benvenuto su Neto";
+"onboarding.welcomeSubtitle" = "Configura la tua app di finanze personali in pochi secondi.";
+"onboarding.nameLabel" = "Come ti chiami?";
+"onboarding.namePlaceholder" = "Il tuo nome";
+"onboarding.currencyTitle" = "Valuta principale";
+"onboarding.currencySubtitle" = "Seleziona la valuta che usi più frequentemente.";
+"onboarding.secondaryTitle" = "Valute secondarie";
+"onboarding.secondarySubtitle" = "Usi altre valute? Seleziona fino a 2 per vedere i tassi di cambio.";
+"onboarding.secondaryHint" = "%d di %d selezionate";
+"onboarding.periodTitle" = "Periodo predefinito";
+"onboarding.periodSubtitle" = "Quale intervallo di tempo preferisci vedere all'apertura dell'app?";
+"onboarding.finish" = "Inizia";
