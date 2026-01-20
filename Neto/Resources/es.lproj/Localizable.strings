@@ -1019,3 +1019,18 @@
 "onboarding.periodTitle" = "Período predeterminado";
 "onboarding.periodSubtitle" = "¿Qué rango de tiempo prefieres ver al abrir la app?";
 "onboarding.finish" = "Comenzar";
+
+// MARK: - Inbox
+
+"inbox.title" = "Bandeja de entrada";
+"inbox.pending" = "Pendientes";
+"inbox.archived" = "Archivados";
+"inbox.noPending" = "Sin borradores pendientes";
+"inbox.noPendingDescription" = "Los borradores de voz e imágenes aparecerán aquí.";
+"inbox.noArchived" = "Sin borradores archivados";
+"inbox.noArchivedDescription" = "Los borradores aprobados o rechazados aparecerán aquí.";
+"inbox.noAmount" = "Sin monto";
+"inbox.needsAccount" = "Cuenta";
+"inbox.needsSubcategory" = "Categoría";
+"inbox.delete" = "Eliminar";
+"inbox.approve" = "Aprobar";

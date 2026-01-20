@@ -1019,3 +1019,18 @@
 "onboarding.periodTitle" = "Periodo predefinito";
 "onboarding.periodSubtitle" = "Quale intervallo di tempo preferisci vedere all'apertura dell'app?";
 "onboarding.finish" = "Inizia";
+
+// MARK: - Inbox
+
+"inbox.title" = "Posta in arrivo";
+"inbox.pending" = "In sospeso";
+"inbox.archived" = "Archiviati";
+"inbox.noPending" = "Nessuna bozza in sospeso";
+"inbox.noPendingDescription" = "Le bozze da voce e immagini appariranno qui.";
+"inbox.noArchived" = "Nessuna bozza archiviata";
+"inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";
+"inbox.noAmount" = "Senza importo";
+"inbox.needsAccount" = "Conto";
+"inbox.needsSubcategory" = "Categoria";
+"inbox.delete" = "Elimina";
+"inbox.approve" = "Approva";

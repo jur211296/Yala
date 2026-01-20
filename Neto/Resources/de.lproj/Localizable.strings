@@ -1019,3 +1019,18 @@
 "onboarding.periodTitle" = "Standardzeitraum";
 "onboarding.periodSubtitle" = "Welchen Zeitraum möchten Sie beim Öffnen der App sehen?";
 "onboarding.finish" = "Los geht's";
+
+// MARK: - Inbox
+
+"inbox.title" = "Posteingang";
+"inbox.pending" = "Ausstehend";
+"inbox.archived" = "Archiviert";
+"inbox.noPending" = "Keine ausstehenden Entwürfe";
+"inbox.noPendingDescription" = "Entwürfe von Sprache und Bildern erscheinen hier.";
+"inbox.noArchived" = "Keine archivierten Entwürfe";
+"inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe erscheinen hier.";
+"inbox.noAmount" = "Kein Betrag";
+"inbox.needsAccount" = "Konto";
+"inbox.needsSubcategory" = "Kategorie";
+"inbox.delete" = "Löschen";
+"inbox.approve" = "Genehmigen";

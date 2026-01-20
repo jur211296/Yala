@@ -42,6 +42,10 @@ struct PanelView: View {
     @Query(sort: \ScheduledPayment.nextDueDate)
     private var scheduledPayments: [ScheduledPayment]
 
+    // Inbox drafts for badge count
+    @Query(filter: #Predicate<InboxDraft> { $0.statusRaw == "pending" })
+    private var pendingDrafts: [InboxDraft]
+
     @State private var viewModel = PanelViewModel()
 
     @State private var isPresentingSettings = false
@@ -60,6 +64,9 @@ struct PanelView: View {
 
     /// Budget Favorites Settings Sheet
     @State private var showBudgetFavoritesSettings = false
+
+    /// Inbox View Sheet
+    @State private var showInbox = false
 
     /// Task for debouncing data recalculations
     @State private var calculationTask: Task<Void, Never>?
@@ -93,6 +100,31 @@ struct PanelView: View {
                 .navigationTitle(L10n.Panel.greeting(userName))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            showInbox = true
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: "tray.full")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(Color.electricIndigo)
+
+                                // Badge with count
+                                if pendingDrafts.count > 0 {
+                                    Text("\(min(pendingDrafts.count, 99))")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 1)
+                                        .background(
+                                            Capsule()
+                                                .fill(Color.hotPink)
+                                        )
+                                        .offset(x: 8, y: -6)
+                                }
+                            }
+                        }
+                    }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button {
                             isPresentingSettings = true
@@ -143,6 +175,9 @@ struct PanelView: View {
                     NavigationStack {
                         BudgetsFavoritesSettingsView()
                     }
+                }
+                .sheet(isPresented: $showInbox) {
+                    InboxView()
                 }
         }
         .onAppear {

@@ -1019,3 +1019,18 @@
 "onboarding.periodTitle" = "Default period";
 "onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
 "onboarding.finish" = "Get Started";
+
+// MARK: - Inbox
+
+"inbox.title" = "Inbox";
+"inbox.pending" = "Pending";
+"inbox.archived" = "Archived";
+"inbox.noPending" = "No pending drafts";
+"inbox.noPendingDescription" = "Drafts from voice and images will appear here.";
+"inbox.noArchived" = "No archived drafts";
+"inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";
+"inbox.noAmount" = "No amount";
+"inbox.needsAccount" = "Account";
+"inbox.needsSubcategory" = "Category";
+"inbox.delete" = "Delete";
+"inbox.approve" = "Approve";

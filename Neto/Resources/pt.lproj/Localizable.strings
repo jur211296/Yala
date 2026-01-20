@@ -1019,3 +1019,18 @@
 "onboarding.periodTitle" = "Período padrão";
 "onboarding.periodSubtitle" = "Qual intervalo de tempo você prefere ver ao abrir o aplicativo?";
 "onboarding.finish" = "Começar";
+
+// MARK: - Inbox
+
+"inbox.title" = "Caixa de entrada";
+"inbox.pending" = "Pendentes";
+"inbox.archived" = "Arquivados";
+"inbox.noPending" = "Sem rascunhos pendentes";
+"inbox.noPendingDescription" = "Rascunhos de voz e imagens aparecerão aqui.";
+"inbox.noArchived" = "Sem rascunhos arquivados";
+"inbox.noArchivedDescription" = "Rascunhos aprovados ou rejeitados aparecerão aqui.";
+"inbox.noAmount" = "Sem valor";
+"inbox.needsAccount" = "Conta";
+"inbox.needsSubcategory" = "Categoria";
+"inbox.delete" = "Excluir";
+"inbox.approve" = "Aprovar";

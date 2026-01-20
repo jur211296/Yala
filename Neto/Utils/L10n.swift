@@ -1461,6 +1461,47 @@ enum L10n {
         }
     }
 
+    // MARK: - Inbox
+
+    enum Inbox {
+        static var title: String {
+            NSLocalizedString("inbox.title", comment: "Inbox title")
+        }
+        static var pending: String {
+            NSLocalizedString("inbox.pending", comment: "Pending filter")
+        }
+        static var archived: String {
+            NSLocalizedString("inbox.archived", comment: "Archived filter")
+        }
+        static var noPending: String {
+            NSLocalizedString("inbox.noPending", comment: "No pending drafts")
+        }
+        static var noPendingDescription: String {
+            NSLocalizedString("inbox.noPendingDescription", comment: "No pending drafts description")
+        }
+        static var noArchived: String {
+            NSLocalizedString("inbox.noArchived", comment: "No archived drafts")
+        }
+        static var noArchivedDescription: String {
+            NSLocalizedString("inbox.noArchivedDescription", comment: "No archived drafts description")
+        }
+        static var noAmount: String {
+            NSLocalizedString("inbox.noAmount", comment: "No amount placeholder")
+        }
+        static var needsAccount: String {
+            NSLocalizedString("inbox.needsAccount", comment: "Needs account indicator")
+        }
+        static var needsSubcategory: String {
+            NSLocalizedString("inbox.needsSubcategory", comment: "Needs subcategory indicator")
+        }
+        static var delete: String {
+            NSLocalizedString("inbox.delete", comment: "Delete draft action")
+        }
+        static var approve: String {
+            NSLocalizedString("inbox.approve", comment: "Approve draft action")
+        }
+    }
+
     // MARK: - Onboarding
 
     enum Onboarding {

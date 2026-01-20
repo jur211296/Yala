@@ -1019,3 +1019,18 @@
 "onboarding.periodTitle" = "Période par défaut";
 "onboarding.periodSubtitle" = "Quelle plage de temps préférez-vous voir à l'ouverture de l'application ?";
 "onboarding.finish" = "Commencer";
+
+// MARK: - Inbox
+
+"inbox.title" = "Boîte de réception";
+"inbox.pending" = "En attente";
+"inbox.archived" = "Archivés";
+"inbox.noPending" = "Aucun brouillon en attente";
+"inbox.noPendingDescription" = "Les brouillons vocaux et d'images apparaîtront ici.";
+"inbox.noArchived" = "Aucun brouillon archivé";
+"inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
+"inbox.noAmount" = "Sans montant";
+"inbox.needsAccount" = "Compte";
+"inbox.needsSubcategory" = "Catégorie";
+"inbox.delete" = "Supprimer";
+"inbox.approve" = "Approuver";

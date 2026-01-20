@@ -30,6 +30,10 @@ final class Tag {
     /// Relación inversa con pagos planificados (muchos-a-muchos)
     var scheduledPayments: [ScheduledPayment] = []
 
+    /// Relación inversa con borradores de bandeja (muchos-a-muchos)
+    @Relationship(inverse: \InboxDraft.tags)
+    var inboxDrafts: [InboxDraft] = []
+
     /// Paleta de 15 colores visibles en light y dark mode (evita negros/blancos)
     static let defaultColors: [String] = [
         "#FF9F0A",  // Naranja
