@@ -16,26 +16,22 @@ Plan: Not started
 Status: Features V1.0 completas, preparando para TestFlight beta pública
 Last activity: 2026-01-20 — Reorganización de roadmap (V1.0 vs V1.1)
 
-Progress: ████████░░░░░░ 50% (Fase 7 - Subfases 7.1-7.4 completadas)
+Progress: ████████████░░ 75% (Fase 7 - Subfases 7.1-7.5, 7.8 completadas)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-20T11:30:00-05:00] f6cd20a feat(currency): expand to 7 currencies with settings UI
+- [2026-01-20T11:28:00-05:00] d7c5ce7 feat(onboarding): add first-time setup flow with currency selection
+- [2026-01-20T11:26:00-05:00] b8e1d43 feat(widgets): add InfoHintButton with toggle and empty states
+- [2026-01-20T11:24:00-05:00] af9896c feat(ui): add FilterBlockedPopover component
+- [2026-01-20T11:22:00-05:00] 016261e fix(ui): standardize empty state icons across app
 - [2026-01-20T07:30:00-05:00] fa7c052 feat(i18n): add 4 currencies and fix hardcoded strings
 - [2026-01-20T07:05:00-05:00] c0e407a chore(cleanup): remove TODOs, dead code, and legacy FIN-XX references
 - [2026-01-19T20:55:00-05:00] 0083534 docs(state): Mark Phase 6 as complete, set Phase 7 as next
 - [2026-01-19T20:44:00-05:00] 30b2a94 refactor(widget): Scheduled payments widget with 3 variants in preferences
 - [2026-01-19T17:05:00-05:00] 1937184 feat(scheduled): Add subscriptions calendar view and UX improvements
-- [2026-01-19T16:45:00-05:00] b40ccf3 feat(scheduled): Add settings view in Profile for payment management
-- [2026-01-19T16:44:00-05:00] f06a17f feat(scheduled): Add detail view with payment history
-- [2026-01-19T16:43:00-05:00] 91b2a0b feat(scheduled): Redesign recurrence with one-time/recurring toggle
-- [2026-01-19T16:30:00-05:00] db09829 feat(i18n): Add scheduled payments localizations for 6 languages
-- [2026-01-19T15:02:00-05:00] dc488b5 feat(scheduled): Add scheduled payments UI with CRUD and filters
-- [2026-01-19T14:42:00-05:00] ab9c874 feat(scheduled): Add ScheduledPayment model and supporting enums
-- [2026-01-19T09:17:00-05:00] 45b9a69 feat(income): Add dynamic title, teal color, and dimming for income mode
-- [2026-01-19T08:26:00-05:00] abe34ae feat(statistics): Hide nature widgets and category chart in income mode
-- [2026-01-19T08:21:00-05:00] 4b9b8ca feat(panel): Widgets respect income/expense filter
 
 ## Completed in Current Phase
 
@@ -43,6 +39,8 @@ Progress: ████████░░░░░░ 50% (Fase 7 - Subfases 7.1-
 - **Subfase 7.2: Performance & Optimización** - Auditoría de código OK (N+1, lazy loading, memory leaks)
 - **Subfase 7.3: Localizaciones y Monedas** - 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP), strings hardcodeados corregidos
 - **Subfase 7.4: Testing & QA** - QA-SCENARIOS.md con 10 módulos y casos edge
+- **Subfase 7.5: UX para Nuevos Usuarios** - Empty states estandarizados, InfoHintButton en 12 widgets con toggle, FilterBlockedPopover, empty states en TrendsTabView
+- **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -107,21 +105,26 @@ Progress: ████████░░░░░░ 50% (Fase 7 - Subfases 7.1-
 - [x] 10 módulos con 3+ escenarios cada uno
 - [x] Casos edge prioritarios documentados
 
-**Subfase 7.5: UX para Nuevos Usuarios** ← Siguiente
-- [ ] Empty states informativos
-- [ ] Textos de ayuda en Settings
+**Subfase 7.5: UX para Nuevos Usuarios** ✅
+- [x] Empty states informativos (auditados, iconos estandarizados)
+- [x] Textos de ayuda en Settings (verificados)
+- [x] InfoHintButton en 12 widgets con toggle showWidgetHints
+- [x] FilterBlockedPopover para mensajes de bloqueo de filtros
+- [x] Empty states en TrendsTabView (gráfica trend y cashflow)
 
-**Subfase 7.6: App Store Preparation**
+**Subfase 7.6: App Store Preparation** ← Siguiente
 - [ ] Screenshots, descripción, metadata
 
 **Subfase 7.7: Estabilidad Pre-Release**
 - [ ] Error handling consistente
 - [ ] Validaciones de datos
 
-**Subfase 7.8: Primer Uso y Onboarding**
-- [ ] Detección idioma/región del sistema
-- [ ] Onboarding básico (nombre + moneda)
-- [ ] Defaults sensatos
+**Subfase 7.8: Primer Uso y Onboarding** ✅
+- [x] Onboarding de 4 pasos (nombre, moneda preferida, secundarias, periodo)
+- [x] Integración con ContentView (fullScreenCover)
+- [x] Reactivo a data wipe (muestra onboarding automáticamente)
+- [x] 7 monedas soportadas (PEN, USD, EUR, MXN, COP, BRL, GBP)
+- [x] Sección divisas secundarias en CurrencySettingsView
 
 ## Parking Lot
 
@@ -137,8 +140,8 @@ Progress: ████████░░░░░░ 50% (Fase 7 - Subfases 7.1-
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Reorganización roadmap V1.0/V1.1
-Next step: Crear spec Fase 7 (Beta Preparation) y planificar subfase 7.1
+Stopped at: Subfases 7.5 y 7.8 completadas (UX + Onboarding)
+Next step: Subfase 7.6 (App Store Preparation) o 7.7 (Estabilidad)
 Resume file: None
 
 ## V1.1 (Futuro)
