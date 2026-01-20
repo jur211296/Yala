@@ -5,21 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 6 — Pagos Planificados
+**Current focus:** Fase 7 — Registro Inteligente (siguiente)
 
 ## Current Position
 
-Phase: 6 of 8 (Pagos Planificados)
-Plan: In progress (Mini-Fase 6.3+ completada)
-Status: Suscripciones con calendario, campos requeridos, iconos subcategoría, fix parpadeo
-Last activity: 2026-01-19 — Subscriptions calendar view, UX improvements
+Phase: 7 of 8 (Registro Inteligente)
+Plan: Not started
+Status: Fase 6 completada, listo para iniciar Fase 7
+Last activity: 2026-01-19 — Fase 6 completada
 
-Progress: ██████░░░░░░░░ 50% (Fase 6)
+Progress: ░░░░░░░░░░░░░░ 0% (Fase 7)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-19T20:44:00-05:00] 30b2a94 refactor(widget): Scheduled payments widget with 3 variants in preferences
 - [2026-01-19T17:05:00-05:00] 1937184 feat(scheduled): Add subscriptions calendar view and UX improvements
 - [2026-01-19T16:45:00-05:00] b40ccf3 feat(scheduled): Add settings view in Profile for payment management
 - [2026-01-19T16:44:00-05:00] f06a17f feat(scheduled): Add detail view with payment history
@@ -81,9 +82,11 @@ Progress: ██████░░░░░░░░ 50% (Fase 6)
 - ~~Campos requeridos (cuenta, subcategoría, nombre, monto)~~ ✅
 - ~~Iconos/colores de subcategoría en listas~~ ✅
 - ~~Fix parpadeo de título en navegación~~ ✅
-- Widget Medium: 3 pagos siguientes
-- Widget Large: calendario por periodo
-- Notificaciones push (UNNotificationCenter)
+- ~~Widget en PanelView con 3 variantes (Resumen/Lista/Calendario)~~ ✅
+- ~~Selección de variante en preferencias de widgets~~ ✅
+- ~~Integración con período del Panel~~ ✅
+- Widget iOS (WidgetKit) - Movido a Fase 8
+- Notificaciones push (UNNotificationCenter) - Movido a Fase 8
 
 ## Parking Lot
 
