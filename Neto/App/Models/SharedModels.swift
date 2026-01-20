@@ -28,7 +28,7 @@ enum FirstWeekday: Int, CaseIterable, Identifiable {
     }
 }
 
-/// Naturaleza de subcategoría para FIN-45
+/// Naturaleza de subcategoría (esencial, prioritaria, opcional, sin clasificar)
 enum SubcategoryNature: String, CaseIterable, Identifiable {
     case essential = "esencial"
     case priority = "prioritaria"
@@ -162,9 +162,6 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         case .custom: return L10n.Period.custom
         }
     }
-
-    /// Display name for UI - redirect to displayName property which is now localized
-    // var displayName: String { rawValue } // OLD
 
     /// Calendar icon for the selector
     var iconName: String { "calendar" }

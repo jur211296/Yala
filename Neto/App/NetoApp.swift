@@ -12,7 +12,7 @@ import SwiftUI
 struct NetoApp: App {
 
     /// ModelContainer compartido para toda la app.
-    /// Incluye todas las entidades base definidas en FIN-17.
+    /// Incluye todas las entidades del modelo de datos.
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Category.self,

@@ -8,14 +8,13 @@
 import SwiftData
 import SwiftUI
 
-// MARK: - Lista de cuentas desde Ajustes (FIN-42 con diseño y orden)
+// MARK: - Lista de cuentas desde Ajustes
 
 struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
 
-    // FIN-46: Transacciones usadas para calcular saldos actuales en Ajustes
     @Query(sort: \TransactionItem.date, order: .reverse)
     private var transactions: [TransactionItem]
 
@@ -288,7 +287,6 @@ struct AccountsSettingsListView: View {
         return account.type.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
-    // FIN-46: Saldo actual mostrado en la lista de cuentas de Ajustes
     private func formattedBalance(for account: Account) -> String {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen

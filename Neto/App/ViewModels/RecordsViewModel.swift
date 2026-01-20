@@ -118,7 +118,6 @@ final class RecordsViewModel: Filterable {
         if transactionTypeFilter != .all { count += 1 }
         if amountCondition.isActive { count += 1 }
         // Exclude period from filters count as it's a primary control
-        // if period != .thisMonth { count += 1 }
         if !selectedCurrencies.isEmpty { count += 1 }
         if hasTransactionNatureFilter { count += 1 }
         return count

@@ -3,11 +3,9 @@
 //  Neto
 //
 //  Modelos y helpers para filtros y columnas de exportación de transacciones.
-//  FIN-48: Modelo de filtros y columnas para exportación.
 //
 //  IMPORTANTE:
-//  - Estos tipos deben ser reutilizados por el servicio de exportación (FIN-49)
-//    y por el wizard de UI (FIN-50, FIN-51, FIN-52).
+//  - Estos tipos son reutilizados por el servicio de exportación y el wizard de UI.
 //  - No implementar aquí lógica de acceso a SwiftData ni generación de CSV.
 //
 
@@ -31,7 +29,6 @@ enum AmountFilterCondition: Equatable {
     case between(min: Decimal, max: Decimal)
 
     /// Helper para validar si un monto concreto cumple la condición.
-    /// Esto será útil dentro de `TransactionsExportService` (FIN-49).
     /// - Parameter amount: monto a evaluar.
     /// - Returns: `true` si el monto cumple la condición, `false` en caso contrario.
     func matches(_ amount: Decimal) -> Bool {
@@ -219,8 +216,7 @@ enum ExportPeriod: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Periodo por defecto para el flujo de exportación.
-    /// Se alinea con lo descrito en FIN-48: un estado razonable es "Últimos 30 días".
+    /// Periodo por defecto para el flujo de exportación (últimos 30 días).
     static var defaultPeriod: ExportPeriod {
         .last30Days
     }
@@ -283,7 +279,7 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         }
     }
 
-    /// Nombre legible para la UI del wizard (FIN-51).
+    /// Nombre legible para la UI del wizard.
     var displayName: String {
         switch self {
         case .date: return "Fecha"
@@ -328,7 +324,6 @@ struct ExportColumns: Equatable {
     private(set) var activeColumns: Set<ExportColumn>
 
     /// Orden base para construir el encabezado del CSV.
-    /// Se alinea con el orden de las columnas en el servicio de exportación (FIN-49).
     static let defaultOrder: [ExportColumn] = ExportColumn.allCases
 
     /// Estado por defecto: todas las columnas activas.
@@ -381,8 +376,7 @@ struct ExportColumns: Equatable {
 // MARK: - Filtros de exportación
 
 /// Modelo principal que representa todos los filtros aplicables a la exportación
-/// de transacciones. Este tipo será construido por la UI del wizard (FIN-50)
-/// y consumido por el servicio central `TransactionsExportService` (FIN-49).
+/// de transacciones. Construido por la UI del wizard y consumido por el servicio de exportación.
 struct ExportFilters: Equatable {
 
     // MARK: Cuentas / categorías / etiquetas / monedas

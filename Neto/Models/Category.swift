@@ -17,7 +17,7 @@ final class Category {
     var colorHex: String
     var isIncome: Bool
 
-    // Campos adicionales para FIN-18 y gestión en Ajustes
+    // Campos adicionales para semilla y gestión en Ajustes
     /// Indica si esta categoría proviene de la semilla inicial de Neto
     var isDefaultSeed: Bool
     /// Control de visibilidad dentro de la app (para permitir ocultar categorías)

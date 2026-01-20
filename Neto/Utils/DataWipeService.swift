@@ -158,10 +158,8 @@ final class DataWipeService {
     // MARK: - Reseed de estado inicial
     // Encapsula aquí la lógica para volver al estado "recien instalada".
     private static func reseedInitialAppState(in context: ModelContext) throws {
-        // FIN-18: Semilla inicial de categorías y subcategorías.
-        // La función `seedCategoriesIfNeeded(in:)` es idempotente: si ya existen
-        // categorías, no hace nada. Después de un borrado completo no debería
-        // haber ninguna categoría, por lo que recreará la semilla inicial.
+        // Semilla inicial de categorías y subcategorías.
+        // La función es idempotente: si ya existen categorías, no hace nada.
         seedCategoriesIfNeeded(in: context)
     }
 }

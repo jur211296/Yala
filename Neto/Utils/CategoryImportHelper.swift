@@ -3,9 +3,8 @@
 //  Neto
 //
 //  Helpers de categorías y subcategorías para importaciones.
-//  FIN-19: lógica centralizada para crear / reutilizar categorías.
+//  Lógica centralizada para crear / reutilizar categorías.
 //
-//  SECCIÓN FINALIZADA (FIN-19):
 //  No modificar la firma pública de este helper sin aprobación explícita.
 //
 

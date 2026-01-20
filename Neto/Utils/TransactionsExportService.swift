@@ -2,14 +2,14 @@
 //  TransactionsExportService.swift
 //  Neto
 //
-//  FIN-49: Servicio central de exportación de transacciones a CSV.
-//  - Aplica filtros definidos en `ExportFilters` (FIN-48).
-//  - Respeta las columnas activas definidas en `ExportColumns` (FIN-48).
+//  Servicio central de exportación de transacciones a CSV.
+//  - Aplica filtros definidos en `ExportFilters`.
+//  - Respeta las columnas activas definidas en `ExportColumns`.
 //  - Genera un archivo CSV en el directorio temporal y devuelve su URL.
 //
 //  IMPORTANTE:
 //  - Este servicio NO presenta UI ni share sheet. Solo genera el archivo.
-//  - Será consumido por el wizard de exportación (FIN-50, FIN-51, FIN-52).
+//  - Consumido por el wizard de exportación.
 //
 
 import Foundation
@@ -58,8 +58,8 @@ struct TransactionsExportService {
     /// Genera un archivo CSV en base a los filtros y columnas indicados.
     ///
     /// - Parameters:
-    ///   - filters: Modelo de filtros de exportación (FIN-48).
-    ///   - columns: Conjunto de columnas activas y su orden (FIN-48).
+    ///   - filters: Modelo de filtros de exportación.
+    ///   - columns: Conjunto de columnas activas y su orden.
     ///   - modelContext: Contexto de SwiftData desde el que se leerán las transacciones.
     /// - Returns: `TransactionsExportResult` con la URL del archivo y el conteo de filas.
     /// - Throws:

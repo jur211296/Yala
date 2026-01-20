@@ -321,7 +321,7 @@ struct SubcategoryDetailView: View {
             let allTransactions = try modelContext.fetch(descriptor)
             return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
         } catch {
-            print("FIN-45: Error counting transactions for subcategory: \(error)")
+            print("Subcategory: Error counting transactions for subcategory: \(error)")
             return 0
         }
     }
@@ -333,7 +333,7 @@ struct SubcategoryDetailView: View {
             try modelContext.save()
             modelContext.processPendingChanges()
         } catch {
-            print("FIN-45: Error deleting subcategory: \(error)")
+            print("Subcategory: Error deleting subcategory: \(error)")
         }
         dismiss()
     }
@@ -359,7 +359,7 @@ struct SubcategoryDetailView: View {
                 let maxOrder = existing.map { $0.sortOrder }.max() ?? -1
                 sortOrder = maxOrder + 1
             } catch {
-                print("FIN-45: Error calculando sortOrder de subcategorías: \(error)")
+                print("Subcategory: Error calculando sortOrder de subcategorías: \(error)")
                 sortOrder = 0
             }
 
@@ -380,7 +380,7 @@ struct SubcategoryDetailView: View {
         do {
             try modelContext.save()
         } catch {
-            print("FIN-45: Error al guardar subcategoría: \(error)")
+            print("Subcategory: Error al guardar subcategoría: \(error)")
         }
 
         dismiss()

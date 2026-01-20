@@ -8,7 +8,7 @@
 import SwiftData
 import SwiftUI
 
-// MARK: - Categorías en Ajustes (FIN-45)
+// MARK: - Categorías en Ajustes
 
 /// Lista principal de categorías dentro de Ajustes → Registros
 struct CategoriesSettingsListView: View {
@@ -127,7 +127,7 @@ struct CategoriesSettingsListView: View {
             try modelContext.save()
             modelContext.processPendingChanges()
         } catch {
-            print("FIN-45: Error deleting category: \(error)")
+            print("Categories: Error deleting category: \(error)")
         }
     }
 
@@ -140,7 +140,7 @@ struct CategoriesSettingsListView: View {
                 return subcategory.category.persistentModelID == category.persistentModelID
             }.count
         } catch {
-            print("FIN-45: Error counting transactions: \(error)")
+            print("Categories: Error counting transactions: \(error)")
             return 0
         }
     }

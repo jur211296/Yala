@@ -2,9 +2,8 @@
 //  TransactionCSVImportService.swift
 //  Neto
 //
-//  FIN-22: Importación de transacciones desde CSV con validaciones estrictas.
+//  Importación de transacciones desde CSV con validaciones estrictas.
 //
-//  SECCIÓN FINALIZADA (FIN-22, capa de dominio):
 //  No modificar la firma de `importCSV(...)` ni los tipos públicos
 //  sin revisar el impacto en la UI de importación.
 //
@@ -425,7 +424,7 @@ enum TransactionCSVImportService {
                 throw CSVImportError.emptySubcategory(row: rowNumber)
             }
 
-            // 5.6 Resolver helpers de categoría y subcategoría (FIN-19)
+            // 5.6 Resolver categoría y subcategoría
             // Supuesto: montos >= 0 se consideran ingresos, < 0 gastos.
             let isIncome = decimalAmount >= 0
 

@@ -8,7 +8,7 @@
 import SwiftData
 import SwiftUI
 
-// MARK: - Vaciar datos del usuario (FIN-25)
+// MARK: - Vaciar datos del usuario
 
 struct UserDataResetView: View {
     @Environment(\.modelContext) private var modelContext

@@ -31,7 +31,7 @@ struct SubcategoryTransferSheet: View {
             let allTransactions = try modelContext.fetch(descriptor)
             return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
         } catch {
-            print("FIN-45: Error counting transactions in sheet: \(error)")
+            print("Transfer: Error counting transactions in sheet: \(error)")
             return 0
         }
     }
@@ -284,14 +284,14 @@ struct SubcategoryTransferSheet: View {
             dismiss()
             onComplete()
         } catch {
-            print("FIN-45: Error transferring transactions: \(error)")
+            print("Transfer: Error transferring transactions: \(error)")
         }
     }
 
     /// Transfers all transactions to the "Unassigned" subcategory in "Others" category
     private func transferToUnassigned() {
         guard let unassignedSubcategory = getOrCreateUnassignedSubcategory() else {
-            print("FIN-45: Could not get or create unassigned subcategory")
+            print("Transfer: Could not get or create unassigned subcategory")
             return
         }
 
@@ -318,7 +318,7 @@ struct SubcategoryTransferSheet: View {
             dismiss()
             onComplete()
         } catch {
-            print("FIN-45: Error deleting transactions: \(error)")
+            print("Transfer: Error deleting transactions: \(error)")
         }
     }
 
@@ -377,7 +377,7 @@ struct SubcategoryTransferSheet: View {
         do {
             try modelContext.save()
         } catch {
-            print("FIN-45: Error saving unassigned subcategory: \(error)")
+            print("Transfer: Error saving unassigned subcategory: \(error)")
             return nil
         }
 

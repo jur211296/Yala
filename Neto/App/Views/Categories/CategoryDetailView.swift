@@ -89,7 +89,7 @@ struct CategoryDetailView: View {
                 do {
                     try modelContext.save()
                 } catch {
-                    print("FIN-45: Error al descartar categoría nueva sin cambios: \(error)")
+                    print("Category: Error al descartar categoría nueva sin cambios: \(error)")
                 }
                 dismiss()
             }
@@ -157,7 +157,7 @@ struct CategoryDetailView: View {
                     do {
                         try modelContext.save()
                     } catch {
-                        print("FIN-45: Error al descartar categoría nueva: \(error)")
+                        print("Category: Error al descartar categoría nueva: \(error)")
                     }
                 }
                 dismiss()
@@ -529,7 +529,7 @@ struct CategoryDetailView: View {
                 return subcategory.category == category
             }.count
         } catch {
-            print("FIN-45: Error counting transactions for category: \(error)")
+            print("Category: Error counting transactions for category: \(error)")
             return 0
         }
     }
@@ -544,7 +544,7 @@ struct CategoryDetailView: View {
             try modelContext.save()
             modelContext.processPendingChanges()
         } catch {
-            print("FIN-45: Error deleting category: \(error)")
+            print("Category: Error deleting category: \(error)")
         }
         dismiss()
     }
@@ -571,7 +571,7 @@ struct CategoryDetailView: View {
         do {
             try modelContext.save()
         } catch {
-            print("FIN-45: Error al guardar categoría: \(error)")
+            print("Category: Error al guardar categoría: \(error)")
         }
 
         dismiss()
@@ -595,7 +595,7 @@ struct CategoryDetailView: View {
             try modelContext.save()
             modelContext.processPendingChanges()
         } catch {
-            print("FIN-45: Error deleting subcategory: \(error)")
+            print("Category: Error deleting subcategory: \(error)")
         }
         subcategoryToDelete = nil
         subcategoryForTransfer = nil
@@ -608,7 +608,7 @@ struct CategoryDetailView: View {
             let allTransactions = try modelContext.fetch(descriptor)
             return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
         } catch {
-            print("FIN-45: Error counting transactions: \(error)")
+            print("Category: Error counting transactions: \(error)")
             return 0
         }
     }

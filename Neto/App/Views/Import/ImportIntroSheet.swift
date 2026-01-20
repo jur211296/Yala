@@ -77,7 +77,7 @@ struct ImportResultOverlay: View {
     }
 }
 
-// MARK: - Flujo de importación de archivo (FIN-24)
+// MARK: - Flujo de importación de archivo
 
 /// Hoja principal de introducción y configuración de importación
 struct ImportIntroSheet: View {
@@ -353,7 +353,7 @@ struct ImportIntroSheet: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
 
-        // Encabezado según documentación FIN-28
+        // Encabezado del CSV de ejemplo
         rows.append([
             "Fecha", "Monto", "Tipo", "Categoría", "Subcategoría", "Nota",
         ])

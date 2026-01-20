@@ -4,8 +4,7 @@
 //
 //  Calcula el saldo actual de una cuenta a partir de todas sus transacciones.
 //  El saldo inicial ahora también es una transacción, por lo que empezamos desde 0.
-//  Esta pieza es el "core" de FIN-46 y debe reutilizarse
-//  en todas las vistas que muestren el saldo de una cuenta.
+//  Reutilizar en todas las vistas que muestren el saldo de una cuenta.
 //
 
 import Foundation

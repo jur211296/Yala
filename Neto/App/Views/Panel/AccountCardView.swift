@@ -9,25 +9,19 @@ import SwiftUI
 
 // MARK: - Tarjeta de cuenta
 
-// FIN-46: Tarjeta de cuenta mostrando el saldo actual.
-// FIN-56: Versión compacta para el carrusel 2x2 del Panel.
-// No modificar sin aprobación explícita, ya que se reutiliza
-// para validar visualmente el comportamiento de FIN-46 y FIN-56.
 struct AccountCardView: View {
 
     let account: Account
     /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
     let currentBalance: Double
 
-    /// Indica si esta tarjeta está seleccionada dentro del carrusel de cuentas (FIN-56).
+    /// Indica si esta tarjeta está seleccionada dentro del carrusel de cuentas.
     var isSelected: Bool
 
     /// Acción opcional para editar / configurar la cuenta asociada a esta tarjeta.
     /// Si es `nil`, no se muestra el botón de edición en la esquina superior derecha.
     var onEditTapped: (() -> Void)?
 
-    // FIN-56: Inicializador explícito para permitir pasar `isSelected` y la acción
-    // de edición desde PanelView u otras vistas.
     init(
         account: Account,
         currentBalance: Double,
@@ -41,7 +35,6 @@ struct AccountCardView: View {
     }
 
     var body: some View {
-        // FIN-56: Tarjeta compacta para el carrusel 2x2 del Panel.
         let backgroundColor =
             isSelected
             ? Color(hex: account.colorHex)

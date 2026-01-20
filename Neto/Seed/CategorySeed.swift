@@ -2,7 +2,7 @@
 //  CategorySeed.swift
 //  Neto
 //
-//  FIN-18: Semilla inicial de categorías por defecto
+//  Semilla inicial de categorías por defecto
 //
 //  -------------------------------------------------------------------------
 //  IMPORTANTE (NO MODIFICAR SIN APROBACIÓN EXPLÍCITA):
@@ -45,9 +45,9 @@ private struct CategorySeedDefinition {
 }
 
 // -------------------------------------------------------------------------
-// DEFINICIÓN DE LA SEMILLA (FIN-18 / Actualizado con iconos)
+// DEFINICIÓN DE LA SEMILLA
 // -------------------------------------------------------------------------
-// Ajustar únicamente si actualizamos FIN-18 y SIEMPRE bajo pedido expreso.
+// Ajustar únicamente bajo pedido expreso del Product Owner.
 //
 
 private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
@@ -308,7 +308,6 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
     ),
 ]
 
-/// FIN-18
 /// Ejecuta la semilla de categorías/subcategorías solo si todavía no existe
 /// ninguna categoría en la base.
 ///
@@ -327,18 +326,18 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
     } catch {
         // Si hay error al leer, preferimos no tocar nada para no
         // corromper datos ni crear semilla en un estado incierto.
-        print("FIN-18: Error leyendo categorías existentes: \(error)")
+        print("CategorySeed: Error leyendo categorías existentes: \(error)")
         return
     }
 
     guard existingCategoriesCount == 0 else {
         // Ya hay categorías, no ejecutamos semilla otra vez.
-        print("FIN-18: Semilla NO ejecutada (ya existen categorías).")
+        print("CategorySeed: Semilla NO ejecutada (ya existen categorías).")
         return
     }
 
     // 2. Ejecutar semilla completa de categorías y subcategorías
-    print("FIN-18: Ejecutando semilla inicial de categorías por defecto...")
+    print("CategorySeed: Ejecutando semilla inicial de categorías por defecto...")
 
     for (categoryIndex, definition) in defaultCategorySeedDefinitions.enumerated() {
 
@@ -373,8 +372,8 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
     // 3. Guardar cambios (por seguridad, aunque SwiftData suele autoguardar)
     do {
         try modelContext.save()
-        print("FIN-18: Semilla de categorías creada correctamente.")
+        print("CategorySeed: Semilla de categorías creada correctamente.")
     } catch {
-        print("FIN-18: Error al guardar la semilla de categorías: \(error)")
+        print("CategorySeed: Error al guardar la semilla de categorías: \(error)")
     }
 }

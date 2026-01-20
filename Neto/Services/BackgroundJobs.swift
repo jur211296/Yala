@@ -21,7 +21,7 @@ import SwiftData
             // Update exchange rates daily
             await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
 
-            // TODO: Check budgets
+            // Budget notifications planned for V1.1 (Phase 9)
 
             task.setTaskCompleted(success: true)
         }

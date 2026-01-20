@@ -14,7 +14,7 @@ import UIKit
 struct PanelView: View {
 
     init() {
-        // FIN-56: Eliminamos el fondo gris por defecto del TabView en modo página
+        // Eliminamos el fondo gris por defecto del TabView en modo página
         let pageViewBackground = UIView.appearance(
             whenContainedInInstancesOf: [UIPageViewController.self]
         )
@@ -31,7 +31,6 @@ struct PanelView: View {
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
     @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
-    // FIN-46: Transacciones usadas para calcular saldos actuales por cuenta
     @Query(sort: \TransactionItem.date, order: .reverse)
     private var transactions: [TransactionItem]
 

@@ -213,7 +213,6 @@ struct PersonalDetailsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            // TODO: Future feature note
             Text(L10n.Profile.aliasFutureNote)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
