@@ -602,7 +602,12 @@ final class NewTransactionViewModel {
         context.insert(subcategory)
 
         // Save to ensure ID stability if needed immediately
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            // Non-critical: SwiftData will auto-save later
+            print("[NewTransactionViewModel] Warning: Could not save subcategory immediately: \(error)")
+        }
 
         return subcategory
     }

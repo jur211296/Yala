@@ -523,6 +523,8 @@
 
 
 "common.unknownError" = "Error desconocido";
+"common.saveError" = "No se pudieron guardar los cambios. Intenta de nuevo.";
+"common.deleteError" = "No se pudo eliminar. Intenta de nuevo.";
 "widget.noExpensesNaturePeriod" = "No hay gastos registrados por naturaleza para este periodo.";
 
 

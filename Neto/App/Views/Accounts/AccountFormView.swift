@@ -119,6 +119,16 @@ struct AccountFormView: View {
                 Text(viewModel.deleteErrorMessage)
             }
         )
+        .alert(
+            L10n.Common.error,
+            isPresented: $viewModel.isShowingSaveError,
+            actions: {
+                Button(L10n.Common.understood, role: .cancel) {}
+            },
+            message: {
+                Text(L10n.Common.saveError)
+            }
+        )
     }
 
     // MARK: Secciones de la vista

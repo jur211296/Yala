@@ -17,6 +17,7 @@ struct BudgetsFavoritesSettingsView: View {
     private var activeBudgets: [Budget]
 
     @State private var isEditMode = false
+    @State private var showSaveError = false
 
     // Group budgets by period type
     private var budgetsByPeriod: [(periodType: BudgetPeriodType, budgets: [Budget])] {
@@ -94,6 +95,16 @@ struct BudgetsFavoritesSettingsView: View {
                 }
             }
         }
+        .alert(
+            L10n.Common.error,
+            isPresented: $showSaveError,
+            actions: {
+                Button(L10n.Common.understood, role: .cancel) {}
+            },
+            message: {
+                Text(L10n.Common.saveError)
+            }
+        )
     }
 
     // MARK: - Info Header
@@ -286,7 +297,11 @@ struct BudgetsFavoritesSettingsView: View {
                 budget.isFavorite = true
                 budget.favoriteOrder = maxOrder + 1
             }
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+            } catch {
+                showSaveError = true
+            }
             // Trigger widget refresh in PanelView
             SessionState.shared.needsBudgetsWidgetRefresh = true
         }
@@ -301,7 +316,11 @@ struct BudgetsFavoritesSettingsView: View {
             budget.favoriteOrder = index
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            showSaveError = true
+        }
         // Trigger widget refresh in PanelView
         SessionState.shared.needsBudgetsWidgetRefresh = true
     }

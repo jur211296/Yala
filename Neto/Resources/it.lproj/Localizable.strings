@@ -521,6 +521,8 @@
 
 
 "common.unknownError" = "Errore sconosciuto";
+"common.saveError" = "Impossibile salvare le modifiche. Riprova.";
+"common.deleteError" = "Impossibile eliminare. Riprova.";
 "widget.noExpensesNaturePeriod" = "Nessuna spesa registrata per natura in questo periodo.";
 
 

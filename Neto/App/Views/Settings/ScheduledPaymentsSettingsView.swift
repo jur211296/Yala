@@ -19,6 +19,7 @@ struct ScheduledPaymentsSettingsView: View {
     @State private var showEditor = false
     @State private var paymentToEdit: ScheduledPayment?
     @State private var selectedTab: ScheduledPaymentsTab = .all
+    @State private var showDeleteError = false
 
     /// Payments filtered by selected tab
     private var filteredPayments: [ScheduledPayment] {
@@ -78,6 +79,16 @@ struct ScheduledPaymentsSettingsView: View {
                 defaultCategory: selectedTab.categoryFilter
             )
         }
+        .alert(
+            L10n.Common.error,
+            isPresented: $showDeleteError,
+            actions: {
+                Button(L10n.Common.understood, role: .cancel) {}
+            },
+            message: {
+                Text(L10n.Common.deleteError)
+            }
+        )
     }
 
     // MARK: - Empty State
@@ -218,7 +229,11 @@ struct ScheduledPaymentsSettingsView: View {
             let payment = filteredPayments[index]
             modelContext.delete(payment)
         }
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            showDeleteError = true
+        }
     }
 
     // MARK: - Helpers

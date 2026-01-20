@@ -50,6 +50,7 @@ struct FavoriteEditorView: View {
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showNatureSelector = false
+    @State private var showSaveError = false
 
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -146,6 +147,16 @@ struct FavoriteEditorView: View {
                     isAmountFieldFocused = false
                 }
             }
+            .alert(
+                L10n.Common.error,
+                isPresented: $showSaveError,
+                actions: {
+                    Button(L10n.Common.understood, role: .cancel) {}
+                },
+                message: {
+                    Text(L10n.Common.saveError)
+                }
+            )
         }
         .tint(Color.electricIndigo)
         .onAppear {
@@ -424,8 +435,12 @@ struct FavoriteEditorView: View {
             modelContext.insert(newFavorite)
         }
 
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            showSaveError = true
+        }
     }
 
     // MARK: - Helpers

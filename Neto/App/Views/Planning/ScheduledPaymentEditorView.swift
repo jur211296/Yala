@@ -57,6 +57,7 @@ struct ScheduledPaymentEditorView: View {
     @State private var showAccountSheet = false
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
+    @State private var showSaveError = false
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
@@ -144,6 +145,16 @@ struct ScheduledPaymentEditorView: View {
                     }
                 }
             }
+            .alert(
+                L10n.Common.error,
+                isPresented: $showSaveError,
+                actions: {
+                    Button(L10n.Common.understood, role: .cancel) {}
+                },
+                message: {
+                    Text(L10n.Common.saveError)
+                }
+            )
         }
     }
 
@@ -904,14 +915,22 @@ struct ScheduledPaymentEditorView: View {
             modelContext.insert(newPayment)
         }
 
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            showSaveError = true
+        }
     }
 
     private func deletePayment() {
         guard let payment = payment else { return }
         modelContext.delete(payment)
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            showSaveError = true
+        }
     }
 }

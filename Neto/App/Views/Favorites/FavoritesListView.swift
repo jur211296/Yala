@@ -33,6 +33,7 @@ struct FavoritesListView: View {
 
     @State private var showEditor = false
     @State private var favoriteToEdit: FavoritePayment?
+    @State private var showSaveError = false
 
     init(mode: FavoritesListMode = .manage, onSelect: ((FavoritePayment) -> Void)? = nil) {
         self.mode = mode
@@ -117,6 +118,16 @@ struct FavoritesListView: View {
                 FavoriteEditorView(favorite: nil)
             }
         }
+        .alert(
+            L10n.Common.error,
+            isPresented: $showSaveError,
+            actions: {
+                Button(L10n.Common.understood, role: .cancel) {}
+            },
+            message: {
+                Text(L10n.Common.saveError)
+            }
+        )
     }
 
     // MARK: - Empty State
@@ -196,7 +207,11 @@ struct FavoritesListView: View {
             let favorite = favorites[index]
             modelContext.delete(favorite)
         }
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            showSaveError = true
+        }
     }
 
     private func moveFavorites(from source: IndexSet, to destination: Int) {
@@ -208,7 +223,11 @@ struct FavoritesListView: View {
             favorite.displayOrder = index
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            showSaveError = true
+        }
     }
 }
 

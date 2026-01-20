@@ -50,6 +50,7 @@ final class AccountFormViewModel {
     // MARK: - UI State
     var isShowingDeleteError: Bool = false
     var deleteErrorMessage: String = ""
+    var isShowingSaveError: Bool = false
     var hasInitializedBalance: Bool = false  // Track if balance was initialized from transactions
 
     // MARK: - Computed Balance Properties
@@ -286,7 +287,12 @@ final class AccountFormViewModel {
         }
 
         // Force save to ensure @Query observers are notified of changes
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            isShowingSaveError = true
+            return false
+        }
 
         return true
     }

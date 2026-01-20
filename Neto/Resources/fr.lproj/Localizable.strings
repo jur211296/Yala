@@ -521,6 +521,8 @@
 
 
 "common.unknownError" = "Erreur inconnue";
+"common.saveError" = "Impossible d'enregistrer les modifications. Veuillez réessayer.";
+"common.deleteError" = "Impossible de supprimer. Veuillez réessayer.";
 "widget.noExpensesNaturePeriod" = "Aucune depense enregistree par nature pour cette periode.";
 
 

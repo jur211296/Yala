@@ -42,6 +42,7 @@ struct BudgetEditorView: View {
     // Sheet states
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
+    @State private var showSaveError = false
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
@@ -123,6 +124,16 @@ struct BudgetEditorView: View {
                     }
                 }
             }
+            .alert(
+                L10n.Common.error,
+                isPresented: $showSaveError,
+                actions: {
+                    Button(L10n.Common.understood, role: .cancel) {}
+                },
+                message: {
+                    Text(L10n.Common.saveError)
+                }
+            )
         }
     }
 
@@ -596,16 +607,24 @@ struct BudgetEditorView: View {
             modelContext.insert(newBudget)
         }
 
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            showSaveError = true
+        }
     }
 
     private func deleteBudget() {
         guard let budget = budget else { return }
         modelContext.delete(budget)
-        try? modelContext.save()
-        // Trigger widget refresh
-        SessionState.shared.needsBudgetsWidgetRefresh = true
-        dismiss()
+        do {
+            try modelContext.save()
+            // Trigger widget refresh
+            SessionState.shared.needsBudgetsWidgetRefresh = true
+            dismiss()
+        } catch {
+            showSaveError = true
+        }
     }
 }

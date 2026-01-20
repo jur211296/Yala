@@ -84,10 +84,14 @@ enum TransactionUpdateService {
 
         // 5. Save all updates at once
         if updatedCount > 0 {
-            try? context.save()
-            print(
-                "TransactionUpdateService: Updated \(updatedCount) transactions with official exchange rates"
-            )
+            do {
+                try context.save()
+                print(
+                    "TransactionUpdateService: Updated \(updatedCount) transactions with official exchange rates"
+                )
+            } catch {
+                print("TransactionUpdateService: Failed to save updates: \(error)")
+            }
         }
     }
 }

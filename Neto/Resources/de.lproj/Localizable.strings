@@ -521,6 +521,8 @@
 
 
 "common.unknownError" = "Unbekannter Fehler";
+"common.saveError" = "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.";
+"common.deleteError" = "Löschen nicht möglich. Bitte erneut versuchen.";
 "widget.noExpensesNaturePeriod" = "Keine Ausgaben nach Art für diesen Zeitraum erfasst.";
 
 

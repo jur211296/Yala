@@ -1129,6 +1129,8 @@ enum L10n {
         static var error: String { NSLocalizedString("common.error", comment: "") }
         static var success: String { NSLocalizedString("common.success", comment: "") }
         static var unknownError: String { NSLocalizedString("common.unknownError", comment: "") }
+        static var saveError: String { NSLocalizedString("common.saveError", comment: "") }
+        static var deleteError: String { NSLocalizedString("common.deleteError", comment: "") }
         static var dataPrivacy: String { NSLocalizedString("common.dataPrivacy", comment: "") }
         static var active: String { NSLocalizedString("common.active", comment: "") }
         static var inactive: String { NSLocalizedString("common.inactive", comment: "") }
