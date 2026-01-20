@@ -62,7 +62,7 @@ extension NetoEmptyState {
     /// Empty state for no transactions
     static func noTransactions(action: (() -> Void)? = nil) -> NetoEmptyState {
         NetoEmptyState(
-            icon: "creditcard",
+            icon: "list.bullet.rectangle",
             title: L10n.Empty.noTransactions,
             message: L10n.Statistics.noRecordsDescription,
             actionTitle: action != nil ? L10n.Transaction.new : nil,
@@ -82,7 +82,7 @@ extension NetoEmptyState {
     /// Empty state for no tags
     static func noTags(action: (() -> Void)? = nil) -> NetoEmptyState {
         NetoEmptyState(
-            icon: "tag",
+            icon: "tag.fill",
             title: L10n.Empty.noTags,
             message: L10n.Empty.tagsDescription,
             actionTitle: action != nil ? L10n.Tag.new : nil,
@@ -93,7 +93,7 @@ extension NetoEmptyState {
     /// Empty state for no accounts
     static func noAccounts(action: (() -> Void)? = nil) -> NetoEmptyState {
         NetoEmptyState(
-            icon: "banknote",
+            icon: "creditcard.fill",
             title: L10n.Empty.noAccounts,
             message: L10n.Empty.accountsDescription,
             actionTitle: action != nil ? L10n.Account.new : nil,
@@ -104,7 +104,7 @@ extension NetoEmptyState {
     /// Empty state for no categories
     static func noCategories(action: (() -> Void)? = nil) -> NetoEmptyState {
         NetoEmptyState(
-            icon: "folder",
+            icon: "folder.fill",
             title: L10n.Empty.noCategories,
             message: L10n.Empty.categoriesDescription,
             actionTitle: action != nil ? L10n.Category.new : nil,

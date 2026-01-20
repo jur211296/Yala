@@ -147,7 +147,7 @@ struct CategoriesSettingsListView: View {
 
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "tag")
+            Image(systemName: "folder.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
 
