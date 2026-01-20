@@ -11,8 +11,28 @@ import SwiftUI
 // MARK: - ContentView (Punto de entrada principal)
 
 struct ContentView: View {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @State private var showOnboarding: Bool = false
+
     var body: some View {
         MainTabView()
+            .onAppear {
+                // Show onboarding if not completed
+                if !hasCompletedOnboarding {
+                    showOnboarding = true
+                }
+            }
+            .onChange(of: hasCompletedOnboarding) { _, newValue in
+                // React to data wipe: show onboarding when flag is reset
+                if !newValue {
+                    showOnboarding = true
+                }
+            }
+            .fullScreenCover(isPresented: $showOnboarding) {
+                OnboardingView {
+                    showOnboarding = false
+                }
+            }
     }
 }
 
