@@ -5,23 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 7 — Beta Preparation (V1.0 Release)
+**Current focus:** Fase 8 — Registro Inteligente (V1.1)
 
 ## Current Position
 
-Version: 1.0 (preparando release)
-Phase: 7 of 7 en V1.0 (Beta Preparation)
-Spec: .planning/PHASE7-BETAPREP-SPEC.md
-Plan: Not started
-Status: Features V1.0 completas, preparando para TestFlight beta pública
-Last activity: 2026-01-20 — Reorganización de roadmap (V1.0 vs V1.1)
+Version: 1.1 (en desarrollo)
+Phase: 8 of 9 en V1.1 (Registro Inteligente)
+Spec: .planning/PHASE8-REGISTRO-SPEC.md
+Plan: In progress
+Status: Subfase 8.1 completada — Infraestructura base de Inbox
+Last activity: 2026-01-20 — Subfase 8.1 completada (InboxDraft model, InboxView, navegación)
 
-Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-7.5, 7.7, 7.8 completadas)
+Progress: █░░░░░░░░░░░░░░░ 10% (Fase 8 - Subfase 8.1 completada)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-20T17:00:00-05:00] 5597718 feat(inbox): add InboxDraft model and basic inbox UI (Subfase 8.1)
 - [2026-01-20T14:52:00-05:00] 220e8ad chore(qa): add test CSV files for import testing
 - [2026-01-20T14:51:00-05:00] 416bbd9 docs(qa): rewrite QA-SCENARIOS.md with exhaustive coverage
 - [2026-01-20T11:40:00-05:00] 90c083f fix(persistence): add error handling for SwiftData save/delete operations
@@ -31,10 +32,12 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 - [2026-01-20T11:24:00-05:00] af9896c feat(ui): add FilterBlockedPopover component
 - [2026-01-20T11:22:00-05:00] 016261e fix(ui): standardize empty state icons across app
 - [2026-01-20T07:30:00-05:00] fa7c052 feat(i18n): add 4 currencies and fix hardcoded strings
-- [2026-01-20T07:05:00-05:00] c0e407a chore(cleanup): remove TODOs, dead code, and legacy FIN-XX references
 
 ## Completed in Current Phase
 
+- **Subfase 8.1: Infraestructura Base** - InboxDraft model con enums, InboxView con filtros, InboxDraftRowView, badge en PanelView, localizaciones 6 idiomas
+
+### Fase 7 (archivado - V1.0)
 - **Subfase 7.1: Code Quality & Cleanup** - TODOs eliminados, código muerto limpiado, referencias legacy (FIN-XX) removidas, 0 warnings
 - **Subfase 7.2: Performance & Optimización** - Auditoría de código OK (N+1, lazy loading, memory leaks)
 - **Subfase 7.3: Localizaciones y Monedas** - 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP), strings hardcodeados corregidos
@@ -42,6 +45,7 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 - **Subfase 7.5: UX para Nuevos Usuarios** - Empty states estandarizados, InfoHintButton en 12 widgets con toggle, FilterBlockedPopover, empty states en TrendsTabView
 - **Subfase 7.7: Estabilidad Pre-Release** - Error handling en persistencia (13 try? → do/catch con alertas), validaciones auditadas OK
 - **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
+- **Subfase 7.6: App Store Preparation** - Metadata completa (6 idiomas), descripciones, keywords, Privacy Policy (ES+EN). Screenshots pendientes (trabajo manual en Xcode)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -82,53 +86,48 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 
 ## Next Steps
 
-### Fase 7: Beta Preparation (V1.0 Release)
+### Fase 8: Registro Inteligente (V1.1)
 
-**Subfase 7.1: Code Quality & Cleanup** ✅
-- [x] Revisar TODOs/FIXMEs en el código
-- [x] Eliminar código muerto o comentado
-- [x] Eliminar referencias legacy (FIN-XX)
-- [x] Imports no usados (verificado)
-- [x] Warnings del compilador a cero
+**Subfase 8.1: Infraestructura Base** ✅
+- [x] Modelo InboxDraft (SwiftData)
+- [x] Vista de bandeja (lista, filtros, badge)
+- [x] Acciones básicas (ver detalle, eliminar)
+- [x] Navegación desde Panel toolbar
 
-**Subfase 7.2: Performance & Optimización** ✅
-- [x] Auditoría de código (N+1, lazy loading, view bodies)
-- [x] Memory leaks (sin retain cycles detectados)
-- [x] Nota: Profiling con Instruments pendiente (manual en Xcode)
+**Subfase 8.2: Edición y Aprobación** ← Siguiente
+- [ ] Sheet de edición rápida
+- [ ] Validación de campos requeridos
+- [ ] Flujo de aprobación → crear TransactionItem
+- [ ] Acciones en lote
 
-**Subfase 7.3: Localizaciones y Monedas** ✅
-- [x] Auditoría de strings hardcodeados (3 títulos corregidos)
-- [x] Nuevas keys en 6 idiomas (filters.title, iconPicker.title)
-- [x] Añadir monedas: MXN, COP, BRL, GBP (7 monedas total)
+**Subfase 8.3: Voz (MVP)**
+- [ ] Integración OpenAI SDK
+- [ ] STT con gpt-4o-mini-transcribe
+- [ ] LLM parser básico
+- [ ] Configuración de idioma en Settings
 
-**Subfase 7.4: Testing & QA** ✅
-- [x] Documento QA-SCENARIOS.md exhaustivo (reescritura completa)
-- [x] 15 secciones con orden de dependencias
-- [x] ~120 escenarios detallados con precondiciones
-- [x] ~250+ validaciones específicas
-- [x] CSVs de prueba en .qa-test-data/ (7 archivos)
-- [x] screenshot_data_pen.csv para capturas App Store
+**Subfase 8.4: Imágenes (MVP)**
+- [ ] Pipeline OCR con Vision
+- [ ] Clasificación heurística
+- [ ] Extractor ScreenshotSingle
+- [ ] Extractor ScreenshotList básico
 
-**Subfase 7.5: UX para Nuevos Usuarios** ✅
-- [x] Empty states informativos (auditados, iconos estandarizados)
-- [x] Textos de ayuda en Settings (verificados)
-- [x] InfoHintButton en 12 widgets con toggle showWidgetHints
-- [x] FilterBlockedPopover para mensajes de bloqueo de filtros
-- [x] Empty states en TrendsTabView (gráfica trend y cashflow)
+**Subfase 8.5: Merchant Memory**
+- [ ] Modelo MerchantMemory
+- [ ] Canonicalización
+- [ ] Actualización al aprobar
+- [ ] Sugerencia de subcategoría
 
-**Subfase 7.6: App Store Preparation** ← Siguiente
-- [ ] Screenshots, descripción, metadata
+**Subfase 8.6: Refinamiento**
+- [ ] Sistema de confianza completo
+- [ ] Fallback STT premium
+- [ ] Extractor ReceiptPhoto
+- [ ] Métricas locales
 
-**Subfase 7.7: Estabilidad Pre-Release** ✅
-- [x] Error handling consistente (13 operaciones de persistencia con alertas)
-- [x] Validaciones de datos (auditadas - todas OK)
-
-**Subfase 7.8: Primer Uso y Onboarding** ✅
-- [x] Onboarding de 4 pasos (nombre, moneda preferida, secundarias, periodo)
-- [x] Integración con ContentView (fullScreenCover)
-- [x] Reactivo a data wipe (muestra onboarding automáticamente)
-- [x] 7 monedas soportadas (PEN, USD, EUR, MXN, COP, BRL, GBP)
-- [x] Sección divisas secundarias en CurrencySettingsView
+**Subfase 8.7: Cloud Fallback (Opcional)**
+- [ ] Investigar proveedor (AWS vs GCP)
+- [ ] Implementar fallback cloud para recibos
+- [ ] Configuración de privacidad
 
 ## Parking Lot
 
@@ -144,8 +143,8 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Subfase 7.7 completada (Estabilidad Pre-Release)
-Next step: Subfase 7.6 (App Store Preparation) — última subfase pendiente
+Stopped at: Subfase 8.1 completada (Infraestructura Base)
+Next step: Subfase 8.2 (Edición y Aprobación)
 Resume file: None
 
 ## V1.1 (Futuro)
