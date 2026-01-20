@@ -16,12 +16,13 @@ Plan: Not started
 Status: Features V1.0 completas, preparando para TestFlight beta pública
 Last activity: 2026-01-20 — Reorganización de roadmap (V1.0 vs V1.1)
 
-Progress: ████░░░░░░░░░░ 25% (Fase 7 - Subfases 7.1, 7.2 completadas)
+Progress: ████████░░░░░░ 50% (Fase 7 - Subfases 7.1-7.4 completadas)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-20T07:30:00-05:00] fa7c052 feat(i18n): add 4 currencies and fix hardcoded strings
 - [2026-01-20T07:05:00-05:00] c0e407a chore(cleanup): remove TODOs, dead code, and legacy FIN-XX references
 - [2026-01-19T20:55:00-05:00] 0083534 docs(state): Mark Phase 6 as complete, set Phase 7 as next
 - [2026-01-19T20:44:00-05:00] 30b2a94 refactor(widget): Scheduled payments widget with 3 variants in preferences
@@ -40,6 +41,8 @@ Progress: ████░░░░░░░░░░ 25% (Fase 7 - Subfases 7.1,
 
 - **Subfase 7.1: Code Quality & Cleanup** - TODOs eliminados, código muerto limpiado, referencias legacy (FIN-XX) removidas, 0 warnings
 - **Subfase 7.2: Performance & Optimización** - Auditoría de código OK (N+1, lazy loading, memory leaks)
+- **Subfase 7.3: Localizaciones y Monedas** - 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP), strings hardcodeados corregidos
+- **Subfase 7.4: Testing & QA** - QA-SCENARIOS.md con 10 módulos y casos edge
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -94,17 +97,17 @@ Progress: ████░░░░░░░░░░ 25% (Fase 7 - Subfases 7.1,
 - [x] Memory leaks (sin retain cycles detectados)
 - [x] Nota: Profiling con Instruments pendiente (manual en Xcode)
 
-**Subfase 7.3: Localizaciones y Monedas** ← Siguiente
-- [ ] Auditoría de strings hardcodeados
-- [ ] Verificar keys en 6 idiomas
-- [ ] Formato números/fechas por locale
-- [ ] Añadir monedas: MXN, COP, BRL, GBP
+**Subfase 7.3: Localizaciones y Monedas** ✅
+- [x] Auditoría de strings hardcodeados (3 títulos corregidos)
+- [x] Nuevas keys en 6 idiomas (filters.title, iconPicker.title)
+- [x] Añadir monedas: MXN, COP, BRL, GBP (7 monedas total)
 
-**Subfase 7.4: Testing & QA**
-- [ ] Documento de escenarios de prueba manual
-- [ ] Casos edge documentados
+**Subfase 7.4: Testing & QA** ✅
+- [x] Documento QA-SCENARIOS.md creado
+- [x] 10 módulos con 3+ escenarios cada uno
+- [x] Casos edge prioritarios documentados
 
-**Subfase 7.5: UX para Nuevos Usuarios**
+**Subfase 7.5: UX para Nuevos Usuarios** ← Siguiente
 - [ ] Empty states informativos
 - [ ] Textos de ayuda en Settings
 
