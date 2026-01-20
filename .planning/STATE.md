@@ -22,6 +22,8 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-20T14:52:00-05:00] 220e8ad chore(qa): add test CSV files for import testing
+- [2026-01-20T14:51:00-05:00] 416bbd9 docs(qa): rewrite QA-SCENARIOS.md with exhaustive coverage
 - [2026-01-20T11:40:00-05:00] 90c083f fix(persistence): add error handling for SwiftData save/delete operations
 - [2026-01-20T11:30:00-05:00] f6cd20a feat(currency): expand to 7 currencies with settings UI
 - [2026-01-20T11:28:00-05:00] d7c5ce7 feat(onboarding): add first-time setup flow with currency selection
@@ -30,16 +32,13 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 - [2026-01-20T11:22:00-05:00] 016261e fix(ui): standardize empty state icons across app
 - [2026-01-20T07:30:00-05:00] fa7c052 feat(i18n): add 4 currencies and fix hardcoded strings
 - [2026-01-20T07:05:00-05:00] c0e407a chore(cleanup): remove TODOs, dead code, and legacy FIN-XX references
-- [2026-01-19T20:55:00-05:00] 0083534 docs(state): Mark Phase 6 as complete, set Phase 7 as next
-- [2026-01-19T20:44:00-05:00] 30b2a94 refactor(widget): Scheduled payments widget with 3 variants in preferences
-- [2026-01-19T17:05:00-05:00] 1937184 feat(scheduled): Add subscriptions calendar view and UX improvements
 
 ## Completed in Current Phase
 
 - **Subfase 7.1: Code Quality & Cleanup** - TODOs eliminados, código muerto limpiado, referencias legacy (FIN-XX) removidas, 0 warnings
 - **Subfase 7.2: Performance & Optimización** - Auditoría de código OK (N+1, lazy loading, memory leaks)
 - **Subfase 7.3: Localizaciones y Monedas** - 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP), strings hardcodeados corregidos
-- **Subfase 7.4: Testing & QA** - QA-SCENARIOS.md con 10 módulos y casos edge
+- **Subfase 7.4: Testing & QA** - QA-SCENARIOS.md exhaustivo (15 secciones, ~120 escenarios, ~250 validaciones), CSVs de prueba para import (7 archivos)
 - **Subfase 7.5: UX para Nuevos Usuarios** - Empty states estandarizados, InfoHintButton en 12 widgets con toggle, FilterBlockedPopover, empty states en TrendsTabView
 - **Subfase 7.7: Estabilidad Pre-Release** - Error handling en persistencia (13 try? → do/catch con alertas), validaciones auditadas OK
 - **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
@@ -103,9 +102,12 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 - [x] Añadir monedas: MXN, COP, BRL, GBP (7 monedas total)
 
 **Subfase 7.4: Testing & QA** ✅
-- [x] Documento QA-SCENARIOS.md creado
-- [x] 10 módulos con 3+ escenarios cada uno
-- [x] Casos edge prioritarios documentados
+- [x] Documento QA-SCENARIOS.md exhaustivo (reescritura completa)
+- [x] 15 secciones con orden de dependencias
+- [x] ~120 escenarios detallados con precondiciones
+- [x] ~250+ validaciones específicas
+- [x] CSVs de prueba en .qa-test-data/ (7 archivos)
+- [x] screenshot_data_pen.csv para capturas App Store
 
 **Subfase 7.5: UX para Nuevos Usuarios** ✅
 - [x] Empty states informativos (auditados, iconos estandarizados)
