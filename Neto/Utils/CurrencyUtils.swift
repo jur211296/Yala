@@ -36,6 +36,22 @@ func normalizeCurrencyCode(_ raw: String) -> String {
     case "EUR", "€", "EURO":
         return "EUR"
 
+    // Peso mexicano
+    case "MXN", "MX$", "PESO MEXICANO":
+        return "MXN"
+
+    // Peso colombiano
+    case "COP", "CO$", "PESO COLOMBIANO":
+        return "COP"
+
+    // Real brasileño
+    case "BRL", "R$", "REAL", "REAIS":
+        return "BRL"
+
+    // Libra esterlina
+    case "GBP", "£", "POUND", "LIBRA":
+        return "GBP"
+
     default:
         // Intento de normalización genérica: tomar solo letras y quedarnos con 3
         let letters = upper.filter { $0.isLetter }
@@ -69,13 +85,22 @@ func rateToPEN(_ rawCode: String) -> Decimal {
     let code = normalizeCurrencyCode(rawCode)
 
     // Fallback rates (approximate, for backward compatibility)
+    // Rates relative to PEN (1 X = Y PEN)
     switch code {
     case "PEN":
         return 1.0
     case "USD":
-        return 3.72  // Updated approximate rate
+        return 3.72
     case "EUR":
-        return 3.95  // Updated approximate rate
+        return 3.95
+    case "MXN":
+        return 0.22  // ~17 MXN = 1 USD
+    case "COP":
+        return 0.0009  // ~4000 COP = 1 USD
+    case "BRL":
+        return 0.75  // ~5 BRL = 1 USD
+    case "GBP":
+        return 4.70  // ~0.79 GBP = 1 USD
     default:
         return 1.0
     }
@@ -87,6 +112,10 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
     case pen = "PEN"
     case usd = "USD"
     case eur = "EUR"
+    case mxn = "MXN"
+    case cop = "COP"
+    case brl = "BRL"
+    case gbp = "GBP"
 
     var id: String { rawValue }
 }
@@ -118,5 +147,13 @@ func currencyInfo(for currency: CurrencyCode) -> (name: String, code: String, fl
         return (L10n.Currency.usd, "USD", "🇺🇸")
     case .eur:
         return (L10n.Currency.eur, "EUR", "🇪🇺")
+    case .mxn:
+        return (L10n.Currency.mxn, "MXN", "🇲🇽")
+    case .cop:
+        return (L10n.Currency.cop, "COP", "🇨🇴")
+    case .brl:
+        return (L10n.Currency.brl, "BRL", "🇧🇷")
+    case .gbp:
+        return (L10n.Currency.gbp, "GBP", "🇬🇧")
     }
 }

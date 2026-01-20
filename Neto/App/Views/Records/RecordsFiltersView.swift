@@ -114,7 +114,7 @@ struct RecordsFiltersView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                 }
             }
-            .navigationTitle("Filtros")
+            .navigationTitle(L10n.Filters.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

@@ -89,6 +89,7 @@
 
 // MARK: - Filters
 
+"filters.title" = "Filtres";
 "filters.all" = "Tous";
 "filters.allAccounts" = "Tous les comptes";
 "filters.allCategories" = "Toutes les categories";
@@ -705,6 +706,10 @@
 "currency.pen" = "sol peruvien";
 "currency.usd" = "dollar americain";
 "currency.eur" = "euro";
+"currency.mxn" = "peso mexicain";
+"currency.cop" = "peso colombien";
+"currency.brl" = "real bresilien";
+"currency.gbp" = "livre sterling";
 
 "common.selectColor" = "Selectionnez une couleur";
 "common.useThisColor" = "Utiliser cette couleur";
@@ -777,6 +782,7 @@
 "nature.unclassified" = "Non classe";
 "nature.unclassifiedDesc" = "Aucune nature specifique definie.";
 
+"iconPicker.title" = "Personnaliser";
 "iconPicker.preview" = "Apercu";
 "iconPicker.shopping" = "Achats";
 "iconPicker.food" = "Alimentation";

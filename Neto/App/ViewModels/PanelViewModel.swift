@@ -1309,6 +1309,14 @@ final class PanelViewModel {
             selectedComparisonCurrencies = [.pen, .eur]
         case .eur:
             selectedComparisonCurrencies = [.usd, .pen]
+        case .mxn:
+            selectedComparisonCurrencies = [.usd, .eur]
+        case .cop:
+            selectedComparisonCurrencies = [.usd, .eur]
+        case .brl:
+            selectedComparisonCurrencies = [.usd, .eur]
+        case .gbp:
+            selectedComparisonCurrencies = [.usd, .eur]
         }
     }
 

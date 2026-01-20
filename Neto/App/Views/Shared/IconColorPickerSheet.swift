@@ -238,7 +238,7 @@ struct IconColorPickerSheet: View {
                 .padding(.vertical, DS.Spacing.xl)
             }
             .background(Color.netoBackground)
-            .navigationTitle("Personalizar")
+            .navigationTitle(L10n.IconPicker.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

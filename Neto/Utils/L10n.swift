@@ -235,6 +235,7 @@ enum L10n {
     // MARK: - Filters
 
     enum Filters {
+        static var title: String { NSLocalizedString("filters.title", comment: "") }
         static var all: String { NSLocalizedString("filters.all", comment: "") }
         static var allAccounts: String { NSLocalizedString("filters.allAccounts", comment: "") }
         static var allCategories: String { NSLocalizedString("filters.allCategories", comment: "") }
@@ -338,6 +339,10 @@ enum L10n {
         static var pen: String { NSLocalizedString("currency.pen", comment: "") }
         static var usd: String { NSLocalizedString("currency.usd", comment: "") }
         static var eur: String { NSLocalizedString("currency.eur", comment: "") }
+        static var mxn: String { NSLocalizedString("currency.mxn", comment: "") }
+        static var cop: String { NSLocalizedString("currency.cop", comment: "") }
+        static var brl: String { NSLocalizedString("currency.brl", comment: "") }
+        static var gbp: String { NSLocalizedString("currency.gbp", comment: "") }
     }
 
     // MARK: - Empty States
@@ -1280,6 +1285,7 @@ enum L10n {
     // MARK: - Icon Picker
 
     enum IconPicker {
+        static var title: String { NSLocalizedString("iconPicker.title", comment: "") }
         static var preview: String { NSLocalizedString("iconPicker.preview", comment: "") }
         static var shopping: String { NSLocalizedString("iconPicker.shopping", comment: "") }
         static var food: String { NSLocalizedString("iconPicker.food", comment: "") }

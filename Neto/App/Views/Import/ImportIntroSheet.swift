@@ -177,7 +177,7 @@ struct ImportIntroSheet: View {
                     .padding(.bottom, DS.Spacing.lg)
                 }
             }
-            .navigationTitle("Importar")
+            .navigationTitle(L10n.Import.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

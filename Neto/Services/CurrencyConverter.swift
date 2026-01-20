@@ -36,8 +36,12 @@ final class CurrencyConverter {
     /// These are approximate rates and should only be used as last resort.
     private let fallbackRates: [String: Double] = [
         "USD": 1.0,
-        "PEN": 3.72,  // ~December 2024 approximate rate
-        "EUR": 0.95,  // ~December 2024 approximate rate
+        "PEN": 3.72,
+        "EUR": 0.95,
+        "MXN": 17.0,
+        "COP": 4100.0,
+        "BRL": 4.95,
+        "GBP": 0.79,
     ]
 
     // MARK: - Public API
