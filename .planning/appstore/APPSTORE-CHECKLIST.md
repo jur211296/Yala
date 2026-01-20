@@ -169,6 +169,186 @@ PERSONALIZA TU EXPERIENCIA
 Neto es 100% offline y tus datos se quedan en tu dispositivo.
 ```
 
+### English (EN)
+
+```
+Neto helps you understand your personal finances with clarity.
+
+TRACK YOUR EXPENSES
+• Add transactions quickly with built-in calculator
+• Organize by customizable categories and subcategories
+• Tag expenses for detailed analysis
+• Supports multiple accounts and currencies
+
+VISUALIZE YOUR TRENDS
+• Interactive charts for expenses and income
+• Comparisons vs previous period
+• Category breakdown with pie charts
+• Flexible filters by date, account, and tags
+
+CONTROL YOUR BUDGET
+• Set budgets by category
+• Visual progress tracking
+• Alerts when approaching limits
+
+PLAN YOUR PAYMENTS
+• Manage subscriptions and recurring payments
+• Calendar of upcoming payments
+• Never miss an important payment
+
+CUSTOMIZE YOUR EXPERIENCE
+• 7 currencies supported (PEN, USD, EUR, MXN, COP, BRL, GBP)
+• Light and dark mode
+• Configure which widgets to display
+• Export and import your data
+
+Neto is 100% offline and your data stays on your device.
+```
+
+### Deutsch (DE)
+
+```
+Neto hilft dir, deine persönlichen Finanzen klar zu verstehen.
+
+ERFASSE DEINE AUSGABEN
+• Füge Transaktionen schnell mit integriertem Rechner hinzu
+• Organisiere nach anpassbaren Kategorien und Unterkategorien
+• Markiere Ausgaben für detaillierte Analyse
+• Unterstützt mehrere Konten und Währungen
+
+VISUALISIERE DEINE TRENDS
+• Interaktive Diagramme für Ausgaben und Einnahmen
+• Vergleiche mit vorherigem Zeitraum
+• Kategorieaufschlüsselung mit Kreisdiagrammen
+• Flexible Filter nach Datum, Konto und Tags
+
+KONTROLLIERE DEIN BUDGET
+• Lege Budgets nach Kategorie fest
+• Visuelle Fortschrittsverfolgung
+• Warnungen bei Annäherung an Limits
+
+PLANE DEINE ZAHLUNGEN
+• Verwalte Abonnements und wiederkehrende Zahlungen
+• Kalender der anstehenden Zahlungen
+• Verpasse nie eine wichtige Zahlung
+
+PERSONALISIERE DEIN ERLEBNIS
+• 7 Währungen unterstützt (PEN, USD, EUR, MXN, COP, BRL, GBP)
+• Heller und dunkler Modus
+• Konfiguriere angezeigte Widgets
+• Exportiere und importiere deine Daten
+
+Neto ist 100% offline und deine Daten bleiben auf deinem Gerät.
+```
+
+### Français (FR)
+
+```
+Neto t'aide à comprendre tes finances personnelles avec clarté.
+
+ENREGISTRE TES DÉPENSES
+• Ajoute des transactions rapidement avec calculatrice intégrée
+• Organise par catégories et sous-catégories personnalisables
+• Étiquette les dépenses pour une analyse détaillée
+• Prend en charge plusieurs comptes et devises
+
+VISUALISE TES TENDANCES
+• Graphiques interactifs des dépenses et revenus
+• Comparaisons avec la période précédente
+• Répartition par catégories avec graphiques circulaires
+• Filtres flexibles par date, compte et étiquettes
+
+CONTRÔLE TON BUDGET
+• Définis des budgets par catégorie
+• Suivi visuel de la progression
+• Alertes à l'approche des limites
+
+PLANIFIE TES PAIEMENTS
+• Gère les abonnements et paiements récurrents
+• Calendrier des paiements à venir
+• N'oublie jamais un paiement important
+
+PERSONNALISE TON EXPÉRIENCE
+• 7 devises prises en charge (PEN, USD, EUR, MXN, COP, BRL, GBP)
+• Mode clair et sombre
+• Configure les widgets affichés
+• Exporte et importe tes données
+
+Neto est 100% hors ligne et tes données restent sur ton appareil.
+```
+
+### Italiano (IT)
+
+```
+Neto ti aiuta a capire le tue finanze personali con chiarezza.
+
+REGISTRA LE TUE SPESE
+• Aggiungi transazioni rapidamente con calcolatrice integrata
+• Organizza per categorie e sottocategorie personalizzabili
+• Etichetta le spese per un'analisi dettagliata
+• Supporta più conti e valute
+
+VISUALIZZA LE TUE TENDENZE
+• Grafici interattivi di spese e entrate
+• Confronti con il periodo precedente
+• Suddivisione per categorie con grafici a torta
+• Filtri flessibili per data, conto ed etichette
+
+CONTROLLA IL TUO BUDGET
+• Imposta budget per categoria
+• Monitoraggio visivo dei progressi
+• Avvisi all'avvicinarsi dei limiti
+
+PIANIFICA I TUOI PAGAMENTI
+• Gestisci abbonamenti e pagamenti ricorrenti
+• Calendario dei prossimi pagamenti
+• Non perdere mai un pagamento importante
+
+PERSONALIZZA LA TUA ESPERIENZA
+• 7 valute supportate (PEN, USD, EUR, MXN, COP, BRL, GBP)
+• Modalità chiara e scura
+• Configura quali widget visualizzare
+• Esporta e importa i tuoi dati
+
+Neto è 100% offline e i tuoi dati rimangono sul tuo dispositivo.
+```
+
+### Português (PT)
+
+```
+Neto te ajuda a entender suas finanças pessoais com clareza.
+
+REGISTRE SEUS GASTOS
+• Adicione transações rapidamente com calculadora integrada
+• Organize por categorias e subcategorias personalizáveis
+• Etiquete gastos para análise detalhada
+• Suporta múltiplas contas e moedas
+
+VISUALIZE SUAS TENDÊNCIAS
+• Gráficos interativos de gastos e receitas
+• Comparações com período anterior
+• Detalhamento por categorias com gráficos de pizza
+• Filtros flexíveis por data, conta e etiquetas
+
+CONTROLE SEU ORÇAMENTO
+• Defina orçamentos por categoria
+• Acompanhamento visual do progresso
+• Alertas ao se aproximar dos limites
+
+PLANEJE SEUS PAGAMENTOS
+• Gerencie assinaturas e pagamentos recorrentes
+• Calendário de próximos pagamentos
+• Nunca perca um pagamento importante
+
+PERSONALIZE SUA EXPERIÊNCIA
+• 7 moedas suportadas (PEN, USD, EUR, MXN, COP, BRL, GBP)
+• Modo claro e escuro
+• Configure quais widgets exibir
+• Exporte e importe seus dados
+
+Neto é 100% offline e seus dados ficam no seu dispositivo.
+```
+
 ---
 
 ## 5. Privacy Policy
@@ -221,9 +401,13 @@ La política debe cubrir:
 |------|--------|
 | Estructura de carpetas | Completado |
 | Documentación de requisitos | Completado |
-| Metadata ES | Pendiente revisión |
-| Metadata EN/DE/FR/IT/PT | Pendiente revisión |
-| Descripción completa | Pendiente revisión |
+| Metadata corta (6 idiomas) | Completado |
+| Descripción completa ES | Completado |
+| Descripción completa EN | Completado |
+| Descripción completa DE | Completado |
+| Descripción completa FR | Completado |
+| Descripción completa IT | Completado |
+| Descripción completa PT | Completado |
 | Privacy Policy | Pendiente |
 | Screenshots | Pendiente (manual) |
 
