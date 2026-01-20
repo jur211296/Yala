@@ -5,21 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 7 — Registro Inteligente (siguiente)
+**Current focus:** Fase 7 — Beta Preparation (V1.0 Release)
 
 ## Current Position
 
-Phase: 7 of 8 (Registro Inteligente)
+Version: 1.0 (preparando release)
+Phase: 7 of 7 en V1.0 (Beta Preparation)
+Spec: .planning/PHASE7-BETAPREP-SPEC.md
 Plan: Not started
-Status: Fase 6 completada, listo para iniciar Fase 7
-Last activity: 2026-01-19 — Fase 6 completada
+Status: Features V1.0 completas, preparando para TestFlight beta pública
+Last activity: 2026-01-20 — Reorganización de roadmap (V1.0 vs V1.1)
 
-Progress: ░░░░░░░░░░░░░░ 0% (Fase 7)
+Progress: ░░░░░░░░░░░░░░ 0% (Fase 7 - Beta Preparation)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-19T20:55:00-05:00] 0083534 docs(state): Mark Phase 6 as complete, set Phase 7 as next
 - [2026-01-19T20:44:00-05:00] 30b2a94 refactor(widget): Scheduled payments widget with 3 variants in preferences
 - [2026-01-19T17:05:00-05:00] 1937184 feat(scheduled): Add subscriptions calendar view and UX improvements
 - [2026-01-19T16:45:00-05:00] b40ccf3 feat(scheduled): Add settings view in Profile for payment management
@@ -72,21 +75,45 @@ Progress: ░░░░░░░░░░░░░░ 0% (Fase 7)
 
 ## Next Steps
 
-### Fase 6: Pagos Planificados
-- ~~Diseñar modelo ScheduledPayment (SwiftData)~~ ✅
-- ~~CRUD de pagos planificados con SegmentedControl~~ ✅
-- ~~Vista detalle con historial de pagos~~ ✅
-- ~~Vista de gestión en Perfil~~ ✅
-- ~~Rediseño de recurrencia (one-time/recurring toggle)~~ ✅
-- ~~Suscripciones con calendario interactivo~~ ✅
-- ~~Campos requeridos (cuenta, subcategoría, nombre, monto)~~ ✅
-- ~~Iconos/colores de subcategoría en listas~~ ✅
-- ~~Fix parpadeo de título en navegación~~ ✅
-- ~~Widget en PanelView con 3 variantes (Resumen/Lista/Calendario)~~ ✅
-- ~~Selección de variante en preferencias de widgets~~ ✅
-- ~~Integración con período del Panel~~ ✅
-- Widget iOS (WidgetKit) - Movido a Fase 8
-- Notificaciones push (UNNotificationCenter) - Movido a Fase 8
+### Fase 7: Beta Preparation (V1.0 Release)
+
+**Subfase 7.1: Code Quality & Cleanup** ← Siguiente
+- [ ] Revisar TODOs/FIXMEs en el código
+- [ ] Eliminar código muerto o comentado
+- [ ] Consistencia en naming conventions
+- [ ] Imports no usados
+- [ ] Warnings del compilador a cero
+
+**Subfase 7.2: Performance & Optimización**
+- [ ] Profiling con Instruments
+- [ ] Revisar memory leaks
+- [ ] Lazy loading donde aplique
+
+**Subfase 7.3: Localizaciones y Monedas**
+- [ ] Auditoría de strings hardcodeados
+- [ ] Verificar keys en 6 idiomas
+- [ ] Formato números/fechas por locale
+- [ ] Añadir monedas: MXN, COP, BRL, GBP
+
+**Subfase 7.4: Testing & QA**
+- [ ] Documento de escenarios de prueba manual
+- [ ] Casos edge documentados
+
+**Subfase 7.5: UX para Nuevos Usuarios**
+- [ ] Empty states informativos
+- [ ] Textos de ayuda en Settings
+
+**Subfase 7.6: App Store Preparation**
+- [ ] Screenshots, descripción, metadata
+
+**Subfase 7.7: Estabilidad Pre-Release**
+- [ ] Error handling consistente
+- [ ] Validaciones de datos
+
+**Subfase 7.8: Primer Uso y Onboarding**
+- [ ] Detección idioma/región del sistema
+- [ ] Onboarding básico (nombre + moneda)
+- [ ] Defaults sensatos
 
 ## Parking Lot
 
@@ -101,7 +128,13 @@ Progress: ░░░░░░░░░░░░░░ 0% (Fase 7)
 
 ## Session Continuity
 
-Last session: 2026-01-19
-Stopped at: Fase 5.1 completada - optimización de cálculos
-Next step: Iniciar Fase 6 (Pagos Planificados)
+Last session: 2026-01-20
+Stopped at: Reorganización roadmap V1.0/V1.1
+Next step: Crear spec Fase 7 (Beta Preparation) y planificar subfase 7.1
 Resume file: None
+
+## V1.1 (Futuro)
+
+Registro Inteligente y Plataforma diferidos. Ver:
+- .planning/PHASE8-REGISTRO-SPEC.md
+- ROADMAP.md (Fases 8-9)

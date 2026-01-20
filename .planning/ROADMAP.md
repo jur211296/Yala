@@ -1,8 +1,14 @@
-# Roadmap: Neto V1.0
+# Roadmap: Neto
 
 ## Overview
 
-App iOS de finanzas personales. V1.0 estabiliza el core, añade automatización, mejora visualizaciones, introduce pagos planificados, registro inteligente con IA, e integración con plataforma iOS.
+App iOS de finanzas personales. Registrar y entender gastos, cuentas, presupuestos y reportes con claridad.
+
+### V1.0 (Release actual)
+Features completas + preparación para beta pública en TestFlight.
+
+### V1.1 (Siguiente release)
+Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 
 ## Domain Expertise
 
@@ -10,6 +16,7 @@ App iOS de finanzas personales. V1.0 estabiliza el core, añade automatización,
 
 ## Phases
 
+### V1.0
 - [x] **Fase 1: Estabilidad Core** - Eliminar bugs críticos antes de construir ✅
 - [x] **Fase 2: Periodos y Filtros** - Infraestructura de filtrado para toda la app ✅
 - [x] **Fase 3: Gestión Categorías** - Mantenimiento eficiente de categorías ✅
@@ -17,8 +24,11 @@ App iOS de finanzas personales. V1.0 estabiliza el core, añade automatización,
 - [x] **Fase 5: Visualizaciones Categorías** - Comparativas y detalles en gráficas ✅
 - [x] **Fase 5.1: Correcciones y Mejoras** - Bugs, UX y tech debt acumulado ✅
 - [x] **Fase 6: Pagos Planificados** - Nuevo módulo de suscripciones y pagos futuros ✅
-- [ ] **Fase 7: Registro Inteligente** - Entrada de transacciones con IA ← Siguiente
-- [ ] **Fase 8: Plataforma y Polish** - Integración iOS y refinamiento final
+- [ ] **Fase 7: Beta Preparation** - Code quality, testing, UX y preparación App Store ← Siguiente
+
+### V1.1
+- [ ] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA
+- [ ] **Fase 9: Plataforma y Polish** - Widgets iOS, notificaciones, atajos, autenticación
 
 ## Phase Details
 
@@ -146,40 +156,112 @@ DoD:
 - CRUD completo de pagos planificados
 - Widgets muestran próximos pagos
 
-### Fase 7: Registro Inteligente
-**Goal**: Automatizar entrada de transacciones con IA
-**Depends on**: Fase 3
-**Research**: Likely (Vision API, Speech Recognition, LLM integration)
-**Research topics**: iOS Vision framework, Speech framework, on-device vs cloud AI, duplicate detection
+### Fase 7: Beta Preparation
+**Goal**: Preparar V1.0 para release público en TestFlight
+**Depends on**: Fase 6
+**Research**: Unlikely
+**Spec**: .planning/PHASE7-BETAPREP-SPEC.md
 **Plans**: TBD
 
-Incluye:
-- Registro por foto con IA
-- Registro por audio con IA
-- Bandeja de entrada para automatizados
-- Validación de repetidos
+Subfases:
+
+**7.1: Code Quality & Cleanup**
+- Revisar TODOs/FIXMEs en el código
+- Eliminar código muerto o comentado
+- Consistencia en naming conventions
+- Imports no usados
+- Warnings del compilador a cero
+
+**7.2: Performance & Optimización**
+- Profiling con Instruments (vistas principales)
+- Revisar memory leaks
+- Lazy loading donde aplique
+- Verificar que no haya N+1 queries restantes
+
+**7.3: Localizaciones y Monedas**
+- Auditoría de strings hardcodeados
+- Verificar todas las keys en 6 idiomas
+- Formato de números/fechas por locale
+- Pluralizaciones correctas
+- Añadir monedas: MXN, COP, BRL, GBP
+
+**7.4: Testing & QA**
+- Documento de escenarios de prueba (manual)
+- Revisar cobertura de unit tests existentes
+- Casos edge: datos vacíos, muchos datos, valores extremos
+- Flujos completos end-to-end documentados
+
+**7.5: UX para Nuevos Usuarios**
+- Empty states informativos en todas las vistas
+- Textos de ayuda/explicación en Settings
+- Tooltips en vistas complejas (gráficas, filtros)
+
+**7.6: Preparación App Store**
+- Screenshots para todos los tamaños
+- Descripción de la app (6 idiomas)
+- Keywords y metadata
+- Privacy policy URL
+
+**7.7: Estabilidad Pre-Release**
+- Error handling consistente
+- Validaciones de entrada de datos
+- Comportamiento offline graceful
+- Migración de datos robusta
+
+**7.8: Primer Uso y Onboarding**
+- Detección de idioma del sistema
+- Sugerencia de moneda según región
+- Onboarding básico (nombre + moneda)
+- Defaults sensatos
 
 DoD:
-- Transacción desde foto/audio funcional
-- Bandeja muestra pendientes
-- Detección de duplicados
+- Cero warnings en build
+- Documento de QA con escenarios de prueba
+- Localizaciones auditadas (0 hardcodes)
+- Performance validada con Instruments
+- Assets de App Store listos
+- App estable para beta testers externos
 
-### Fase 8: Plataforma y Polish
+---
+
+### Fase 8: Registro Inteligente
+**Goal**: Automatizar entrada de transacciones con IA
+**Depends on**: Fase 7
+**Research**: Done
+**Spec**: .planning/PHASE8-REGISTRO-SPEC.md
+**Plans**: TBD
+
+Subfases:
+- 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación)
+- 8.2: Edición y Aprobación (sheet edición, validación, acciones lote)
+- 8.3: Voz MVP (OpenAI SDK, STT, LLM parser)
+- 8.4: Imágenes MVP (OCR Vision, clasificación, extractores)
+- 8.5: Merchant Memory (canonicalización, sugerencias)
+- 8.6: Refinamiento (sistema confianza, fallbacks)
+- 8.7: Cloud Fallback (opcional, AWS/GCP para recibos)
+
+DoD:
+- Bandeja de entrada funcional con drafts pendientes
+- Voz → draft con monto/fecha/nota
+- Imagen → draft(s) según tipo
+- Aprobación → TransactionItem
+- Merchant Memory sugiere subcategorías
+
+### Fase 9: Plataforma y Polish
 **Goal**: Integración con sistema iOS y refinamiento final
-**Depends on**: Todas las fases anteriores
+**Depends on**: Fase 8
 **Research**: Likely (WidgetKit, App Intents, Notifications)
 **Research topics**: WidgetKit timeline, App Intents/Shortcuts, UNNotification scheduling, Local Authentication
 **Plans**: TBD
 
 Incluye:
-- Widgets iOS (general)
-- Atajos (Shortcuts)
-- Share Sheet
-- Notificaciones
-- Inicio de sesión (autenticación)
-- Textos explicativos en ajustes
+- Widgets iOS (WidgetKit en pantalla inicio)
+- Notificaciones (UNNotificationCenter)
+- Atajos (App Intents / Shortcuts)
+- Share Sheet (importar datos)
+- Autenticación (Face ID / Touch ID)
+- Onboarding completo para nuevos usuarios
 - Vaciar datos: preguntar si cargar seed
-- **FINAL:** Analizar solo gastos vs todo
 
 DoD:
 - Widgets en pantalla de inicio
@@ -187,22 +269,27 @@ DoD:
 - Share Sheet importa datos
 - Notificaciones configurables
 - Autenticación activa
-- Ajustes documentados
-- Opción gastos/todo coherente en toda la app
+- Onboarding guiado funcionando
 
 ## Progress
 
-| Fase | Nombre | Plans | Status | Completed |
-|------|--------|-------|--------|-----------|
-| 1 | Estabilidad Core | N/A | ✅ Done | 2026-01-13 |
-| 2 | Periodos y Filtros | N/A | ✅ Done | 2026-01-14 |
-| 3 | Gestión Categorías | N/A | ✅ Done | 2026-01-14 |
-| 4 | Panel y Navegación | N/A | ✅ Done | 2026-01-15 |
-| 5 | Visualizaciones Categorías | N/A | ✅ Done | 2026-01-18 |
-| 5.1 | Correcciones y Mejoras | N/A | ✅ Done | 2026-01-19 |
-| 6 | Pagos Planificados | N/A | ✅ Done | 2026-01-19 |
-| 7 | Registro Inteligente | TBD | Not started | - |
-| 8 | Plataforma y Polish | TBD | Not started | - |
+### V1.0
+| Fase | Nombre | Status | Completed |
+|------|--------|--------|-----------|
+| 1 | Estabilidad Core | ✅ Done | 2026-01-13 |
+| 2 | Periodos y Filtros | ✅ Done | 2026-01-14 |
+| 3 | Gestión Categorías | ✅ Done | 2026-01-14 |
+| 4 | Panel y Navegación | ✅ Done | 2026-01-15 |
+| 5 | Visualizaciones Categorías | ✅ Done | 2026-01-18 |
+| 5.1 | Correcciones y Mejoras | ✅ Done | 2026-01-19 |
+| 6 | Pagos Planificados | ✅ Done | 2026-01-19 |
+| 7 | Beta Preparation | Not started | - |
+
+### V1.1
+| Fase | Nombre | Status | Completed |
+|------|--------|--------|-----------|
+| 8 | Registro Inteligente | Not started | - |
+| 9 | Plataforma y Polish | Not started | - |
 
 ---
 
