@@ -408,7 +408,7 @@ La política debe cubrir:
 | Descripción completa FR | Completado |
 | Descripción completa IT | Completado |
 | Descripción completa PT | Completado |
-| Privacy Policy | Pendiente |
+| Privacy Policy | Completado (ver PRIVACY-POLICY.md) |
 | Screenshots | Pendiente (manual) |
 
 ---
