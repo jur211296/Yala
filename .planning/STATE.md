@@ -20,6 +20,71 @@ Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-
 
 ---
 
+## ⚠️ FIX URGENTE V1.0 (PRIORIDAD MÁXIMA)
+
+### Edición masiva de transacciones
+
+**Problema:** El botón "Editar" en modo selección múltiple muestra "Coming Soon" en lugar de funcionar.
+
+**Estado actual (qué SÍ funciona):**
+- ✅ Entrar en modo selección (botón checkmark en toolbar de Records)
+- ✅ Seleccionar/deseleccionar transacciones individuales
+- ✅ Seleccionar todos
+- ✅ Eliminar seleccionados (botón trash) — FUNCIONA
+- ✅ Editar 1 registro (abre formulario de edición) — FUNCIONA
+
+**Lo que NO funciona:**
+- ❌ Editar múltiples registros → muestra alert "Coming Soon"
+
+**Archivos clave:**
+| Archivo | Líneas | Descripción |
+|---------|--------|-------------|
+| `DetailContainerView.swift` | 388-401 | `handleEditAction()` — tiene el placeholder |
+| `DetailContainerView.swift` | 327-357 | `selectionActionBar` — UI de acciones |
+| `DetailContainerView.swift` | 669-672 | Alert "Coming Soon" a reemplazar |
+| `RecordsViewModel.swift` | 319-336 | `editSelectedRecords()` — devuelve `.multiple` |
+
+**Implementación requerida:**
+
+1. **Crear `BulkEditSheet.swift`** en `Views/Records/`
+   - Opciones: "Cambiar cuenta", "Cambiar categoría"
+   - Usar DS tokens y patrones de UI existentes
+   - Cada opción abre un picker (reutilizar existentes)
+
+2. **Agregar métodos en `RecordsViewModel.swift`:**
+   ```swift
+   func bulkUpdateAccount(_ accountID: PersistentIdentifier, context: ModelContext)
+   func bulkUpdateSubcategory(_ subcategoryID: PersistentIdentifier, context: ModelContext)
+   ```
+
+3. **En `DetailContainerView.swift`:**
+   - Agregar `@State private var showBulkEditSheet = false`
+   - En `handleEditAction()` case `.multiple`: cambiar `showMultiEditPlaceholder = true` por `showBulkEditSheet = true`
+   - Agregar `.sheet(isPresented: $showBulkEditSheet)`
+
+**Flujo esperado:**
+```
+1. Usuario entra en modo selección (checkmark button)
+2. Selecciona múltiples transacciones (tap en cada una)
+3. Toca botón "Editar" (pencil) en barra inferior
+4. Aparece sheet: "Cambiar cuenta" | "Cambiar categoría"
+5. Selecciona opción → aparece picker correspondiente
+6. Confirma → se aplica cambio a TODOS los seleccionados
+7. Sale del modo selección automáticamente
+```
+
+**Definition of Done:**
+- [ ] `BulkEditSheet.swift` creado con diseño consistente
+- [ ] Cambiar cuenta funciona para N transacciones
+- [ ] Cambiar subcategoría funciona para N transacciones
+- [ ] Feedback visual después de aplicar cambios
+- [ ] Build compila sin warnings
+- [ ] Verificar con 1, 5, y 20+ transacciones seleccionadas
+
+**Estimación:** 3-4 incrementos pequeños
+
+---
+
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
 - [2026-01-20T14:52:00-05:00] 220e8ad chore(qa): add test CSV files for import testing
