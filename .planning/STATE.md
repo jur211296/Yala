@@ -16,12 +16,13 @@ Plan: Not started
 Status: Features V1.0 completas, preparando para TestFlight beta pública
 Last activity: 2026-01-20 — Reorganización de roadmap (V1.0 vs V1.1)
 
-Progress: ████████████░░ 75% (Fase 7 - Subfases 7.1-7.5, 7.8 completadas)
+Progress: █████████████░ 85% (Fase 7 - Subfases 7.1-7.5, 7.7, 7.8 completadas)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-20T11:40:00-05:00] 90c083f fix(persistence): add error handling for SwiftData save/delete operations
 - [2026-01-20T11:30:00-05:00] f6cd20a feat(currency): expand to 7 currencies with settings UI
 - [2026-01-20T11:28:00-05:00] d7c5ce7 feat(onboarding): add first-time setup flow with currency selection
 - [2026-01-20T11:26:00-05:00] b8e1d43 feat(widgets): add InfoHintButton with toggle and empty states
@@ -40,6 +41,7 @@ Progress: ████████████░░ 75% (Fase 7 - Subfases 7.1-
 - **Subfase 7.3: Localizaciones y Monedas** - 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP), strings hardcodeados corregidos
 - **Subfase 7.4: Testing & QA** - QA-SCENARIOS.md con 10 módulos y casos edge
 - **Subfase 7.5: UX para Nuevos Usuarios** - Empty states estandarizados, InfoHintButton en 12 widgets con toggle, FilterBlockedPopover, empty states en TrendsTabView
+- **Subfase 7.7: Estabilidad Pre-Release** - Error handling en persistencia (13 try? → do/catch con alertas), validaciones auditadas OK
 - **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
 
 ### Fase 6 (archivado)
@@ -115,9 +117,9 @@ Progress: ████████████░░ 75% (Fase 7 - Subfases 7.1-
 **Subfase 7.6: App Store Preparation** ← Siguiente
 - [ ] Screenshots, descripción, metadata
 
-**Subfase 7.7: Estabilidad Pre-Release**
-- [ ] Error handling consistente
-- [ ] Validaciones de datos
+**Subfase 7.7: Estabilidad Pre-Release** ✅
+- [x] Error handling consistente (13 operaciones de persistencia con alertas)
+- [x] Validaciones de datos (auditadas - todas OK)
 
 **Subfase 7.8: Primer Uso y Onboarding** ✅
 - [x] Onboarding de 4 pasos (nombre, moneda preferida, secundarias, periodo)
@@ -140,8 +142,8 @@ Progress: ████████████░░ 75% (Fase 7 - Subfases 7.1-
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Subfases 7.5 y 7.8 completadas (UX + Onboarding)
-Next step: Subfase 7.6 (App Store Preparation) o 7.7 (Estabilidad)
+Stopped at: Subfase 7.7 completada (Estabilidad Pre-Release)
+Next step: Subfase 7.6 (App Store Preparation) — última subfase pendiente
 Resume file: None
 
 ## V1.1 (Futuro)
