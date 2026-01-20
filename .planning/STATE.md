@@ -140,11 +140,18 @@ Progress: █░░░░░░░░░░░░░░░ 10% (Fase 8 - Subfase
 - Design System (DS) en `DesignTokens.swift` con: Spacing, Radius, FormRow, ListRow, Typography
 - SwiftData N:N requiere `@Relationship(inverse:)` explícito en un lado; arrays sin inverse se tratan como 1:N
 
+## Fixes Pendientes V1.0
+
+**[URGENTE] Edición masiva de transacciones**
+- UI de selección existe pero funcionalidad no implementada
+- Ubicación: RecordsTabView (modo selección)
+- Pendiente: acciones de edición masiva (cambiar categoría, cuenta, eliminar, etc.)
+
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Subfase 8.1 completada (Infraestructura Base)
-Next step: Subfase 8.2 (Edición y Aprobación)
+Stopped at: Subfase 8.1 completada — Pausado para fix urgente en 1.0
+Next step: Fix edición masiva en 1.0, luego retomar Subfase 8.2
 Resume file: None
 
 ## V1.1 (Futuro)
