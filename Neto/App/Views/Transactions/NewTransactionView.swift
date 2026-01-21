@@ -246,6 +246,17 @@ struct NewTransactionView: View {
                     isAmountFieldFocused = false
                 }
             }
+            .alert(
+                L10n.Alert.confirmDelete,
+                isPresented: $viewModel.showDeleteConfirmation
+            ) {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Action.delete, role: .destructive) {
+                    deleteTransaction()
+                }
+            } message: {
+                Text(L10n.Alert.deleteWarning)
+            }
         }
         .tint(Color.electricIndigo)
         .onAppear {
@@ -918,6 +929,18 @@ struct NewTransactionView: View {
         // Show feedback by focusing the amount field
         isNoteFieldFocused = false
         isAmountFieldFocused = true
+    }
+
+    private func deleteTransaction() {
+        guard let transaction = transactionToEdit else { return }
+
+        do {
+            modelContext.delete(transaction)
+            try modelContext.save()
+            dismiss()
+        } catch {
+            print("Error deleting transaction: \(error)")
+        }
     }
 
     private func prefillFromFavorite(_ favorite: FavoritePayment) {
