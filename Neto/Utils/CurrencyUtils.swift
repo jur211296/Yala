@@ -125,15 +125,56 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
 /// Centralized default currency settings.
 /// Use these constants instead of hardcoding "PEN" throughout the codebase.
 enum CurrencyDefaults {
-    /// The default currency code when none is specified (PEN - Peruvian Sol)
-    static let defaultCode = "PEN"
+    /// The fallback currency code when region detection fails (USD - US Dollar)
+    static let fallbackCode = "USD"
+
+    /// The default currency code when none is specified
+    /// Uses region detection, falls back to USD
+    static var defaultCode: String {
+        detectCurrencyFromRegion().rawValue
+    }
 
     /// UserDefaults key for storing the user's preferred currency
     static let preferredCurrencyKey = "defaultCurrencyCode"
 
-    /// Returns the user's current preferred currency code, or the default if not set
+    /// Returns the user's current preferred currency code, or the detected default if not set
     static var currentPreferred: String {
         UserDefaults.standard.string(forKey: preferredCurrencyKey) ?? defaultCode
+    }
+
+    /// Detects the recommended currency based on the user's device region
+    /// Falls back to USD for unsupported regions
+    static func detectCurrencyFromRegion() -> CurrencyCode {
+        let regionCode = Locale.current.region?.identifier ?? ""
+
+        switch regionCode {
+        // Latin America
+        case "PE":
+            return .pen
+        case "MX":
+            return .mxn
+        case "CO":
+            return .cop
+        case "BR":
+            return .brl
+
+        // North America
+        case "US":
+            return .usd
+
+        // Europe - Eurozone
+        case "ES", "DE", "FR", "IT", "PT", "NL", "BE", "AT", "IE", "FI", "GR",
+             "SK", "SI", "EE", "LV", "LT", "CY", "MT", "LU":
+            return .eur
+
+        // UK
+        case "GB":
+            return .gbp
+
+        // Default to USD for international users
+        default:
+            return .usd
+        }
     }
 }
 

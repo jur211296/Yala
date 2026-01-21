@@ -1608,19 +1608,19 @@ enum L10n {
 /// Centralized locale configuration for date formatters and charts.
 /// This makes it easy to change the app's locale in one place.
 enum AppLocale {
-    /// Supported language codes
-    private static let supportedLanguages = ["es", "en"]
+    /// Supported language codes (must match available .lproj localizations)
+    private static let supportedLanguages = ["es", "en", "de", "fr", "it", "pt"]
 
     /// The app's current locale for date formatting.
-    /// Uses the system locale if supported, otherwise defaults to Spanish.
+    /// Uses the system locale if supported, otherwise defaults to English.
     static var current: Locale {
-        let preferredLanguage = Locale.preferredLanguages.first ?? "es"
+        let preferredLanguage = Locale.preferredLanguages.first ?? "en"
         let languageCode = String(preferredLanguage.prefix(2))
 
         if supportedLanguages.contains(languageCode) {
             return Locale(identifier: preferredLanguage)
         }
-        return Locale(identifier: "es_ES")  // Default fallback
+        return Locale(identifier: "en_US")  // Default fallback
     }
 
     /// Short identifier for SwiftUI .locale() modifiers
