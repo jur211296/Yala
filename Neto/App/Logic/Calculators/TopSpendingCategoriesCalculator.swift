@@ -32,8 +32,11 @@ struct TopSpendingCategoriesCalculator {
         // - Within interval
         // - Has a category
         // - Matches requested transaction natures
+        // - Excludes balance adjustments and transfers
         let filteredTransactions = transactions.filter { transaction in
             guard let category = transaction.category else { return false }
+            // Exclude balance adjustments and transfers
+            guard transaction.balanceAdjustmentType == nil else { return false }
             let nature: TransactionNature = category.isIncome ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }
             return interval.contains(transaction.date)

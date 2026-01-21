@@ -179,12 +179,14 @@ struct SubcategorySelectorSheet: View {
         // Group by category
         let grouped = Dictionary(grouping: filtered) { $0.category }
 
-        // Sort by category sortOrder and convert to array of tuples
+        // Sort by category sortOrder, subcategories alphabetically A-Z
         return
             grouped
             .sorted { $0.key.sortOrder < $1.key.sortOrder }
             .map {
-                (category: $0.key, subcategories: $0.value.sorted { $0.sortOrder < $1.sortOrder })
+                (category: $0.key, subcategories: $0.value.sorted {
+                    $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                })
             }
     }
 }

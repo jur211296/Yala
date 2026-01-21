@@ -179,6 +179,14 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !hasExactRate
             )
 
+            // Mark transfers and adjustments so they're excluded from income/expense stats
+            let subcategoryName = draft.subcategory.name
+            if subcategoryName == L10n.Transfer.categoryName {
+                transaction.balanceAdjustmentType = "transfer"
+            } else if subcategoryName == "Ajustes de saldo" {
+                transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+            }
+
             context.insert(transaction)
         }
 
@@ -447,10 +455,11 @@ enum TransactionCSVImportService {
                 )
             } else {
                 // Modo estricto: solo se permiten categorías existentes.
-                // Si no existen, se aborta la importación con un error específico.
+                // Busca por nombre sin filtrar por isIncome para soportar categorías
+                // "neutrales" como "Otros" que contienen transferencias.
                 let categoryDescriptor = FetchDescriptor<Category>(
                     predicate: #Predicate { cat in
-                        cat.name == trimmedCategory && cat.isIncome == isIncome
+                        cat.name == trimmedCategory
                     }
                 )
                 let fetchedCategories = try context.fetch(categoryDescriptor)
@@ -933,6 +942,14 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !hasExactRate
             )
 
+            // Mark transfers and adjustments so they're excluded from income/expense stats
+            let subcategoryName = draft.subcategory.name
+            if subcategoryName == L10n.Transfer.categoryName {
+                transaction.balanceAdjustmentType = "transfer"
+            } else if subcategoryName == "Ajustes de saldo" {
+                transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+            }
+
             context.insert(transaction)
         }
 
@@ -1140,9 +1157,11 @@ enum TransactionCSVImportService {
                     in: context
                 )
             } else {
+                // Busca por nombre sin filtrar por isIncome para soportar categorías
+                // "neutrales" como "Otros" que contienen transferencias.
                 let categoryDescriptor = FetchDescriptor<Category>(
                     predicate: #Predicate { cat in
-                        cat.name == trimmedCategory && cat.isIncome == isIncome
+                        cat.name == trimmedCategory
                     }
                 )
                 let fetchedCategories = try context.fetch(categoryDescriptor)

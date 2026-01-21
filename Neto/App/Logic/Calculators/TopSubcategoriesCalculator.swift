@@ -40,6 +40,9 @@ struct TopSubcategoriesCalculator {
             // Basic validity - must have category
             guard let category = transaction.category else { return false }
 
+            // Exclude balance adjustments and transfers (they shouldn't appear in category stats)
+            guard transaction.balanceAdjustmentType == nil else { return false }
+
             // Nature check
             let nature: TransactionNature = category.isIncome ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }

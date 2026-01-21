@@ -253,29 +253,33 @@ struct SubcategoryDetailView: View {
                     }
                     .padding()
 
-                    SubsectionDivider()
+                    // Nature selector only for expense categories (not income)
+                    if !parentCategory.isIncome {
+                        SubsectionDivider()
 
-                    Button {
-                        isPresentingNatureSelector = true
-                    } label: {
-                        HStack(spacing: DS.Spacing.md) {
-                            Image(systemName: "circle.lefthalf.filled")
-                                .foregroundStyle(.secondary)
-                            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                                Text(L10n.Category.nature)
-                                    .foregroundStyle(.primary)
-                                Text(selectedNature.displayName)
-                                    .font(.subheadline)
+                        Button {
+                            isPresentingNatureSelector = true
+                        } label: {
+                            HStack(spacing: DS.Spacing.md) {
+                                Image(systemName: "circle.lefthalf.filled")
                                     .foregroundStyle(.secondary)
+                                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                                    Text(L10n.Category.nature)
+                                        .foregroundStyle(.primary)
+                                    Text(selectedNature.displayName)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote)
+                                    .foregroundStyle(.tertiary)
                             }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
+                            .padding()
+                            .contentShape(Rectangle())
                         }
-                        .padding()
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
 
                     SubsectionDivider()
 
@@ -342,40 +346,34 @@ struct SubcategoryDetailView: View {
         let finalName = trimmedName
         guard !finalName.isEmpty else { return }
 
+        // Income subcategories always use unclassified nature
+        let finalNature: SubcategoryNature = parentCategory.isIncome ? .unclassified : selectedNature
+
         if let sub = subcategoryToEdit {
             // Edición
             sub.name = finalName
             sub.isVisible = isVisible
-            sub.nature = selectedNature
+            sub.nature = finalNature
             sub.colorHex = parentCategory.colorHex  // Enforce parent color
             sub.iconName = selectedIconName
         } else {
-            // Creación
-            let sortOrder: Int
-            do {
-                let descriptor = FetchDescriptor<Subcategory>()
-                let allSubcategories = try modelContext.fetch(descriptor)
-                let existing = allSubcategories.filter { $0.category == parentCategory }
-                let maxOrder = existing.map { $0.sortOrder }.max() ?? -1
-                sortOrder = maxOrder + 1
-            } catch {
-                print("Subcategory: Error calculando sortOrder de subcategorías: \(error)")
-                sortOrder = 0
-            }
-
+            // Creación - sortOrder will be recalculated after save
             let newSubcategory = Subcategory(
                 name: finalName,
                 colorHex: parentCategory.colorHex,  // Enforce parent color
                 isDefaultSeed: false,
                 isVisible: isVisible,
-                sortOrder: sortOrder,
-                natureRawValue: selectedNature.rawValue,
+                sortOrder: 0,  // Temporary, will be recalculated
+                natureRawValue: finalNature.rawValue,
                 iconName: selectedIconName,
                 category: parentCategory
             )
 
             modelContext.insert(newSubcategory)
         }
+
+        // Reorder all subcategories in this category alphabetically
+        reorderSubcategoriesAlphabetically()
 
         do {
             try modelContext.save()
@@ -384,5 +382,22 @@ struct SubcategoryDetailView: View {
         }
 
         dismiss()
+    }
+
+    /// Reorders all subcategories in the parent category alphabetically by name
+    private func reorderSubcategoriesAlphabetically() {
+        do {
+            let descriptor = FetchDescriptor<Subcategory>()
+            let allSubcategories = try modelContext.fetch(descriptor)
+            let categorySubcategories = allSubcategories
+                .filter { $0.category == parentCategory }
+                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+
+            for (index, subcategory) in categorySubcategories.enumerated() {
+                subcategory.sortOrder = index
+            }
+        } catch {
+            print("Subcategory: Error reordering subcategories: \(error)")
+        }
     }
 }

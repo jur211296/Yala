@@ -137,6 +137,10 @@ struct CategoriesTabView: View {
         .onChange(of: viewModel.selectedTransactionNatures) {
             calculateData()
         }
+        .onChange(of: allSubcategories) {
+            // Recalculate when subcategories change (nature edited, etc.)
+            calculateData()
+        }
         .onChange(of: selectedCategoryID) {
             syncSelectionToCategoryFilter()
             calculateData()

@@ -200,6 +200,10 @@ struct PanelView: View {
             // Recalculate when budgets change (favorites toggled, reordered, etc.)
             recalculateData()
         }
+        .onChange(of: allSubcategories) {
+            // Recalculate when subcategories change (nature edited, etc.)
+            recalculateData()
+        }
         .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in
             // Recalculate when favorites are modified from any view (Profile, Planning, etc.)
             if needsRefresh {

@@ -36,8 +36,10 @@ struct NatureTrendHelper {
 
         for tx in transactions {
             // Strict Filter:
-            // 1. Must have a category (Excludes Transfers)
-            // 2. Category must NOT be income (Excludes Incomes)
+            // 1. Exclude balance adjustments and transfers
+            // 2. Must have a category
+            // 3. Category must NOT be income (Excludes Incomes)
+            guard tx.balanceAdjustmentType == nil else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
 
             // Use TrendGrouping extension for consistent date bucketing

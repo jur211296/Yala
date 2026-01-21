@@ -407,7 +407,9 @@ struct SubcategoryTransferSheet: View {
             grouped
             .sorted { $0.key.sortOrder < $1.key.sortOrder }
             .map {
-                (category: $0.key, subcategories: $0.value.sorted { $0.sortOrder < $1.sortOrder })
+                (category: $0.key, subcategories: $0.value.sorted {
+                    $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                })
             }
     }
 }

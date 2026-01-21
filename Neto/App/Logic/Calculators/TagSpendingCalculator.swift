@@ -30,8 +30,11 @@ struct TagSpendingCalculator {
         // - Has a category (to determine nature)
         // - Matches requested transaction natures
         // - Has at least one tag
+        // - Excludes balance adjustments and transfers
         let filteredTransactions = transactions.filter { transaction in
             guard let category = transaction.category else { return false }
+            // Exclude balance adjustments and transfers
+            guard transaction.balanceAdjustmentType == nil else { return false }
             let nature: TransactionNature = category.isIncome ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }
             guard !transaction.tags.isEmpty else { return false }
