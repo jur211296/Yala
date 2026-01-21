@@ -50,6 +50,7 @@ struct SubcategoryNatureSelectorView: View {
                                     }
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 14)
+                                    .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                             }

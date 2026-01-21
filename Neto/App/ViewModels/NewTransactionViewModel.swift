@@ -513,6 +513,7 @@ final class NewTransactionViewModel {
             outTransaction.amountInPreferredCurrency =
                 (outAmountInPreferred as NSDecimalNumber).doubleValue
             outTransaction.preferredCurrencyCode = preferredCode
+            outTransaction.balanceAdjustmentType = "transfer"
 
             // Update In
             inTransaction.date = transactionDate
@@ -527,6 +528,7 @@ final class NewTransactionViewModel {
             inTransaction.amountInPreferredCurrency =
                 (inAmountInPreferred as NSDecimalNumber).doubleValue
             inTransaction.preferredCurrencyCode = preferredCode
+            inTransaction.balanceAdjustmentType = "transfer"
 
         } else {
             outTransaction = TransactionItem(
@@ -542,6 +544,7 @@ final class NewTransactionViewModel {
                 amountInPreferredCurrency: (outAmountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode
             )
+            outTransaction.balanceAdjustmentType = "transfer"
 
             inTransaction = TransactionItem(
                 date: transactionDate,
@@ -556,6 +559,7 @@ final class NewTransactionViewModel {
                 amountInPreferredCurrency: (inAmountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode
             )
+            inTransaction.balanceAdjustmentType = "transfer"
 
             context.insert(outTransaction)
             context.insert(inTransaction)
@@ -565,43 +569,43 @@ final class NewTransactionViewModel {
     }
 
     private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
-        let categoryName = L10n.Transfer.categoryName
+        // Use "Otros" category (from seed) with localized subcategory name
+        let parentCategoryName = "Otros"
         let subcategoryName = L10n.Transfer.categoryName
 
-        // Check if exists
+        // Check if subcategory exists within "Otros"
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == categoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == parentCategoryName }
         )
 
         if let existing = try? context.fetch(descriptor).first {
             return existing
         }
 
-        // Check if Parent Category exists
+        // Check if "Otros" category exists (should always exist from seed)
         let catDescriptor = FetchDescriptor<Category>(
-            predicate: #Predicate { $0.name == categoryName }
+            predicate: #Predicate { $0.name == parentCategoryName }
         )
 
         let category: Category
         if let existingCat = try? context.fetch(catDescriptor).first {
             category = existingCat
         } else {
-            // Create Category
-            // Note: Category init(name, colorHex, isIncome, ...)
+            // Fallback: create "Otros" if somehow missing
             category = Category(
-                name: categoryName,
-                colorHex: "8E8E93",  // Gray, neutral
+                name: parentCategoryName,
+                colorHex: "#64748B",
                 isIncome: false
             )
             context.insert(category)
         }
 
-        // Create Subcategory
-        // Note: Subcategory init(name, colorHex?, ..., natureRawValue?, category)
+        // Create subcategory within "Otros"
         let subcategory = Subcategory(
             name: subcategoryName,
             colorHex: nil,
             natureRawValue: SubcategoryNature.unclassified.rawValue,
+            iconName: "arrow.left.arrow.right",
             category: category
         )
         context.insert(subcategory)

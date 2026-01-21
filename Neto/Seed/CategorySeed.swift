@@ -303,7 +303,10 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
         subcategories: [
             SubcategorySeedDefinition(
                 name: "Ajustes de saldo", natureRawValue: "sin_clasificacion",
-                iconName: "plus.forwardslash.minus")
+                iconName: "plus.forwardslash.minus"),
+            SubcategorySeedDefinition(
+                name: "Transferencia entre cuentas", natureRawValue: "sin_clasificacion",
+                iconName: "arrow.left.arrow.right")
         ]
     ),
 ]

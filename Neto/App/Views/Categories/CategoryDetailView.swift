@@ -58,16 +58,11 @@ struct CategoryDetailView: View {
         _colorHex = State(initialValue: category.colorHex)
     }
 
-    /// Subcategorías filtradas solo para esta categoría, ordenadas por sortOrder y nombre.
+    /// Subcategorías filtradas solo para esta categoría, ordenadas alfabéticamente A-Z.
     private var subcategories: [Subcategory] {
         allSubcategories
             .filter { $0.category == category }
-            .sorted { lhs, rhs in
-                if lhs.sortOrder != rhs.sortOrder {
-                    return lhs.sortOrder < rhs.sortOrder
-                }
-                return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     private var hasUnsavedChanges: Bool {
@@ -307,8 +302,9 @@ struct CategoryDetailView: View {
                 }
             }
 
-            // Delete button (only for existing categories, not new ones)
-            if !isNewCategory {
+            // Delete button (only for existing expense categories, not new ones or income categories)
+            // Income category cannot be deleted because users can't create new income categories
+            if !isNewCategory && !category.isIncome {
                 SectionBox(title: "") {
                     Button {
                         transactionCount = countTransactionsInCategory()
@@ -325,6 +321,7 @@ struct CategoryDetailView: View {
                             Spacer()
                         }
                         .padding()
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }

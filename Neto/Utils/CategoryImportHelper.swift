@@ -29,6 +29,10 @@ enum CategoryImportHelper {
     ///   - isIncome: Indica si la categoría es de ingresos o de gastos.
     ///   - context: ModelContext de SwiftData.
     /// - Returns: Category resuelta o creada.
+    ///
+    /// - Note: Busca primero por nombre exacto (ignorando isIncome) para soportar
+    ///   categorías "neutrales" como "Otros" que contienen subcategorías de transferencias.
+    ///   Esto permite importar transferencias correctamente independiente del signo del monto.
     static func fetchOrCreateCategory(
         named name: String,
         isIncome: Bool,
@@ -38,7 +42,9 @@ enum CategoryImportHelper {
         // Normalizamos nombre para evitar duplicados triviales por espacios.
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Buscamos una categoría ya existente con el mismo nombre.
+        // Buscamos una categoría ya existente con el mismo nombre (sin filtrar por isIncome).
+        // Esto permite que categorías "neutrales" como "Otros" funcionen para transferencias
+        // que tienen montos positivos (entrada) y negativos (salida).
         let descriptor = FetchDescriptor<Category>(
             predicate: #Predicate { category in
                 category.name == trimmedName
