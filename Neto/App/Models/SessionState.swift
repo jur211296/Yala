@@ -230,6 +230,10 @@ class SessionState {
     /// Set to true after favorites are modified (toggled, reordered)
     var needsBudgetsWidgetRefresh: Bool = false
 
+    /// Version counter for formatting settings (rounded amounts, etc.)
+    /// Increment this to force views to re-render with new formatting
+    var formattingVersion: Int = 0
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

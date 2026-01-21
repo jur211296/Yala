@@ -502,8 +502,8 @@
 
 "common.all" = "Tutte";
 "widget.main" = "Principale";
-"widget.topCategories" = "Categorie principali";
-"widget.topSubcategories" = "Sottocategorie principali";
+"widget.topCategories" = "Top categorie";
+"widget.topSubcategories" = "Top sottocategorie";
 "widget.subcategories" = "Sottocategorie";
 "widget.noExpensesPeriod" = "Non hai ancora spese in questo periodo.";
 "widget.noExpensesDescriptionCategories" = "Quando registrerai transazioni, le tue categorie principali appariranno qui.";
@@ -518,8 +518,9 @@
 "common.remaining" = "Rimanente";
 "widget.categories" = "Categorie";
 "widget.noExpensesSubcategoriesPeriod" = "Non ci sono ancora spese nelle sottocategorie per questo periodo.";
-"widget.distributionByCategory" = "Distribuzione per categoria";
-"widget.distributionBySubcategory" = "Distribuzione per sottocategoria";
+"widget.distributionByCategory" = "Categorie";
+"widget.distributionBySubcategory" = "Sottocategorie";
+"widget.distributionByNature" = "Nature";
 "widget.distributionByTag" = "Distribuzione per etichetta";
 "widget.noDataForPeriod" = "Nessun dato per questo periodo";
 "widget.selectCurrencies" = "Seleziona fino a 2 valute da confrontare con %@";
@@ -597,6 +598,8 @@
 "statistics.noRecordsFiltered" = "Nessuna registrazione trovata con i filtri applicati.";
 "statistics.noRecordsDescription" = "Quando registrerai transazioni, appariranno qui.";
 "statistics.periodComparison" = "Confronto con il periodo precedente";
+"statistics.vsPreviousPeriod" = "vs Periodo precedente";
+"statistics.vsPreviousYear" = "vs Anno precedente";
 "statistics.currentPeriod" = "Periodo attuale";
 "statistics.previousPeriod" = "Periodo precedente";
 "statistics.latestRecords" = "Ultime registrazioni";
@@ -1004,6 +1007,8 @@
 
 "settings.widgetHints" = "Testi di aiuto";
 "settings.widgetHintsDescription" = "Mostra pulsanti info sui widget con spiegazioni su ogni grafico.";
+"settings.roundedAmounts" = "Importi arrotondati";
+"settings.roundedAmountsDescription" = "Mostra tutti gli importi senza decimali per una lettura più rapida.";
 
 "widget.hint.trend" = "Mostra l'evoluzione del tuo saldo, entrate o spese nel periodo selezionato.";
 "widget.hint.topCategories" = "Le categorie in cui hai speso di piu in questo periodo.";

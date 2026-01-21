@@ -105,11 +105,23 @@ struct TopSubcategoriesWidget: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
-                        // Total amount (only with variation header)
+                        // Total amount with vs comparison (only with variation header)
                         if showVariationHeader && !subcategories.isEmpty {
-                            Text(NetoFormatter.currency(value: totalAmount, currencyCode: currencyCode))
-                                .font(.title3.weight(.bold))
-                                .foregroundStyle(.primary)
+                            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                                Text(NetoFormatter.currency(value: totalAmount, currencyCode: currencyCode))
+                                    .font(.callout.weight(.bold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+
+                                if let prevAmount = previousTotalAmount {
+                                    Text("vs \(NetoFormatter.number(value: prevAmount))")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.netoSecondaryText)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
+                                }
+                            }
                         }
                     }
                 }
@@ -132,6 +144,8 @@ struct TopSubcategoriesWidget: View {
                             Text(comparisonText)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                     }
                 }
@@ -323,7 +337,7 @@ struct TopSubcategoriesWidget: View {
                             .lineLimit(1)
 
                         Text(formattedAmount(top.amount))
-                            .font(.title3.weight(.bold))
+                            .font(.callout.weight(.bold))
                             .foregroundStyle(.primary)
                             .minimumScaleFactor(0.8)
                             .lineLimit(1)

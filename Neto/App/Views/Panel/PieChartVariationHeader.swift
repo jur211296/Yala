@@ -55,16 +55,20 @@ struct PieChartVariationHeader: View {
                     .padding(.bottom, 2)
 
                 // KPI with "vs previous amount"
-                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(formattedCurrency(totalAmount))
-                        .font(.title3.weight(.bold))
+                        .font(.callout.weight(.bold))
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                     // Show previous period value for comparison
                     if let prevAmount = previousAmount {
                         Text("vs \(NetoFormatter.number(value: prevAmount))")
                             .font(.caption)
                             .foregroundStyle(Color.netoSecondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
             }
@@ -88,6 +92,8 @@ struct PieChartVariationHeader: View {
                         Text(comparisonText)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
             }

@@ -14,7 +14,8 @@ struct PeriodComparisonChartView: View {
     let previousPeriodPoints: [BarPoint]
     let yDomain: ClosedRange<Double>
     let grouping: TrendGrouping
-    let interval: DateInterval
+    let currentInterval: DateInterval
+    let previousInterval: DateInterval
     let currencyCode: String
     let trendType: TrendType
     let chartHeight: CGFloat
@@ -34,10 +35,10 @@ struct PeriodComparisonChartView: View {
     // Calculate X domain based on actual data range (current period only)
     // Previous period dates are adjusted to fit within current period domain
     private var dataXDomain: ClosedRange<Date> {
-        guard !filteredCurrentPoints.isEmpty else { return interval.start...interval.end }
+        guard !filteredCurrentPoints.isEmpty else { return currentInterval.start...currentInterval.end }
         guard let firstDate = filteredCurrentPoints.first?.date,
               let lastDate = filteredCurrentPoints.last?.date
-        else { return interval.start...interval.end }
+        else { return currentInterval.start...currentInterval.end }
 
         // Add some padding
         let calendar = Calendar.current
@@ -105,11 +106,12 @@ struct PeriodComparisonChartView: View {
                 // Find corresponding previous period point (already adjusted in clippedPreviousPoints)
                 let selectedPreviousPoint = closestPoint(to: activeDate, in: clippedPreviousPoints)
 
+                // Vertical dashed line
                 RuleMark(x: .value("Selected Date", activeDate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                     .foregroundStyle(Color.netoSecondaryText)
 
-                // Ring Border (Background)
+                // Ring Border (Background) on data point
                 PointMark(
                     x: .value("Selected Date", activeDate),
                     y: .value("Selected Value", selectedCurrentPoint.value)
@@ -117,7 +119,7 @@ struct PeriodComparisonChartView: View {
                 .symbolSize(140)
                 .foregroundStyle(trendType.color)
 
-                // Main Dot (Foreground)
+                // Main Dot (Foreground) on data point
                 PointMark(
                     x: .value("Selected Date", activeDate),
                     y: .value("Selected Value", selectedCurrentPoint.value)
@@ -125,47 +127,47 @@ struct PeriodComparisonChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(Color.netoCard)
 
-                // Tooltip showing both values - dynamic position based on point height
+                // Invisible anchor point at top of chart for tooltip
+                PointMark(
+                    x: .value("Selected Date", activeDate),
+                    y: .value("Top", yDomain.upperBound)
+                )
+                .symbolSize(0)
                 .annotation(
-                    position: tooltipShouldBeBelow(for: selectedCurrentPoint.value) ? .bottom : .top,
+                    position: .top,
                     alignment: tooltipAlignment(for: activeDate)
                 ) {
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        Text(periodLabel(for: activeDate))
-                            .font(.caption2)
-                            .foregroundStyle(Color.netoSecondaryText)
-                            .frame(maxWidth: .infinity, alignment: .center)
-
-                        // Current period value
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        // Current period value with date
                         HStack(spacing: DS.Spacing.xs) {
                             Circle()
                                 .fill(trendType.color)
                                 .frame(width: 6, height: 6)
-                            Text("\(formattedAmount(selectedCurrentPoint.value)) \(currencyCode)")
+                            Text("\(periodLabel(for: selectedCurrentPoint.date)): \(formattedAmount(selectedCurrentPoint.value))")
                                 .font(.caption.bold())
                                 .foregroundStyle(Color.netoPrimaryText)
                         }
 
-                        // Previous period value (if exists)
+                        // Previous period value with original date (if exists)
                         if let previousPoint = selectedPreviousPoint {
+                            let originalPrevDate = getOriginalPreviousDate(for: previousPoint.date)
                             HStack(spacing: DS.Spacing.xs) {
                                 Circle()
                                     .fill(Color.netoSecondaryText.opacity(0.5))
                                     .frame(width: 6, height: 6)
-                                Text("\(formattedAmount(previousPoint.value)) \(currencyCode)")
+                                Text("\(periodLabel(for: originalPrevDate)): \(formattedAmount(previousPoint.value))")
                                     .font(.caption)
                                     .foregroundStyle(Color.netoSecondaryText)
                             }
                         }
                     }
                     .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
                             .fill(Color.netoCard.opacity(0.95))
                             .shadow(radius: 2)
                     )
-                    .offset(y: tooltipShouldBeBelow(for: selectedCurrentPoint.value) ? -30 : -30)
                 }
             }
         }
@@ -234,39 +236,29 @@ struct PeriodComparisonChartView: View {
     // MARK: - Helpers
 
     /// Adjust previous period dates to align with current period on X-axis
-    /// Uses calendar-based alignment to correctly handle months with different lengths
+    /// Uses proportional mapping: position in previous interval → same position in current interval
     private func adjustDateToCurrent(_ previousDate: Date) -> Date {
-        let calendar = Calendar.current
-
-        // Get day-of-month from previous date
-        let dayOfMonth = calendar.component(.day, from: previousDate)
-
-        // Create date in current period with same day-of-month
-        var components = calendar.dateComponents([.year, .month], from: interval.start)
-        components.day = dayOfMonth
-
-        // If day doesn't exist in current month (e.g., Nov 30 → Feb 30), clamp to last day
-        if let adjustedDate = calendar.date(from: components) {
-            // Check if the date is within the current interval
-            if adjustedDate >= interval.start && adjustedDate < interval.end {
-                return adjustedDate
-            }
-        }
-
-        // Fallback: use proportional mapping for edge cases
-        // Calculate position in previous period and map to current period
-        let previousInterval = DateInterval(
-            start: calendar.date(byAdding: .month, value: -1, to: interval.start) ?? previousDate,
-            end: interval.start
-        )
-
         let previousDuration = previousInterval.duration
-        let currentDuration = interval.duration
+        let currentDuration = currentInterval.duration
 
         guard previousDuration > 0 else { return previousDate }
 
+        // Calculate relative position (0.0 to 1.0) within previous interval
         let relativePosition = previousDate.timeIntervalSince(previousInterval.start) / previousDuration
-        return interval.start.addingTimeInterval(relativePosition * currentDuration)
+
+        // Map to same relative position in current interval
+        return currentInterval.start.addingTimeInterval(relativePosition * currentDuration)
+    }
+
+    /// Get the original previous period date for a given current period date (inverse mapping)
+    private func getOriginalPreviousDate(for currentDate: Date) -> Date {
+        let currentDuration = currentInterval.duration
+        let previousDuration = previousInterval.duration
+
+        guard currentDuration > 0 else { return currentDate }
+
+        let relativePosition = currentDate.timeIntervalSince(currentInterval.start) / currentDuration
+        return previousInterval.start.addingTimeInterval(relativePosition * previousDuration)
     }
 
     /// Format currency value for Y-axis (shortened) - matches TrendChartView format
@@ -309,10 +301,10 @@ struct PeriodComparisonChartView: View {
     /// Safe tooltip alignment based on date position in interval
     private func tooltipAlignment(for date: Date) -> Alignment {
         // Calculate position as percentage of interval
-        let intervalDuration = interval.end.timeIntervalSince(interval.start)
+        let intervalDuration = currentInterval.end.timeIntervalSince(currentInterval.start)
         guard intervalDuration > 0 else { return .center }
 
-        let datePosition = date.timeIntervalSince(interval.start)
+        let datePosition = date.timeIntervalSince(currentInterval.start)
         let percentage = datePosition / intervalDuration
 
         if percentage < 0.25 {
@@ -322,16 +314,6 @@ struct PeriodComparisonChartView: View {
         } else {
             return .center
         }
-    }
-
-    /// Determines if tooltip should be below the point (when point is in upper portion of chart)
-    private func tooltipShouldBeBelow(for value: Double) -> Bool {
-        let range = yDomain.upperBound - yDomain.lowerBound
-        guard range > 0 else { return false }
-
-        let normalizedValue = (value - yDomain.lowerBound) / range
-        // If point is in upper 30% of chart, put tooltip below
-        return normalizedValue > 0.70
     }
 
     /// Format period label for tooltip

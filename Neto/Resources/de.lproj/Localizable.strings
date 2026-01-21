@@ -502,8 +502,8 @@
 
 "common.all" = "Alle";
 "widget.main" = "Haupt";
-"widget.topCategories" = "Hauptkategorien";
-"widget.topSubcategories" = "Hauptunterkategorien";
+"widget.topCategories" = "Top Kategorien";
+"widget.topSubcategories" = "Top Unterkategorien";
 "widget.subcategories" = "Unterkategorien";
 "widget.noExpensesPeriod" = "Du hast noch keine Ausgaben in diesem Zeitraum.";
 "widget.noExpensesDescriptionCategories" = "Wenn du Transaktionen erfasst, siehst du hier deine Hauptkategorien.";
@@ -518,8 +518,9 @@
 "common.remaining" = "Verbleibend";
 "widget.categories" = "Kategorien";
 "widget.noExpensesSubcategoriesPeriod" = "Noch keine Ausgaben in Unterkategorien für diesen Zeitraum.";
-"widget.distributionByCategory" = "Verteilung nach Kategorie";
-"widget.distributionBySubcategory" = "Verteilung nach Unterkategorie";
+"widget.distributionByCategory" = "Kategorien";
+"widget.distributionBySubcategory" = "Unterkategorien";
+"widget.distributionByNature" = "Naturen";
 "widget.distributionByTag" = "Verteilung nach Tag";
 "widget.noDataForPeriod" = "Keine Daten für diesen Zeitraum";
 "widget.selectCurrencies" = "Wähle bis zu 2 Währungen zum Vergleich mit %@";
@@ -597,6 +598,8 @@
 "statistics.noRecordsFiltered" = "Keine Einträge mit den angewandten Filtern gefunden.";
 "statistics.noRecordsDescription" = "Wenn du Transaktionen erfasst, erscheinen sie hier.";
 "statistics.periodComparison" = "Vergleich mit vorherigem Zeitraum";
+"statistics.vsPreviousPeriod" = "vs Vorheriger Zeitraum";
+"statistics.vsPreviousYear" = "vs Vorjahr";
 "statistics.currentPeriod" = "Aktueller Zeitraum";
 "statistics.previousPeriod" = "Vorheriger Zeitraum";
 "statistics.latestRecords" = "Neueste Einträge";
@@ -1004,6 +1007,8 @@
 
 "settings.widgetHints" = "Hilfetexte";
 "settings.widgetHintsDescription" = "Zeigt Info-Buttons auf Widgets mit Erklärungen zu jedem Diagramm.";
+"settings.roundedAmounts" = "Gerundete Beträge";
+"settings.roundedAmountsDescription" = "Zeigt alle Beträge ohne Dezimalstellen für schnelleres Lesen.";
 
 "widget.hint.trend" = "Zeigt die Entwicklung Ihres Saldos, Einkommens oder Ihrer Ausgaben im ausgewählten Zeitraum.";
 "widget.hint.topCategories" = "Die Kategorien, in denen Sie in diesem Zeitraum am meisten ausgegeben haben.";

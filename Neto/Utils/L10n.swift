@@ -149,6 +149,12 @@ enum L10n {
         static var periodComparison: String {
             NSLocalizedString("statistics.periodComparison", comment: "")
         }
+        static var vsPreviousPeriod: String {
+            NSLocalizedString("statistics.vsPreviousPeriod", comment: "")
+        }
+        static var vsPreviousYear: String {
+            NSLocalizedString("statistics.vsPreviousYear", comment: "")
+        }
         static var currentPeriod: String {
             NSLocalizedString("statistics.currentPeriod", comment: "")
         }
@@ -1062,6 +1068,12 @@ enum L10n {
         static var widgetHintsDescription: String {
             NSLocalizedString("settings.widgetHintsDescription", comment: "")
         }
+        static var roundedAmounts: String {
+            NSLocalizedString("settings.roundedAmounts", comment: "")
+        }
+        static var roundedAmountsDescription: String {
+            NSLocalizedString("settings.roundedAmountsDescription", comment: "")
+        }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
             NSLocalizedString("settings.resetDataDescription", comment: "")
@@ -1245,6 +1257,9 @@ enum L10n {
         }
         static var distributionBySubcategory: String {
             NSLocalizedString("widget.distributionBySubcategory", comment: "")
+        }
+        static var distributionByNature: String {
+            NSLocalizedString("widget.distributionByNature", comment: "")
         }
         static var distributionByTag: String {
             NSLocalizedString("widget.distributionByTag", comment: "")

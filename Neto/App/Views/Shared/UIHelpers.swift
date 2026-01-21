@@ -270,6 +270,16 @@ extension Color {
 // MARK: - Formatters
 
 struct NetoFormatter {
+    /// Check if user prefers rounded amounts (no decimals)
+    /// Defaults to true (rounded) on first launch
+    private static var useRoundedAmounts: Bool {
+        // If key doesn't exist, default to true (rounded)
+        if UserDefaults.standard.object(forKey: "useRoundedAmounts") == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "useRoundedAmounts")
+    }
+
     /// Formats a currency value with standard format: `PEN 20,000.00` or `PEN -20,000.00`
     /// - Parameters:
     ///   - value: The numeric value to format
@@ -281,11 +291,17 @@ struct NetoFormatter {
     ) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
+
+        if useRoundedAmounts {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 0
+        } else {
+            formatter.minimumFractionDigits = 2
+            formatter.maximumFractionDigits = 2
+        }
 
         let absoluteValue = abs(value)
-        let formattedNumber = formatter.string(from: NSNumber(value: absoluteValue)) ?? "0.00"
+        let formattedNumber = formatter.string(from: NSNumber(value: absoluteValue)) ?? (useRoundedAmounts ? "0" : "0.00")
 
         // Build sign prefix (attached to number, no extra space)
         var signedNumber = formattedNumber
@@ -309,8 +325,15 @@ struct NetoFormatter {
     static func number(value: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
+
+        if useRoundedAmounts {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 0
+        } else {
+            formatter.minimumFractionDigits = 2
+            formatter.maximumFractionDigits = 2
+        }
+
+        return formatter.string(from: NSNumber(value: value)) ?? (useRoundedAmounts ? "0" : "0.00")
     }
 }

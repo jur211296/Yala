@@ -471,11 +471,14 @@ struct SubcategoriesPieWidget: View {
                         Text(L10n.Widget.distributionBySubcategory)
                             .font(.headline)
                             .foregroundStyle(.primary)
+                            .lineLimit(1)
                             .padding(.bottom, 2)
 
                         Text(formattedCurrency(filteredTotalExpense))
-                            .font(.title3.weight(.bold))
+                            .font(.callout.weight(.bold))
                             .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                     Spacer()
                     if onShowDetail != nil {

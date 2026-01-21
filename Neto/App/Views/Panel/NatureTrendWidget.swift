@@ -100,25 +100,29 @@ struct NatureTrendWidget: View {
             HStack(alignment: .top) {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.Nature.title)
+                    Text(L10n.Widget.distributionByNature)
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
 
                     // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
                     if !isIncomeMode && !trendPoints.isEmpty {
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(
                                 NetoFormatter.currency(
                                     value: totalAmount, currencyCode: currencyCode)
                             )
-                            .font(.title3.weight(.bold))
+                            .font(.callout.weight(.bold))
                             .foregroundStyle(Color.netoPrimaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
 
                             // Show previous period value for comparison
                             if let prevAmount = previousTotalAmount {
                                 Text("vs \(NetoFormatter.number(value: prevAmount))")
                                     .font(.caption)
                                     .foregroundStyle(Color.netoSecondaryText)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
                             }
                         }
                     }
@@ -140,6 +144,8 @@ struct NatureTrendWidget: View {
                             Text(comparisonText)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                     }
                 }

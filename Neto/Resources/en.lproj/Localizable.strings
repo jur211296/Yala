@@ -520,8 +520,9 @@
 "common.remaining" = "Remaining";
 "widget.categories" = "Categories";
 "widget.noExpensesSubcategoriesPeriod" = "No subcategory expenses yet for this period.";
-"widget.distributionByCategory" = "Distribution by category";
-"widget.distributionBySubcategory" = "Distribution by subcategory";
+"widget.distributionByCategory" = "Categories";
+"widget.distributionBySubcategory" = "Subcategories";
+"widget.distributionByNature" = "Natures";
 "widget.distributionByTag" = "Distribution by tag";
 "widget.noDataForPeriod" = "No data for this period";
 "widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
@@ -599,6 +600,8 @@
 "statistics.noRecordsFiltered" = "No records found with the applied filters.";
 "statistics.noRecordsDescription" = "When you add transactions, they will appear here.";
 "statistics.periodComparison" = "Comparison with previous period";
+"statistics.vsPreviousPeriod" = "vs Previous period";
+"statistics.vsPreviousYear" = "vs Previous year";
 "statistics.currentPeriod" = "Current period";
 "statistics.previousPeriod" = "Previous period";
 "statistics.latestRecords" = "Latest records";
@@ -1004,6 +1007,8 @@
 
 "settings.widgetHints" = "Help hints";
 "settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
+"settings.roundedAmounts" = "Rounded amounts";
+"settings.roundedAmountsDescription" = "Show all amounts without decimals for faster reading.";
 
 "widget.hint.trend" = "Shows the evolution of your balance, income, or expenses in the selected period.";
 "widget.hint.topCategories" = "The categories where you spent the most this period.";

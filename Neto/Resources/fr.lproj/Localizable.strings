@@ -502,8 +502,8 @@
 
 "common.all" = "Toutes";
 "widget.main" = "Principal";
-"widget.topCategories" = "Categories principales";
-"widget.topSubcategories" = "Sous-categories principales";
+"widget.topCategories" = "Top catégories";
+"widget.topSubcategories" = "Top sous-catégories";
 "widget.subcategories" = "Sous-categories";
 "widget.noExpensesPeriod" = "Vous n'avez pas encore de depenses pour cette periode.";
 "widget.noExpensesDescriptionCategories" = "Lorsque vous enregistrerez des transactions, vos categories principales apparaitront ici.";
@@ -518,8 +518,9 @@
 "common.remaining" = "Restant";
 "widget.categories" = "Categories";
 "widget.noExpensesSubcategoriesPeriod" = "Pas encore de depenses dans les sous-categories pour cette periode.";
-"widget.distributionByCategory" = "Distribution par categorie";
-"widget.distributionBySubcategory" = "Distribution par sous-categorie";
+"widget.distributionByCategory" = "Catégories";
+"widget.distributionBySubcategory" = "Sous-catégories";
+"widget.distributionByNature" = "Natures";
 "widget.distributionByTag" = "Distribution par etiquette";
 "widget.noDataForPeriod" = "Aucune donnee pour cette periode";
 "widget.selectCurrencies" = "Selectionnez jusqu'a 2 devises a comparer avec %@";
@@ -597,6 +598,8 @@
 "statistics.noRecordsFiltered" = "Aucun enregistrement trouve avec les filtres appliques.";
 "statistics.noRecordsDescription" = "Lorsque vous enregistrerez des transactions, elles apparaitront ici.";
 "statistics.periodComparison" = "Comparaison avec la periode precedente";
+"statistics.vsPreviousPeriod" = "vs Periode precedente";
+"statistics.vsPreviousYear" = "vs Annee precedente";
 "statistics.currentPeriod" = "Periode actuelle";
 "statistics.previousPeriod" = "Periode precedente";
 "statistics.latestRecords" = "Derniers enregistrements";
@@ -1004,6 +1007,8 @@
 
 "settings.widgetHints" = "Textes d'aide";
 "settings.widgetHintsDescription" = "Afficher des boutons d'info sur les widgets avec des explications sur chaque graphique.";
+"settings.roundedAmounts" = "Montants arrondis";
+"settings.roundedAmountsDescription" = "Affiche tous les montants sans décimales pour une lecture plus rapide.";
 
 "widget.hint.trend" = "Affiche l'evolution de votre solde, revenus ou depenses sur la periode selectionnee.";
 "widget.hint.topCategories" = "Les categories ou vous avez le plus depense cette periode.";
