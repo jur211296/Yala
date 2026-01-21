@@ -125,6 +125,13 @@
 "action.multipleEdit" = "Modifica multipla";
 "action.back" = "Indietro";
 "action.next" = "Avanti";
+"action.duplicate" = "Duplica";
+"action.favorite" = "Preferito";
+"action.recurring" = "Ricorrente";
+"action.saveAsFavorite" = "Salva come preferito";
+"action.saveAsRecurring" = "Salva come ricorrente";
+"action.savedAsFavorite" = "Salvato come preferito";
+"action.savedAsRecurring" = "Salvato come ricorrente";
 
 // MARK: - Search
 

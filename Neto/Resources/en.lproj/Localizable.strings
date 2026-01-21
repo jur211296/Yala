@@ -127,6 +127,13 @@
 "action.multipleEdit" = "Multiple edit";
 "action.back" = "Back";
 "action.next" = "Next";
+"action.duplicate" = "Duplicate";
+"action.favorite" = "Favorite";
+"action.recurring" = "Recurring";
+"action.saveAsFavorite" = "Save as favorite";
+"action.saveAsRecurring" = "Save as recurring";
+"action.savedAsFavorite" = "Saved as favorite";
+"action.savedAsRecurring" = "Saved as recurring";
 
 // MARK: - Search
 
