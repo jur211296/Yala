@@ -10,6 +10,7 @@
       "Bash(cd:*)",
       "Bash(cat:*)",
       "Bash(mkdir:*)",
+      "Bash(mkdir -p:*)",
 
       "Bash(git status:*)",
       "Bash(git diff:*)",
@@ -21,7 +22,10 @@
       "Bash(xcodebuild:*)",
       "Bash(grep:*)",
       "Bash(head:*)",
-      "Bash(cat >> /Users/jur/Neto/*)"
+      "Bash(cat >> /Users/jur/Neto/*)",
+      "Bash(mkdir -p .claude/sessions*)",
+      "Bash(cat >> \".claude/sessions/*)",
+      "Bash(echo*)"
     ]
   }
 }
