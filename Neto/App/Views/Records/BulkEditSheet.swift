@@ -518,6 +518,9 @@ private struct BulkTagRow: View {
     var body: some View {
         Button(action: onToggle) {
             HStack(spacing: DS.Spacing.md) {
+                // Checkbox indicator (left side, clear selection state)
+                checkboxIndicator
+
                 // Color circle with icon
                 Circle()
                     .fill(Color(hex: tag.colorHex))
@@ -534,9 +537,6 @@ private struct BulkTagRow: View {
                     .foregroundStyle(.primary)
 
                 Spacer()
-
-                // State indicator
-                stateIndicator
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
@@ -546,33 +546,23 @@ private struct BulkTagRow: View {
     }
 
     @ViewBuilder
-    private var stateIndicator: some View {
+    private var checkboxIndicator: some View {
         switch state {
-        case .toAdd:
-            HStack(spacing: DS.Spacing.xs) {
-                Text(L10n.Action.add)
-                    .font(.caption)
-                    .foregroundStyle(.green)
-                Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(.green)
-            }
-        case .toRemove:
-            HStack(spacing: DS.Spacing.xs) {
-                Text(L10n.Action.delete)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red)
-            }
-        case .common:
-            Image(systemName: "checkmark.circle.fill")
+        case .toAdd, .common:
+            // Checked - tag will be present after save
+            Image(systemName: "checkmark.square.fill")
+                .font(.system(size: 22))
                 .foregroundStyle(Color.electricIndigo)
-        case .partial:
-            Image(systemName: "minus.circle")
-                .foregroundStyle(.orange)
-        case .available:
-            Image(systemName: "circle")
+        case .toRemove, .available:
+            // Unchecked - tag will NOT be present after save
+            Image(systemName: "square")
+                .font(.system(size: 22))
                 .foregroundStyle(.tertiary)
+        case .partial:
+            // Mixed state - some have it, some don't
+            Image(systemName: "minus.square.fill")
+                .font(.system(size: 22))
+                .foregroundStyle(.orange)
         }
     }
 }
