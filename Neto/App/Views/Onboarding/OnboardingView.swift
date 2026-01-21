@@ -75,9 +75,11 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            Image(systemName: "hand.wave.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(Color.electricIndigo)
+            Image("NetoLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
 
             VStack(spacing: DS.Spacing.md) {
                 Text(L10n.Onboarding.welcomeTitle)
