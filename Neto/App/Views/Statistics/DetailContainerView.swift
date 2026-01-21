@@ -328,36 +328,41 @@ struct DetailContainerView: View {
         VStack {
             Spacer()
 
-            HStack {
+            HStack(spacing: DS.Spacing.xl) {
+                // Delete button
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
-                    VStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "trash")
-                        Text(L10n.Tag.delete)
-                            .font(.caption2)
-                    }
-                    .frame(maxWidth: .infinity)
+                    Image(systemName: "trash")
+                        .font(.system(size: 20, weight: .medium))
+                        .frame(width: 44, height: 44)
                 }
+                .buttonStyle(.plain)
 
+                Spacer()
+
+                // Selection count
                 Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
-                    .font(.subheadline.weight(.medium))
-                    .frame(maxWidth: .infinity)
+                    .font(.subheadline.weight(.semibold))
 
+                Spacer()
+
+                // Edit button
                 Button {
                     handleEditAction()
                 } label: {
-                    VStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "pencil")
-                        Text(L10n.Favorites.edit)
-                            .font(.caption2)
-                    }
-                    .frame(maxWidth: .infinity)
+                    Image(systemName: "pencil")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(Color.electricIndigo)
+                        .frame(width: 44, height: 44)
                 }
+                .buttonStyle(.plain)
             }
-            .padding(.vertical, DS.Spacing.md)
-            .padding(.horizontal, DS.Spacing.xl)
-            .background(.ultraThinMaterial)
+            .padding(.vertical, DS.Spacing.sm)
+            .padding(.horizontal, DS.Spacing.lg)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
     }
 
