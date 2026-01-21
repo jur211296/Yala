@@ -13,7 +13,7 @@ struct OnboardingView: View {
 
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
-    @State private var selectedCurrency: CurrencyCode = .pen
+    @State private var selectedCurrency: CurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()
     @State private var selectedSecondaryCurrencies: Set<CurrencyCode> = []
     @State private var selectedPeriod: DetailPeriod = .thisMonth
 
