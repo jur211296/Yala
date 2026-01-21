@@ -29,6 +29,9 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 3) Ejecutar /verify-ios
 4) Si aplica, ejecutar tests (ver estrategia abajo)
 5) Commit pequeño con /commit-one
+6) **Actualizar QA-SCENARIOS.md** con escenarios de prueba para la funcionalidad nueva
+
+**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener sus escenarios de prueba documentados en `.planning/QA-SCENARIOS.md` ANTES del commit. Esto asegura que las validaciones manuales estén siempre listas.
 
 ## Estrategia de Testing
 Usar el comando apropiado según el tipo de cambio:

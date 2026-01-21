@@ -40,7 +40,7 @@ struct DetailContainerView: View {
     // MARK: - UI State
 
     @State private var showDeleteConfirmation = false
-    @State private var showMultiEditPlaceholder = false
+    @State private var showBulkEditSheet = false
     @State private var isPresentingSettings = false
     @State private var isSyncingState = false  // Anti-loop flag for session sync
     private let isFromSearch: Bool  // Skip session sync when coming from global search
@@ -94,7 +94,7 @@ struct DetailContainerView: View {
                     recordsViewModel: recordsViewModel,
                     trendsViewModel: trendsViewModel,
                     showDeleteConfirmation: $showDeleteConfirmation,
-                    showMultiEditPlaceholder: $showMultiEditPlaceholder,
+                    showBulkEditSheet: $showBulkEditSheet,
                     isPresentingSettings: $isPresentingSettings,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
@@ -328,36 +328,42 @@ struct DetailContainerView: View {
         VStack {
             Spacer()
 
-            HStack {
+            HStack(spacing: DS.Spacing.xl) {
+                // Delete button
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
-                    VStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "trash")
-                        Text(L10n.Tag.delete)
-                            .font(.caption2)
-                    }
-                    .frame(maxWidth: .infinity)
+                    Image(systemName: "trash")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.red)
+                        .frame(width: 44, height: 44)
                 }
+                .buttonStyle(.plain)
 
+                Spacer()
+
+                // Selection count
                 Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
-                    .font(.subheadline.weight(.medium))
-                    .frame(maxWidth: .infinity)
+                    .font(.subheadline.weight(.semibold))
 
+                Spacer()
+
+                // Edit button
                 Button {
                     handleEditAction()
                 } label: {
-                    VStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "pencil")
-                        Text(L10n.Favorites.edit)
-                            .font(.caption2)
-                    }
-                    .frame(maxWidth: .infinity)
+                    Image(systemName: "pencil")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(Color.electricIndigo)
+                        .frame(width: 44, height: 44)
                 }
+                .buttonStyle(.plain)
             }
-            .padding(.vertical, DS.Spacing.md)
-            .padding(.horizontal, DS.Spacing.xl)
-            .background(.ultraThinMaterial)
+            .padding(.vertical, DS.Spacing.sm)
+            .padding(.horizontal, DS.Spacing.lg)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
     }
 
@@ -397,7 +403,7 @@ struct DetailContainerView: View {
             recordsViewModel.showEditTransaction = true
             recordsViewModel.exitSelectionMode()
         case .multiple:
-            showMultiEditPlaceholder = true
+            showBulkEditSheet = true
         }
     }
 
@@ -620,7 +626,7 @@ private struct DetailContainerSheets: ViewModifier {
     @Bindable var recordsViewModel: RecordsViewModel
     @Bindable var trendsViewModel: StatisticsViewModel
     @Binding var showDeleteConfirmation: Bool
-    @Binding var showMultiEditPlaceholder: Bool
+    @Binding var showBulkEditSheet: Bool
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
@@ -666,10 +672,12 @@ private struct DetailContainerSheets: ViewModifier {
             } message: {
                 Text(L10n.Common.cannotUndo)
             }
-            .alert(L10n.Action.multipleEdit, isPresented: $showMultiEditPlaceholder) {
-                Button(L10n.Common.understood, role: .cancel) {}
-            } message: {
-                Text(L10n.Common.comingSoon)
+            .sheet(isPresented: $showBulkEditSheet) {
+                BulkEditSheet(
+                    viewModel: recordsViewModel,
+                    selectedCount: recordsViewModel.selectedRecordIDs.count,
+                    onComplete: refreshRecordsData
+                )
             }
             .sheet(isPresented: $isPresentingSettings) {
                 ProfileView()

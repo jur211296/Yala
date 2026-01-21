@@ -5,24 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 8 — Registro Inteligente (V1.1)
+**Current focus:** V1.0 Release Complete — Listo para TestFlight
 
 ## Current Position
 
-Version: 1.1 (en desarrollo)
-Phase: 8 of 9 en V1.1 (Registro Inteligente)
-Spec: .planning/PHASE8-REGISTRO-SPEC.md
-Plan: In progress
-Status: Subfase 8.1 completada — Infraestructura base de Inbox
-Last activity: 2026-01-20 — Subfase 8.1 completada (InboxDraft model, InboxView, navegación)
+Version: 1.0 (RELEASE READY)
+Phase: 7.1 of 7.1 en V1.0 (Acciones Rápidas en Transacciones) ✅ COMPLETADA
+Spec: None
+Plan: Complete
+Status: **V1.0 lista para TestFlight** — Todas las fases completadas incluyendo acciones rápidas
+Last activity: 2026-01-21 — Fase 7.1 completada (6 incrementos)
 
-Progress: █░░░░░░░░░░░░░░░ 10% (Fase 8 - Subfase 8.1 completada)
+Progress: ██████████████ 100% (V1.0 Completa)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-20T17:00:00-05:00] 5597718 feat(inbox): add InboxDraft model and basic inbox UI (Subfase 8.1)
+- [2026-01-20T19:35:00-05:00] da12c1f docs(qa): add bulk edit scenarios to QA-SCENARIOS.md
+- [2026-01-20T19:32:00-05:00] 649a0eb feat(bulk-edit): implement bulk editing for multiple transactions
+- [2026-01-20T19:15:00-05:00] 3a458b6 fix(ui): redesign selection action bar with iOS 18 style
 - [2026-01-20T14:52:00-05:00] 220e8ad chore(qa): add test CSV files for import testing
 - [2026-01-20T14:51:00-05:00] 416bbd9 docs(qa): rewrite QA-SCENARIOS.md with exhaustive coverage
 - [2026-01-20T11:40:00-05:00] 90c083f fix(persistence): add error handling for SwiftData save/delete operations
@@ -30,14 +32,9 @@ Progress: █░░░░░░░░░░░░░░░ 10% (Fase 8 - Subfase
 - [2026-01-20T11:28:00-05:00] d7c5ce7 feat(onboarding): add first-time setup flow with currency selection
 - [2026-01-20T11:26:00-05:00] b8e1d43 feat(widgets): add InfoHintButton with toggle and empty states
 - [2026-01-20T11:24:00-05:00] af9896c feat(ui): add FilterBlockedPopover component
-- [2026-01-20T11:22:00-05:00] 016261e fix(ui): standardize empty state icons across app
-- [2026-01-20T07:30:00-05:00] fa7c052 feat(i18n): add 4 currencies and fix hardcoded strings
 
 ## Completed in Current Phase
 
-- **Subfase 8.1: Infraestructura Base** - InboxDraft model con enums, InboxView con filtros, InboxDraftRowView, badge en PanelView, localizaciones 6 idiomas
-
-### Fase 7 (archivado - V1.0)
 - **Subfase 7.1: Code Quality & Cleanup** - TODOs eliminados, código muerto limpiado, referencias legacy (FIN-XX) removidas, 0 warnings
 - **Subfase 7.2: Performance & Optimización** - Auditoría de código OK (N+1, lazy loading, memory leaks)
 - **Subfase 7.3: Localizaciones y Monedas** - 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP), strings hardcodeados corregidos
@@ -45,7 +42,9 @@ Progress: █░░░░░░░░░░░░░░░ 10% (Fase 8 - Subfase
 - **Subfase 7.5: UX para Nuevos Usuarios** - Empty states estandarizados, InfoHintButton en 12 widgets con toggle, FilterBlockedPopover, empty states en TrendsTabView
 - **Subfase 7.7: Estabilidad Pre-Release** - Error handling en persistencia (13 try? → do/catch con alertas), validaciones auditadas OK
 - **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
-- **Subfase 7.6: App Store Preparation** - Metadata completa (6 idiomas), descripciones, keywords, Privacy Policy (ES+EN). Screenshots pendientes (trabajo manual en Xcode)
+- **Fix urgente: Edición masiva** - BulkEditSheet completo con 5 opciones (cuenta, subcategoría, tags, nota, monto), barra de selección rediseñada estilo iOS 18, métodos bulk update en RecordsViewModel, localizaciones en 6 idiomas, 9 escenarios QA nuevos
+- **Subfase 7.6: App Store Preparation** - Metadata en 6 idiomas (nombre, subtitle, keywords, descripción completa), Privacy Policy (ES/EN), demo-data.csv para screenshots; documentado en .planning/appstore/
+- **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -86,50 +85,88 @@ Progress: █░░░░░░░░░░░░░░░ 10% (Fase 8 - Subfase
 
 ## Next Steps
 
-### Fase 8: Registro Inteligente (V1.1)
+### Fase 7.1: Acciones Rápidas en Transacciones ✅ COMPLETADA
 
-**Subfase 8.1: Infraestructura Base** ✅
-- [x] Modelo InboxDraft (SwiftData)
-- [x] Vista de bandeja (lista, filtros, badge)
-- [x] Acciones básicas (ver detalle, eliminar)
-- [x] Navegación desde Panel toolbar
+- [x] UI Base: Barra de acciones debajo del monto (4 botones con iconos)
+- [x] Duplicar: Crea copia de transacción actual (solo edición)
+- [x] Eliminar: Elimina con confirmación (solo edición)
+- [x] Guardar como favorito: Crea FavoritePayment desde transacción
+- [x] Guardar como recurrente: Crea ScheduledPayment desde transacción
+- [x] Localizaciones en 6 idiomas
+- [x] QA-SCENARIOS.md actualizado con 7 escenarios nuevos
 
-**Subfase 8.2: Edición y Aprobación** ← Siguiente
-- [ ] Sheet de edición rápida
-- [ ] Validación de campos requeridos
-- [ ] Flujo de aprobación → crear TransactionItem
-- [ ] Acciones en lote
+---
 
-**Subfase 8.3: Voz (MVP)**
-- [ ] Integración OpenAI SDK
-- [ ] STT con gpt-4o-mini-transcribe
-- [ ] LLM parser básico
-- [ ] Configuración de idioma en Settings
+### Post V1.0 — Opciones
 
-**Subfase 8.4: Imágenes (MVP)**
-- [ ] Pipeline OCR con Vision
-- [ ] Clasificación heurística
-- [ ] Extractor ScreenshotSingle
-- [ ] Extractor ScreenshotList básico
+1. Subir build a TestFlight (Archive → Distribute en Xcode)
+2. Capturar screenshots manuales con demo-data.csv
+3. Iniciar V1.1 (Fase 8: Registro Inteligente)
 
-**Subfase 8.5: Merchant Memory**
-- [ ] Modelo MerchantMemory
-- [ ] Canonicalización
-- [ ] Actualización al aprobar
-- [ ] Sugerencia de subcategoría
+---
 
-**Subfase 8.6: Refinamiento**
-- [ ] Sistema de confianza completo
-- [ ] Fallback STT premium
-- [ ] Extractor ReceiptPhoto
-- [ ] Métricas locales
+### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
-**Subfase 8.7: Cloud Fallback (Opcional)**
-- [ ] Investigar proveedor (AWS vs GCP)
-- [ ] Implementar fallback cloud para recibos
-- [ ] Configuración de privacidad
+**Subfase 7.1: Code Quality & Cleanup** ✅
+- [x] Revisar TODOs/FIXMEs en el código
+- [x] Eliminar código muerto o comentado
+- [x] Eliminar referencias legacy (FIN-XX)
+- [x] Imports no usados (verificado)
+- [x] Warnings del compilador a cero
+
+**Subfase 7.2: Performance & Optimización** ✅
+- [x] Auditoría de código (N+1, lazy loading, view bodies)
+- [x] Memory leaks (sin retain cycles detectados)
+- [x] Nota: Profiling con Instruments pendiente (manual en Xcode)
+
+**Subfase 7.3: Localizaciones y Monedas** ✅
+- [x] Auditoría de strings hardcodeados (3 títulos corregidos)
+- [x] Nuevas keys en 6 idiomas (filters.title, iconPicker.title)
+- [x] Añadir monedas: MXN, COP, BRL, GBP (7 monedas total)
+
+**Subfase 7.4: Testing & QA** ✅
+- [x] Documento QA-SCENARIOS.md exhaustivo (reescritura completa)
+- [x] 15 secciones con orden de dependencias
+- [x] ~120 escenarios detallados con precondiciones
+- [x] ~250+ validaciones específicas
+- [x] CSVs de prueba en .qa-test-data/ (7 archivos)
+- [x] screenshot_data_pen.csv para capturas App Store
+
+**Subfase 7.5: UX para Nuevos Usuarios** ✅
+- [x] Empty states informativos (auditados, iconos estandarizados)
+- [x] Textos de ayuda en Settings (verificados)
+- [x] InfoHintButton en 12 widgets con toggle showWidgetHints
+- [x] FilterBlockedPopover para mensajes de bloqueo de filtros
+- [x] Empty states en TrendsTabView (gráfica trend y cashflow)
+
+**Subfase 7.6: App Store Preparation** ✅
+- [x] Metadata en 6 idiomas (nombre, subtitle, keywords, descripción)
+- [x] Privacy Policy (ES/EN)
+- [x] demo-data.csv para screenshots
+- [x] Documentado en .planning/appstore/
+- [ ] Screenshots (pendiente - captura manual en Xcode)
+
+**Subfase 7.7: Estabilidad Pre-Release** ✅
+- [x] Error handling consistente (13 operaciones de persistencia con alertas)
+- [x] Validaciones de datos (auditadas - todas OK)
+
+**Subfase 7.8: Primer Uso y Onboarding** ✅
+- [x] Onboarding de 4 pasos (nombre, moneda preferida, secundarias, periodo)
+- [x] Integración con ContentView (fullScreenCover)
+- [x] Reactivo a data wipe (muestra onboarding automáticamente)
+- [x] 7 monedas soportadas (PEN, USD, EUR, MXN, COP, BRL, GBP)
+- [x] Sección divisas secundarias en CurrencySettingsView
 
 ## Parking Lot
+
+### Ideas Capturadas
+
+- **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
+  Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
+  Estado: Por definir, no está claro el alcance ni implementación
+  Dependencias: Por determinar cuando se defina el alcance
+
+### Notas Técnicas
 
 (Items movidos a Fase 5.1)
 
@@ -140,18 +177,11 @@ Progress: █░░░░░░░░░░░░░░░ 10% (Fase 8 - Subfase
 - Design System (DS) en `DesignTokens.swift` con: Spacing, Radius, FormRow, ListRow, Typography
 - SwiftData N:N requiere `@Relationship(inverse:)` explícito en un lado; arrays sin inverse se tratan como 1:N
 
-## Fixes Pendientes V1.0
-
-**[URGENTE] Edición masiva de transacciones**
-- UI de selección existe pero funcionalidad no implementada
-- Ubicación: RecordsTabView (modo selección)
-- Pendiente: acciones de edición masiva (cambiar categoría, cuenta, eliminar, etc.)
-
 ## Session Continuity
 
-Last session: 2026-01-20
-Stopped at: Subfase 8.1 completada — Pausado para fix urgente en 1.0
-Next step: Fix edición masiva en 1.0, luego retomar Subfase 8.2
+Last session: 2026-01-21
+Stopped at: V1.0 COMPLETA — Fase 7.1 implementada (6 commits)
+Next step: Validaciones manuales de acciones rápidas, luego TestFlight
 Resume file: None
 
 ## V1.1 (Futuro)

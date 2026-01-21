@@ -790,9 +790,123 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Transacción eliminada
 - [ ] Balance de cuenta restaurado
 
+### Escenarios de Edición Masiva (Bulk Edit)
+
+#### Escenario 5.14: Entrar en modo selección
+**Precondiciones:** Al menos 3 transacciones en Records
+**Pasos:**
+1. Records → tap icono checkmark (toolbar)
+2. Verificar UI de modo selección
+**Resultado esperado:**
+- [ ] Barra superior muestra "Cancelar" y "Seleccionar todo"
+- [ ] Transacciones muestran checkbox
+- [ ] FAB "+" desaparece
+- [ ] Barra inferior aparece al seleccionar (vacía si 0 seleccionados)
+
+#### Escenario 5.15: Seleccionar múltiples transacciones
+**Precondiciones:** Modo selección activo, 5+ transacciones
+**Pasos:**
+1. Tap en 3 transacciones diferentes
+2. Verificar contador
+3. Tap "Seleccionar todo"
+4. Verificar contador
+5. Tap una seleccionada para deseleccionar
+**Resultado esperado:**
+- [ ] Contador muestra "3 seleccionados" después de paso 2
+- [ ] "Seleccionar todo" selecciona todas las visibles
+- [ ] Deseleccionar reduce contador
+
+#### Escenario 5.16: Eliminar múltiples transacciones
+**Precondiciones:** 3+ transacciones seleccionadas
+**Pasos:**
+1. Con 3 transacciones seleccionadas
+2. Tap icono papelera (barra inferior)
+3. Confirmar eliminación en dialog
+**Resultado esperado:**
+- [ ] ConfirmationDialog aparece desde abajo
+- [ ] Mensaje indica cantidad a eliminar
+- [ ] Tras confirmar: transacciones eliminadas
+- [ ] Balances de cuentas actualizados
+- [ ] Modo selección se cierra automáticamente
+
+#### Escenario 5.17: Edición masiva - Cambiar cuenta
+**Precondiciones:** 3+ transacciones seleccionadas, 2+ cuentas activas
+**Pasos:**
+1. Con 3 transacciones seleccionadas
+2. Tap icono lápiz (barra inferior)
+3. Sheet de edición masiva aparece
+4. Tap "Cuentas"
+5. Seleccionar cuenta diferente
+**Resultado esperado:**
+- [ ] Sheet muestra 5 opciones (Cuentas, Categoría, Tags, Nota, Monto)
+- [ ] Aviso de cambio de divisa visible
+- [ ] Selector de cuentas abre
+- [ ] Tras seleccionar: todas las transacciones cambian de cuenta
+- [ ] Divisa actualizada según nueva cuenta
+- [ ] Modo selección se cierra
+
+#### Escenario 5.18: Edición masiva - Cambiar subcategoría
+**Precondiciones:** 3+ transacciones de gasto seleccionadas
+**Pasos:**
+1. Seleccionar 3 gastos
+2. Tap lápiz → "Categoría"
+3. Seleccionar nueva subcategoría
+**Resultado esperado:**
+- [ ] Selector muestra solo subcategorías de gasto
+- [ ] Tras seleccionar: subcategoría actualizada en todas
+- [ ] Sheet y modo selección se cierran
+
+#### Escenario 5.19: Edición masiva - Añadir tags
+**Precondiciones:** 3+ transacciones seleccionadas, tags existentes
+**Pasos:**
+1. Seleccionar 3 transacciones (algunas con tags, otras sin)
+2. Tap lápiz → "Tags"
+3. Seleccionar 2 tags
+4. Tap "Guardar"
+**Resultado esperado:**
+- [ ] Tags añadidos a todas las transacciones
+- [ ] Tags existentes preservados (no reemplazados)
+- [ ] No hay duplicados de tags
+
+#### Escenario 5.20: Edición masiva - Cambiar nota
+**Precondiciones:** 3+ transacciones seleccionadas
+**Pasos:**
+1. Seleccionar 3 transacciones
+2. Tap lápiz → "Nota"
+3. Escribir "Actualizado en lote"
+4. Guardar
+**Resultado esperado:**
+- [ ] Campo de texto con auto-focus
+- [ ] Nota aplicada a todas las transacciones
+- [ ] Notas anteriores reemplazadas
+
+#### Escenario 5.21: Edición masiva - Cambiar monto
+**Precondiciones:** 3+ transacciones seleccionadas
+**Pasos:**
+1. Seleccionar 3 transacciones
+2. Tap lápiz → "Monto"
+3. Ingresar 100.00
+4. Guardar
+**Resultado esperado:**
+- [ ] Teclado numérico aparece
+- [ ] Monto aplicado a todas las transacciones
+- [ ] Balances recalculados correctamente
+
+#### Escenario 5.22: Cancelar edición masiva
+**Precondiciones:** Transacciones seleccionadas
+**Pasos:**
+1. Seleccionar transacciones
+2. Tap lápiz (abre sheet)
+3. Tap X para cerrar sheet
+4. Tap "Cancelar" en toolbar
+**Resultado esperado:**
+- [ ] Sheet se cierra sin cambios
+- [ ] Cancelar sale del modo selección
+- [ ] Transacciones no modificadas
+
 ### Escenarios de Favoritos en Transacciones
 
-#### Escenario 5.14: Usar favorito para crear transacción
+#### Escenario 5.23: Usar favorito para crear transacción
 **Precondiciones:** Favorito "Café" existente con monto 8.50
 **Pasos:**
 1. Tap "+"
@@ -805,6 +919,115 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Campos pre-llenados del favorito
 - [ ] Monto editable
 - [ ] Transacción creada correctamente
+
+### Escenarios de Acciones Rápidas (Quick Actions)
+
+#### Escenario 5.24: Verificar visibilidad de botones de acción rápida
+**Precondiciones:** Transacción existente
+**Pasos:**
+1. Crear nueva transacción (modo nuevo)
+2. Verificar botones visibles debajo del monto
+3. Editar transacción existente
+4. Verificar botones visibles
+**Resultado esperado:**
+- [ ] En modo nuevo: solo "Favorito" y "Recurrente" visibles
+- [ ] En modo edición: los 4 botones visibles (Duplicar, Eliminar, Favorito, Recurrente)
+- [ ] Iconos correctos: doc.on.doc, trash, star, repeat
+- [ ] Labels correctos según idioma
+
+#### Escenario 5.25: Duplicar transacción existente
+**Precondiciones:** Transacción existente con todos los campos llenados
+**Pasos:**
+1. Editar transacción existente
+2. Verificar título "Editar registro"
+3. Tap botón "Duplicar"
+4. Verificar que título cambia a "Nuevo registro"
+5. Verificar que todos los campos mantienen sus valores
+6. Guardar
+**Resultado esperado:**
+- [ ] Título cambia de "Editar registro" a "Nuevo registro"
+- [ ] Monto, cuenta, subcategoría, tags, nota se mantienen
+- [ ] Fecha permanece igual
+- [ ] Al guardar: crea NUEVA transacción (no modifica original)
+- [ ] Dos transacciones existen con mismos datos
+
+#### Escenario 5.26: Eliminar transacción desde quick action
+**Precondiciones:** Transacción existente
+**Pasos:**
+1. Editar transacción
+2. Tap botón "Eliminar" (trash icon)
+3. Verificar alert de confirmación
+4. Cancelar primera vez
+5. Repetir y confirmar
+**Resultado esperado:**
+- [ ] Alert aparece: "Confirmar eliminación"
+- [ ] Mensaje: "Esta acción no se puede deshacer"
+- [ ] Botón cancelar cierra alert sin acción
+- [ ] Botón eliminar borra transacción
+- [ ] Vista se cierra automáticamente
+- [ ] Balance de cuenta actualizado
+
+#### Escenario 5.27: Guardar como favorito desde transacción nueva
+**Precondiciones:** Transacción nueva con datos (sin guardar)
+**Pasos:**
+1. Crear nueva transacción
+2. Llenar: monto 50, cuenta, subcategoría, nota "Test"
+3. Tap botón "Favorito"
+4. Verificar alert con campo de nombre
+5. Ingresar nombre "Mi Favorito"
+6. Tap Guardar
+**Resultado esperado:**
+- [ ] Alert aparece: "Guardar como favorito"
+- [ ] Campo de nombre pre-llenado con nota actual ("Test")
+- [ ] Toast aparece: "Guardado como favorito"
+- [ ] Favorito creado con datos del formulario
+- [ ] Formulario de transacción sigue abierto (no se cierra)
+
+#### Escenario 5.28: Guardar como favorito desde transacción existente
+**Precondiciones:** Transacción existente con todos los campos
+**Pasos:**
+1. Editar transacción con cuenta, subcategoría, tags, nota
+2. Tap botón "Favorito"
+3. Cambiar nombre a "Recurrente mensual"
+4. Guardar
+**Resultado esperado:**
+- [ ] Favorito incluye: cuenta, subcategoría, tags, monto, nota
+- [ ] Nombre del favorito = lo ingresado
+- [ ] Toast de confirmación visible
+- [ ] Favorito aparece en lista de Favoritos
+
+#### Escenario 5.29: Guardar como recurrente desde transacción
+**Precondiciones:** Transacción nueva o existente con datos
+**Pasos:**
+1. Crear/editar transacción
+2. Llenar: monto 100, cuenta, subcategoría
+3. Tap botón "Recurrente"
+4. Verificar alert con campo de nombre
+5. Ingresar nombre "Pago mensual"
+6. Tap Guardar
+**Resultado esperado:**
+- [ ] Alert aparece: "Guardar como recurrente"
+- [ ] Campo de nombre pre-llenado con nota (si existe)
+- [ ] Toast aparece: "Guardado como recurrente"
+- [ ] ScheduledPayment creado con:
+  - Recurrencia mensual (default)
+  - nextDueDate = fecha de la transacción
+  - Datos del formulario (cuenta, subcategoría, monto, etc.)
+- [ ] Pago aparece en Planning → Pagos Programados
+
+#### Escenario 5.30: Verificar localización de acciones rápidas
+**Precondiciones:** App configurada en diferentes idiomas
+**Pasos:**
+1. Cambiar idioma del dispositivo a cada uno soportado
+2. Ir a editar transacción
+3. Verificar labels de los 4 botones
+**Resultado esperado:**
+- [ ] ES: Duplicar, Eliminar, Favorito, Recurrente
+- [ ] EN: Duplicate, Delete, Favorite, Recurring
+- [ ] DE: Duplizieren, Löschen, Favorit, Wiederkehrend
+- [ ] FR: Dupliquer, Supprimer, Favori, Récurrent
+- [ ] IT: Duplica, Elimina, Preferito, Ricorrente
+- [ ] PT: Duplicar, Excluir, Favorito, Recorrente
 
 ---
 
@@ -1790,6 +2013,6 @@ Ordenado por dependencias de datos para ejecución secuencial.
 ---
 
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-20*
-*Total escenarios: ~120*
-*Total verificaciones: ~250+*
+*Última actualización: 2026-01-21*
+*Total escenarios: ~127*
+*Total verificaciones: ~280+*

@@ -33,6 +33,12 @@ struct NewTransactionView: View {
     @State private var showSuccessScreen = false
     @State private var successData: TransactionSuccessData?
     @State private var isCreatingAnother = false
+    @State private var isDuplicating = false
+
+    // Quick action states
+    @State private var showSavedToast = false
+    @State private var savedToastMessage = ""
+    @State private var duplicateAnimationVisible = true
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -115,9 +121,11 @@ struct NewTransactionView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.xxl)
                 }
+                .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
+                .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
             }
             .navigationTitle(
-                transactionToEdit != nil
+                (transactionToEdit != nil && !isDuplicating)
                     ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
             )
             .navigationBarTitleDisplayMode(.inline)
@@ -245,13 +253,44 @@ struct NewTransactionView: View {
                     isAmountFieldFocused = false
                 }
             }
+            .alert(
+                L10n.Alert.confirmDelete,
+                isPresented: $viewModel.showDeleteConfirmation
+            ) {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Action.delete, role: .destructive) {
+                    deleteTransaction()
+                }
+            } message: {
+                Text(L10n.Alert.deleteWarning)
+            }
+            .sheet(isPresented: $viewModel.showSaveAsFavoriteSheet) {
+                favoriteSheetContent
+            }
+            .sheet(isPresented: $viewModel.showSaveAsRecurringSheet) {
+                recurringSheetContent
+            }
+            .overlay(alignment: .bottom) {
+                if showSavedToast {
+                    Text(savedToastMessage)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(Capsule().fill(Color.electricIndigo))
+                        .padding(.bottom, DS.Spacing.xxxl)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
         }
         .tint(Color.electricIndigo)
         .onAppear {
             prefillFromContext()
-            // Auto-focus amount field when view appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                isAmountFieldFocused = true
+            // Auto-focus amount field only for new transactions (not editing)
+            if transactionToEdit == nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isAmountFieldFocused = true
+                }
             }
         }
         .onChange(of: viewModel.sourceAccount) { _, _ in
@@ -349,6 +388,10 @@ struct NewTransactionView: View {
                 }
                 .padding(.top, DS.Spacing.sm)
             }
+
+            // Quick actions bar
+            quickActionsBar
+                .padding(.top, DS.Spacing.lg)
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes
@@ -443,6 +486,107 @@ struct NewTransactionView: View {
     /// Currency code for display (PEN, USD, EUR, etc.)
     private var currencySymbol: String {
         viewModel.effectiveCurrencyCode
+    }
+
+    // MARK: - Quick Actions Bar
+
+    private var quickActionsBar: some View {
+        HStack(spacing: DS.Spacing.xl) {
+            // Duplicate (only in edit mode)
+            if transactionToEdit != nil {
+                quickActionButton(
+                    icon: "doc.on.doc",
+                    label: L10n.Action.duplicate
+                ) {
+                    duplicateTransaction()
+                }
+            }
+
+            // Delete (only in edit mode)
+            if transactionToEdit != nil {
+                quickActionButton(
+                    icon: "trash",
+                    label: L10n.Action.delete
+                ) {
+                    viewModel.showDeleteConfirmation = true
+                }
+            }
+
+            // Save as favorite
+            quickActionButton(
+                icon: "star",
+                label: L10n.Action.favorite
+            ) {
+                viewModel.showSaveAsFavoriteSheet = true
+            }
+
+            // Save as recurring
+            quickActionButton(
+                icon: "repeat",
+                label: L10n.Action.recurring
+            ) {
+                viewModel.showSaveAsRecurringSheet = true
+            }
+        }
+    }
+
+    private func quickActionButton(
+        icon: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: DS.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 48, height: 48)
+                    .background(
+                        Circle()
+                            .fill(Color.netoCard)
+                            .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                    )
+                Text(label)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(BouncyButtonStyle())
+    }
+
+    // MARK: - Sheet Content (extracted to help type-checker)
+
+    private var favoriteSheetContent: some View {
+        SaveAsFavoriteSheet(
+            transactionType: viewModel.transactionType,
+            amount: viewModel.amount,
+            note: viewModel.note,
+            account: viewModel.selectedAccount,
+            subcategory: viewModel.selectedSubcategory,
+            tags: viewModel.selectedTags,
+            natureOverride: viewModel.selectedNature,
+            currencyCode: viewModel.effectiveCurrencyCode,
+            onSaved: { message in
+                showToast(message)
+            }
+        )
+    }
+
+    private var recurringSheetContent: some View {
+        SaveAsRecurringSheet(
+            transactionType: viewModel.transactionType,
+            amount: viewModel.amount,
+            note: viewModel.note,
+            account: viewModel.selectedAccount,
+            subcategory: viewModel.selectedSubcategory,
+            tags: viewModel.selectedTags,
+            natureOverride: viewModel.selectedNature,
+            currencyCode: viewModel.effectiveCurrencyCode,
+            transactionDate: viewModel.transactionDate,
+            onSaved: { message in
+                showToast(message)
+            }
+        )
     }
 
     // MARK: - Bottom Chips
@@ -837,6 +981,60 @@ struct NewTransactionView: View {
             accounts: accounts,
             subcategories: allSubcategories
         )
+    }
+
+    private func duplicateTransaction() {
+        guard transactionToEdit != nil else { return }
+
+        // Animate form out
+        withAnimation(.easeIn(duration: 0.15)) {
+            duplicateAnimationVisible = false
+        }
+
+        // After animation out, update state and animate back in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            // Keep all current form data but clear the editing reference
+            // This turns the form into "create new" mode with prefilled data
+            viewModel.editingTransaction = nil
+            viewModel.editingTransferPair = nil
+
+            // Mark as duplicating to update title
+            isDuplicating = true
+
+            // Animate form back in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                duplicateAnimationVisible = true
+            }
+
+            // Show feedback and focus amount
+            showToast(L10n.Action.duplicated)
+            isNoteFieldFocused = false
+            isAmountFieldFocused = true
+        }
+    }
+
+    private func deleteTransaction() {
+        guard let transaction = transactionToEdit else { return }
+
+        do {
+            modelContext.delete(transaction)
+            try modelContext.save()
+            dismiss()
+        } catch {
+            print("Error deleting transaction: \(error)")
+        }
+    }
+
+    private func showToast(_ message: String) {
+        savedToastMessage = message
+        withAnimation(.easeInOut(duration: 0.25)) {
+            showSavedToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showSavedToast = false
+            }
+        }
     }
 
     private func prefillFromFavorite(_ favorite: FavoritePayment) {

@@ -310,6 +310,14 @@ enum L10n {
         static var multipleEdit: String { NSLocalizedString("action.multipleEdit", comment: "") }
         static var back: String { NSLocalizedString("action.back", comment: "") }
         static var next: String { NSLocalizedString("action.next", comment: "") }
+        static var duplicate: String { NSLocalizedString("action.duplicate", comment: "") }
+        static var favorite: String { NSLocalizedString("action.favorite", comment: "") }
+        static var recurring: String { NSLocalizedString("action.recurring", comment: "") }
+        static var saveAsFavorite: String { NSLocalizedString("action.saveAsFavorite", comment: "") }
+        static var saveAsRecurring: String { NSLocalizedString("action.saveAsRecurring", comment: "") }
+        static var savedAsFavorite: String { NSLocalizedString("action.savedAsFavorite", comment: "") }
+        static var savedAsRecurring: String { NSLocalizedString("action.savedAsRecurring", comment: "") }
+        static var duplicated: String { NSLocalizedString("action.duplicated", comment: "") }
     }
 
     // MARK: - Search
@@ -891,6 +899,17 @@ enum L10n {
         static var descriptionPlaceholder: String {
             NSLocalizedString("favorites.descriptionPlaceholder", comment: "")
         }
+        static var saveDescription: String {
+            NSLocalizedString("favorites.saveDescription", comment: "")
+        }
+    }
+
+    // MARK: - Scheduled
+
+    enum Scheduled {
+        static var saveDescription: String {
+            NSLocalizedString("scheduled.saveDescription", comment: "")
+        }
     }
 
     // MARK: - Settings
@@ -1167,6 +1186,8 @@ enum L10n {
         static var cancel: String { NSLocalizedString("action.cancel", comment: "") }
         static var apply: String { NSLocalizedString("common.apply", comment: "Apply action") }
         static var selected: String { NSLocalizedString("common.selected", comment: "") }
+        static var details: String { NSLocalizedString("common.details", comment: "") }
+        static var select: String { NSLocalizedString("common.select", comment: "") }
     }
 
     // MARK: - Widgets
@@ -1540,6 +1561,29 @@ enum L10n {
         }
         static var finish: String {
             NSLocalizedString("onboarding.finish", comment: "")
+        }
+    }
+
+    // MARK: - Bulk Edit
+
+    enum BulkEdit {
+        static var currencyWarning: String {
+            NSLocalizedString("bulkEdit.currencyWarning", comment: "")
+        }
+        static func editCount(_ count: Int) -> String {
+            String(format: NSLocalizedString("bulkEdit.editCount", comment: ""), count)
+        }
+        static var successMessage: String {
+            NSLocalizedString("bulkEdit.successMessage", comment: "")
+        }
+        static var commonTags: String {
+            NSLocalizedString("bulkEdit.commonTags", comment: "")
+        }
+        static var partialTags: String {
+            NSLocalizedString("bulkEdit.partialTags", comment: "")
+        }
+        static var availableTags: String {
+            NSLocalizedString("bulkEdit.availableTags", comment: "")
         }
     }
 }

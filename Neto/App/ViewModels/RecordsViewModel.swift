@@ -334,4 +334,111 @@ final class RecordsViewModel: Filterable {
         case single(TransactionItem)
         case multiple(Int)
     }
+
+    // MARK: - Bulk Edit Operations
+
+    /// Update account for all selected transactions
+    func bulkUpdateAccount(_ account: Account, context: ModelContext) {
+        let transactions = getSelectedTransactions(context: context)
+        for transaction in transactions {
+            transaction.account = account
+            // Update currency to match the new account
+            transaction.currencyCode = account.currencyCode
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Error saving bulk account update: \(error)")
+        }
+    }
+
+    /// Update subcategory for all selected transactions
+    func bulkUpdateSubcategory(_ subcategory: Subcategory, context: ModelContext) {
+        let transactions = getSelectedTransactions(context: context)
+        for transaction in transactions {
+            transaction.subcategory = subcategory
+            transaction.category = subcategory.category
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Error saving bulk subcategory update: \(error)")
+        }
+    }
+
+    /// Add tags to all selected transactions
+    func bulkAddTags(_ tags: [Tag], context: ModelContext) {
+        let transactions = getSelectedTransactions(context: context)
+        for transaction in transactions {
+            for tag in tags {
+                if !transaction.tags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
+                    transaction.tags.append(tag)
+                }
+            }
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Error saving bulk tags update: \(error)")
+        }
+    }
+
+    /// Remove tags from all selected transactions
+    func bulkRemoveTags(_ tags: [Tag], context: ModelContext) {
+        let transactions = getSelectedTransactions(context: context)
+        let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
+        for transaction in transactions {
+            transaction.tags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Error saving bulk tags removal: \(error)")
+        }
+    }
+
+    /// Update note for all selected transactions
+    func bulkUpdateNote(_ note: String, context: ModelContext) {
+        let transactions = getSelectedTransactions(context: context)
+        for transaction in transactions {
+            transaction.note = note
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Error saving bulk note update: \(error)")
+        }
+    }
+
+    /// Update amount for all selected transactions
+    func bulkUpdateAmount(_ amount: Double, context: ModelContext) {
+        let transactions = getSelectedTransactions(context: context)
+        for transaction in transactions {
+            transaction.amount = amount
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Error saving bulk amount update: \(error)")
+        }
+    }
+
+    /// Get tags for all selected transactions (for bulk tag editing UI)
+    func getSelectedTransactionTags() -> [[Tag]] {
+        let flatTransactions = groupedRecords.flatMap { $0.records }
+        return selectedRecordIDs.compactMap { id in
+            flatTransactions.first { $0.persistentModelID == id }?.tags
+        }
+    }
+
+    /// Helper to fetch selected transactions from context
+    private func getSelectedTransactions(context: ModelContext) -> [TransactionItem] {
+        var transactions: [TransactionItem] = []
+        for id in selectedRecordIDs {
+            if let transaction = context.model(for: id) as? TransactionItem {
+                transactions.append(transaction)
+            }
+        }
+        return transactions
+    }
 }
