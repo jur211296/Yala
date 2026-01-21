@@ -33,6 +33,7 @@ struct NewTransactionView: View {
     @State private var showSuccessScreen = false
     @State private var successData: TransactionSuccessData?
     @State private var isCreatingAnother = false
+    @State private var isDuplicating = false
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -117,7 +118,7 @@ struct NewTransactionView: View {
                 }
             }
             .navigationTitle(
-                transactionToEdit != nil
+                (transactionToEdit != nil && !isDuplicating)
                     ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
             )
             .navigationBarTitleDisplayMode(.inline)
@@ -904,7 +905,19 @@ struct NewTransactionView: View {
     }
 
     private func duplicateTransaction() {
-        // TODO: Implement in increment 2
+        guard transactionToEdit != nil else { return }
+
+        // Keep all current form data but clear the editing reference
+        // This turns the form into "create new" mode with prefilled data
+        viewModel.editingTransaction = nil
+        viewModel.editingTransferPair = nil
+
+        // Mark as duplicating to update title
+        isDuplicating = true
+
+        // Show feedback by focusing the amount field
+        isNoteFieldFocused = false
+        isAmountFieldFocused = true
     }
 
     private func prefillFromFavorite(_ favorite: FavoritePayment) {
