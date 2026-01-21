@@ -130,6 +130,10 @@
 "action.duplicate" = "Duplicar";
 "action.favorite" = "Favorito";
 "action.recurring" = "Recurrente";
+"action.saveAsFavorite" = "Guardar como favorito";
+"action.saveAsRecurring" = "Guardar como recurrente";
+"action.savedAsFavorite" = "Guardado como favorito";
+"action.savedAsRecurring" = "Guardado como recurrente";
 
 // MARK: - Search
 

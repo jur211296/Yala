@@ -35,6 +35,12 @@ struct NewTransactionView: View {
     @State private var isCreatingAnother = false
     @State private var isDuplicating = false
 
+    // Quick action states
+    @State private var favoriteNameInput = ""
+    @State private var recurringNameInput = ""
+    @State private var showSavedToast = false
+    @State private var savedToastMessage = ""
+
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
     let prefillCategoryID: PersistentIdentifier?
@@ -256,6 +262,54 @@ struct NewTransactionView: View {
                 }
             } message: {
                 Text(L10n.Alert.deleteWarning)
+            }
+            .alert(
+                L10n.Action.saveAsFavorite,
+                isPresented: $viewModel.showSaveAsFavoriteSheet
+            ) {
+                TextField(L10n.Favorites.namePlaceholder, text: $favoriteNameInput)
+                Button(L10n.Action.cancel, role: .cancel) {
+                    favoriteNameInput = ""
+                }
+                Button(L10n.Action.save) {
+                    saveAsFavorite()
+                }
+            } message: {
+                Text(L10n.Favorites.createTemplate)
+            }
+            .alert(
+                L10n.Action.saveAsRecurring,
+                isPresented: $viewModel.showSaveAsRecurringSheet
+            ) {
+                TextField(L10n.Common.name, text: $recurringNameInput)
+                Button(L10n.Action.cancel, role: .cancel) {
+                    recurringNameInput = ""
+                }
+                Button(L10n.Action.save) {
+                    saveAsRecurring()
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showSavedToast {
+                    Text(savedToastMessage)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(Capsule().fill(Color.electricIndigo))
+                        .padding(.bottom, DS.Spacing.xxxl)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .onChange(of: viewModel.showSaveAsFavoriteSheet) { _, isPresenting in
+                if isPresenting {
+                    favoriteNameInput = viewModel.note
+                }
+            }
+            .onChange(of: viewModel.showSaveAsRecurringSheet) { _, isPresenting in
+                if isPresenting {
+                    recurringNameInput = viewModel.note
+                }
             }
         }
         .tint(Color.electricIndigo)
@@ -940,6 +994,81 @@ struct NewTransactionView: View {
             dismiss()
         } catch {
             print("Error deleting transaction: \(error)")
+        }
+    }
+
+    private func saveAsFavorite() {
+        let name = favoriteNameInput.isEmpty ? viewModel.note : favoriteNameInput
+        guard !name.isEmpty else { return }
+
+        // Get next display order
+        let descriptor = FetchDescriptor<FavoritePayment>(sortBy: [SortDescriptor(\.displayOrder, order: .reverse)])
+        let existingFavorites = (try? modelContext.fetch(descriptor)) ?? []
+        let nextOrder = (existingFavorites.first?.displayOrder ?? -1) + 1
+
+        let favorite = FavoritePayment(
+            name: name,
+            transactionType: viewModel.transactionType.rawValue,
+            amount: viewModel.amount > 0 ? viewModel.amount : nil,
+            note: viewModel.note.isEmpty ? nil : viewModel.note,
+            account: viewModel.selectedAccount,
+            subcategory: viewModel.selectedSubcategory,
+            tags: viewModel.selectedTags,
+            natureOverride: viewModel.selectedNature?.rawValue,
+            currencyCode: viewModel.effectiveCurrencyCode,
+            displayOrder: nextOrder
+        )
+
+        modelContext.insert(favorite)
+        do {
+            try modelContext.save()
+            favoriteNameInput = ""
+            showToast(L10n.Action.savedAsFavorite)
+        } catch {
+            print("Error saving favorite: \(error)")
+        }
+    }
+
+    private func saveAsRecurring() {
+        let name = recurringNameInput.isEmpty ? viewModel.note : recurringNameInput
+        guard !name.isEmpty else { return }
+
+        let scheduled = ScheduledPayment(
+            name: name,
+            note: viewModel.note.isEmpty ? nil : viewModel.note,
+            amount: viewModel.amount,
+            currencyCode: viewModel.effectiveCurrencyCode,
+            transactionType: viewModel.transactionType.rawValue,
+            account: viewModel.selectedAccount,
+            subcategory: viewModel.selectedSubcategory,
+            tags: viewModel.selectedTags,
+            natureOverride: viewModel.selectedNature?.rawValue,
+            isRecurring: true,
+            recurrenceType: "monthly",
+            recurrenceInterval: 1,
+            nextDueDate: viewModel.transactionDate,
+            paymentCategory: "recurring"
+        )
+
+        modelContext.insert(scheduled)
+        do {
+            try modelContext.save()
+            recurringNameInput = ""
+            showToast(L10n.Action.savedAsRecurring)
+        } catch {
+            print("Error saving recurring payment: \(error)")
+        }
+    }
+
+    private func showToast(_ message: String) {
+        savedToastMessage = message
+        withAnimation(.easeInOut(duration: 0.25)) {
+            showSavedToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showSavedToast = false
+            }
         }
     }
 

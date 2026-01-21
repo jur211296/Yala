@@ -313,6 +313,10 @@ enum L10n {
         static var duplicate: String { NSLocalizedString("action.duplicate", comment: "") }
         static var favorite: String { NSLocalizedString("action.favorite", comment: "") }
         static var recurring: String { NSLocalizedString("action.recurring", comment: "") }
+        static var saveAsFavorite: String { NSLocalizedString("action.saveAsFavorite", comment: "") }
+        static var saveAsRecurring: String { NSLocalizedString("action.saveAsRecurring", comment: "") }
+        static var savedAsFavorite: String { NSLocalizedString("action.savedAsFavorite", comment: "") }
+        static var savedAsRecurring: String { NSLocalizedString("action.savedAsRecurring", comment: "") }
     }
 
     // MARK: - Search
