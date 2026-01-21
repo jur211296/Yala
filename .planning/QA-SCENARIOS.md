@@ -790,9 +790,123 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Transacción eliminada
 - [ ] Balance de cuenta restaurado
 
+### Escenarios de Edición Masiva (Bulk Edit)
+
+#### Escenario 5.14: Entrar en modo selección
+**Precondiciones:** Al menos 3 transacciones en Records
+**Pasos:**
+1. Records → tap icono checkmark (toolbar)
+2. Verificar UI de modo selección
+**Resultado esperado:**
+- [ ] Barra superior muestra "Cancelar" y "Seleccionar todo"
+- [ ] Transacciones muestran checkbox
+- [ ] FAB "+" desaparece
+- [ ] Barra inferior aparece al seleccionar (vacía si 0 seleccionados)
+
+#### Escenario 5.15: Seleccionar múltiples transacciones
+**Precondiciones:** Modo selección activo, 5+ transacciones
+**Pasos:**
+1. Tap en 3 transacciones diferentes
+2. Verificar contador
+3. Tap "Seleccionar todo"
+4. Verificar contador
+5. Tap una seleccionada para deseleccionar
+**Resultado esperado:**
+- [ ] Contador muestra "3 seleccionados" después de paso 2
+- [ ] "Seleccionar todo" selecciona todas las visibles
+- [ ] Deseleccionar reduce contador
+
+#### Escenario 5.16: Eliminar múltiples transacciones
+**Precondiciones:** 3+ transacciones seleccionadas
+**Pasos:**
+1. Con 3 transacciones seleccionadas
+2. Tap icono papelera (barra inferior)
+3. Confirmar eliminación en dialog
+**Resultado esperado:**
+- [ ] ConfirmationDialog aparece desde abajo
+- [ ] Mensaje indica cantidad a eliminar
+- [ ] Tras confirmar: transacciones eliminadas
+- [ ] Balances de cuentas actualizados
+- [ ] Modo selección se cierra automáticamente
+
+#### Escenario 5.17: Edición masiva - Cambiar cuenta
+**Precondiciones:** 3+ transacciones seleccionadas, 2+ cuentas activas
+**Pasos:**
+1. Con 3 transacciones seleccionadas
+2. Tap icono lápiz (barra inferior)
+3. Sheet de edición masiva aparece
+4. Tap "Cuentas"
+5. Seleccionar cuenta diferente
+**Resultado esperado:**
+- [ ] Sheet muestra 5 opciones (Cuentas, Categoría, Tags, Nota, Monto)
+- [ ] Aviso de cambio de divisa visible
+- [ ] Selector de cuentas abre
+- [ ] Tras seleccionar: todas las transacciones cambian de cuenta
+- [ ] Divisa actualizada según nueva cuenta
+- [ ] Modo selección se cierra
+
+#### Escenario 5.18: Edición masiva - Cambiar subcategoría
+**Precondiciones:** 3+ transacciones de gasto seleccionadas
+**Pasos:**
+1. Seleccionar 3 gastos
+2. Tap lápiz → "Categoría"
+3. Seleccionar nueva subcategoría
+**Resultado esperado:**
+- [ ] Selector muestra solo subcategorías de gasto
+- [ ] Tras seleccionar: subcategoría actualizada en todas
+- [ ] Sheet y modo selección se cierran
+
+#### Escenario 5.19: Edición masiva - Añadir tags
+**Precondiciones:** 3+ transacciones seleccionadas, tags existentes
+**Pasos:**
+1. Seleccionar 3 transacciones (algunas con tags, otras sin)
+2. Tap lápiz → "Tags"
+3. Seleccionar 2 tags
+4. Tap "Guardar"
+**Resultado esperado:**
+- [ ] Tags añadidos a todas las transacciones
+- [ ] Tags existentes preservados (no reemplazados)
+- [ ] No hay duplicados de tags
+
+#### Escenario 5.20: Edición masiva - Cambiar nota
+**Precondiciones:** 3+ transacciones seleccionadas
+**Pasos:**
+1. Seleccionar 3 transacciones
+2. Tap lápiz → "Nota"
+3. Escribir "Actualizado en lote"
+4. Guardar
+**Resultado esperado:**
+- [ ] Campo de texto con auto-focus
+- [ ] Nota aplicada a todas las transacciones
+- [ ] Notas anteriores reemplazadas
+
+#### Escenario 5.21: Edición masiva - Cambiar monto
+**Precondiciones:** 3+ transacciones seleccionadas
+**Pasos:**
+1. Seleccionar 3 transacciones
+2. Tap lápiz → "Monto"
+3. Ingresar 100.00
+4. Guardar
+**Resultado esperado:**
+- [ ] Teclado numérico aparece
+- [ ] Monto aplicado a todas las transacciones
+- [ ] Balances recalculados correctamente
+
+#### Escenario 5.22: Cancelar edición masiva
+**Precondiciones:** Transacciones seleccionadas
+**Pasos:**
+1. Seleccionar transacciones
+2. Tap lápiz (abre sheet)
+3. Tap X para cerrar sheet
+4. Tap "Cancelar" en toolbar
+**Resultado esperado:**
+- [ ] Sheet se cierra sin cambios
+- [ ] Cancelar sale del modo selección
+- [ ] Transacciones no modificadas
+
 ### Escenarios de Favoritos en Transacciones
 
-#### Escenario 5.14: Usar favorito para crear transacción
+#### Escenario 5.23: Usar favorito para crear transacción
 **Precondiciones:** Favorito "Café" existente con monto 8.50
 **Pasos:**
 1. Tap "+"
