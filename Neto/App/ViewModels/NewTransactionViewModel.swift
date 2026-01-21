@@ -82,6 +82,11 @@ final class NewTransactionViewModel {
     var showDatePicker: Bool = false
     var showNatureSelector: Bool = false
 
+    // Quick actions sheets
+    var showDeleteConfirmation: Bool = false
+    var showSaveAsFavoriteSheet: Bool = false
+    var showSaveAsRecurringSheet: Bool = false
+
     // MARK: - Validation State
 
     var showValidationErrors: Bool = false

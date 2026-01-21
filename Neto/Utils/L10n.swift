@@ -310,6 +310,9 @@ enum L10n {
         static var multipleEdit: String { NSLocalizedString("action.multipleEdit", comment: "") }
         static var back: String { NSLocalizedString("action.back", comment: "") }
         static var next: String { NSLocalizedString("action.next", comment: "") }
+        static var duplicate: String { NSLocalizedString("action.duplicate", comment: "") }
+        static var favorite: String { NSLocalizedString("action.favorite", comment: "") }
+        static var recurring: String { NSLocalizedString("action.recurring", comment: "") }
     }
 
     // MARK: - Search

@@ -127,6 +127,9 @@
 "action.multipleEdit" = "Edición múltiple";
 "action.back" = "Atrás";
 "action.next" = "Siguiente";
+"action.duplicate" = "Duplicar";
+"action.favorite" = "Favorito";
+"action.recurring" = "Recurrente";
 
 // MARK: - Search
 

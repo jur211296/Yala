@@ -349,6 +349,10 @@ struct NewTransactionView: View {
                 }
                 .padding(.top, DS.Spacing.sm)
             }
+
+            // Quick actions bar
+            quickActionsBar
+                .padding(.top, DS.Spacing.lg)
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes
@@ -443,6 +447,66 @@ struct NewTransactionView: View {
     /// Currency code for display (PEN, USD, EUR, etc.)
     private var currencySymbol: String {
         viewModel.effectiveCurrencyCode
+    }
+
+    // MARK: - Quick Actions Bar
+
+    private var quickActionsBar: some View {
+        HStack(spacing: DS.Spacing.xl) {
+            // Duplicate (only in edit mode)
+            if transactionToEdit != nil {
+                quickActionButton(
+                    icon: "doc.on.doc",
+                    label: L10n.Action.duplicate
+                ) {
+                    duplicateTransaction()
+                }
+            }
+
+            // Delete (only in edit mode)
+            if transactionToEdit != nil {
+                quickActionButton(
+                    icon: "trash",
+                    label: L10n.Action.delete
+                ) {
+                    viewModel.showDeleteConfirmation = true
+                }
+            }
+
+            // Save as favorite
+            quickActionButton(
+                icon: "star",
+                label: L10n.Action.favorite
+            ) {
+                viewModel.showSaveAsFavoriteSheet = true
+            }
+
+            // Save as recurring
+            quickActionButton(
+                icon: "repeat",
+                label: L10n.Action.recurring
+            ) {
+                viewModel.showSaveAsRecurringSheet = true
+            }
+        }
+    }
+
+    private func quickActionButton(
+        icon: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: DS.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                Text(label)
+                    .font(.caption2)
+            }
+            .foregroundStyle(.secondary)
+            .frame(minWidth: 44, minHeight: 44)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Bottom Chips
@@ -837,6 +901,10 @@ struct NewTransactionView: View {
             accounts: accounts,
             subcategories: allSubcategories
         )
+    }
+
+    private func duplicateTransaction() {
+        // TODO: Implement in increment 2
     }
 
     private func prefillFromFavorite(_ favorite: FavoritePayment) {
