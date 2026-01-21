@@ -920,6 +920,115 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Monto editable
 - [ ] Transacción creada correctamente
 
+### Escenarios de Acciones Rápidas (Quick Actions)
+
+#### Escenario 5.24: Verificar visibilidad de botones de acción rápida
+**Precondiciones:** Transacción existente
+**Pasos:**
+1. Crear nueva transacción (modo nuevo)
+2. Verificar botones visibles debajo del monto
+3. Editar transacción existente
+4. Verificar botones visibles
+**Resultado esperado:**
+- [ ] En modo nuevo: solo "Favorito" y "Recurrente" visibles
+- [ ] En modo edición: los 4 botones visibles (Duplicar, Eliminar, Favorito, Recurrente)
+- [ ] Iconos correctos: doc.on.doc, trash, star, repeat
+- [ ] Labels correctos según idioma
+
+#### Escenario 5.25: Duplicar transacción existente
+**Precondiciones:** Transacción existente con todos los campos llenados
+**Pasos:**
+1. Editar transacción existente
+2. Verificar título "Editar registro"
+3. Tap botón "Duplicar"
+4. Verificar que título cambia a "Nuevo registro"
+5. Verificar que todos los campos mantienen sus valores
+6. Guardar
+**Resultado esperado:**
+- [ ] Título cambia de "Editar registro" a "Nuevo registro"
+- [ ] Monto, cuenta, subcategoría, tags, nota se mantienen
+- [ ] Fecha permanece igual
+- [ ] Al guardar: crea NUEVA transacción (no modifica original)
+- [ ] Dos transacciones existen con mismos datos
+
+#### Escenario 5.26: Eliminar transacción desde quick action
+**Precondiciones:** Transacción existente
+**Pasos:**
+1. Editar transacción
+2. Tap botón "Eliminar" (trash icon)
+3. Verificar alert de confirmación
+4. Cancelar primera vez
+5. Repetir y confirmar
+**Resultado esperado:**
+- [ ] Alert aparece: "Confirmar eliminación"
+- [ ] Mensaje: "Esta acción no se puede deshacer"
+- [ ] Botón cancelar cierra alert sin acción
+- [ ] Botón eliminar borra transacción
+- [ ] Vista se cierra automáticamente
+- [ ] Balance de cuenta actualizado
+
+#### Escenario 5.27: Guardar como favorito desde transacción nueva
+**Precondiciones:** Transacción nueva con datos (sin guardar)
+**Pasos:**
+1. Crear nueva transacción
+2. Llenar: monto 50, cuenta, subcategoría, nota "Test"
+3. Tap botón "Favorito"
+4. Verificar alert con campo de nombre
+5. Ingresar nombre "Mi Favorito"
+6. Tap Guardar
+**Resultado esperado:**
+- [ ] Alert aparece: "Guardar como favorito"
+- [ ] Campo de nombre pre-llenado con nota actual ("Test")
+- [ ] Toast aparece: "Guardado como favorito"
+- [ ] Favorito creado con datos del formulario
+- [ ] Formulario de transacción sigue abierto (no se cierra)
+
+#### Escenario 5.28: Guardar como favorito desde transacción existente
+**Precondiciones:** Transacción existente con todos los campos
+**Pasos:**
+1. Editar transacción con cuenta, subcategoría, tags, nota
+2. Tap botón "Favorito"
+3. Cambiar nombre a "Recurrente mensual"
+4. Guardar
+**Resultado esperado:**
+- [ ] Favorito incluye: cuenta, subcategoría, tags, monto, nota
+- [ ] Nombre del favorito = lo ingresado
+- [ ] Toast de confirmación visible
+- [ ] Favorito aparece en lista de Favoritos
+
+#### Escenario 5.29: Guardar como recurrente desde transacción
+**Precondiciones:** Transacción nueva o existente con datos
+**Pasos:**
+1. Crear/editar transacción
+2. Llenar: monto 100, cuenta, subcategoría
+3. Tap botón "Recurrente"
+4. Verificar alert con campo de nombre
+5. Ingresar nombre "Pago mensual"
+6. Tap Guardar
+**Resultado esperado:**
+- [ ] Alert aparece: "Guardar como recurrente"
+- [ ] Campo de nombre pre-llenado con nota (si existe)
+- [ ] Toast aparece: "Guardado como recurrente"
+- [ ] ScheduledPayment creado con:
+  - Recurrencia mensual (default)
+  - nextDueDate = fecha de la transacción
+  - Datos del formulario (cuenta, subcategoría, monto, etc.)
+- [ ] Pago aparece en Planning → Pagos Programados
+
+#### Escenario 5.30: Verificar localización de acciones rápidas
+**Precondiciones:** App configurada en diferentes idiomas
+**Pasos:**
+1. Cambiar idioma del dispositivo a cada uno soportado
+2. Ir a editar transacción
+3. Verificar labels de los 4 botones
+**Resultado esperado:**
+- [ ] ES: Duplicar, Eliminar, Favorito, Recurrente
+- [ ] EN: Duplicate, Delete, Favorite, Recurring
+- [ ] DE: Duplizieren, Löschen, Favorit, Wiederkehrend
+- [ ] FR: Dupliquer, Supprimer, Favori, Récurrent
+- [ ] IT: Duplica, Elimina, Preferito, Ricorrente
+- [ ] PT: Duplicar, Excluir, Favorito, Recorrente
+
 ---
 
 ## Sección 6: Presupuestos
@@ -1904,6 +2013,6 @@ Ordenado por dependencias de datos para ejecución secuencial.
 ---
 
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-20*
-*Total escenarios: ~120*
-*Total verificaciones: ~250+*
+*Última actualización: 2026-01-21*
+*Total escenarios: ~127*
+*Total verificaciones: ~280+*
