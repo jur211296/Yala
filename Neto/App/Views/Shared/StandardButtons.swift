@@ -1,5 +1,18 @@
 import SwiftUI
 
+// MARK: - Bouncy Button Style
+
+/// Button style with scale-down animation on press (bouncy effect)
+struct BouncyButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Toolbar Button
+
 /// Botón circular estándar para acciones de navegación (Atrás, Cerrar, Más, etc.)
 /// Diseño: Icono nativo (Circle, Chevron, XMark) sin fondo adicional.
 struct NetoToolbarButton: View {

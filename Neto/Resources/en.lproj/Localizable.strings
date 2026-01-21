@@ -134,6 +134,7 @@
 "action.saveAsRecurring" = "Save as recurring";
 "action.savedAsFavorite" = "Saved as favorite";
 "action.savedAsRecurring" = "Saved as recurring";
+"action.duplicated" = "Duplicated - save to create new";
 
 // MARK: - Search
 
@@ -280,6 +281,11 @@
 "favorites.namePlaceholder" = "Favorite name";
 "favorites.notConfigured" = "Not configured";
 "favorites.descriptionPlaceholder" = "Description (optional)";
+"favorites.saveDescription" = "Save this payment as a favorite to quickly record similar expenses in the future. You'll find it in the ⭐ at the top right when creating or editing any transaction. You can always edit it from Favorite Payments in your profile.";
+
+// MARK: - Scheduled
+
+"scheduled.saveDescription" = "Create a scheduled payment to remind you of this recurring expense or income. You'll find it in the Scheduled Payments section in your profile, where you can edit, activate, or deactivate it anytime.";
 
 // MARK: - Settings
 
@@ -544,6 +550,8 @@
 "common.selectedDate" = "Selected Date";
 "common.selectedValue" = "Selected Value";
 "common.selected" = "selected";
+"common.details" = "Details";
+"common.select" = "Select";
 
 
 "statistics.title" = "Statistics";

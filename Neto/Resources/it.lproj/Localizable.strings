@@ -132,6 +132,7 @@
 "action.saveAsRecurring" = "Salva come ricorrente";
 "action.savedAsFavorite" = "Salvato come preferito";
 "action.savedAsRecurring" = "Salvato come ricorrente";
+"action.duplicated" = "Duplicato - salva per creare nuovo";
 
 // MARK: - Search
 
@@ -278,6 +279,11 @@
 "favorites.namePlaceholder" = "Nome del preferito";
 "favorites.notConfigured" = "Non configurato";
 "favorites.descriptionPlaceholder" = "Descrizione (opzionale)";
+"favorites.saveDescription" = "Salva questo pagamento come preferito per registrare più velocemente spese simili in futuro. Lo troverai nella ⭐ in alto a destra quando crei o modifichi una transazione. Potrai sempre modificarlo dai Pagamenti Preferiti nel tuo profilo.";
+
+// MARK: - Scheduled
+
+"scheduled.saveDescription" = "Crea un pagamento pianificato per ricordarti di questa spesa o entrata ricorrente. Lo troverai nella sezione Pagamenti Pianificati nel tuo profilo, dove potrai modificarlo, attivarlo o disattivarlo in qualsiasi momento.";
 
 // MARK: - Settings
 
@@ -542,6 +548,8 @@
 "common.selectedDate" = "Data selezionata";
 "common.selectedValue" = "Valore selezionato";
 "common.selected" = "selezionati";
+"common.details" = "Dettagli";
+"common.select" = "Seleziona";
 
 
 "statistics.title" = "Statistiche";

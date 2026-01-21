@@ -317,6 +317,7 @@ enum L10n {
         static var saveAsRecurring: String { NSLocalizedString("action.saveAsRecurring", comment: "") }
         static var savedAsFavorite: String { NSLocalizedString("action.savedAsFavorite", comment: "") }
         static var savedAsRecurring: String { NSLocalizedString("action.savedAsRecurring", comment: "") }
+        static var duplicated: String { NSLocalizedString("action.duplicated", comment: "") }
     }
 
     // MARK: - Search
@@ -898,6 +899,17 @@ enum L10n {
         static var descriptionPlaceholder: String {
             NSLocalizedString("favorites.descriptionPlaceholder", comment: "")
         }
+        static var saveDescription: String {
+            NSLocalizedString("favorites.saveDescription", comment: "")
+        }
+    }
+
+    // MARK: - Scheduled
+
+    enum Scheduled {
+        static var saveDescription: String {
+            NSLocalizedString("scheduled.saveDescription", comment: "")
+        }
     }
 
     // MARK: - Settings
@@ -1174,6 +1186,8 @@ enum L10n {
         static var cancel: String { NSLocalizedString("action.cancel", comment: "") }
         static var apply: String { NSLocalizedString("common.apply", comment: "Apply action") }
         static var selected: String { NSLocalizedString("common.selected", comment: "") }
+        static var details: String { NSLocalizedString("common.details", comment: "") }
+        static var select: String { NSLocalizedString("common.select", comment: "") }
     }
 
     // MARK: - Widgets
