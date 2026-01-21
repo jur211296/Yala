@@ -24,7 +24,8 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 - [x] **Fase 5: Visualizaciones Categorías** - Comparativas y detalles en gráficas ✅
 - [x] **Fase 5.1: Correcciones y Mejoras** - Bugs, UX y tech debt acumulado ✅
 - [x] **Fase 6: Pagos Planificados** - Nuevo módulo de suscripciones y pagos futuros ✅
-- [ ] **Fase 7: Beta Preparation** - Code quality, testing, UX y preparación App Store ← Siguiente
+- [x] **Fase 7: Beta Preparation** - Code quality, testing, UX y preparación App Store ✅
+- [x] **Fase 7.1: Acciones Rápidas en Transacciones** - Botones de acción en NewTransactionView ✅
 
 ### V1.1
 - [ ] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA
@@ -222,6 +223,24 @@ DoD:
 - Assets de App Store listos
 - App estable para beta testers externos
 
+### Fase 7.1: Acciones Rápidas en Transacciones
+**Goal:** Mejorar productividad con acciones rápidas en NewTransactionView
+**Depends on:** Fase 7
+**Research:** Unlikely
+**Plans:** TBD
+
+Incrementos:
+- UI Base: Barra de acciones debajo del monto (4 botones con iconos)
+- Duplicar: Crea copia de transacción actual (solo edición)
+- Eliminar: Elimina con confirmación (solo edición)
+- Guardar como favorito: Crea FavoritePayment desde transacción
+- Guardar como recurrente: Crea ScheduledPayment desde transacción
+
+DoD:
+- 4 acciones funcionales en NewTransactionView
+- Botones contextuales (algunos solo en modo edición)
+- Localizaciones en 6 idiomas
+
 ---
 
 ### Fase 8: Registro Inteligente
@@ -283,7 +302,8 @@ DoD:
 | 5 | Visualizaciones Categorías | ✅ Done | 2026-01-18 |
 | 5.1 | Correcciones y Mejoras | ✅ Done | 2026-01-19 |
 | 6 | Pagos Planificados | ✅ Done | 2026-01-19 |
-| 7 | Beta Preparation | Not started | - |
+| 7 | Beta Preparation | ✅ Done | 2026-01-21 |
+| 7.1 | Acciones Rápidas en Transacciones | ✅ Done | 2026-01-21 |
 
 ### V1.1
 | Fase | Nombre | Status | Completed |

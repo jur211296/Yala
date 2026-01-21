@@ -5,18 +5,18 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 7 — Beta Preparation (V1.0 Release)
+**Current focus:** V1.0 Release Complete — Listo para TestFlight
 
 ## Current Position
 
-Version: 1.0 (preparando release)
-Phase: 7 of 7 en V1.0 (Beta Preparation)
-Spec: .planning/PHASE7-BETAPREP-SPEC.md
-Plan: Not started
-Status: Features V1.0 completas, preparando para TestFlight beta pública
-Last activity: 2026-01-20 — Fix urgente de edición masiva completado
+Version: 1.0 (RELEASE READY)
+Phase: 7.1 of 7.1 en V1.0 (Acciones Rápidas en Transacciones) ✅ COMPLETADA
+Spec: None
+Plan: Complete
+Status: **V1.0 lista para TestFlight** — Todas las fases completadas incluyendo acciones rápidas
+Last activity: 2026-01-21 — Fase 7.1 completada (6 incrementos)
 
-Progress: █████████████░ 90% (Fase 7 - Subfases 7.1-7.5, 7.7, 7.8 completadas + Fix urgente)
+Progress: ██████████████ 100% (V1.0 Completa)
 
 ---
 
@@ -43,6 +43,8 @@ Progress: █████████████░ 90% (Fase 7 - Subfases 7.1-
 - **Subfase 7.7: Estabilidad Pre-Release** - Error handling en persistencia (13 try? → do/catch con alertas), validaciones auditadas OK
 - **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
 - **Fix urgente: Edición masiva** - BulkEditSheet completo con 5 opciones (cuenta, subcategoría, tags, nota, monto), barra de selección rediseñada estilo iOS 18, métodos bulk update en RecordsViewModel, localizaciones en 6 idiomas, 9 escenarios QA nuevos
+- **Subfase 7.6: App Store Preparation** - Metadata en 6 idiomas (nombre, subtitle, keywords, descripción completa), Privacy Policy (ES/EN), demo-data.csv para screenshots; documentado en .planning/appstore/
+- **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -83,7 +85,27 @@ Progress: █████████████░ 90% (Fase 7 - Subfases 7.1-
 
 ## Next Steps
 
-### Fase 7: Beta Preparation (V1.0 Release)
+### Fase 7.1: Acciones Rápidas en Transacciones ✅ COMPLETADA
+
+- [x] UI Base: Barra de acciones debajo del monto (4 botones con iconos)
+- [x] Duplicar: Crea copia de transacción actual (solo edición)
+- [x] Eliminar: Elimina con confirmación (solo edición)
+- [x] Guardar como favorito: Crea FavoritePayment desde transacción
+- [x] Guardar como recurrente: Crea ScheduledPayment desde transacción
+- [x] Localizaciones en 6 idiomas
+- [x] QA-SCENARIOS.md actualizado con 7 escenarios nuevos
+
+---
+
+### Post V1.0 — Opciones
+
+1. Subir build a TestFlight (Archive → Distribute en Xcode)
+2. Capturar screenshots manuales con demo-data.csv
+3. Iniciar V1.1 (Fase 8: Registro Inteligente)
+
+---
+
+### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
 **Subfase 7.1: Code Quality & Cleanup** ✅
 - [x] Revisar TODOs/FIXMEs en el código
@@ -117,8 +139,12 @@ Progress: █████████████░ 90% (Fase 7 - Subfases 7.1-
 - [x] FilterBlockedPopover para mensajes de bloqueo de filtros
 - [x] Empty states en TrendsTabView (gráfica trend y cashflow)
 
-**Subfase 7.6: App Store Preparation** ← Siguiente
-- [ ] Screenshots, descripción, metadata
+**Subfase 7.6: App Store Preparation** ✅
+- [x] Metadata en 6 idiomas (nombre, subtitle, keywords, descripción)
+- [x] Privacy Policy (ES/EN)
+- [x] demo-data.csv para screenshots
+- [x] Documentado en .planning/appstore/
+- [ ] Screenshots (pendiente - captura manual en Xcode)
 
 **Subfase 7.7: Estabilidad Pre-Release** ✅
 - [x] Error handling consistente (13 operaciones de persistencia con alertas)
@@ -133,6 +159,15 @@ Progress: █████████████░ 90% (Fase 7 - Subfases 7.1-
 
 ## Parking Lot
 
+### Ideas Capturadas
+
+- **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
+  Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
+  Estado: Por definir, no está claro el alcance ni implementación
+  Dependencias: Por determinar cuando se defina el alcance
+
+### Notas Técnicas
+
 (Items movidos a Fase 5.1)
 
 - `iconName` en Tag tiene default `"tag.fill"` para migración
@@ -144,9 +179,9 @@ Progress: █████████████░ 90% (Fase 7 - Subfases 7.1-
 
 ## Session Continuity
 
-Last session: 2026-01-20
-Stopped at: Subfase 7.7 completada (Estabilidad Pre-Release)
-Next step: Subfase 7.6 (App Store Preparation) — última subfase pendiente
+Last session: 2026-01-21
+Stopped at: V1.0 COMPLETA — Fase 7.1 implementada (6 commits)
+Next step: Validaciones manuales de acciones rápidas, luego TestFlight
 Resume file: None
 
 ## V1.1 (Futuro)
