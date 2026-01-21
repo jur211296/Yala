@@ -57,7 +57,7 @@ struct BulkEditSheet: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \Account.name) private var accounts: [Account]
-    @Query(sort: \Tag.name) private var tags: [Tag]
+    @Query(sort: \Tag.name) private var allTags: [Tag]
 
     @Bindable var viewModel: RecordsViewModel
     let selectedCount: Int
@@ -66,14 +66,16 @@ struct BulkEditSheet: View {
     // Sheet navigation state
     @State private var showAccountSelector = false
     @State private var showSubcategorySelector = false
-    @State private var showTagSelector = false
+    @State private var showTagEditor = false
     @State private var showNoteEditor = false
     @State private var showAmountEditor = false
+
+    // Track applied changes
+    @State private var appliedChanges: Set<BulkEditOption> = []
 
     // Selected values for editing
     @State private var selectedAccount: Account?
     @State private var selectedSubcategory: Subcategory?
-    @State private var selectedTags: [Tag] = []
     @State private var bulkNote: String = ""
     @State private var bulkAmount: Double = 0
 
@@ -84,6 +86,12 @@ struct BulkEditSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
+                        // Header with count
+                        Text(L10n.BulkEdit.editCount(selectedCount))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
                         // Options list
                         SectionBox(title: "") {
                             VStack(spacing: 0) {
@@ -92,7 +100,10 @@ struct BulkEditSheet: View {
                                         SubsectionDivider()
                                     }
 
-                                    BulkEditOptionRow(option: option) {
+                                    BulkEditOptionRow(
+                                        option: option,
+                                        isApplied: appliedChanges.contains(option)
+                                    ) {
                                         handleOptionTap(option)
                                     }
                                 }
@@ -100,8 +111,13 @@ struct BulkEditSheet: View {
                         }
 
                         // Currency warning for account changes
-                        if showAccountSelector || selectedAccount != nil {
+                        if appliedChanges.contains(.account) || showAccountSelector {
                             currencyWarning
+                        }
+
+                        // Applied changes summary
+                        if !appliedChanges.isEmpty {
+                            appliedChangesSummary
                         }
                     }
                     .padding(.horizontal, DS.Spacing.lg)
@@ -113,7 +129,16 @@ struct BulkEditSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NetoToolbarButton(systemName: "xmark") {
-                        dismiss()
+                        finishEditing()
+                    }
+                }
+
+                if !appliedChanges.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(L10n.Action.done) {
+                            finishEditing()
+                        }
+                        .fontWeight(.semibold)
                     }
                 }
             }
@@ -136,13 +161,14 @@ struct BulkEditSheet: View {
                     }
                 }
             }
-            .sheet(isPresented: $showTagSelector) {
-                TagSelectorSheet(selectedTags: $selectedTags)
-                    .onDisappear {
-                        if !selectedTags.isEmpty {
-                            applyTagChange(selectedTags)
-                        }
+            .sheet(isPresented: $showTagEditor) {
+                BulkTagEditorSheet(
+                    viewModel: viewModel,
+                    allTags: allTags.filter { $0.isActive },
+                    onApply: { tagsToAdd, tagsToRemove in
+                        applyTagChanges(add: tagsToAdd, remove: tagsToRemove)
                     }
+                )
             }
             .sheet(isPresented: $showNoteEditor) {
                 BulkNoteEditorSheet(note: $bulkNote) {
@@ -175,6 +201,23 @@ struct BulkEditSheet: View {
         .cornerRadius(DS.Radius.md)
     }
 
+    // MARK: - Applied Changes Summary
+
+    private var appliedChangesSummary: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+
+            Text(L10n.BulkEdit.successMessage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.green.opacity(0.1))
+        .cornerRadius(DS.Radius.md)
+    }
+
     // MARK: - Actions
 
     private func handleOptionTap(_ option: BulkEditOption) {
@@ -186,8 +229,7 @@ struct BulkEditSheet: View {
             selectedSubcategory = nil
             showSubcategorySelector = true
         case .tag:
-            selectedTags = []
-            showTagSelector = true
+            showTagEditor = true
         case .note:
             bulkNote = ""
             showNoteEditor = true
@@ -199,31 +241,43 @@ struct BulkEditSheet: View {
 
     private func applyAccountChange(_ account: Account) {
         viewModel.bulkUpdateAccount(account, context: modelContext)
+        appliedChanges.insert(.account)
         onComplete()
-        dismiss()
     }
 
     private func applySubcategoryChange(_ subcategory: Subcategory) {
         viewModel.bulkUpdateSubcategory(subcategory, context: modelContext)
+        appliedChanges.insert(.subcategory)
         onComplete()
-        dismiss()
     }
 
-    private func applyTagChange(_ tags: [Tag]) {
-        viewModel.bulkAddTags(tags, context: modelContext)
-        onComplete()
-        dismiss()
+    private func applyTagChanges(add tagsToAdd: [Tag], remove tagsToRemove: [Tag]) {
+        if !tagsToAdd.isEmpty {
+            viewModel.bulkAddTags(tagsToAdd, context: modelContext)
+        }
+        if !tagsToRemove.isEmpty {
+            viewModel.bulkRemoveTags(tagsToRemove, context: modelContext)
+        }
+        if !tagsToAdd.isEmpty || !tagsToRemove.isEmpty {
+            appliedChanges.insert(.tag)
+            onComplete()
+        }
     }
 
     private func applyNoteChange(_ note: String) {
         viewModel.bulkUpdateNote(note, context: modelContext)
+        appliedChanges.insert(.note)
         onComplete()
-        dismiss()
     }
 
     private func applyAmountChange(_ amount: Double) {
         viewModel.bulkUpdateAmount(amount, context: modelContext)
+        appliedChanges.insert(.amount)
         onComplete()
+    }
+
+    private func finishEditing() {
+        viewModel.exitSelectionMode()
         dismiss()
     }
 }
@@ -232,6 +286,7 @@ struct BulkEditSheet: View {
 
 private struct BulkEditOptionRow: View {
     let option: BulkEditOption
+    let isApplied: Bool
     let action: () -> Void
 
     var body: some View {
@@ -254,16 +309,271 @@ private struct BulkEditOptionRow: View {
 
                 Spacer()
 
-                // Chevron
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.tertiary)
+                // Applied checkmark or chevron
+                if isApplied {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.green)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Bulk Tag Editor Sheet
+
+struct BulkTagEditorSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let viewModel: RecordsViewModel
+    let allTags: [Tag]
+    let onApply: ([Tag], [Tag]) -> Void
+
+    @State private var tagsToAdd: Set<PersistentIdentifier> = []
+    @State private var tagsToRemove: Set<PersistentIdentifier> = []
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        // Common tags section (tags that ALL selected transactions have)
+                        if !commonTags.isEmpty {
+                            SectionBox(title: L10n.BulkEdit.commonTags) {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(commonTags.enumerated()), id: \.element.persistentModelID) { index, tag in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
+                                        BulkTagRow(
+                                            tag: tag,
+                                            state: tagState(for: tag),
+                                            onToggle: { toggleTag(tag) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Partial tags section (tags that SOME selected transactions have)
+                        if !partialTags.isEmpty {
+                            SectionBox(title: L10n.BulkEdit.partialTags) {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(partialTags.enumerated()), id: \.element.persistentModelID) { index, tag in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
+                                        BulkTagRow(
+                                            tag: tag,
+                                            state: tagState(for: tag),
+                                            onToggle: { toggleTag(tag) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Available tags section (tags that NO selected transactions have)
+                        if !availableTags.isEmpty {
+                            SectionBox(title: L10n.BulkEdit.availableTags) {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(availableTags.enumerated()), id: \.element.persistentModelID) { index, tag in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
+                                        BulkTagRow(
+                                            tag: tag,
+                                            state: tagState(for: tag),
+                                            onToggle: { toggleTag(tag) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if allTags.isEmpty {
+                            NetoEmptyState(
+                                icon: "tag.slash",
+                                title: L10n.Empty.noTags,
+                                message: L10n.Empty.tagsDescription
+                            )
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
+                }
+            }
+            .navigationTitle(L10n.Settings.tags)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NetoToolbarButton(systemName: "xmark") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    NetoSaveButton {
+                        let addTags = allTags.filter { tagsToAdd.contains($0.persistentModelID) }
+                        let removeTags = allTags.filter { tagsToRemove.contains($0.persistentModelID) }
+                        onApply(addTags, removeTags)
+                        dismiss()
+                    }
+                    .disabled(tagsToAdd.isEmpty && tagsToRemove.isEmpty)
+                }
+            }
+        }
+        .tint(Color.electricIndigo)
+    }
+
+    // MARK: - Tag Analysis
+
+    private var selectedTransactionTags: [[Tag]] {
+        viewModel.getSelectedTransactionTags()
+    }
+
+    private var commonTags: [Tag] {
+        guard !selectedTransactionTags.isEmpty else { return [] }
+        let allTagSets = selectedTransactionTags.map { Set($0.map { $0.persistentModelID }) }
+        guard let first = allTagSets.first else { return [] }
+        let commonIDs = allTagSets.dropFirst().reduce(first) { $0.intersection($1) }
+        return allTags.filter { commonIDs.contains($0.persistentModelID) }
+    }
+
+    private var partialTags: [Tag] {
+        guard selectedTransactionTags.count > 1 else { return [] }
+        let allTagSets = selectedTransactionTags.map { Set($0.map { $0.persistentModelID }) }
+        let allUsedIDs = allTagSets.reduce(Set<PersistentIdentifier>()) { $0.union($1) }
+        let commonIDs = Set(commonTags.map { $0.persistentModelID })
+        let partialIDs = allUsedIDs.subtracting(commonIDs)
+        return allTags.filter { partialIDs.contains($0.persistentModelID) }
+    }
+
+    private var availableTags: [Tag] {
+        let usedIDs = Set(commonTags.map { $0.persistentModelID })
+            .union(Set(partialTags.map { $0.persistentModelID }))
+        return allTags.filter { !usedIDs.contains($0.persistentModelID) }
+    }
+
+    // MARK: - Tag State
+
+    enum TagState {
+        case toAdd      // Will be added
+        case toRemove   // Will be removed
+        case common     // All have it, no change
+        case partial    // Some have it, no change
+        case available  // None have it, no change
+    }
+
+    private func tagState(for tag: Tag) -> TagState {
+        let id = tag.persistentModelID
+        if tagsToAdd.contains(id) { return .toAdd }
+        if tagsToRemove.contains(id) { return .toRemove }
+        if commonTags.contains(where: { $0.persistentModelID == id }) { return .common }
+        if partialTags.contains(where: { $0.persistentModelID == id }) { return .partial }
+        return .available
+    }
+
+    private func toggleTag(_ tag: Tag) {
+        let id = tag.persistentModelID
+        let isCommon = commonTags.contains(where: { $0.persistentModelID == id })
+        let isPartial = partialTags.contains(where: { $0.persistentModelID == id })
+
+        if tagsToAdd.contains(id) {
+            // Was marked to add, remove from add list
+            tagsToAdd.remove(id)
+        } else if tagsToRemove.contains(id) {
+            // Was marked to remove, remove from remove list
+            tagsToRemove.remove(id)
+        } else if isCommon {
+            // Common tag, mark for removal
+            tagsToRemove.insert(id)
+        } else if isPartial {
+            // Partial tag, mark for add (to add to all)
+            tagsToAdd.insert(id)
+        } else {
+            // Available tag, mark for add
+            tagsToAdd.insert(id)
+        }
+    }
+}
+
+// MARK: - Bulk Tag Row
+
+private struct BulkTagRow: View {
+    let tag: Tag
+    let state: BulkTagEditorSheet.TagState
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: DS.Spacing.md) {
+                // Color circle with icon
+                Circle()
+                    .fill(Color(hex: tag.colorHex))
+                    .frame(width: 28, height: 28)
+                    .overlay(
+                        Image(systemName: tag.iconName)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                    )
+
+                // Tag name
+                Text(tag.name)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                // State indicator
+                stateIndicator
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var stateIndicator: some View {
+        switch state {
+        case .toAdd:
+            HStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Action.add)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                Image(systemName: "plus.circle.fill")
+                    .foregroundStyle(.green)
+            }
+        case .toRemove:
+            HStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Action.delete)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                Image(systemName: "minus.circle.fill")
+                    .foregroundStyle(.red)
+            }
+        case .common:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Color.electricIndigo)
+        case .partial:
+            Image(systemName: "minus.circle")
+                .foregroundStyle(.orange)
+        case .available:
+            Image(systemName: "circle")
+                .foregroundStyle(.tertiary)
+        }
     }
 }
 

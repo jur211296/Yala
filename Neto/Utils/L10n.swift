@@ -1514,6 +1514,15 @@ enum L10n {
         static var successMessage: String {
             NSLocalizedString("bulkEdit.successMessage", comment: "")
         }
+        static var commonTags: String {
+            NSLocalizedString("bulkEdit.commonTags", comment: "")
+        }
+        static var partialTags: String {
+            NSLocalizedString("bulkEdit.partialTags", comment: "")
+        }
+        static var availableTags: String {
+            NSLocalizedString("bulkEdit.availableTags", comment: "")
+        }
     }
 }
 

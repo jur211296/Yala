@@ -335,6 +335,7 @@ struct DetailContainerView: View {
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)

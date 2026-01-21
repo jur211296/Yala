@@ -350,7 +350,6 @@ final class RecordsViewModel: Filterable {
         } catch {
             print("Error saving bulk account update: \(error)")
         }
-        exitSelectionMode()
     }
 
     /// Update subcategory for all selected transactions
@@ -358,13 +357,13 @@ final class RecordsViewModel: Filterable {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
             transaction.subcategory = subcategory
+            transaction.category = subcategory.category
         }
         do {
             try context.save()
         } catch {
             print("Error saving bulk subcategory update: \(error)")
         }
-        exitSelectionMode()
     }
 
     /// Add tags to all selected transactions
@@ -382,7 +381,20 @@ final class RecordsViewModel: Filterable {
         } catch {
             print("Error saving bulk tags update: \(error)")
         }
-        exitSelectionMode()
+    }
+
+    /// Remove tags from all selected transactions
+    func bulkRemoveTags(_ tags: [Tag], context: ModelContext) {
+        let transactions = getSelectedTransactions(context: context)
+        let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
+        for transaction in transactions {
+            transaction.tags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Error saving bulk tags removal: \(error)")
+        }
     }
 
     /// Update note for all selected transactions
@@ -396,7 +408,6 @@ final class RecordsViewModel: Filterable {
         } catch {
             print("Error saving bulk note update: \(error)")
         }
-        exitSelectionMode()
     }
 
     /// Update amount for all selected transactions
@@ -410,7 +421,14 @@ final class RecordsViewModel: Filterable {
         } catch {
             print("Error saving bulk amount update: \(error)")
         }
-        exitSelectionMode()
+    }
+
+    /// Get tags for all selected transactions (for bulk tag editing UI)
+    func getSelectedTransactionTags() -> [[Tag]] {
+        let flatTransactions = groupedRecords.flatMap { $0.records }
+        return selectedRecordIDs.compactMap { id in
+            flatTransactions.first { $0.persistentModelID == id }?.tags
+        }
     }
 
     /// Helper to fetch selected transactions from context

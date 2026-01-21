@@ -20,7 +20,8 @@
 
       "Bash(xcodebuild:*)",
       "Bash(grep:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(cat >> /Users/jur/Neto/*)"
     ]
   }
 }

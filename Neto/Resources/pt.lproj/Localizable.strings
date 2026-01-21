@@ -1024,3 +1024,6 @@
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";
 "bulkEdit.editCount" = "Editar %d transações";
 "bulkEdit.successMessage" = "Transações atualizadas com sucesso";
+"bulkEdit.commonTags" = "Em todas as selecionadas";
+"bulkEdit.partialTags" = "Em algumas selecionadas";
+"bulkEdit.availableTags" = "Disponíveis para adicionar";
