@@ -40,7 +40,7 @@ struct DetailContainerView: View {
     // MARK: - UI State
 
     @State private var showDeleteConfirmation = false
-    @State private var showMultiEditPlaceholder = false
+    @State private var showBulkEditSheet = false
     @State private var isPresentingSettings = false
     @State private var isSyncingState = false  // Anti-loop flag for session sync
     private let isFromSearch: Bool  // Skip session sync when coming from global search
@@ -94,7 +94,7 @@ struct DetailContainerView: View {
                     recordsViewModel: recordsViewModel,
                     trendsViewModel: trendsViewModel,
                     showDeleteConfirmation: $showDeleteConfirmation,
-                    showMultiEditPlaceholder: $showMultiEditPlaceholder,
+                    showBulkEditSheet: $showBulkEditSheet,
                     isPresentingSettings: $isPresentingSettings,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
@@ -402,7 +402,7 @@ struct DetailContainerView: View {
             recordsViewModel.showEditTransaction = true
             recordsViewModel.exitSelectionMode()
         case .multiple:
-            showMultiEditPlaceholder = true
+            showBulkEditSheet = true
         }
     }
 
@@ -625,7 +625,7 @@ private struct DetailContainerSheets: ViewModifier {
     @Bindable var recordsViewModel: RecordsViewModel
     @Bindable var trendsViewModel: StatisticsViewModel
     @Binding var showDeleteConfirmation: Bool
-    @Binding var showMultiEditPlaceholder: Bool
+    @Binding var showBulkEditSheet: Bool
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
@@ -671,10 +671,12 @@ private struct DetailContainerSheets: ViewModifier {
             } message: {
                 Text(L10n.Common.cannotUndo)
             }
-            .alert(L10n.Action.multipleEdit, isPresented: $showMultiEditPlaceholder) {
-                Button(L10n.Common.understood, role: .cancel) {}
-            } message: {
-                Text(L10n.Common.comingSoon)
+            .sheet(isPresented: $showBulkEditSheet) {
+                BulkEditSheet(
+                    viewModel: recordsViewModel,
+                    selectedCount: recordsViewModel.selectedRecordIDs.count,
+                    onComplete: refreshRecordsData
+                )
             }
             .sheet(isPresented: $isPresentingSettings) {
                 ProfileView()

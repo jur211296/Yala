@@ -1019,3 +1019,8 @@
 "onboarding.periodTitle" = "Standardzeitraum";
 "onboarding.periodSubtitle" = "Welchen Zeitraum möchten Sie beim Öffnen der App sehen?";
 "onboarding.finish" = "Los geht's";
+
+// MARK: - Bulk Edit
+"bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";
+"bulkEdit.editCount" = "%d Transaktionen bearbeiten";
+"bulkEdit.successMessage" = "Transaktionen erfolgreich aktualisiert";

@@ -1019,3 +1019,8 @@
 "onboarding.periodTitle" = "Periodo predefinito";
 "onboarding.periodSubtitle" = "Quale intervallo di tempo preferisci vedere all'apertura dell'app?";
 "onboarding.finish" = "Inizia";
+
+// MARK: - Bulk Edit
+"bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";
+"bulkEdit.editCount" = "Modifica %d transazioni";
+"bulkEdit.successMessage" = "Transazioni aggiornate con successo";

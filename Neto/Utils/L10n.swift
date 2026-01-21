@@ -1501,6 +1501,20 @@ enum L10n {
             NSLocalizedString("onboarding.finish", comment: "")
         }
     }
+
+    // MARK: - Bulk Edit
+
+    enum BulkEdit {
+        static var currencyWarning: String {
+            NSLocalizedString("bulkEdit.currencyWarning", comment: "")
+        }
+        static func editCount(_ count: Int) -> String {
+            String(format: NSLocalizedString("bulkEdit.editCount", comment: ""), count)
+        }
+        static var successMessage: String {
+            NSLocalizedString("bulkEdit.successMessage", comment: "")
+        }
+    }
 }
 
 // MARK: - App Locale

@@ -1019,3 +1019,8 @@
 "onboarding.periodTitle" = "Période par défaut";
 "onboarding.periodSubtitle" = "Quelle plage de temps préférez-vous voir à l'ouverture de l'application ?";
 "onboarding.finish" = "Commencer";
+
+// MARK: - Bulk Edit
+"bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";
+"bulkEdit.editCount" = "Modifier %d transactions";
+"bulkEdit.successMessage" = "Transactions mises à jour avec succès";
