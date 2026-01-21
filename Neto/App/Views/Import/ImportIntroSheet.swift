@@ -352,41 +352,38 @@ struct ImportIntroSheet: View {
         let now = Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
+        let dateString = formatter.string(from: now)
 
-        // Encabezado del CSV de ejemplo
+        // Get user's preferred currency
+        let preferredCurrency = CurrencyDefaults.currentPreferred
+
+        // Encabezado del CSV (headers en inglés lowercase como espera el servicio)
         rows.append([
-            "Fecha", "Monto", "Tipo", "Categoría", "Subcategoría", "Nota",
+            "date", "amount", "currency", "category", "subcategory", "tags", "note",
         ])
 
-        // Fila de ejemplo con una categoría del catálogo (si existe)
-        let sampleCategoryName = categories.first?.name ?? "Alimentación"
-        let sampleSubcategoryName: String = {
-            if let cat = categories.first,
-                let sub = cat.subcategories.first
-            {
-                return sub.name
+        // Generate one example row per subcategory from seed data
+        // Sort categories by sortOrder for consistent output
+        let sortedCategories = categories.sorted { $0.sortOrder < $1.sortOrder }
+
+        for category in sortedCategories {
+            let sortedSubcategories = category.subcategories.sorted { $0.sortOrder < $1.sortOrder }
+
+            for subcategory in sortedSubcategories {
+                // Positive amount for income categories, negative for expenses
+                let amount = category.isIncome ? "100.00" : "-50.00"
+
+                rows.append([
+                    dateString,
+                    amount,
+                    preferredCurrency,
+                    category.name,
+                    subcategory.name,
+                    "",
+                    "",
+                ])
             }
-            return "Supermercado"
-        }()
-
-        rows.append([
-            formatter.string(from: now),
-            "-45.50",
-            "egreso",
-            sampleCategoryName,
-            sampleSubcategoryName,
-            "Compra semanal",
-        ])
-
-        rows.append([
-            formatter.string(from: now),
-            "1500.00",
-            "ingreso",
-            categories.first(where: { $0.name.lowercased().contains("ingreso") })?.name
-                ?? "Salario",
-            "",
-            "Pago mensual",
-        ])
+        }
 
         let csvText = rows.map { row in
             row.map { field in

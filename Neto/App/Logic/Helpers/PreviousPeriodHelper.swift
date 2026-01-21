@@ -173,41 +173,41 @@ enum PreviousPeriodHelper {
 
         case .thisWeek, .last7Days:
             if mode == .year {
-                // "vs 5 - 11 ene 25"
+                // Compact: "vs 5-11ene25"
                 formatter.dateFormat = "d"
                 let startDay = formatter.string(from: previousInterval.start)
-                formatter.dateFormat = "d MMM yy"
-                let endDate = formatter.string(from: previousInterval.end).replacingOccurrences(of: ".", with: "")
-                return "vs \(startDay) - \(endDate)"
+                formatter.dateFormat = "dMMMyy"
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                return "vs \(startDay)-\(endDate)"
             } else {
-                // "vs 29 dic - 4 ene"
-                formatter.dateFormat = "d MMM"
-                let startDate = formatter.string(from: previousInterval.start).replacingOccurrences(of: ".", with: "")
-                let endDate = formatter.string(from: previousInterval.end).replacingOccurrences(of: ".", with: "")
-                return "vs \(startDate) - \(endDate)"
+                // Compact: "vs 29dic-4ene"
+                formatter.dateFormat = "dMMM"
+                let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                return "vs \(startDate)-\(endDate)"
             }
 
         case .last30Days:
             if mode == .year {
-                // "vs 17 dic 24 - 15 ene 25"
-                formatter.dateFormat = "d MMM yy"
-                let startDate = formatter.string(from: previousInterval.start).replacingOccurrences(of: ".", with: "")
-                let endDate = formatter.string(from: previousInterval.end).replacingOccurrences(of: ".", with: "")
-                return "vs \(startDate) - \(endDate)"
+                // Compact: "vs 17dic24-15ene25"
+                formatter.dateFormat = "dMMMyy"
+                let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                return "vs \(startDate)-\(endDate)"
             } else {
-                // "vs 17 dic - 15 ene"
-                formatter.dateFormat = "d MMM"
-                let startDate = formatter.string(from: previousInterval.start).replacingOccurrences(of: ".", with: "")
-                let endDate = formatter.string(from: previousInterval.end).replacingOccurrences(of: ".", with: "")
-                return "vs \(startDate) - \(endDate)"
+                // Compact: "vs 17dic-15ene"
+                formatter.dateFormat = "dMMM"
+                let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                return "vs \(startDate)-\(endDate)"
             }
 
         case .custom:
-            // Always show full range with year
-            formatter.dateFormat = "d MMM yy"
-            let startDate = formatter.string(from: previousInterval.start).replacingOccurrences(of: ".", with: "")
-            let endDate = formatter.string(from: previousInterval.end).replacingOccurrences(of: ".", with: "")
-            return "vs \(startDate) - \(endDate)"
+            // Compact: "vs 11dic25-31dic25"
+            formatter.dateFormat = "dMMMyy"
+            let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
+            let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+            return "vs \(startDate)-\(endDate)"
 
         case .allTime:
             return ""

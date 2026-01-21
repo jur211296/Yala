@@ -17,6 +17,7 @@ struct PersonalizationSettingsView: View {
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
+    @AppStorage("useRoundedAmounts") private var useRoundedAmounts: Bool = true
 
     @State private var showingPeriodPicker = false
     @State private var showingTabBarConfig = false
@@ -218,6 +219,38 @@ struct PersonalizationSettingsView: View {
                         )
 
                         Text(L10n.Settings.widgetHintsDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
+
+                    // Rounded Amounts Toggle Section
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Text(L10n.Settings.roundedAmounts)
+                                .font(.body)
+                                .foregroundStyle(Color.netoPrimaryText)
+
+                            Spacer()
+
+                            Toggle("", isOn: $useRoundedAmounts)
+                                .labelsHidden()
+                                .tint(Color.brandPrimary)
+                                .onChange(of: useRoundedAmounts) { _, _ in
+                                    // Trigger UI refresh for all views showing formatted amounts
+                                    SessionState.shared.formattingVersion += 1
+                                }
+                        }
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(Color.netoCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                        )
+
+                        Text(L10n.Settings.roundedAmountsDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 4)

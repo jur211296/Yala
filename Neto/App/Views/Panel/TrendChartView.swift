@@ -126,7 +126,7 @@ struct TrendChartView: View {
                 let selectedPoint = closestPoint(to: activeDate, in: data),
                 let rawValue = value(for: activeDate, in: rawPoints)  // Use raw points for actual value
             {
-
+                // Vertical dashed line
                 RuleMark(x: .value(L10n.Common.selectedDate, activeDate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                     .foregroundStyle(Color.netoSecondaryText)
@@ -147,9 +147,14 @@ struct TrendChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(Color.netoCard)
 
-                // Tooltip - dynamic position based on point height
+                // Invisible anchor point at top of chart for tooltip
+                PointMark(
+                    x: .value(L10n.Common.selectedDate, activeDate),
+                    y: .value("Top", yDomain.upperBound)
+                )
+                .symbolSize(0)
                 .annotation(
-                    position: tooltipShouldBeBelow(for: selectedPoint.value) ? .bottom : .top,
+                    position: .top,
                     alignment: tooltipAlignment(for: activeDate)
                 ) {
                     VStack(alignment: .center, spacing: DS.Spacing.xs) {
@@ -167,7 +172,6 @@ struct TrendChartView: View {
                             .fill(Color.netoCard.opacity(0.95))
                             .shadow(radius: 2)
                     )
-                    .offset(y: tooltipShouldBeBelow(for: selectedPoint.value) ? -30 : -30)
                 }
             }
         }
@@ -333,7 +337,6 @@ struct TrendChartView: View {
 
     /// Safe tooltip alignment based on date position in interval
     private func tooltipAlignment(for date: Date) -> Alignment {
-
         // Calculate position as percentage of interval
         let intervalDuration = interval.end.timeIntervalSince(interval.start)
         guard intervalDuration > 0 else { return .center }
@@ -348,16 +351,6 @@ struct TrendChartView: View {
         } else {
             return .center
         }
-    }
-
-    /// Determines if tooltip should be below the point (when point is in upper portion of chart)
-    private func tooltipShouldBeBelow(for value: Double) -> Bool {
-        let range = yDomain.upperBound - yDomain.lowerBound
-        guard range > 0 else { return false }
-
-        let normalizedValue = (value - yDomain.lowerBound) / range
-        // If point is in upper 30% of chart, put tooltip below
-        return normalizedValue > 0.70
     }
 
     /// Format day as number only (1, 2, 3, etc.)

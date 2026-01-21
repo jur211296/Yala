@@ -211,20 +211,24 @@ struct CashFlowWidget: View {
 
                     // KPI with "vs previous amount" - only show when we have data
                     if !hasNoData {
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(
                                 NetoFormatter.currency(
                                     value: kpiValue, currencyCode: summary.currencyCode,
                                     forceSign: displayMode == .balance || displayMode == .none)
                             )
-                            .font(.title3.weight(.bold))
+                            .font(.callout.weight(.bold))
                             .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
 
                             // Show previous period value for comparison
                             if let prevAmount = previousAmount {
                                 Text("vs \(NetoFormatter.number(value: prevAmount))")
                                     .font(.caption)
                                     .foregroundStyle(Color.netoSecondaryText)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
                             }
                         }
                     }

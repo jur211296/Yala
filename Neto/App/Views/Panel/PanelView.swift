@@ -211,6 +211,10 @@ struct PanelView: View {
             // Recalculate when preferred currency changes
             recalculateData()
         }
+        .onChange(of: sessionState.formattingVersion) {
+            // Force recalculation when formatting settings change (rounded amounts, etc.)
+            recalculateData()
+        }
         .onChange(of: viewModel.trendType) {
             // Sync trend type to SessionState when it changes
             viewModel.syncToSessionState(sessionState)
@@ -237,6 +241,8 @@ struct PanelView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxxl)
+                // Force complete re-render when formatting settings change
+                .id(sessionState.formattingVersion)
             }
 
             // Botón flotante de nuevo registro

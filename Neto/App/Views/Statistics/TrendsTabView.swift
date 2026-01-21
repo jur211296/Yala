@@ -494,6 +494,8 @@ struct TrendsTabView: View {
                         Text(comparisonPeriodText)
                             .font(.caption2)
                             .foregroundStyle(Color.netoSecondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
             }
@@ -541,25 +543,39 @@ struct TrendsTabView: View {
         .frame(height: 220)
     }
 
+    /// Dynamic title for period comparison card based on comparison mode
+    private var periodComparisonTitle: String {
+        switch sessionState.comparisonMode {
+        case .month:
+            return L10n.Statistics.vsPreviousPeriod
+        case .year:
+            return L10n.Statistics.vsPreviousYear
+        }
+    }
+
     private var periodComparisonCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             // Header with KPI and variation chip (same style as chartCard)
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.Statistics.periodComparison)
+                    Text(periodComparisonTitle)
                         .font(.headline)
                         .foregroundStyle(Color.netoPrimaryText)
 
                     // KPI value with "vs" previous (same as chartHeader)
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         Text(currentKPIValue)
-                            .font(.title2.weight(.bold))
+                            .font(.callout.weight(.bold))
                             .foregroundStyle(Color.netoPrimaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
 
                         if let prevTotal = previousPeriodTotal {
                             Text("vs \(NetoFormatter.number(value: prevTotal))")
                                 .font(.caption)
                                 .foregroundStyle(Color.netoSecondaryText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                     }
                     .padding(.top, 4)
@@ -580,6 +596,8 @@ struct TrendsTabView: View {
                     Text(comparisonPeriodText)
                         .font(.caption2)
                         .foregroundStyle(Color.netoSecondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
 
@@ -589,7 +607,12 @@ struct TrendsTabView: View {
                 previousPeriodPoints: previousPeriodPoints,
                 yDomain: comparisonYDomain,
                 grouping: .day,
-                interval: trendsViewModel.currentInterval,
+                currentInterval: trendsViewModel.currentInterval,
+                previousInterval: PreviousPeriodHelper.previousInterval(
+                    for: trendsViewModel.detailPeriod,
+                    mode: sessionState.comparisonMode,
+                    customRange: sessionState.customDateRange
+                ),
                 currencyCode: defaultCurrencyCode,
                 trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
                 chartHeight: 220
@@ -629,10 +652,12 @@ struct TrendsTabView: View {
                 .font(.headline)
                 .foregroundStyle(Color.netoPrimaryText)
 
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                 Text(currentKPIValue)
-                    .font(.title2.weight(.bold))
+                    .font(.callout.weight(.bold))
                     .foregroundStyle(Color.netoPrimaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
 
                 // Show previous period value for comparison (hidden for All Time)
                 if trendsViewModel.detailPeriod != .allTime,
@@ -640,6 +665,8 @@ struct TrendsTabView: View {
                     Text("vs \(NetoFormatter.number(value: prevTotal))")
                         .font(.caption)
                         .foregroundStyle(Color.netoSecondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
             .padding(.top, 4)
