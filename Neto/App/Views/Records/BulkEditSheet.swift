@@ -490,19 +490,24 @@ struct BulkTagEditorSheet: View {
         let isPartial = partialTags.contains(where: { $0.persistentModelID == id })
 
         if tagsToAdd.contains(id) {
-            // Was marked to add, remove from add list
+            // Was marked to add → mark for removal (or back to original if common)
             tagsToAdd.remove(id)
+            if isPartial {
+                // Partial: add → remove cycle
+                tagsToRemove.insert(id)
+            }
+            // If was common or available, just go back to original state
         } else if tagsToRemove.contains(id) {
-            // Was marked to remove, remove from remove list
+            // Was marked to remove → back to original state
             tagsToRemove.remove(id)
         } else if isCommon {
-            // Common tag, mark for removal
+            // Common tag (all have) → mark for removal
             tagsToRemove.insert(id)
         } else if isPartial {
-            // Partial tag, mark for add (to add to all)
+            // Partial tag (some have) → mark for add to all
             tagsToAdd.insert(id)
         } else {
-            // Available tag, mark for add
+            // Available tag (none have) → mark for add
             tagsToAdd.insert(id)
         }
     }
