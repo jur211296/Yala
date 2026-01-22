@@ -217,7 +217,7 @@ struct ImportIntroSheet: View {
         }
         .fileImporter(
             isPresented: $isShowingFileImporter,
-            allowedContentTypes: [UTType.commaSeparatedText],
+            allowedContentTypes: [UTType.commaSeparatedText, UTType.spreadsheet],
             allowsMultipleSelection: false
         ) { result in
             handleFileImportResult(result)
@@ -432,9 +432,9 @@ struct ImportIntroSheet: View {
                 return
             }
 
-            // Scan currencies from CSV
+            // Scan currencies from file (CSV or XLSX)
             do {
-                let currencies = try TransactionCSVImportService.scanCurrencies(from: url)
+                let currencies = try TransactionCSVImportService.scanCurrenciesFromFile(from: url)
                 selectedFileURL = url
                 detectedCurrencies = currencies
 
@@ -499,13 +499,25 @@ struct ImportIntroSheet: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             Task { @MainActor in
                 do {
-                    print("🔵 [IMPORT] Calling TransactionCSVImportService.importCSV")
-                    let result = try await TransactionCSVImportService.importCSV(
-                        from: url,
-                        into: account,
-                        in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
-                    )
+                    let isXLSX = url.pathExtension.lowercased() == "xlsx"
+                    print("🔵 [IMPORT] Calling import for \(isXLSX ? "XLSX" : "CSV")")
+
+                    let result: TransactionImportResult
+                    if isXLSX {
+                        result = try await TransactionCSVImportService.importXLSX(
+                            from: url,
+                            into: account,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories
+                        )
+                    } else {
+                        result = try await TransactionCSVImportService.importCSV(
+                            from: url,
+                            into: account,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories
+                        )
+                    }
 
                     let createdCount = result.createdCount
                     print("🔵 [IMPORT] Import complete, count = \(createdCount)")
@@ -578,13 +590,25 @@ struct ImportIntroSheet: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             Task { @MainActor in
                 do {
-                    print("🔵 [IMPORT-MULTI] Calling TransactionCSVImportService.importCSVMultiCurrency")
-                    let result = try await TransactionCSVImportService.importCSVMultiCurrency(
-                        from: url,
-                        currencyAccountMap: currencyAccountMap,
-                        in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
-                    )
+                    let isXLSX = url.pathExtension.lowercased() == "xlsx"
+                    print("🔵 [IMPORT-MULTI] Calling import for \(isXLSX ? "XLSX" : "CSV") multi-currency")
+
+                    let result: TransactionImportResult
+                    if isXLSX {
+                        result = try await TransactionCSVImportService.importXLSXMultiCurrency(
+                            from: url,
+                            currencyAccountMap: currencyAccountMap,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories
+                        )
+                    } else {
+                        result = try await TransactionCSVImportService.importCSVMultiCurrency(
+                            from: url,
+                            currencyAccountMap: currencyAccountMap,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories
+                        )
+                    }
 
                     let createdCount = result.createdCount
                     let currencyCount = currencyAccountMap.count
