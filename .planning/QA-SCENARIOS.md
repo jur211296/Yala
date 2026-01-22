@@ -2071,7 +2071,89 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ---
 
+## Sección 16: Bandeja de Entrada (Inbox) - V1.1
+
+### Vista: InboxView
+
+Bandeja para borradores de transacciones generados por extractores (voz, imagen, etc.).
+
+### Precondiciones
+
+- Tener drafts en la bandeja (requiere Fase 8.3+ para generar desde voz/imagen)
+- Para testing manual: crear drafts programáticamente o mediante debug tools
+
+### Escenarios de Lista
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.1 | Ver bandeja vacía (Pendientes) | Abrir bandeja sin drafts | Empty state: "Sin borradores pendientes" |
+| 16.2 | Ver bandeja vacía (Archivados) | Cambiar a filtro Archivados | Empty state: "Sin borradores archivados" |
+| 16.3 | Filtrar por Pendientes | Tap en chip "Pendientes" | Solo muestra drafts con status pending |
+| 16.4 | Filtrar por Archivados | Tap en chip "Archivados" | Muestra drafts approved + rejected |
+| 16.5 | Badge en Panel | Ver botón en PanelView | Badge muestra conteo de pendientes |
+
+### Escenarios de Edición Individual
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.6 | Abrir editor | Tap en draft | Sheet de edición estilo NewTransactionView |
+| 16.7 | Editar nota | Cambiar texto | Se actualiza al guardar |
+| 16.8 | Editar monto | Cambiar valor | Se actualiza al guardar |
+| 16.9 | Editar fecha | Tap en chip fecha | DatePicker funcional |
+| 16.10 | Asignar cuenta | Tap en chip cuenta | AccountSelectorSheet |
+| 16.11 | Asignar subcategoría | Tap en chip subcategoría | SubcategorySelectorSheet |
+| 16.12 | Asignar tags | Tap en chip tags | TagSelectorSheet |
+| 16.13 | Guardar cambios | Tap "Guardar" | Draft actualizado, sheet cierra |
+
+### Escenarios de Aprobación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.14 | Aprobar desde editor | Completar campos + Tap "Aprobar" | TransactionItem creado, draft → approved |
+| 16.15 | Aprobar incompleto | Intentar aprobar sin cuenta/monto/subcategoría | Alert con error específico |
+| 16.16 | Swipe right to approve | Swipe derecha en draft válido | Draft aprobado, transacción creada |
+| 16.17 | Swipe right bloqueado | Swipe derecha en draft incompleto | Swipe no disponible |
+
+### Escenarios de Eliminación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.18 | Swipe left to delete | Swipe izquierda | Draft → rejected, desaparece de Pendientes |
+| 16.19 | Ver eliminado en Archivados | Filtrar Archivados | Draft eliminado visible |
+
+### Escenarios de Selección Múltiple
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.20 | Entrar modo selección | Tap "Edición múltiple" | Círculos de selección aparecen |
+| 16.21 | Seleccionar draft | Tap en draft | Círculo se llena |
+| 16.22 | Seleccionar todos | Tap en círculo de barra | Todos seleccionados |
+| 16.23 | Deseleccionar todos | Tap en círculo lleno | Todos deseleccionados |
+| 16.24 | Salir modo selección | Tap "Cancelar" | Círculos desaparecen |
+
+### Escenarios de Acciones en Lote
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.25 | Asignar cuenta a varios | Seleccionar → Editar → Cuenta | Todos actualizados con cuenta |
+| 16.26 | Asignar subcategoría a varios | Seleccionar → Editar → Subcategoría | Todos actualizados |
+| 16.27 | Aprobar varios válidos | Seleccionar válidos → Aprobar | Transacciones creadas |
+| 16.28 | Aprobar con algunos inválidos | Mezcla de válidos e inválidos | Solo válidos se aprueban, muestra conteo |
+| 16.29 | Eliminar varios | Seleccionar → Eliminar | Confirmación → todos rejected |
+
+### Validaciones de UI
+
+| Elemento | Verificación |
+|----------|--------------|
+| Icono de fuente | Correcto para tipo (voz, recibo, etc.) |
+| Indicadores campos faltantes | Chips rojos para account/subcategory/amount |
+| Fecha relativa | "Hoy", "Ayer", o fecha formateada |
+| Color de monto | Verde/morado para positivo, rosa para negativo |
+| Indicador confianza | Triángulo naranja si <70% |
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-21*
-*Total escenarios: ~127*
-*Total verificaciones: ~280+*
+*Última actualización: 2026-01-22*
+*Total escenarios: ~156*
+*Total verificaciones: ~320+*

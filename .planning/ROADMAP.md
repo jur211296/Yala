@@ -251,13 +251,13 @@ DoD:
 **Plans**: TBD
 
 Subfases:
-- 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación)
-- 8.2: Edición y Aprobación (sheet edición, validación, acciones lote)
-- 8.3: Voz MVP (OpenAI SDK, STT, LLM parser)
-- 8.4: Imágenes MVP (OCR Vision, clasificación, extractores)
-- 8.5: Merchant Memory (canonicalización, sugerencias)
-- 8.6: Refinamiento (sistema confianza, fallbacks)
-- 8.7: Cloud Fallback (opcional, AWS/GCP para recibos)
+- [x] 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación) ✅
+- [ ] 8.2: Edición y Aprobación (sheet edición, validación, acciones lote)
+- [ ] 8.3: Voz MVP (OpenAI SDK, STT, LLM parser)
+- [ ] 8.4: Imágenes MVP (OCR Vision, clasificación, extractores)
+- [ ] 8.5: Merchant Memory (canonicalización, sugerencias)
+- [ ] 8.6: Refinamiento (sistema confianza, fallbacks)
+- [ ] 8.7: Cloud Fallback (opcional, AWS/GCP para recibos)
 
 DoD:
 - Bandeja de entrada funcional con drafts pendientes
@@ -308,7 +308,7 @@ DoD:
 ### V1.1
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 8 | Registro Inteligente | Not started | - |
+| 8 | Registro Inteligente | 🔄 In Progress (8.1 ✅) | - |
 | 9 | Plataforma y Polish | Not started | - |
 
 ---
