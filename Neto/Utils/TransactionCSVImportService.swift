@@ -180,11 +180,14 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            let subcategoryName = draft.subcategory.name
-            if subcategoryName == L10n.Transfer.categoryName {
-                transaction.balanceAdjustmentType = "transfer"
-            } else if subcategoryName == "Ajustes de saldo" {
-                transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+            if draft.subcategory.isSystemSubcategory {
+                let subcategoryName = draft.subcategory.name
+                if subcategoryName == "Ajustes de saldo" {
+                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+                } else {
+                    // All other system subcategories are transfers
+                    transaction.balanceAdjustmentType = "transfer"
+                }
             }
 
             context.insert(transaction)
@@ -943,11 +946,14 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            let subcategoryName = draft.subcategory.name
-            if subcategoryName == L10n.Transfer.categoryName {
-                transaction.balanceAdjustmentType = "transfer"
-            } else if subcategoryName == "Ajustes de saldo" {
-                transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+            if draft.subcategory.isSystemSubcategory {
+                let subcategoryName = draft.subcategory.name
+                if subcategoryName == "Ajustes de saldo" {
+                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+                } else {
+                    // All other system subcategories are transfers
+                    transaction.balanceAdjustmentType = "transfer"
+                }
             }
 
             context.insert(transaction)

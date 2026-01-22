@@ -277,7 +277,7 @@ struct NewTransactionView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(Capsule().fill(Color.electricIndigo))
+                        .background(Capsule().fill(Color(UIColor.darkGray)))
                         .padding(.bottom, DS.Spacing.xxxl)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -332,13 +332,13 @@ struct NewTransactionView: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 16, weight: .medium))
                     Text(dateChipText)
-                        .font(.subheadline.weight(.medium))
+                        .font(.callout.weight(.medium))
                 }
                 .foregroundStyle(.primary)
-                .padding(.horizontal, DS.FormRow.paddingV)
-                .padding(.vertical, DS.Spacing.sm)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
                 .background(
                     Capsule()
                         .fill(Color(UIColor.label).opacity(0.08))
@@ -378,13 +378,30 @@ struct NewTransactionView: View {
                 amountDisplay
             }
 
-            // Nature chip (visible when subcategory is selected, not for transfers)
-            if !viewModel.isTransfer, viewModel.selectedSubcategory != nil {
-                NatureEditChip(
-                    nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
-                        ?? .unclassified
-                ) {
-                    viewModel.showNatureSelector = true
+            // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
+            if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
+                HStack(spacing: DS.Spacing.sm) {
+                    // Category chip (read-only, styled like NatureEditChip)
+                    let category = subcategory.category
+                    let categoryColor = Color(hex: category.colorHex) ?? .gray
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: category.iconName ?? "folder")
+                            .font(.caption2.weight(.medium))
+                        Text(category.name)
+                            .font(.caption2.weight(.medium))
+                    }
+                    .foregroundStyle(categoryColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule().fill(categoryColor.opacity(0.12))
+                    )
+
+                    NatureEditChip(
+                        nature: viewModel.selectedNature ?? subcategory.nature ?? .unclassified
+                    ) {
+                        viewModel.showNatureSelector = true
+                    }
                 }
                 .padding(.top, DS.Spacing.sm)
             }
@@ -403,19 +420,31 @@ struct NewTransactionView: View {
         }
     }
 
+    /// Dynamic font size for amount based on length
+    private var amountFontSize: CGFloat {
+        let length = viewModel.amountString.count
+        switch length {
+        case 0...7: return 64
+        case 8...9: return 54
+        case 10...11: return 46
+        case 12...13: return 38
+        default: return 32
+        }
+    }
+
     private var amountDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             Text(currencySymbol)
-                .font(.system(size: 28, weight: .medium, design: .rounded))
+                .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
                 .foregroundStyle(viewModel.amountColor.opacity(0.7))
 
             TextField("0.00", text: $viewModel.amountString)
-                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(viewModel.amountColor)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($isAmountFieldFocused)
-                .frame(width: 250)  // Increased width for decimals
+                .fixedSize(horizontal: true, vertical: false)  // Dynamic width based on content
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     // When field gets focus and value is just "0" or "0.00", clear it
                     if isFocused
@@ -657,17 +686,46 @@ struct NewTransactionView: View {
                             viewModel.showTagSelector = true
                         }
                     } else {
-                        // Individual chip for each selected tag
+                        // Individual chip for each selected tag with remove button inside
+                        // Styled to match SelectionChip size
                         ForEach(viewModel.selectedTags, id: \.persistentModelID) { tag in
-                            SelectionChip(
-                                icon: "number",
-                                text: tag.name,
-                                isSelected: true,
-                                color: Color.tagChipColor
-                            ) {
-                                dismissKeyboard()
-                                viewModel.showTagSelector = true
+                            HStack(spacing: DS.Spacing.sm) {
+                                // Tag content (tappable to open selector)
+                                Button {
+                                    dismissKeyboard()
+                                    viewModel.showTagSelector = true
+                                } label: {
+                                    HStack(spacing: DS.Spacing.sm) {
+                                        Image(systemName: tag.iconName ?? "number")
+                                            .font(.system(size: 14, weight: .medium))
+                                        Text(tag.name)
+                                            .font(.subheadline.weight(.medium))
+                                            .lineLimit(1)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+
+                                // Remove button (X)
+                                Button {
+                                    withAnimation {
+                                        viewModel.selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
+                                    }
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 16))
+                                }
+                                .buttonStyle(.plain)
                             }
+                            .foregroundStyle(Color.tagChipColor)
+                            .padding(.horizontal, DS.FormRow.paddingV)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .background(
+                                Capsule().fill(Color.tagChipColor.opacity(0.12))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.tagChipColor.opacity(0.3), lineWidth: 1)
+                            )
                         }
                     }
                 }

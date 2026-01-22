@@ -292,6 +292,9 @@ private let defaultCategorySeedDefinitions: [CategorySeedDefinition] = [
             SubcategorySeedDefinition(
                 name: "Ventas", natureRawValue: "sin_clasificacion",
                 iconName: "dollarsign.circle.fill"),
+            SubcategorySeedDefinition(
+                name: "Transferencia entre cuentas", natureRawValue: "sin_clasificacion",
+                iconName: "arrow.left.arrow.right"),
         ]
     ),
     // 11. Otros (neutral category for system/adjustment transactions)

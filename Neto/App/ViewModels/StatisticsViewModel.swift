@@ -217,7 +217,8 @@ final class StatisticsViewModel: Filterable {
 
     init(context: StatisticsContext) {
         self.selectedMetric = context.initialMetric
-        self.detailPeriod = context.period
+        // Note: detailPeriod is NOT set here because it's a computed property that writes to SessionState.
+        // Setting it would overwrite the user's period selection. The period comes from SessionState directly.
 
         if let accountID = context.accountID {
             self.selectedAccounts = [accountID]

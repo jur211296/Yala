@@ -97,6 +97,20 @@ Este directorio contiene archivos CSV para testing manual y automatizado de la f
 - Distribución realista de categorías
 - **Uso:** Verificar rendimiento con muchos datos
 
+### 8. `test_transfers.csv`
+**Propósito:** Test de importación de transferencias
+- 5 transacciones (4 transferencias + 1 ajuste)
+- **Casos incluidos:**
+  - Transferencia saliente (Otros/Transferencia entre cuentas, monto negativo)
+  - Transferencia entrante (Ingresos/Transferencia entre cuentas, monto positivo)
+  - Ajuste de saldo (Otros/Ajustes de saldo)
+- **Uso:** Verificar correcta clasificación de transferencias en import
+- **Validaciones:**
+  - Transferencias salientes NO aparecen al filtrar "Ingresos"
+  - Transferencias entrantes SÍ aparecen al filtrar "Ingresos"
+  - Todas tienen balanceAdjustmentType correcto
+  - Todas se excluyen de totales de ingresos/gastos reales en gráficas
+
 ---
 
 ## Cómo Usar
