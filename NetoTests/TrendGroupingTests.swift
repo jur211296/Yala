@@ -98,8 +98,9 @@ struct CurrencyDefaultsTests {
 
 struct CurrencyCodeTests {
 
-    @Test func allCases_containsThreeCurrencies() {
-        #expect(CurrencyCode.allCases.count == 3)
+    @Test func allCases_containsSevenCurrencies() {
+        // PEN, USD, EUR, MXN, COP, BRL, GBP
+        #expect(CurrencyCode.allCases.count == 7)
     }
 
     @Test func pen_hasCorrectRawValue() {
