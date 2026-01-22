@@ -10,18 +10,21 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 ## Current Position
 
 Version: 1.1 (IN DEVELOPMENT)
-Phase: 8 - Registro Inteligente (Subfase 8.1 ✅, trabajando en 8.2)
+Phase: 8 - Registro Inteligente (Subfase 8.1 ✅, 8.2 ✅, siguiente: 8.3)
 Spec: .planning/PHASE8-REGISTRO-SPEC.md
 Plan: In progress
-Status: **V1.1 en desarrollo** — Bandeja de entrada implementada, siguiente: edición y aprobación
-Last activity: 2026-01-22 — Subfase 8.1 completada
+Status: **V1.1 en desarrollo** — Edición y aprobación de drafts completada, siguiente: Voz MVP
+Last activity: 2026-01-22 — Subfase 8.2 completada
 
-Progress: █░░░░░░░░░░░░░ 10% (V1.1 - Fase 8 iniciada)
+Progress: ██░░░░░░░░░░░░ 15% (V1.1 - Fase 8 en progreso)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T14:25:00-05:00] cbe38f8 docs: update state and QA for inbox subfase 8.2
+- [2026-01-22T14:24:00-05:00] d557621 chore(l10n): add inbox localization keys in 6 languages
+- [2026-01-22T14:23:00-05:00] 62d32dd feat(inbox): add draft editing and bulk actions
 - [2026-01-22T12:45:00-05:00] a939ee3 fix(transaction-ui): match tag chip size with other selection chips
 - [2026-01-22T12:42:00-05:00] cac01fc fix(transaction-ui): improve category and tag chips styling
 - [2026-01-22T12:38:00-05:00] 5e401b9 fix(transaction-ui): improve amount, tags, date chip and toast
@@ -29,14 +32,6 @@ Progress: █░░░░░░░░░░░░░ 10% (V1.1 - Fase 8 iniciada
 - [2026-01-22T12:00:00-05:00] c6294fa fix(records): balance now equals income minus expense
 - [2026-01-22T11:45:00-05:00] 50e542c fix(filters): prevent auto-expense when selecting income categories
 - [2026-01-22T10:45:00-05:00] 3361855 fix(tests): update currency count test to expect 7 currencies
-- [2026-01-22T10:44:00-05:00] cbfe355 docs(qa): add transfer classification test scenarios
-- [2026-01-22T10:40:00-05:00] 80ac396 feat(migration): migrate positive transfers to Income category
-- [2026-01-22T10:38:00-05:00] c1c8a4d fix(import): use isSystemSubcategory for transfer detection
-- [2026-01-22T10:36:00-05:00] 2a4b80e fix(subcategories): protect system subcategories from deletion
-- [2026-01-22T10:35:00-05:00] fe0b54c fix(categories): protect Otros category from deletion
-- [2026-01-22T10:34:00-05:00] b57c916 feat(transfers): classify incoming transfers under Income category
-- [2026-01-22T10:33:00-05:00] e13bbc2 feat(seed): add transfer subcategory to Income category
-- [2026-01-22T10:32:00-05:00] 4433200 feat(charts): add smart alignment for period comparison
 
 ## Completed in Current Phase (V1.1)
 
@@ -48,6 +43,15 @@ Progress: █░░░░░░░░░░░░░ 10% (V1.1 - Fase 8 iniciada
 - **Navegación** - Botón en PanelView toolbar (lado izquierdo) con badge de contador de pendientes
 - **Localizaciones** - 12 keys en 6 idiomas (es, en, de, fr, it, pt)
 - **Registro en ModelContainer** - InboxDraft añadido al schema en NetoApp.swift
+
+### Subfase 8.2: Edición y Aprobación ✅
+- **InboxDraftEditSheet** - Formulario de edición con mismo diseño que NewTransactionView, prefilled desde draft
+- **Flujo de aprobación** - Validación de campos requeridos (account, amount, subcategory), crea TransactionItem
+- **Swipe actions** - Swipe right to approve (drafts válidos), swipe left to delete
+- **Modo selección múltiple** - Selection circles, barra de selección con contador
+- **InboxBulkActionsSheet** - Acciones en lote: asignar cuenta, subcategoría, aprobar válidos, eliminar
+- **Localizaciones** - 13 nuevas keys en 6 idiomas
+- **QA-SCENARIOS** - Sección 16 con 29 escenarios de prueba
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -88,18 +92,16 @@ Progress: █░░░░░░░░░░░░░ 10% (V1.1 - Fase 8 iniciada
 
 ## Next Steps
 
-### Subfase 8.2: Edición y Aprobación (En progreso)
+### Subfase 8.3: Voz MVP (Siguiente)
 
-- [ ] Sheet de edición rápida (InboxDraftEditSheet)
-- [ ] Validación de campos requeridos (account, amount, subcategory)
-- [ ] Flujo de aprobación → crear TransactionItem
-- [ ] Acciones en lote (asignar cuenta, subcategoría, aprobar, eliminar)
-- [ ] Localizaciones en 6 idiomas
-- [ ] QA-SCENARIOS.md actualizado
+- [ ] Integración OpenAI SDK
+- [ ] Speech-to-Text (STT)
+- [ ] LLM parser para extraer datos de transcripción
+- [ ] Crear InboxDraft desde voz
+- [ ] UI para grabar y procesar audio
 
 ### Subfases siguientes (Fase 8)
 
-- **8.3: Voz MVP** - OpenAI SDK, STT, LLM parser
 - **8.4: Imágenes MVP** - OCR Vision, clasificación, extractores
 - **8.5: Merchant Memory** - Canonicalización, sugerencias
 - **8.6: Refinamiento** - Sistema confianza, fallbacks
