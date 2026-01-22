@@ -22,16 +22,16 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-22T07:30:00-05:00] 33b70b8 fix(filters): improve filter sync between Panel and Statistics views
-- [2026-01-22T07:20:00-05:00] 7fdb536 fix(widgets): update default order and visibility for panel widgets
-- [2026-01-21T20:46:00-05:00] 6ce1466 fix(ui): use consistent tag selector style in quick action sheets
-- [2026-01-21T20:33:00-05:00] e9b1da8 fix(i18n): use localized displayName for transaction type in success view
-- [2026-01-21T20:30:00-05:00] 9db55a1 fix(ui): ensure DatePicker save button works on first tap
-- [2026-01-21T20:05:00-05:00] 85a2648 fix(ui): use tag.iconName instead of hardcoded icon in TagSelectorSheet
-- [2026-01-21T20:02:00-05:00] b159686 fix(ui): increase recent subcategories from 4 to 8
-- [2026-01-20T19:35:00-05:00] da12c1f docs(qa): add bulk edit scenarios to QA-SCENARIOS.md
-- [2026-01-20T19:32:00-05:00] 649a0eb feat(bulk-edit): implement bulk editing for multiple transactions
-- [2026-01-20T19:15:00-05:00] 3a458b6 fix(ui): redesign selection action bar with iOS 18 style
+- [2026-01-22T10:45:00-05:00] 3361855 fix(tests): update currency count test to expect 7 currencies
+- [2026-01-22T10:44:00-05:00] cbfe355 docs(qa): add transfer classification test scenarios
+- [2026-01-22T10:40:00-05:00] 80ac396 feat(migration): migrate positive transfers to Income category
+- [2026-01-22T10:38:00-05:00] c1c8a4d fix(import): use isSystemSubcategory for transfer detection
+- [2026-01-22T10:36:00-05:00] 2a4b80e fix(subcategories): protect system subcategories from deletion
+- [2026-01-22T10:35:00-05:00] fe0b54c fix(categories): protect Otros category from deletion
+- [2026-01-22T10:34:00-05:00] b57c916 feat(transfers): classify incoming transfers under Income category
+- [2026-01-22T10:33:00-05:00] e13bbc2 feat(seed): add transfer subcategory to Income category
+- [2026-01-22T10:32:00-05:00] 4433200 feat(charts): add smart alignment for period comparison
+- [2026-01-22T10:31:00-05:00] 0c0b938 refactor(filters): implement SSOT for filter state across all views
 
 ## Completed in Current Phase
 
@@ -46,6 +46,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Subfase 7.6: App Store Preparation** - Metadata en 6 idiomas (nombre, subtitle, keywords, descripción completa), Privacy Policy (ES/EN), demo-data.csv para screenshots; documentado en .planning/appstore/
 - **Bugfixes TestFlight V1.0** - Subcategorías recientes de 4→8, icono correcto en TagSelectorSheet, estilos consistentes en tag selector de quick actions, DatePicker save button fix, localización de tipo transacción en success view
 - **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
+- **Bugfixes TestFlight Ronda 2** - SSOT para filtros, smart alignment para gráficas comparativas, clasificación correcta de transferencias (entrantes a Ingresos, salientes a Otros), protección de categorías/subcategorías del sistema, migración automática de transferencias existentes, 4 escenarios QA nuevos
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -102,33 +103,13 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 | # | Bug | Complejidad | Estado |
 |---|-----|-------------|--------|
-| 1 | Gráfica naturaleza en CategoriesTabView no filtra por categoría/subcategoría (revisar PanelView también) | Media | **En progreso** - Refactor SSOT |
-| 2 | Comparativa vs periodo anterior - fechas descuadradas (ej: 9 ene vs 13 dic a misma altura, incrementa por datos no por fecha) | Media-Alta | Pendiente |
-| 3 | Transferencias entrantes no se ven como ingreso en registros | Alta | Pendiente |
-| 4 | Saldo en RecordsTabView no cuadra con diferencia ingresos-egresos (relacionado con transferencias) | Media | Pendiente |
-| 5 | Preferencias widgets default desactualizadas - reordenar y cambiar defaults | Baja | ✅ Completado (7fdb536) |
+| 1 | Gráfica naturaleza en CategoriesTabView no filtra por categoría/subcategoría | Media | ✅ Completado (0c0b938) |
+| 2 | Comparativa vs periodo anterior - fechas descuadradas | Media-Alta | ✅ Completado (4433200) |
+| 3 | Transferencias entrantes no se ven como ingreso en registros | Alta | ✅ Completado (b57c916) |
+| 4 | Saldo en RecordsTabView no cuadra con diferencia ingresos-egresos | Media | ✅ Completado (implícito con Bug 3) |
+| 5 | Preferencias widgets default desactualizadas | Baja | ✅ Completado (7fdb536) |
 
-**Bug 1 - Decisión arquitectónica:**
-La sincronización de filtros entre vistas tiene múltiples fuentes de verdad (SessionState, ViewModels, @State locales).
-Se aprobó refactor a **Single Source of Truth (SSOT)** usando SessionState como única fuente.
-- Commit checkpoint: 33b70b8 (mejoras parciales, punto de reversión)
-- Próximo: Refactor completo SSOT para todos los filtros
-
-**Detalle Bug 3 (Transferencias):**
-Propuesta de diseño: crear subcategorías de transferencia
-- Saliente → Otros/Transferencia entre cuentas (gasto)
-- Entrante → Ingresos/Transferencia entre cuentas (ingreso)
-- Actualizar filtros de cálculos para excluir ambas de totales reales
-
-**Detalle Bug 5 (Widgets):**
-Nuevo orden: Tendencias, Flujo efectivo, Dist. categorías, Dist. subcategorías, Top categorías, Top subcategorías, Naturaleza, Presupuestos, Pagos planificados, Tipo de cambio (último)
-Defaults visibles: Tendencias, Flujo de efectivo compacto, Distribución de categorías, TopSubcategoría, Últimos registros
-
-**Orden sugerido de implementación:**
-1. Bug 5 (widgets) - rápido, sin riesgo
-2. Bug 1 (filtro naturaleza) - aislado
-3. Bug 2 (fechas comparativa) - requiere investigación
-4. Bugs 3+4 (transferencias) - juntos, decisión de diseño pendiente
+**Todos los bugs de Ronda 2 completados.** La app está lista para validación manual.
 
 ---
 
@@ -215,13 +196,14 @@ Defaults visibles: Tendencias, Flujo de efectivo compacto, Distribución de cate
 ## Session Continuity
 
 Last session: 2026-01-22
-Stopped at: Bug 5 completado, Bug 1 parcial con mejoras de sync, decisión de refactor SSOT
-Next step: Refactor Single Source of Truth para filtros (11 filtros, 3 ViewModels, 5 vistas)
-Resume file: .claude/sessions/2026-01-22-071628.log
+Stopped at: Todos los bugs de TestFlight Ronda 2 completados
+Next step: Validación manual de transferencias, luego decidir V1.1 o más polish
+Resume file: .claude/sessions/2026-01-22-102721.log
 Resume context:
-- Checkpoint commit: 33b70b8 (punto de reversión antes de SSOT)
-- Plan SSOT aprobado: SessionState como única fuente de verdad para todos los filtros
-- Archivos a refactorizar: PanelViewModel, StatisticsViewModel, RecordsViewModel, CategoriesTabView, TrendsTabView, RecordsTabView, DetailContainerView, PanelView
+- Bugs 1-5 de Ronda 2 completados
+- Transferencias ahora clasifican correctamente: entrantes a Ingresos, salientes a Otros
+- Categorías y subcategorías del sistema protegidas de eliminación
+- Migración automática de transferencias existentes implementada
 
 ## V1.1 (Futuro)
 
