@@ -22,6 +22,7 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T17:10:00-05:00] 58aab0f feat(import): add XLSX file support for transaction import
 - [2026-01-22T17:03:00-05:00] 3fc8428 feat(voice): add voice recording UI and complete input flow
 - [2026-01-22T16:55:00-05:00] a070ac1 fix(panel): remove duplicate onChange handlers
 - [2026-01-22T16:54:00-05:00] 6482862 feat(voice): add voice input toggle and conditional FAB menu
@@ -31,7 +32,6 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 - [2026-01-22T14:24:00-05:00] d557621 chore(l10n): add inbox localization keys in 6 languages
 - [2026-01-22T14:23:00-05:00] 62d32dd feat(inbox): add draft editing and bulk actions
 - [2026-01-22T12:45:00-05:00] a939ee3 fix(transaction-ui): match tag chip size with other selection chips
-- [2026-01-22T12:42:00-05:00] cac01fc fix(transaction-ui): improve category and tag chips styling
 
 ## Completed in Current Phase (V1.1)
 
@@ -64,6 +64,15 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 - **FAB condicional** - Menu Voz/Manual en PanelView y DetailContainerView cuando voice está habilitado
 - **Flujo completo** - Grabar → Transcribir → Parsear → Crear InboxDraft con confidence
 - **Localizaciones** - 9 nuevas keys voice.* en 6 idiomas
+
+### Mejoras adicionales (V1.1)
+- **Importación XLSX** - Soporte para archivos Excel (.xlsx) además de CSV
+  - XLSXReader usando CoreXLSX para parsear primera hoja
+  - Tipos genéricos (ImportError, ImportColumn, TransactionImportResult) compartidos
+  - RawImportRow struct y validateAndCreateDraft() para validación compartida
+  - importXLSX() e importXLSXMultiCurrency() métodos
+  - scanCurrenciesFromFile() detecta monedas en ambos formatos
+  - ImportIntroSheet acepta UTType.spreadsheet
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
