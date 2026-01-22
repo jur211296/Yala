@@ -1054,6 +1054,19 @@
 "inbox.needsSubcategory" = "Kategorie";
 "inbox.delete" = "Löschen";
 "inbox.approve" = "Genehmigen";
+"inbox.editDraft" = "Entwurf bearbeiten";
+"inbox.cannotApprove" = "Kann nicht genehmigen";
+"inbox.sourceVoice" = "Sprache";
+"inbox.sourceReceipt" = "Beleg";
+"inbox.sourceScreenshotList" = "Liste";
+"inbox.sourceScreenshot" = "Screenshot";
+"inbox.sourceEmail" = "E-Mail";
+"inbox.errorNoAccount" = "Wähle ein Konto";
+"inbox.errorNoAmount" = "Gib einen Betrag ein";
+"inbox.errorNoSubcategory" = "Wähle eine Kategorie";
+"inbox.selectedCount" = "%d ausgewählt";
+"inbox.approveableCount" = "%d von %d bereit zur Genehmigung";
+"inbox.deleteConfirmMessage" = "%d Entwürfe werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";

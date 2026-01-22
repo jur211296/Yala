@@ -1054,6 +1054,19 @@
 "inbox.needsSubcategory" = "Categoria";
 "inbox.delete" = "Excluir";
 "inbox.approve" = "Aprovar";
+"inbox.editDraft" = "Editar rascunho";
+"inbox.cannotApprove" = "Não é possível aprovar";
+"inbox.sourceVoice" = "Voz";
+"inbox.sourceReceipt" = "Recibo";
+"inbox.sourceScreenshotList" = "Lista";
+"inbox.sourceScreenshot" = "Captura";
+"inbox.sourceEmail" = "Email";
+"inbox.errorNoAccount" = "Selecione uma conta";
+"inbox.errorNoAmount" = "Insira um valor";
+"inbox.errorNoSubcategory" = "Selecione uma categoria";
+"inbox.selectedCount" = "%d selecionados";
+"inbox.approveableCount" = "%d de %d prontos para aprovar";
+"inbox.deleteConfirmMessage" = "%d rascunhos serão excluídos. Esta ação não pode ser desfeita.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";
