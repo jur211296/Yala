@@ -687,18 +687,20 @@ struct NewTransactionView: View {
                         }
                     } else {
                         // Individual chip for each selected tag with remove button inside
+                        // Styled to match SelectionChip size
                         ForEach(viewModel.selectedTags, id: \.persistentModelID) { tag in
-                            HStack(spacing: DS.Spacing.xs) {
+                            HStack(spacing: DS.Spacing.sm) {
                                 // Tag content (tappable to open selector)
                                 Button {
                                     dismissKeyboard()
                                     viewModel.showTagSelector = true
                                 } label: {
-                                    HStack(spacing: DS.Spacing.xs) {
+                                    HStack(spacing: DS.Spacing.sm) {
                                         Image(systemName: tag.iconName ?? "number")
-                                            .font(.footnote)
+                                            .font(.system(size: 14, weight: .medium))
                                         Text(tag.name)
-                                            .font(.footnote.weight(.medium))
+                                            .font(.subheadline.weight(.medium))
+                                            .lineLimit(1)
                                     }
                                 }
                                 .buttonStyle(.plain)
@@ -709,17 +711,20 @@ struct NewTransactionView: View {
                                         viewModel.selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
                                     }
                                 } label: {
-                                    Image(systemName: "xmark")
-                                        .font(.caption2.weight(.semibold))
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 16))
                                 }
                                 .buttonStyle(.plain)
                             }
                             .foregroundStyle(Color.tagChipColor)
-                            .padding(.leading, DS.Spacing.sm)
-                            .padding(.trailing, DS.Spacing.xs)
-                            .padding(.vertical, DS.Spacing.xs)
+                            .padding(.horizontal, DS.FormRow.paddingV)
+                            .padding(.vertical, DS.Spacing.sm)
                             .background(
-                                Capsule().fill(Color.tagChipColor.opacity(0.15))
+                                Capsule().fill(Color.tagChipColor.opacity(0.12))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.tagChipColor.opacity(0.3), lineWidth: 1)
                             )
                         }
                     }
