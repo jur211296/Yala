@@ -171,9 +171,8 @@ final class RecordsViewModel: Filterable {
         if let nature = context.nature {
             selectedNatures = [nature]
         }
-        if let period = context.period {
-            self.period = period
-        }
+        // Note: period is NOT set here because it's a computed property that writes to SessionState.
+        // Setting it would overwrite the user's period selection. The period comes from SessionState directly.
         if let type = context.transactionType {
             self.transactionTypeFilter = type
         }
