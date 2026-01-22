@@ -147,6 +147,7 @@ struct PanelView: View {
         }
         .onAppear {
             seedCategoriesIfNeeded(in: modelContext)
+            TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext)
 
             // Sync all filters from SessionState -> ViewModel
             viewModel.syncFromSessionState(sessionState)

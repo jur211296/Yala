@@ -52,10 +52,13 @@ final class Subcategory {
         self.category = category
     }
 
-    // MARK: - System Subcategories
+}
 
+// MARK: - System Subcategories
+
+extension Subcategory {
     /// System subcategory names that cannot be deleted (all localizations)
-    private static let systemSubcategoryNames: Set<String> = [
+    static let systemSubcategoryNames: Set<String> = [
         // Balance adjustments (Spanish seed name)
         "Ajustes de saldo",
         // Transfers (Spanish seed name + all localizations)
