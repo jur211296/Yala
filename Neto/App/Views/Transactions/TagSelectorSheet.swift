@@ -173,7 +173,7 @@ struct TagSelectorRow: View {
                     .fill(Color(hex: tag.colorHex))
                     .frame(width: 28, height: 28)
                     .overlay(
-                        Image(systemName: "number")
+                        Image(systemName: tag.iconName)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white)
                     )

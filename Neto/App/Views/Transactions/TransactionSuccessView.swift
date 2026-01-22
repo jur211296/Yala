@@ -199,7 +199,7 @@ struct TransactionSuccessView: View {
 
             Spacer()
 
-            Text(data.transactionType.rawValue)
+            Text(data.transactionType.displayName)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(data.transactionType.color)
         }
