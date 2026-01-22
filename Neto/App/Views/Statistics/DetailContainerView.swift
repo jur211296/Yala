@@ -576,23 +576,14 @@ private struct DetailContainerObservers: ViewModifier {
     let calculateTrendsData: () -> Void
     let refreshRecordsData: () -> Void
 
-    // Queries for inferring transaction type from category/subcategory selection
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
-    @Query(sort: \Subcategory.name) private var allSubcategories: [Subcategory]
-
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
             .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedCategoryIDs) {
-                // Auto-infer transaction type based on selected category
+                // Auto-create expense chip when category filter applied
                 if !sessionState.selectedCategoryIDs.isEmpty {
-                    let hasIncomeCategory = categories.contains { cat in
-                        sessionState.selectedCategoryIDs.contains(cat.persistentModelID)
-                            && cat.isIncome
-                    }
-                    sessionState.selectedTransactionNatures = hasIncomeCategory
-                        ? [.income] : [.expense]
+                    sessionState.selectedTransactionNatures = [.expense]
                 }
                 handleSessionStateFilterChange()
             }
@@ -604,15 +595,9 @@ private struct DetailContainerObservers: ViewModifier {
                 handleSessionStateFilterChange()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
-                // Auto-infer transaction type based on selected subcategory's category
+                // Auto-create expense chip when subcategory filter applied
                 if !sessionState.selectedSubcategoryIDs.isEmpty {
-                    // Find if any selected subcategory belongs to an income category
-                    let hasIncomeSubcategory = allSubcategories.contains { sub in
-                        sessionState.selectedSubcategoryIDs.contains(sub.persistentModelID)
-                            && sub.category.isIncome
-                    }
-                    sessionState.selectedTransactionNatures = hasIncomeSubcategory
-                        ? [.income] : [.expense]
+                    sessionState.selectedTransactionNatures = [.expense]
                 }
                 handleSessionStateFilterChange()
             }
