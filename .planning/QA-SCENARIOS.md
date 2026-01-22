@@ -754,6 +754,65 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Tipo de cambio calculado desde montos
 - [ ] Ambos montos respetados
 
+#### Escenario 5.10.1: Clasificación correcta de transferencias
+**Precondiciones:** 2 cuentas en PEN
+**Pasos:**
+1. Crear transferencia de 500 PEN desde Efectivo a Ahorros
+2. Ir a Statistics → Records
+3. Filtrar por "Ingresos" (tap en total verde)
+4. Verificar que aparece la transacción entrante (+500)
+5. Filtrar por "Gastos" (tap en total rosa)
+6. Verificar que aparece la transacción saliente (-500)
+**Resultado esperado:**
+- [ ] Transferencia entrante (+500) tiene categoría "Ingresos"
+- [ ] Transferencia entrante aparece al filtrar por ingresos
+- [ ] Transferencia saliente (-500) tiene categoría "Otros"
+- [ ] Transferencia saliente aparece al filtrar por gastos
+- [ ] Ambas excluidas de totales reales de ingresos/gastos en gráficas
+
+#### Escenario 5.10.2: Protección de categorías del sistema
+**Precondiciones:** App con datos
+**Pasos:**
+1. Ir a Profile → Categorías
+2. Tap en categoría "Otros"
+3. Verificar que NO aparece botón de eliminar
+4. Tap en categoría "Ingresos"
+5. Verificar que NO aparece botón de eliminar
+6. Tap en categoría "Alimentación"
+7. Verificar que SÍ aparece botón de eliminar
+**Resultado esperado:**
+- [ ] "Otros" e "Ingresos" no tienen botón eliminar
+- [ ] Otras categorías sí tienen botón eliminar
+
+#### Escenario 5.10.3: Protección de subcategorías del sistema
+**Precondiciones:** App con datos
+**Pasos:**
+1. Ir a Profile → Categorías → Otros
+2. Tap en "Editar"
+3. Verificar que "Ajustes de saldo" NO tiene botón "-"
+4. Verificar que "Transferencia entre cuentas" NO tiene botón "-"
+5. Ir a Ingresos
+6. Verificar que "Transferencia entre cuentas" NO tiene botón "-"
+7. Verificar que "Salario" SÍ tiene botón "-"
+**Resultado esperado:**
+- [ ] Subcategorías del sistema no tienen botón eliminar
+- [ ] Otras subcategorías sí tienen botón eliminar
+
+#### Escenario 5.10.4: Importación de transferencias
+**Precondiciones:** Archivo test_transfers.csv disponible
+**Pasos:**
+1. Profile → Importar
+2. Seleccionar test_transfers.csv
+3. Completar importación
+4. Ir a Statistics → Records
+5. Filtrar por "Ingresos"
+6. Verificar transacciones entrantes (+500, +200)
+**Resultado esperado:**
+- [ ] 5 transacciones importadas
+- [ ] Transferencias entrantes (positivas) en categoría Ingresos
+- [ ] Transferencias salientes (negativas) en categoría Otros
+- [ ] Todas marcadas con balanceAdjustmentType correcto
+
 ### Escenarios de Edición y Eliminación
 
 #### Escenario 5.11: Editar transacción existente
