@@ -378,19 +378,27 @@ struct NewTransactionView: View {
                 amountDisplay
             }
 
-            // Category label + Nature chip (visible when subcategory is selected, not for transfers)
-            if !viewModel.isTransfer, viewModel.selectedSubcategory != nil {
+            // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
+            if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
-                    // Category label (read-only)
-                    if let categoryName = viewModel.selectedSubcategory?.category.name {
-                        Text(categoryName)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                    // Category chip (read-only, styled like NatureEditChip)
+                    let category = subcategory.category
+                    let categoryColor = Color(hex: category.colorHex) ?? .gray
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: category.iconName ?? "folder")
+                            .font(.caption2.weight(.medium))
+                        Text(category.name)
+                            .font(.caption2.weight(.medium))
                     }
+                    .foregroundStyle(categoryColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule().fill(categoryColor.opacity(0.12))
+                    )
 
                     NatureEditChip(
-                        nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
-                            ?? .unclassified
+                        nature: viewModel.selectedNature ?? subcategory.nature ?? .unclassified
                     ) {
                         viewModel.showNatureSelector = true
                     }
@@ -678,31 +686,41 @@ struct NewTransactionView: View {
                             viewModel.showTagSelector = true
                         }
                     } else {
-                        // Individual chip for each selected tag with remove button
+                        // Individual chip for each selected tag with remove button inside
                         ForEach(viewModel.selectedTags, id: \.persistentModelID) { tag in
-                            HStack(spacing: 0) {
-                                SelectionChip(
-                                    icon: "number",
-                                    text: tag.name,
-                                    isSelected: true,
-                                    color: Color.tagChipColor
-                                ) {
+                            HStack(spacing: DS.Spacing.xs) {
+                                // Tag content (tappable to open selector)
+                                Button {
                                     dismissKeyboard()
                                     viewModel.showTagSelector = true
+                                } label: {
+                                    HStack(spacing: DS.Spacing.xs) {
+                                        Image(systemName: tag.iconName ?? "number")
+                                            .font(.footnote)
+                                        Text(tag.name)
+                                            .font(.footnote.weight(.medium))
+                                    }
                                 }
+                                .buttonStyle(.plain)
 
-                                // Remove button
+                                // Remove button (X)
                                 Button {
                                     withAnimation {
                                         viewModel.selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
                                     }
                                 } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(.secondary)
+                                    Image(systemName: "xmark")
+                                        .font(.caption2.weight(.semibold))
                                 }
-                                .padding(.leading, -DS.Spacing.xs)
+                                .buttonStyle(.plain)
                             }
+                            .foregroundStyle(Color.tagChipColor)
+                            .padding(.leading, DS.Spacing.sm)
+                            .padding(.trailing, DS.Spacing.xs)
+                            .padding(.vertical, DS.Spacing.xs)
+                            .background(
+                                Capsule().fill(Color.tagChipColor.opacity(0.15))
+                            )
                         }
                     }
                 }
