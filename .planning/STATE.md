@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 ## Current Position
 
 Version: 1.1 (IN DEVELOPMENT)
-Phase: 8 - Registro Inteligente (Subfase 8.1 ✅, 8.2 ✅, siguiente: 8.3)
+Phase: 8 - Registro Inteligente (Subfase 8.1 ✅, 8.2 ✅, 8.3 ✅, siguiente: 8.4)
 Spec: .planning/PHASE8-REGISTRO-SPEC.md
 Plan: In progress
-Status: **V1.1 en desarrollo** — Edición y aprobación de drafts completada, siguiente: Voz MVP
-Last activity: 2026-01-22 — Subfase 8.2 completada
+Status: **V1.1 en desarrollo** — Voz MVP completado, siguiente: Imágenes MVP
+Last activity: 2026-01-22 — Subfase 8.3 completada
 
-Progress: ██░░░░░░░░░░░░ 15% (V1.1 - Fase 8 en progreso)
+Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progreso)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T17:03:00-05:00] 3fc8428 feat(voice): add voice recording UI and complete input flow
+- [2026-01-22T16:55:00-05:00] a070ac1 fix(panel): remove duplicate onChange handlers
+- [2026-01-22T16:54:00-05:00] 6482862 feat(voice): add voice input toggle and conditional FAB menu
+- [2026-01-22T16:40:00-05:00] 1cac316 feat(settings): add voice language preference in personalization
+- [2026-01-22T16:30:00-05:00] bd67105 feat(voice): add OpenAI integration for voice transcription
 - [2026-01-22T14:25:00-05:00] cbe38f8 docs: update state and QA for inbox subfase 8.2
 - [2026-01-22T14:24:00-05:00] d557621 chore(l10n): add inbox localization keys in 6 languages
 - [2026-01-22T14:23:00-05:00] 62d32dd feat(inbox): add draft editing and bulk actions
 - [2026-01-22T12:45:00-05:00] a939ee3 fix(transaction-ui): match tag chip size with other selection chips
 - [2026-01-22T12:42:00-05:00] cac01fc fix(transaction-ui): improve category and tag chips styling
-- [2026-01-22T12:38:00-05:00] 5e401b9 fix(transaction-ui): improve amount, tags, date chip and toast
-- [2026-01-22T12:30:00-05:00] f1051ac fix(period): prevent ViewModels from overwriting period selection
-- [2026-01-22T12:00:00-05:00] c6294fa fix(records): balance now equals income minus expense
-- [2026-01-22T11:45:00-05:00] 50e542c fix(filters): prevent auto-expense when selecting income categories
-- [2026-01-22T10:45:00-05:00] 3361855 fix(tests): update currency count test to expect 7 currencies
 
 ## Completed in Current Phase (V1.1)
 
@@ -52,6 +52,18 @@ Progress: ██░░░░░░░░░░░░ 15% (V1.1 - Fase 8 en progr
 - **InboxBulkActionsSheet** - Acciones en lote: asignar cuenta, subcategoría, aprobar válidos, eliminar
 - **Localizaciones** - 13 nuevas keys en 6 idiomas
 - **QA-SCENARIOS** - Sección 16 con 29 escenarios de prueba
+
+### Subfase 8.3: Voz MVP ✅
+- **OpenAI SDK** - MacPaw/OpenAI v0.4.7 integrado via Swift Package Manager
+- **API Key segura** - xcconfig con Secrets.xcconfig (git-ignored), APIKeyService lee desde Info.plist
+- **VoiceTranscriptionService** - Whisper STT a 16kHz, VoiceLanguage enum (system/es/en)
+- **TranscriptionParserService** - GPT-4o-mini extrae amount, date, note, isExpense con confidence scores
+- **AudioRecorderService** - AVAudioRecorder en m4a mono, permisos micrófono, estados (idle/recording/processing)
+- **VoiceRecordingView** - UI con círculo pulsante, duración en tiempo real, estados de procesamiento
+- **Toggle en ProfileView** - "Entrada por voz con IA" con selector de idioma inline
+- **FAB condicional** - Menu Voz/Manual en PanelView y DetailContainerView cuando voice está habilitado
+- **Flujo completo** - Grabar → Transcribir → Parsear → Crear InboxDraft con confidence
+- **Localizaciones** - 9 nuevas keys voice.* en 6 idiomas
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -92,17 +104,16 @@ Progress: ██░░░░░░░░░░░░ 15% (V1.1 - Fase 8 en progr
 
 ## Next Steps
 
-### Subfase 8.3: Voz MVP (Siguiente)
+### Subfase 8.4: Imágenes MVP (Siguiente)
 
-- [ ] Integración OpenAI SDK
-- [ ] Speech-to-Text (STT)
-- [ ] LLM parser para extraer datos de transcripción
-- [ ] Crear InboxDraft desde voz
-- [ ] UI para grabar y procesar audio
+- [ ] OCR con Vision API (OpenAI)
+- [ ] Clasificación de imágenes (recibo, screenshot lista, screenshot individual)
+- [ ] Extractores especializados por tipo de imagen
+- [ ] Crear InboxDraft(s) desde imagen
+- [ ] UI para capturar/seleccionar foto
 
 ### Subfases siguientes (Fase 8)
 
-- **8.4: Imágenes MVP** - OCR Vision, clasificación, extractores
 - **8.5: Merchant Memory** - Canonicalización, sugerencias
 - **8.6: Refinamiento** - Sistema confianza, fallbacks
 - **8.7: Cloud Fallback** - (Opcional) AWS/GCP para recibos
@@ -140,14 +151,15 @@ V1.0 fue completada el 2026-01-21 y está en TestFlight. Incluye:
 ## Session Continuity
 
 Last session: 2026-01-22
-Stopped at: Subfase 8.1 completada, iniciando 8.2
-Next step: Implementar Subfase 8.2 (Edición y Aprobación)
-Resume file: .claude/sessions/2026-01-22-131941.log
+Stopped at: Subfase 8.3 completada
+Next step: Implementar Subfase 8.4 (Imágenes MVP)
 Resume context:
-- Subfase 8.1 (Infraestructura Base) completada
-- InboxDraft model, InboxView, InboxDraftRowView implementados
-- Navegación desde PanelView con badge funcionando
-- Localizaciones completas en 6 idiomas
+- Subfase 8.3 (Voz MVP) completada
+- OpenAI SDK integrado, API key via xcconfig
+- VoiceTranscriptionService (Whisper) y TranscriptionParserService (GPT-4o-mini)
+- AudioRecorderService y VoiceRecordingView implementados
+- FAB condicional en PanelView y DetailContainerView
+- Flujo completo: grabar → transcribir → parsear → InboxDraft
 
 ## Referencias
 
