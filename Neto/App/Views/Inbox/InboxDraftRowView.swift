@@ -12,6 +12,8 @@ import SwiftUI
 struct InboxDraftRowView: View {
     let draft: InboxDraft
     let currencyCode: String
+    var isSelectionMode: Bool = false
+    var isSelected: Bool = false
     let onTap: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
@@ -19,6 +21,11 @@ struct InboxDraftRowView: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: DS.ListRow.spacing) {
+                // Selection circle (only in selection mode)
+                if isSelectionMode {
+                    selectionCircle
+                }
+
                 // Source type icon
                 sourceIcon
 
@@ -86,6 +93,29 @@ struct InboxDraftRowView: View {
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
             .fill(Color.netoCard)
+    }
+
+    // MARK: - Selection Circle
+
+    private var selectionCircle: some View {
+        ZStack {
+            Circle()
+                .stroke(
+                    isSelected ? Color.electricIndigo : Color.secondary.opacity(0.3),
+                    lineWidth: 2
+                )
+                .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+
+            if isSelected {
+                Circle()
+                    .fill(Color.electricIndigo)
+                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+
+                Image(systemName: "checkmark")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+        }
     }
 
     // MARK: - Source Icon

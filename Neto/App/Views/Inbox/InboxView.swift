@@ -44,6 +44,11 @@ struct InboxView: View {
     @State private var selectedFilter: InboxFilter = .pending
     @State private var selectedDraft: InboxDraft?
 
+    // Selection mode
+    @State private var isSelectionMode = false
+    @State private var selectedDraftIDs: Set<PersistentIdentifier> = []
+    @State private var showBulkActions = false
+
     // Query all drafts
     @Query(sort: \InboxDraft.createdAt, order: .reverse)
     private var allDrafts: [InboxDraft]
@@ -84,6 +89,21 @@ struct InboxView: View {
             .navigationTitle(L10n.Inbox.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if !filteredDrafts.isEmpty && selectedFilter == .pending {
+                        Button {
+                            withAnimation {
+                                if isSelectionMode {
+                                    exitSelectionMode()
+                                } else {
+                                    isSelectionMode = true
+                                }
+                            }
+                        } label: {
+                            Text(isSelectionMode ? L10n.Action.cancel : L10n.Action.multipleEdit)
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.done) {
                         dismiss()
@@ -91,9 +111,81 @@ struct InboxView: View {
                 }
             }
             .sheet(item: $selectedDraft) { draft in
-                InboxDraftDetailSheet(draft: draft)
+                InboxDraftEditSheet(draft: draft)
+            }
+            .sheet(isPresented: $showBulkActions) {
+                InboxBulkActionsSheet(
+                    selectedDrafts: selectedDrafts,
+                    onComplete: {
+                        exitSelectionMode()
+                    }
+                )
+            }
+            .safeAreaInset(edge: .bottom) {
+                if isSelectionMode {
+                    selectionBar
+                }
             }
         }
+    }
+
+    // MARK: - Selection Bar
+
+    private var selectionBar: some View {
+        HStack(spacing: DS.Spacing.lg) {
+            // Select all / Deselect all
+            Button {
+                withAnimation {
+                    if selectedDraftIDs.count == filteredDrafts.count {
+                        selectedDraftIDs.removeAll()
+                    } else {
+                        selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                    }
+                }
+            } label: {
+                Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(Color.electricIndigo)
+            }
+
+            // Count
+            Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
+                .font(.subheadline.weight(.medium))
+
+            Spacer()
+
+            // Actions button
+            Button {
+                showBulkActions = true
+            } label: {
+                Text(L10n.Action.edit)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(
+                        Capsule()
+                            .fill(selectedDraftIDs.isEmpty ? Color.gray : Color.electricIndigo)
+                    )
+            }
+            .disabled(selectedDraftIDs.isEmpty)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
+        .background(
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+        )
+    }
+
+    private var selectedDrafts: [InboxDraft] {
+        filteredDrafts.filter { selectedDraftIDs.contains($0.persistentModelID) }
+    }
+
+    private func exitSelectionMode() {
+        isSelectionMode = false
+        selectedDraftIDs.removeAll()
     }
 
     // MARK: - Filter Chips
@@ -162,17 +254,45 @@ struct InboxView: View {
                 InboxDraftRowView(
                     draft: draft,
                     currencyCode: draft.account?.currencyCode ?? preferredCurrency,
+                    isSelectionMode: isSelectionMode,
+                    isSelected: selectedDraftIDs.contains(draft.persistentModelID),
                     onTap: {
-                        selectedDraft = draft
+                        if isSelectionMode {
+                            toggleSelection(draft)
+                        } else {
+                            selectedDraft = draft
+                        }
                     }
                 )
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        deleteDraft(draft)
-                    } label: {
-                        Label(L10n.Inbox.delete, systemImage: "trash")
+                .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode) {
+                    if !isSelectionMode {
+                        Button(role: .destructive) {
+                            deleteDraft(draft)
+                        } label: {
+                            Label(L10n.Inbox.delete, systemImage: "trash")
+                        }
                     }
                 }
+                .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove) {
+                    if !isSelectionMode && draft.isReadyToApprove {
+                        Button {
+                            approveDraft(draft)
+                        } label: {
+                            Label(L10n.Inbox.approve, systemImage: "checkmark.circle")
+                        }
+                        .tint(Color.electricIndigo)
+                    }
+                }
+            }
+        }
+    }
+
+    private func toggleSelection(_ draft: InboxDraft) {
+        withAnimation {
+            if selectedDraftIDs.contains(draft.persistentModelID) {
+                selectedDraftIDs.remove(draft.persistentModelID)
+            } else {
+                selectedDraftIDs.insert(draft.persistentModelID)
             }
         }
     }
@@ -210,62 +330,35 @@ struct InboxView: View {
             }
         }
     }
-}
 
-// MARK: - Draft Detail Sheet (Placeholder)
+    private func approveDraft(_ draft: InboxDraft) {
+        guard let account = draft.account,
+              let amount = draft.amount,
+              let subcategory = draft.subcategory else { return }
 
-struct InboxDraftDetailSheet: View {
-    let draft: InboxDraft
-    @Environment(\.dismiss) private var dismiss
+        withAnimation {
+            // Create TransactionItem
+            let transaction = TransactionItem(
+                date: draft.effectiveDate,
+                amount: amount,
+                currencyCode: account.currencyCode
+            )
+            transaction.note = draft.note.isEmpty ? nil : draft.note
+            transaction.account = account
+            transaction.subcategory = subcategory
+            transaction.category = subcategory.category
+            transaction.tags = draft.tags
 
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: DS.Spacing.xxl) {
-                // Source icon
-                ZStack {
-                    Circle()
-                        .fill(Color.electricIndigo.opacity(0.15))
-                        .frame(width: 80, height: 80)
+            modelContext.insert(transaction)
 
-                    Image(systemName: draft.sourceIcon)
-                        .font(.system(size: 32, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
-                }
+            // Update draft status
+            draft.status = .approved
+            draft.updatedAt = Date()
 
-                // Info
-                VStack(spacing: DS.Spacing.md) {
-                    Text(draft.note.isEmpty ? L10n.Common.uncategorized : draft.note)
-                        .font(DS.Typography.title2)
-                        .multilineTextAlignment(.center)
-
-                    if let amount = draft.amount {
-                        Text(NetoFormatter.currency(value: amount, currencyCode: draft.account?.currencyCode ?? "PEN"))
-                            .font(DS.Typography.amountLarge)
-                            .foregroundStyle(amount >= 0 ? Color.electricIndigo : Color.hotPink)
-                    }
-
-                    Text(draft.effectiveDate, style: .date)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                // Placeholder message
-                Text("Edición completa disponible en Subfase 8.2")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
-                    .padding(.top, DS.Spacing.xl)
-
-                Spacer()
-            }
-            .padding(DS.Spacing.xxl)
-            .navigationTitle(L10n.Inbox.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) {
-                        dismiss()
-                    }
-                }
+            do {
+                try modelContext.save()
+            } catch {
+                print("Error approving draft: \(error)")
             }
         }
     }

@@ -1536,6 +1536,45 @@ enum L10n {
         static var approve: String {
             NSLocalizedString("inbox.approve", comment: "Approve draft action")
         }
+        static var editDraft: String {
+            NSLocalizedString("inbox.editDraft", comment: "Edit draft title")
+        }
+        static var cannotApprove: String {
+            NSLocalizedString("inbox.cannotApprove", comment: "Cannot approve alert title")
+        }
+        static var sourceVoice: String {
+            NSLocalizedString("inbox.sourceVoice", comment: "Voice source type")
+        }
+        static var sourceReceipt: String {
+            NSLocalizedString("inbox.sourceReceipt", comment: "Receipt source type")
+        }
+        static var sourceScreenshotList: String {
+            NSLocalizedString("inbox.sourceScreenshotList", comment: "Screenshot list source type")
+        }
+        static var sourceScreenshot: String {
+            NSLocalizedString("inbox.sourceScreenshot", comment: "Screenshot source type")
+        }
+        static var sourceEmail: String {
+            NSLocalizedString("inbox.sourceEmail", comment: "Email source type")
+        }
+        static var errorNoAccount: String {
+            NSLocalizedString("inbox.errorNoAccount", comment: "Error no account selected")
+        }
+        static var errorNoAmount: String {
+            NSLocalizedString("inbox.errorNoAmount", comment: "Error no amount entered")
+        }
+        static var errorNoSubcategory: String {
+            NSLocalizedString("inbox.errorNoSubcategory", comment: "Error no subcategory selected")
+        }
+        static func selectedCount(_ count: Int) -> String {
+            String(format: NSLocalizedString("inbox.selectedCount", comment: "Selected count"), count)
+        }
+        static func approveableCount(_ approveable: Int, _ total: Int) -> String {
+            String(format: NSLocalizedString("inbox.approveableCount", comment: "Approveable count"), approveable, total)
+        }
+        static func deleteConfirmMessage(_ count: Int) -> String {
+            String(format: NSLocalizedString("inbox.deleteConfirmMessage", comment: "Delete confirmation message"), count)
+        }
     }
 
     // MARK: - Onboarding
