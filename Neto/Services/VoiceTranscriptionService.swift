@@ -82,24 +82,22 @@ final class VoiceTranscriptionService {
 
     // MARK: - Properties
 
-    private var openAI: OpenAI? {
+    private lazy var openAI: OpenAI? = {
         guard let apiKey = APIKeyService.openAIAPIKey else {
             return nil
         }
         return OpenAI(apiToken: apiKey)
-    }
+    }()
 
     // MARK: - Public Methods
 
     /// Transcribes audio data to text using OpenAI Whisper API.
     /// - Parameters:
     ///   - audioData: Audio data in supported format (m4a, mp3, wav, etc.)
-    ///   - fileName: Name of the audio file with extension
     ///   - language: Preferred language for transcription
     /// - Returns: TranscriptionResult with transcribed text
     func transcribe(
         audioData: Data,
-        fileName: String = "recording.m4a",
         language: VoiceLanguage = .system
     ) async throws -> TranscriptionResult {
         guard let client = openAI else {

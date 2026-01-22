@@ -77,12 +77,12 @@ final class TranscriptionParserService {
 
     // MARK: - Properties
 
-    private var openAI: OpenAI? {
+    private lazy var openAI: OpenAI? = {
         guard let apiKey = APIKeyService.openAIAPIKey else {
             return nil
         }
         return OpenAI(apiToken: apiKey)
-    }
+    }()
 
     private let dateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()

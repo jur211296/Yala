@@ -1080,3 +1080,5 @@
 "voiceLanguage.system" = "Système";
 "voiceLanguage.spanish" = "Espagnol";
 "voiceLanguage.english" = "Anglais";
+"settings.voiceLanguage" = "Langue vocale";
+"settings.voiceLanguageDescription" = "Langue pour la transcription vocale lors de l'enregistrement des dépenses.";

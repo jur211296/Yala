@@ -1080,3 +1080,5 @@
 "voiceLanguage.system" = "System";
 "voiceLanguage.spanish" = "Spanish";
 "voiceLanguage.english" = "English";
+"settings.voiceLanguage" = "Voice Language";
+"settings.voiceLanguageDescription" = "Language for voice transcription when recording expenses.";

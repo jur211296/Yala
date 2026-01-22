@@ -1074,6 +1074,12 @@ enum L10n {
         static var roundedAmountsDescription: String {
             NSLocalizedString("settings.roundedAmountsDescription", comment: "")
         }
+        static var voiceLanguage: String {
+            NSLocalizedString("settings.voiceLanguage", comment: "")
+        }
+        static var voiceLanguageDescription: String {
+            NSLocalizedString("settings.voiceLanguageDescription", comment: "")
+        }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
             NSLocalizedString("settings.resetDataDescription", comment: "")
