@@ -13,8 +13,8 @@ Version: 1.0 (RELEASE READY)
 Phase: 7.1 of 7.1 en V1.0 (Acciones Rápidas en Transacciones) ✅ COMPLETADA
 Spec: None
 Plan: Complete
-Status: **V1.0 lista para TestFlight** — Todas las fases completadas incluyendo acciones rápidas
-Last activity: 2026-01-21 — Fase 7.1 completada (6 incrementos)
+Status: **V1.0 en TestFlight** — Nuevos bugs reportados pendientes de resolver
+Last activity: 2026-01-21 — Bugfixes TestFlight (5 commits), nuevos bugs documentados
 
 Progress: ██████████████ 100% (V1.0 Completa)
 
@@ -22,16 +22,16 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T07:30:00-05:00] 33b70b8 fix(filters): improve filter sync between Panel and Statistics views
+- [2026-01-22T07:20:00-05:00] 7fdb536 fix(widgets): update default order and visibility for panel widgets
+- [2026-01-21T20:46:00-05:00] 6ce1466 fix(ui): use consistent tag selector style in quick action sheets
+- [2026-01-21T20:33:00-05:00] e9b1da8 fix(i18n): use localized displayName for transaction type in success view
+- [2026-01-21T20:30:00-05:00] 9db55a1 fix(ui): ensure DatePicker save button works on first tap
+- [2026-01-21T20:05:00-05:00] 85a2648 fix(ui): use tag.iconName instead of hardcoded icon in TagSelectorSheet
+- [2026-01-21T20:02:00-05:00] b159686 fix(ui): increase recent subcategories from 4 to 8
 - [2026-01-20T19:35:00-05:00] da12c1f docs(qa): add bulk edit scenarios to QA-SCENARIOS.md
 - [2026-01-20T19:32:00-05:00] 649a0eb feat(bulk-edit): implement bulk editing for multiple transactions
 - [2026-01-20T19:15:00-05:00] 3a458b6 fix(ui): redesign selection action bar with iOS 18 style
-- [2026-01-20T14:52:00-05:00] 220e8ad chore(qa): add test CSV files for import testing
-- [2026-01-20T14:51:00-05:00] 416bbd9 docs(qa): rewrite QA-SCENARIOS.md with exhaustive coverage
-- [2026-01-20T11:40:00-05:00] 90c083f fix(persistence): add error handling for SwiftData save/delete operations
-- [2026-01-20T11:30:00-05:00] f6cd20a feat(currency): expand to 7 currencies with settings UI
-- [2026-01-20T11:28:00-05:00] d7c5ce7 feat(onboarding): add first-time setup flow with currency selection
-- [2026-01-20T11:26:00-05:00] b8e1d43 feat(widgets): add InfoHintButton with toggle and empty states
-- [2026-01-20T11:24:00-05:00] af9896c feat(ui): add FilterBlockedPopover component
 
 ## Completed in Current Phase
 
@@ -44,6 +44,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
 - **Fix urgente: Edición masiva** - BulkEditSheet completo con 5 opciones (cuenta, subcategoría, tags, nota, monto), barra de selección rediseñada estilo iOS 18, métodos bulk update en RecordsViewModel, localizaciones en 6 idiomas, 9 escenarios QA nuevos
 - **Subfase 7.6: App Store Preparation** - Metadata en 6 idiomas (nombre, subtitle, keywords, descripción completa), Privacy Policy (ES/EN), demo-data.csv para screenshots; documentado en .planning/appstore/
+- **Bugfixes TestFlight V1.0** - Subcategorías recientes de 4→8, icono correcto en TagSelectorSheet, estilos consistentes en tag selector de quick actions, DatePicker save button fix, localización de tipo transacción en success view
 - **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
 
 ### Fase 6 (archivado)
@@ -97,9 +98,43 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ---
 
+### Bugs TestFlight V1.0 - Ronda 2 (2026-01-21)
+
+| # | Bug | Complejidad | Estado |
+|---|-----|-------------|--------|
+| 1 | Gráfica naturaleza en CategoriesTabView no filtra por categoría/subcategoría (revisar PanelView también) | Media | **En progreso** - Refactor SSOT |
+| 2 | Comparativa vs periodo anterior - fechas descuadradas (ej: 9 ene vs 13 dic a misma altura, incrementa por datos no por fecha) | Media-Alta | Pendiente |
+| 3 | Transferencias entrantes no se ven como ingreso en registros | Alta | Pendiente |
+| 4 | Saldo en RecordsTabView no cuadra con diferencia ingresos-egresos (relacionado con transferencias) | Media | Pendiente |
+| 5 | Preferencias widgets default desactualizadas - reordenar y cambiar defaults | Baja | ✅ Completado (7fdb536) |
+
+**Bug 1 - Decisión arquitectónica:**
+La sincronización de filtros entre vistas tiene múltiples fuentes de verdad (SessionState, ViewModels, @State locales).
+Se aprobó refactor a **Single Source of Truth (SSOT)** usando SessionState como única fuente.
+- Commit checkpoint: 33b70b8 (mejoras parciales, punto de reversión)
+- Próximo: Refactor completo SSOT para todos los filtros
+
+**Detalle Bug 3 (Transferencias):**
+Propuesta de diseño: crear subcategorías de transferencia
+- Saliente → Otros/Transferencia entre cuentas (gasto)
+- Entrante → Ingresos/Transferencia entre cuentas (ingreso)
+- Actualizar filtros de cálculos para excluir ambas de totales reales
+
+**Detalle Bug 5 (Widgets):**
+Nuevo orden: Tendencias, Flujo efectivo, Dist. categorías, Dist. subcategorías, Top categorías, Top subcategorías, Naturaleza, Presupuestos, Pagos planificados, Tipo de cambio (último)
+Defaults visibles: Tendencias, Flujo de efectivo compacto, Distribución de categorías, TopSubcategoría, Últimos registros
+
+**Orden sugerido de implementación:**
+1. Bug 5 (widgets) - rápido, sin riesgo
+2. Bug 1 (filtro naturaleza) - aislado
+3. Bug 2 (fechas comparativa) - requiere investigación
+4. Bugs 3+4 (transferencias) - juntos, decisión de diseño pendiente
+
+---
+
 ### Post V1.0 — Opciones
 
-1. Subir build a TestFlight (Archive → Distribute en Xcode)
+1. Resolver bugs Ronda 2 arriba
 2. Capturar screenshots manuales con demo-data.csv
 3. Iniciar V1.1 (Fase 8: Registro Inteligente)
 
@@ -179,10 +214,14 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Session Continuity
 
-Last session: 2026-01-21
-Stopped at: V1.0 COMPLETA — Fase 7.1 implementada (6 commits)
-Next step: Validaciones manuales de acciones rápidas, luego TestFlight
-Resume file: None
+Last session: 2026-01-22
+Stopped at: Bug 5 completado, Bug 1 parcial con mejoras de sync, decisión de refactor SSOT
+Next step: Refactor Single Source of Truth para filtros (11 filtros, 3 ViewModels, 5 vistas)
+Resume file: .claude/sessions/2026-01-22-071628.log
+Resume context:
+- Checkpoint commit: 33b70b8 (punto de reversión antes de SSOT)
+- Plan SSOT aprobado: SessionState como única fuente de verdad para todos los filtros
+- Archivos a refactorizar: PanelViewModel, StatisticsViewModel, RecordsViewModel, CategoriesTabView, TrendsTabView, RecordsTabView, DetailContainerView, PanelView
 
 ## V1.1 (Futuro)
 
