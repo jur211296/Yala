@@ -169,6 +169,9 @@ struct PanelView: View {
                         prefillSubcategoryName: prefillSubcategoryName
                     )
                 }
+                .sheet(isPresented: $showVoiceRecording) {
+                    VoiceRecordingView()
+                }
                 .sheet(isPresented: $showCustomPeriodPicker) {
                     CustomPeriodPickerSheet(
                         minDate: transactionDateRange.start,

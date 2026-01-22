@@ -1653,6 +1653,20 @@ enum L10n {
         }
     }
 
+    // MARK: - Voice Recording
+
+    enum Voice {
+        static var title: String { NSLocalizedString("voice.title", comment: "") }
+        static var tapToRecord: String { NSLocalizedString("voice.tapToRecord", comment: "") }
+        static var instruction: String { NSLocalizedString("voice.instruction", comment: "") }
+        static var recording: String { NSLocalizedString("voice.recording", comment: "") }
+        static var pleaseWait: String { NSLocalizedString("voice.pleaseWait", comment: "") }
+        static var processingAudio: String { NSLocalizedString("voice.processingAudio", comment: "") }
+        static var transcribing: String { NSLocalizedString("voice.transcribing", comment: "") }
+        static var parsing: String { NSLocalizedString("voice.parsing", comment: "") }
+        static var saving: String { NSLocalizedString("voice.saving", comment: "") }
+    }
+
     // MARK: - Voice Language
 
     enum VoiceLanguage {

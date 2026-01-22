@@ -1084,3 +1084,14 @@
 "voiceLanguage.english" = "Anglais";
 "settings.voiceInputEnabled" = "Saisie vocale avec IA";
 "settings.voiceLanguage" = "Langue";
+
+// Voice Recording
+"voice.title" = "Saisie vocale";
+"voice.tapToRecord" = "Appuyez pour enregistrer";
+"voice.instruction" = "Dites le montant, le concept et la date de votre depense";
+"voice.recording" = "Enregistrement...";
+"voice.pleaseWait" = "Veuillez patienter...";
+"voice.processingAudio" = "Traitement audio...";
+"voice.transcribing" = "Transcription...";
+"voice.parsing" = "Analyse...";
+"voice.saving" = "Enregistrement...";

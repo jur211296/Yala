@@ -100,6 +100,7 @@ struct DetailContainerView: View {
                     showDeleteConfirmation: $showDeleteConfirmation,
                     showBulkEditSheet: $showBulkEditSheet,
                     isPresentingSettings: $isPresentingSettings,
+                    showVoiceRecording: $showVoiceRecording,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
                     syncFiltersToTrends: syncFiltersToTrends,
@@ -539,6 +540,7 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showDeleteConfirmation: Bool
     @Binding var showBulkEditSheet: Bool
     @Binding var isPresentingSettings: Bool
+    @Binding var showVoiceRecording: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
     let syncFiltersToTrends: () -> Void
@@ -553,6 +555,9 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
                     .onDisappear { refreshRecordsData() }
+            }
+            .sheet(isPresented: $showVoiceRecording) {
+                VoiceRecordingView()
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {

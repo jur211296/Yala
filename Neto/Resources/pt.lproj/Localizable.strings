@@ -1084,3 +1084,14 @@
 "voiceLanguage.english" = "Inglês";
 "settings.voiceInputEnabled" = "Entrada por voz com IA";
 "settings.voiceLanguage" = "Idioma";
+
+// Voice Recording
+"voice.title" = "Registro por voz";
+"voice.tapToRecord" = "Toque para gravar";
+"voice.instruction" = "Diga o valor, conceito e data da sua despesa";
+"voice.recording" = "Gravando...";
+"voice.pleaseWait" = "Por favor aguarde...";
+"voice.processingAudio" = "Processando audio...";
+"voice.transcribing" = "Transcrevendo...";
+"voice.parsing" = "Analisando...";
+"voice.saving" = "Salvando...";
