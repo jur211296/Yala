@@ -217,21 +217,20 @@ final class RecordsViewModel: Filterable {
     }
 
     /// Calculate summary from grouped records (called once when data changes)
+    /// Balance = Income - Expense (excludes adjustments and transfers for consistency)
     private func calculateSummary() {
         var income: Double = 0
         var expense: Double = 0
-        var balance: Double = 0
 
         for group in groupedRecords {
             for record in group.records {
                 guard let account = record.account else { continue }
                 if account.isArchived || account.excludeFromStatistics { continue }
 
-                let amount = record.amountInPreferredCurrency
-                balance += amount
-
+                // Exclude balance adjustments and transfers from summary
                 let isBalanceAdjustment = record.balanceAdjustmentType != nil
                 if !isBalanceAdjustment {
+                    let amount = record.amountInPreferredCurrency
                     if amount > 0 {
                         income += amount
                     } else {
@@ -241,7 +240,8 @@ final class RecordsViewModel: Filterable {
             }
         }
 
-        recordsSummary = (balance, income, expense)
+        // Balance is simply the difference (cash flow)
+        recordsSummary = (income - expense, income, expense)
     }
 
     /// Get effective date interval from current period

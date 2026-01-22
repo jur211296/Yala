@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T11:45:00-05:00] 50e542c fix(filters): prevent auto-expense when selecting income categories
 - [2026-01-22T10:45:00-05:00] 3361855 fix(tests): update currency count test to expect 7 currencies
 - [2026-01-22T10:44:00-05:00] cbfe355 docs(qa): add transfer classification test scenarios
 - [2026-01-22T10:40:00-05:00] 80ac396 feat(migration): migrate positive transfers to Income category
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-22T10:34:00-05:00] b57c916 feat(transfers): classify incoming transfers under Income category
 - [2026-01-22T10:33:00-05:00] e13bbc2 feat(seed): add transfer subcategory to Income category
 - [2026-01-22T10:32:00-05:00] 4433200 feat(charts): add smart alignment for period comparison
-- [2026-01-22T10:31:00-05:00] 0c0b938 refactor(filters): implement SSOT for filter state across all views
 
 ## Completed in Current Phase
 
