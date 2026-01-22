@@ -1075,3 +1075,8 @@
 "bulkEdit.commonTags" = "Dans toutes les sélectionnées";
 "bulkEdit.partialTags" = "Dans certaines sélectionnées";
 "bulkEdit.availableTags" = "Disponibles à ajouter";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "Système";
+"voiceLanguage.spanish" = "Espagnol";
+"voiceLanguage.english" = "Anglais";

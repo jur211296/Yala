@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC32EC3D721002AC31C /* CoreXLSX */; };
+		96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC72EC3D721002AC31C /* OpenAI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +32,7 @@
 		96CFFF932EC3CF06002AC31C /* Neto.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Neto.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96CFFFA42EC3CF09002AC31C /* NetoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NetoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96CFFFAE2EC3CF09002AC31C /* NetoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NetoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -70,6 +72,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */,
+				96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,6 +96,7 @@
 		96CFFF8A2EC3CF06002AC31C = {
 			isa = PBXGroup;
 			children = (
+				96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */,
 				96CFFF952EC3CF06002AC31C /* Neto */,
 				96CFFFA72EC3CF09002AC31C /* NetoTests */,
 				96CFFFB12EC3CF09002AC31C /* NetoUITests */,
@@ -131,6 +135,7 @@
 			name = Neto;
 			packageProductDependencies = (
 				96CFFFC32EC3D721002AC31C /* CoreXLSX */,
+				96CFFFC72EC3D721002AC31C /* OpenAI */,
 			);
 			productName = Neto;
 			productReference = 96CFFF932EC3CF06002AC31C /* Neto.app */;
@@ -221,6 +226,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */,
+				96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96CFFF942EC3CF06002AC31C /* Products */;
@@ -374,6 +380,7 @@
 		};
 		96CFFFBA2EC3CF09002AC31C /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -439,6 +446,7 @@
 		};
 		96CFFFBB2EC3CF09002AC31C /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -659,6 +667,7 @@
 		};
 		96CFFFDA2EC3CF09002AC31C /* Debug-Dev */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -724,6 +733,7 @@
 		};
 		96CFFFDB2EC3CF09002AC31C /* Release-Dev */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -922,6 +932,14 @@
 				minimumVersion = 0.14.2;
 			};
 		};
+		96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MacPaw/OpenAI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -929,6 +947,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */;
 			productName = CoreXLSX;
+		};
+		96CFFFC72EC3D721002AC31C /* OpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */;
+			productName = OpenAI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

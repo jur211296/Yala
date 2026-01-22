@@ -1640,6 +1640,14 @@ enum L10n {
             NSLocalizedString("bulkEdit.availableTags", comment: "")
         }
     }
+
+    // MARK: - Voice Language
+
+    enum VoiceLanguage {
+        static var system: String { NSLocalizedString("voiceLanguage.system", comment: "") }
+        static var spanish: String { NSLocalizedString("voiceLanguage.spanish", comment: "") }
+        static var english: String { NSLocalizedString("voiceLanguage.english", comment: "") }
+    }
 }
 
 // MARK: - App Locale
