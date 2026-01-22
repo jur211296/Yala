@@ -22,6 +22,7 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T18:58:41-05:00] d3abd90 feat(inbox): improve draft approval UX with type selector and category chips
 - [2026-01-22T18:08:00-05:00] 41ac5d3 feat(voice): add smart entity extraction and improved instructions UI
 - [2026-01-22T17:10:00-05:00] 58aab0f feat(import): add XLSX file support for transaction import
 - [2026-01-22T17:03:00-05:00] 3fc8428 feat(voice): add voice recording UI and complete input flow
@@ -31,7 +32,6 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 - [2026-01-22T16:30:00-05:00] bd67105 feat(voice): add OpenAI integration for voice transcription
 - [2026-01-22T14:25:00-05:00] cbe38f8 docs: update state and QA for inbox subfase 8.2
 - [2026-01-22T14:24:00-05:00] d557621 chore(l10n): add inbox localization keys in 6 languages
-- [2026-01-22T14:23:00-05:00] 62d32dd feat(inbox): add draft editing and bulk actions
 
 ## Completed in Current Phase (V1.1)
 
