@@ -40,7 +40,19 @@ struct DatePickerSheet: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    NetoSaveButton(action: { dismiss() })
+                    Button {
+                        // Resign first responder to ensure DatePicker commits its selection
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 20, height: 20)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.electricIndigo)
+                    .buttonBorderShape(.circle)
                 }
             }
         }
