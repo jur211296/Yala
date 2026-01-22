@@ -185,8 +185,8 @@ struct TrendsTabView: View {
             calculatePeriodComparisonData()
         }
         .onChange(of: sessionState.selectedTransactionNatures) {
-            // Sync transaction nature filter from SessionState and recalculate
-            trendsViewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+            // SSOT: trendsViewModel.selectedTransactionNatures IS sessionState.selectedTransactionNatures
+            // Just recalculate when it changes
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
@@ -307,8 +307,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 transactionNature: nature,
                                 onClear: {
+                                    // SSOT: trendsViewModel.selectedTransactionNatures writes to SessionState.shared
                                     trendsViewModel.selectedTransactionNatures.removeAll()
-                                    sessionState.selectedTransactionNatures.removeAll()
                                 }
                             )
                         }
@@ -318,8 +318,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 currencyCode: currency.rawValue,
                                 onClear: {
+                                    // SSOT: trendsViewModel.selectedCurrencies writes to SessionState.shared
                                     trendsViewModel.selectedCurrencies.remove(currency)
-                                    sessionState.selectedCurrencies.remove(currency)
                                 }
                             )
                         }
@@ -329,8 +329,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 amountText: trendsViewModel.amountCondition.displayText,
                                 onClear: {
+                                    // SSOT: trendsViewModel.amountCondition writes to SessionState.shared
                                     trendsViewModel.amountCondition = .any
-                                    sessionState.amountCondition = .any
                                 }
                             )
                         }
@@ -340,8 +340,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 noteText: trendsViewModel.searchText,
                                 onClear: {
+                                    // SSOT: trendsViewModel.searchText writes to SessionState.shared
                                     trendsViewModel.searchText = ""
-                                    sessionState.searchText = ""
                                 }
                             )
                         }

@@ -7,12 +7,28 @@ final class PanelViewModel {
 
     // MARK: - State
 
-    var selectedAccountID: PersistentIdentifier?
+    // UI State (not filters)
     var leadingColumnIndex: Int? = 0
 
-    // Period Filter State
-    var selectedPeriod: DetailPeriod = .thisYear
-    var customDateRange: DateInterval?
+    // MARK: - Filter Properties (SSOT: Read/Write from SessionState)
+
+    var selectedAccountID: PersistentIdentifier? {
+        get { SessionState.shared.selectedAccountIDs.first }
+        set {
+            SessionState.shared.selectedAccountIDs.removeAll()
+            if let id = newValue { SessionState.shared.selectedAccountIDs.insert(id) }
+        }
+    }
+
+    var selectedPeriod: DetailPeriod {
+        get { SessionState.shared.selectedPeriod }
+        set { SessionState.shared.selectedPeriod = newValue }
+    }
+
+    var customDateRange: DateInterval? {
+        get { SessionState.shared.customDateRange }
+        set { SessionState.shared.customDateRange = newValue }
+    }
 
     // Widget Configuration Manager (delegated)
     let widgetConfig = WidgetConfigManager()
@@ -46,18 +62,45 @@ final class PanelViewModel {
 
     // Subcategory Widget State
     var topSubcategories: [SubcategorySpendingSummary] = []
-    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
     var subcategoriesWidgetFilter: PersistentIdentifier?
 
-    // Nature filter state
-    var selectedNature: SubcategoryNature?
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedSubcategoryIDs }
+        set { SessionState.shared.selectedSubcategoryIDs = newValue }
+    }
 
-    // Additional filter state (synced from SessionState for data filtering)
-    var selectedTags: Set<PersistentIdentifier> = []
-    var selectedCurrencies: Set<CurrencyCode> = []
-    var amountCondition: AmountFilterCondition = .any
-    var searchText: String = ""
-    var selectedTransactionNatures: Set<TransactionNature> = []
+    var selectedNature: SubcategoryNature? {
+        get { SessionState.shared.selectedNatures.first }
+        set {
+            SessionState.shared.selectedNatures.removeAll()
+            if let n = newValue { SessionState.shared.selectedNatures.insert(n) }
+        }
+    }
+
+    var selectedTags: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedTags }
+        set { SessionState.shared.selectedTags = newValue }
+    }
+
+    var selectedCurrencies: Set<CurrencyCode> {
+        get { SessionState.shared.selectedCurrencies }
+        set { SessionState.shared.selectedCurrencies = newValue }
+    }
+
+    var amountCondition: AmountFilterCondition {
+        get { SessionState.shared.amountCondition }
+        set { SessionState.shared.amountCondition = newValue }
+    }
+
+    var searchText: String {
+        get { SessionState.shared.searchText }
+        set { SessionState.shared.searchText = newValue }
+    }
+
+    var selectedTransactionNatures: Set<TransactionNature> {
+        get { SessionState.shared.selectedTransactionNatures }
+        set { SessionState.shared.selectedTransactionNatures = newValue }
+    }
 
     // Nature Widget State
     var natureTrendPoints: [NatureTrendPoint] = []
@@ -149,74 +192,21 @@ final class PanelViewModel {
         sessionState.isExpenseAutomatic = false
     }
 
-    // MARK: - SessionState Synchronization
+    // MARK: - SessionState Synchronization (SSOT: Filters are now computed properties)
+    // These functions are kept for backward compatibility but do minimal work
+    // since filter properties now read/write directly to SessionState
 
-    /// Sync local filters FROM SessionState (call on appear/resume)
+    /// Sync non-filter state FROM SessionState (call on appear/resume)
     func syncFromSessionState(_ sessionState: SessionState) {
-        // Period
-        self.selectedPeriod = sessionState.selectedPeriod
-        self.customDateRange = sessionState.customDateRange
-
-        // Account (single-select from SessionState's set)
-        self.selectedAccountID = sessionState.selectedAccountIDs.first
-
-        // Category (single-select)
-        self.selectedCategoryID = sessionState.selectedCategoryIDs.first
-
-        // Subcategories (multi-select for budget filters)
-        self.selectedSubcategoryIDs = sessionState.selectedSubcategoryIDs
-
-        // Nature (single-select)
-        self.selectedNature = sessionState.selectedNatures.first
-
-        // Additional filters (synced for data filtering, Panel doesn't show UI for these)
-        self.selectedTags = sessionState.selectedTags
-        self.selectedCurrencies = sessionState.selectedCurrencies
-        self.amountCondition = sessionState.amountCondition
-        self.searchText = sessionState.searchText
-        self.selectedTransactionNatures = sessionState.selectedTransactionNatures
-
         // Trend Metric - convert TrendMetric to TrendType
         self.trendType = convertMetricToTrendType(sessionState.selectedTrendMetric)
 
-        // Apply trend lock logic after syncing filters
+        // Apply trend lock logic
         enforceTrendLock(sessionState: sessionState)
     }
 
-    /// Sync local filters TO SessionState (call after filter changes)
+    /// Sync non-filter state TO SessionState (call after changes)
     func syncToSessionState(_ sessionState: SessionState) {
-        // Period
-        sessionState.selectedPeriod = self.selectedPeriod
-
-        // Account
-        sessionState.selectedAccountIDs.removeAll()
-        if let accountID = self.selectedAccountID {
-            sessionState.selectedAccountIDs.insert(accountID)
-        }
-
-        // Category
-        sessionState.selectedCategoryIDs.removeAll()
-        if let categoryID = self.selectedCategoryID {
-            sessionState.selectedCategoryIDs.insert(categoryID)
-        }
-
-        // Subcategories
-        sessionState.selectedSubcategoryIDs = self.selectedSubcategoryIDs
-
-        // Nature
-        sessionState.selectedNatures.removeAll()
-        if let nature = self.selectedNature {
-            sessionState.selectedNatures.insert(nature)
-        }
-
-        // Additional filters - sync back
-        sessionState.selectedTags = self.selectedTags
-        sessionState.selectedCurrencies = self.selectedCurrencies
-        sessionState.amountCondition = self.amountCondition
-        sessionState.searchText = self.searchText
-        // Note: selectedTransactionNatures is managed directly via sessionState in PanelView,
-        // not through viewModel, so we don't sync it back here
-
         // Trend Metric - convert TrendType to TrendMetric
         sessionState.selectedTrendMetric = convertTrendTypeToMetric(self.trendType)
     }
@@ -433,7 +423,13 @@ final class PanelViewModel {
 
     // MARK: - Trend & Balance Status Logic
 
-    var selectedCategoryID: PersistentIdentifier?
+    var selectedCategoryID: PersistentIdentifier? {
+        get { SessionState.shared.selectedCategoryIDs.first }
+        set {
+            SessionState.shared.selectedCategoryIDs.removeAll()
+            if let id = newValue { SessionState.shared.selectedCategoryIDs.insert(id) }
+        }
+    }
 
     // Trend State
 

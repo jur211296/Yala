@@ -16,38 +16,65 @@ import SwiftUI
 @Observable
 final class RecordsViewModel: Filterable {
 
-    // MARK: - Filter State
+    // MARK: - Filter State (SSOT: Read/Write from SessionState.shared)
 
     /// Selected accounts for filtering
-    var selectedAccounts: Set<PersistentIdentifier> = []
+    var selectedAccounts: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedAccountIDs }
+        set { SessionState.shared.selectedAccountIDs = newValue }
+    }
 
     /// Selected categories for filtering
-    var selectedCategories: Set<PersistentIdentifier> = []
+    var selectedCategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedCategoryIDs }
+        set { SessionState.shared.selectedCategoryIDs = newValue }
+    }
 
     /// Selected subcategories for filtering
-    var selectedSubcategories: Set<PersistentIdentifier> = []
+    var selectedSubcategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedSubcategoryIDs }
+        set { SessionState.shared.selectedSubcategoryIDs = newValue }
+    }
 
     /// Selected natures for filtering
-    var selectedNatures: Set<SubcategoryNature> = []
+    var selectedNatures: Set<SubcategoryNature> {
+        get { SessionState.shared.selectedNatures }
+        set { SessionState.shared.selectedNatures = newValue }
+    }
 
     /// Selected transaction natures for filtering (empty = all)
     /// Used for income/expense filter chips
-    var selectedTransactionNatures: Set<TransactionNature> = []
+    var selectedTransactionNatures: Set<TransactionNature> {
+        get { SessionState.shared.selectedTransactionNatures }
+        set { SessionState.shared.selectedTransactionNatures = newValue }
+    }
 
     /// Selected tags for filtering
-    var selectedTags: Set<PersistentIdentifier> = []
+    var selectedTags: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedTags }
+        set { SessionState.shared.selectedTags = newValue }
+    }
 
-    /// Transaction type filter
+    /// Transaction type filter (local - not shared between views)
     var transactionTypeFilter: TransactionTypeFilter = .all
 
     /// Amount filter condition
-    var amountCondition: AmountFilterCondition = .any
+    var amountCondition: AmountFilterCondition {
+        get { SessionState.shared.amountCondition }
+        set { SessionState.shared.amountCondition = newValue }
+    }
 
     /// Period filter (unified with Trends)
-    var period: DetailPeriod = .thisMonth
+    var period: DetailPeriod {
+        get { SessionState.shared.selectedPeriod }
+        set { SessionState.shared.selectedPeriod = newValue }
+    }
 
     /// Custom date range (synced from SessionState)
-    var customDateRange: DateInterval?
+    var customDateRange: DateInterval? {
+        get { SessionState.shared.customDateRange }
+        set { SessionState.shared.customDateRange = newValue }
+    }
 
     /// Custom date range start (for backward compat, deprecated)
     var customStartDate: Date =
@@ -57,10 +84,16 @@ final class RecordsViewModel: Filterable {
     var customEndDate: Date = Date()
 
     /// Selected currencies for filtering
-    var selectedCurrencies: Set<CurrencyCode> = []
+    var selectedCurrencies: Set<CurrencyCode> {
+        get { SessionState.shared.selectedCurrencies }
+        set { SessionState.shared.selectedCurrencies = newValue }
+    }
 
     /// Search text for note filtering
-    var searchText: String = ""
+    var searchText: String {
+        get { SessionState.shared.searchText }
+        set { SessionState.shared.searchText = newValue }
+    }
 
     // MARK: - UI State
 
@@ -217,12 +250,12 @@ final class RecordsViewModel: Filterable {
         return period.dateInterval(customRange: customDateRange)
     }
 
-    // MARK: - SessionState Synchronization
+    // MARK: - SessionState Synchronization (SSOT - Most sync is now via computed properties)
 
-    /// Sync custom date range and period FROM SessionState
+    /// No-op: customDateRange and period are now SSOT computed properties
+    /// Kept for backward compatibility with existing callers
     func syncCustomRangeFromSessionState(_ sessionState: SessionState) {
-        self.customDateRange = sessionState.customDateRange
-        self.period = sessionState.selectedPeriod
+        // No-op: customDateRange and period are now SSOT computed properties
     }
 
     // MARK: - Selection Actions

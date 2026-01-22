@@ -19,10 +19,13 @@ final class StatisticsViewModel: Filterable {
     /// Currently selected tab
     var selectedTab: DetailViewTab = .trends
 
-    // MARK: - Metric State
+    // MARK: - Metric State (SSOT: Read/Write from SessionState.shared)
 
     /// Currently selected metric (Saldo, Ingreso, Gasto)
-    var selectedMetric: TrendMetric = .balance
+    var selectedMetric: TrendMetric {
+        get { SessionState.shared.selectedTrendMetric }
+        set { SessionState.shared.selectedTrendMetric = newValue }
+    }
 
     /// Whether to show aggregated view (true) or per-account view (false)
     var isAggregatedView: Bool = true
@@ -63,41 +66,74 @@ final class StatisticsViewModel: Filterable {
         selectedMetric = metric
     }
 
-    // MARK: - Filter State
+    // MARK: - Filter State (SSOT: Read/Write from SessionState.shared)
 
     /// Selected accounts for filtering (empty = all)
-    var selectedAccounts: Set<PersistentIdentifier> = []
+    var selectedAccounts: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedAccountIDs }
+        set { SessionState.shared.selectedAccountIDs = newValue }
+    }
 
     /// Selected categories for filtering
-    var selectedCategories: Set<PersistentIdentifier> = []
+    var selectedCategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedCategoryIDs }
+        set { SessionState.shared.selectedCategoryIDs = newValue }
+    }
 
     /// Selected subcategories for filtering
-    var selectedSubcategories: Set<PersistentIdentifier> = []
+    var selectedSubcategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedSubcategoryIDs }
+        set { SessionState.shared.selectedSubcategoryIDs = newValue }
+    }
 
     /// Selected tags for filtering
-    var selectedTags: Set<PersistentIdentifier> = []
+    var selectedTags: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedTags }
+        set { SessionState.shared.selectedTags = newValue }
+    }
 
     /// Selected natures for filtering
-    var selectedNatures: Set<SubcategoryNature> = []
+    var selectedNatures: Set<SubcategoryNature> {
+        get { SessionState.shared.selectedNatures }
+        set { SessionState.shared.selectedNatures = newValue }
+    }
 
     /// Selected transaction natures for filtering (empty = all)
     /// Used for income/expense filter chips in Statistics
-    var selectedTransactionNatures: Set<TransactionNature> = []
+    var selectedTransactionNatures: Set<TransactionNature> {
+        get { SessionState.shared.selectedTransactionNatures }
+        set { SessionState.shared.selectedTransactionNatures = newValue }
+    }
 
     /// Selected currencies for filtering (empty = all)
-    var selectedCurrencies: Set<CurrencyCode> = []
+    var selectedCurrencies: Set<CurrencyCode> {
+        get { SessionState.shared.selectedCurrencies }
+        set { SessionState.shared.selectedCurrencies = newValue }
+    }
 
     /// Amount filter condition
-    var amountCondition: AmountFilterCondition = .any
+    var amountCondition: AmountFilterCondition {
+        get { SessionState.shared.amountCondition }
+        set { SessionState.shared.amountCondition = newValue }
+    }
 
     /// Search text for note filtering
-    var searchText: String = ""
+    var searchText: String {
+        get { SessionState.shared.searchText }
+        set { SessionState.shared.searchText = newValue }
+    }
 
     /// Selected period (using DetailPeriod for expanded options)
-    var detailPeriod: DetailPeriod = .thisMonth
+    var detailPeriod: DetailPeriod {
+        get { SessionState.shared.selectedPeriod }
+        set { SessionState.shared.selectedPeriod = newValue }
+    }
 
     /// Custom date range (synced from SessionState)
-    var customDateRange: DateInterval?
+    var customDateRange: DateInterval? {
+        get { SessionState.shared.customDateRange }
+        set { SessionState.shared.customDateRange = newValue }
+    }
 
     /// Custom date range start (for backward compat, deprecated)
     var customStartDate: Date =
@@ -667,22 +703,24 @@ final class StatisticsViewModel: Filterable {
         )
     }
 
-    // MARK: - SessionState Synchronization
+    // MARK: - SessionState Synchronization (SSOT - Most sync is now via computed properties)
 
-    /// Sync trend metric FROM SessionState
+    /// No-op: selectedMetric is now a computed property reading from SessionState.shared
+    /// Kept for backward compatibility with existing callers
     func syncMetricFromSessionState(_ sessionState: SessionState) {
-        self.selectedMetric = sessionState.selectedTrendMetric
-        self.customDateRange = sessionState.customDateRange
+        // No-op: selectedMetric and customDateRange are now SSOT computed properties
     }
 
-    /// Sync trend metric TO SessionState
+    /// No-op: selectedMetric is now a computed property writing to SessionState.shared
+    /// Kept for backward compatibility with existing callers
     func syncMetricToSessionState(_ sessionState: SessionState) {
-        sessionState.selectedTrendMetric = self.selectedMetric
+        // No-op: selectedMetric is now a SSOT computed property
     }
 
-    /// Sync custom date range FROM SessionState
+    /// No-op: customDateRange is now a computed property reading from SessionState.shared
+    /// Kept for backward compatibility with existing callers
     func syncCustomRangeFromSessionState(_ sessionState: SessionState) {
-        self.customDateRange = sessionState.customDateRange
+        // No-op: customDateRange is now a SSOT computed property
     }
 }
 
