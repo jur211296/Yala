@@ -719,15 +719,6 @@ struct PanelView: View {
             .onChange(of: viewModel.trendType) { _, _ in
                 recalculateData()
             }
-            .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.selectedSubcategoryIDs) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.trendType) { _, _ in
-                recalculateData()
-            }
         } else if config.type == .topSpending {
             TopCategoriesWidget(
                 categories: viewModel.topSpendingCategories,
