@@ -157,21 +157,10 @@ final class PanelViewModel {
     // Loading State - tracks when heavy calculations are in progress
     var isCalculating: Bool = false
 
-    // Check if category/subcategory/nature filters require expense mode
-    var hasExpenseOnlyFilters: Bool {
-        selectedCategoryID != nil || !selectedSubcategoryIDs.isEmpty || selectedNature != nil
-    }
-
-    /// Enforce trend logic based on filters
-    /// Simple rule: chip is source of truth, category/nature filters auto-create expense chip
+    /// Derive trendType from chip (single source of truth)
+    /// Note: Auto-expense logic for category/subcategory filters is handled in PanelView onChange handlers
+    /// which properly check if categories are expense-only before setting the filter.
     private func enforceTrendLock(sessionState: SessionState) {
-        // Category/subcategory/nature filters auto-create expense chip (if not already set)
-        if hasExpenseOnlyFilters {
-            if !sessionState.selectedTransactionNatures.contains(.expense) {
-                sessionState.selectedTransactionNatures = [.expense]
-            }
-        }
-
         // Derive trendType from chip (single source of truth)
         if sessionState.selectedTransactionNatures.count == 1 {
             if sessionState.selectedTransactionNatures.contains(.income) {

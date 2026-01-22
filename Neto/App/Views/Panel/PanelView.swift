@@ -30,6 +30,7 @@ struct PanelView: View {
     @Environment(SessionState.self) private var sessionState
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
+    @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
     @Query(sort: \TransactionItem.date, order: .reverse)
     private var transactions: [TransactionItem]
@@ -210,6 +211,8 @@ struct PanelView: View {
         .modifier(
             PanelSessionObservers(
                 sessionState: sessionState,
+                categories: categories,
+                subcategories: allSubcategories,
                 recalculateData: recalculateData
             )
         )
@@ -880,6 +883,8 @@ struct AccountFormSheet: Identifiable {
 /// that read/write directly to SessionState.shared. Only recalculateData is needed.
 private struct PanelSessionObservers: ViewModifier {
     let sessionState: SessionState
+    let categories: [Category]
+    let subcategories: [Subcategory]
     let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
@@ -891,23 +896,35 @@ private struct PanelSessionObservers: ViewModifier {
                 recalculateData()
             }
             .onChange(of: sessionState.selectedCategoryIDs) {
-                // Auto-create expense chip when category filter applied
+                // Auto-create expense chip only if ALL selected categories are expense (not income)
                 if !sessionState.selectedCategoryIDs.isEmpty {
-                    sessionState.selectedTransactionNatures = [.expense]
+                    let selectedCats = categories.filter {
+                        sessionState.selectedCategoryIDs.contains($0.persistentModelID)
+                    }
+                    // Only set expense if we found matching categories AND all are expense categories
+                    if !selectedCats.isEmpty && selectedCats.allSatisfy({ !$0.isIncome }) {
+                        sessionState.selectedTransactionNatures = [.expense]
+                    }
                 }
                 recalculateData()
             }
             .onChange(of: sessionState.selectedNatures) {
-                // Auto-create expense chip when nature filter applied
+                // Auto-create expense chip when nature filter applied (natures are expense-only)
                 if !sessionState.selectedNatures.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
-                // Auto-create expense chip when subcategory filter applied
+                // Auto-create expense chip only if ALL selected subcategories are from expense categories
                 if !sessionState.selectedSubcategoryIDs.isEmpty {
-                    sessionState.selectedTransactionNatures = [.expense]
+                    let selectedSubs = subcategories.filter {
+                        sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
+                    }
+                    // Only set expense if we found matching subcategories AND all are from expense categories
+                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.category.isIncome }) {
+                        sessionState.selectedTransactionNatures = [.expense]
+                    }
                 }
                 recalculateData()
             }
