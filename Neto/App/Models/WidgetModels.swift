@@ -102,19 +102,21 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
     var scheduledPaymentsMode: ScheduledPaymentsWidgetMode = .summary
 
     // Default configs generator
+    // Order: Tendencias, Flujo, Dist.Cat, Dist.Subcat, TopCat, TopSubcat, Naturaleza, Registros, Presupuestos, Pagos, Cambio
+    // Defaults visible: trend, cashFlow, categoriesPie, topSubcategories, latestRecords
     static func defaultConfigs() -> [WidgetConfig] {
         return [
             WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .cashFlow, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .topSpending, isVisible: false, size: .medium),
-            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .categoriesPie, isVisible: true, size: .large),
             WidgetConfig(id: UUID(), type: .subcategoriesPie, isVisible: false, size: .large),
-            WidgetConfig(id: UUID(), type: .expensesByNature, isVisible: true, size: .medium),
+            WidgetConfig(id: UUID(), type: .topSpending, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: true, size: .medium),
+            WidgetConfig(id: UUID(), type: .expensesByNature, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .latestRecords, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .budgets, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .scheduledPayments, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
         ]
     }
 }
