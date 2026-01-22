@@ -51,4 +51,24 @@ final class Subcategory {
         self.iconName = iconName
         self.category = category
     }
+
+    // MARK: - System Subcategories
+
+    /// System subcategory names that cannot be deleted (all localizations)
+    private static let systemSubcategoryNames: Set<String> = [
+        // Balance adjustments (Spanish seed name)
+        "Ajustes de saldo",
+        // Transfers (Spanish seed name + all localizations)
+        "Transferencia entre cuentas",
+        "Transfer between accounts",
+        "Überweisung zwischen Konten",
+        "Virement entre comptes",
+        "Trasferimento tra conti",
+        "Transferencia entre contas",
+    ]
+
+    /// Whether this subcategory is a system subcategory that cannot be deleted
+    var isSystemSubcategory: Bool {
+        Self.systemSubcategoryNames.contains(name)
+    }
 }
