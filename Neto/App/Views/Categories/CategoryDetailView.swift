@@ -302,9 +302,10 @@ struct CategoryDetailView: View {
                 }
             }
 
-            // Delete button (only for existing expense categories, not new ones or income categories)
-            // Income category cannot be deleted because users can't create new income categories
-            if !isNewCategory && !category.isIncome {
+            // Delete button (only for user-created categories, not system categories)
+            // System categories: Ingresos (isIncome) and Otros (contains transfers/adjustments)
+            let isSystemCategory = category.isIncome || category.name == "Otros"
+            if !isNewCategory && !isSystemCategory {
                 SectionBox(title: "") {
                     Button {
                         transactionCount = countTransactionsInCategory()
