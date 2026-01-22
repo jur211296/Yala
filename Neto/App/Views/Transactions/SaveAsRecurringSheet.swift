@@ -379,41 +379,82 @@ struct SaveAsRecurringSheet: View {
 
     private var tagSelectorSheet: some View {
         NavigationStack {
-            List {
-                ForEach(activeTags) { tag in
-                    Button {
-                        if selectedTags.contains(tag.persistentModelID) {
-                            selectedTags.remove(tag.persistentModelID)
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        if activeTags.isEmpty {
+                            NetoEmptyState(
+                                icon: "tag.slash",
+                                title: L10n.Empty.noTags,
+                                message: L10n.Empty.tagsDescription
+                            )
                         } else {
-                            selectedTags.insert(tag.persistentModelID)
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: tag.iconName)
-                                .foregroundStyle(Color(hex: tag.colorHex))
-                            Text(tag.name)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if selectedTags.contains(tag.persistentModelID) {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.electricIndigo)
+                            SectionBox(title: "") {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
+                                        Button {
+                                            if selectedTags.contains(tag.persistentModelID) {
+                                                selectedTags.remove(tag.persistentModelID)
+                                            } else {
+                                                selectedTags.insert(tag.persistentModelID)
+                                            }
+                                        } label: {
+                                            HStack(spacing: DS.Spacing.md) {
+                                                Circle()
+                                                    .fill(Color(hex: tag.colorHex))
+                                                    .frame(width: 28, height: 28)
+                                                    .overlay(
+                                                        Image(systemName: tag.iconName)
+                                                            .font(.system(size: 12, weight: .semibold))
+                                                            .foregroundStyle(.white)
+                                                    )
+
+                                                Text(tag.name)
+                                                    .font(.body)
+                                                    .foregroundStyle(.primary)
+
+                                                Spacer()
+
+                                                if selectedTags.contains(tag.persistentModelID) {
+                                                    Image(systemName: "checkmark")
+                                                        .font(.body.weight(.semibold))
+                                                        .foregroundStyle(Color.electricIndigo)
+                                                }
+                                            }
+                                            .padding(.horizontal, DS.Spacing.lg)
+                                            .padding(.vertical, DS.FormRow.paddingV)
+                                            .contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
                             }
                         }
                     }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) {
+                ToolbarItem(placement: .topBarLeading) {
+                    NetoToolbarButton(systemName: "xmark") {
                         showTagSelector = false
                     }
-                    .fontWeight(.semibold)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    NetoSaveButton(action: { showTagSelector = false })
                 }
             }
         }
-        .presentationDetents([.medium])
+        .tint(Color.electricIndigo)
+        .presentationDetents([.medium, .large])
     }
 
     // MARK: - Subscription Section
