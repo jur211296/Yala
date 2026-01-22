@@ -1088,7 +1088,22 @@
 // Voice Recording
 "voice.title" = "Saisie vocale";
 "voice.tapToRecord" = "Appuyez pour enregistrer";
-"voice.instruction" = "Dites le montant, le concept et la date de votre depense";
+"voice.instruction" = "Exemple: \"Dépensé 50 chez Starbucks restaurants tag voyage\"";
+"voice.youCanSay" = "Vous pouvez mentionner:";
+"voice.hint.type" = "Type:";
+"voice.hint.type.example" = "\"dépensé\" ou \"reçu\"";
+"voice.hint.amount" = "Montant:";
+"voice.hint.amount.example" = "\"50 euros\"";
+"voice.hint.subcategory" = "Sous-catégorie:";
+"voice.hint.subcategory.example" = "\"aux restaurants\"";
+"voice.hint.merchant" = "Commerce:";
+"voice.hint.merchant.example" = "\"chez Starbucks\"";
+"voice.hint.tag" = "Tag:";
+"voice.hint.tag.example" = "\"tag voyage\"";
+"voice.hint.date" = "Date:";
+"voice.hint.date.example" = "\"hier\" (aujourd'hui par défaut)";
+"voice.example.label" = "Exemple complet:";
+"voice.example.text" = "\"Aujourd'hui j'ai dépensé 50 euros chez Starbucks restaurants tag voyage\"";
 "voice.recording" = "Enregistrement...";
 "voice.pleaseWait" = "Veuillez patienter...";
 "voice.processingAudio" = "Traitement audio...";

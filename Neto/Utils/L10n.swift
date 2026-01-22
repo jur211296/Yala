@@ -1665,6 +1665,23 @@ enum L10n {
         static var transcribing: String { NSLocalizedString("voice.transcribing", comment: "") }
         static var parsing: String { NSLocalizedString("voice.parsing", comment: "") }
         static var saving: String { NSLocalizedString("voice.saving", comment: "") }
+
+        // Instructions
+        static var youCanSay: String { NSLocalizedString("voice.youCanSay", comment: "") }
+        static var hintType: String { NSLocalizedString("voice.hint.type", comment: "") }
+        static var hintTypeExample: String { NSLocalizedString("voice.hint.type.example", comment: "") }
+        static var hintAmount: String { NSLocalizedString("voice.hint.amount", comment: "") }
+        static var hintAmountExample: String { NSLocalizedString("voice.hint.amount.example", comment: "") }
+        static var hintSubcategory: String { NSLocalizedString("voice.hint.subcategory", comment: "") }
+        static var hintSubcategoryExample: String { NSLocalizedString("voice.hint.subcategory.example", comment: "") }
+        static var hintMerchant: String { NSLocalizedString("voice.hint.merchant", comment: "") }
+        static var hintMerchantExample: String { NSLocalizedString("voice.hint.merchant.example", comment: "") }
+        static var hintTag: String { NSLocalizedString("voice.hint.tag", comment: "") }
+        static var hintTagExample: String { NSLocalizedString("voice.hint.tag.example", comment: "") }
+        static var hintDate: String { NSLocalizedString("voice.hint.date", comment: "") }
+        static var hintDateExample: String { NSLocalizedString("voice.hint.date.example", comment: "") }
+        static var exampleLabel: String { NSLocalizedString("voice.example.label", comment: "") }
+        static var exampleText: String { NSLocalizedString("voice.example.text", comment: "") }
     }
 
     // MARK: - Voice Language

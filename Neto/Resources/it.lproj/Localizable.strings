@@ -1088,7 +1088,22 @@
 // Voice Recording
 "voice.title" = "Inserimento vocale";
 "voice.tapToRecord" = "Tocca per registrare";
-"voice.instruction" = "Dì l'importo, il concetto e la data della tua spesa";
+"voice.instruction" = "Esempio: \"Speso 50 da Starbucks ristoranti tag viaggio\"";
+"voice.youCanSay" = "Puoi menzionare:";
+"voice.hint.type" = "Tipo:";
+"voice.hint.type.example" = "\"speso\" o \"ricevuto\"";
+"voice.hint.amount" = "Importo:";
+"voice.hint.amount.example" = "\"50 euro\"";
+"voice.hint.subcategory" = "Sottocategoria:";
+"voice.hint.subcategory.example" = "\"nei ristoranti\"";
+"voice.hint.merchant" = "Commerciante:";
+"voice.hint.merchant.example" = "\"da Starbucks\"";
+"voice.hint.tag" = "Tag:";
+"voice.hint.tag.example" = "\"tag viaggio\"";
+"voice.hint.date" = "Data:";
+"voice.hint.date.example" = "\"ieri\" (oggi di default)";
+"voice.example.label" = "Esempio completo:";
+"voice.example.text" = "\"Oggi ho speso 50 euro da Starbucks ristoranti tag viaggio\"";
 "voice.recording" = "Registrazione...";
 "voice.pleaseWait" = "Attendere...";
 "voice.processingAudio" = "Elaborazione audio...";

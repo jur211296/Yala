@@ -15,12 +15,16 @@ struct ParsedTransaction: Codable {
     let date: Date?
     let note: String
     let isExpense: Bool
+    let subcategoryHint: String?
+    let tagHints: [String]
     let confidence: TransactionConfidence
 
     struct TransactionConfidence: Codable {
         let amount: Double
         let date: Double
         let merchant: Double
+        let subcategory: Double
+        let tags: Double
     }
 }
 
@@ -56,12 +60,16 @@ private struct LLMResponse: Codable {
     let date: String?
     let note: String
     let isExpense: Bool
+    let subcategoryHint: String?
+    let tagHints: [String]?
     let confidence: ConfidenceScores
 
     struct ConfidenceScores: Codable {
         let amount: Double
         let date: Double
         let merchant: Double
+        let subcategory: Double
+        let tags: Double
     }
 }
 
@@ -119,9 +127,24 @@ final class TranscriptionParserService {
         - Por defecto asume gasto (isExpense: true)
         - Si menciona "ingreso", "cobré", "me pagaron", "recibí" → isExpense: false
 
-        Reglas de nota:
-        - Incluye el merchant/comercio si se menciona
-        - Incluye descripción breve del gasto
+        Reglas de subcategoría:
+        - Si menciona explícitamente una categoría como "en restaurantes", "de transporte", "comida", "gasolina", etc. → extrae el nombre
+        - Solo extrae si es explícito, no inferir
+        - Ejemplos: "gasté en restaurantes" → "Restaurantes", "pagué la gasolina" → "Gasolina"
+        - Si no hay mención explícita → null
+
+        Reglas de etiquetas/tags:
+        - Si dice "etiqueta X", "tag X", "con la etiqueta X", "para X" (donde X es un proyecto/contexto) → extrae X
+        - Puede haber múltiples etiquetas
+        - Ejemplos: "con la etiqueta viaje" → ["viaje"], "etiqueta trabajo y cliente" → ["trabajo", "cliente"]
+        - Si no hay mención explícita → []
+
+        Reglas de nota (IMPORTANTE):
+        - La nota es para el merchant/comercio específico o información adicional
+        - NUNCA repetir la subcategoría en la nota
+        - Si hay subcategoría + merchant: note = merchant. Ej: "Starbucks restaurantes" → subcategoryHint: "Restaurantes", note: "Starbucks"
+        - Si hay subcategoría sin merchant: note = "". Ej: "gasté en restaurantes" → subcategoryHint: "Restaurantes", note: ""
+        - Si NO hay subcategoría: note = descripción. Ej: "gasté en almuerzo" → subcategoryHint: null, note: "almuerzo"
 
         Responde ÚNICAMENTE con este JSON (sin ```json ni nada más):
         {
@@ -129,10 +152,14 @@ final class TranscriptionParserService {
           "date": "YYYY-MM-DD",
           "note": "descripción breve",
           "isExpense": true | false,
+          "subcategoryHint": "nombre subcategoría" | null,
+          "tagHints": ["tag1", "tag2"] | [],
           "confidence": {
             "amount": 0.0-1.0,
             "date": 0.0-1.0,
-            "merchant": 0.0-1.0
+            "merchant": 0.0-1.0,
+            "subcategory": 0.0-1.0,
+            "tags": 0.0-1.0
           }
         }
         """
@@ -227,10 +254,14 @@ final class TranscriptionParserService {
             date: date,
             note: llmResponse.note,
             isExpense: llmResponse.isExpense,
+            subcategoryHint: llmResponse.subcategoryHint,
+            tagHints: llmResponse.tagHints ?? [],
             confidence: ParsedTransaction.TransactionConfidence(
                 amount: llmResponse.confidence.amount,
                 date: llmResponse.confidence.date,
-                merchant: llmResponse.confidence.merchant
+                merchant: llmResponse.confidence.merchant,
+                subcategory: llmResponse.confidence.subcategory,
+                tags: llmResponse.confidence.tags
             )
         )
     }

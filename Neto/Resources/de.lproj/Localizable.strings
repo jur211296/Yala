@@ -1088,7 +1088,22 @@
 // Voice Recording
 "voice.title" = "Spracheingabe";
 "voice.tapToRecord" = "Zum Aufnehmen tippen";
-"voice.instruction" = "Sagen Sie Betrag, Konzept und Datum Ihrer Ausgabe";
+"voice.instruction" = "Beispiel: \"50 bei Starbucks Restaurants Tag Reise ausgegeben\"";
+"voice.youCanSay" = "Sie können erwähnen:";
+"voice.hint.type" = "Typ:";
+"voice.hint.type.example" = "\"ausgegeben\" oder \"erhalten\"";
+"voice.hint.amount" = "Betrag:";
+"voice.hint.amount.example" = "\"50 Euro\"";
+"voice.hint.subcategory" = "Unterkategorie:";
+"voice.hint.subcategory.example" = "\"bei Restaurants\"";
+"voice.hint.merchant" = "Händler:";
+"voice.hint.merchant.example" = "\"bei Starbucks\"";
+"voice.hint.tag" = "Tag:";
+"voice.hint.tag.example" = "\"Tag Reise\"";
+"voice.hint.date" = "Datum:";
+"voice.hint.date.example" = "\"gestern\" (heute Standard)";
+"voice.example.label" = "Vollständiges Beispiel:";
+"voice.example.text" = "\"Heute habe ich 50 Euro bei Starbucks Restaurants Tag Reise ausgegeben\"";
 "voice.recording" = "Aufnahme...";
 "voice.pleaseWait" = "Bitte warten...";
 "voice.processingAudio" = "Audio verarbeiten...";

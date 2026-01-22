@@ -1088,7 +1088,22 @@
 // Voice Recording
 "voice.title" = "Registro por voz";
 "voice.tapToRecord" = "Toca para grabar";
-"voice.instruction" = "Di el monto, concepto y fecha de tu gasto";
+"voice.instruction" = "Ejemplo: \"Gasté 50 en Starbucks restaurantes con la etiqueta viaje\"";
+"voice.youCanSay" = "Puedes mencionar:";
+"voice.hint.type" = "Tipo:";
+"voice.hint.type.example" = "\"gasté\" o \"recibí\"";
+"voice.hint.amount" = "Monto:";
+"voice.hint.amount.example" = "\"50 soles\"";
+"voice.hint.subcategory" = "Subcategoría:";
+"voice.hint.subcategory.example" = "\"en restaurantes\"";
+"voice.hint.merchant" = "Comercio:";
+"voice.hint.merchant.example" = "\"en Starbucks\"";
+"voice.hint.tag" = "Etiqueta:";
+"voice.hint.tag.example" = "\"etiqueta viaje\"";
+"voice.hint.date" = "Fecha:";
+"voice.hint.date.example" = "\"ayer\" (hoy por defecto)";
+"voice.example.label" = "Ejemplo completo:";
+"voice.example.text" = "\"Hoy gasté 50 soles en Starbucks restaurantes con la etiqueta viaje\"";
 "voice.recording" = "Grabando...";
 "voice.pleaseWait" = "Por favor espera...";
 "voice.processingAudio" = "Procesando audio...";

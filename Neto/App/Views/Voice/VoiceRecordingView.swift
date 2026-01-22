@@ -129,15 +129,70 @@ struct VoiceRecordingView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                Text(L10n.Voice.tapToRecord)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Voice.instruction)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                instructionsView
             }
+        }
+    }
+
+    // MARK: - Instructions View
+
+    private var instructionsView: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            Text(L10n.Voice.tapToRecord)
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            // What you can say
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Text(L10n.Voice.youCanSay)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    instructionItem(icon: "arrow.left.arrow.right", text: L10n.Voice.hintType, highlight: L10n.Voice.hintTypeExample)
+                    instructionItem(icon: "dollarsign.circle", text: L10n.Voice.hintAmount, highlight: L10n.Voice.hintAmountExample)
+                    instructionItem(icon: "folder", text: L10n.Voice.hintSubcategory, highlight: L10n.Voice.hintSubcategoryExample)
+                    instructionItem(icon: "mappin", text: L10n.Voice.hintMerchant, highlight: L10n.Voice.hintMerchantExample)
+                    instructionItem(icon: "tag", text: L10n.Voice.hintTag, highlight: L10n.Voice.hintTagExample)
+                    instructionItem(icon: "calendar", text: L10n.Voice.hintDate, highlight: L10n.Voice.hintDateExample)
+                }
+            }
+            .padding(DS.Spacing.md)
+            .background(Color.netoCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            // Example
+            VStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Voice.exampleLabel)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                Text(L10n.Voice.exampleText)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.electricIndigo)
+                    .multilineTextAlignment(.center)
+                    .italic()
+            }
+        }
+        .padding(.horizontal, DS.Spacing.md)
+    }
+
+    private func instructionItem(icon: String, text: String, highlight: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(Color.electricIndigo)
+                .frame(width: 16)
+
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(highlight)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.primary)
+
+            Spacer()
         }
     }
 
@@ -261,18 +316,125 @@ struct VoiceRecordingView: View {
             amountDouble = parsed.isExpense ? -abs(value) : abs(value)
         }
 
+        // Try to match subcategory hint with existing subcategories
+        var matchedSubcategory: Subcategory?
+        var needsUserInputFields = ["account", "subcategory"]
+
+        if let hint = parsed.subcategoryHint, !hint.isEmpty {
+            matchedSubcategory = findSubcategory(matching: hint, isExpense: parsed.isExpense)
+            if matchedSubcategory != nil {
+                needsUserInputFields.removeAll { $0 == "subcategory" }
+            }
+        }
+
+        // Try to match tag hints with existing tags
+        var matchedTags: [Tag] = []
+        if !parsed.tagHints.isEmpty {
+            matchedTags = findTags(matching: parsed.tagHints)
+        }
+
         let draft = InboxDraft(
             note: parsed.note,
             amount: amountDouble,
             date: parsed.date,
+            subcategory: matchedSubcategory,
+            tags: matchedTags,
             sourceType: .voice,
             rawText: transcription,
             confidenceAmount: parsed.confidence.amount,
             confidenceDate: parsed.confidence.date,
-            confidenceMerchant: parsed.confidence.merchant
+            confidenceMerchant: parsed.confidence.merchant,
+            confidenceSubcategory: matchedSubcategory != nil ? parsed.confidence.subcategory : nil,
+            needsUserInput: needsUserInputFields
         )
         modelContext.insert(draft)
         try? modelContext.save()
+    }
+
+    // MARK: - Entity Matching
+
+    /// Finds a subcategory matching the hint (case-insensitive, partial match)
+    /// Returns nil if multiple matches found (ambiguous) to let user choose manually
+    private func findSubcategory(matching hint: String, isExpense: Bool) -> Subcategory? {
+        let normalizedHint = hint.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let descriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate<Subcategory> { subcategory in
+                subcategory.isVisible == true
+            }
+        )
+
+        guard let subcategories = try? modelContext.fetch(descriptor) else {
+            return nil
+        }
+
+        // Filter by expense type (subcategories in expense categories for expenses, income for income)
+        let filtered = subcategories.filter { sub in
+            let category = sub.category
+            return isExpense ? !category.isIncome : category.isIncome
+        }
+
+        // Try exact match first - check for duplicates
+        let exactMatches = filtered.filter { $0.name.lowercased() == normalizedHint }
+        if exactMatches.count == 1 {
+            return exactMatches.first
+        } else if exactMatches.count > 1 {
+            // Ambiguous: multiple subcategories with same name in different categories
+            return nil
+        }
+
+        // Try contains match - check for duplicates
+        let partialMatches = filtered.filter { $0.name.lowercased().contains(normalizedHint) }
+        if partialMatches.count == 1 {
+            return partialMatches.first
+        } else if partialMatches.count > 1 {
+            // Ambiguous: multiple matches
+            return nil
+        }
+
+        // Try if hint contains subcategory name - check for duplicates
+        let reverseMatches = filtered.filter { normalizedHint.contains($0.name.lowercased()) }
+        if reverseMatches.count == 1 {
+            return reverseMatches.first
+        }
+        // Multiple reverse matches = ambiguous, return nil
+
+        return nil
+    }
+
+    /// Finds tags matching the hints (case-insensitive)
+    private func findTags(matching hints: [String]) -> [Tag] {
+        let descriptor = FetchDescriptor<Tag>(
+            predicate: #Predicate<Tag> { tag in
+                tag.isActive == true
+            }
+        )
+
+        guard let allTags = try? modelContext.fetch(descriptor) else {
+            return []
+        }
+
+        var matched: [Tag] = []
+        for hint in hints {
+            let normalizedHint = hint.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Try exact match first
+            if let exact = allTags.first(where: { $0.name.lowercased() == normalizedHint }) {
+                if !matched.contains(where: { $0.persistentModelID == exact.persistentModelID }) {
+                    matched.append(exact)
+                }
+                continue
+            }
+
+            // Try contains match
+            if let partial = allTags.first(where: { $0.name.lowercased().contains(normalizedHint) }) {
+                if !matched.contains(where: { $0.persistentModelID == partial.persistentModelID }) {
+                    matched.append(partial)
+                }
+            }
+        }
+
+        return matched
     }
 }
 

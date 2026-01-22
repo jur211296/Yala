@@ -90,6 +90,13 @@ struct PanelView: View {
         TabBarConfiguration.fromJSON(tabConfigJSON).activeTabs.contains(.statistics)
     }
 
+    /// Check if voice input can be used (requires accounts and subcategories)
+    private var canUseVoiceInput: Bool {
+        let hasActiveAccounts = accounts.contains { !$0.isArchived }
+        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
+        return hasActiveAccounts && hasVisibleSubcategories
+    }
+
     /// Navigate to Statistics detail, setting temporary tab if needed
     private func navigateToStatistics(_ detailTab: DetailViewTab) {
         if !isStatisticsVisible {
@@ -281,51 +288,62 @@ struct PanelView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    if voiceInputEnabled {
-                        Menu {
-                            Button {
-                                showVoiceRecording = true
-                            } label: {
-                                Label(L10n.Panel.fabVoice, systemImage: "waveform")
-                            }
-                            Button {
-                                showNewTransaction = true
-                            } label: {
-                                Label(L10n.Panel.fabManual, systemImage: "square.and.pencil")
-                            }
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 56, height: 56)
-                                .background(Color.electricIndigo)
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .glassEffect(.regular.interactive())
-                        .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                        .padding(.trailing, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.xxl)
-                    } else {
-                        Button {
-                            showNewTransaction = true
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 56, height: 56)
-                                .background(Color.electricIndigo)
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .glassEffect(.regular.interactive())
-                        .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                        .padding(.trailing, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.xxl)
-                    }
+                    newRecordFAB
                 }
             }
         }
+    }
+
+    // MARK: - New Record FAB
+
+    @ViewBuilder
+    private var newRecordFAB: some View {
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+
+        if voiceInputEnabled && canUseVoiceInput {
+            Menu {
+                Button {
+                    showVoiceRecording = true
+                } label: {
+                    Label(L10n.Panel.fabVoice, systemImage: "waveform")
+                }
+                Button {
+                    showNewTransaction = true
+                } label: {
+                    Label(L10n.Panel.fabManual, systemImage: "square.and.pencil")
+                }
+            } label: {
+                fabButtonLabel(background: fabBackground)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
+        } else {
+            Button {
+                if canUseVoiceInput {
+                    showNewTransaction = true
+                }
+            } label: {
+                fabButtonLabel(background: fabBackground)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
+            .disabled(!canUseVoiceInput)
+        }
+    }
+
+    private func fabButtonLabel(background: Color) -> some View {
+        Image(systemName: "plus")
+            .font(.system(size: 24, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 56, height: 56)
+            .background(background)
+            .clipShape(Circle())
     }
 
     private var accountsSection: some View {

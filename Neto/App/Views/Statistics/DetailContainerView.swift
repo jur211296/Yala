@@ -52,6 +52,13 @@ struct DetailContainerView: View {
     /// Voice recording sheet
     @State private var showVoiceRecording = false
 
+    /// Check if voice input can be used (requires accounts and subcategories)
+    private var canUseVoiceInput: Bool {
+        let hasActiveAccounts = accounts.contains { !$0.isArchived }
+        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
+        return hasActiveAccounts && hasVisibleSubcategories
+    }
+
     // MARK: - Initialization
 
     init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .records) {
@@ -312,13 +319,15 @@ struct DetailContainerView: View {
     // MARK: - New Record FAB
 
     private var newRecordFAB: some View {
-        VStack {
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+
+        return VStack {
             Spacer()
 
             HStack {
                 Spacer()
 
-                if voiceInputEnabled {
+                if voiceInputEnabled && canUseVoiceInput {
                     Menu {
                         Button {
                             showVoiceRecording = true
@@ -331,35 +340,37 @@ struct DetailContainerView: View {
                             Label(L10n.Panel.fabManual, systemImage: "square.and.pencil")
                         }
                     } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Color.electricIndigo)
-                            .clipShape(Circle())
+                        fabLabel(background: fabBackground)
                     }
                     .buttonStyle(.plain)
                     .glassEffect(.regular.interactive())
                     .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
                 } else {
                     Button {
-                        recordsViewModel.showNewTransaction = true
+                        if canUseVoiceInput {
+                            recordsViewModel.showNewTransaction = true
+                        }
                     } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Color.electricIndigo)
-                            .clipShape(Circle())
+                        fabLabel(background: fabBackground)
                     }
                     .buttonStyle(.plain)
                     .glassEffect(.regular.interactive())
                     .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                    .disabled(!canUseVoiceInput)
                 }
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
+    }
+
+    private func fabLabel(background: Color) -> some View {
+        Image(systemName: "plus")
+            .font(.system(size: 24, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 56, height: 56)
+            .background(background)
+            .clipShape(Circle())
     }
 
     // MARK: - Selection Action Bar

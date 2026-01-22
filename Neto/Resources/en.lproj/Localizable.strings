@@ -1088,7 +1088,22 @@
 // Voice Recording
 "voice.title" = "Voice Entry";
 "voice.tapToRecord" = "Tap to record";
-"voice.instruction" = "Say the amount, concept and date of your expense";
+"voice.instruction" = "Example: \"Spent 50 at Starbucks restaurants tag travel\"";
+"voice.youCanSay" = "You can mention:";
+"voice.hint.type" = "Type:";
+"voice.hint.type.example" = "\"spent\" or \"received\"";
+"voice.hint.amount" = "Amount:";
+"voice.hint.amount.example" = "\"50 dollars\"";
+"voice.hint.subcategory" = "Subcategory:";
+"voice.hint.subcategory.example" = "\"at restaurants\"";
+"voice.hint.merchant" = "Merchant:";
+"voice.hint.merchant.example" = "\"at Starbucks\"";
+"voice.hint.tag" = "Tag:";
+"voice.hint.tag.example" = "\"tag travel\"";
+"voice.hint.date" = "Date:";
+"voice.hint.date.example" = "\"yesterday\" (today by default)";
+"voice.example.label" = "Full example:";
+"voice.example.text" = "\"Today I spent 50 dollars at Starbucks restaurants tag travel\"";
 "voice.recording" = "Recording...";
 "voice.pleaseWait" = "Please wait...";
 "voice.processingAudio" = "Processing audio...";
