@@ -463,7 +463,8 @@ final class NewTransactionViewModel {
             throw TransactionSaveError.missingRequiredFields
         }
 
-        let transferSubcategory = try ensureTransferCategory(context: context)
+        let outflowSubcategory = try ensureTransferCategory(context: context)
+        let inflowSubcategory = try ensureIncomeTransferCategory(context: context)
         let preferredCode = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "PEN"
 
         // --- OUTFLOW (Source) ---
@@ -500,13 +501,13 @@ final class NewTransactionViewModel {
             outTransaction = pair.out
             inTransaction = pair.in
 
-            // Update Out
+            // Update Out (Otros/Transferencia entre cuentas)
             outTransaction.date = transactionDate
             outTransaction.amount = outAmount
             outTransaction.currencyCode = source.currencyCode
             outTransaction.note = note.isEmpty ? L10n.Transfer.transferTo(dest.name) : note
-            outTransaction.category = transferSubcategory.category
-            outTransaction.subcategory = transferSubcategory
+            outTransaction.category = outflowSubcategory.category
+            outTransaction.subcategory = outflowSubcategory
             outTransaction.account = source
             outTransaction.tags = selectedTags
             outTransaction.exchangeRate = abs(outRate)
@@ -515,13 +516,13 @@ final class NewTransactionViewModel {
             outTransaction.preferredCurrencyCode = preferredCode
             outTransaction.balanceAdjustmentType = "transfer"
 
-            // Update In
+            // Update In (Ingresos/Transferencia entre cuentas)
             inTransaction.date = transactionDate
             inTransaction.amount = inAmount
             inTransaction.currencyCode = dest.currencyCode
             inTransaction.note = note.isEmpty ? L10n.Transfer.transferFrom(source.name) : note
-            inTransaction.category = transferSubcategory.category
-            inTransaction.subcategory = transferSubcategory
+            inTransaction.category = inflowSubcategory.category
+            inTransaction.subcategory = inflowSubcategory
             inTransaction.account = dest
             inTransaction.tags = selectedTags
             inTransaction.exchangeRate = abs(inRate)
@@ -531,13 +532,14 @@ final class NewTransactionViewModel {
             inTransaction.balanceAdjustmentType = "transfer"
 
         } else {
+            // Create Out (Otros/Transferencia entre cuentas)
             outTransaction = TransactionItem(
                 date: transactionDate,
                 amount: outAmount,
                 currencyCode: source.currencyCode,
                 note: note.isEmpty ? L10n.Transfer.transferTo(dest.name) : note,
-                category: transferSubcategory.category,
-                subcategory: transferSubcategory,
+                category: outflowSubcategory.category,
+                subcategory: outflowSubcategory,
                 account: source,
                 tags: selectedTags,
                 exchangeRate: abs(outRate),
@@ -546,13 +548,14 @@ final class NewTransactionViewModel {
             )
             outTransaction.balanceAdjustmentType = "transfer"
 
+            // Create In (Ingresos/Transferencia entre cuentas)
             inTransaction = TransactionItem(
                 date: transactionDate,
                 amount: inAmount,
                 currencyCode: dest.currencyCode,
                 note: note.isEmpty ? L10n.Transfer.transferFrom(source.name) : note,
-                category: transferSubcategory.category,
-                subcategory: transferSubcategory,
+                category: inflowSubcategory.category,
+                subcategory: inflowSubcategory,
                 account: dest,
                 tags: selectedTags,
                 exchangeRate: abs(inRate),
@@ -616,6 +619,57 @@ final class NewTransactionViewModel {
         } catch {
             // Non-critical: SwiftData will auto-save later
             print("[NewTransactionViewModel] Warning: Could not save subcategory immediately: \(error)")
+        }
+
+        return subcategory
+    }
+
+    /// Ensures the "Ingresos/Transferencia entre cuentas" subcategory exists for incoming transfers
+    private func ensureIncomeTransferCategory(context: ModelContext) throws -> Subcategory {
+        let parentCategoryName = "Ingresos"
+        let subcategoryName = L10n.Transfer.categoryName
+
+        // Check if subcategory exists within "Ingresos"
+        let descriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == parentCategoryName }
+        )
+
+        if let existing = try? context.fetch(descriptor).first {
+            return existing
+        }
+
+        // Check if "Ingresos" category exists (should always exist from seed)
+        let catDescriptor = FetchDescriptor<Category>(
+            predicate: #Predicate { $0.name == parentCategoryName }
+        )
+
+        let category: Category
+        if let existingCat = try? context.fetch(catDescriptor).first {
+            category = existingCat
+        } else {
+            // Fallback: create "Ingresos" if somehow missing
+            category = Category(
+                name: parentCategoryName,
+                colorHex: "#14B8A6",
+                isIncome: true
+            )
+            context.insert(category)
+        }
+
+        // Create subcategory within "Ingresos"
+        let subcategory = Subcategory(
+            name: subcategoryName,
+            colorHex: nil,
+            natureRawValue: SubcategoryNature.unclassified.rawValue,
+            iconName: "arrow.left.arrow.right",
+            category: category
+        )
+        context.insert(subcategory)
+
+        do {
+            try context.save()
+        } catch {
+            print("[NewTransactionViewModel] Warning: Could not save income transfer subcategory: \(error)")
         }
 
         return subcategory
