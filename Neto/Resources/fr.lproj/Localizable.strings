@@ -455,6 +455,8 @@
 "common.moreOptions" = "Plus d'options";
 "common.comingSoon" = "Bientot disponible";
 "panel.greeting" = "Pret pour neto, %@";
+"panel.fab.voice" = "Voix";
+"panel.fab.manual" = "Manuel";
 "widget.today" = "Aujourd'hui";
 
 // Widget Preferences
@@ -1080,5 +1082,5 @@
 "voiceLanguage.system" = "Système";
 "voiceLanguage.spanish" = "Espagnol";
 "voiceLanguage.english" = "Anglais";
-"settings.voiceLanguage" = "Langue vocale";
-"settings.voiceLanguageDescription" = "Langue pour la transcription vocale lors de l'enregistrement des dépenses.";
+"settings.voiceInputEnabled" = "Saisie vocale avec IA";
+"settings.voiceLanguage" = "Langue";

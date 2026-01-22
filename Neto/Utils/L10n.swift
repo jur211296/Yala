@@ -26,6 +26,12 @@ enum L10n {
         static func greeting(_ name: String) -> String {
             String(format: NSLocalizedString("panel.greeting", comment: ""), name)
         }
+        static var fabVoice: String {
+            NSLocalizedString("panel.fab.voice", comment: "FAB menu: voice input option")
+        }
+        static var fabManual: String {
+            NSLocalizedString("panel.fab.manual", comment: "FAB menu: manual input option")
+        }
     }
 
     // MARK: - Trend
@@ -1074,11 +1080,11 @@ enum L10n {
         static var roundedAmountsDescription: String {
             NSLocalizedString("settings.roundedAmountsDescription", comment: "")
         }
+        static var voiceInputEnabled: String {
+            NSLocalizedString("settings.voiceInputEnabled", comment: "")
+        }
         static var voiceLanguage: String {
             NSLocalizedString("settings.voiceLanguage", comment: "")
-        }
-        static var voiceLanguageDescription: String {
-            NSLocalizedString("settings.voiceLanguageDescription", comment: "")
         }
         // resetData removed (duplicate)
         static var resetDataDescription: String {

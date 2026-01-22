@@ -457,6 +457,8 @@
 "common.moreOptions" = "More options";
 "common.comingSoon" = "Coming soon";
 "panel.greeting" = "Ready for neto, %@";
+"panel.fab.voice" = "Voice";
+"panel.fab.manual" = "Manual";
 "widget.today" = "Today";
 
 // Widget Preferences
@@ -1080,5 +1082,5 @@
 "voiceLanguage.system" = "System";
 "voiceLanguage.spanish" = "Spanish";
 "voiceLanguage.english" = "English";
-"settings.voiceLanguage" = "Voice Language";
-"settings.voiceLanguageDescription" = "Language for voice transcription when recording expenses.";
+"settings.voiceInputEnabled" = "Voice Input with AI";
+"settings.voiceLanguage" = "Language";

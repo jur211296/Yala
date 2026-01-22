@@ -80,6 +80,10 @@ struct PanelView: View {
         .rawValue
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+
+    /// Voice recording sheet
+    @State private var showVoiceRecording = false
 
     /// Check if Statistics tab is visible
     private var isStatisticsVisible: Bool {
@@ -274,21 +278,48 @@ struct PanelView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    Button {
-                        showNewTransaction = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Color.electricIndigo)
-                            .clipShape(Circle())
+                    if voiceInputEnabled {
+                        Menu {
+                            Button {
+                                showVoiceRecording = true
+                            } label: {
+                                Label(L10n.Panel.fabVoice, systemImage: "waveform")
+                            }
+                            Button {
+                                showNewTransaction = true
+                            } label: {
+                                Label(L10n.Panel.fabManual, systemImage: "square.and.pencil")
+                            }
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 56, height: 56)
+                                .background(Color.electricIndigo)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.interactive())
+                        .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                        .padding(.trailing, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxl)
+                    } else {
+                        Button {
+                            showNewTransaction = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 56, height: 56)
+                                .background(Color.electricIndigo)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.interactive())
+                        .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                        .padding(.trailing, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxl)
                     }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive())
-                    .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                    .padding(.trailing, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
                 }
             }
         }

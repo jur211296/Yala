@@ -457,6 +457,8 @@
 "common.moreOptions" = "Más opciones";
 "common.comingSoon" = "Próximamente";
 "panel.greeting" = "Habla neto, %@";
+"panel.fab.voice" = "Voz";
+"panel.fab.manual" = "Manual";
 "widget.today" = "Hoy";
 
 // Widget Preferences
@@ -1080,5 +1082,5 @@
 "voiceLanguage.system" = "Sistema";
 "voiceLanguage.spanish" = "Español";
 "voiceLanguage.english" = "Inglés";
-"settings.voiceLanguage" = "Idioma de voz";
-"settings.voiceLanguageDescription" = "Idioma para la transcripción de voz al registrar gastos.";
+"settings.voiceInputEnabled" = "Entrada por voz con IA";
+"settings.voiceLanguage" = "Idioma";

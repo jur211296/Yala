@@ -455,6 +455,8 @@
 "common.moreOptions" = "Weitere Optionen";
 "common.comingSoon" = "Demnächst";
 "panel.greeting" = "Klartext, %@";
+"panel.fab.voice" = "Sprache";
+"panel.fab.manual" = "Manuell";
 "widget.today" = "Heute";
 
 // Widget Preferences
@@ -1080,5 +1082,5 @@
 "voiceLanguage.system" = "System";
 "voiceLanguage.spanish" = "Spanisch";
 "voiceLanguage.english" = "Englisch";
-"settings.voiceLanguage" = "Sprachsprache";
-"settings.voiceLanguageDescription" = "Sprache für die Sprachtranskription bei der Ausgabenerfassung.";
+"settings.voiceInputEnabled" = "Spracheingabe mit KI";
+"settings.voiceLanguage" = "Sprache";

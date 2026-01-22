@@ -18,12 +18,10 @@ struct PersonalizationSettingsView: View {
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
     @AppStorage("useRoundedAmounts") private var useRoundedAmounts: Bool = true
-    @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
 
     @State private var showingPeriodPicker = false
     @State private var showingTabBarConfig = false
     @State private var showingWeekdayPicker = false
-    @State private var showingVoiceLanguagePicker = false
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
@@ -31,10 +29,6 @@ struct PersonalizationSettingsView: View {
 
     private var selectedWeekday: FirstWeekday {
         FirstWeekday(rawValue: firstWeekdayRaw) ?? .monday
-    }
-
-    private var selectedVoiceLanguage: VoiceLanguage {
-        VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
     }
 
     var body: some View {
@@ -262,43 +256,6 @@ struct PersonalizationSettingsView: View {
                             .padding(.horizontal, 4)
                     }
 
-                    // Voice Language Section
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        Button {
-                            showingVoiceLanguagePicker = true
-                        } label: {
-                            HStack {
-                                Text(L10n.Settings.voiceLanguage)
-                                    .font(.body)
-                                    .foregroundStyle(Color.netoPrimaryText)
-
-                                Spacer()
-
-                                Text(selectedVoiceLanguage.displayName)
-                                    .font(.body)
-                                    .foregroundStyle(.secondary)
-
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.FormRow.paddingV)
-                            .background(Color.netoCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(.plain)
-
-                        Text(L10n.Settings.voiceLanguageDescription)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 4)
-                    }
-
                     Spacer()
                 }
                 .padding()
@@ -340,89 +297,6 @@ struct PersonalizationSettingsView: View {
                 }
             )
             .presentationDetents([.height(280)])
-        }
-        .sheet(isPresented: $showingVoiceLanguagePicker) {
-            VoiceLanguagePickerSheet(
-                selectedLanguage: selectedVoiceLanguage,
-                onSelect: { language in
-                    voiceLanguageRaw = language.rawValue
-                    showingVoiceLanguagePicker = false
-                }
-            )
-            .presentationDetents([.height(280)])
-        }
-    }
-}
-
-// MARK: - Voice Language Picker Sheet
-
-private struct VoiceLanguagePickerSheet: View {
-    let selectedLanguage: VoiceLanguage
-    let onSelect: (VoiceLanguage) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(VoiceLanguage.allCases) { language in
-                            languageRow(for: language)
-                        }
-                    }
-                    .background(Color.netoCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding()
-                }
-            }
-            .navigationTitle(L10n.Settings.voiceLanguage)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NetoToolbarButton(systemName: "xmark") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func languageRow(for language: VoiceLanguage) -> some View {
-        let isSelected = selectedLanguage == language
-
-        Button {
-            onSelect(language)
-        } label: {
-            HStack {
-                Text(language.displayName)
-                    .font(.body)
-                    .foregroundStyle(Color.netoPrimaryText)
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
-                }
-            }
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-
-        if language != VoiceLanguage.allCases.last {
-            Divider()
-                .padding(.leading, DS.Spacing.lg)
         }
     }
 }

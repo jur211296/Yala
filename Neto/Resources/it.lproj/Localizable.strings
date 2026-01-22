@@ -455,6 +455,8 @@
 "common.moreOptions" = "Altre opzioni";
 "common.comingSoon" = "Prossimamente";
 "panel.greeting" = "Pronto per neto, %@";
+"panel.fab.voice" = "Voce";
+"panel.fab.manual" = "Manuale";
 "widget.today" = "Oggi";
 
 // Widget Preferences
@@ -1080,5 +1082,5 @@
 "voiceLanguage.system" = "Sistema";
 "voiceLanguage.spanish" = "Spagnolo";
 "voiceLanguage.english" = "Inglese";
-"settings.voiceLanguage" = "Lingua vocale";
-"settings.voiceLanguageDescription" = "Lingua per la trascrizione vocale durante la registrazione delle spese.";
+"settings.voiceInputEnabled" = "Inserimento vocale con IA";
+"settings.voiceLanguage" = "Lingua";
