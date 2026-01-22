@@ -1536,6 +1536,9 @@ enum L10n {
         static var noAmount: String {
             NSLocalizedString("inbox.noAmount", comment: "No amount placeholder")
         }
+        static var noDescription: String {
+            NSLocalizedString("inbox.noDescription", comment: "No description placeholder")
+        }
         static var needsAccount: String {
             NSLocalizedString("inbox.needsAccount", comment: "Needs account indicator")
         }

@@ -22,6 +22,7 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T18:08:00-05:00] 41ac5d3 feat(voice): add smart entity extraction and improved instructions UI
 - [2026-01-22T17:10:00-05:00] 58aab0f feat(import): add XLSX file support for transaction import
 - [2026-01-22T17:03:00-05:00] 3fc8428 feat(voice): add voice recording UI and complete input flow
 - [2026-01-22T16:55:00-05:00] a070ac1 fix(panel): remove duplicate onChange handlers
@@ -31,7 +32,6 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 - [2026-01-22T14:25:00-05:00] cbe38f8 docs: update state and QA for inbox subfase 8.2
 - [2026-01-22T14:24:00-05:00] d557621 chore(l10n): add inbox localization keys in 6 languages
 - [2026-01-22T14:23:00-05:00] 62d32dd feat(inbox): add draft editing and bulk actions
-- [2026-01-22T12:45:00-05:00] a939ee3 fix(transaction-ui): match tag chip size with other selection chips
 
 ## Completed in Current Phase (V1.1)
 

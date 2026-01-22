@@ -32,7 +32,7 @@ struct InboxDraftRowView: View {
                 // Text content
                 VStack(alignment: .leading, spacing: 3) {
                     // Line 1: Note or placeholder
-                    Text(draft.note.isEmpty ? L10n.Common.uncategorized : draft.note)
+                    Text(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(draft.note.isEmpty ? .secondary : .primary)
                         .lineLimit(1)

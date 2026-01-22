@@ -1052,6 +1052,7 @@
 "inbox.noArchived" = "Sem rascunhos arquivados";
 "inbox.noArchivedDescription" = "Rascunhos aprovados ou rejeitados aparecerão aqui.";
 "inbox.noAmount" = "Sem valor";
+"inbox.noDescription" = "Sem descrição";
 "inbox.needsAccount" = "Conta";
 "inbox.needsSubcategory" = "Categoria";
 "inbox.delete" = "Excluir";

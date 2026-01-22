@@ -1052,6 +1052,7 @@
 "inbox.noArchived" = "Sin borradores archivados";
 "inbox.noArchivedDescription" = "Los borradores aprobados o rechazados aparecerán aquí.";
 "inbox.noAmount" = "Sin monto";
+"inbox.noDescription" = "Sin descripción";
 "inbox.needsAccount" = "Cuenta";
 "inbox.needsSubcategory" = "Categoría";
 "inbox.delete" = "Eliminar";

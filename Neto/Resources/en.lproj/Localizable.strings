@@ -1052,6 +1052,7 @@
 "inbox.noArchived" = "No archived drafts";
 "inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";
 "inbox.noAmount" = "No amount";
+"inbox.noDescription" = "No description";
 "inbox.needsAccount" = "Account";
 "inbox.needsSubcategory" = "Category";
 "inbox.delete" = "Delete";

@@ -238,14 +238,16 @@ final class TranscriptionParserService {
 
         var date: Date? = nil
         if let dateString = llmResponse.date {
-            // Try ISO8601 format first
-            if let parsed = dateFormatter.date(from: dateString) {
-                date = parsed
-            } else {
-                // Try simple date format
-                let simpleFormatter = DateFormatter()
-                simpleFormatter.dateFormat = "yyyy-MM-dd"
-                date = simpleFormatter.date(from: dateString)
+            // Try simple date format with local timezone
+            let simpleFormatter = DateFormatter()
+            simpleFormatter.dateFormat = "yyyy-MM-dd"
+            simpleFormatter.timeZone = .current
+            simpleFormatter.locale = Locale(identifier: "en_US_POSIX")
+
+            if let parsed = simpleFormatter.date(from: dateString) {
+                // Set time to noon to avoid timezone edge cases
+                let calendar = Calendar.current
+                date = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: parsed)
             }
         }
 

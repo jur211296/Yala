@@ -1052,6 +1052,7 @@
 "inbox.noArchived" = "Aucun brouillon archivé";
 "inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
 "inbox.noAmount" = "Sans montant";
+"inbox.noDescription" = "Sans description";
 "inbox.needsAccount" = "Compte";
 "inbox.needsSubcategory" = "Catégorie";
 "inbox.delete" = "Supprimer";

@@ -1052,6 +1052,7 @@
 "inbox.noArchived" = "Nessuna bozza archiviata";
 "inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";
 "inbox.noAmount" = "Senza importo";
+"inbox.noDescription" = "Senza descrizione";
 "inbox.needsAccount" = "Conto";
 "inbox.needsSubcategory" = "Categoria";
 "inbox.delete" = "Elimina";

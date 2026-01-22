@@ -1052,6 +1052,7 @@
 "inbox.noArchived" = "Keine archivierten Entwürfe";
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe erscheinen hier.";
 "inbox.noAmount" = "Kein Betrag";
+"inbox.noDescription" = "Keine Beschreibung";
 "inbox.needsAccount" = "Konto";
 "inbox.needsSubcategory" = "Kategorie";
 "inbox.delete" = "Löschen";

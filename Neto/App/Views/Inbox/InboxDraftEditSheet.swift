@@ -29,12 +29,17 @@ struct InboxDraftEditSheet: View {
     @State private var selectedAccount: Account?
     @State private var selectedSubcategory: Subcategory?
     @State private var selectedTags: [Tag] = []
+    @State private var isExpense: Bool = true
+
+    // Nature
+    @State private var selectedNature: SubcategoryNature?
 
     // Sheet states
     @State private var showAccountSelector = false
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showDatePicker = false
+    @State private var showNatureSelector = false
 
     // Focus state
     @FocusState private var isNoteFieldFocused: Bool
@@ -62,8 +67,8 @@ struct InboxDraftEditSheet: View {
     }
 
     private var amountColor: Color {
-        guard let amt = amount else { return .secondary }
-        return amt >= 0 ? Color.electricIndigo : Color.hotPink
+        guard amount != nil else { return .secondary }
+        return isExpense ? Color.hotPink : Color.electricIndigo
     }
 
     // MARK: - Body
@@ -86,6 +91,7 @@ struct InboxDraftEditSheet: View {
                 .sheet(isPresented: $showSubcategorySelector) { subcategorySheet }
                 .sheet(isPresented: $showTagSelector) { tagSheet }
                 .sheet(isPresented: $showDatePicker) { dateSheet }
+                .sheet(isPresented: $showNatureSelector) { natureSheet }
                 .onChange(of: showAccountSelector) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
                 }
@@ -97,6 +103,16 @@ struct InboxDraftEditSheet: View {
                 }
                 .onChange(of: showDatePicker) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
+                }
+                .onChange(of: showNatureSelector) { _, isPresenting in
+                    if isPresenting { dismissKeyboard() }
+                }
+                .onChange(of: selectedSubcategory) { _, newSubcategory in
+                    if let subcategory = newSubcategory {
+                        selectedNature = subcategory.nature
+                    } else {
+                        selectedNature = nil
+                    }
                 }
                 .alert(L10n.Inbox.cannotApprove, isPresented: $showApproveError) {
                     Button("OK", role: .cancel) {}
@@ -113,6 +129,10 @@ struct InboxDraftEditSheet: View {
                 .dismissKeyboardOnTap()
 
             VStack(spacing: 0) {
+                // Transaction type selector (full width, at top)
+                transactionTypeSelector
+                    .padding(.top, DS.Spacing.sm)
+
                 Spacer()
                 centralContent
                 Spacer()
@@ -123,6 +143,51 @@ struct InboxDraftEditSheet: View {
                     .padding(.bottom, DS.Spacing.xxl)
             }
         }
+    }
+
+    // MARK: - Transaction Type Selector
+
+    private var transactionTypeSelector: some View {
+        HStack(spacing: 0) {
+            // Expense button
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    isExpense = true
+                    selectedSubcategory = nil
+                }
+            } label: {
+                Text(L10n.Transaction.expense)
+                    .font(.subheadline.weight(isExpense ? .semibold : .regular))
+                    .foregroundStyle(isExpense ? .white : .secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(isExpense ? Color.hotPink : Color.clear)
+                    )
+            }
+
+            // Income button
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    isExpense = false
+                    selectedSubcategory = nil
+                }
+            } label: {
+                Text(L10n.Transaction.income)
+                    .font(.subheadline.weight(!isExpense ? .semibold : .regular))
+                    .foregroundStyle(!isExpense ? .white : .secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(!isExpense ? Color.electricIndigo : Color.clear)
+                    )
+            }
+        }
+        .padding(DS.Spacing.xs)
+        .background(Capsule().fill(Color.netoCard))
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     @ToolbarContentBuilder
@@ -142,10 +207,9 @@ struct InboxDraftEditSheet: View {
     }
 
     private var subcategorySheet: some View {
-        let transactionType: TransactionType = (amount ?? 0) >= 0 ? .income : .expense
-        return SubcategorySelectorSheet(
+        SubcategorySelectorSheet(
             selectedSubcategory: $selectedSubcategory,
-            transactionType: transactionType
+            transactionType: isExpense ? .expense : .income
         )
     }
 
@@ -156,6 +220,18 @@ struct InboxDraftEditSheet: View {
     private var dateSheet: some View {
         DatePickerSheet(selectedDate: $transactionDate)
             .presentationDetents([.medium, .large])
+    }
+
+    private var natureSheet: some View {
+        NatureSelectorSheet(
+            selectedNature: Binding(
+                get: {
+                    selectedNature ?? selectedSubcategory?.nature ?? .unclassified
+                },
+                set: { selectedNature = $0 }
+            )
+        )
+        .presentationDetents([.medium])
     }
 
     // MARK: - Central Content
@@ -195,6 +271,34 @@ struct InboxDraftEditSheet: View {
 
             // Amount display
             amountDisplay
+
+            // Category chip + Nature chip (visible when subcategory is selected)
+            if let subcategory = selectedSubcategory {
+                HStack(spacing: DS.Spacing.sm) {
+                    // Category chip (read-only)
+                    let category = subcategory.category
+                    let categoryColor = Color(hex: category.colorHex)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: category.iconName ?? "folder")
+                            .font(.caption2.weight(.medium))
+                        Text(category.name)
+                            .font(.caption2.weight(.medium))
+                    }
+                    .foregroundStyle(categoryColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule().fill(categoryColor.opacity(0.12))
+                    )
+
+                    NatureEditChip(
+                        nature: selectedNature ?? subcategory.nature
+                    ) {
+                        showNatureSelector = true
+                    }
+                }
+                .padding(.top, DS.Spacing.sm)
+            }
 
             // Source indicator
             sourceIndicator
@@ -468,14 +572,16 @@ struct InboxDraftEditSheet: View {
 
         if let amt = draft.amount {
             amountString = String(format: "%.2f", abs(amt))
+            isExpense = amt < 0
         } else {
             amountString = "0.00"
+            isExpense = true // Default to expense
         }
     }
 
     private func saveDraft() {
         draft.note = note
-        draft.amount = amount.map { draft.amount ?? 0 >= 0 ? abs($0) : -abs($0) } ?? draft.amount
+        draft.amount = amount.map { isExpense ? -abs($0) : abs($0) }
         draft.date = transactionDate
         draft.account = selectedAccount
         draft.subcategory = selectedSubcategory
@@ -497,6 +603,9 @@ struct InboxDraftEditSheet: View {
     }
 
     private func approveDraft() {
+        // Dismiss keyboard to ensure all field values are committed
+        dismissKeyboard()
+
         guard let account = selectedAccount else {
             approveErrorMessage = L10n.Inbox.errorNoAccount
             showApproveError = true
@@ -515,10 +624,11 @@ struct InboxDraftEditSheet: View {
             return
         }
 
-        // Create TransactionItem
+        // Create TransactionItem with current form values
+        let finalAmount = isExpense ? -abs(amt) : abs(amt)
         let transaction = TransactionItem(
             date: transactionDate,
-            amount: amt >= 0 ? amt : -abs(amt),
+            amount: finalAmount,
             currencyCode: account.currencyCode
         )
         transaction.note = note.isEmpty ? nil : note
@@ -527,9 +637,20 @@ struct InboxDraftEditSheet: View {
         transaction.category = subcategory.category
         transaction.tags = selectedTags
 
+        // Set nature override if user changed it
+        if let nature = selectedNature, nature != subcategory.nature {
+            transaction.natureOverride = nature.rawValue
+        }
+
         modelContext.insert(transaction)
 
-        // Update draft status
+        // Update draft with current values and mark as approved
+        draft.note = note
+        draft.amount = finalAmount
+        draft.date = transactionDate
+        draft.account = account
+        draft.subcategory = subcategory
+        draft.tags = selectedTags
         draft.status = .approved
         draft.updatedAt = Date()
 
