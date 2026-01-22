@@ -629,7 +629,9 @@ struct TrendsTabView: View {
                 ),
                 currencyCode: defaultCurrencyCode,
                 trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                chartHeight: 220
+                chartHeight: 220,
+                period: trendsViewModel.detailPeriod,
+                comparisonMode: sessionState.comparisonMode
             )
             .padding(.top, DS.Spacing.sm)
         }

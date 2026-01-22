@@ -19,6 +19,8 @@ struct PeriodComparisonChartView: View {
     let currencyCode: String
     let trendType: TrendType
     let chartHeight: CGFloat
+    let period: DetailPeriod
+    let comparisonMode: ComparisonMode
 
     @Environment(\.colorScheme) var colorScheme
     @State private var draggingDate: Date?  // For transient drag state
@@ -235,30 +237,117 @@ struct PeriodComparisonChartView: View {
 
     // MARK: - Helpers
 
+    /// Determines the alignment strategy based on period and comparison mode
+    private var alignmentStrategy: AlignmentStrategy {
+        switch comparisonMode {
+        case .year:
+            // Year mode: always align by exact calendar date (-1 year)
+            return .calendarYear
+        case .month:
+            // Month mode: depends on period type
+            switch period {
+            case .thisWeek:
+                // Weekly periods: align by day of week (Mon↔Mon, Tue↔Tue)
+                return .dayOfWeek
+            case .thisMonth, .lastMonth:
+                // Monthly periods: align by day of month (13↔13)
+                return .dayOfMonth
+            case .last7Days, .last30Days, .custom, .thisYear, .lastYear, .allTime:
+                // Rolling/custom periods: proportional mapping (day 1↔day 1)
+                return .proportional
+            }
+        }
+    }
+
+    private enum AlignmentStrategy {
+        case calendarYear   // Exact date -1 year
+        case dayOfMonth     // Same day of month (13 → 13)
+        case dayOfWeek      // Same day of week (Mon → Mon)
+        case proportional   // Position-based (day 1 → day 1)
+    }
+
     /// Adjust previous period dates to align with current period on X-axis
-    /// Uses proportional mapping: position in previous interval → same position in current interval
+    /// Uses different strategies based on period type and comparison mode
     private func adjustDateToCurrent(_ previousDate: Date) -> Date {
-        let previousDuration = previousInterval.duration
-        let currentDuration = currentInterval.duration
+        let calendar = Calendar.current
 
-        guard previousDuration > 0 else { return previousDate }
+        switch alignmentStrategy {
+        case .calendarYear:
+            // Add 1 year to previous date to align with current
+            return calendar.date(byAdding: .year, value: 1, to: previousDate) ?? previousDate
 
-        // Calculate relative position (0.0 to 1.0) within previous interval
-        let relativePosition = previousDate.timeIntervalSince(previousInterval.start) / previousDuration
+        case .dayOfMonth:
+            // Align by day of month: Dec 13 → Jan 13
+            let dayOfMonth = calendar.component(.day, from: previousDate)
+            // Get the month/year from current interval start
+            var components = calendar.dateComponents([.year, .month], from: currentInterval.start)
+            components.day = dayOfMonth
+            // Handle edge case: day doesn't exist in current month (e.g., 31 in Feb)
+            if let targetDate = calendar.date(from: components) {
+                return targetDate
+            }
+            // Fallback: use last day of current month
+            let lastDayOfMonth = calendar.range(of: .day, in: .month, for: currentInterval.start)?.upperBound ?? 28
+            components.day = min(dayOfMonth, lastDayOfMonth - 1)
+            return calendar.date(from: components) ?? previousDate
 
-        // Map to same relative position in current interval
-        return currentInterval.start.addingTimeInterval(relativePosition * currentDuration)
+        case .dayOfWeek:
+            // Align by day of week: Mon → Mon, Tue → Tue
+            let weekday = calendar.component(.weekday, from: previousDate)
+            // Find the same weekday in current interval
+            let currentWeekStart = currentInterval.start
+            let currentWeekday = calendar.component(.weekday, from: currentWeekStart)
+            let dayOffset = weekday - currentWeekday
+            return calendar.date(byAdding: .day, value: dayOffset, to: currentWeekStart) ?? previousDate
+
+        case .proportional:
+            // Original proportional mapping
+            let previousDuration = previousInterval.duration
+            let currentDuration = currentInterval.duration
+            guard previousDuration > 0 else { return previousDate }
+            let relativePosition = previousDate.timeIntervalSince(previousInterval.start) / previousDuration
+            return currentInterval.start.addingTimeInterval(relativePosition * currentDuration)
+        }
     }
 
     /// Get the original previous period date for a given current period date (inverse mapping)
     private func getOriginalPreviousDate(for currentDate: Date) -> Date {
-        let currentDuration = currentInterval.duration
-        let previousDuration = previousInterval.duration
+        let calendar = Calendar.current
 
-        guard currentDuration > 0 else { return currentDate }
+        switch alignmentStrategy {
+        case .calendarYear:
+            // Subtract 1 year from current date
+            return calendar.date(byAdding: .year, value: -1, to: currentDate) ?? currentDate
 
-        let relativePosition = currentDate.timeIntervalSince(currentInterval.start) / currentDuration
-        return previousInterval.start.addingTimeInterval(relativePosition * previousDuration)
+        case .dayOfMonth:
+            // Inverse: get day of month from current, apply to previous month
+            let dayOfMonth = calendar.component(.day, from: currentDate)
+            var components = calendar.dateComponents([.year, .month], from: previousInterval.start)
+            components.day = dayOfMonth
+            if let targetDate = calendar.date(from: components) {
+                return targetDate
+            }
+            // Fallback: use last day of previous month
+            let lastDayOfMonth = calendar.range(of: .day, in: .month, for: previousInterval.start)?.upperBound ?? 28
+            components.day = min(dayOfMonth, lastDayOfMonth - 1)
+            return calendar.date(from: components) ?? currentDate
+
+        case .dayOfWeek:
+            // Inverse: get weekday from current, find same in previous week
+            let weekday = calendar.component(.weekday, from: currentDate)
+            let previousWeekStart = previousInterval.start
+            let previousWeekday = calendar.component(.weekday, from: previousWeekStart)
+            let dayOffset = weekday - previousWeekday
+            return calendar.date(byAdding: .day, value: dayOffset, to: previousWeekStart) ?? currentDate
+
+        case .proportional:
+            // Original inverse proportional mapping
+            let currentDuration = currentInterval.duration
+            let previousDuration = previousInterval.duration
+            guard currentDuration > 0 else { return currentDate }
+            let relativePosition = currentDate.timeIntervalSince(currentInterval.start) / currentDuration
+            return previousInterval.start.addingTimeInterval(relativePosition * previousDuration)
+        }
     }
 
     /// Format currency value for Y-axis (shortened) - matches TrendChartView format
