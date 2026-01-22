@@ -22,6 +22,11 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-22T12:45:00-05:00] a939ee3 fix(transaction-ui): match tag chip size with other selection chips
+- [2026-01-22T12:42:00-05:00] cac01fc fix(transaction-ui): improve category and tag chips styling
+- [2026-01-22T12:38:00-05:00] 5e401b9 fix(transaction-ui): improve amount, tags, date chip and toast
+- [2026-01-22T12:30:00-05:00] f1051ac fix(period): prevent ViewModels from overwriting period selection
+- [2026-01-22T12:00:00-05:00] c6294fa fix(records): balance now equals income minus expense
 - [2026-01-22T11:45:00-05:00] 50e542c fix(filters): prevent auto-expense when selecting income categories
 - [2026-01-22T10:45:00-05:00] 3361855 fix(tests): update currency count test to expect 7 currencies
 - [2026-01-22T10:44:00-05:00] cbfe355 docs(qa): add transfer classification test scenarios
