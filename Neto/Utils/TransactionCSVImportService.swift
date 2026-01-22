@@ -17,8 +17,8 @@ import SwiftData
 
 // MARK: - Tipos auxiliares
 
-/// Columnas esperadas en el CSV.
-enum CSVImportColumn: String {
+/// Columnas esperadas en archivos de importación (CSV/XLSX).
+enum ImportColumn: String {
     case date
     case amount
     case currency
@@ -29,7 +29,7 @@ enum CSVImportColumn: String {
 }
 
 /// Errores de importación con detalle por fila.
-enum CSVImportError: LocalizedError {
+enum ImportError: LocalizedError {
     case invalidFileExtension
     case unreadableFile
     case emptyFile
@@ -48,7 +48,7 @@ enum CSVImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidFileExtension:
-            return "El archivo debe tener extensión .csv."
+            return "El archivo debe tener extensión .csv o .xlsx."
         case .unreadableFile:
             return "No se pudo leer el contenido del archivo CSV."
         case .emptyFile:
@@ -84,7 +84,7 @@ enum CSVImportError: LocalizedError {
     }
 }
 
-/// Representa un registro intermedio válido luego de parsear y validar el CSV.
+/// Representa un registro intermedio válido luego de parsear y validar.
 /// Todavía no se ha creado ningún `TransactionItem`.
 struct ParsedTransactionDraft {
     let date: Date
@@ -96,8 +96,20 @@ struct ParsedTransactionDraft {
     let tags: [Tag]
 }
 
+/// Representa una fila cruda leída de un archivo CSV o XLSX antes de validación.
+struct RawImportRow {
+    let rowNumber: Int
+    let date: String
+    let amount: String
+    let currency: String
+    let category: String
+    let subcategory: String
+    let tags: String?
+    let note: String?
+}
+
 /// Resultado de una importación exitosa.
-struct CSVImportResult {
+struct TransactionImportResult {
     let createdCount: Int
     let drafts: [ParsedTransactionDraft]
 }
@@ -121,14 +133,14 @@ enum TransactionCSVImportService {
     ///   - account: Cuenta destino seleccionada por el usuario.
     ///   - context: ModelContext de SwiftData.
     ///
-    /// - Returns: CSVImportResult con el número de registros creados.
+    /// - Returns: TransactionImportResult con el número de registros creados.
     @MainActor
     static func importCSV(
         from url: URL,
         into account: Account,
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true
-    ) async throws -> CSVImportResult {
+    ) async throws -> TransactionImportResult {
 
         // Resolve preferred currency once
         let preferredCode = CurrencyDefaults.currentPreferred
@@ -220,11 +232,11 @@ enum TransactionCSVImportService {
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
         createTransaction: (ParsedTransactionDraft, ModelContext) throws -> Void
-    ) async throws -> CSVImportResult {
+    ) async throws -> TransactionImportResult {
 
         // 1. Validar extensión
         guard url.pathExtension.lowercased() == "csv" else {
-            throw CSVImportError.invalidFileExtension
+            throw ImportError.invalidFileExtension
         }
 
         // 2. Start accessing security-scoped resource (REQUIRED for real devices)
@@ -241,7 +253,7 @@ enum TransactionCSVImportService {
         do {
             rawContents = try String(contentsOf: url, encoding: .utf8)
         } catch {
-            throw CSVImportError.unreadableFile
+            throw ImportError.unreadableFile
         }
 
         // 3. Dividir en líneas y limpiar vacías finales
@@ -251,7 +263,7 @@ enum TransactionCSVImportService {
         }
 
         guard !lines.isEmpty else {
-            throw CSVImportError.emptyFile
+            throw ImportError.emptyFile
         }
 
         // 4. Validar encabezado
@@ -281,7 +293,7 @@ enum TransactionCSVImportService {
             headerMatchesBase || headerMatchesWithNote || headerMatchesWithTagsAndNote
                 || headerMatchesWithTagsOnly
         else {
-            throw CSVImportError.invalidHeader(found: headerLine)
+            throw ImportError.invalidHeader(found: headerLine)
         }
 
         let hasTagsColumn = headerMatchesWithTagsAndNote || headerMatchesWithTagsOnly
@@ -359,7 +371,7 @@ enum TransactionCSVImportService {
             }
 
             if columns.count != expectedColumnCount {
-                throw CSVImportError.invalidColumnCount(
+                throw ImportError.invalidColumnCount(
                     row: rowNumber,
                     expected: expectedColumnCount,
                     found: columns.count
@@ -388,8 +400,8 @@ enum TransactionCSVImportService {
             let noteString = noteIndex != nil ? columns[noteIndex!] : nil
 
             // 5.1 Validar fecha
-            guard let parsedDate = parseCSVDate(dateString) else {
-                throw CSVImportError.invalidDate(
+            guard let parsedDate = parseDate(dateString) else {
+                throw ImportError.invalidDate(
                     row: rowNumber,
                     value: dateString
                 )
@@ -397,19 +409,19 @@ enum TransactionCSVImportService {
 
             // 5.2 Validar monto usando parseDecimal (utilidad existente en Neto),
             // normalizando primero el separador decimal ("," o ".") y miles.
-            let normalizedAmountString = normalizeCSVAmountString(amountString)
+            let normalizedAmountString = normalizeAmountString(amountString)
 
             guard let decimalAmount = parseDecimal(from: normalizedAmountString) else {
-                throw CSVImportError.invalidAmount(
+                throw ImportError.invalidAmount(
                     row: rowNumber,
                     value: amountString
                 )
             }
 
             // 5.3 Normalizar y validar moneda (aceptando sinónimos comunes)
-            let normalizedFileCurrency = normalizeCSVCurrencyCode(currencyString)
+            let normalizedFileCurrency = normalizeCurrencyInput(currencyString)
             if normalizedFileCurrency.isEmpty {
-                throw CSVImportError.invalidCurrency(
+                throw ImportError.invalidCurrency(
                     row: rowNumber,
                     value: currencyString
                 )
@@ -417,7 +429,7 @@ enum TransactionCSVImportService {
 
             // 5.4 Validar compatibilidad con la cuenta destino
             guard normalizedFileCurrency == normalizedAccountCurrency else {
-                throw CSVImportError.currencyMismatchWithAccount(
+                throw ImportError.currencyMismatchWithAccount(
                     row: rowNumber,
                     fileCurrency: normalizedFileCurrency,
                     accountCurrency: normalizedAccountCurrency
@@ -427,12 +439,12 @@ enum TransactionCSVImportService {
             // 5.5 Validar categoría y subcategoría
             let trimmedCategory = categoryName.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedCategory.isEmpty else {
-                throw CSVImportError.emptyCategory(row: rowNumber)
+                throw ImportError.emptyCategory(row: rowNumber)
             }
 
             let trimmedSubcategory = subcategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedSubcategory.isEmpty else {
-                throw CSVImportError.emptySubcategory(row: rowNumber)
+                throw ImportError.emptySubcategory(row: rowNumber)
             }
 
             // 5.6 Resolver categoría y subcategoría
@@ -468,7 +480,7 @@ enum TransactionCSVImportService {
                 let fetchedCategories = try context.fetch(categoryDescriptor)
 
                 guard let existingCategory = fetchedCategories.first else {
-                    throw CSVImportError.unknownCategory(
+                    throw ImportError.unknownCategory(
                         row: rowNumber,
                         name: trimmedCategory
                     )
@@ -490,7 +502,7 @@ enum TransactionCSVImportService {
                         $0.category === category
                     })
                 else {
-                    throw CSVImportError.unknownSubcategory(
+                    throw ImportError.unknownSubcategory(
                         row: rowNumber,
                         categoryName: trimmedCategory,
                         name: trimmedSubcategory
@@ -534,7 +546,7 @@ enum TransactionCSVImportService {
             try createTransaction(draft, context)
         }
 
-        return CSVImportResult(
+        return TransactionImportResult(
             createdCount: drafts.count,
             drafts: drafts
         )
@@ -601,15 +613,136 @@ enum TransactionCSVImportService {
         return resolved
     }
 
+    // MARK: - Validación de filas
+
+    /// Valida una fila cruda y la convierte en un ParsedTransactionDraft.
+    ///
+    /// Esta función extrae la lógica de validación para ser reutilizada entre CSV y XLSX.
+    ///
+    /// - Parameters:
+    ///   - row: Fila cruda con valores como strings.
+    ///   - accountCurrency: Código de moneda de la cuenta destino (normalizado).
+    ///   - allowCreatingNewCategories: Si se permite crear categorías/subcategorías nuevas.
+    ///   - context: ModelContext de SwiftData.
+    ///
+    /// - Returns: ParsedTransactionDraft con valores validados y entidades resueltas.
+    static func validateAndCreateDraft(
+        from row: RawImportRow,
+        accountCurrency: String,
+        allowCreatingNewCategories: Bool,
+        context: ModelContext
+    ) throws -> ParsedTransactionDraft {
+        let rowNumber = row.rowNumber
+
+        // 1. Validar fecha
+        guard let parsedDate = parseDate(row.date) else {
+            throw ImportError.invalidDate(row: rowNumber, value: row.date)
+        }
+
+        // 2. Validar monto
+        let normalizedAmountString = normalizeAmountString(row.amount)
+        guard let decimalAmount = parseDecimal(from: normalizedAmountString) else {
+            throw ImportError.invalidAmount(row: rowNumber, value: row.amount)
+        }
+
+        // 3. Normalizar y validar moneda
+        let normalizedCurrency = normalizeCurrencyInput(row.currency)
+        if normalizedCurrency.isEmpty {
+            throw ImportError.invalidCurrency(row: rowNumber, value: row.currency)
+        }
+
+        // 4. Validar compatibilidad con la cuenta destino
+        guard normalizedCurrency == accountCurrency else {
+            throw ImportError.currencyMismatchWithAccount(
+                row: rowNumber,
+                fileCurrency: normalizedCurrency,
+                accountCurrency: accountCurrency
+            )
+        }
+
+        // 5. Validar que categoría y subcategoría no estén vacías
+        let trimmedCategory = row.category.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedCategory.isEmpty else {
+            throw ImportError.emptyCategory(row: rowNumber)
+        }
+
+        let trimmedSubcategory = row.subcategory.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedSubcategory.isEmpty else {
+            throw ImportError.emptySubcategory(row: rowNumber)
+        }
+
+        // 6. Resolver categoría y subcategoría
+        let isIncome = decimalAmount >= 0
+
+        let category: Category
+        let subcategory: Subcategory
+
+        if allowCreatingNewCategories {
+            category = try CategoryImportHelper.fetchOrCreateCategory(
+                named: trimmedCategory,
+                isIncome: isIncome,
+                in: context
+            )
+            subcategory = try CategoryImportHelper.fetchOrCreateSubcategory(
+                named: trimmedSubcategory,
+                in: category,
+                isIncome: isIncome,
+                in: context
+            )
+        } else {
+            let categoryDescriptor = FetchDescriptor<Category>(
+                predicate: #Predicate { cat in
+                    cat.name == trimmedCategory
+                }
+            )
+            let fetchedCategories = try context.fetch(categoryDescriptor)
+
+            guard let existingCategory = fetchedCategories.first else {
+                throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
+            }
+            category = existingCategory
+
+            let subcategoryDescriptor = FetchDescriptor<Subcategory>(
+                predicate: #Predicate { sub in
+                    sub.name == trimmedSubcategory
+                }
+            )
+            let fetchedSubcategories = try context.fetch(subcategoryDescriptor)
+
+            guard let existingSubcategory = fetchedSubcategories.first(where: { $0.category === category }) else {
+                throw ImportError.unknownSubcategory(
+                    row: rowNumber,
+                    categoryName: trimmedCategory,
+                    name: trimmedSubcategory
+                )
+            }
+            subcategory = existingSubcategory
+        }
+
+        // 7. Resolver etiquetas (tags)
+        let resolvedTags = try resolveTags(from: row.tags, in: context, allowCreatingNewTags: true)
+
+        // 8. Construir y retornar draft
+        return ParsedTransactionDraft(
+            date: parsedDate,
+            amount: decimalAmount,
+            normalizedCurrencyCode: normalizedCurrency,
+            category: category,
+            subcategory: subcategory,
+            note: row.note?.isEmpty == true ? nil : row.note,
+            tags: resolvedTags
+        )
+    }
+
     // MARK: - Parseo de fechas
 
-    /// Intenta parsear la fecha del CSV usando varios formatos soportados.
+    /// Intenta parsear la fecha usando varios formatos soportados.
     ///
     /// Formatos de ejemplo:
     /// - yyyy-MM-dd
     /// - dd/MM/yyyy
     /// - MM/dd/yyyy
-    private static func parseCSVDate(_ value: String) -> Date? {
+    private static func parseDate(_ value: String) -> Date? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return nil }
 
@@ -704,7 +837,7 @@ enum TransactionCSVImportService {
     /// - "1.234,56"
     /// - "1234,56"
     /// - Signos + y - al inicio.
-    private static func normalizeCSVAmountString(_ value: String) -> String {
+    private static func normalizeAmountString(_ value: String) -> String {
         var s = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.isEmpty { return s }
 
@@ -751,7 +884,7 @@ enum TransactionCSVImportService {
     }
 
     /// Normaliza códigos de moneda aceptando sinónimos habituales en CSV.
-    private static func normalizeCSVCurrencyCode(_ rawValue: String) -> String {
+    static func normalizeCurrencyInput(_ rawValue: String) -> String {
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return "" }
 
@@ -819,7 +952,7 @@ enum TransactionCSVImportService {
     static func scanCurrencies(from url: URL) throws -> Set<String> {
         // Validar extensión
         guard url.pathExtension.lowercased() == "csv" else {
-            throw CSVImportError.invalidFileExtension
+            throw ImportError.invalidFileExtension
         }
 
         // Acceder al recurso con seguridad
@@ -835,7 +968,7 @@ enum TransactionCSVImportService {
         do {
             rawContents = try String(contentsOf: url, encoding: .utf8)
         } catch {
-            throw CSVImportError.unreadableFile
+            throw ImportError.unreadableFile
         }
 
         // Dividir en líneas
@@ -846,7 +979,7 @@ enum TransactionCSVImportService {
         }
 
         guard !lines.isEmpty else {
-            throw CSVImportError.emptyFile
+            throw ImportError.emptyFile
         }
 
         // Detectar delimitador y saltar header
@@ -868,7 +1001,7 @@ enum TransactionCSVImportService {
             // Columna de moneda es índice 2 (date, amount, currency, ...)
             if columns.count > 2 {
                 let currencyString = columns[2]
-                let normalizedCurrency = normalizeCSVCurrencyCode(currencyString)
+                let normalizedCurrency = normalizeCurrencyInput(currencyString)
                 if !normalizedCurrency.isEmpty {
                     currencies.insert(normalizedCurrency)
                 }
@@ -888,14 +1021,14 @@ enum TransactionCSVImportService {
     ///   - context: ModelContext de SwiftData.
     ///   - allowCreatingNewCategories: Si se permite crear categorías/subcategorías nuevas.
     ///
-    /// - Returns: CSVImportResult con el número de registros creados.
+    /// - Returns: TransactionImportResult con el número de registros creados.
     @MainActor
     static func importCSVMultiCurrency(
         from url: URL,
         currencyAccountMap: [String: Account],
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true
-    ) async throws -> CSVImportResult {
+    ) async throws -> TransactionImportResult {
 
         // Resolve preferred currency once
         let preferredCode = CurrencyDefaults.currentPreferred
@@ -982,11 +1115,11 @@ enum TransactionCSVImportService {
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
         createTransaction: (ParsedTransactionDraft, Account, ModelContext) throws -> Void
-    ) async throws -> CSVImportResult {
+    ) async throws -> TransactionImportResult {
 
         // 1. Validar extensión
         guard url.pathExtension.lowercased() == "csv" else {
-            throw CSVImportError.invalidFileExtension
+            throw ImportError.invalidFileExtension
         }
 
         // 2. Acceder al recurso con seguridad
@@ -1002,7 +1135,7 @@ enum TransactionCSVImportService {
         do {
             rawContents = try String(contentsOf: url, encoding: .utf8)
         } catch {
-            throw CSVImportError.unreadableFile
+            throw ImportError.unreadableFile
         }
 
         // 4. Dividir en líneas
@@ -1012,7 +1145,7 @@ enum TransactionCSVImportService {
         }
 
         guard !lines.isEmpty else {
-            throw CSVImportError.emptyFile
+            throw ImportError.emptyFile
         }
 
         // 5. Validar encabezado
@@ -1033,7 +1166,7 @@ enum TransactionCSVImportService {
         let headerMatchesWithTagsOnly = headerColumns == expectedWithTagsOnly
 
         guard headerMatchesBase || headerMatchesWithNote || headerMatchesWithTagsAndNote || headerMatchesWithTagsOnly else {
-            throw CSVImportError.invalidHeader(found: headerLine)
+            throw ImportError.invalidHeader(found: headerLine)
         }
 
         let hasTagsColumn = headerMatchesWithTagsAndNote || headerMatchesWithTagsOnly
@@ -1082,7 +1215,7 @@ enum TransactionCSVImportService {
             }
 
             if columns.count != expectedColumnCount {
-                throw CSVImportError.invalidColumnCount(
+                throw ImportError.invalidColumnCount(
                     row: rowNumber,
                     expected: expectedColumnCount,
                     found: columns.count
@@ -1102,31 +1235,31 @@ enum TransactionCSVImportService {
             let noteString = noteIndex != nil ? columns[noteIndex!] : nil
 
             // Validar fecha
-            guard let parsedDate = parseCSVDate(dateString) else {
-                throw CSVImportError.invalidDate(row: rowNumber, value: dateString)
+            guard let parsedDate = parseDate(dateString) else {
+                throw ImportError.invalidDate(row: rowNumber, value: dateString)
             }
 
             // Validar monto
-            let normalizedAmountString = normalizeCSVAmountString(amountString)
+            let normalizedAmountString = normalizeAmountString(amountString)
             guard let decimalAmount = parseDecimal(from: normalizedAmountString) else {
-                throw CSVImportError.invalidAmount(row: rowNumber, value: amountString)
+                throw ImportError.invalidAmount(row: rowNumber, value: amountString)
             }
 
             // Normalizar y validar moneda
-            let normalizedCurrency = normalizeCSVCurrencyCode(currencyString)
+            let normalizedCurrency = normalizeCurrencyInput(currencyString)
             if normalizedCurrency.isEmpty {
-                throw CSVImportError.invalidCurrency(row: rowNumber, value: currencyString)
+                throw ImportError.invalidCurrency(row: rowNumber, value: currencyString)
             }
 
             // Buscar cuenta para esta moneda
             guard let account = currencyAccountMap[normalizedCurrency] else {
-                throw CSVImportError.missingAccountForCurrency(row: rowNumber, currency: normalizedCurrency)
+                throw ImportError.missingAccountForCurrency(row: rowNumber, currency: normalizedCurrency)
             }
 
             // Validar que la moneda coincide con la cuenta
             let normalizedAccountCurrency = normalizeCurrencyCode(account.currencyCode)
             guard normalizedCurrency == normalizedAccountCurrency else {
-                throw CSVImportError.currencyMismatchWithAccount(
+                throw ImportError.currencyMismatchWithAccount(
                     row: rowNumber,
                     fileCurrency: normalizedCurrency,
                     accountCurrency: normalizedAccountCurrency
@@ -1136,12 +1269,12 @@ enum TransactionCSVImportService {
             // Validar categoría y subcategoría
             let trimmedCategory = categoryName.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedCategory.isEmpty else {
-                throw CSVImportError.emptyCategory(row: rowNumber)
+                throw ImportError.emptyCategory(row: rowNumber)
             }
 
             let trimmedSubcategory = subcategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedSubcategory.isEmpty else {
-                throw CSVImportError.emptySubcategory(row: rowNumber)
+                throw ImportError.emptySubcategory(row: rowNumber)
             }
 
             // Resolver categoría y subcategoría
@@ -1173,7 +1306,7 @@ enum TransactionCSVImportService {
                 let fetchedCategories = try context.fetch(categoryDescriptor)
 
                 guard let existingCategory = fetchedCategories.first else {
-                    throw CSVImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
+                    throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
                 }
                 category = existingCategory
 
@@ -1185,7 +1318,7 @@ enum TransactionCSVImportService {
                 let fetchedSubcategories = try context.fetch(subcategoryDescriptor)
 
                 guard let existingSubcategory = fetchedSubcategories.first(where: { $0.category === category }) else {
-                    throw CSVImportError.unknownSubcategory(
+                    throw ImportError.unknownSubcategory(
                         row: rowNumber,
                         categoryName: trimmedCategory,
                         name: trimmedSubcategory
@@ -1216,7 +1349,258 @@ enum TransactionCSVImportService {
             try createTransaction(draft, account, context)
         }
 
-        return CSVImportResult(
+        return TransactionImportResult(
+            createdCount: drafts.count,
+            drafts: drafts.map { $0.0 }
+        )
+    }
+
+    // MARK: - Importación XLSX
+
+    /// Importa un archivo XLSX en una cuenta concreta y crea `TransactionItem`
+    /// por cada fila válida.
+    ///
+    /// - Parameters:
+    ///   - url: URL local del archivo XLSX.
+    ///   - account: Cuenta destino seleccionada por el usuario.
+    ///   - context: ModelContext de SwiftData.
+    ///   - allowCreatingNewCategories: Si se permite crear categorías/subcategorías nuevas.
+    ///
+    /// - Returns: TransactionImportResult con el número de registros creados.
+    @MainActor
+    static func importXLSX(
+        from url: URL,
+        into account: Account,
+        in context: ModelContext,
+        allowCreatingNewCategories: Bool = true
+    ) async throws -> TransactionImportResult {
+
+        // Validar extensión
+        guard url.pathExtension.lowercased() == "xlsx" else {
+            throw ImportError.invalidFileExtension
+        }
+
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let normalizedAccountCurrency = normalizeCurrencyCode(account.currencyCode)
+
+        // 1. Leer filas del archivo XLSX
+        let rawRows = try XLSXReader.readRows(from: url)
+
+        guard !rawRows.isEmpty else {
+            throw ImportError.emptyFile
+        }
+
+        // 2. Validar y crear drafts
+        var drafts: [ParsedTransactionDraft] = []
+        drafts.reserveCapacity(rawRows.count)
+
+        for row in rawRows {
+            let draft = try validateAndCreateDraft(
+                from: row,
+                accountCurrency: normalizedAccountCurrency,
+                allowCreatingNewCategories: allowCreatingNewCategories,
+                context: context
+            )
+            drafts.append(draft)
+        }
+
+        // 3. Crear transacciones
+        for draft in drafts {
+            let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
+
+            let hasExactRate = CurrencyConverter.shared.hasExactRate(
+                for: draft.date, context: context)
+
+            let amountInPreferred = CurrencyConverter.shared.convert(
+                draft.amount,
+                from: draft.normalizedCurrencyCode,
+                to: preferredCode,
+                on: draft.date,
+                context: context
+            )
+
+            let effectiveRate: Double
+            if abs(amountDouble) > 0.0001 {
+                effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / amountDouble
+            } else {
+                effectiveRate = 1.0
+            }
+
+            let transaction = TransactionItem(
+                date: draft.date,
+                amount: amountDouble,
+                currencyCode: draft.normalizedCurrencyCode,
+                note: draft.note,
+                category: draft.category,
+                subcategory: draft.subcategory,
+                account: account,
+                tags: draft.tags,
+                exchangeRate: abs(effectiveRate),
+                amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
+                preferredCurrencyCode: preferredCode,
+                isExchangeRateProvisional: !hasExactRate
+            )
+
+            if draft.subcategory.isSystemSubcategory {
+                let subcategoryName = draft.subcategory.name
+                if subcategoryName == "Ajustes de saldo" {
+                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+                } else {
+                    transaction.balanceAdjustmentType = "transfer"
+                }
+            }
+
+            context.insert(transaction)
+        }
+
+        // 4. Actualizar fecha de saldo inicial si es necesario
+        let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
+        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+            InitialBalanceService.updateInitialBalanceDateIfNeeded(
+                for: account,
+                allTransactions: allTransactions,
+                context: context
+            )
+        }
+
+        return TransactionImportResult(
+            createdCount: drafts.count,
+            drafts: drafts
+        )
+    }
+
+    /// Escanea un archivo (CSV o XLSX) y devuelve el conjunto de monedas únicas encontradas.
+    ///
+    /// - Parameter url: URL local del archivo.
+    /// - Returns: Set con los códigos de moneda normalizados encontrados.
+    static func scanCurrenciesFromFile(from url: URL) throws -> Set<String> {
+        let ext = url.pathExtension.lowercased()
+
+        if ext == "xlsx" {
+            return try XLSXReader.scanCurrencies(from: url)
+        } else if ext == "csv" {
+            return try scanCurrencies(from: url)
+        } else {
+            throw ImportError.invalidFileExtension
+        }
+    }
+
+    /// Importa un archivo XLSX con múltiples monedas, usando una cuenta diferente para cada moneda.
+    ///
+    /// - Parameters:
+    ///   - url: URL local del archivo XLSX.
+    ///   - currencyAccountMap: Diccionario que mapea código de moneda (ej: "PEN") a la cuenta destino.
+    ///   - context: ModelContext de SwiftData.
+    ///   - allowCreatingNewCategories: Si se permite crear categorías/subcategorías nuevas.
+    ///
+    /// - Returns: TransactionImportResult con el número de registros creados.
+    @MainActor
+    static func importXLSXMultiCurrency(
+        from url: URL,
+        currencyAccountMap: [String: Account],
+        in context: ModelContext,
+        allowCreatingNewCategories: Bool = true
+    ) async throws -> TransactionImportResult {
+
+        // Validar extensión
+        guard url.pathExtension.lowercased() == "xlsx" else {
+            throw ImportError.invalidFileExtension
+        }
+
+        let preferredCode = CurrencyDefaults.currentPreferred
+
+        // 1. Leer filas del archivo XLSX
+        let rawRows = try XLSXReader.readRows(from: url)
+
+        guard !rawRows.isEmpty else {
+            throw ImportError.emptyFile
+        }
+
+        // 2. Validar y crear drafts con sus cuentas correspondientes
+        var drafts: [(ParsedTransactionDraft, Account)] = []
+        drafts.reserveCapacity(rawRows.count)
+
+        for row in rawRows {
+            let normalizedCurrency = normalizeCurrencyInput(row.currency)
+
+            guard let account = currencyAccountMap[normalizedCurrency] else {
+                throw ImportError.missingAccountForCurrency(row: row.rowNumber, currency: normalizedCurrency)
+            }
+
+            let normalizedAccountCurrency = normalizeCurrencyCode(account.currencyCode)
+
+            let draft = try validateAndCreateDraft(
+                from: row,
+                accountCurrency: normalizedAccountCurrency,
+                allowCreatingNewCategories: allowCreatingNewCategories,
+                context: context
+            )
+
+            drafts.append((draft, account))
+        }
+
+        // 3. Crear transacciones
+        for (draft, account) in drafts {
+            let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
+
+            let hasExactRate = CurrencyConverter.shared.hasExactRate(
+                for: draft.date, context: context)
+
+            let amountInPreferred = CurrencyConverter.shared.convert(
+                draft.amount,
+                from: draft.normalizedCurrencyCode,
+                to: preferredCode,
+                on: draft.date,
+                context: context
+            )
+
+            let effectiveRate: Double
+            if abs(amountDouble) > 0.0001 {
+                effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / amountDouble
+            } else {
+                effectiveRate = 1.0
+            }
+
+            let transaction = TransactionItem(
+                date: draft.date,
+                amount: amountDouble,
+                currencyCode: draft.normalizedCurrencyCode,
+                note: draft.note,
+                category: draft.category,
+                subcategory: draft.subcategory,
+                account: account,
+                tags: draft.tags,
+                exchangeRate: abs(effectiveRate),
+                amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
+                preferredCurrencyCode: preferredCode,
+                isExchangeRateProvisional: !hasExactRate
+            )
+
+            if draft.subcategory.isSystemSubcategory {
+                let subcategoryName = draft.subcategory.name
+                if subcategoryName == "Ajustes de saldo" {
+                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
+                } else {
+                    transaction.balanceAdjustmentType = "transfer"
+                }
+            }
+
+            context.insert(transaction)
+        }
+
+        // 4. Actualizar fechas de saldo inicial para todas las cuentas afectadas
+        let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
+        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+            for account in Set(currencyAccountMap.values) {
+                InitialBalanceService.updateInitialBalanceDateIfNeeded(
+                    for: account,
+                    allTransactions: allTransactions,
+                    context: context
+                )
+            }
+        }
+
+        return TransactionImportResult(
             createdCount: drafts.count,
             drafts: drafts.map { $0.0 }
         )
