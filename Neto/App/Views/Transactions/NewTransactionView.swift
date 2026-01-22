@@ -277,7 +277,7 @@ struct NewTransactionView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(Capsule().fill(Color.electricIndigo))
+                        .background(Capsule().fill(Color(UIColor.darkGray)))
                         .padding(.bottom, DS.Spacing.xxxl)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -332,13 +332,13 @@ struct NewTransactionView: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 16, weight: .medium))
                     Text(dateChipText)
-                        .font(.subheadline.weight(.medium))
+                        .font(.callout.weight(.medium))
                 }
                 .foregroundStyle(.primary)
-                .padding(.horizontal, DS.FormRow.paddingV)
-                .padding(.vertical, DS.Spacing.sm)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
                 .background(
                     Capsule()
                         .fill(Color(UIColor.label).opacity(0.08))
@@ -378,13 +378,22 @@ struct NewTransactionView: View {
                 amountDisplay
             }
 
-            // Nature chip (visible when subcategory is selected, not for transfers)
+            // Category label + Nature chip (visible when subcategory is selected, not for transfers)
             if !viewModel.isTransfer, viewModel.selectedSubcategory != nil {
-                NatureEditChip(
-                    nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
-                        ?? .unclassified
-                ) {
-                    viewModel.showNatureSelector = true
+                HStack(spacing: DS.Spacing.sm) {
+                    // Category label (read-only)
+                    if let categoryName = viewModel.selectedSubcategory?.category.name {
+                        Text(categoryName)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    NatureEditChip(
+                        nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
+                            ?? .unclassified
+                    ) {
+                        viewModel.showNatureSelector = true
+                    }
                 }
                 .padding(.top, DS.Spacing.sm)
             }
@@ -403,19 +412,31 @@ struct NewTransactionView: View {
         }
     }
 
+    /// Dynamic font size for amount based on length
+    private var amountFontSize: CGFloat {
+        let length = viewModel.amountString.count
+        switch length {
+        case 0...7: return 64
+        case 8...9: return 54
+        case 10...11: return 46
+        case 12...13: return 38
+        default: return 32
+        }
+    }
+
     private var amountDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             Text(currencySymbol)
-                .font(.system(size: 28, weight: .medium, design: .rounded))
+                .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
                 .foregroundStyle(viewModel.amountColor.opacity(0.7))
 
             TextField("0.00", text: $viewModel.amountString)
-                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(viewModel.amountColor)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($isAmountFieldFocused)
-                .frame(width: 250)  // Increased width for decimals
+                .fixedSize(horizontal: true, vertical: false)  // Dynamic width based on content
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     // When field gets focus and value is just "0" or "0.00", clear it
                     if isFocused
@@ -657,16 +678,30 @@ struct NewTransactionView: View {
                             viewModel.showTagSelector = true
                         }
                     } else {
-                        // Individual chip for each selected tag
+                        // Individual chip for each selected tag with remove button
                         ForEach(viewModel.selectedTags, id: \.persistentModelID) { tag in
-                            SelectionChip(
-                                icon: "number",
-                                text: tag.name,
-                                isSelected: true,
-                                color: Color.tagChipColor
-                            ) {
-                                dismissKeyboard()
-                                viewModel.showTagSelector = true
+                            HStack(spacing: 0) {
+                                SelectionChip(
+                                    icon: "number",
+                                    text: tag.name,
+                                    isSelected: true,
+                                    color: Color.tagChipColor
+                                ) {
+                                    dismissKeyboard()
+                                    viewModel.showTagSelector = true
+                                }
+
+                                // Remove button
+                                Button {
+                                    withAnimation {
+                                        viewModel.selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
+                                    }
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.leading, -DS.Spacing.xs)
                             }
                         }
                     }
