@@ -1,31 +1,26 @@
 {
   "permissions": {
     "deny": [
-      "Bash(rm:*)",
-      "Bash(sudo:*)"
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
     ],
     "allow": [
-      "Bash(pwd:*)",
-      "Bash(ls:*)",
-      "Bash(cd:*)",
-      "Bash(cat:*)",
-      "Bash(mkdir:*)",
-      "Bash(mkdir -p:*)",
-
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git log:*)",
-      "Bash(git branch:*)",
-
-      "Bash(xcodebuild:*)",
-      "Bash(grep:*)",
-      "Bash(head:*)",
-      "Bash(cat >> /Users/jur/Neto/*)",
-      "Bash(mkdir -p .claude/sessions*)",
-      "Bash(cat >> \".claude/sessions/*)",
-      "Bash(echo*)"
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Task",
+      "WebFetch",
+      "WebSearch",
+      "NotebookEdit"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
   }
 }

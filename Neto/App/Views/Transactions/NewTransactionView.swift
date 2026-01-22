@@ -383,7 +383,7 @@ struct NewTransactionView: View {
                 HStack(spacing: DS.Spacing.sm) {
                     // Category chip (read-only, styled like NatureEditChip)
                     let category = subcategory.category
-                    let categoryColor = Color(hex: category.colorHex) ?? .gray
+                    let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
                             .font(.caption2.weight(.medium))
@@ -398,7 +398,7 @@ struct NewTransactionView: View {
                     )
 
                     NatureEditChip(
-                        nature: viewModel.selectedNature ?? subcategory.nature ?? .unclassified
+                        nature: viewModel.selectedNature ?? subcategory.nature
                     ) {
                         viewModel.showNatureSelector = true
                     }
@@ -696,7 +696,7 @@ struct NewTransactionView: View {
                                     viewModel.showTagSelector = true
                                 } label: {
                                     HStack(spacing: DS.Spacing.sm) {
-                                        Image(systemName: tag.iconName ?? "number")
+                                        Image(systemName: tag.iconName)
                                             .font(.system(size: 14, weight: .medium))
                                         Text(tag.name)
                                             .font(.subheadline.weight(.medium))
