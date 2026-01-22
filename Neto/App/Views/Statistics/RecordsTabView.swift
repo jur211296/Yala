@@ -109,6 +109,21 @@ struct RecordsTabView: View {
                                     onFilterChange()
                                 }
                             )
+                        } else if !viewModel.selectedCategories.isEmpty {
+                            // Direct category filter (not from subcategory)
+                            let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
+                            if let firstCat = selectedCats.first {
+                                FilterChipView(
+                                    categoryName: firstCat.name,
+                                    iconName: firstCat.iconName,
+                                    colorHex: firstCat.colorHex,
+                                    count: selectedCats.count,
+                                    onClear: {
+                                        viewModel.selectedCategories.removeAll()
+                                        onFilterChange()
+                                    }
+                                )
+                            }
                         }
 
                         // Subcategory chip (aggregated - one chip max)

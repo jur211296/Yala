@@ -209,11 +209,13 @@ final class PanelViewModel {
             sessionState.selectedNatures.insert(nature)
         }
 
-        // Additional filters - sync back (Panel receives but doesn't modify these)
+        // Additional filters - sync back
         sessionState.selectedTags = self.selectedTags
         sessionState.selectedCurrencies = self.selectedCurrencies
         sessionState.amountCondition = self.amountCondition
         sessionState.searchText = self.searchText
+        // Note: selectedTransactionNatures is managed directly via sessionState in PanelView,
+        // not through viewModel, so we don't sync it back here
 
         // Trend Metric - convert TrendType to TrendMetric
         sessionState.selectedTrendMetric = convertTrendTypeToMetric(self.trendType)

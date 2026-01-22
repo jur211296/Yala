@@ -62,6 +62,11 @@ struct CategoriesTabView: View {
     // Nature Carousel State
     @State private var natureCarouselIndex: Int? = 0
 
+    /// Effective category ID combining local selection and SessionState sync
+    private var effectiveCategoryID: PersistentIdentifier? {
+        selectedCategoryID ?? viewModel.selectedCategories.first
+    }
+
     // MARK: - List View Type
 
     enum ListViewType: String, CaseIterable, Identifiable {
@@ -110,6 +115,9 @@ struct CategoriesTabView: View {
             .netoSafeBottomPadding()
         }
         .onAppear {
+            // Sync local selection state from viewModel filters (may come from SessionState)
+            syncCategoryFilterToSelection()
+            syncSubcategoryFilterToSelection()
             calculateData()
         }
         .onChange(of: viewModel.detailPeriod) {
@@ -241,6 +249,21 @@ struct CategoriesTabView: View {
                                     selectedCategoryID = nil
                                 }
                             )
+                        } else if !viewModel.selectedCategories.isEmpty {
+                            // Chip from external filter (SessionState sync)
+                            let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
+                            if let firstCat = selectedCats.first {
+                                FilterChipView(
+                                    categoryName: firstCat.name,
+                                    iconName: firstCat.iconName,
+                                    colorHex: firstCat.colorHex,
+                                    count: selectedCats.count,
+                                    onClear: {
+                                        viewModel.selectedCategories.removeAll()
+                                        selectedCategoryID = nil
+                                    }
+                                )
+                            }
                         }
 
                         // Subcategory chip - show when subcategory selected from pie or via filter
@@ -523,12 +546,14 @@ struct CategoriesTabView: View {
                 CategoriesPieWidget(
                     categories: categorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryID: selectedCategoryID,
+                    selectedCategoryID: effectiveCategoryID,
                     onSelectCategory: { categoryID in
-                        if selectedCategoryID == categoryID {
+                        if effectiveCategoryID == categoryID {
                             selectedCategoryID = nil
+                            viewModel.selectedCategories.removeAll()
                         } else {
                             selectedCategoryID = categoryID
+                            viewModel.selectedCategories = [categoryID]
                         }
                     },
                     size: .large,
@@ -564,7 +589,7 @@ struct CategoriesTabView: View {
                 SubcategoriesPieWidget(
                     subcategories: subcategorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryID: selectedCategoryID,
+                    selectedCategoryID: effectiveCategoryID,
                     selectedSubcategoryIDs: selectedSubcategoryID.map { Set([$0]) } ?? [],
                     onSelectSubcategory: { subcategoryID in
                         if selectedSubcategoryID == subcategoryID {
@@ -808,15 +833,17 @@ struct CategoriesTabView: View {
                     AllCategoriesListContent(
                         categories: categorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryID: selectedCategoryID,
+                        selectedCategoryID: effectiveCategoryID,
                         isExpanded: isListExpanded,
                         showVariation: viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectCategory: { categoryID in
-                            if selectedCategoryID == categoryID {
+                            if effectiveCategoryID == categoryID {
                                 selectedCategoryID = nil
+                                viewModel.selectedCategories.removeAll()
                             } else {
                                 selectedCategoryID = categoryID
+                                viewModel.selectedCategories = [categoryID]
                             }
                         }
                     )
@@ -833,7 +860,7 @@ struct CategoriesTabView: View {
                     AllSubcategoriesListContent(
                         subcategories: subcategorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryID: selectedCategoryID,
+                        selectedCategoryID: effectiveCategoryID,
                         selectedSubcategoryID: selectedSubcategoryID,
                         isExpanded: isListExpanded,
                         showVariation: viewModel.detailPeriod != .allTime,
@@ -982,11 +1009,11 @@ struct CategoriesTabView: View {
             criteria: pieChartCriteria
         )
 
-        // Create criteria for nature widget (WITHOUT nature filter - show all with dim)
+        // Create criteria for nature widget (respects cat/subcat filters, but NOT nature filter - show all with dim)
         let natureCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
-            selectedCategories: [],  // Don't filter by category
-            selectedSubcategories: [],  // Don't filter by subcategory
+            selectedCategories: viewModel.selectedCategories,
+            selectedSubcategories: viewModel.selectedSubcategories,
             selectedTags: viewModel.selectedTags,
             selectedNatures: [],  // Don't filter by nature - show all with dim
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
@@ -1020,7 +1047,7 @@ struct CategoriesTabView: View {
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]
-        if let categoryID = selectedCategoryID {
+        if let categoryID = effectiveCategoryID {
             // Filter to only show subcategories of selected category
             subcategoryTransactions = pieFiltered.filter { $0.category?.persistentModelID == categoryID }
         } else {
@@ -1129,7 +1156,7 @@ struct CategoriesTabView: View {
 
         // Calculate previous period subcategory spending (filter by category if selected)
         let prevSubcategoryTransactions: [TransactionItem]
-        if let categoryID = selectedCategoryID {
+        if let categoryID = effectiveCategoryID {
             prevSubcategoryTransactions = previousFiltered.filter { $0.category?.persistentModelID == categoryID }
         } else {
             prevSubcategoryTransactions = previousFiltered

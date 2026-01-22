@@ -245,6 +245,20 @@ struct TrendsTabView: View {
                                     trendsViewModel.selectedSubcategories.removeAll()
                                 }
                             )
+                        } else if !trendsViewModel.selectedCategories.isEmpty {
+                            // Direct category filter (not from subcategory)
+                            let selectedCats = categories.filter { trendsViewModel.selectedCategories.contains($0.persistentModelID) }
+                            if let firstCat = selectedCats.first {
+                                FilterChipView(
+                                    categoryName: firstCat.name,
+                                    iconName: firstCat.iconName,
+                                    colorHex: firstCat.colorHex,
+                                    count: selectedCats.count,
+                                    onClear: {
+                                        trendsViewModel.selectedCategories.removeAll()
+                                    }
+                                )
+                            }
                         }
 
                         // Subcategory chip (aggregated - one chip max)

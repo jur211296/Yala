@@ -117,6 +117,14 @@ struct DetailContainerView: View {
                 refreshRecordsData()
                 calculateTrendsData()
             }
+            .onChange(of: sessionState.selectedMainTab) { _, newTab in
+                // Sync filters when navigating to Statistics tab (view may already be mounted)
+                if newTab == .statistics && !isFromSearch {
+                    syncFromSessionState()
+                    calculateTrendsData()
+                    refreshRecordsData()
+                }
+            }
             .onChange(of: allTransactions) {
                 // Recalculate when transactions change (e.g., initial balance modified)
                 calculateTrendsData()
