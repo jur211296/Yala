@@ -118,7 +118,7 @@ struct SubcategorySelectorSheet: View {
         .tint(Color.electricIndigo)
     }
 
-    /// Last 4 unique subcategories used in recent transactions
+    /// Last 8 unique subcategories used in recent transactions (2 rows)
     private var recentSubcategories: [Subcategory] {
         var seen = Set<PersistentIdentifier>()
         var result: [Subcategory] = []
@@ -145,7 +145,7 @@ struct SubcategorySelectorSheet: View {
             if !seen.contains(id) {
                 seen.insert(id)
                 result.append(subcategory)
-                if result.count >= 4 { break }
+                if result.count >= 8 { break }
             }
         }
 
