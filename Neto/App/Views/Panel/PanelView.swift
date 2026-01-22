@@ -207,26 +207,8 @@ struct PanelView: View {
                 accountsSortOrderNamesRaw = newOrder
             }
         }
-        .onChange(of: viewModel.selectedAccountID) {
-            // Sync to SessionState and recalculate
-            viewModel.syncToSessionState(sessionState)
-            recalculateData()
-        }
-        .onChange(of: viewModel.selectedCategoryID) {
-            // Sync to SessionState and recalculate
-            viewModel.syncToSessionState(sessionState)
-            recalculateData()
-        }
-        .onChange(of: viewModel.selectedSubcategoryIDs) {
-            // Sync to SessionState and recalculate
-            viewModel.syncToSessionState(sessionState)
-            recalculateData()
-        }
-        .onChange(of: viewModel.selectedNature) {
-            // Sync to SessionState and recalculate
-            viewModel.syncToSessionState(sessionState)
-            recalculateData()
-        }
+        // Note: Filter onChange handlers removed - filters are now SSOT computed properties
+        // that read/write directly to SessionState. PanelSessionObservers handles recalculation.
         .onChange(of: transactions) {
             // Recalculate when transactions change
             recalculateData()
@@ -262,7 +244,6 @@ struct PanelView: View {
         .modifier(
             PanelSessionObservers(
                 sessionState: sessionState,
-                syncFromSessionState: { viewModel.syncFromSessionState(sessionState) },
                 recalculateData: recalculateData
             )
         )
@@ -929,19 +910,18 @@ struct AccountFormSheet: Identifiable {
 // MARK: - Panel Observers
 
 /// Encapsulates SessionState onChange observers to reduce body complexity and avoid type-checker limits
+/// Note: With SSOT refactor, syncFromSessionState is no longer needed - filters are computed properties
+/// that read/write directly to SessionState.shared. Only recalculateData is needed.
 private struct PanelSessionObservers: ViewModifier {
     let sessionState: SessionState
-    let syncFromSessionState: () -> Void
     let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.selectedPeriod) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedAccountIDs) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedCategoryIDs) {
@@ -949,7 +929,6 @@ private struct PanelSessionObservers: ViewModifier {
                 if !sessionState.selectedCategoryIDs.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedNatures) {
@@ -957,7 +936,6 @@ private struct PanelSessionObservers: ViewModifier {
                 if !sessionState.selectedNatures.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
@@ -965,35 +943,27 @@ private struct PanelSessionObservers: ViewModifier {
                 if !sessionState.selectedSubcategoryIDs.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedTags) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedCurrencies) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedTransactionNatures) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.amountCondition) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.searchText) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.selectedTrendMetric) {
-                syncFromSessionState()
                 recalculateData()
             }
             .onChange(of: sessionState.customDateRange) {
-                syncFromSessionState()
                 recalculateData()
             }
     }

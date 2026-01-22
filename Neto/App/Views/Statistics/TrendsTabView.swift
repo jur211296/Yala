@@ -185,8 +185,8 @@ struct TrendsTabView: View {
             calculatePeriodComparisonData()
         }
         .onChange(of: sessionState.selectedTransactionNatures) {
-            // Sync transaction nature filter from SessionState and recalculate
-            trendsViewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+            // SSOT: trendsViewModel.selectedTransactionNatures IS sessionState.selectedTransactionNatures
+            // Just recalculate when it changes
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
@@ -245,6 +245,20 @@ struct TrendsTabView: View {
                                     trendsViewModel.selectedSubcategories.removeAll()
                                 }
                             )
+                        } else if !trendsViewModel.selectedCategories.isEmpty {
+                            // Direct category filter (not from subcategory)
+                            let selectedCats = categories.filter { trendsViewModel.selectedCategories.contains($0.persistentModelID) }
+                            if let firstCat = selectedCats.first {
+                                FilterChipView(
+                                    categoryName: firstCat.name,
+                                    iconName: firstCat.iconName,
+                                    colorHex: firstCat.colorHex,
+                                    count: selectedCats.count,
+                                    onClear: {
+                                        trendsViewModel.selectedCategories.removeAll()
+                                    }
+                                )
+                            }
                         }
 
                         // Subcategory chip (aggregated - one chip max)
@@ -293,8 +307,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 transactionNature: nature,
                                 onClear: {
+                                    // SSOT: trendsViewModel.selectedTransactionNatures writes to SessionState.shared
                                     trendsViewModel.selectedTransactionNatures.removeAll()
-                                    sessionState.selectedTransactionNatures.removeAll()
                                 }
                             )
                         }
@@ -304,8 +318,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 currencyCode: currency.rawValue,
                                 onClear: {
+                                    // SSOT: trendsViewModel.selectedCurrencies writes to SessionState.shared
                                     trendsViewModel.selectedCurrencies.remove(currency)
-                                    sessionState.selectedCurrencies.remove(currency)
                                 }
                             )
                         }
@@ -315,8 +329,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 amountText: trendsViewModel.amountCondition.displayText,
                                 onClear: {
+                                    // SSOT: trendsViewModel.amountCondition writes to SessionState.shared
                                     trendsViewModel.amountCondition = .any
-                                    sessionState.amountCondition = .any
                                 }
                             )
                         }
@@ -326,8 +340,8 @@ struct TrendsTabView: View {
                             FilterChipView(
                                 noteText: trendsViewModel.searchText,
                                 onClear: {
+                                    // SSOT: trendsViewModel.searchText writes to SessionState.shared
                                     trendsViewModel.searchText = ""
-                                    sessionState.searchText = ""
                                 }
                             )
                         }
@@ -615,7 +629,9 @@ struct TrendsTabView: View {
                 ),
                 currencyCode: defaultCurrencyCode,
                 trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                chartHeight: 220
+                chartHeight: 220,
+                period: trendsViewModel.detailPeriod,
+                comparisonMode: sessionState.comparisonMode
             )
             .padding(.top, DS.Spacing.sm)
         }

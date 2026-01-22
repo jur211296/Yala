@@ -109,6 +109,21 @@ struct RecordsTabView: View {
                                     onFilterChange()
                                 }
                             )
+                        } else if !viewModel.selectedCategories.isEmpty {
+                            // Direct category filter (not from subcategory)
+                            let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
+                            if let firstCat = selectedCats.first {
+                                FilterChipView(
+                                    categoryName: firstCat.name,
+                                    iconName: firstCat.iconName,
+                                    colorHex: firstCat.colorHex,
+                                    count: selectedCats.count,
+                                    onClear: {
+                                        viewModel.selectedCategories.removeAll()
+                                        onFilterChange()
+                                    }
+                                )
+                            }
                         }
 
                         // Subcategory chip (aggregated - one chip max)
@@ -160,8 +175,8 @@ struct RecordsTabView: View {
                             FilterChipView(
                                 transactionNature: nature,
                                 onClear: {
+                                    // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
                                     viewModel.selectedTransactionNatures.removeAll()
-                                    sessionState.selectedTransactionNatures.removeAll()
                                     onFilterChange()
                                 }
                             )
@@ -180,8 +195,8 @@ struct RecordsTabView: View {
                             FilterChipView(
                                 currencyCode: currency.rawValue,
                                 onClear: {
+                                    // SSOT: viewModel.selectedCurrencies writes to SessionState.shared
                                     viewModel.selectedCurrencies.remove(currency)
-                                    sessionState.selectedCurrencies.remove(currency)
                                     onFilterChange()
                                 }
                             )
@@ -192,8 +207,8 @@ struct RecordsTabView: View {
                             FilterChipView(
                                 amountText: viewModel.amountCondition.displayText,
                                 onClear: {
+                                    // SSOT: viewModel.amountCondition writes to SessionState.shared
                                     viewModel.amountCondition = .any
-                                    sessionState.amountCondition = .any
                                     onFilterChange()
                                 }
                             )
@@ -204,8 +219,8 @@ struct RecordsTabView: View {
                             FilterChipView(
                                 noteText: viewModel.searchText,
                                 onClear: {
+                                    // SSOT: viewModel.searchText writes to SessionState.shared
                                     viewModel.searchText = ""
-                                    sessionState.searchText = ""
                                     onFilterChange()
                                 }
                             )
@@ -272,12 +287,11 @@ struct RecordsTabView: View {
                 // Income button
                 Button {
                     withAnimation {
+                        // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
                         if isIncomeFiltered {
                             viewModel.selectedTransactionNatures.removeAll()
-                            sessionState.selectedTransactionNatures.removeAll()
                         } else {
                             viewModel.selectedTransactionNatures = [.income]
-                            sessionState.selectedTransactionNatures = [.income]
                         }
                         onFilterChange()
                     }
@@ -300,12 +314,11 @@ struct RecordsTabView: View {
                 // Expense button
                 Button {
                     withAnimation {
+                        // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
                         if isExpenseFiltered {
                             viewModel.selectedTransactionNatures.removeAll()
-                            sessionState.selectedTransactionNatures.removeAll()
                         } else {
                             viewModel.selectedTransactionNatures = [.expense]
-                            sessionState.selectedTransactionNatures = [.expense]
                         }
                         onFilterChange()
                     }

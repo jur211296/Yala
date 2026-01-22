@@ -117,6 +117,14 @@ struct DetailContainerView: View {
                 refreshRecordsData()
                 calculateTrendsData()
             }
+            .onChange(of: sessionState.selectedMainTab) { _, newTab in
+                // Sync filters when navigating to Statistics tab (view may already be mounted)
+                if newTab == .statistics && !isFromSearch {
+                    syncFromSessionState()
+                    calculateTrendsData()
+                    refreshRecordsData()
+                }
+            }
             .onChange(of: allTransactions) {
                 // Recalculate when transactions change (e.g., initial balance modified)
                 calculateTrendsData()
@@ -421,155 +429,27 @@ struct DetailContainerView: View {
     // MARK: - Synchronization
 
     private func syncFiltersToTrends() {
-        if trendsViewModel.detailPeriod != recordsViewModel.period {
-            trendsViewModel.detailPeriod = recordsViewModel.period
-        }
-        if trendsViewModel.selectedAccounts != recordsViewModel.selectedAccounts {
-            trendsViewModel.selectedAccounts = recordsViewModel.selectedAccounts
-        }
-        if trendsViewModel.selectedCategories != recordsViewModel.selectedCategories {
-            trendsViewModel.selectedCategories = recordsViewModel.selectedCategories
-        }
-        if trendsViewModel.selectedSubcategories != recordsViewModel.selectedSubcategories {
-            trendsViewModel.selectedSubcategories = recordsViewModel.selectedSubcategories
-        }
-        if trendsViewModel.selectedTags != recordsViewModel.selectedTags {
-            trendsViewModel.selectedTags = recordsViewModel.selectedTags
-        }
-        if trendsViewModel.selectedNatures != recordsViewModel.selectedNatures {
-            trendsViewModel.selectedNatures = recordsViewModel.selectedNatures
-        }
-        if trendsViewModel.selectedCurrencies != recordsViewModel.selectedCurrencies {
-            trendsViewModel.selectedCurrencies = recordsViewModel.selectedCurrencies
-        }
-        if trendsViewModel.amountCondition != recordsViewModel.amountCondition {
-            trendsViewModel.amountCondition = recordsViewModel.amountCondition
-        }
-        if trendsViewModel.searchText != recordsViewModel.searchText {
-            trendsViewModel.searchText = recordsViewModel.searchText
-        }
-        if trendsViewModel.selectedTransactionNatures != recordsViewModel.selectedTransactionNatures
-        {
-            trendsViewModel.selectedTransactionNatures =
-                recordsViewModel.selectedTransactionNatures
-        }
+        // SSOT Refactor: Both trendsViewModel and recordsViewModel have computed properties
+        // that read/write directly from SessionState.shared. They're always in sync.
+        // This function is kept as a no-op for backward compatibility.
     }
 
     private func syncFiltersToRecords() {
-        if recordsViewModel.period != trendsViewModel.detailPeriod {
-            recordsViewModel.period = trendsViewModel.detailPeriod
-        }
-        if recordsViewModel.selectedAccounts != trendsViewModel.selectedAccounts {
-            recordsViewModel.selectedAccounts = trendsViewModel.selectedAccounts
-        }
-        if recordsViewModel.selectedCategories != trendsViewModel.selectedCategories {
-            recordsViewModel.selectedCategories = trendsViewModel.selectedCategories
-        }
-        if recordsViewModel.selectedSubcategories != trendsViewModel.selectedSubcategories {
-            recordsViewModel.selectedSubcategories = trendsViewModel.selectedSubcategories
-        }
-        if recordsViewModel.selectedTags != trendsViewModel.selectedTags {
-            recordsViewModel.selectedTags = trendsViewModel.selectedTags
-        }
-        if recordsViewModel.selectedNatures != trendsViewModel.selectedNatures {
-            recordsViewModel.selectedNatures = trendsViewModel.selectedNatures
-        }
-        if recordsViewModel.selectedCurrencies != trendsViewModel.selectedCurrencies {
-            recordsViewModel.selectedCurrencies = trendsViewModel.selectedCurrencies
-        }
-        if recordsViewModel.amountCondition != trendsViewModel.amountCondition {
-            recordsViewModel.amountCondition = trendsViewModel.amountCondition
-        }
-        if recordsViewModel.searchText != trendsViewModel.searchText {
-            recordsViewModel.searchText = trendsViewModel.searchText
-        }
-        if recordsViewModel.selectedTransactionNatures != trendsViewModel.selectedTransactionNatures
-        {
-            recordsViewModel.selectedTransactionNatures =
-                trendsViewModel.selectedTransactionNatures
-        }
+        // SSOT Refactor: Both trendsViewModel and recordsViewModel have computed properties
+        // that read/write directly from SessionState.shared. They're always in sync.
+        // This function is kept as a no-op for backward compatibility.
     }
 
     private func syncFromSessionState() {
-        guard !isSyncingState else { return }
-        isSyncingState = true
-        defer { isSyncingState = false }
-
-        trendsViewModel.detailPeriod = sessionState.selectedPeriod
-        recordsViewModel.period = sessionState.selectedPeriod
-
-        // Sync custom date range for custom period
-        trendsViewModel.customDateRange = sessionState.customDateRange
-        recordsViewModel.customDateRange = sessionState.customDateRange
-
-        trendsViewModel.selectedAccounts = sessionState.selectedAccountIDs
-        recordsViewModel.selectedAccounts = sessionState.selectedAccountIDs
-
-        trendsViewModel.selectedCategories = sessionState.selectedCategoryIDs
-        recordsViewModel.selectedCategories = sessionState.selectedCategoryIDs
-
-        // Convert subcategory names to PersistentIdentifiers
-        // Sync subcategory IDs directly (no name-to-ID conversion needed now)
-        trendsViewModel.selectedSubcategories = sessionState.selectedSubcategoryIDs
-        recordsViewModel.selectedSubcategories = sessionState.selectedSubcategoryIDs
-
-        trendsViewModel.selectedNatures = sessionState.selectedNatures
-        recordsViewModel.selectedNatures = sessionState.selectedNatures
-
-        // Sync tags
-        trendsViewModel.selectedTags = sessionState.selectedTags
-        recordsViewModel.selectedTags = sessionState.selectedTags
-
-        // Sync currencies
-        trendsViewModel.selectedCurrencies = sessionState.selectedCurrencies
-        recordsViewModel.selectedCurrencies = sessionState.selectedCurrencies
-
-        // Sync amount condition
-        trendsViewModel.amountCondition = sessionState.amountCondition
-        recordsViewModel.amountCondition = sessionState.amountCondition
-
-        // Sync search text
-        trendsViewModel.searchText = sessionState.searchText
-        recordsViewModel.searchText = sessionState.searchText
-
-        // Sync transaction natures (income/expense)
-        trendsViewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
-        recordsViewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
-
-        // Sync trend metric from SessionState
-        trendsViewModel.selectedMetric = sessionState.selectedTrendMetric
+        // SSOT Refactor: All viewModel filter properties are now computed properties
+        // that read/write directly from SessionState.shared. No sync needed.
+        // This function is kept as a no-op for backward compatibility with existing callers.
     }
 
     private func syncToSessionState() {
-        guard !isSyncingState else { return }
-        isSyncingState = true
-        defer { isSyncingState = false }
-
-        sessionState.selectedPeriod = trendsViewModel.detailPeriod
-        sessionState.selectedAccountIDs = trendsViewModel.selectedAccounts
-        sessionState.selectedCategoryIDs = trendsViewModel.selectedCategories
-        sessionState.selectedNatures = trendsViewModel.selectedNatures
-
-        // Sync subcategory IDs directly (no ID-to-name conversion needed now)
-        sessionState.selectedSubcategoryIDs = trendsViewModel.selectedSubcategories
-
-        // Sync tags
-        sessionState.selectedTags = trendsViewModel.selectedTags
-
-        // Sync currencies
-        sessionState.selectedCurrencies = trendsViewModel.selectedCurrencies
-
-        // Sync amount condition
-        sessionState.amountCondition = trendsViewModel.amountCondition
-
-        // Sync search text
-        sessionState.searchText = trendsViewModel.searchText
-
-        // Sync transaction natures (income/expense)
-        sessionState.selectedTransactionNatures = trendsViewModel.selectedTransactionNatures
-
-        // Sync trend metric to SessionState
-        sessionState.selectedTrendMetric = trendsViewModel.selectedMetric
+        // SSOT Refactor: All viewModel filter properties are now computed properties
+        // that read/write directly from SessionState.shared. No sync needed.
+        // This function is kept as a no-op for backward compatibility with existing callers.
     }
 }
 
