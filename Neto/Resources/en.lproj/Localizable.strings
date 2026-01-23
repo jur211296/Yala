@@ -1053,6 +1053,7 @@
 "inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";
 "inbox.noAmount" = "No amount";
 "inbox.noDescription" = "No description";
+"inbox.missingLabel" = "Missing:";
 "inbox.needsAccount" = "Account";
 "inbox.needsSubcategory" = "Category";
 "inbox.delete" = "Delete";
@@ -1105,6 +1106,9 @@
 "voice.hint.date.example" = "\"yesterday\" (today by default)";
 "voice.example.label" = "Full example:";
 "voice.example.text" = "\"Today I spent 50 dollars at Starbucks restaurants tag travel\"";
+"voice.example1" = "I spent 25 dollars on the taxi";
+"voice.example2" = "Yesterday I received 500 salary";
+"voice.example3" = "150 at pharmacy tag health";
 "voice.recording" = "Recording...";
 "voice.pleaseWait" = "Please wait...";
 "voice.processingAudio" = "Processing audio...";

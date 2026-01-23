@@ -1053,6 +1053,7 @@
 "inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
 "inbox.noAmount" = "Sans montant";
 "inbox.noDescription" = "Sans description";
+"inbox.missingLabel" = "Manque:";
 "inbox.needsAccount" = "Compte";
 "inbox.needsSubcategory" = "Catégorie";
 "inbox.delete" = "Supprimer";
@@ -1105,6 +1106,9 @@
 "voice.hint.date.example" = "\"hier\" (aujourd'hui par défaut)";
 "voice.example.label" = "Exemple complet:";
 "voice.example.text" = "\"Aujourd'hui j'ai dépensé 50 euros chez Starbucks restaurants tag voyage\"";
+"voice.example1" = "J'ai dépensé 25 euros en taxi";
+"voice.example2" = "Hier j'ai reçu 500 euros de salaire";
+"voice.example3" = "150 à la pharmacie tag santé";
 "voice.recording" = "Enregistrement...";
 "voice.pleaseWait" = "Veuillez patienter...";
 "voice.processingAudio" = "Traitement audio...";

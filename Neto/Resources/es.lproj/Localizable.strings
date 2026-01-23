@@ -1053,6 +1053,7 @@
 "inbox.noArchivedDescription" = "Los borradores aprobados o rechazados aparecerán aquí.";
 "inbox.noAmount" = "Sin monto";
 "inbox.noDescription" = "Sin descripción";
+"inbox.missingLabel" = "Falta:";
 "inbox.needsAccount" = "Cuenta";
 "inbox.needsSubcategory" = "Categoría";
 "inbox.delete" = "Eliminar";
@@ -1105,6 +1106,9 @@
 "voice.hint.date.example" = "\"ayer\" (hoy por defecto)";
 "voice.example.label" = "Ejemplo completo:";
 "voice.example.text" = "\"Hoy gasté 50 soles en Starbucks restaurantes con la etiqueta viaje\"";
+"voice.example1" = "Gasté 25 soles en el taxi";
+"voice.example2" = "Ayer recibí 500 soles de sueldo";
+"voice.example3" = "150 en farmacia etiqueta salud";
 "voice.recording" = "Grabando...";
 "voice.pleaseWait" = "Por favor espera...";
 "voice.processingAudio" = "Procesando audio...";

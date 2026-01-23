@@ -141,6 +141,12 @@ V1.0 fue completada el 2026-01-21 y está en TestFlight. Incluye:
 
 ### Ideas Capturadas
 
+- **2026-01-22 [Enhancement] [UX] [Medium]: Animaciones y haptics en toda la app**
+  Contexto: La animación de pulso en los botones del FAB menu inspiró explorar más micro-animaciones
+  Inspiración: phaseAnimator con scaleEffect sutil para llamar atención del usuario
+  A considerar: Haptic feedback en acciones clave, animaciones de entrada/salida, transiciones fluidas
+  Target: Release oficial V1.1
+
 - **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
   Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
   Estado: Por definir, no está claro el alcance ni implementación

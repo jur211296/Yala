@@ -1053,6 +1053,7 @@
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe erscheinen hier.";
 "inbox.noAmount" = "Kein Betrag";
 "inbox.noDescription" = "Keine Beschreibung";
+"inbox.missingLabel" = "Fehlt:";
 "inbox.needsAccount" = "Konto";
 "inbox.needsSubcategory" = "Kategorie";
 "inbox.delete" = "Löschen";
@@ -1105,6 +1106,9 @@
 "voice.hint.date.example" = "\"gestern\" (heute Standard)";
 "voice.example.label" = "Vollständiges Beispiel:";
 "voice.example.text" = "\"Heute habe ich 50 Euro bei Starbucks Restaurants Tag Reise ausgegeben\"";
+"voice.example1" = "25 Euro für das Taxi ausgegeben";
+"voice.example2" = "Gestern 500 Euro Gehalt erhalten";
+"voice.example3" = "150 in der Apotheke Tag Gesundheit";
 "voice.recording" = "Aufnahme...";
 "voice.pleaseWait" = "Bitte warten...";
 "voice.processingAudio" = "Audio verarbeiten...";

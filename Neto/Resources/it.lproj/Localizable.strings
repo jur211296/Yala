@@ -1053,6 +1053,7 @@
 "inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";
 "inbox.noAmount" = "Senza importo";
 "inbox.noDescription" = "Senza descrizione";
+"inbox.missingLabel" = "Manca:";
 "inbox.needsAccount" = "Conto";
 "inbox.needsSubcategory" = "Categoria";
 "inbox.delete" = "Elimina";
@@ -1105,6 +1106,9 @@
 "voice.hint.date.example" = "\"ieri\" (oggi di default)";
 "voice.example.label" = "Esempio completo:";
 "voice.example.text" = "\"Oggi ho speso 50 euro da Starbucks ristoranti tag viaggio\"";
+"voice.example1" = "Ho speso 25 euro per il taxi";
+"voice.example2" = "Ieri ho ricevuto 500 euro di stipendio";
+"voice.example3" = "150 in farmacia tag salute";
 "voice.recording" = "Registrazione...";
 "voice.pleaseWait" = "Attendere...";
 "voice.processingAudio" = "Elaborazione audio...";

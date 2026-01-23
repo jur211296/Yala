@@ -149,6 +149,10 @@ struct InboxDraftRowView: View {
 
     private var missingFieldsRow: some View {
         HStack(spacing: DS.Spacing.xs) {
+            Text(L10n.Inbox.missingLabel)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
             ForEach(draft.needsUserInput.prefix(2), id: \.self) { field in
                 Text(localizedFieldName(field))
                     .font(.caption2.weight(.medium))

@@ -137,63 +137,101 @@ struct VoiceRecordingView: View {
     // MARK: - Instructions View
 
     private var instructionsView: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Text(L10n.Voice.tapToRecord)
-                .font(.headline)
-                .foregroundStyle(.primary)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: DS.Spacing.lg) {
+                Text(L10n.Voice.tapToRecord)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
 
-            // What you can say
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                Text(L10n.Voice.youCanSay)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                // Hints grid
+                hintsSection
 
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    instructionItem(icon: "arrow.left.arrow.right", text: L10n.Voice.hintType, highlight: L10n.Voice.hintTypeExample)
-                    instructionItem(icon: "dollarsign.circle", text: L10n.Voice.hintAmount, highlight: L10n.Voice.hintAmountExample)
-                    instructionItem(icon: "folder", text: L10n.Voice.hintSubcategory, highlight: L10n.Voice.hintSubcategoryExample)
-                    instructionItem(icon: "mappin", text: L10n.Voice.hintMerchant, highlight: L10n.Voice.hintMerchantExample)
-                    instructionItem(icon: "tag", text: L10n.Voice.hintTag, highlight: L10n.Voice.hintTagExample)
-                    instructionItem(icon: "calendar", text: L10n.Voice.hintDate, highlight: L10n.Voice.hintDateExample)
-                }
+                // Examples
+                examplesSection
             }
-            .padding(DS.Spacing.md)
-            .background(Color.netoCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-
-            // Example
-            VStack(spacing: DS.Spacing.xs) {
-                Text(L10n.Voice.exampleLabel)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-
-                Text(L10n.Voice.exampleText)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.electricIndigo)
-                    .multilineTextAlignment(.center)
-                    .italic()
-            }
+            .padding(.horizontal, DS.Spacing.lg)
         }
-        .padding(.horizontal, DS.Spacing.md)
     }
 
-    private func instructionItem(icon: String, text: String, highlight: String) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
+    private var hintsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Voice.youCanSay)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: DS.Spacing.sm) {
+                hintChip(icon: "arrow.left.arrow.right", text: L10n.Voice.hintTypeExample)
+                hintChip(icon: "dollarsign.circle", text: L10n.Voice.hintAmountExample)
+                hintChip(icon: "folder", text: L10n.Voice.hintSubcategoryExample)
+                hintChip(icon: "mappin", text: L10n.Voice.hintMerchantExample)
+                hintChip(icon: "tag", text: L10n.Voice.hintTagExample)
+                hintChip(icon: "calendar", text: L10n.Voice.hintDateExample)
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func hintChip(icon: String, text: String) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(Color.electricIndigo)
-                .frame(width: 16)
 
             Text(text)
                 .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text(highlight)
-                .font(.caption.weight(.medium))
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.electricIndigo.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+    }
+
+    private var examplesSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Voice.exampleLabel)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            VStack(spacing: DS.Spacing.xs) {
+                exampleRow(text: L10n.Voice.example1)
+                exampleRow(text: L10n.Voice.example2)
+                exampleRow(text: L10n.Voice.example3)
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(Color.netoCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func exampleRow(text: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "text.quote")
+                .font(.caption)
+                .foregroundStyle(Color.electricIndigo)
+
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .italic()
 
             Spacer()
         }
+        .padding(.vertical, DS.Spacing.sm)
+        .padding(.horizontal, DS.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .stroke(Color.electricIndigo.opacity(0.2), lineWidth: 1)
+        )
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {

@@ -1539,6 +1539,9 @@ enum L10n {
         static var noDescription: String {
             NSLocalizedString("inbox.noDescription", comment: "No description placeholder")
         }
+        static var missingLabel: String {
+            NSLocalizedString("inbox.missingLabel", comment: "Missing fields label")
+        }
         static var needsAccount: String {
             NSLocalizedString("inbox.needsAccount", comment: "Needs account indicator")
         }
@@ -1685,6 +1688,9 @@ enum L10n {
         static var hintDateExample: String { NSLocalizedString("voice.hint.date.example", comment: "") }
         static var exampleLabel: String { NSLocalizedString("voice.example.label", comment: "") }
         static var exampleText: String { NSLocalizedString("voice.example.text", comment: "") }
+        static var example1: String { NSLocalizedString("voice.example1", comment: "") }
+        static var example2: String { NSLocalizedString("voice.example2", comment: "") }
+        static var example3: String { NSLocalizedString("voice.example3", comment: "") }
     }
 
     // MARK: - Voice Language

@@ -1053,6 +1053,7 @@
 "inbox.noArchivedDescription" = "Rascunhos aprovados ou rejeitados aparecerão aqui.";
 "inbox.noAmount" = "Sem valor";
 "inbox.noDescription" = "Sem descrição";
+"inbox.missingLabel" = "Falta:";
 "inbox.needsAccount" = "Conta";
 "inbox.needsSubcategory" = "Categoria";
 "inbox.delete" = "Excluir";
@@ -1105,6 +1106,9 @@
 "voice.hint.date.example" = "\"ontem\" (hoje por padrão)";
 "voice.example.label" = "Exemplo completo:";
 "voice.example.text" = "\"Hoje gastei 50 reais no Starbucks restaurantes tag viagem\"";
+"voice.example1" = "Gastei 25 reais no táxi";
+"voice.example2" = "Ontem recebi 500 reais de salário";
+"voice.example3" = "150 na farmácia tag saúde";
 "voice.recording" = "Gravando...";
 "voice.pleaseWait" = "Por favor aguarde...";
 "voice.processingAudio" = "Processando audio...";
