@@ -1,0 +1,472 @@
+//
+//  TransactionSuccessView.swift
+//  Yala
+//
+//  Created by Neto - Success confirmation screen after transaction registration.
+//
+
+import SwiftUI
+
+// MARK: - Transaction Success Data
+
+/// Data structure holding the saved transaction details for display
+struct TransactionSuccessData {
+    let transactionType: TransactionType
+    let date: Date
+    let accountName: String
+    let accountColorHex: String
+    let note: String
+    let amount: Decimal
+    let currencyCode: String
+    let subcategoryName: String?
+    let subcategoryColorHex: String?
+    let categoryName: String?
+    let categoryColorHex: String?
+    let tags: [(name: String, colorHex: String)]
+    let nature: SubcategoryNature?
+
+    // For transfers
+    let isTransfer: Bool
+    let destinationAccountName: String?
+    let destinationAccountColorHex: String?
+    let destinationAmount: Decimal?
+    let destinationCurrencyCode: String?
+}
+
+// MARK: - Transaction Success View
+
+struct TransactionSuccessView: View {
+    let data: TransactionSuccessData
+    let onAccept: () -> Void
+    let onCreateAnother: () -> Void
+    let onEdit: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.yalaBackground.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Edit button at top right - native iOS style (inverted)
+                HStack {
+                    Spacer()
+                    Button(L10n.Action.edit, action: onEdit)
+                        .buttonStyle(.bordered)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.lg)
+
+                Spacer()
+
+                // Success icon and title
+                VStack(spacing: DS.Spacing.lg) {
+                    ZStack {
+                        Circle()
+                            .fill(data.transactionType.color.opacity(0.15))
+                            .frame(width: 80, height: 80)
+
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 36, weight: .semibold))
+                            .foregroundStyle(data.transactionType.color)
+                    }
+
+                    Text(L10n.Transaction.successTitle)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                }
+                .padding(.bottom, DS.Spacing.xxxl)
+
+                // Transaction details
+                detailsSection
+                    .padding(.horizontal, DS.Spacing.xl)
+
+                Spacer()
+
+                // Action buttons - native iOS style
+                VStack(spacing: DS.Spacing.md) {
+                    // Primary: Accept
+                    Button(action: onAccept) {
+                        Text(L10n.Common.accept)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.electricIndigo)
+                    .controlSize(.large)
+
+                    // Secondary: Create another
+                    Button(action: onCreateAnother) {
+                        Text(L10n.Transaction.createAnother)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(Color.electricIndigo)
+                    .controlSize(.large)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxxl)
+            }
+        }
+    }
+
+    // MARK: - Details Section
+
+    private var detailsSection: some View {
+        VStack(spacing: 0) {
+            // Amount (prominent)
+            amountRow
+
+            // Transaction type
+            typeRow
+
+            // Date
+            detailRow(
+                icon: "calendar",
+                label: L10n.Transaction.date,
+                value: formattedDate
+            )
+
+            // Account(s)
+            if data.isTransfer {
+                transferAccountsRow
+            } else {
+                accountRow
+            }
+
+            // Subcategory & Category (only for non-transfers)
+            if !data.isTransfer {
+                if data.subcategoryName != nil || data.categoryName != nil {
+                    categoryRow
+                }
+
+                // Nature (only for non-transfers)
+                if let nature = data.nature {
+                    natureRow(nature: nature)
+                }
+            }
+
+            // Note
+            if !data.note.isEmpty {
+                detailRow(
+                    icon: "text.alignleft",
+                    label: L10n.Transaction.note,
+                    value: data.note
+                )
+            }
+
+            // Tags
+            if !data.tags.isEmpty {
+                tagsRow
+            }
+        }
+        .padding(.vertical, DS.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .fill(Color.yalaCard)
+        )
+    }
+
+    // MARK: - Row Components
+
+    private var amountRow: some View {
+        HStack {
+            Text(L10n.Transaction.total)
+                .font(.title3.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Text(
+                YalaFormatter.currency(
+                    value: NSDecimalNumber(decimal: data.amount).doubleValue,
+                    currencyCode: data.currencyCode)
+            )
+            .font(.title.weight(.bold))
+            .foregroundStyle(data.transactionType.color)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.lg)
+    }
+
+    private var typeRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: data.transactionType.iconName)
+                .font(.subheadline)
+                .foregroundStyle(data.transactionType.color)
+                .frame(width: 20)
+
+            Text(L10n.Transaction.type)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Text(data.transactionType.displayName)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(data.transactionType.color)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM yyyy"
+        formatter.locale = AppLocale.current
+        return formatter.string(from: data.date)
+    }
+
+    private func detailRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private var accountRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "creditcard")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            Text(L10n.Account.selectAccount)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            HStack(spacing: DS.Spacing.xs) {
+                Circle()
+                    .fill(Color(hex: data.accountColorHex))
+                    .frame(width: 8, height: 8)
+                Text(data.accountName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private var transferAccountsRow: some View {
+        VStack(spacing: 0) {
+            // Source account
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "arrow.up.circle")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.hotPink)
+                    .frame(width: 20)
+
+                Text(L10n.Transaction.origin)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                HStack(spacing: DS.Spacing.xs) {
+                    Circle()
+                        .fill(Color(hex: data.accountColorHex))
+                        .frame(width: 8, height: 8)
+                    Text(data.accountName)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+
+            // Destination account
+            if let destName = data.destinationAccountName,
+                let destColor = data.destinationAccountColorHex
+            {
+                HStack(spacing: DS.Spacing.md) {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.electricIndigo)
+                        .frame(width: 20)
+
+                    Text(L10n.Transaction.destination)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    HStack(spacing: DS.Spacing.xs) {
+                        Circle()
+                            .fill(Color(hex: destColor))
+                            .frame(width: 8, height: 8)
+                        Text(destName)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+
+                        if let destAmount = data.destinationAmount,
+                            let destCurrency = data.destinationCurrencyCode,
+                            destCurrency != data.currencyCode
+                        {
+                            Text(
+                                "(\(YalaFormatter.currency(value: NSDecimalNumber(decimal: destAmount).doubleValue, currencyCode: destCurrency)))"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+        }
+    }
+
+    private var categoryRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "tag")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            Text(L10n.Transaction.category)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                if let subcatName = data.subcategoryName {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Circle()
+                            .fill(
+                                Color(
+                                    hex: data.subcategoryColorHex ?? data.categoryColorHex
+                                        ?? "6366F1")
+                            )
+                            .frame(width: 8, height: 8)
+                        Text(subcatName)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                    }
+                }
+                if let catName = data.categoryName {
+                    Text(catName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private func natureRow(nature: SubcategoryNature) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "leaf")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            Text(L10n.Category.nature)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            HStack(spacing: DS.Spacing.xs) {
+                Circle()
+                    .fill(nature.color)
+                    .frame(width: 6, height: 6)
+
+                Text(nature.displayName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+            }
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(
+                Capsule().fill(nature.color.opacity(0.1))
+            )
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private var tagsRow: some View {
+        HStack(alignment: .center, spacing: DS.Spacing.md) {
+            Image(systemName: "number")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            Text(L10n.Transaction.tags)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            // Tags as chips - right aligned
+            HStack(spacing: DS.Spacing.xs) {
+                ForEach(data.tags, id: \.name) { tag in
+                    HStack(spacing: DS.Spacing.xs) {
+                        Circle()
+                            .fill(Color(hex: tag.colorHex))
+                            .frame(width: 6, height: 6)
+                        Text(tag.name)
+                            .font(.caption)
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(
+                        Capsule()
+                            .fill(Color(UIColor.label).opacity(0.08))
+                    )
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+}
+
+#Preview {
+    TransactionSuccessView(
+        data: TransactionSuccessData(
+            transactionType: .expense,
+            date: Date(),
+            accountName: "Soles",
+            accountColorHex: "FF6B6B",
+            note: "Compra en supermercado",
+            amount: 125.50,
+            currencyCode: "PEN",
+            subcategoryName: "Alimentación",
+            subcategoryColorHex: "4CAF50",
+            categoryName: "Hogar",
+            categoryColorHex: "4CAF50",
+            tags: [
+                (name: "Necesario", colorHex: "2196F3"),
+                (name: "Mensual", colorHex: "9C27B0"),
+            ],
+            nature: .essential,
+            isTransfer: false,
+            destinationAccountName: nil,
+            destinationAccountColorHex: nil,
+            destinationAmount: nil,
+            destinationCurrencyCode: nil
+        ),
+        onAccept: {},
+        onCreateAnother: {},
+        onEdit: {}
+    )
+}

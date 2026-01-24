@@ -15,17 +15,17 @@
 **Run Commands:**
 ```bash
 # Via Xcode
-xcodebuild -scheme Neto -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' test -only-testing:NetoTests
+xcodebuild -scheme Yala -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' test -only-testing:YalaTests
 
 # UI Tests
-xcodebuild -scheme Neto -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' test -only-testing:NetoUITests
+xcodebuild -scheme Yala -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' test -only-testing:YalaUITests
 ```
 
 ## Test File Organization
 
 **Location:**
-- Unit tests: `NetoTests/` directory
-- UI tests: `NetoUITests/` directory
+- Unit tests: `YalaTests/` directory
+- UI tests: `YalaUITests/` directory
 - Co-located with project (not with source files)
 
 **Naming:**
@@ -34,16 +34,16 @@ xcodebuild -scheme Neto -destination 'platform=iOS Simulator,name=iPhone 17 Pro 
 
 **Structure:**
 ```
-NetoTests/
-├── NetoTests.swift              # Placeholder (empty)
+YalaTests/
+├── YalaTests.swift              # Placeholder (empty)
 ├── CalculatorTests.swift        # Business logic tests
 ├── FilterServiceTests.swift     # Filter service tests
 ├── TrendGroupingTests.swift     # Grouping helper tests
 ├── TrendProcessingTests.swift   # Trend processing tests
 └── TagTests.swift               # Tag model static methods (added 2026-01-15)
 
-NetoUITests/
-├── NetoUITests.swift            # Main UI tests
+YalaUITests/
+├── YalaUITests.swift            # Main UI tests
 └── FinariaUITestsLaunchTests.swift  # Launch performance
 ```
 
@@ -52,7 +52,7 @@ NetoUITests/
 **Suite Organization (Swift Testing):**
 ```swift
 import Testing
-@testable import Neto
+@testable import Yala
 
 struct FilterServiceTests {
 
@@ -179,7 +179,7 @@ let date = calendar.date(from: components)!
 - Would test: SwiftData operations, service chains
 
 **UI Tests:**
-- Location: `NetoUITests/`
+- Location: `YalaUITests/`
 - Framework: XCTest with XCUIApplication
 - Current: Launch performance tests only
 
@@ -243,7 +243,7 @@ final class FinariaUITestsLaunchTests: XCTestCase {
 
 **App Interaction:**
 ```swift
-final class NetoUITests: XCTestCase {
+final class YalaUITests: XCTestCase {
     let app = XCUIApplication()
 
     override func setUpWithError() throws {

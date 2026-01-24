@@ -1,0 +1,339 @@
+//
+//  UIHelpers.swift
+//  Yala
+//
+//  Created by Yala Refactoring.
+//  Updated by Audit & Refactoring Agent.
+//
+
+import SwiftData
+import SwiftUI
+
+#if canImport(UIKit)
+    import UIKit
+#endif
+
+// MARK: - Design System
+// Note: Design tokens (Spacing, Radius, Opacity) are now unified in:
+// App/Theme/DesignTokens.swift → Use DS.Spacing, DS.Radius, DS.Opacity
+// Legacy DesignSystem aliases remain available for backwards compatibility.
+
+// MARK: - Enums de apoyo
+
+enum AccountType: String, CaseIterable, Identifiable {
+    case general = "General"
+    case cash = "Efectivo"
+    case checking = "Cuenta corriente"
+    case savings = "Cuenta de ahorros"
+
+    var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .general: return L10n.Account.AccountType.general
+        case .cash: return L10n.Account.AccountType.cash
+        case .checking: return L10n.Account.AccountType.current
+        case .savings: return L10n.Account.AccountType.savings
+        }
+    }
+}
+
+enum AdjustmentMode: String, CaseIterable, Identifiable {
+    // Keep rawValue for backward compatibility with stored data
+    case byEntry = "Ajustar por registro"
+    case changeInitialBalance = "Cambiar saldo inicial"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .byEntry:
+            return L10n.Account.adjustByEntry
+        case .changeInitialBalance:
+            return L10n.Account.changeInitialBalanceName
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .byEntry:
+            return L10n.Account.adjustByEntryDesc
+        case .changeInitialBalance:
+            return L10n.Account.changeInitialBalanceDesc
+        }
+    }
+}
+
+enum AppTheme: Int, CaseIterable, Identifiable {
+    case system = 0
+    case light = 1
+    case dark = 2
+
+    var id: Int { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: return L10n.Settings.system
+        case .light: return L10n.Settings.light
+        case .dark: return L10n.Settings.dark
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+}
+
+// MARK: - Helper Functions
+
+/// Paleta de colores estándar para categorías y cuentas a partir de su hex
+/// - Parameter hex: Cadena hexadecimal del color.
+/// - Returns: Color de SwiftUI.
+func colorForHex(_ hex: String) -> Color {
+    switch hex {
+    case "#FF9F0A": return Color.orange
+    case "#5E5CE6": return Color.purple
+    case "#0A84FF": return Color.blue
+    case "#1C3556": return Color(red: 0.11, green: 0.21, blue: 0.34)
+    case "#FFD60A": return Color.yellow
+    case "#FF375F": return Color.red
+    case "#30D158": return Color.green
+    case "#64D2FF": return Color(red: 0.39, green: 0.82, blue: 1.00)
+    case "#32D74B": return Color(red: 0.19, green: 0.84, blue: 0.29)
+    default: return Color(hex: hex)
+    }
+}
+
+/// Ícono estándar sugerido según el tipo de cuenta
+func iconName(for accountType: AccountType) -> String {
+    switch accountType {
+    case .general: return "creditcard"
+    case .cash: return "banknote.fill"
+    case .checking: return "building.columns.fill"
+    case .savings: return "banknote"
+    }
+}
+
+/// Ícono efectivo para mostrar según los datos actuales de la cuenta
+func displayIconName(for account: Account) -> String {
+    if !account.iconName.isEmpty && account.iconName != "building.columns.fill" {
+        return account.iconName
+    }
+    if let type = AccountType(rawValue: account.type) {
+        return iconName(for: type)
+    }
+    return "building.columns.fill"
+}
+
+// MARK: - Color Extension & Palette
+
+extension Color {
+
+    // MARK: - Primary Brand Colors
+
+    /// Electric Indigo: El equilibrio entre la seriedad bancaria y la tecnología moderna.
+    static let electricIndigo = Color(hex: "6366F1")
+
+    /// Neon Cyan: Representa el 'dinero digital' y el optimismo.
+    static let neonCyan = Color(hex: "00F3FF")
+
+    /// Hot Pink: Corta el ruido visual. Urgencia y placer culposo.
+    static let hotPink = Color(hex: "FF0080")
+
+    /// Deep Slate: El lienzo infinito (Principal Dark Mode).
+    static let deepSlate = Color(hex: "0F172A")
+
+    /// Priority Nature: Softer Cyan for „Priority" expenses.
+    static let priorityNature = Color(hex: "00C2CB")
+
+    // MARK: - Nature Colors (Distinct from brand colors)
+
+    /// Essential Nature: Warm amber for basic necessities
+    static let essentialNature = Color(hex: "F59E0B")
+
+    /// Priority Nature (Violet): Attention-grabbing but not urgent
+    static let priorityNatureNew = Color(hex: "8B5CF6")
+
+    /// Optional Nature: Soft rose for discretionary spending
+    static let optionalNature = Color(hex: "FB7185")
+
+    /// Tag Chip Color: Darker teal in light mode for visibility, bright cyan in dark mode.
+    static var tagChipColor: Color {
+        #if canImport(UIKit)
+            return Color(
+                UIColor { traitCollection in
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(Color.neonCyan)
+                        : UIColor(Color(hex: "0891B2"))  // Darker teal for light mode
+                })
+        #else
+            return Color.neonCyan
+        #endif
+    }
+
+    /// Transfer Color: Dark gray that works in both light and dark mode.
+    static var transferColor: Color {
+        #if canImport(UIKit)
+            return Color(
+                UIColor { traitCollection in
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(Color(hex: "64748B"))  // Slate gray for dark mode
+                        : UIColor.label  // Black for light mode
+                })
+        #else
+            return Color.primary
+        #endif
+    }
+
+    // MARK: - Semantic Colors (Adaptive)
+
+    /// Color de fondo principal de la aplicación.
+    /// Light: Blanco muy suave / Dark: Deep Slate.
+    static var yalaBackground: Color {
+        #if canImport(UIKit)
+            return Color(
+                UIColor { traitCollection in
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(Color.deepSlate)
+                        : UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1.0)
+                })
+        #else
+            return Color.gray.opacity(0.1)  // Fallback
+        #endif
+    }
+
+    /// Color secundario de fondo (para tarjetas o modales).
+    /// Light: Blanco / Dark: Slate muy oscuro + ligero tinte.
+    static var yalaCard: Color {
+        #if canImport(UIKit)
+            return Color(
+                UIColor { traitCollection in
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 0.11, green: 0.16, blue: 0.28, alpha: 1.0) : UIColor.white
+                })
+        #else
+            return Color.white  // Fallback
+        #endif
+    }
+
+    /// Color de texto principal.
+    static var yalaPrimaryText: Color {
+        Color.primary
+    }
+
+    /// Color de texto secundario (subtitulos).
+    static var yalaSecondaryText: Color {
+        Color.secondary
+    }
+
+    /// Alias para compatibilidad con código existente
+    static let financeGreen = Color(red: 0.13, green: 0.75, blue: 0.45)
+    static let financeBlue = Color(red: 0.17, green: 0.47, blue: 0.96)
+    static let financeOrange = Color(red: 1.00, green: 0.58, blue: 0.30)
+
+    // Estos se deprecarian a favor de yalaBackground, pero los mantenemos por compatibilidad inmediata
+    static let financeBackgroundTop = Color(red: 0.99, green: 0.99, blue: 1.00)
+    static let financeBackgroundBottom = electricIndigo.opacity(0.1)
+
+    // MARK: - Semantic Aliases
+    static let brandPrimary = electricIndigo
+    static let brandSecondary = hotPink
+    static let brandTertiary = priorityNature  // Teal - third main color
+    static let incomeGraph = priorityNature  // Changed from neonCyan to teal
+    static let expenseGraph = hotPink
+    static let darkBackground = deepSlate
+
+    /// Returns either white or black depending on which contrasts better with the given color.
+    static func contrastingText(for color: Color) -> Color {
+        #if canImport(UIKit)
+            let uiColor = UIColor(color)
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+
+            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+            // Luminance formula
+            let luminance = 0.299 * red + 0.587 * green + 0.114 * blue
+            return luminance > 0.6 ? .black : .white  // 0.6 threshold favors white text slightly more for mid-tones
+        #else
+            return .white  // Fallback
+        #endif
+    }
+
+}
+// MARK: - Formatters
+
+struct YalaFormatter {
+    /// Check if user prefers rounded amounts (no decimals)
+    /// Defaults to true (rounded) on first launch
+    private static var useRoundedAmounts: Bool {
+        // If key doesn't exist, default to true (rounded)
+        if UserDefaults.standard.object(forKey: "useRoundedAmounts") == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "useRoundedAmounts")
+    }
+
+    /// Formats a currency value with standard format: `PEN 20,000.00` or `PEN -20,000.00`
+    /// - Parameters:
+    ///   - value: The numeric value to format
+    ///   - currencyCode: 3-letter currency code (e.g., "PEN", "USD")
+    ///   - forceSign: If true, adds '+' for positive values (only for tooltips like CashFlow)
+    /// - Returns: Formatted string like "PEN 20,000.00" or "PEN -20,000.00"
+    static func currency(
+        value: Double, currencyCode: String, forceSign: Bool = false
+    ) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+
+        if useRoundedAmounts {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 0
+        } else {
+            formatter.minimumFractionDigits = 2
+            formatter.maximumFractionDigits = 2
+        }
+
+        let absoluteValue = abs(value)
+        let formattedNumber = formatter.string(from: NSNumber(value: absoluteValue)) ?? (useRoundedAmounts ? "0" : "0.00")
+
+        // Build sign prefix (attached to number, no extra space)
+        var signedNumber = formattedNumber
+        if value < 0 {
+            signedNumber = "-\(formattedNumber)"
+        } else if forceSign && value > 0 {
+            signedNumber = "+\(formattedNumber)"
+        }
+
+        // Format: "PEN 20,000.00" or "PEN -20,000.00"
+        return "\(currencyCode) \(signedNumber)"
+    }
+
+    static func compactCurrency(value: Double) -> String {
+        value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
+    }
+
+    /// Formats a number with standard format: `20,000.00` or `-20,000.00` (no currency)
+    /// - Parameter value: The numeric value to format
+    /// - Returns: Formatted string like "20,000.00" or "-20,000.00"
+    static func number(value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+
+        if useRoundedAmounts {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 0
+        } else {
+            formatter.minimumFractionDigits = 2
+            formatter.maximumFractionDigits = 2
+        }
+
+        return formatter.string(from: NSNumber(value: value)) ?? (useRoundedAmounts ? "0" : "0.00")
+    }
+}

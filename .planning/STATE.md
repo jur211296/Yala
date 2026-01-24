@@ -66,7 +66,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
   - Settings/: Todas las vistas de configuración
   - Records/: RecordsFiltersView, RecordRowView
   - Transactions/: NewTransactionView, SelectionChip
-  - Shared/: NetoEmptyState, NetoBadge, StandardButtons, NetoLoadingOverlay, SectionBox, CurrencySelectorView, IconColorPickerSheet, SkeletonView
+  - Shared/: YalaEmptyState, YalaBadge, StandardButtons, YalaLoadingOverlay, SectionBox, CurrencySelectorView, IconColorPickerSheet, SkeletonView
   - Planning/: PlanningView
   - Profile/: ProfileView
   - Tags/: TagFormView

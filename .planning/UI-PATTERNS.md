@@ -33,7 +33,7 @@ HStack {
 - **NUNCA** escribir `.padding(16)` - usar `.padding(.horizontal, DS.Spacing.lg)`
 
 ### 3. Colores Semánticos
-- **SIEMPRE** usar colores del sistema: `Color.netoBackground`, `Color.netoCard`, `Color.electricIndigo`
+- **SIEMPRE** usar colores del sistema: `Color.netoBackground`, `Color.yalaCard`, `Color.electricIndigo`
 - **NUNCA** usar colores hardcodeados como `Color.blue` o `Color(hex: "...")`
 
 ---
@@ -88,7 +88,7 @@ HStack {
 
 ### Colores Semánticos
 - `Color.netoBackground` - Fondo de app
-- `Color.netoCard` - Fondo de tarjetas/modales
+- `Color.yalaCard` - Fondo de tarjetas/modales
 - `Color.netoPrimaryText` - Texto principal
 - `Color.netoSecondaryText` - Texto secundario
 
@@ -115,7 +115,7 @@ Button(action: onTap) {
 }
 .buttonStyle(.plain)
 .contentShape(Rectangle())
-.background(Color.netoCard)
+.background(Color.yalaCard)
 .cornerRadius(DS.Radius.card)
 ```
 
@@ -142,25 +142,25 @@ Button(action: onTap) {
 
 | Tipo | Uso | Componente |
 |------|-----|------------|
-| Primario | Acción principal | `NetoPrimaryButton` |
-| Secundario | Acciones alternativas | `NetoSecondaryButton` |
+| Primario | Acción principal | `YalaPrimaryButton` |
+| Secundario | Acciones alternativas | `YalaSecondaryButton` |
 | Texto | Links, acciones terciarias | `NetoTextButton` |
 | Toolbar | Navegación, cerrar | `NetoToolbarButton` |
-| Guardar | Confirmación circular | `NetoSaveButton` |
+| Guardar | Confirmación circular | `YalaSaveButton` |
 
 ### Empty States
-- **SIEMPRE** usar `NetoEmptyState` para estados vacíos
+- **SIEMPRE** usar `YalaEmptyState` para estados vacíos
 - Incluir: icono (48pt), título, mensaje opcional, acción opcional
 - Variantes predefinidas: `.noTransactions`, `.noResults`, `.noTags`, etc.
 
 ### Loading States
-- `NetoLoadingOverlay` - Modal con overlay oscuro
+- `YalaLoadingOverlay` - Modal con overlay oscuro
 - `NetoLoadingInline` - Indicador pequeño inline
 - `NetoLoadingFullScreen` - Pantalla completa
 - Skeletons para contenido: `WidgetSkeleton`, `LatestRecordsSkeleton`, etc.
 
 ### Badges
-- `NetoBadge` - Badge genérico (filled/soft/outline)
+- `YalaBadge` - Badge genérico (filled/soft/outline)
 - `NetoStatusBadge` - Estados (success/warning/error/info)
 - `NetoTagBadge` - Tags de transacciones
 - `NetoCountBadge` - Contadores
@@ -174,7 +174,7 @@ Button(action: onTap) {
 VStack(spacing: DS.Spacing.xxl) {
     // Sección 1
     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-        NetoSectionHeader(title: "Título")
+        YalaSectionHeader(title: "Título")
         // Contenido
     }
 
@@ -186,8 +186,8 @@ VStack(spacing: DS.Spacing.xxl) {
 ```
 
 ### Headers de Sección
-- `NetoSectionHeader` - Header principal con acción opcional
-- `NetoSectionHeaderCompact` - Subsección (uppercase, pequeño)
+- `YalaSectionHeader` - Header principal con acción opcional
+- `YalaSectionHeaderCompact` - Subsección (uppercase, pequeño)
 
 ### Cards/Widgets
 ```swift
@@ -195,7 +195,7 @@ VStack {
     // Contenido
 }
 .padding(DS.Card.padding)
-.background(Color.netoCard)
+.background(Color.yalaCard)
 .cornerRadius(DS.Radius.xl)
 .overlay(
     RoundedRectangle(cornerRadius: DS.Radius.xl)
@@ -435,11 +435,11 @@ Antes de commitear cambios de UI, verificar:
 - [ ] ¿Se usan tokens de `DS.Spacing` en lugar de valores hardcodeados?
 - [ ] ¿Se usan tokens de `DS.Radius` para corners?
 - [ ] ¿Se usa `DS.Typography` para fuentes?
-- [ ] ¿Los colores son semánticos (`Color.netoCard`, etc.)?
+- [ ] ¿Los colores son semánticos (`Color.yalaCard`, etc.)?
 - [ ] ¿Los montos usan `amountLarge`/`amount`/`amountSmall`?
-- [ ] ¿Los estados vacíos usan `NetoEmptyState`?
+- [ ] ¿Los estados vacíos usan `YalaEmptyState`?
 - [ ] ¿Los loading states usan componentes estándar?
-- [ ] ¿Los botones usan componentes estándar (`NetoPrimaryButton`, etc.)?
+- [ ] ¿Los botones usan componentes estándar (`YalaPrimaryButton`, etc.)?
 - [ ] ¿Las vistas principales usan `.navigationTitle()` con `.large` para título animado?
 - [ ] ¿Los chips de navegación/filtro usan `.glassEffect()` sin fondo general?
 - [ ] ¿Solo chips de navegación están en `safeAreaInset`? (control bars deben scrollear)
@@ -454,10 +454,10 @@ Antes de commitear cambios de UI, verificar:
 
 - **Design Tokens**: `Neto/App/Theme/DesignTokens.swift`
 - **Botones**: `Neto/App/Views/Shared/StandardButtons.swift`
-- **Empty States**: `Neto/App/Views/Shared/NetoEmptyState.swift`
-- **Badges**: `Neto/App/Views/Shared/NetoBadge.swift`
-- **Loading**: `Neto/App/Views/Shared/NetoLoadingOverlay.swift`
+- **Empty States**: `Neto/App/Views/Shared/YalaEmptyState.swift`
+- **Badges**: `Neto/App/Views/Shared/YalaBadge.swift`
+- **Loading**: `Neto/App/Views/Shared/YalaLoadingOverlay.swift`
 - **Skeletons**: `Neto/App/Views/Shared/SkeletonView.swift`
-- **Section Headers**: `Neto/App/Views/Shared/NetoSectionHeader.swift`
+- **Section Headers**: `Neto/App/Views/Shared/YalaSectionHeader.swift`
 - **Form Rows**: `Neto/App/Views/Transactions/TransactionFormRow.swift`
 - **List Rows**: `Neto/App/Views/Records/Components/RecordRowView.swift`

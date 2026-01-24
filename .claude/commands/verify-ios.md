@@ -1,5 +1,5 @@
 ---
-description: Build iOS (scheme Neto) filtrando errores y warnings
+description: Build iOS (scheme Yala) filtrando errores y warnings
 allowed-tools: Bash(cd:*), Bash(xcodebuild:*), Bash(grep:*), Bash(head:*)
 ---
 
@@ -13,7 +13,7 @@ PASOS:
    - Solo continúa con la compilación completa si este check pasa
 
 1. BUILD COMPLETO:
-!`cd /Users/work/Neto && xcodebuild -scheme Neto -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build 2>&1 | grep -E "(error:|warning:|BUILD SUCCEEDED|BUILD FAILED)" | head -20`
+!`cd /Users/work/Neto && xcodebuild -scheme Yala -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build 2>&1 | grep -E "(error:|warning:|BUILD SUCCEEDED|BUILD FAILED)" | head -20`
 
 Si aparece BUILD FAILED o errores:
 1) Resume la causa raíz en 3 a 6 líneas.

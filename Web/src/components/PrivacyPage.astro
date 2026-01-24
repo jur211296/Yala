@@ -1,0 +1,91 @@
+---
+import type { Language } from '../i18n/translations';
+import { getTranslations } from '../i18n/translations';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = getTranslations(lang);
+const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
+---
+
+<main class="min-h-screen bg-primary">
+  <div class="max-w-3xl mx-auto px-6 py-24">
+    <a href={homeUrl} class="text-accent hover:text-accent-light transition-colors mb-8 block">
+      {t.privacyBackHome}
+    </a>
+
+    <div class="prose-container p-8 rounded-3xl">
+      <p class="text-muted text-sm mb-6">{t.privacyLastUpdate}</p>
+
+      <h1 class="text-3xl font-bold text-primary mb-8">{t.privacyH1}</h1>
+
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyIntroTitle}</h2>
+        <p class="text-secondary leading-relaxed" set:html={t.privacyIntroText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')} />
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyDataTitle}</h2>
+        <p class="text-secondary leading-relaxed mb-4">{t.privacyDataIntro}</p>
+        <ul class="space-y-3 text-secondary">
+          <li class="flex items-start gap-3">
+            <span class="text-accent mt-1">•</span>
+            <span set:html={t.privacyDataBullet1.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-accent mt-1">•</span>
+            <span set:html={t.privacyDataBullet2.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-accent mt-1">•</span>
+            <span set:html={t.privacyDataBullet3.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+          </li>
+        </ul>
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyIcloudTitle}</h2>
+        <p class="text-secondary leading-relaxed">{t.privacyIcloudText}</p>
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyAnalyticsTitle}</h2>
+        <p class="text-secondary leading-relaxed" set:html={t.privacyAnalyticsText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyChangesTitle}</h2>
+        <p class="text-secondary leading-relaxed">{t.privacyChangesText}</p>
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyContactTitle}</h2>
+        <p class="text-secondary leading-relaxed">
+          {t.privacyContactText} <a href="mailto:admin@neto.com.pe" class="text-accent hover:text-accent-light">admin@neto.com.pe</a>
+        </p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<style>
+  .bg-primary { background-color: var(--bg-primary); }
+  .text-primary { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-muted { color: var(--text-muted); }
+  .text-accent { color: #6366f1; }
+  .text-accent-light { color: #818cf8; }
+
+  .prose-container {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+  }
+
+  .prose-container strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+</style>
