@@ -1071,6 +1071,9 @@
 "inbox.selectedCount" = "%d selected";
 "inbox.approveableCount" = "%d of %d ready to approve";
 "inbox.deleteConfirmMessage" = "%d drafts will be deleted. This action cannot be undone.";
+"inbox.duplicateWarningTitle" = "Possible duplicate";
+"inbox.duplicateWarningMessage" = "A transaction with the same amount and date already exists. Do you want to create another one anyway?";
+"inbox.createAnyway" = "Create anyway";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
@@ -1109,9 +1112,11 @@
 "voice.example1" = "I spent 25 dollars on the taxi";
 "voice.example2" = "Yesterday I received 500 salary";
 "voice.example3" = "150 at pharmacy tag health";
+"voice.errorNoAmount" = "Could not identify an amount. Try to be clearer when mentioning the quantity.";
 "voice.recording" = "Recording...";
 "voice.pleaseWait" = "Please wait...";
 "voice.processingAudio" = "Processing audio...";
 "voice.transcribing" = "Transcribing...";
+"voice.analyzing" = "Analyzing...";
 "voice.parsing" = "Analyzing...";
 "voice.saving" = "Saving...";

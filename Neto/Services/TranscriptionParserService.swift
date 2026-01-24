@@ -17,6 +17,7 @@ struct ParsedTransaction: Codable {
     let isExpense: Bool
     let subcategoryHint: String?
     let tagHints: [String]
+    let currencyHint: String?
     let confidence: TransactionConfidence
 
     struct TransactionConfidence: Codable {
@@ -62,6 +63,7 @@ private struct LLMResponse: Codable {
     let isExpense: Bool
     let subcategoryHint: String?
     let tagHints: [String]?
+    let currencyHint: String?
     let confidence: ConfidenceScores
 
     struct ConfidenceScores: Codable {
@@ -139,6 +141,16 @@ final class TranscriptionParserService {
         - Ejemplos: "con la etiqueta viaje" → ["viaje"], "etiqueta trabajo y cliente" → ["trabajo", "cliente"]
         - Si no hay mención explícita → []
 
+        Reglas de moneda:
+        - Extrae el código de moneda ISO si se menciona explícitamente
+        - "dólares", "dollars", "usd" → "USD"
+        - "euros", "eur" → "EUR"
+        - "soles", "pen" → "PEN"
+        - "pesos mexicanos", "mxn" → "MXN"
+        - "pesos colombianos", "cop" → "COP"
+        - "reales", "brl" → "BRL"
+        - Si no se menciona moneda → null
+
         Reglas de nota (IMPORTANTE):
         - La nota es para el merchant/comercio específico o información adicional
         - NUNCA repetir la subcategoría en la nota
@@ -154,6 +166,7 @@ final class TranscriptionParserService {
           "isExpense": true | false,
           "subcategoryHint": "nombre subcategoría" | null,
           "tagHints": ["tag1", "tag2"] | [],
+          "currencyHint": "USD" | "EUR" | "PEN" | null,
           "confidence": {
             "amount": 0.0-1.0,
             "date": 0.0-1.0,
@@ -258,6 +271,7 @@ final class TranscriptionParserService {
             isExpense: llmResponse.isExpense,
             subcategoryHint: llmResponse.subcategoryHint,
             tagHints: llmResponse.tagHints ?? [],
+            currencyHint: llmResponse.currencyHint,
             confidence: ParsedTransaction.TransactionConfidence(
                 amount: llmResponse.confidence.amount,
                 date: llmResponse.confidence.date,

@@ -1593,6 +1593,15 @@ enum L10n {
         static func deleteConfirmMessage(_ count: Int) -> String {
             String(format: NSLocalizedString("inbox.deleteConfirmMessage", comment: "Delete confirmation message"), count)
         }
+        static var duplicateWarningTitle: String {
+            NSLocalizedString("inbox.duplicateWarningTitle", comment: "Duplicate warning title")
+        }
+        static var duplicateWarningMessage: String {
+            NSLocalizedString("inbox.duplicateWarningMessage", comment: "Duplicate warning message")
+        }
+        static var createAnyway: String {
+            NSLocalizedString("inbox.createAnyway", comment: "Create anyway button")
+        }
     }
 
     // MARK: - Onboarding
@@ -1669,6 +1678,7 @@ enum L10n {
         static var pleaseWait: String { NSLocalizedString("voice.pleaseWait", comment: "") }
         static var processingAudio: String { NSLocalizedString("voice.processingAudio", comment: "") }
         static var transcribing: String { NSLocalizedString("voice.transcribing", comment: "") }
+        static var analyzing: String { NSLocalizedString("voice.analyzing", comment: "") }
         static var parsing: String { NSLocalizedString("voice.parsing", comment: "") }
         static var saving: String { NSLocalizedString("voice.saving", comment: "") }
 
@@ -1691,6 +1701,9 @@ enum L10n {
         static var example1: String { NSLocalizedString("voice.example1", comment: "") }
         static var example2: String { NSLocalizedString("voice.example2", comment: "") }
         static var example3: String { NSLocalizedString("voice.example3", comment: "") }
+
+        // Errors
+        static var errorNoAmount: String { NSLocalizedString("voice.errorNoAmount", comment: "") }
     }
 
     // MARK: - Voice Language

@@ -1071,6 +1071,9 @@
 "inbox.selectedCount" = "%d selezionati";
 "inbox.approveableCount" = "%d di %d pronti per l'approvazione";
 "inbox.deleteConfirmMessage" = "%d bozze verranno eliminate. Questa azione non può essere annullata.";
+"inbox.duplicateWarningTitle" = "Possibile duplicato";
+"inbox.duplicateWarningMessage" = "Esiste già una transazione con lo stesso importo e data. Vuoi crearne un'altra comunque?";
+"inbox.createAnyway" = "Crea comunque";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";
@@ -1109,9 +1112,11 @@
 "voice.example1" = "Ho speso 25 euro per il taxi";
 "voice.example2" = "Ieri ho ricevuto 500 euro di stipendio";
 "voice.example3" = "150 in farmacia tag salute";
+"voice.errorNoAmount" = "Non è stato possibile identificare un importo. Prova a essere più chiaro nel menzionare la quantità.";
 "voice.recording" = "Registrazione...";
 "voice.pleaseWait" = "Attendere...";
 "voice.processingAudio" = "Elaborazione audio...";
 "voice.transcribing" = "Trascrizione...";
+"voice.analyzing" = "Analisi...";
 "voice.parsing" = "Analisi...";
 "voice.saving" = "Salvataggio...";

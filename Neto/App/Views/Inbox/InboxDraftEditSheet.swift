@@ -48,6 +48,9 @@ struct InboxDraftEditSheet: View {
     // Alert states
     @State private var showApproveError = false
     @State private var approveErrorMessage = ""
+    @State private var showDuplicateWarning = false
+    @State private var duplicateTransaction: TransactionItem?
+    @State private var shouldCreateDespiteDuplicate = false
 
     // Callback for when draft is approved
     var onApproved: (() -> Void)?
@@ -118,6 +121,23 @@ struct InboxDraftEditSheet: View {
                     Button("OK", role: .cancel) {}
                 } message: {
                     Text(approveErrorMessage)
+                }
+                .alert(L10n.Inbox.duplicateWarningTitle, isPresented: $showDuplicateWarning) {
+                    Button(L10n.Common.cancel, role: .cancel) {
+                        shouldCreateDespiteDuplicate = false
+                    }
+                    Button(L10n.Inbox.createAnyway, role: .destructive) {
+                        shouldCreateDespiteDuplicate = true
+                    }
+                } message: {
+                    Text(L10n.Inbox.duplicateWarningMessage)
+                }
+                .onChange(of: showDuplicateWarning) { _, isShowing in
+                    // Trigger creation after alert dismisses if user chose to proceed
+                    if !isShowing && shouldCreateDespiteDuplicate {
+                        shouldCreateDespiteDuplicate = false
+                        createTransactionAndApprove(skipDuplicateCheck: true)
+                    }
                 }
         }
     }
@@ -195,6 +215,14 @@ struct InboxDraftEditSheet: View {
         ToolbarItem(placement: .topBarLeading) {
             NetoToolbarButton(systemName: "xmark") {
                 dismiss()
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                rejectDraft()
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundStyle(.red)
             }
         }
     }
@@ -618,13 +646,29 @@ struct InboxDraftEditSheet: View {
             return
         }
 
-        guard let subcategory = selectedSubcategory else {
+        guard selectedSubcategory != nil else {
             approveErrorMessage = L10n.Inbox.errorNoSubcategory
             showApproveError = true
             return
         }
 
-        // Create TransactionItem with current form values
+        // Check for potential duplicate
+        let finalAmount = isExpense ? -abs(amt) : abs(amt)
+        if let duplicate = findDuplicateTransaction(amount: finalAmount, date: transactionDate, account: account) {
+            duplicateTransaction = duplicate
+            showDuplicateWarning = true
+            return
+        }
+
+        // No duplicate, proceed
+        createTransactionAndApprove(skipDuplicateCheck: true)
+    }
+
+    private func createTransactionAndApprove(skipDuplicateCheck: Bool) {
+        guard let account = selectedAccount,
+              let amt = amount,
+              let subcategory = selectedSubcategory else { return }
+
         let finalAmount = isExpense ? -abs(amt) : abs(amt)
         let transaction = TransactionItem(
             date: transactionDate,
@@ -652,7 +696,15 @@ struct InboxDraftEditSheet: View {
         draft.subcategory = subcategory
         draft.tags = selectedTags
         draft.status = .approved
+        draft.approvedTransaction = transaction
         draft.updatedAt = Date()
+
+        // Cache display values for when related objects might be deleted later
+        draft.cachedAccountName = account.name
+        draft.cachedSubcategoryName = subcategory.name
+        draft.cachedCategoryColorHex = subcategory.category.colorHex
+        draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+        draft.cachedCurrencyCode = account.currencyCode
 
         do {
             try modelContext.save()
@@ -660,6 +712,40 @@ struct InboxDraftEditSheet: View {
             dismiss()
         } catch {
             print("Error approving draft: \(error)")
+        }
+    }
+
+    /// Checks if a similar transaction already exists (same date, amount, account)
+    private func findDuplicateTransaction(amount: Double, date: Date, account: Account) -> TransactionItem? {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+
+        let descriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { transaction in
+                transaction.date >= startOfDay &&
+                transaction.date < endOfDay &&
+                transaction.amount == amount
+            }
+        )
+
+        guard let transactions = try? modelContext.fetch(descriptor) else {
+            return nil
+        }
+
+        // Check if any matches the account
+        return transactions.first { $0.account?.persistentModelID == account.persistentModelID }
+    }
+
+    private func rejectDraft() {
+        draft.status = .rejected
+        draft.updatedAt = Date()
+
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            print("Error rejecting draft: \(error)")
         }
     }
 }

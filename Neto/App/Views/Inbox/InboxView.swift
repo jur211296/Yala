@@ -43,6 +43,7 @@ struct InboxView: View {
 
     @State private var selectedFilter: InboxFilter = .pending
     @State private var selectedDraft: InboxDraft?
+    @State private var selectedTransaction: TransactionItem?
 
     // Selection mode
     @State private var isSelectionMode = false
@@ -53,12 +54,17 @@ struct InboxView: View {
     @Query(sort: \InboxDraft.createdAt, order: .reverse)
     private var allDrafts: [InboxDraft]
 
+
     private var filteredDrafts: [InboxDraft] {
         switch selectedFilter {
         case .pending:
             return allDrafts.filter { $0.status == .pending }
         case .archived:
-            return allDrafts.filter { $0.status == .approved || $0.status == .rejected }
+            // Only show archived drafts that have cached values (to avoid crashes from invalid relationships)
+            return allDrafts.filter {
+                ($0.status == .approved || $0.status == .rejected) &&
+                $0.cachedAccountName != nil
+            }
         }
     }
 
@@ -67,23 +73,21 @@ struct InboxView: View {
             ZStack {
                 PanelBackgroundView()
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.lg) {
-                        // Filter chips
-                        filterChips
-                            .padding(.horizontal, DS.Spacing.lg)
-                            .padding(.top, DS.Spacing.sm)
+                VStack(spacing: 0) {
+                    // Filter chips
+                    filterChips
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.sm)
+                        .padding(.bottom, DS.Spacing.md)
 
-                        // Content
-                        if filteredDrafts.isEmpty {
-                            emptyState
-                                .padding(.top, DS.Spacing.xxxxl)
-                        } else {
-                            draftsList
-                                .padding(.horizontal, DS.Spacing.lg)
-                        }
+                    // Content
+                    if filteredDrafts.isEmpty {
+                        Spacer()
+                        emptyState
+                        Spacer()
+                    } else {
+                        draftsList
                     }
-                    .padding(.bottom, DS.Spacing.safeBottom)
                 }
             }
             .navigationTitle(L10n.Inbox.title)
@@ -112,6 +116,9 @@ struct InboxView: View {
             }
             .sheet(item: $selectedDraft) { draft in
                 InboxDraftEditSheet(draft: draft)
+            }
+            .sheet(item: $selectedTransaction) { transaction in
+                NewTransactionView(transactionToEdit: transaction)
             }
             .sheet(isPresented: $showBulkActions) {
                 InboxBulkActionsSheet(
@@ -249,23 +256,26 @@ struct InboxView: View {
     // MARK: - Drafts List
 
     private var draftsList: some View {
-        LazyVStack(spacing: DS.Spacing.sm) {
+        List {
             ForEach(filteredDrafts, id: \.persistentModelID) { draft in
                 InboxDraftRowView(
                     draft: draft,
-                    currencyCode: draft.account?.currencyCode ?? preferredCurrency,
+                    currencyCode: draft.displayCurrencyCode ?? preferredCurrency,
                     isSelectionMode: isSelectionMode,
                     isSelected: selectedDraftIDs.contains(draft.persistentModelID),
                     onTap: {
                         if isSelectionMode {
                             toggleSelection(draft)
                         } else {
-                            selectedDraft = draft
+                            handleDraftTap(draft)
                         }
                     }
                 )
-                .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode) {
-                    if !isSelectionMode {
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
+                .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && selectedFilter == .pending) {
+                    if !isSelectionMode && selectedFilter == .pending {
                         Button(role: .destructive) {
                             deleteDraft(draft)
                         } label: {
@@ -273,8 +283,8 @@ struct InboxView: View {
                         }
                     }
                 }
-                .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove) {
-                    if !isSelectionMode && draft.isReadyToApprove {
+                .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending) {
+                    if !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending {
                         Button {
                             approveDraft(draft)
                         } label: {
@@ -285,6 +295,9 @@ struct InboxView: View {
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .animation(nil, value: filteredDrafts.count)
     }
 
     private func toggleSelection(_ draft: InboxDraft) {
@@ -321,6 +334,18 @@ struct InboxView: View {
 
     private func deleteDraft(_ draft: InboxDraft) {
         withAnimation {
+            // Cache display values BEFORE changing status (if available)
+            // (archived drafts use ONLY cached values to avoid accessing deleted relationships)
+            if let account = draft.account {
+                draft.cachedAccountName = account.name
+                draft.cachedCurrencyCode = account.currencyCode
+            }
+            if let subcategory = draft.subcategory {
+                draft.cachedSubcategoryName = subcategory.name
+                draft.cachedCategoryColorHex = subcategory.category.colorHex
+                draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+            }
+
             draft.status = .rejected
             draft.updatedAt = Date()
             do {
@@ -351,8 +376,17 @@ struct InboxView: View {
 
             modelContext.insert(transaction)
 
-            // Update draft status
+            // Cache display values BEFORE changing status
+            // (archived drafts use ONLY cached values to avoid accessing deleted relationships)
+            draft.cachedAccountName = account.name
+            draft.cachedSubcategoryName = subcategory.name
+            draft.cachedCategoryColorHex = subcategory.category.colorHex
+            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+            draft.cachedCurrencyCode = account.currencyCode
+
+            // Update draft status and link to transaction
             draft.status = .approved
+            draft.approvedTransaction = transaction
             draft.updatedAt = Date()
 
             do {
@@ -362,6 +396,36 @@ struct InboxView: View {
             }
         }
     }
+
+    private func handleDraftTap(_ draft: InboxDraft) {
+        switch draft.status {
+        case .pending:
+            // Show edit sheet for pending drafts
+            selectedDraft = draft
+
+        case .approved:
+            // Check if we have a linked transaction
+            if let transaction = draft.approvedTransaction {
+                // Show the linked transaction
+                selectedTransaction = transaction
+            } else {
+                // No linked transaction (old draft or transaction was deleted)
+                // Allow re-approval by changing status to pending
+                draft.status = .pending
+                draft.updatedAt = Date()
+                try? modelContext.save()
+                selectedDraft = draft
+            }
+
+        case .rejected:
+            // Allow re-attempting rejected drafts - change status back to pending and open editor
+            draft.status = .pending
+            draft.updatedAt = Date()
+            try? modelContext.save()
+            selectedDraft = draft
+        }
+    }
+
 }
 
 // MARK: - Preview

@@ -46,6 +46,21 @@ final class DataWipeService {
         }
         try context.save()
 
+        // 1.1b Limpiar relaciones de InboxDraft y eliminar
+        let inboxDraftDescriptor = FetchDescriptor<InboxDraft>()
+        let allDrafts = try context.fetch(inboxDraftDescriptor)
+        for draft in allDrafts {
+            draft.tags = []
+            draft.account = nil
+            draft.subcategory = nil
+            draft.approvedTransaction = nil
+        }
+        try context.save()
+        for draft in allDrafts {
+            context.delete(draft)
+        }
+        try context.save()
+
         // 1.2 Eliminar todas las transacciones
         for transaction in allTransactions {
             context.delete(transaction)
