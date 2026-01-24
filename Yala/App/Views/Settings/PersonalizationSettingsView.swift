@@ -390,6 +390,11 @@ private struct PeriodPickerSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    /// Exclude .custom - default period should be relative, not absolute dates
+    private var availablePeriods: [DetailPeriod] {
+        DetailPeriod.allCases.filter { $0 != .custom }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -397,7 +402,7 @@ private struct PeriodPickerSheet: View {
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        ForEach(DetailPeriod.allCases) { period in
+                        ForEach(availablePeriods) { period in
                             periodRow(for: period)
                         }
                     }
@@ -448,7 +453,7 @@ private struct PeriodPickerSheet: View {
         }
         .buttonStyle(.plain)
 
-        if period != DetailPeriod.allCases.last {
+        if period != availablePeriods.last {
             Divider()
                 .padding(.leading, DS.Spacing.lg)
         }

@@ -424,7 +424,7 @@
 "common.updatingRecords" = "Actualizando registros...";
 "common.recalculatingConversions" = "Recalculando conversiones históricas";
 "export.customizeFile" = "Personaliza tu archivo";
-"export.csvGeneratedSuccess" = "El archivo se ha generado y compartido correctamente.";
+"export.csvGeneratedSuccess" = "El archivo se ha generado correctamente.";
 "export.confirmExport" = "Confirma tu exportación";
 "export.selectColumns" = "Seleccionar columnas";
 "export.availableColumns" = "Columnas disponibles";

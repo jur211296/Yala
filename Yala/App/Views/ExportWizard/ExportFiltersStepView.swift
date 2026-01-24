@@ -42,6 +42,7 @@ struct ExportFiltersStepView: View {
 
     // Periodo
     @State private var selectedPeriod: DetailPeriod = .last30Days
+    @State private var customDateRange: DateInterval?
 
     // Nota
     @State private var noteContains: String = ""
@@ -88,8 +89,13 @@ struct ExportFiltersStepView: View {
             selectedTagNames = selectedTagObjects.map { $0.name }
         }
 
-        // Convert DetailPeriod to date interval
-        let dateInterval = selectedPeriod.dateInterval()
+        // Convert DetailPeriod to date interval (use custom range if selected)
+        let dateInterval: DateInterval
+        if selectedPeriod == .custom, let customRange = customDateRange {
+            dateInterval = customRange
+        } else {
+            dateInterval = selectedPeriod.dateInterval()
+        }
 
         return ExportFilters(
             selectedAccounts: allAccounts.filter {
@@ -116,6 +122,7 @@ struct ExportFiltersStepView: View {
             .sheet(isPresented: $showPeriodPicker) {
                 ExportPeriodPickerSheet(
                     selectedPeriod: selectedPeriod,
+                    customDateRange: $customDateRange,
                     onSelect: { period in
                         selectedPeriod = period
                         showPeriodPicker = false
@@ -516,6 +523,16 @@ struct ExportFiltersStepView: View {
 
     // MARK: - Period Row (inside SectionBox)
 
+    private var periodDisplayText: String {
+        if selectedPeriod == .custom, let range = customDateRange {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM yy"
+            formatter.locale = AppLocale.current
+            return "\(formatter.string(from: range.start)) - \(formatter.string(from: range.end))"
+        }
+        return selectedPeriod.displayName
+    }
+
     private var periodRow: some View {
         Button {
             showPeriodPicker = true
@@ -532,7 +549,7 @@ struct ExportFiltersStepView: View {
 
                 Spacer()
 
-                Text(selectedPeriod.displayName)
+                Text(periodDisplayText)
                     .font(.body)
                     .foregroundStyle(.secondary)
 
@@ -565,9 +582,16 @@ struct ExportFiltersStepView: View {
 
 private struct ExportPeriodPickerSheet: View {
     let selectedPeriod: DetailPeriod
+    @Binding var customDateRange: DateInterval?
     let onSelect: (DetailPeriod) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @State private var showCustomPicker = false
+
+    /// Periods to show (exclude .custom, handled separately)
+    private var standardPeriods: [DetailPeriod] {
+        DetailPeriod.allCases.filter { $0 != .custom }
+    }
 
     var body: some View {
         NavigationStack {
@@ -576,9 +600,14 @@ private struct ExportPeriodPickerSheet: View {
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        ForEach(DetailPeriod.allCases) { period in
+                        // Standard periods
+                        ForEach(standardPeriods) { period in
                             periodRow(for: period)
+                            Divider().padding(.leading, DS.Spacing.lg)
                         }
+
+                        // Custom period section
+                        customPeriodRow
                     }
                     .background(Color.yalaCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
@@ -597,6 +626,14 @@ private struct ExportPeriodPickerSheet: View {
                         dismiss()
                     }
                 }
+            }
+            .sheet(isPresented: $showCustomPicker) {
+                ExportCustomPeriodPickerSheet(
+                    customDateRange: $customDateRange,
+                    onApply: {
+                        onSelect(.custom)
+                    }
+                )
             }
         }
     }
@@ -626,10 +663,126 @@ private struct ExportPeriodPickerSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
 
-        if period != DetailPeriod.allCases.last {
-            Divider()
-                .padding(.leading, 16)
+    private var customPeriodRow: some View {
+        Button {
+            showCustomPicker = true
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Period.custom)
+                        .font(.body)
+                        .foregroundStyle(Color.yalaPrimaryText)
+
+                    if let range = customDateRange {
+                        Text(formattedRange(range))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if selectedPeriod == .custom {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Color.brandPrimary)
+                        .font(.body.weight(.semibold))
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+    }
+
+    private func formattedRange(_ range: DateInterval) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM yy"
+        formatter.locale = AppLocale.current
+        return "\(formatter.string(from: range.start)) - \(formatter.string(from: range.end))"
+    }
+}
+
+// MARK: - Custom Period Picker Sheet
+
+private struct ExportCustomPeriodPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var customDateRange: DateInterval?
+    let onApply: () -> Void
+
+    @State private var startDate: Date
+    @State private var endDate: Date
+
+    init(customDateRange: Binding<DateInterval?>, onApply: @escaping () -> Void) {
+        self._customDateRange = customDateRange
+        self.onApply = onApply
+
+        // Initialize with current range or default to last 30 days
+        if let range = customDateRange.wrappedValue {
+            _startDate = State(initialValue: range.start)
+            _endDate = State(initialValue: range.end)
+        } else {
+            let now = Date()
+            let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
+            _startDate = State(initialValue: thirtyDaysAgo)
+            _endDate = State(initialValue: now)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    DatePicker(
+                        L10n.Period.startDate,
+                        selection: $startDate,
+                        in: ...endDate,
+                        displayedComponents: .date
+                    )
+
+                    DatePicker(
+                        L10n.Period.endDate,
+                        selection: $endDate,
+                        in: startDate...,
+                        displayedComponents: .date
+                    )
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.yalaBackground)
+            .navigationTitle(L10n.Period.custom)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    YalaToolbarButton(systemName: "chevron.left") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    YalaSaveButton {
+                        applyRange()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func applyRange() {
+        let calendar = Calendar.current
+        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+        let range = DateInterval(start: calendar.startOfDay(for: startDate), end: endOfDay)
+
+        customDateRange = range
+        dismiss()
+        onApply()
     }
 }

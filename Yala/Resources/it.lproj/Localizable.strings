@@ -422,7 +422,7 @@
 "common.updatingRecords" = "Aggiornamento registrazioni...";
 "common.recalculatingConversions" = "Ricalcolo conversioni storiche";
 "export.customizeFile" = "Personalizza il tuo file";
-"export.csvGeneratedSuccess" = "Il file e stato generato e condiviso con successo.";
+"export.csvGeneratedSuccess" = "Il file è stato generato con successo.";
 "export.confirmExport" = "Conferma la tua esportazione";
 "export.selectColumns" = "Seleziona colonne";
 "export.availableColumns" = "Colonne disponibili";

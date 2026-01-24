@@ -36,8 +36,7 @@ struct ExportSummaryStepView: View {
     @State private var isExporting = false
     @State private var exportError: (any Error)?
     @State private var showErrorAlert = false
-    @State private var exportedFileURL: URL?
-    @State private var showShareSheet = false
+    @State private var exportedFile: ExportedFile?
     @State private var showSuccessAlert = false
 
     // MARK: - Body
@@ -78,21 +77,17 @@ struct ExportSummaryStepView: View {
         } message: {
             Text(L10n.Export.csvGeneratedSuccess)
         }
-        .sheet(isPresented: $showShareSheet) {
-            if let url = exportedFileURL {
-                ShareSheet(
-                    activityItems: [url],
-                    onComplete: { completed in
-                        // Solo mostramos el mensaje de éxito si realmente se completó
-                        // alguna acción (guardar/compartir). Si el usuario cierra con la X,
-                        // `completed` será false y no mostraremos la confirmación.
-                        if completed {
-                            showSuccessAlert = true
-                        }
-                    }
-                )
-                .presentationDetents([.medium, .large])
+        .sheet(
+            item: $exportedFile,
+            onDismiss: {
+                // Always show success - file was generated successfully
+                // User can dismiss if they didn't actually share
+                showSuccessAlert = true
             }
+        ) { file in
+            ShareSheet(activityItems: [file.url])
+                .presentationDetents([.medium, .large])
+                .interactiveDismissDisabled(false)
         }
     }
 
@@ -302,8 +297,7 @@ struct ExportSummaryStepView: View {
 
                 await MainActor.run {
                     self.isExporting = false
-                    self.exportedFileURL = result.fileURL
-                    self.showShareSheet = true
+                    self.exportedFile = ExportedFile(url: result.fileURL)
                 }
             } catch {
                 await MainActor.run {
@@ -314,6 +308,13 @@ struct ExportSummaryStepView: View {
             }
         }
     }
+}
+
+// MARK: - Exported File Model
+
+struct ExportedFile: Identifiable {
+    let id = UUID()
+    let url: URL
 }
 
 // MARK: - Share Sheet Helper
