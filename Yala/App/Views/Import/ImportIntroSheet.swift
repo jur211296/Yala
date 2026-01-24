@@ -89,6 +89,9 @@ struct ImportIntroSheet: View {
     let accounts: [Account]
     let categories: [Category]
 
+    // Query subcategories directly to ensure they're loaded for template generation
+    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+
     @State private var allowCreatingNewCategories: Bool = false
     @State private var isShowingAccountPicker: Bool = false
     @State private var isShowingFileImporter: Bool = false
@@ -373,12 +376,18 @@ struct ImportIntroSheet: View {
         // Headers (English lowercase as expected by import service)
         let headers = ["date", "amount", "currency", "category", "subcategory", "tags", "note"]
 
-        // Generate one example row per subcategory from seed data
+        // Generate one example row per subcategory (using @Query to ensure data is loaded)
         var dataRows = [[String]]()
-        let sortedCategories = categories.sorted { $0.sortOrder < $1.sortOrder }
+
+        // Group subcategories by category and sort
+        let subcategoriesByCategory = Dictionary(grouping: allSubcategories) { $0.category }
+        let sortedCategories = subcategoriesByCategory.keys
+            .compactMap { $0 }
+            .sorted { $0.sortOrder < $1.sortOrder }
 
         for category in sortedCategories {
-            let sortedSubcategories = category.subcategories.sorted { $0.sortOrder < $1.sortOrder }
+            let sortedSubcategories = (subcategoriesByCategory[category] ?? [])
+                .sorted { $0.sortOrder < $1.sortOrder }
 
             for subcategory in sortedSubcategories {
                 // Positive amount for income categories, negative for expenses
