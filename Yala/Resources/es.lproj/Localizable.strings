@@ -434,6 +434,7 @@
 "export.filtersSummary" = "Resumen de filtros";
 "export.columnsToExport" = "Columnas a exportar";
 "export.exportToCSV" = "Exportar a CSV";
+"export.exportBtn" = "Exportar";
 "export.exportError" = "Error de exportación";
 "export.exportCompleted" = "Exportación completada";
 "export.backToSettings" = "Volver a ajustes";

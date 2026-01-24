@@ -432,6 +432,7 @@
 "export.filtersSummary" = "Resume des filtres";
 "export.columnsToExport" = "Colonnes a exporter";
 "export.exportToCSV" = "Exporter en CSV";
+"export.exportBtn" = "Exporter";
 "export.exportError" = "Erreur d'exportation";
 "export.exportCompleted" = "Exportation terminee";
 "export.backToSettings" = "Retour aux parametres";

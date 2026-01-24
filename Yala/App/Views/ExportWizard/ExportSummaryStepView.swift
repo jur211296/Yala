@@ -165,15 +165,25 @@ struct ExportSummaryStepView: View {
     }
 
     private var exportButtonSection: some View {
-        Button {
-            performExport()
+        Menu {
+            Button {
+                performExport(format: .csv)
+            } label: {
+                Label("CSV", systemImage: "doc.text")
+            }
+
+            Button {
+                performExport(format: .xlsx)
+            } label: {
+                Label("Excel (XLSX)", systemImage: "tablecells")
+            }
         } label: {
             ZStack {
                 if isExporting {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Label(L10n.Export.exportToCSV, systemImage: "square.and.arrow.up")
+                    Label(L10n.Export.exportBtn, systemImage: "square.and.arrow.up")
                         .font(.headline)
                 }
             }
@@ -274,7 +284,7 @@ struct ExportSummaryStepView: View {
         }
     }
 
-    private func performExport() {
+    private func performExport(format: ExportFormat) {
         isExporting = true
 
         // Ejecutamos en una Task para no bloquear la UI
@@ -283,7 +293,8 @@ struct ExportSummaryStepView: View {
             try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s
 
             do {
-                let result = try TransactionsExportService.exportToCSV(
+                let result = try TransactionsExportService.export(
+                    format: format,
                     using: exportFilters,
                     columns: exportColumns,
                     in: modelContext

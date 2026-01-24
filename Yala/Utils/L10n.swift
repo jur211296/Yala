@@ -839,6 +839,9 @@ enum L10n {
         static var exportToCSV: String {
             NSLocalizedString("export.exportToCSV", comment: "")
         }
+        static var exportBtn: String {
+            NSLocalizedString("export.exportBtn", comment: "")
+        }
         static var exportError: String {
             NSLocalizedString("export.exportError", comment: "")
         }
