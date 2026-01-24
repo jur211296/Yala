@@ -455,6 +455,8 @@
 "common.moreOptions" = "Plus d'options";
 "common.comingSoon" = "Bientot disponible";
 "panel.greeting" = "Pret pour neto, %@";
+"panel.fab.voice" = "Voix";
+"panel.fab.manual" = "Manuel";
 "widget.today" = "Aujourd'hui";
 
 // Widget Preferences
@@ -1050,10 +1052,28 @@
 "inbox.noArchived" = "Aucun brouillon archivé";
 "inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
 "inbox.noAmount" = "Sans montant";
+"inbox.noDescription" = "Sans description";
+"inbox.missingLabel" = "Manque:";
 "inbox.needsAccount" = "Compte";
 "inbox.needsSubcategory" = "Catégorie";
 "inbox.delete" = "Supprimer";
 "inbox.approve" = "Approuver";
+"inbox.editDraft" = "Modifier le brouillon";
+"inbox.cannotApprove" = "Impossible d'approuver";
+"inbox.sourceVoice" = "Voix";
+"inbox.sourceReceipt" = "Reçu";
+"inbox.sourceScreenshotList" = "Liste";
+"inbox.sourceScreenshot" = "Capture";
+"inbox.sourceEmail" = "Email";
+"inbox.errorNoAccount" = "Sélectionnez un compte";
+"inbox.errorNoAmount" = "Entrez un montant";
+"inbox.errorNoSubcategory" = "Sélectionnez une catégorie";
+"inbox.selectedCount" = "%d sélectionnés";
+"inbox.approveableCount" = "%d sur %d prêts à approuver";
+"inbox.deleteConfirmMessage" = "%d brouillons seront supprimés. Cette action est irréversible.";
+"inbox.duplicateWarningTitle" = "Doublon possible";
+"inbox.duplicateWarningMessage" = "Une transaction avec le même montant et la même date existe déjà. Voulez-vous en créer une autre quand même?";
+"inbox.createAnyway" = "Créer quand même";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";
@@ -1062,3 +1082,41 @@
 "bulkEdit.commonTags" = "Dans toutes les sélectionnées";
 "bulkEdit.partialTags" = "Dans certaines sélectionnées";
 "bulkEdit.availableTags" = "Disponibles à ajouter";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "Système";
+"voiceLanguage.spanish" = "Espagnol";
+"voiceLanguage.english" = "Anglais";
+"settings.voiceInputEnabled" = "Saisie vocale avec IA";
+"settings.voiceLanguage" = "Langue";
+
+// Voice Recording
+"voice.title" = "Saisie vocale";
+"voice.tapToRecord" = "Appuyez pour enregistrer";
+"voice.instruction" = "Exemple: \"Dépensé 50 chez Starbucks restaurants tag voyage\"";
+"voice.youCanSay" = "Vous pouvez mentionner:";
+"voice.hint.type" = "Type:";
+"voice.hint.type.example" = "\"dépensé\" ou \"reçu\"";
+"voice.hint.amount" = "Montant:";
+"voice.hint.amount.example" = "\"50 euros\"";
+"voice.hint.subcategory" = "Sous-catégorie:";
+"voice.hint.subcategory.example" = "\"aux restaurants\"";
+"voice.hint.merchant" = "Commerce:";
+"voice.hint.merchant.example" = "\"chez Starbucks\"";
+"voice.hint.tag" = "Tag:";
+"voice.hint.tag.example" = "\"tag voyage\"";
+"voice.hint.date" = "Date:";
+"voice.hint.date.example" = "\"hier\" (aujourd'hui par défaut)";
+"voice.example.label" = "Exemple complet:";
+"voice.example.text" = "\"Aujourd'hui j'ai dépensé 50 euros chez Starbucks restaurants tag voyage\"";
+"voice.example1" = "J'ai dépensé 25 euros en taxi";
+"voice.example2" = "Hier j'ai reçu 500 euros de salaire";
+"voice.example3" = "150 à la pharmacie tag santé";
+"voice.errorNoAmount" = "Impossible d'identifier un montant. Essayez d'être plus clair en mentionnant la quantité.";
+"voice.recording" = "Enregistrement...";
+"voice.pleaseWait" = "Veuillez patienter...";
+"voice.processingAudio" = "Traitement audio...";
+"voice.transcribing" = "Transcription...";
+"voice.analyzing" = "Analyse...";
+"voice.parsing" = "Analyse...";
+"voice.saving" = "Enregistrement...";

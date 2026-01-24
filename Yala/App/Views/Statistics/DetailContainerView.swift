@@ -47,6 +47,20 @@ struct DetailContainerView: View {
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+
+    /// Voice recording sheet
+    @State private var showVoiceRecording = false
+
+    /// FAB menu expanded state
+    @State private var showFABMenu = false
+
+    /// Check if voice input can be used (requires accounts and subcategories)
+    private var canUseVoiceInput: Bool {
+        let hasActiveAccounts = accounts.contains { !$0.isArchived }
+        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
+        return hasActiveAccounts && hasVisibleSubcategories
+    }
 
     // MARK: - Initialization
 
@@ -96,6 +110,7 @@ struct DetailContainerView: View {
                     showDeleteConfirmation: $showDeleteConfirmation,
                     showBulkEditSheet: $showBulkEditSheet,
                     isPresentingSettings: $isPresentingSettings,
+                    showVoiceRecording: $showVoiceRecording,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
                     syncFiltersToTrends: syncFiltersToTrends,
@@ -307,28 +322,116 @@ struct DetailContainerView: View {
     // MARK: - New Record FAB
 
     private var newRecordFAB: some View {
-        VStack {
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+
+        return VStack {
             Spacer()
 
             HStack {
                 Spacer()
 
-                Button {
-                    recordsViewModel.showNewTransaction = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
-                        .background(Color.electricIndigo)
-                        .clipShape(Circle())
+                if voiceInputEnabled && canUseVoiceInput {
+                    // Custom FAB with popup menu above
+                    VStack(alignment: .trailing, spacing: DS.Spacing.md) {
+                        // Menu options (shown when expanded)
+                        if showFABMenu {
+                            VStack(spacing: DS.Spacing.sm) {
+                                fabMenuButton(
+                                    icon: "waveform",
+                                    text: L10n.Panel.fabVoice,
+                                    color: .electricIndigo
+                                ) {
+                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                        showFABMenu = false
+                                    }
+                                    showVoiceRecording = true
+                                }
+
+                                fabMenuButton(
+                                    icon: "square.and.pencil",
+                                    text: L10n.Panel.fabManual,
+                                    color: .hotPink
+                                ) {
+                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                        showFABMenu = false
+                                    }
+                                    recordsViewModel.showNewTransaction = true
+                                }
+                            }
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
+                                removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
+                            ))
+                        }
+
+                        // FAB button
+                        Button {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu.toggle()
+                            }
+                        } label: {
+                            Image(systemName: showFABMenu ? "xmark" : "plus")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 56, height: 56)
+                                .background(showFABMenu ? Color.gray : fabBackground)
+                                .clipShape(Circle())
+                                .rotationEffect(.degrees(showFABMenu ? 90 : 0))
+                        }
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.interactive())
+                        .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                    }
+                } else {
+                    Button {
+                        if canUseVoiceInput {
+                            recordsViewModel.showNewTransaction = true
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 56, height: 56)
+                            .background(fabBackground)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive())
+                    .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                    .disabled(!canUseVoiceInput)
                 }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive())
-                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
+        }
+    }
+
+    private func fabMenuButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 24)
+
+                Text(text)
+                    .font(.subheadline.weight(.semibold))
+
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .frame(width: 140)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(color)
+            .clipShape(Capsule())
+            .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .phaseAnimator([false, true]) { content, phase in
+            content
+                .scaleEffect(phase ? 1.03 : 1.0)
+        } animation: { _ in
+            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
         }
     }
 
@@ -510,6 +613,7 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showDeleteConfirmation: Bool
     @Binding var showBulkEditSheet: Bool
     @Binding var isPresentingSettings: Bool
+    @Binding var showVoiceRecording: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
     let syncFiltersToTrends: () -> Void
@@ -524,6 +628,9 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
                     .onDisappear { refreshRecordsData() }
+            }
+            .sheet(isPresented: $showVoiceRecording) {
+                VoiceRecordingView()
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {

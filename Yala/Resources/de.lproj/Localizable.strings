@@ -455,6 +455,8 @@
 "common.moreOptions" = "Weitere Optionen";
 "common.comingSoon" = "Demnächst";
 "panel.greeting" = "Klartext, %@";
+"panel.fab.voice" = "Sprache";
+"panel.fab.manual" = "Manuell";
 "widget.today" = "Heute";
 
 // Widget Preferences
@@ -1050,10 +1052,28 @@
 "inbox.noArchived" = "Keine archivierten Entwürfe";
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe erscheinen hier.";
 "inbox.noAmount" = "Kein Betrag";
+"inbox.noDescription" = "Keine Beschreibung";
+"inbox.missingLabel" = "Fehlt:";
 "inbox.needsAccount" = "Konto";
 "inbox.needsSubcategory" = "Kategorie";
 "inbox.delete" = "Löschen";
 "inbox.approve" = "Genehmigen";
+"inbox.editDraft" = "Entwurf bearbeiten";
+"inbox.cannotApprove" = "Kann nicht genehmigen";
+"inbox.sourceVoice" = "Sprache";
+"inbox.sourceReceipt" = "Beleg";
+"inbox.sourceScreenshotList" = "Liste";
+"inbox.sourceScreenshot" = "Screenshot";
+"inbox.sourceEmail" = "E-Mail";
+"inbox.errorNoAccount" = "Wähle ein Konto";
+"inbox.errorNoAmount" = "Gib einen Betrag ein";
+"inbox.errorNoSubcategory" = "Wähle eine Kategorie";
+"inbox.selectedCount" = "%d ausgewählt";
+"inbox.approveableCount" = "%d von %d bereit zur Genehmigung";
+"inbox.deleteConfirmMessage" = "%d Entwürfe werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
+"inbox.duplicateWarningTitle" = "Mögliches Duplikat";
+"inbox.duplicateWarningMessage" = "Eine Transaktion mit dem gleichen Betrag und Datum existiert bereits. Möchten Sie trotzdem eine weitere erstellen?";
+"inbox.createAnyway" = "Trotzdem erstellen";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";
@@ -1062,3 +1082,41 @@
 "bulkEdit.commonTags" = "In allen ausgewählten";
 "bulkEdit.partialTags" = "In einigen ausgewählten";
 "bulkEdit.availableTags" = "Verfügbar zum Hinzufügen";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "System";
+"voiceLanguage.spanish" = "Spanisch";
+"voiceLanguage.english" = "Englisch";
+"settings.voiceInputEnabled" = "Spracheingabe mit KI";
+"settings.voiceLanguage" = "Sprache";
+
+// Voice Recording
+"voice.title" = "Spracheingabe";
+"voice.tapToRecord" = "Zum Aufnehmen tippen";
+"voice.instruction" = "Beispiel: \"50 bei Starbucks Restaurants Tag Reise ausgegeben\"";
+"voice.youCanSay" = "Sie können erwähnen:";
+"voice.hint.type" = "Typ:";
+"voice.hint.type.example" = "\"ausgegeben\" oder \"erhalten\"";
+"voice.hint.amount" = "Betrag:";
+"voice.hint.amount.example" = "\"50 Euro\"";
+"voice.hint.subcategory" = "Unterkategorie:";
+"voice.hint.subcategory.example" = "\"bei Restaurants\"";
+"voice.hint.merchant" = "Händler:";
+"voice.hint.merchant.example" = "\"bei Starbucks\"";
+"voice.hint.tag" = "Tag:";
+"voice.hint.tag.example" = "\"Tag Reise\"";
+"voice.hint.date" = "Datum:";
+"voice.hint.date.example" = "\"gestern\" (heute Standard)";
+"voice.example.label" = "Vollständiges Beispiel:";
+"voice.example.text" = "\"Heute habe ich 50 Euro bei Starbucks Restaurants Tag Reise ausgegeben\"";
+"voice.example1" = "25 Euro für das Taxi ausgegeben";
+"voice.example2" = "Gestern 500 Euro Gehalt erhalten";
+"voice.example3" = "150 in der Apotheke Tag Gesundheit";
+"voice.errorNoAmount" = "Konnte keinen Betrag identifizieren. Versuche, den Betrag klarer zu nennen.";
+"voice.recording" = "Aufnahme...";
+"voice.pleaseWait" = "Bitte warten...";
+"voice.processingAudio" = "Audio verarbeiten...";
+"voice.transcribing" = "Transkribieren...";
+"voice.analyzing" = "Analysieren...";
+"voice.parsing" = "Analysieren...";
+"voice.saving" = "Speichern...";

@@ -18,6 +18,8 @@ struct ProfileView: View {
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+    @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
 
     @Query private var allTransactions: [TransactionItem]
     @Query private var accounts: [Account]
@@ -272,12 +274,90 @@ struct ProfileView: View {
                     iconColor: .green, destination: .currency
                 )
                 SubsectionDivider()
+                voiceInputRow
+                SubsectionDivider()
                 profileRow(
                     icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
                     destination: .notifications)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private var voiceInputRow: some View {
+        VStack(spacing: 0) {
+            // Toggle row
+            HStack(spacing: DS.Spacing.md) {
+                if colorfulIcons {
+                    Image(systemName: "waveform.badge.mic")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.cyan)
+                        )
+                } else {
+                    Image(systemName: "waveform.badge.mic")
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .frame(width: 28)
+                }
+
+                Text(L10n.Settings.voiceInputEnabled)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Toggle("", isOn: $voiceInputEnabled)
+                    .labelsHidden()
+                    .tint(Color.brandPrimary)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+
+            // Language selector (only visible when enabled)
+            if voiceInputEnabled {
+                HStack(spacing: DS.Spacing.md) {
+                    // Empty space to align with icon
+                    Color.clear
+                        .frame(width: 28, height: 28)
+
+                    Text(L10n.Settings.voiceLanguage)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Menu {
+                        ForEach(VoiceLanguage.allCases) { language in
+                            Button {
+                                voiceLanguageRaw = language.rawValue
+                            } label: {
+                                HStack {
+                                    Text(language.displayName)
+                                    if voiceLanguageRaw == language.rawValue {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(VoiceLanguage(rawValue: voiceLanguageRaw)?.displayName ?? L10n.VoiceLanguage.system)
+                                .font(.body)
+                                .foregroundStyle(Color.brandPrimary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(Color.brandPrimary)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+        }
     }
 
     private var datosSection: some View {

@@ -53,6 +53,12 @@ final class InboxDraft: Identifiable {
     @Relationship(deleteRule: .nullify)
     var tags: [Tag]
 
+    /// Transacción creada al aprobar (para sincronización)
+    /// Se establece deleteRule: .nullify para que si se elimina la transacción,
+    /// el draft conserve su referencia nula y pueda detectar que fue eliminada.
+    @Relationship(deleteRule: .nullify)
+    var approvedTransaction: TransactionItem?
+
     // MARK: - Metadatos de origen
 
     /// Tipo de fuente (voz, foto, screenshot, etc.)
@@ -79,6 +85,23 @@ final class InboxDraft: Identifiable {
     /// Estado del draft
     var statusRaw: String
 
+    // MARK: - Cached Display Values (para cuando los objetos relacionados son eliminados)
+
+    /// Nombre de cuenta cacheado al aprobar
+    var cachedAccountName: String?
+
+    /// Nombre de subcategoría cacheado al aprobar
+    var cachedSubcategoryName: String?
+
+    /// Color hex de categoría cacheado al aprobar
+    var cachedCategoryColorHex: String?
+
+    /// Icono de subcategoría cacheado al aprobar
+    var cachedSubcategoryIcon: String?
+
+    /// Código de moneda cacheado al aprobar
+    var cachedCurrencyCode: String?
+
     // MARK: - Timestamps
 
     var createdAt: Date
@@ -104,6 +127,78 @@ final class InboxDraft: Identifiable {
     /// Indica si el draft tiene todos los campos requeridos para aprobar
     var isReadyToApprove: Bool {
         account != nil && amount != nil && subcategory != nil
+    }
+
+    /// Indica si la transacción aprobada fue eliminada (permite re-aprobar)
+    var wasTransactionDeleted: Bool {
+        status == .approved && approvedTransaction == nil
+    }
+
+    /// Indica si todos los campos están completos (para mostrar vista completa vs incompleta)
+    /// Para drafts archivados usa SOLO valores cacheados (las relaciones pueden estar invalidadas)
+    /// Para drafts pendientes usa las relaciones vivas
+    var hasAllRequiredFields: Bool {
+        guard amount != nil else { return false }
+
+        switch status {
+        case .approved, .rejected:
+            // Archived: use ONLY cached values (relationships may be invalidated)
+            return cachedAccountName != nil && cachedSubcategoryName != nil
+        case .pending:
+            // Pending: use live relationships
+            return account != nil && subcategory != nil
+        }
+    }
+
+    /// Nombre de cuenta para mostrar
+    /// Para archivados: SOLO cache. Para pendientes: relación viva.
+    var displayAccountName: String? {
+        switch status {
+        case .approved, .rejected:
+            return cachedAccountName
+        case .pending:
+            return account?.name
+        }
+    }
+
+    /// Nombre de subcategoría para mostrar
+    var displaySubcategoryName: String? {
+        switch status {
+        case .approved, .rejected:
+            return cachedSubcategoryName
+        case .pending:
+            return subcategory?.name
+        }
+    }
+
+    /// Color de categoría para mostrar
+    var displayCategoryColorHex: String {
+        switch status {
+        case .approved, .rejected:
+            return cachedCategoryColorHex ?? "#6366F1"
+        case .pending:
+            return subcategory?.category.colorHex ?? "#6366F1"
+        }
+    }
+
+    /// Icono de subcategoría para mostrar
+    var displaySubcategoryIcon: String {
+        switch status {
+        case .approved, .rejected:
+            return cachedSubcategoryIcon ?? "tag.fill"
+        case .pending:
+            return subcategory?.iconName ?? subcategory?.category.iconName ?? "tag.fill"
+        }
+    }
+
+    /// Código de moneda para mostrar
+    var displayCurrencyCode: String? {
+        switch status {
+        case .approved, .rejected:
+            return cachedCurrencyCode
+        case .pending:
+            return account?.currencyCode
+        }
     }
 
     /// Icono SF Symbol según el tipo de fuente

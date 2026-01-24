@@ -5,53 +5,75 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** V1.0 Release Complete — Listo para TestFlight
+**Current focus:** V1.1 Desarrollo — Fase 8: Registro Inteligente
 
 ## Current Position
 
-Version: 1.0 (RELEASE READY)
-Phase: 7.1 of 7.1 en V1.0 (Acciones Rápidas en Transacciones) ✅ COMPLETADA
-Spec: None
-Plan: Complete
-Status: **V1.0 en TestFlight** — Nuevos bugs reportados pendientes de resolver
-Last activity: 2026-01-21 — Bugfixes TestFlight (5 commits), nuevos bugs documentados
+Version: 1.1 (IN DEVELOPMENT)
+Phase: 8 - Registro Inteligente (Subfase 8.1 ✅, 8.2 ✅, 8.3 ✅, siguiente: 8.4)
+Spec: .planning/PHASE8-REGISTRO-SPEC.md
+Plan: In progress
+Status: **V1.1 en desarrollo** — Voz MVP completado, siguiente: Imágenes MVP
+Last activity: 2026-01-22 — Subfase 8.3 completada
 
-Progress: ██████████████ 100% (V1.0 Completa)
+Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progreso)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-22T12:45:00-05:00] a939ee3 fix(transaction-ui): match tag chip size with other selection chips
-- [2026-01-22T12:42:00-05:00] cac01fc fix(transaction-ui): improve category and tag chips styling
-- [2026-01-22T12:38:00-05:00] 5e401b9 fix(transaction-ui): improve amount, tags, date chip and toast
-- [2026-01-22T12:30:00-05:00] f1051ac fix(period): prevent ViewModels from overwriting period selection
-- [2026-01-22T12:00:00-05:00] c6294fa fix(records): balance now equals income minus expense
-- [2026-01-22T11:45:00-05:00] 50e542c fix(filters): prevent auto-expense when selecting income categories
-- [2026-01-22T10:45:00-05:00] 3361855 fix(tests): update currency count test to expect 7 currencies
-- [2026-01-22T10:44:00-05:00] cbfe355 docs(qa): add transfer classification test scenarios
-- [2026-01-22T10:40:00-05:00] 80ac396 feat(migration): migrate positive transfers to Income category
-- [2026-01-22T10:38:00-05:00] c1c8a4d fix(import): use isSystemSubcategory for transfer detection
-- [2026-01-22T10:36:00-05:00] 2a4b80e fix(subcategories): protect system subcategories from deletion
-- [2026-01-22T10:35:00-05:00] fe0b54c fix(categories): protect Otros category from deletion
-- [2026-01-22T10:34:00-05:00] b57c916 feat(transfers): classify incoming transfers under Income category
-- [2026-01-22T10:33:00-05:00] e13bbc2 feat(seed): add transfer subcategory to Income category
-- [2026-01-22T10:32:00-05:00] 4433200 feat(charts): add smart alignment for period comparison
+- [2026-01-24T07:30:00-05:00] b25d225 feat(inbox): add cached display values and improve archived drafts handling
+- [2026-01-22T19:25:37-05:00] 4b6fbef feat(voice): redesign FAB menu and voice instructions UI
+- [2026-01-22T18:58:41-05:00] d3abd90 feat(inbox): improve draft approval UX with type selector and category chips
+- [2026-01-22T18:08:00-05:00] 41ac5d3 feat(voice): add smart entity extraction and improved instructions UI
+- [2026-01-22T17:10:00-05:00] 58aab0f feat(import): add XLSX file support for transaction import
+- [2026-01-22T17:03:00-05:00] 3fc8428 feat(voice): add voice recording UI and complete input flow
+- [2026-01-22T16:55:00-05:00] a070ac1 fix(panel): remove duplicate onChange handlers
+- [2026-01-22T16:54:00-05:00] 6482862 feat(voice): add voice input toggle and conditional FAB menu
+- [2026-01-22T16:40:00-05:00] 1cac316 feat(settings): add voice language preference in personalization
+- [2026-01-22T16:30:00-05:00] bd67105 feat(voice): add OpenAI integration for voice transcription
+- [2026-01-22T14:25:00-05:00] cbe38f8 docs: update state and QA for inbox subfase 8.2
 
-## Completed in Current Phase
+## Completed in Current Phase (V1.1)
 
-- **Subfase 7.1: Code Quality & Cleanup** - TODOs eliminados, código muerto limpiado, referencias legacy (FIN-XX) removidas, 0 warnings
-- **Subfase 7.2: Performance & Optimización** - Auditoría de código OK (N+1, lazy loading, memory leaks)
-- **Subfase 7.3: Localizaciones y Monedas** - 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP), strings hardcodeados corregidos
-- **Subfase 7.4: Testing & QA** - QA-SCENARIOS.md exhaustivo (15 secciones, ~120 escenarios, ~250 validaciones), CSVs de prueba para import (7 archivos)
-- **Subfase 7.5: UX para Nuevos Usuarios** - Empty states estandarizados, InfoHintButton en 12 widgets con toggle, FilterBlockedPopover, empty states en TrendsTabView
-- **Subfase 7.7: Estabilidad Pre-Release** - Error handling en persistencia (13 try? → do/catch con alertas), validaciones auditadas OK
-- **Subfase 7.8: Primer Uso y Onboarding** - Onboarding 4 pasos (nombre, moneda, secundarias, periodo), 7 monedas, sección divisas secundarias en Settings
-- **Fix urgente: Edición masiva** - BulkEditSheet completo con 5 opciones (cuenta, subcategoría, tags, nota, monto), barra de selección rediseñada estilo iOS 18, métodos bulk update en RecordsViewModel, localizaciones en 6 idiomas, 9 escenarios QA nuevos
-- **Subfase 7.6: App Store Preparation** - Metadata en 6 idiomas (nombre, subtitle, keywords, descripción completa), Privacy Policy (ES/EN), demo-data.csv para screenshots; documentado en .planning/appstore/
-- **Bugfixes TestFlight V1.0** - Subcategorías recientes de 4→8, icono correcto en TagSelectorSheet, estilos consistentes en tag selector de quick actions, DatePicker save button fix, localización de tipo transacción en success view
-- **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
-- **Bugfixes TestFlight Ronda 2** - SSOT para filtros, smart alignment para gráficas comparativas, clasificación correcta de transferencias (entrantes a Ingresos, salientes a Otros), protección de categorías/subcategorías del sistema, migración automática de transferencias existentes, 4 escenarios QA nuevos
+### Subfase 8.1: Infraestructura Base ✅
+- **Modelo InboxDraft** - SwiftData model con campos para draft, metadatos de origen, confianza por campo, estado y validación
+- **Enums** - DraftSourceType (voice, receiptPhoto, screenshotList, screenshotSingle, emailAlert) y DraftStatus (pending, approved, rejected)
+- **InboxView** - Vista de bandeja con filtros (Pendientes/Archivados), lista de drafts, swipe to delete, empty states
+- **InboxDraftRowView** - Celda con icono de fuente, nota, indicadores de campos faltantes, fecha relativa, monto con indicador de confianza
+- **Navegación** - Botón en PanelView toolbar (lado izquierdo) con badge de contador de pendientes
+- **Localizaciones** - 12 keys en 6 idiomas (es, en, de, fr, it, pt)
+- **Registro en ModelContainer** - InboxDraft añadido al schema en NetoApp.swift
+
+### Subfase 8.2: Edición y Aprobación ✅
+- **InboxDraftEditSheet** - Formulario de edición con mismo diseño que NewTransactionView, prefilled desde draft
+- **Flujo de aprobación** - Validación de campos requeridos (account, amount, subcategory), crea TransactionItem
+- **Swipe actions** - Swipe right to approve (drafts válidos), swipe left to delete
+- **Modo selección múltiple** - Selection circles, barra de selección con contador
+- **InboxBulkActionsSheet** - Acciones en lote: asignar cuenta, subcategoría, aprobar válidos, eliminar
+- **Localizaciones** - 13 nuevas keys en 6 idiomas
+- **QA-SCENARIOS** - Sección 16 con 29 escenarios de prueba
+
+### Subfase 8.3: Voz MVP ✅
+- **OpenAI SDK** - MacPaw/OpenAI v0.4.7 integrado via Swift Package Manager
+- **API Key segura** - xcconfig con Secrets.xcconfig (git-ignored), APIKeyService lee desde Info.plist
+- **VoiceTranscriptionService** - Whisper STT a 16kHz, VoiceLanguage enum (system/es/en)
+- **TranscriptionParserService** - GPT-4o-mini extrae amount, date, note, isExpense con confidence scores
+- **AudioRecorderService** - AVAudioRecorder en m4a mono, permisos micrófono, estados (idle/recording/processing)
+- **VoiceRecordingView** - UI con círculo pulsante, duración en tiempo real, estados de procesamiento
+- **Toggle en ProfileView** - "Entrada por voz con IA" con selector de idioma inline
+- **FAB condicional** - Menu Voz/Manual en PanelView y DetailContainerView cuando voice está habilitado
+- **Flujo completo** - Grabar → Transcribir → Parsear → Crear InboxDraft con confidence
+- **Localizaciones** - 9 nuevas keys voice.* en 6 idiomas
+
+### Mejoras adicionales (V1.1)
+- **Importación XLSX** - Soporte para archivos Excel (.xlsx) además de CSV
+  - XLSXReader usando CoreXLSX para parsear primera hoja
+  - Tipos genéricos (ImportError, ImportColumn, TransactionImportResult) compartidos
+  - RawImportRow struct y validateAndCreateDraft() para validación compartida
+  - importXLSX() e importXLSXMultiCurrency() métodos
+  - scanCurrenciesFromFile() detecta monedas en ambos formatos
+  - ImportIntroSheet acepta UTType.spreadsheet
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -92,95 +114,39 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Next Steps
 
-### Fase 7.1: Acciones Rápidas en Transacciones ✅ COMPLETADA
+### Subfase 8.4: Imágenes MVP (Siguiente)
 
-- [x] UI Base: Barra de acciones debajo del monto (4 botones con iconos)
-- [x] Duplicar: Crea copia de transacción actual (solo edición)
-- [x] Eliminar: Elimina con confirmación (solo edición)
-- [x] Guardar como favorito: Crea FavoritePayment desde transacción
-- [x] Guardar como recurrente: Crea ScheduledPayment desde transacción
-- [x] Localizaciones en 6 idiomas
-- [x] QA-SCENARIOS.md actualizado con 7 escenarios nuevos
+- [ ] OCR con Vision API (OpenAI)
+- [ ] Clasificación de imágenes (recibo, screenshot lista, screenshot individual)
+- [ ] Extractores especializados por tipo de imagen
+- [ ] Crear InboxDraft(s) desde imagen
+- [ ] UI para capturar/seleccionar foto
 
----
+### Subfases siguientes (Fase 8)
 
-### Bugs TestFlight V1.0 - Ronda 2 (2026-01-21)
-
-| # | Bug | Complejidad | Estado |
-|---|-----|-------------|--------|
-| 1 | Gráfica naturaleza en CategoriesTabView no filtra por categoría/subcategoría | Media | ✅ Completado (0c0b938) |
-| 2 | Comparativa vs periodo anterior - fechas descuadradas | Media-Alta | ✅ Completado (4433200) |
-| 3 | Transferencias entrantes no se ven como ingreso en registros | Alta | ✅ Completado (b57c916) |
-| 4 | Saldo en RecordsTabView no cuadra con diferencia ingresos-egresos | Media | ✅ Completado (implícito con Bug 3) |
-| 5 | Preferencias widgets default desactualizadas | Baja | ✅ Completado (7fdb536) |
-
-**Todos los bugs de Ronda 2 completados.** La app está lista para validación manual.
+- **8.5: Merchant Memory** - Canonicalización, sugerencias
+- **8.6: Refinamiento** - Sistema confianza, fallbacks
+- **8.7: Cloud Fallback** - (Opcional) AWS/GCP para recibos
 
 ---
 
-### Post V1.0 — Opciones
+### V1.0 Completado (Archivado)
 
-1. Resolver bugs Ronda 2 arriba
-2. Capturar screenshots manuales con demo-data.csv
-3. Iniciar V1.1 (Fase 8: Registro Inteligente)
-
----
-
-### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
-
-**Subfase 7.1: Code Quality & Cleanup** ✅
-- [x] Revisar TODOs/FIXMEs en el código
-- [x] Eliminar código muerto o comentado
-- [x] Eliminar referencias legacy (FIN-XX)
-- [x] Imports no usados (verificado)
-- [x] Warnings del compilador a cero
-
-**Subfase 7.2: Performance & Optimización** ✅
-- [x] Auditoría de código (N+1, lazy loading, view bodies)
-- [x] Memory leaks (sin retain cycles detectados)
-- [x] Nota: Profiling con Instruments pendiente (manual en Xcode)
-
-**Subfase 7.3: Localizaciones y Monedas** ✅
-- [x] Auditoría de strings hardcodeados (3 títulos corregidos)
-- [x] Nuevas keys en 6 idiomas (filters.title, iconPicker.title)
-- [x] Añadir monedas: MXN, COP, BRL, GBP (7 monedas total)
-
-**Subfase 7.4: Testing & QA** ✅
-- [x] Documento QA-SCENARIOS.md exhaustivo (reescritura completa)
-- [x] 15 secciones con orden de dependencias
-- [x] ~120 escenarios detallados con precondiciones
-- [x] ~250+ validaciones específicas
-- [x] CSVs de prueba en .qa-test-data/ (7 archivos)
-- [x] screenshot_data_pen.csv para capturas App Store
-
-**Subfase 7.5: UX para Nuevos Usuarios** ✅
-- [x] Empty states informativos (auditados, iconos estandarizados)
-- [x] Textos de ayuda en Settings (verificados)
-- [x] InfoHintButton en 12 widgets con toggle showWidgetHints
-- [x] FilterBlockedPopover para mensajes de bloqueo de filtros
-- [x] Empty states en TrendsTabView (gráfica trend y cashflow)
-
-**Subfase 7.6: App Store Preparation** ✅
-- [x] Metadata en 6 idiomas (nombre, subtitle, keywords, descripción)
-- [x] Privacy Policy (ES/EN)
-- [x] demo-data.csv para screenshots
-- [x] Documentado en .planning/appstore/
-- [ ] Screenshots (pendiente - captura manual en Xcode)
-
-**Subfase 7.7: Estabilidad Pre-Release** ✅
-- [x] Error handling consistente (13 operaciones de persistencia con alertas)
-- [x] Validaciones de datos (auditadas - todas OK)
-
-**Subfase 7.8: Primer Uso y Onboarding** ✅
-- [x] Onboarding de 4 pasos (nombre, moneda preferida, secundarias, periodo)
-- [x] Integración con ContentView (fullScreenCover)
-- [x] Reactivo a data wipe (muestra onboarding automáticamente)
-- [x] 7 monedas soportadas (PEN, USD, EUR, MXN, COP, BRL, GBP)
-- [x] Sección divisas secundarias en CurrencySettingsView
+V1.0 fue completada el 2026-01-21 y está en TestFlight. Incluye:
+- Fases 1-7.1 completadas
+- Fase 7: Beta Preparation con todas las subfases (7.1-7.8)
+- Bugfixes TestFlight Ronda 1 y 2
+- Ver detalles en commits de branch `1.0`
 
 ## Parking Lot
 
 ### Ideas Capturadas
+
+- **2026-01-22 [Enhancement] [UX] [Medium]: Animaciones y haptics en toda la app**
+  Contexto: La animación de pulso en los botones del FAB menu inspiró explorar más micro-animaciones
+  Inspiración: phaseAnimator con scaleEffect sutil para llamar atención del usuario
+  A considerar: Haptic feedback en acciones clave, animaciones de entrada/salida, transiciones fluidas
+  Target: Release oficial V1.1
 
 - **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
   Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
@@ -201,17 +167,17 @@ Progress: ██████████████ 100% (V1.0 Completa)
 ## Session Continuity
 
 Last session: 2026-01-22
-Stopped at: Todos los bugs de TestFlight Ronda 2 completados
-Next step: Validación manual de transferencias, luego decidir V1.1 o más polish
-Resume file: .claude/sessions/2026-01-22-102721.log
+Stopped at: Subfase 8.3 completada
+Next step: Implementar Subfase 8.4 (Imágenes MVP)
 Resume context:
-- Bugs 1-5 de Ronda 2 completados
-- Transferencias ahora clasifican correctamente: entrantes a Ingresos, salientes a Otros
-- Categorías y subcategorías del sistema protegidas de eliminación
-- Migración automática de transferencias existentes implementada
+- Subfase 8.3 (Voz MVP) completada
+- OpenAI SDK integrado, API key via xcconfig
+- VoiceTranscriptionService (Whisper) y TranscriptionParserService (GPT-4o-mini)
+- AudioRecorderService y VoiceRecordingView implementados
+- FAB condicional en PanelView y DetailContainerView
+- Flujo completo: grabar → transcribir → parsear → InboxDraft
 
-## V1.1 (Futuro)
+## Referencias
 
-Registro Inteligente y Plataforma diferidos. Ver:
-- .planning/PHASE8-REGISTRO-SPEC.md
-- ROADMAP.md (Fases 8-9)
+- Spec Fase 8: .planning/PHASE8-REGISTRO-SPEC.md
+- ROADMAP: .planning/ROADMAP.md (Fases 8-9 para V1.1)

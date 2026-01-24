@@ -1742,6 +1742,7 @@ Ordenado por dependencias de datos para ejecución secuencial.
 **Formatos soportados:**
 - CSV simple (fecha, monto, descripción, categoría)
 - CSV multimoneda (incluye campo moneda)
+- XLSX (Excel) - mismo formato de columnas que CSV
 
 ### Export (ExportWizardView)
 
@@ -1790,6 +1791,73 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Monto no numérico
 - [ ] Categoría inexistente
 - [ ] Columnas faltantes
+
+### Escenarios de Import XLSX
+
+#### Escenario 12.3.1: Importar XLSX simple
+**Precondiciones:** Archivo XLSX válido con columnas: date,amount,currency,category,subcategory
+**Pasos:**
+1. Profile → Importar → seleccionar archivo .xlsx
+2. Sistema detecta formato Excel
+3. Mapear columnas si necesario
+4. Seleccionar cuenta destino
+5. Importar
+**Resultado esperado:**
+- [ ] XLSXReader parsea primera hoja
+- [ ] Transacciones creadas correctamente
+- [ ] Resumen de importación muestra conteo
+- [ ] Balances actualizados
+
+#### Escenario 12.3.2: Importar XLSX multimoneda
+**Precondiciones:** XLSX con columna currency con múltiples divisas (PEN, USD, EUR)
+**Pasos:**
+1. Importar archivo XLSX
+2. Sistema detecta múltiples monedas via scanCurrenciesFromFile()
+3. Sheet de asignación de cuentas por moneda aparece
+4. Asignar cuenta a cada moneda
+5. Importar
+**Resultado esperado:**
+- [ ] Detección automática de monedas funciona
+- [ ] Transacciones asignadas a cuentas correctas según moneda
+- [ ] Balances de cada cuenta actualizados
+
+#### Escenario 12.3.3: XLSX con columnas opcionales (tags, note)
+**Precondiciones:** XLSX con columnas: date,amount,currency,category,subcategory,tags,note
+**Pasos:**
+1. Importar archivo XLSX con 7 columnas
+2. Completar importación
+**Resultado esperado:**
+- [ ] Tags parseados correctamente (separados por coma)
+- [ ] Notas importadas
+- [ ] Tags nuevos creados con colores únicos
+
+#### Escenario 12.3.4: XLSX con errores de formato
+**Precondiciones:** XLSX con celdas inválidas (fecha como texto malformado, monto como texto)
+**Pasos:**
+1. Intentar importar XLSX con errores
+2. Ver reporte de errores
+**Resultado esperado:**
+- [ ] Filas válidas importadas
+- [ ] Errores específicos reportados por fila
+- [ ] Mensaje claro del tipo de error
+
+#### Escenario 12.3.5: XLSX vacío o sin datos
+**Precondiciones:** Archivo XLSX con solo encabezados, sin filas de datos
+**Pasos:**
+1. Intentar importar XLSX vacío
+**Resultado esperado:**
+- [ ] Error claro: "No hay datos para importar"
+- [ ] No se crean transacciones
+
+#### Escenario 12.3.6: Selector de archivo acepta .xlsx
+**Precondiciones:** Ninguna
+**Pasos:**
+1. Profile → Importar
+2. Verificar que el picker muestra archivos .xlsx y .csv
+**Resultado esperado:**
+- [ ] UTType.spreadsheet acepta .xlsx
+- [ ] UTType.commaSeparatedText acepta .csv
+- [ ] Ambos formatos seleccionables
 
 ### Escenarios de Export
 
@@ -2071,7 +2139,221 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ---
 
+## Sección 16: Bandeja de Entrada (Inbox) - V1.1
+
+### Vista: InboxView
+
+Bandeja para borradores de transacciones generados por extractores (voz, imagen, etc.).
+
+### Precondiciones
+
+- Tener drafts en la bandeja (requiere Fase 8.3+ para generar desde voz/imagen)
+- Para testing manual: crear drafts programáticamente o mediante debug tools
+
+### Escenarios de Lista
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.1 | Ver bandeja vacía (Pendientes) | Abrir bandeja sin drafts | Empty state: "Sin borradores pendientes" |
+| 16.2 | Ver bandeja vacía (Archivados) | Cambiar a filtro Archivados | Empty state: "Sin borradores archivados" |
+| 16.3 | Filtrar por Pendientes | Tap en chip "Pendientes" | Solo muestra drafts con status pending |
+| 16.4 | Filtrar por Archivados | Tap en chip "Archivados" | Muestra drafts approved + rejected |
+| 16.5 | Badge en Panel | Ver botón en PanelView | Badge muestra conteo de pendientes |
+
+### Escenarios de Edición Individual
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.6 | Abrir editor | Tap en draft | Sheet de edición estilo NewTransactionView |
+| 16.7 | Editar nota | Cambiar texto | Se actualiza al guardar |
+| 16.8 | Editar monto | Cambiar valor | Se actualiza al guardar |
+| 16.9 | Editar fecha | Tap en chip fecha | DatePicker funcional |
+| 16.10 | Asignar cuenta | Tap en chip cuenta | AccountSelectorSheet |
+| 16.11 | Asignar subcategoría | Tap en chip subcategoría | SubcategorySelectorSheet |
+| 16.12 | Asignar tags | Tap en chip tags | TagSelectorSheet |
+| 16.13 | Guardar cambios | Tap "Guardar" | Draft actualizado, sheet cierra |
+
+### Escenarios de Aprobación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.14 | Aprobar desde editor | Completar campos + Tap "Aprobar" | TransactionItem creado, draft → approved |
+| 16.15 | Aprobar incompleto | Intentar aprobar sin cuenta/monto/subcategoría | Alert con error específico |
+| 16.16 | Swipe right to approve | Swipe derecha en draft válido | Draft aprobado, transacción creada |
+| 16.17 | Swipe right bloqueado | Swipe derecha en draft incompleto | Swipe no disponible |
+
+### Escenarios de Eliminación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.18 | Swipe left to delete | Swipe izquierda | Draft → rejected, desaparece de Pendientes |
+| 16.19 | Ver eliminado en Archivados | Filtrar Archivados | Draft eliminado visible |
+
+### Escenarios de Selección Múltiple
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.20 | Entrar modo selección | Tap "Edición múltiple" | Círculos de selección aparecen |
+| 16.21 | Seleccionar draft | Tap en draft | Círculo se llena |
+| 16.22 | Seleccionar todos | Tap en círculo de barra | Todos seleccionados |
+| 16.23 | Deseleccionar todos | Tap en círculo lleno | Todos deseleccionados |
+| 16.24 | Salir modo selección | Tap "Cancelar" | Círculos desaparecen |
+
+### Escenarios de Acciones en Lote
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.25 | Asignar cuenta a varios | Seleccionar → Editar → Cuenta | Todos actualizados con cuenta |
+| 16.26 | Asignar subcategoría a varios | Seleccionar → Editar → Subcategoría | Todos actualizados |
+| 16.27 | Aprobar varios válidos | Seleccionar válidos → Aprobar | Transacciones creadas |
+| 16.28 | Aprobar con algunos inválidos | Mezcla de válidos e inválidos | Solo válidos se aprueban, muestra conteo |
+| 16.29 | Eliminar varios | Seleccionar → Eliminar | Confirmación → todos rejected |
+
+### Validaciones de UI
+
+| Elemento | Verificación |
+|----------|--------------|
+| Icono de fuente | Correcto para tipo (voz, recibo, etc.) |
+| Indicadores campos faltantes | Chips rojos para account/subcategory/amount |
+| Fecha relativa | "Hoy", "Ayer", o fecha formateada |
+| Color de monto | Verde/morado para positivo, rosa para negativo |
+| Indicador confianza | Triángulo naranja si <70% |
+
+---
+
+## Sección 17: Entrada por Voz (Voz MVP) - V1.1
+
+### Vista: VoiceRecordingView + ProfileView (Settings)
+
+Funcionalidad de entrada de transacciones por voz usando OpenAI Whisper (STT) y GPT-4o-mini (parsing).
+
+### Precondiciones Generales
+
+- API Key de OpenAI configurada en Secrets.xcconfig
+- Permiso de micrófono otorgado (o disponible para solicitar)
+- Conexión a internet activa
+
+---
+
+### Escenarios de Configuración (ProfileView)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.1 | Toggle voz deshabilitado (default) | Abrir Profile → Personalización | Toggle "Entrada por voz con IA" está OFF |
+| 17.2 | Habilitar entrada por voz | Activar toggle "Entrada por voz con IA" | Toggle ON, selector de idioma aparece |
+| 17.3 | Deshabilitar entrada por voz | Desactivar toggle | Toggle OFF, selector de idioma desaparece |
+| 17.4 | Selector idioma - Sistema | Con voz habilitada, seleccionar "Sistema" | Usa idioma del dispositivo para transcripción |
+| 17.5 | Selector idioma - Español | Seleccionar "Español" | Whisper transcribe en español |
+| 17.6 | Selector idioma - Inglés | Seleccionar "English" | Whisper transcribe en inglés |
+| 17.7 | Persistencia de configuración | Cerrar y abrir app | Toggle y idioma mantienen valor |
+
+---
+
+### Escenarios de FAB Condicional
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.8 | FAB simple (voz deshabilitada) | Con voz OFF, ver PanelView | FAB "+" abre NewTransactionView directamente |
+| 17.9 | FAB menú (voz habilitada) | Con voz ON, tap en FAB "+" en PanelView | Menú con opciones: "Voz" y "Manual" |
+| 17.10 | FAB menú en Statistics | Con voz ON, tap en FAB "+" en DetailContainerView | Mismo menú: "Voz" y "Manual" |
+| 17.11 | Seleccionar "Manual" del menú | Tap en "Manual" | Abre NewTransactionView |
+| 17.12 | Seleccionar "Voz" del menú | Tap en "Voz" | Abre VoiceRecordingView |
+
+---
+
+### Escenarios de Permisos de Micrófono
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.13 | Primera solicitud de permiso | Primera vez que se abre VoiceRecordingView | Alert del sistema pidiendo permiso de micrófono |
+| 17.14 | Permiso otorgado | Aceptar permiso | Grabación disponible, botón de grabar activo |
+| 17.15 | Permiso denegado | Denegar permiso | Mensaje de error, enlace a Settings |
+| 17.16 | Permiso revocado posteriormente | Revocar en Settings del sistema, volver a app | Mensaje indicando que se necesita permiso |
+
+---
+
+### Escenarios de Grabación (VoiceRecordingView)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.17 | UI inicial | Abrir VoiceRecordingView | Botón grande de micrófono, instrucciones visibles |
+| 17.18 | Iniciar grabación | Tap en botón de micrófono | Círculo pulsante, contador de duración inicia (0:00) |
+| 17.19 | Contador en tiempo real | Grabar por 5 segundos | Duración muestra 0:05 en tiempo real |
+| 17.20 | Detener grabación | Tap en botón durante grabación | Grabación se detiene, inicia procesamiento |
+| 17.21 | Estado "Procesando" | Después de detener | Indicador de carga, texto "Procesando..." |
+| 17.22 | Cancelar grabación | Tap en X o swipe down durante grabación | Grabación cancelada, sheet se cierra |
+
+---
+
+### Escenarios de Transcripción y Parsing
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.23 | Transcripción exitosa | Grabar "Gasté veinte soles en almuerzo" | Whisper devuelve texto transcrito |
+| 17.24 | Parsing de monto | Transcripción con monto | GPT-4o-mini extrae amount: 20.00 |
+| 17.25 | Parsing de nota | Transcripción con descripción | Extrae note: "almuerzo" o similar |
+| 17.26 | Parsing de fecha implícita | "Gasté ayer..." | Extrae date: fecha de ayer |
+| 17.27 | Parsing de tipo (gasto) | "Gasté..." o "Pagué..." | isExpense: true |
+| 17.28 | Parsing de tipo (ingreso) | "Me pagaron..." o "Recibí..." | isExpense: false |
+| 17.29 | Confidence scores | Después de parsing | Cada campo tiene confidence (0.0-1.0) |
+
+---
+
+### Escenarios de Creación de InboxDraft
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.30 | Draft creado exitosamente | Flujo completo de voz | InboxDraft creado en bandeja |
+| 17.31 | Draft con sourceType correcto | Ver draft en Inbox | sourceType = .voice |
+| 17.32 | Draft con campos extraídos | Ver draft | amount, note, date poblados según parsing |
+| 17.33 | Draft con confidence | Ver indicadores | Campos con confidence <70% muestran indicador |
+| 17.34 | Navegación post-creación | Después de crear draft | Sheet se cierra, puede ir a Inbox |
+| 17.35 | Toast de confirmación | Después de crear draft | Toast: "Borrador creado" o similar |
+
+---
+
+### Escenarios de Errores
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.36 | Sin conexión a internet | Intentar grabar sin internet | Error claro: "Se requiere conexión a internet" |
+| 17.37 | API Key inválida/faltante | Grabar con key incorrecta | Error: "Error de autenticación" |
+| 17.38 | Timeout de transcripción | Simular timeout | Error con opción de reintentar |
+| 17.39 | Audio muy corto | Grabar <1 segundo | Error: "Grabación muy corta" |
+| 17.40 | Audio inaudible/silencio | Grabar silencio | Error o warning: "No se detectó audio" |
+| 17.41 | Parsing falla | Transcripción no parseable | Draft creado solo con nota (texto completo) |
+| 17.42 | Error de Whisper API | Error 500 de OpenAI | Mensaje de error, opción reintentar |
+
+---
+
+### Escenarios de Localización
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.43 | Labels en Español | Dispositivo en ES | "Entrada por voz con IA", "Idioma de voz", etc. |
+| 17.44 | Labels en Inglés | Dispositivo en EN | "Voice input with AI", "Voice language", etc. |
+| 17.45 | Labels en Alemán | Dispositivo en DE | Textos traducidos correctamente |
+| 17.46 | Labels en Francés | Dispositivo en FR | Textos traducidos correctamente |
+| 17.47 | Labels en Italiano | Dispositivo en IT | Textos traducidos correctamente |
+| 17.48 | Labels en Portugués | Dispositivo en PT | Textos traducidos correctamente |
+
+---
+
+### Validaciones de UI
+
+| Elemento | Verificación |
+|----------|--------------|
+| Toggle voz | Estilo consistente con otros toggles de Settings |
+| Selector idioma | Aparece/desaparece con animación al toggle |
+| Botón micrófono | Tamaño grande, fácil de presionar |
+| Círculo pulsante | Animación suave durante grabación |
+| Contador duración | Formato MM:SS, actualiza cada segundo |
+| Estados de carga | Indicadores claros para cada estado |
+| Mensajes de error | Texto claro, accionable |
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-21*
-*Total escenarios: ~127*
-*Total verificaciones: ~280+*
+*Última actualización: 2026-01-22*
+*Total escenarios: ~210*
+*Total verificaciones: ~400+*

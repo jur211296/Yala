@@ -26,6 +26,12 @@ enum L10n {
         static func greeting(_ name: String) -> String {
             String(format: NSLocalizedString("panel.greeting", comment: ""), name)
         }
+        static var fabVoice: String {
+            NSLocalizedString("panel.fab.voice", comment: "FAB menu: voice input option")
+        }
+        static var fabManual: String {
+            NSLocalizedString("panel.fab.manual", comment: "FAB menu: manual input option")
+        }
     }
 
     // MARK: - Trend
@@ -1074,6 +1080,12 @@ enum L10n {
         static var roundedAmountsDescription: String {
             NSLocalizedString("settings.roundedAmountsDescription", comment: "")
         }
+        static var voiceInputEnabled: String {
+            NSLocalizedString("settings.voiceInputEnabled", comment: "")
+        }
+        static var voiceLanguage: String {
+            NSLocalizedString("settings.voiceLanguage", comment: "")
+        }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
             NSLocalizedString("settings.resetDataDescription", comment: "")
@@ -1524,6 +1536,12 @@ enum L10n {
         static var noAmount: String {
             NSLocalizedString("inbox.noAmount", comment: "No amount placeholder")
         }
+        static var noDescription: String {
+            NSLocalizedString("inbox.noDescription", comment: "No description placeholder")
+        }
+        static var missingLabel: String {
+            NSLocalizedString("inbox.missingLabel", comment: "Missing fields label")
+        }
         static var needsAccount: String {
             NSLocalizedString("inbox.needsAccount", comment: "Needs account indicator")
         }
@@ -1535,6 +1553,54 @@ enum L10n {
         }
         static var approve: String {
             NSLocalizedString("inbox.approve", comment: "Approve draft action")
+        }
+        static var editDraft: String {
+            NSLocalizedString("inbox.editDraft", comment: "Edit draft title")
+        }
+        static var cannotApprove: String {
+            NSLocalizedString("inbox.cannotApprove", comment: "Cannot approve alert title")
+        }
+        static var sourceVoice: String {
+            NSLocalizedString("inbox.sourceVoice", comment: "Voice source type")
+        }
+        static var sourceReceipt: String {
+            NSLocalizedString("inbox.sourceReceipt", comment: "Receipt source type")
+        }
+        static var sourceScreenshotList: String {
+            NSLocalizedString("inbox.sourceScreenshotList", comment: "Screenshot list source type")
+        }
+        static var sourceScreenshot: String {
+            NSLocalizedString("inbox.sourceScreenshot", comment: "Screenshot source type")
+        }
+        static var sourceEmail: String {
+            NSLocalizedString("inbox.sourceEmail", comment: "Email source type")
+        }
+        static var errorNoAccount: String {
+            NSLocalizedString("inbox.errorNoAccount", comment: "Error no account selected")
+        }
+        static var errorNoAmount: String {
+            NSLocalizedString("inbox.errorNoAmount", comment: "Error no amount entered")
+        }
+        static var errorNoSubcategory: String {
+            NSLocalizedString("inbox.errorNoSubcategory", comment: "Error no subcategory selected")
+        }
+        static func selectedCount(_ count: Int) -> String {
+            String(format: NSLocalizedString("inbox.selectedCount", comment: "Selected count"), count)
+        }
+        static func approveableCount(_ approveable: Int, _ total: Int) -> String {
+            String(format: NSLocalizedString("inbox.approveableCount", comment: "Approveable count"), approveable, total)
+        }
+        static func deleteConfirmMessage(_ count: Int) -> String {
+            String(format: NSLocalizedString("inbox.deleteConfirmMessage", comment: "Delete confirmation message"), count)
+        }
+        static var duplicateWarningTitle: String {
+            NSLocalizedString("inbox.duplicateWarningTitle", comment: "Duplicate warning title")
+        }
+        static var duplicateWarningMessage: String {
+            NSLocalizedString("inbox.duplicateWarningMessage", comment: "Duplicate warning message")
+        }
+        static var createAnyway: String {
+            NSLocalizedString("inbox.createAnyway", comment: "Create anyway button")
         }
     }
 
@@ -1600,6 +1666,52 @@ enum L10n {
         static var availableTags: String {
             NSLocalizedString("bulkEdit.availableTags", comment: "")
         }
+    }
+
+    // MARK: - Voice Recording
+
+    enum Voice {
+        static var title: String { NSLocalizedString("voice.title", comment: "") }
+        static var tapToRecord: String { NSLocalizedString("voice.tapToRecord", comment: "") }
+        static var instruction: String { NSLocalizedString("voice.instruction", comment: "") }
+        static var recording: String { NSLocalizedString("voice.recording", comment: "") }
+        static var pleaseWait: String { NSLocalizedString("voice.pleaseWait", comment: "") }
+        static var processingAudio: String { NSLocalizedString("voice.processingAudio", comment: "") }
+        static var transcribing: String { NSLocalizedString("voice.transcribing", comment: "") }
+        static var analyzing: String { NSLocalizedString("voice.analyzing", comment: "") }
+        static var parsing: String { NSLocalizedString("voice.parsing", comment: "") }
+        static var saving: String { NSLocalizedString("voice.saving", comment: "") }
+
+        // Instructions
+        static var youCanSay: String { NSLocalizedString("voice.youCanSay", comment: "") }
+        static var hintType: String { NSLocalizedString("voice.hint.type", comment: "") }
+        static var hintTypeExample: String { NSLocalizedString("voice.hint.type.example", comment: "") }
+        static var hintAmount: String { NSLocalizedString("voice.hint.amount", comment: "") }
+        static var hintAmountExample: String { NSLocalizedString("voice.hint.amount.example", comment: "") }
+        static var hintSubcategory: String { NSLocalizedString("voice.hint.subcategory", comment: "") }
+        static var hintSubcategoryExample: String { NSLocalizedString("voice.hint.subcategory.example", comment: "") }
+        static var hintMerchant: String { NSLocalizedString("voice.hint.merchant", comment: "") }
+        static var hintMerchantExample: String { NSLocalizedString("voice.hint.merchant.example", comment: "") }
+        static var hintTag: String { NSLocalizedString("voice.hint.tag", comment: "") }
+        static var hintTagExample: String { NSLocalizedString("voice.hint.tag.example", comment: "") }
+        static var hintDate: String { NSLocalizedString("voice.hint.date", comment: "") }
+        static var hintDateExample: String { NSLocalizedString("voice.hint.date.example", comment: "") }
+        static var exampleLabel: String { NSLocalizedString("voice.example.label", comment: "") }
+        static var exampleText: String { NSLocalizedString("voice.example.text", comment: "") }
+        static var example1: String { NSLocalizedString("voice.example1", comment: "") }
+        static var example2: String { NSLocalizedString("voice.example2", comment: "") }
+        static var example3: String { NSLocalizedString("voice.example3", comment: "") }
+
+        // Errors
+        static var errorNoAmount: String { NSLocalizedString("voice.errorNoAmount", comment: "") }
+    }
+
+    // MARK: - Voice Language
+
+    enum VoiceLanguage {
+        static var system: String { NSLocalizedString("voiceLanguage.system", comment: "") }
+        static var spanish: String { NSLocalizedString("voiceLanguage.spanish", comment: "") }
+        static var english: String { NSLocalizedString("voiceLanguage.english", comment: "") }
     }
 }
 

@@ -80,10 +80,24 @@ struct PanelView: View {
         .rawValue
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+
+    /// Voice recording sheet
+    @State private var showVoiceRecording = false
+
+    /// FAB menu expanded state
+    @State private var showFABMenu = false
 
     /// Check if Statistics tab is visible
     private var isStatisticsVisible: Bool {
         TabBarConfiguration.fromJSON(tabConfigJSON).activeTabs.contains(.statistics)
+    }
+
+    /// Check if voice input can be used (requires accounts and subcategories)
+    private var canUseVoiceInput: Bool {
+        let hasActiveAccounts = accounts.contains { !$0.isArchived }
+        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
+        return hasActiveAccounts && hasVisibleSubcategories
     }
 
     /// Navigate to Statistics detail, setting temporary tab if needed
@@ -164,6 +178,9 @@ struct PanelView: View {
                         prefillCategoryID: viewModel.selectedCategoryID,
                         prefillSubcategoryName: prefillSubcategoryName
                     )
+                }
+                .sheet(isPresented: $showVoiceRecording) {
+                    VoiceRecordingView()
                 }
                 .sheet(isPresented: $showCustomPeriodPicker) {
                     CustomPeriodPickerSheet(
@@ -274,23 +291,120 @@ struct PanelView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    Button {
-                        showNewTransaction = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Color.electricIndigo)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive())
-                    .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                    .padding(.trailing, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
+                    newRecordFAB
                 }
             }
+        }
+    }
+
+    // MARK: - New Record FAB
+
+    @ViewBuilder
+    private var newRecordFAB: some View {
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+
+        if voiceInputEnabled && canUseVoiceInput {
+            // Custom FAB with popup menu above
+            VStack(alignment: .trailing, spacing: DS.Spacing.md) {
+                // Menu options (shown when expanded)
+                if showFABMenu {
+                    VStack(spacing: DS.Spacing.sm) {
+                        fabMenuButton(
+                            icon: "waveform",
+                            text: L10n.Panel.fabVoice,
+                            color: .electricIndigo
+                        ) {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            showVoiceRecording = true
+                        }
+
+                        fabMenuButton(
+                            icon: "square.and.pencil",
+                            text: L10n.Panel.fabManual,
+                            color: .hotPink
+                        ) {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            showNewTransaction = true
+                        }
+                    }
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
+                        removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
+                    ))
+                }
+
+                // FAB button
+                Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        showFABMenu.toggle()
+                    }
+                } label: {
+                    Image(systemName: showFABMenu ? "xmark" : "plus")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(showFABMenu ? Color.gray : fabBackground)
+                        .clipShape(Circle())
+                        .rotationEffect(.degrees(showFABMenu ? 90 : 0))
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive())
+                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            }
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
+        } else {
+            Button {
+                if canUseVoiceInput {
+                    showNewTransaction = true
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(fabBackground)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
+            .disabled(!canUseVoiceInput)
+        }
+    }
+
+    private func fabMenuButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 24)
+
+                Text(text)
+                    .font(.subheadline.weight(.semibold))
+
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .frame(width: 140)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(color)
+            .clipShape(Capsule())
+            .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .phaseAnimator([false, true]) { content, phase in
+            content
+                .scaleEffect(phase ? 1.03 : 1.0)
+        } animation: { _ in
+            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
         }
     }
 
@@ -679,15 +793,6 @@ struct PanelView: View {
                 currencyCode: preferredCurrency.rawValue,
                 currentBalance: balance
             )
-            .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.selectedSubcategoryIDs) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.trendType) { _, _ in
-                recalculateData()
-            }
             .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
                 recalculateData()
             }
