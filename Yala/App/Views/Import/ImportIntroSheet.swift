@@ -264,8 +264,18 @@ struct ImportIntroSheet: View {
 
     private var templateSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Button {
-                generateTemplate()
+            Menu {
+                Button {
+                    generateTemplate(format: .csv)
+                } label: {
+                    Label("CSV", systemImage: "doc.text")
+                }
+
+                Button {
+                    generateTemplate(format: .xlsx)
+                } label: {
+                    Label("Excel (XLSX)", systemImage: "tablecells")
+                }
             } label: {
                 HStack {
                     Text(L10n.Import.downloadTemplate)
@@ -287,7 +297,6 @@ struct ImportIntroSheet: View {
                         .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                 )
             }
-            .buttonStyle(.plain)
 
             Text(L10n.Import.templateDescription)
             .font(Typography.label)
@@ -347,8 +356,12 @@ struct ImportIntroSheet: View {
         }
     }
 
-    private func generateTemplate() {
-        var rows = [[String]]()
+    private enum TemplateFormat {
+        case csv
+        case xlsx
+    }
+
+    private func generateTemplate(format: TemplateFormat) {
         let now = Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -357,13 +370,11 @@ struct ImportIntroSheet: View {
         // Get user's preferred currency
         let preferredCurrency = CurrencyDefaults.currentPreferred
 
-        // Encabezado del CSV (headers en inglés lowercase como espera el servicio)
-        rows.append([
-            "date", "amount", "currency", "category", "subcategory", "tags", "note",
-        ])
+        // Headers (English lowercase as expected by import service)
+        let headers = ["date", "amount", "currency", "category", "subcategory", "tags", "note"]
 
         // Generate one example row per subcategory from seed data
-        // Sort categories by sortOrder for consistent output
+        var dataRows = [[String]]()
         let sortedCategories = categories.sorted { $0.sortOrder < $1.sortOrder }
 
         for category in sortedCategories {
@@ -373,7 +384,7 @@ struct ImportIntroSheet: View {
                 // Positive amount for income categories, negative for expenses
                 let amount = category.isIncome ? "100.00" : "-50.00"
 
-                rows.append([
+                dataRows.append([
                     dateString,
                     amount,
                     preferredCurrency,
@@ -385,23 +396,36 @@ struct ImportIntroSheet: View {
             }
         }
 
-        let csvText = rows.map { row in
+        do {
+            let tempURL: URL
+            switch format {
+            case .csv:
+                tempURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("plantilla_yala.csv")
+                let csvText = generateCSVText(headers: headers, rows: dataRows)
+                try csvText.write(to: tempURL, atomically: true, encoding: .utf8)
+
+            case .xlsx:
+                tempURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("plantilla_yala.xlsx")
+                try XLSXWriter.write(to: tempURL, headers: headers, rows: dataRows)
+            }
+
+            templateFile = TemplateFile(url: tempURL)
+        } catch {
+            // Template generation error - just show alert, don't dismiss
+            showTemplateAlert = false
+        }
+    }
+
+    private func generateCSVText(headers: [String], rows: [[String]]) -> String {
+        var allRows = [headers] + rows
+        return allRows.map { row in
             row.map { field in
                 let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
                 return "\"\(escaped)\""
             }.joined(separator: ",")
         }.joined(separator: "\n")
-
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("plantilla_neto.csv")
-
-        do {
-            try csvText.write(to: tempURL, atomically: true, encoding: .utf8)
-            templateFile = TemplateFile(url: tempURL)
-        } catch {
-            // Template generation error - just show alert, don't dismiss
-            showTemplateAlert = false  // Error handled separately
-        }
     }
 
     // MARK: - Import Handling
