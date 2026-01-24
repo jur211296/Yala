@@ -237,7 +237,7 @@ struct VoiceRecordingView: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.netoCard)
+        .background(Color.yalaCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
@@ -273,7 +273,7 @@ struct VoiceRecordingView: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.netoCard)
+        .background(Color.yalaCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 

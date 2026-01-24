@@ -144,7 +144,7 @@ struct InboxDraftEditSheet: View {
 
     private var mainContent: some View {
         ZStack {
-            Color.netoBackground
+            Color.yalaBackground
                 .ignoresSafeArea()
                 .dismissKeyboardOnTap()
 
@@ -206,14 +206,14 @@ struct InboxDraftEditSheet: View {
             }
         }
         .padding(DS.Spacing.xs)
-        .background(Capsule().fill(Color.netoCard))
+        .background(Capsule().fill(Color.yalaCard))
         .padding(.horizontal, DS.Spacing.lg)
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            NetoToolbarButton(systemName: "xmark") {
+            YalaToolbarButton(systemName: "xmark") {
                 dismiss()
             }
         }

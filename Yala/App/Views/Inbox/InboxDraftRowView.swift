@@ -127,7 +127,7 @@ struct InboxDraftRowView: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
-                Text(NetoFormatter.currency(value: amount, currencyCode: currencyCode))
+                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(amount >= 0 ? Color.electricIndigo : Color.hotPink)
             } else {
@@ -183,7 +183,7 @@ struct InboxDraftRowView: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-            .fill(Color.netoCard)
+            .fill(Color.yalaCard)
     }
 
     // MARK: - Selection Circle
@@ -362,7 +362,7 @@ struct InboxDraftRowView: View {
 
 #Preview {
     ZStack {
-        Color.netoBackground.ignoresSafeArea()
+        Color.yalaBackground.ignoresSafeArea()
 
         VStack(spacing: DS.Spacing.md) {
             Text("InboxDraftRowView Preview")

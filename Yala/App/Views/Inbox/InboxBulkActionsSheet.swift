@@ -113,7 +113,7 @@ struct InboxBulkActionsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    NetoToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark") {
                         finishEditing()
                     }
                 }

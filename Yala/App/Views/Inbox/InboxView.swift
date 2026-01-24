@@ -316,13 +316,13 @@ struct InboxView: View {
     private var emptyState: some View {
         switch selectedFilter {
         case .pending:
-            NetoEmptyState(
+            YalaEmptyState(
                 icon: "tray",
                 title: L10n.Inbox.noPending,
                 message: L10n.Inbox.noPendingDescription
             )
         case .archived:
-            NetoEmptyState(
+            YalaEmptyState(
                 icon: "archivebox",
                 title: L10n.Inbox.noArchived,
                 message: L10n.Inbox.noArchivedDescription
