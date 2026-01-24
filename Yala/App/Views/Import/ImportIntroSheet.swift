@@ -419,7 +419,7 @@ struct ImportIntroSheet: View {
     }
 
     private func generateCSVText(headers: [String], rows: [[String]]) -> String {
-        var allRows = [headers] + rows
+        let allRows = [headers] + rows
         return allRows.map { row in
             row.map { field in
                 let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")

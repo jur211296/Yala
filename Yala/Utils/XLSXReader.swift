@@ -194,23 +194,29 @@ enum XLSXReader {
             }
 
             // Obtener valor de la celda
-            let value: String
+            var value: String
             if let stringValue = cell.stringValue(sharedStrings) {
                 value = stringValue
             } else if let inlineString = cell.inlineString?.text {
                 value = inlineString
             } else if let numericValue = cell.value {
-                // Columna 0 es la fecha - Excel almacena fechas como números seriales
-                if columnIndex == 0, let serialDate = Double(numericValue) {
-                    value = excelSerialDateToISO(serialDate)
-                } else {
-                    value = numericValue
-                }
+                value = numericValue
             } else {
                 value = ""
             }
 
-            values[columnIndex] = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Columna 0 es la fecha - si el valor es un número puro (Excel serial date), convertirlo
+            if columnIndex == 0, !value.isEmpty {
+                // Check if value is a pure number (Excel serial date)
+                // Excel dates are typically 5-digit numbers (e.g., 45658 for dates in 2024+)
+                if let serialDate = Double(value), serialDate > 1000 && serialDate < 100000 {
+                    value = excelSerialDateToISO(serialDate)
+                }
+            }
+
+            values[columnIndex] = value
         }
 
         return values

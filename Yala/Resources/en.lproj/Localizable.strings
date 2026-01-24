@@ -424,7 +424,7 @@
 "common.updatingRecords" = "Updating records...";
 "common.recalculatingConversions" = "Recalculating historical conversions";
 "export.customizeFile" = "Customize your file";
-"export.csvGeneratedSuccess" = "The CSV file has been generated and shared successfully.";
+"export.csvGeneratedSuccess" = "The file has been generated and shared successfully.";
 "export.confirmExport" = "Confirm your export";
 "export.selectColumns" = "Select columns";
 "export.availableColumns" = "Available columns";

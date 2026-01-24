@@ -422,7 +422,7 @@
 "common.updatingRecords" = "Einträge werden aktualisiert...";
 "common.recalculatingConversions" = "Historische Umrechnungen werden neu berechnet";
 "export.customizeFile" = "Datei anpassen";
-"export.csvGeneratedSuccess" = "Die CSV-Datei wurde erfolgreich erstellt und geteilt.";
+"export.csvGeneratedSuccess" = "Die Datei wurde erfolgreich erstellt und geteilt.";
 "export.confirmExport" = "Export bestätigen";
 "export.selectColumns" = "Spalten auswählen";
 "export.availableColumns" = "Verfügbare Spalten";
