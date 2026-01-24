@@ -75,11 +75,17 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            Image("YalaLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+            // App logo with electric indigo background (matches app icon style)
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Color.electricIndigo)
+                    .frame(width: 120, height: 120)
+
+                Image("YalaLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 70, height: 70)
+            }
 
             VStack(spacing: DS.Spacing.md) {
                 Text(L10n.Onboarding.welcomeTitle)

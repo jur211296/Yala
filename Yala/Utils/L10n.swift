@@ -878,6 +878,24 @@ enum L10n {
         static var condition: String {
             NSLocalizedString("export.condition", comment: "")
         }
+        static var noneSelected: String {
+            NSLocalizedString("export.noneSelected", comment: "")
+        }
+        static func accountsSelected(_ count: Int) -> String {
+            String(format: NSLocalizedString("export.accountsSelected", comment: ""), count)
+        }
+        static var allCategories: String {
+            NSLocalizedString("export.allCategories", comment: "")
+        }
+        static func subcategoriesSelected(_ count: Int) -> String {
+            String(format: NSLocalizedString("export.subcategoriesSelected", comment: ""), count)
+        }
+        static var allTags: String {
+            NSLocalizedString("export.allTags", comment: "")
+        }
+        static var allCurrencies: String {
+            NSLocalizedString("export.allCurrencies", comment: "")
+        }
     }
 
     // MARK: - Favorites

@@ -228,9 +228,9 @@
 // MARK: - Import
 
 "import.title" = "Importer des Transactions";
-"import.selectFile" = "Importer un fichier CSV";
+"import.selectFile" = "Sélectionner un fichier";
 "import.importing" = "Importation...";
-"import.downloadTemplate" = "Telecharger le modele CSV";
+"import.downloadTemplate" = "Télécharger le modèle";
 "import.createCategories" = "Creer de nouvelles categories";
 "import.continue" = "Continuer";
 "import.noAccountsAvailable" = "Aucun compte disponible";
@@ -238,8 +238,8 @@
 "import.completed" = "Importation terminee";
 "import.error" = "Erreur d'importation";
 "import.templateGenerated" = "Modele genere";
-"import.templateGeneratedMessage" = "Le modele CSV a ete genere avec succes. Vous pouvez maintenant le modifier et revenir a cet ecran pour l'importer.";
-"import.introDescription" = "Ajoutez vos transactions financieres en masse a partir d'un fichier CSV.";
+"import.templateGeneratedMessage" = "Le modèle a été généré avec succès. Vous pouvez maintenant le modifier et revenir à cet écran pour l'importer.";
+"import.introDescription" = "Ajoutez vos transactions financières en masse à partir d'un fichier CSV ou Excel.";
 "import.templateDescription" = "Utilisez notre modele officiel pour garantir le bon format.";
 "import.categoriesDescription" = "Si le fichier contient des categories qui n'existent pas, elles seront creees automatiquement.";
 "import.selectAccount" = "Selectionnez un compte";
@@ -445,6 +445,12 @@
 "export.any" = "N'importe lequel";
 "export.between" = "Entre";
 "export.condition" = "Condition";
+"export.noneSelected" = "Aucune";
+"export.accountsSelected" = "%d sélectionnées";
+"export.allCategories" = "Toutes les catégories";
+"export.subcategoriesSelected" = "%d sous-catégories sélectionnées";
+"export.allTags" = "Toutes les étiquettes";
+"export.allCurrencies" = "Toutes";
 "common.next" = "Suivant";
 "settings.versionInfo" = "Version 1.0.0 (Build 1)";
 "tab.panel" = "Accueil";

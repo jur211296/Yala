@@ -208,17 +208,15 @@ struct ExportSummaryStepView: View {
 
     private var accountsSummaryText: String {
         if exportFilters.selectedAccounts.isEmpty {
-            return "Ninguna"  // No debería pasar por validación previa
+            return L10n.Export.noneSelected
         }
-        // Aquí no tenemos el total de cuentas fácilmente accesible para comparar con "Todas",
-        // pero podemos mostrar el conteo.
-        return "\(exportFilters.selectedAccounts.count) seleccionadas"
+        return L10n.Export.accountsSelected(exportFilters.selectedAccounts.count)
     }
 
     private var periodSummaryText: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "d MMM yyyy"
+        formatter.locale = Locale.current
+        formatter.dateStyle = .medium
 
         let from = exportFilters.dateFrom
         let to = exportFilters.dateTo
@@ -231,30 +229,29 @@ struct ExportSummaryStepView: View {
 
         // Sin filtros: interpretamos como "todas las categorías"
         if catCount == 0 && subCount == 0 {
-            return "Todas las categorías"
+            return L10n.Export.allCategories
         }
 
         // Si no hay subcategorías seleccionadas en un contexto filtrado,
         // explicitamos que no hay selección a ese nivel.
         if subCount == 0 {
-            return "Ninguna subcategoría seleccionada"
+            return L10n.Export.noSubcategorySelected
         }
 
-        // Caso general: mostramos solo el conteo de subcategorías,
-        // sin mencionar el número de categorías.
-        return "\(subCount) subcategorías seleccionadas"
+        // Caso general: mostramos solo el conteo de subcategorías
+        return L10n.Export.subcategoriesSelected(subCount)
     }
 
     private var tagsSummaryText: String {
         if exportFilters.selectedTagNames.isEmpty {
-            return "Todas las etiquetas"
+            return L10n.Export.allTags
         }
-        return "\(exportFilters.selectedTagNames.count) seleccionadas"
+        return L10n.Export.accountsSelected(exportFilters.selectedTagNames.count)
     }
 
     private var currenciesSummaryText: String {
         if exportFilters.selectedCurrencies.isEmpty {
-            return "Todas"
+            return L10n.Export.allCurrencies
         }
         return exportFilters.selectedCurrencies.map { $0.rawValue }.joined(separator: ", ")
     }
