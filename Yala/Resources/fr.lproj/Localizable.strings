@@ -1013,10 +1013,17 @@
 
 "settings.widgetHints" = "Textes d'aide";
 "settings.widgetHintsDescription" = "Afficher des boutons d'info sur les widgets avec des explications sur chaque graphique.";
-"settings.roundedAmounts" = "Montants arrondis";
-"settings.roundedAmountsDescription" = "Affiche tous les montants sans décimales pour une lecture plus rapide.";
+"settings.decimalPlaces" = "Décimales";
+"settings.decimalPlacesDescription" = "S'applique uniquement aux totaux et graphiques. Les enregistrements individuels affichent toujours 2 décimales.";
+"settings.decimalsNone" = "Sans décimales";
+"settings.decimalsOne" = "1 décimale";
+"settings.decimalsTwo" = "2 décimales";
+"settings.currencyFormat" = "Format de devise";
+"settings.currencyFormatDescription" = "Choisissez d'afficher le code de devise (EUR) ou le symbole (€).";
+"settings.currencyCode" = "Code (PEN, USD)";
+"settings.currencySymbol" = "Symbole (S/, $)";
 
-"widget.hint.trend" = "Affiche l'evolution de votre solde, revenus ou depenses sur la periode selectionnee.";
+"widget.hint.trend" = "Affiche l'évolution de votre solde, revenus ou dépenses sur la période sélectionnée.";
 "widget.hint.topCategories" = "Les categories ou vous avez le plus depense cette periode.";
 "widget.hint.topSubcategories" = "Les sous-categories avec les depenses les plus elevees, filtrees par categorie.";
 "widget.hint.categoriesPie" = "Repartition en pourcentage des depenses par categorie.";

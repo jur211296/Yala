@@ -205,7 +205,8 @@ struct RecordRowView: View {
     // MARK: - Helpers
 
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode)
+        // Individual records always show full precision (2 decimals) regardless of user preference
+        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

@@ -1013,10 +1013,17 @@
 
 "settings.widgetHints" = "Textos de ajuda";
 "settings.widgetHintsDescription" = "Mostra botoes de info nos widgets com explicacoes sobre cada grafico.";
-"settings.roundedAmounts" = "Valores arredondados";
-"settings.roundedAmountsDescription" = "Mostra todos os valores sem decimais para leitura mais rápida.";
+"settings.decimalPlaces" = "Casas decimais";
+"settings.decimalPlacesDescription" = "Aplica-se apenas a totais e gráficos. Os registros individuais sempre mostram 2 decimais.";
+"settings.decimalsNone" = "Sem decimais";
+"settings.decimalsOne" = "1 decimal";
+"settings.decimalsTwo" = "2 decimais";
+"settings.currencyFormat" = "Formato de moeda";
+"settings.currencyFormatDescription" = "Escolha se mostra o código da moeda (BRL) ou o símbolo (R$).";
+"settings.currencyCode" = "Código (PEN, USD)";
+"settings.currencySymbol" = "Símbolo (S/, $)";
 
-"widget.hint.trend" = "Mostra a evolucao do seu saldo, receitas ou despesas no periodo selecionado.";
+"widget.hint.trend" = "Mostra a evolução do seu saldo, receitas ou despesas no período selecionado.";
 "widget.hint.topCategories" = "As categorias onde mais gastou neste periodo.";
 "widget.hint.topSubcategories" = "As subcategorias com maior gasto, filtradas por categoria.";
 "widget.hint.categoriesPie" = "Distribuicao percentual do gasto por categoria.";

@@ -1013,8 +1013,15 @@
 
 "settings.widgetHints" = "Help hints";
 "settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
-"settings.roundedAmounts" = "Rounded amounts";
-"settings.roundedAmountsDescription" = "Show all amounts without decimals for faster reading.";
+"settings.decimalPlaces" = "Decimal places";
+"settings.decimalPlacesDescription" = "Applies only to totals and charts. Individual records always show 2 decimals.";
+"settings.decimalsNone" = "No decimals";
+"settings.decimalsOne" = "1 decimal";
+"settings.decimalsTwo" = "2 decimals";
+"settings.currencyFormat" = "Currency format";
+"settings.currencyFormatDescription" = "Choose whether to show the currency code (USD) or symbol ($).";
+"settings.currencyCode" = "Code (PEN, USD)";
+"settings.currencySymbol" = "Symbol (S/, $)";
 
 "widget.hint.trend" = "Shows the evolution of your balance, income, or expenses in the selected period.";
 "widget.hint.topCategories" = "The categories where you spent the most this period.";

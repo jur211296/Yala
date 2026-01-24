@@ -1086,11 +1086,32 @@ enum L10n {
         static var widgetHintsDescription: String {
             NSLocalizedString("settings.widgetHintsDescription", comment: "")
         }
-        static var roundedAmounts: String {
-            NSLocalizedString("settings.roundedAmounts", comment: "")
+        static var decimalPlaces: String {
+            NSLocalizedString("settings.decimalPlaces", comment: "")
         }
-        static var roundedAmountsDescription: String {
-            NSLocalizedString("settings.roundedAmountsDescription", comment: "")
+        static var decimalPlacesDescription: String {
+            NSLocalizedString("settings.decimalPlacesDescription", comment: "")
+        }
+        static var decimalsNone: String {
+            NSLocalizedString("settings.decimalsNone", comment: "")
+        }
+        static var decimalsOne: String {
+            NSLocalizedString("settings.decimalsOne", comment: "")
+        }
+        static var decimalsTwo: String {
+            NSLocalizedString("settings.decimalsTwo", comment: "")
+        }
+        static var currencyFormat: String {
+            NSLocalizedString("settings.currencyFormat", comment: "")
+        }
+        static var currencyFormatDescription: String {
+            NSLocalizedString("settings.currencyFormatDescription", comment: "")
+        }
+        static var currencyCode: String {
+            NSLocalizedString("settings.currencyCode", comment: "")
+        }
+        static var currencySymbol: String {
+            NSLocalizedString("settings.currencySymbol", comment: "")
         }
         // resetData removed (duplicate)
         static var resetDataDescription: String {

@@ -1013,8 +1013,15 @@
 
 "settings.widgetHints" = "Hilfetexte";
 "settings.widgetHintsDescription" = "Zeigt Info-Buttons auf Widgets mit Erklärungen zu jedem Diagramm.";
-"settings.roundedAmounts" = "Gerundete Beträge";
-"settings.roundedAmountsDescription" = "Zeigt alle Beträge ohne Dezimalstellen für schnelleres Lesen.";
+"settings.decimalPlaces" = "Dezimalstellen";
+"settings.decimalPlacesDescription" = "Gilt nur für Summen und Grafiken. Einzelne Datensätze zeigen immer 2 Dezimalstellen.";
+"settings.decimalsNone" = "Keine Dezimalstellen";
+"settings.decimalsOne" = "1 Dezimalstelle";
+"settings.decimalsTwo" = "2 Dezimalstellen";
+"settings.currencyFormat" = "Währungsformat";
+"settings.currencyFormatDescription" = "Wählen Sie, ob der Währungscode (EUR) oder das Symbol (€) angezeigt wird.";
+"settings.currencyCode" = "Code (PEN, USD)";
+"settings.currencySymbol" = "Symbol (S/, $)";
 
 "widget.hint.trend" = "Zeigt die Entwicklung Ihres Saldos, Einkommens oder Ihrer Ausgaben im ausgewählten Zeitraum.";
 "widget.hint.topCategories" = "Die Kategorien, in denen Sie in diesem Zeitraum am meisten ausgegeben haben.";

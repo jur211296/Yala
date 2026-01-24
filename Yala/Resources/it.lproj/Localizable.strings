@@ -1013,8 +1013,15 @@
 
 "settings.widgetHints" = "Testi di aiuto";
 "settings.widgetHintsDescription" = "Mostra pulsanti info sui widget con spiegazioni su ogni grafico.";
-"settings.roundedAmounts" = "Importi arrotondati";
-"settings.roundedAmountsDescription" = "Mostra tutti gli importi senza decimali per una lettura più rapida.";
+"settings.decimalPlaces" = "Decimali";
+"settings.decimalPlacesDescription" = "Si applica solo a totali e grafici. I record individuali mostrano sempre 2 decimali.";
+"settings.decimalsNone" = "Senza decimali";
+"settings.decimalsOne" = "1 decimale";
+"settings.decimalsTwo" = "2 decimali";
+"settings.currencyFormat" = "Formato valuta";
+"settings.currencyFormatDescription" = "Scegli se mostrare il codice valuta (EUR) o il simbolo (€).";
+"settings.currencyCode" = "Codice (PEN, USD)";
+"settings.currencySymbol" = "Simbolo (S/, $)";
 
 "widget.hint.trend" = "Mostra l'evoluzione del tuo saldo, entrate o spese nel periodo selezionato.";
 "widget.hint.topCategories" = "Le categorie in cui hai speso di piu in questo periodo.";

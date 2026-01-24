@@ -17,9 +17,12 @@ struct PersonalizationSettingsView: View {
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
-    @AppStorage("useRoundedAmounts") private var useRoundedAmounts: Bool = true
+    @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
+    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
 
     @State private var showingPeriodPicker = false
+    @State private var showingDecimalsPicker = false
+    @State private var showingCurrencyFormatPicker = false
     @State private var showingTabBarConfig = false
     @State private var showingWeekdayPicker = false
 
@@ -29,6 +32,18 @@ struct PersonalizationSettingsView: View {
 
     private var selectedWeekday: FirstWeekday {
         FirstWeekday(rawValue: firstWeekdayRaw) ?? .monday
+    }
+
+    private var decimalPlacesDisplayName: String {
+        switch decimalPlaces {
+        case 0: return L10n.Settings.decimalsNone
+        case 1: return L10n.Settings.decimalsOne
+        default: return L10n.Settings.decimalsTwo
+        }
+    }
+
+    private var currencyFormatDisplayName: String {
+        currencyDisplayFormat == "symbol" ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
     }
 
     var body: some View {
@@ -224,33 +239,75 @@ struct PersonalizationSettingsView: View {
                             .padding(.horizontal, 4)
                     }
 
-                    // Rounded Amounts Toggle Section
+                    // Decimal Places Section
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        HStack {
-                            Text(L10n.Settings.roundedAmounts)
-                                .font(.body)
-                                .foregroundStyle(Color.yalaPrimaryText)
+                        Button {
+                            showingDecimalsPicker = true
+                        } label: {
+                            HStack {
+                                Text(L10n.Settings.decimalPlaces)
+                                    .font(.body)
+                                    .foregroundStyle(Color.yalaPrimaryText)
 
-                            Spacer()
+                                Spacer()
 
-                            Toggle("", isOn: $useRoundedAmounts)
-                                .labelsHidden()
-                                .tint(Color.brandPrimary)
-                                .onChange(of: useRoundedAmounts) { _, _ in
-                                    // Trigger UI refresh for all views showing formatted amounts
-                                    SessionState.shared.formattingVersion += 1
-                                }
+                                Text(decimalPlacesDisplayName)
+                                    .font(.body)
+                                    .foregroundStyle(.secondary)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.FormRow.paddingV)
+                            .background(Color.yalaCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
                         }
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .background(Color.yalaCard)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                        )
+                        .buttonStyle(.plain)
 
-                        Text(L10n.Settings.roundedAmountsDescription)
+                        Text(L10n.Settings.decimalPlacesDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
+
+                    // Currency Display Format Section
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Button {
+                            showingCurrencyFormatPicker = true
+                        } label: {
+                            HStack {
+                                Text(L10n.Settings.currencyFormat)
+                                    .font(.body)
+                                    .foregroundStyle(Color.yalaPrimaryText)
+
+                                Spacer()
+
+                                Text(currencyFormatDisplayName)
+                                    .font(.body)
+                                    .foregroundStyle(.secondary)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.FormRow.paddingV)
+                            .background(Color.yalaCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Text(L10n.Settings.currencyFormatDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 4)
@@ -294,6 +351,30 @@ struct PersonalizationSettingsView: View {
                     let currentPeriod = sessionState.selectedPeriod
                     sessionState.selectedPeriod = currentPeriod
                     showingWeekdayPicker = false
+                }
+            )
+            .presentationDetents([.height(280)])
+        }
+        .sheet(isPresented: $showingDecimalsPicker) {
+            DecimalsPickerSheet(
+                selectedDecimals: decimalPlaces,
+                onSelect: { decimals in
+                    decimalPlaces = decimals
+                    // Trigger UI refresh for all views showing formatted amounts
+                    SessionState.shared.formattingVersion += 1
+                    showingDecimalsPicker = false
+                }
+            )
+            .presentationDetents([.height(320)])
+        }
+        .sheet(isPresented: $showingCurrencyFormatPicker) {
+            CurrencyFormatPickerSheet(
+                selectedFormat: currencyDisplayFormat,
+                onSelect: { format in
+                    currencyDisplayFormat = format
+                    // Trigger UI refresh for all views showing formatted amounts
+                    SessionState.shared.formattingVersion += 1
+                    showingCurrencyFormatPicker = false
                 }
             )
             .presentationDetents([.height(280)])
@@ -441,6 +522,175 @@ private struct WeekdayPickerSheet: View {
         .buttonStyle(.plain)
 
         if weekday != FirstWeekday.allCases.last {
+            Divider()
+                .padding(.leading, DS.Spacing.lg)
+        }
+    }
+}
+
+// MARK: - Decimals Picker Sheet
+
+private struct DecimalsPickerSheet: View {
+    let selectedDecimals: Int
+    let onSelect: (Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private let options: [(value: Int, label: String, example: String)] = [
+        (0, L10n.Settings.decimalsNone, "1,234"),
+        (1, L10n.Settings.decimalsOne, "1,234.5"),
+        (2, L10n.Settings.decimalsTwo, "1,234.56"),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(options, id: \.value) { option in
+                            decimalsRow(for: option)
+                        }
+                    }
+                    .background(Color.yalaCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                    .padding()
+                }
+            }
+            .navigationTitle(L10n.Settings.decimalPlaces)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(systemName: "xmark") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func decimalsRow(for option: (value: Int, label: String, example: String)) -> some View {
+        let isSelected = selectedDecimals == option.value
+
+        Button {
+            onSelect(option.value)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.label)
+                        .font(.body)
+                        .foregroundStyle(Color.yalaPrimaryText)
+
+                    Text(option.example)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Color.brandPrimary)
+                        .font(.body.weight(.semibold))
+                }
+            }
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        if option.value != 2 {
+            Divider()
+                .padding(.leading, DS.Spacing.lg)
+        }
+    }
+}
+
+// MARK: - Currency Format Picker Sheet
+
+private struct CurrencyFormatPickerSheet: View {
+    let selectedFormat: String  // "code" or "symbol"
+    let onSelect: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private let options: [(value: String, label: String, example: String)] = [
+        ("code", L10n.Settings.currencyCode, "PEN 1,234"),
+        ("symbol", L10n.Settings.currencySymbol, "S/ 1,234"),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(options, id: \.value) { option in
+                            formatRow(for: option)
+                        }
+                    }
+                    .background(Color.yalaCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                    .padding()
+                }
+            }
+            .navigationTitle(L10n.Settings.currencyFormat)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(systemName: "xmark") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func formatRow(for option: (value: String, label: String, example: String)) -> some View {
+        let isSelected = selectedFormat == option.value
+
+        Button {
+            onSelect(option.value)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.label)
+                        .font(.body)
+                        .foregroundStyle(Color.yalaPrimaryText)
+
+                    Text(option.example)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Color.brandPrimary)
+                        .font(.body.weight(.semibold))
+                }
+            }
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        if option.value != "symbol" {
             Divider()
                 .padding(.leading, DS.Spacing.lg)
         }

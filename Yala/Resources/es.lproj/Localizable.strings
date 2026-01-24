@@ -1013,8 +1013,15 @@
 
 "settings.widgetHints" = "Textos de ayuda";
 "settings.widgetHintsDescription" = "Muestra botones de info en los widgets con explicaciones sobre cada gráfica.";
-"settings.roundedAmounts" = "Montos redondeados";
-"settings.roundedAmountsDescription" = "Muestra todos los montos sin decimales para una lectura más rápida.";
+"settings.decimalPlaces" = "Decimales";
+"settings.decimalPlacesDescription" = "Se aplica solo a totales y gráficas. Los registros individuales siempre muestran 2 decimales.";
+"settings.decimalsNone" = "Sin decimales";
+"settings.decimalsOne" = "1 decimal";
+"settings.decimalsTwo" = "2 decimales";
+"settings.currencyFormat" = "Formato de moneda";
+"settings.currencyFormatDescription" = "Elige si mostrar el código de moneda (PEN) o el símbolo (S/).";
+"settings.currencyCode" = "Código (PEN, USD)";
+"settings.currencySymbol" = "Símbolo (S/, $)";
 
 "widget.hint.trend" = "Muestra la evolución de tu balance, ingresos o gastos en el período seleccionado.";
 "widget.hint.topCategories" = "Las categorías donde más has gastado en este período.";
