@@ -13,8 +13,8 @@ Version: 1.0 (RELEASE READY)
 Phase: 7.1 of 7.1 en V1.0 (Acciones Rápidas en Transacciones) ✅ COMPLETADA
 Spec: None
 Plan: Complete
-Status: **V1.0 en TestFlight** — Nuevos bugs reportados pendientes de resolver
-Last activity: 2026-01-21 — Bugfixes TestFlight (5 commits), nuevos bugs documentados
+Status: **V1.0 en TestFlight** — Soporte XLSX completo agregado
+Last activity: 2026-01-24 — Soporte XLSX (6 commits): import fecha fix, XLSXWriter, plantilla XLSX, export XLSX
 
 Progress: ██████████████ 100% (V1.0 Completa)
 
@@ -22,21 +22,16 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-22T12:45:00-05:00] a939ee3 fix(transaction-ui): match tag chip size with other selection chips
-- [2026-01-22T12:42:00-05:00] cac01fc fix(transaction-ui): improve category and tag chips styling
-- [2026-01-22T12:38:00-05:00] 5e401b9 fix(transaction-ui): improve amount, tags, date chip and toast
-- [2026-01-22T12:30:00-05:00] f1051ac fix(period): prevent ViewModels from overwriting period selection
-- [2026-01-22T12:00:00-05:00] c6294fa fix(records): balance now equals income minus expense
-- [2026-01-22T11:45:00-05:00] 50e542c fix(filters): prevent auto-expense when selecting income categories
-- [2026-01-22T10:45:00-05:00] 3361855 fix(tests): update currency count test to expect 7 currencies
-- [2026-01-22T10:44:00-05:00] cbfe355 docs(qa): add transfer classification test scenarios
-- [2026-01-22T10:40:00-05:00] 80ac396 feat(migration): migrate positive transfers to Income category
-- [2026-01-22T10:38:00-05:00] c1c8a4d fix(import): use isSystemSubcategory for transfer detection
-- [2026-01-22T10:36:00-05:00] 2a4b80e fix(subcategories): protect system subcategories from deletion
-- [2026-01-22T10:35:00-05:00] fe0b54c fix(categories): protect Otros category from deletion
-- [2026-01-22T10:34:00-05:00] b57c916 feat(transfers): classify incoming transfers under Income category
-- [2026-01-22T10:33:00-05:00] e13bbc2 feat(seed): add transfer subcategory to Income category
-- [2026-01-22T10:32:00-05:00] 4433200 feat(charts): add smart alignment for period comparison
+- [2026-01-24] 6e7753c feat(export): add custom period picker and fix share sheet crash
+- [2026-01-24] cad0eea fix(import): use @Query for subcategories in template generation
+- [2026-01-24] bfc1109 chore(project): update build settings and deployment target
+- [2026-01-24] e9e302d fix(i18n): update export success messages to be format-agnostic
+- [2026-01-24] 3e0addf feat(export): add XLSX export option
+- [2026-01-24] 2761284 feat(import): add XLSX template download option
+- [2026-01-24] b0f3707 feat(export): add XLSXWriter for creating Excel files
+- [2026-01-24] 8af4c8d fix(import): convert Excel serial dates to ISO format in XLSX import
+- [2026-01-23] 9d8e1b7 fix(ui): onboarding logo, period sheets, and chart smoothing
+- [2026-01-23] ae80677 feat(personalization): add decimal places selector and currency format preference
 
 ## Completed in Current Phase
 
@@ -52,6 +47,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Bugfixes TestFlight V1.0** - Subcategorías recientes de 4→8, icono correcto en TagSelectorSheet, estilos consistentes en tag selector de quick actions, DatePicker save button fix, localización de tipo transacción en success view
 - **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
 - **Bugfixes TestFlight Ronda 2** - SSOT para filtros, smart alignment para gráficas comparativas, clasificación correcta de transferencias (entrantes a Ingresos, salientes a Otros), protección de categorías/subcategorías del sistema, migración automática de transferencias existentes, 4 escenarios QA nuevos
+- **Soporte XLSX completo** - Fix importación de fechas Excel (números seriales a ISO), XLSXWriter para crear archivos Excel usando ZIPFoundation, descarga de plantilla en CSV o XLSX, exportación de datos en CSV o XLSX, localizaciones actualizadas en 6 idiomas
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -200,15 +196,16 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Session Continuity
 
-Last session: 2026-01-22
-Stopped at: Todos los bugs de TestFlight Ronda 2 completados
-Next step: Validación manual de transferencias, luego decidir V1.1 o más polish
-Resume file: .claude/sessions/2026-01-22-102721.log
+Last session: 2026-01-24
+Stopped at: Mejoras de Export y fix de plantilla de importación
+Next step: V1.0 listo - continuar con V1.1 o más polish
+Resume file: N/A
 Resume context:
-- Bugs 1-5 de Ronda 2 completados
-- Transferencias ahora clasifican correctamente: entrantes a Ingresos, salientes a Otros
-- Categorías y subcategorías del sistema protegidas de eliminación
-- Migración automática de transferencias existentes implementada
+- Fix plantilla importación: ahora usa @Query para cargar subcategorías correctamente
+- Export con periodo personalizado: DatePicker para seleccionar rango de fechas
+- Personalización: excluido "Personalizado" de periodo por defecto (no tiene sentido)
+- Fix crash share sheet: refactorizado a sheet(item:) pattern
+- Mensaje de éxito actualizado: no dice "compartido" ya que no sabemos si lo fue
 
 ## V1.1 (Futuro)
 
