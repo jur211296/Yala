@@ -1,0 +1,1064 @@
+/*
+  Localizable.strings (Italian)
+  Yala
+
+  Italian translations for localization support.
+*/
+
+// MARK: - Date Formats
+
+"date.weekOf %@" = "Settimana del %@";
+"date.today" = "Oggi";
+"date.yesterday" = "Ieri";
+
+// MARK: - Panel
+
+"panel.accounts" = "Conti";
+"panel.widgets" = "Widget";
+"panel.totalBalance" = "Saldo Totale";
+
+// MARK: - Trend Widget
+
+"trend.title" = "Tendenze";
+"trend.balance.title" = "Tendenza del Saldo";
+"trend.income.title" = "Tendenza delle Entrate";
+"trend.expense.title" = "Tendenza delle Spese";
+
+// MARK: - Periods
+
+"period.thisWeek" = "Questa settimana";
+"period.lastWeek" = "Settimana scorsa";
+"period.nextWeek" = "Prossima settimana";
+"period.thisMonth" = "Questo mese";
+"period.lastMonth" = "Mese scorso";
+"period.nextMonth" = "Prossimo mese";
+"period.last30Days" = "Ultimi 30 giorni";
+"period.thisYear" = "Quest'anno";
+"period.lastYear" = "Anno scorso";
+"period.nextYear" = "Prossimo anno";
+"period.allTime" = "Tutto il periodo";
+"period.custom" = "Personalizzato";
+"period.startDate" = "Data di inizio";
+"period.endDate" = "Data di fine";
+
+// MARK: - Trend Types
+
+"trendType.balance" = "Saldo";
+"trendType.income" = "Entrata";
+"trendType.expense" = "Spesa";
+
+// MARK: - Groupings
+
+"grouping.day" = "Giorno";
+"grouping.week" = "Settimana";
+"grouping.month" = "Mese";
+
+// MARK: - Cash Flow
+
+"cashFlow.title" = "Flusso di Cassa";
+"cashFlow.income" = "Entrate";
+"cashFlow.expense" = "Spese";
+"cashFlow.net" = "Netto";
+
+// MARK: - Categories
+
+"categories.title" = "Categorie";
+"categories.topSpending" = "Top Categorie";
+"categories.others" = "Altri";
+"categories.noCategory" = "Senza categoria";
+
+// MARK: - Subcategories
+
+"subcategories.title" = "Sottocategorie";
+"subcategories.noSubcategory" = "Senza sottocategoria";
+
+// MARK: - Nature
+
+"nature.expensesByNature" = "Spese per natura";
+"nature.title" = "Natura";
+"nature.essential" = "Essenziale";
+"nature.discretionary" = "Discrezionale";
+"nature.unclassified" = "Non classificato";
+
+// MARK: - Records
+
+"records.title" = "Registrazioni";
+"records.latest" = "Ultime registrazioni";
+"records.noRecords" = "Nessuna registrazione";
+"records.deleteConfirmTitle" = "Eliminare %d registrazione(i)?";
+
+// MARK: - Filters
+
+"filters.title" = "Filtri";
+"filters.all" = "Tutti";
+"filters.allAccounts" = "Tutti i conti";
+"filters.allCategories" = "Tutte le categorie";
+"filters.clearFilters" = "Cancella filtri";
+"filters.selectCategories" = "Seleziona categorie";
+"filters.selectAll" = "Seleziona tutto";
+"filters.deselectAll" = "Deseleziona tutto";
+"filters.noSubcategories" = "Nessuna sottocategoria";
+"filters.noneSelected" = "Nessuna selezionata";
+"filters.allSubcategories" = "Tutte le sottocategorie";
+"filters.filterOptions" = "Opzioni di filtro";
+"filters.noteContains" = "Nota contiene...";
+"filters.selectAccounts" = "Seleziona conti";
+"filters.selectTags" = "Seleziona etichette";
+"filters.selectCurrencies" = "Seleziona valute";
+"filters.allTags" = "Tutte le etichette";
+"filters.noTags" = "Nessuna etichetta";
+"filters.allCurrencies" = "Tutte disponibili";
+"filters.allNatures" = "Tutte";
+"filters.selectedCount" = "%d selezionate";
+"filters.subcategoriesSelectedCount" = "%d sottocategorie selezionate";
+
+// MARK: - Actions
+
+"action.cancel" = "Annulla";
+"action.done" = "Fatto";
+"action.save" = "Salva";
+"action.delete" = "Elimina";
+"action.edit" = "Modifica";
+"action.add" = "Aggiungi";
+"action.viewAll" = "Vedi tutto";
+"action.viewLess" = "Vedi meno";
+"action.multipleEdit" = "Modifica multipla";
+"action.back" = "Indietro";
+"action.next" = "Avanti";
+"action.duplicate" = "Duplica";
+"action.favorite" = "Preferito";
+"action.recurring" = "Ricorrente";
+"action.saveAsFavorite" = "Salva come preferito";
+"action.saveAsRecurring" = "Salva come ricorrente";
+"action.savedAsFavorite" = "Salvato come preferito";
+"action.savedAsRecurring" = "Salvato come ricorrente";
+"action.duplicated" = "Duplicato - salva per creare nuovo";
+
+// MARK: - Search
+
+"search.noResults" = "Nessun risultato";
+"search.tryAnotherTerm" = "Prova un altro termine di ricerca";
+
+// MARK: - Exchange Rate
+
+"exchangeRate.title" = "Tasso di Cambio";
+"exchangeRate.updated" = "Aggiornato";
+"exchangeRate.loadError" = "Impossibile caricare il tasso di cambio per questo periodo. Riprova piu tardi.";
+
+// MARK: - Empty States
+
+"empty.noData" = "Ancora nessun dato da mostrare";
+"empty.noTransactions" = "Ancora nessuna transazione";
+"empty.noFavorites" = "Ancora nessun preferito";
+"empty.noTags" = "Ancora nessuna etichetta";
+"empty.noAccounts" = "Ancora nessun conto";
+"empty.noCategories" = "Ancora nessuna categoria";
+"empty.noSubcategories" = "Ancora nessuna sottocategoria";
+
+// MARK: - Transaction
+
+"transaction.new" = "Nuova transazione";
+"transaction.edit" = "Modifica transazione";
+"transaction.type" = "Tipo";
+"transaction.amount" = "Importo";
+"transaction.note" = "Nota";
+"transaction.notePlaceholder" = "Scrivi una nota";
+"transaction.date" = "Data";
+"transaction.tags" = "Etichette";
+"transaction.addTags" = "Aggiungi etichette";
+"transaction.category" = "Categoria";
+"transaction.subcategory" = "Sottocategoria";
+"transaction.select" = "Seleziona";
+"transaction.total" = "Totale";
+"transaction.income" = "Entrata";
+"transaction.expense" = "Spesa";
+"transaction.transfer" = "Trasferimento";
+"transaction.origin" = "Origine";
+"transaction.destination" = "Destinazione";
+"transaction.exchangeRate" = "Tasso di cambio";
+"transaction.willReceive" = "Ricevera";
+"transaction.createAnother" = "Crea un'altra";
+"transaction.recents" = "Recenti";
+"transaction.successTitle" = "Registrazione riuscita!";
+"transaction.type.expense" = "Spesa";
+"transaction.type.income" = "Entrata";
+"transaction.type.transfer" = "Trasferimento";
+
+// MARK: - Account
+
+"account.new" = "Nuovo conto";
+"account.edit" = "Modifica conto";
+"account.name" = "Nome";
+"account.type" = "Tipo";
+"account.currency" = "Valuta";
+"account.balance" = "Saldo";
+"account.initialBalance" = "Saldo iniziale";
+"account.sign" = "Segno";
+"account.positive" = "Positivo";
+"account.negative" = "Negativo";
+"account.adjustment" = "Rettifica";
+"account.selected" = "Selezionato";
+"account.selectAccount" = "Seleziona conto";
+"account.archived" = "Archiviato";
+"account.archive" = "Archivia conto";
+"account.unarchive" = "Ripristina";
+"account.excludeFromStats" = "Escludi dalle statistiche";
+"account.delete" = "Elimina conto";
+
+// MARK: - Category
+
+"category.new" = "Nuova categoria";
+"category.edit" = "Modifica categoria";
+"category.name" = "Nome";
+"category.nature" = "Natura";
+"category.show" = "Mostra";
+"category.addSubcategory" = "Aggiungi sottocategoria";
+"category.subcategories" = "Sottocategorie";
+"category.noSubcategoriesYet" = "Questa categoria non ha ancora sottocategorie.";
+"category.requiresSubcategory" = "Per creare una nuova categoria, devi aggiungere almeno una sottocategoria.";
+
+// MARK: - Alert
+
+"alert.unsavedChanges" = "Modifiche non salvate";
+"alert.discardChanges" = "Scarta le modifiche";
+"alert.keepEditing" = "Continua a modificare";
+"alert.confirmDelete" = "Conferma eliminazione";
+"alert.deleteWarning" = "Questa azione non puo essere annullata.";
+
+// MARK: - Import
+
+"import.title" = "Importa Transazioni";
+"import.selectFile" = "Importa file CSV";
+"import.importing" = "Importazione...";
+"import.downloadTemplate" = "Scarica modello CSV";
+"import.createCategories" = "Crea nuove categorie";
+"import.continue" = "Continua";
+"import.noAccountsAvailable" = "Nessun conto disponibile";
+"import.createAccountFirst" = "Crea almeno un conto prima di importare transazioni.";
+"import.completed" = "Importazione completata";
+"import.error" = "Errore di importazione";
+"import.templateGenerated" = "Modello generato";
+"import.templateGeneratedMessage" = "Il modello CSV e stato generato con successo. Ora puoi modificarlo e tornare a questa schermata per importarlo.";
+"import.introDescription" = "Aggiungi le tue transazioni finanziarie in blocco da un file CSV.";
+"import.templateDescription" = "Usa il nostro modello ufficiale per garantire il formato corretto.";
+"import.categoriesDescription" = "Se il file include categorie che non esistono, verranno create automaticamente.";
+"import.selectAccount" = "Seleziona un conto";
+"import.fileUrlError" = "Impossibile ottenere l'URL del file selezionato.";
+"import.createAccountBeforeImport" = "Crea almeno un conto prima di importare transazioni.";
+
+// Multi-currency import
+"import.multiCurrencyDetected" = "Rilevate piu valute";
+"import.assignAccountPerCurrency" = "Assegna un conto per ogni valuta trovata nel file.";
+"import.selectAccountForCurrency" = "Seleziona conto";
+"import.currenciesDetected" = "%d valute rilevate";
+"import.recordsImportedMultiCurrency" = "%d record importati in %d valute.";
+"import.noAccountsForCurrency" = "Nessun conto in %@. Crea prima un conto in questa valuta.";
+"import.noCurrenciesDetected" = "Nessuna valuta valida rilevata nel file.";
+"import.importAction" = "Importa";
+
+// MARK: - Export
+
+"export.title" = "Esporta";
+"export.filters" = "Filtri";
+"export.columns" = "Colonne";
+"export.summary" = "Riepilogo";
+"export.format" = "Formato";
+"export.period" = "Periodo";
+"export.selectAll" = "Seleziona tutto";
+"export.deselectAll" = "Deseleziona tutto";
+
+// MARK: - Favorites
+
+"favorites.title" = "Pagamenti Preferiti";
+"favorites.new" = "Nuovo preferito";
+"favorites.edit" = "Modifica preferito";
+"favorites.noFavorites" = "Nessun preferito";
+"favorites.createTemplate" = "Crea modelli di pagamenti ricorrenti per registrarli piu velocemente.";
+"favorites.newTitle" = "Nuovo preferito";
+"favorites.editTitle" = "Modifica preferito";
+"favorites.namePlaceholder" = "Nome del preferito";
+"favorites.notConfigured" = "Non configurato";
+"favorites.descriptionPlaceholder" = "Descrizione (opzionale)";
+"favorites.saveDescription" = "Salva questo pagamento come preferito per registrare più velocemente spese simili in futuro. Lo troverai nella ⭐ in alto a destra quando crei o modifichi una transazione. Potrai sempre modificarlo dai Pagamenti Preferiti nel tuo profilo.";
+
+// MARK: - Scheduled
+
+"scheduled.saveDescription" = "Crea un pagamento pianificato per ricordarti di questa spesa o entrata ricorrente. Lo troverai nella sezione Pagamenti Pianificati nel tuo profilo, dove potrai modificarlo, attivarlo o disattivarlo in qualsiasi momento.";
+
+// MARK: - Settings
+
+"settings.title" = "Impostazioni";
+"settings.theme" = "Tema";
+"settings.currency" = "Valuta";
+"settings.appIcon" = "Icona app";
+"settings.personalization" = "Personalizzazione";
+"settings.accounts" = "Conti";
+"settings.categories" = "Categorie";
+"settings.tags" = "Etichette";
+"settings.notifications" = "Notifiche";
+"settings.favorites" = "Pagamenti preferiti";
+"settings.budgetsFavorites" = "Budget preferiti";
+"settings.budgetsFavoritesInfo" = "I budget preferiti appaiono nel widget Budget (3 in medio, 5 in grande).";
+"settings.budgetsFavoritesEmptyHint" = "Crea budget nella scheda Pianificazione.";
+"settings.budgetsFavoritesReorder" = "Riordina preferiti";
+"settings.tabBarConfig" = "Personalizza navigazione";
+"settings.tabBarConfigInfo" = "Scegli quali sezioni mostrare nella barra inferiore. Minimo 1, massimo 3.";
+"settings.tabBarConfigActive" = "Tab attive";
+"settings.tabBarConfigAvailable" = "Disponibili";
+"settings.tabBarConfigReorderHint" = "Tieni premuto per riordinare";
+"settings.tabBarConfigMinWarning" = "Devi avere almeno una sezione";
+"settings.tabBarConfigMaxWarning" = "Massimo 3 sezioni";
+"settings.plannedPayments" = "Pagamenti pianificati";
+"settings.resetData" = "Elimina dati";
+"settings.version" = "Versione";
+"settings.light" = "Chiaro";
+"settings.dark" = "Scuro";
+"settings.system" = "Sistema";
+"settings.defaultCurrency" = "Valuta predefinita";
+"settings.currentIcon" = "Icona attuale";
+"settings.resetAllData" = "Elimina tutti i tuoi dati";
+"settings.deleteAllData" = "Elimina tutti i miei dati";
+
+// MARK: - Common
+
+"common.accept" = "Accetta";
+"common.name" = "Nome";
+"common.alias" = "Alias";
+"common.color" = "Colore";
+"common.icon" = "Icona";
+"common.changeIcon" = "Cambia icona";
+"common.search" = "Cerca";
+"common.loading" = "Caricamento...";
+"common.error" = "Errore";
+"common.success" = "Successo";
+"common.dataPrivacy" = "I tuoi dati non lasciano mai il tuo dispositivo";
+"common.active" = "Attive";
+"common.hidden" = "Nascoste";
+"common.inactive" = "Inattive";
+
+// MARK: - Widgets
+
+"widget.preferences" = "Preferenze widget";
+"widget.visible" = "Visibile";
+"widget.size" = "Dimensione";
+"widget.compact" = "Compatto";
+"widget.expanded" = "Espanso";
+"widget.top3" = "Top 3";
+"widget.top5" = "Top 5";
+
+// MARK: - Planning
+
+"planning.title" = "Pianificazione";
+"planning.budgets" = "Budget";
+"planning.goals" = "Obiettivi";
+"planning.comingSoon" = "Prossimamente";
+"planning.scheduledPayments" = "Pagamenti programmati";
+
+// MARK: - Budgets
+
+"budgets.title" = "Budget";
+"budgets.empty.title" = "Nessun budget";
+"budgets.empty.message" = "Crea budget per controllare le tue spese.";
+"budgets.widget.noFavorites.title" = "Nessun preferito";
+"budgets.widget.noFavorites.message" = "Segna i budget come preferiti in Impostazioni > Budget per vederli qui.";
+"budgets.widget.selectFavorites" = "Seleziona preferiti";
+"budgets.new" = "Nuovo budget";
+"budgets.edit" = "Modifica budget";
+"budgets.delete" = "Elimina budget";
+"budgets.delete.confirm.title" = "Eliminare il budget?";
+"budgets.delete.confirm.message" = "Questa azione non puo essere annullata.";
+
+// Budget Period Types
+"budgets.period.weekly" = "Settimanale";
+"budgets.period.monthly" = "Mensile";
+"budgets.period.yearly" = "Annuale";
+"budgets.period.unique" = "Una tantum";
+"budgets.period.all" = "Tutti";
+
+// Budget Status
+"budgets.status.exceeded" = "Superati";
+"budgets.status.active" = "Attivi";
+"budgets.status.inactive" = "Inattivi";
+
+// Budget Details
+"budgets.spent.percent" = "%@ speso";
+"budgets.days.remaining" = "%@ giorni rimanenti";
+"budgets.period.past" = "Passato";
+"budgets.amount.of" = "di %@";
+
+// Budget Editor
+"budgets.editor.name.placeholder" = "Nome del budget";
+"budgets.editor.amount.placeholder" = "Importo";
+"budgets.editor.basic.info" = "Informazioni base";
+"budgets.editor.filters" = "Filtri";
+"budgets.editor.period.type" = "Periodo";
+"budgets.editor.date.range" = "Intervallo date";
+"budgets.editor.start.date" = "Data inizio";
+"budgets.editor.end.date" = "Data fine";
+
+// Period Selector
+"budgets.period.selector.title.weekly" = "Scegli una settimana";
+"budgets.period.selector.title.monthly" = "Scegli un mese";
+"budgets.period.selector.title.yearly" = "Scegli un anno";
+"budgets.period.week.of" = "Settimana del %@";
+"budgets.period.current.week" = "Questa settimana";
+"budgets.period.current.month" = "Questo mese";
+"budgets.period.current.year" = "Quest'anno";
+"budgets.period.confirm" = "Fatto";
+
+// MARK: - Profile
+
+"profile.title" = "Profilo";
+"profile.personalDetails" = "Dati personali";
+"profile.dataManagement" = "Gestione dati";
+"profile.appearance" = "Aspetto";
+"empty.noExpenses" = "Ancora nessuna spesa registrata";
+"empty.noSubcategories" = "Ancora nessuna sottocategoria";
+"common.recent" = "Recenti";
+"tag.new" = "Nuova etichetta";
+"tag.edit" = "Modifica etichetta";
+"tag.delete" = "Elimina etichetta";
+"settings.currencyAndExchange" = "Valuta e Cambio";
+"common.updatingRecords" = "Aggiornamento registrazioni...";
+"common.recalculatingConversions" = "Ricalcolo conversioni storiche";
+"export.customizeFile" = "Personalizza il tuo file";
+"export.csvGeneratedSuccess" = "Il file CSV e stato generato e condiviso con successo.";
+"export.confirmExport" = "Conferma la tua esportazione";
+"export.selectColumns" = "Seleziona colonne";
+"export.availableColumns" = "Colonne disponibili";
+"export.columnsDescription" = "Scegli quali colonne includere nel file CSV esportato. Devi selezionarne almeno una.";
+"export.summaryAndExport" = "Riepilogo ed Esporta";
+"export.summaryDescription" = "Verifica i filtri e le colonne selezionate prima di generare il file CSV.";
+"export.filtersSummary" = "Riepilogo filtri";
+"export.columnsToExport" = "Colonne da esportare";
+"export.exportToCSV" = "Esporta in CSV";
+"export.exportError" = "Errore di esportazione";
+"export.exportCompleted" = "Esportazione completata";
+"export.backToSettings" = "Torna alle impostazioni";
+"export.exportData" = "Esporta dati";
+"export.greaterThan" = "Maggiore di";
+"export.lessThan" = "Minore di";
+"export.selectSingleCurrency" = "Seleziona una singola valuta per filtrare per importo.";
+"export.allAvailable" = "Tutte disponibili";
+"export.noTagsSelected" = "Nessuna etichetta";
+"export.noSubcategorySelected" = "Nessuna sottocategoria selezionata";
+"export.any" = "Qualsiasi";
+"export.between" = "Tra";
+"export.condition" = "Condizione";
+"common.next" = "Avanti";
+"settings.versionInfo" = "Versione 1.0.0 (Build 1)";
+"tab.panel" = "Home";
+"tab.statistics" = "Statistiche";
+"tab.planning" = "Pianificazione";
+"tab.more" = "Altro";
+"tab.search" = "Cerca";
+"common.moreOptions" = "Altre opzioni";
+"common.comingSoon" = "Prossimamente";
+"panel.greeting" = "Pronto per neto, %@";
+"widget.today" = "Oggi";
+
+// Widget Preferences
+"widget.preferences" = "Preferenze dashboard";
+"widget.preferences.description" = "Scegli cosa vuoi vedere nella tua dashboard e in quale ordine.";
+"widget.resetLayout" = "Ripristina layout originale";
+"widget.alwaysVisible" = "Sempre visibile";
+"widget.fixedPosition" = "Posizione fissa";
+"widget.visible" = "Visibile";
+"widget.size" = "Dimensione: %@";
+"widget.compact" = "Compatto";
+"widget.expanded" = "Espanso";
+"widget.top3" = "Top 3";
+"widget.top5" = "Top 5";
+"widget.summary" = "Riepilogo";
+"widget.list" = "Elenco";
+"widget.calendar" = "Calendario";
+
+// Widget Types
+"widgetType.trend" = "Tendenze";
+"widgetType.topSpending" = "Top categorie";
+"widgetType.topSubcategories" = "Top sottocategorie";
+"widgetType.cashFlow" = "Flusso di cassa";
+"widgetType.categoriesPie" = "Distribuzione categorie";
+"widgetType.subcategoriesPie" = "Distribuzione sottocategorie";
+"widgetType.latestRecords" = "Ultime registrazioni";
+"widgetType.expensesByNature" = "Spese per natura";
+"widgetType.exchangeRate" = "Tasso di cambio";
+"widgetType.budgets" = "Budget";
+"widgetType.scheduledPayments" = "Pagamenti pianificati";
+
+// MARK: - Scheduled Payments Widget
+"scheduled.widget.count" = "%d pagamenti attivi";
+"scheduled.widget.empty.title" = "Nessun pagamento";
+"scheduled.widget.empty.message" = "Aggiungi pagamenti pianificati per vederli qui";
+"scheduled.widget.daysAgo" = "%d giorni fa";
+"scheduled.widget.tomorrow" = "Domani";
+"scheduled.widget.inDays" = "Tra %d giorni";
+"scheduled.payments.count" = "%d pagamenti attivi";
+"scheduled.calendar.show.all" = "Mostra tutto";
+"scheduled.calendar.day.empty" = "Nessun pagamento questo giorno";
+"scheduled.calendar.month.empty" = "Nessun pagamento questo mese";
+
+"widget.sizeLabel" = "Dimensione";
+
+"common.all" = "Tutte";
+"widget.main" = "Principale";
+"widget.topCategories" = "Top categorie";
+"widget.topSubcategories" = "Top sottocategorie";
+"widget.subcategories" = "Sottocategorie";
+"widget.noExpensesPeriod" = "Non hai ancora spese in questo periodo.";
+"widget.noExpensesDescriptionCategories" = "Quando registrerai transazioni, le tue categorie principali appariranno qui.";
+"widget.noExpensesDescriptionSubcategories" = "Quando registrerai transazioni, le tue sottocategorie principali appariranno qui.";
+"widget.of" = "di";
+"widget.ofTotal" = "del totale";
+"widget.ofExpense" = "della spesa";
+"widget.categoryAbbr" = "Cat.";
+
+
+"common.others" = "Altri";
+"common.remaining" = "Rimanente";
+"widget.categories" = "Categorie";
+"widget.noExpensesSubcategoriesPeriod" = "Non ci sono ancora spese nelle sottocategorie per questo periodo.";
+"widget.distributionByCategory" = "Categorie";
+"widget.distributionBySubcategory" = "Sottocategorie";
+"widget.distributionByNature" = "Nature";
+"widget.distributionByTag" = "Distribuzione per etichetta";
+"widget.noDataForPeriod" = "Nessun dato per questo periodo";
+"widget.selectCurrencies" = "Seleziona fino a 2 valute da confrontare con %@";
+"widget.currenciesToCompare" = "Valute da confrontare";
+"widget.noRecordsForFilters" = "Nessuna registrazione per questo periodo e filtri";
+"widget.recordsWillAppear" = "Quando registrerai transazioni, appariranno qui.";
+"widget.total" = "Totale";
+
+
+"common.uncategorized" = "Senza categoria";
+"cashFlow.netFlow" = "Flusso netto";
+
+
+"common.unknownError" = "Errore sconosciuto";
+"common.saveError" = "Impossibile salvare le modifiche. Riprova.";
+"common.deleteError" = "Impossibile eliminare. Riprova.";
+"widget.noExpensesNaturePeriod" = "Nessuna spesa registrata per natura in questo periodo.";
+
+
+"account.addAccount" = "Aggiungi conto";
+
+
+"common.date" = "Data";
+"common.amount" = "Importo";
+"common.base" = "Base";
+"common.selectedDate" = "Data selezionata";
+"common.selectedValue" = "Valore selezionato";
+"common.selected" = "selezionati";
+"common.details" = "Dettagli";
+"common.select" = "Seleziona";
+
+
+"statistics.title" = "Statistiche";
+"statistics.trends" = "Tendenze";
+"statistics.categories" = "Categorie";
+"statistics.records" = "Registrazioni";
+
+
+"period.thisWeek" = "Questa settimana";
+"period.last7Days" = "Ultimi 7 giorni";
+"period.last30Days" = "Ultimi 30 giorni";
+"period.thisMonth" = "Questo mese";
+"period.lastMonth" = "Mese scorso";
+"period.thisYear" = "Quest'anno";
+"period.lastYear" = "Anno scorso";
+"period.allTime" = "Tutto il periodo";
+
+"nature.essential" = "Essenziale";
+"nature.priority" = "Prioritario";
+"nature.optional" = "Opzionale";
+"nature.unclassified" = "Non classificato";
+"nature.essential.desc" = "Spese indispensabili, difficili da tagliare.";
+"nature.priority.desc" = "Importanti ma con una certa flessibilita.";
+"nature.optional.desc" = "Spese discrezionali o di svago.";
+"nature.unclassified.desc" = "Senza etichetta di natura specifica.";
+
+"trendType.balance" = "Saldo";
+"trendType.income" = "Entrata";
+"trendType.expense" = "Spesa";
+
+
+"cashFlowViewType.total" = "Totale";
+"cashFlowViewType.byAccount" = "Per conto";
+"cashFlowViewType.byCurrency" = "Per valuta";
+
+
+"listViewType.categories" = "Categorie";
+"listViewType.subcategories" = "Sottocategorie";
+
+"comparison.month" = "Mese";
+"comparison.year" = "Anno";
+"comparison.monthShort" = "P-1";
+"comparison.yearShort" = "A-1";
+
+"statistics.noRecordsFiltered" = "Nessuna registrazione trovata con i filtri applicati.";
+"statistics.noRecordsDescription" = "Quando registrerai transazioni, appariranno qui.";
+"statistics.periodComparison" = "Confronto con il periodo precedente";
+"statistics.vsPreviousPeriod" = "vs Periodo precedente";
+"statistics.vsPreviousYear" = "vs Anno precedente";
+"statistics.currentPeriod" = "Periodo attuale";
+"statistics.previousPeriod" = "Periodo precedente";
+"statistics.latestRecords" = "Ultime registrazioni";
+"statistics.noCategoryData" = "Nessun dato categoria";
+"statistics.noSubcategoryData" = "Nessun dato sottocategoria";
+"statistics.noExpensesInPeriod" = "Nessuna spesa nel periodo selezionato";
+"statistics.topCategories" = "Categorie principali";
+"statistics.topSubcategories" = "Sottocategorie principali";
+"statistics.noDataToShow" = "Nessun dato da mostrare";
+"statistics.noRecords" = "Nessuna registrazione";
+"statistics.ofExpense" = "della spesa";
+"statistics.spendingAnalysis" = "Analisi delle spese";
+"statistics.incomeAnalysis" = "Analisi delle entrate";
+"trend.filterBlockedMessage" = "Rimuovi prima i filtri di categoria o natura";
+"trend.filterBlockedTitle" = "Opzione non disponibile";
+"nature.incomeNotApplicable" = "La classificazione per natura si applica solo alle spese";
+
+
+"settings.organization" = "Organizzazione";
+"settings.preferences" = "Preferenze";
+"settings.data" = "Dati";
+"settings.security" = "Sicurezza e account";
+"settings.help" = "Hai bisogno di aiuto?";
+"settings.legal" = "Legale";
+
+"settings.importData" = "Importa file";
+"settings.exportData" = "Esporta dati";
+"settings.wipeData" = "Cancella dati";
+"settings.faceId" = "Face ID";
+"settings.permissions" = "Permessi";
+"settings.subscriptions" = "Gestisci abbonamenti";
+"settings.rateApp" = "Valuta e consiglia";
+"settings.tips" = "Suggerimenti e trucchi";
+"settings.faq" = "FAQ";
+"settings.contact" = "Contattaci";
+"settings.privacy" = "Informativa sulla privacy";
+"settings.terms" = "Termini di utilizzo";
+
+"profile.title" = "Profilo";
+"profile.edit" = "Modifica profilo";
+"profile.importSuccess" = "Importazione completata";
+"profile.importError" = "Errore di importazione";
+
+
+"profile.personalDetails" = "Informazioni personali";
+"profile.changePhoto" = "Cambia foto";
+"profile.addPhoto" = "Aggiungi foto";
+"profile.yourName" = "Il tuo nome";
+"profile.aliasPlaceholder" = "utente_123";
+"profile.characters" = "caratteri";
+"profile.minChars" = "Minimo 3 caratteri";
+"profile.maxChars" = "Massimo 20 caratteri";
+"profile.allowedChars" = "Solo lettere, numeri e underscore";
+"profile.aliasAvailable" = "Alias disponibile";
+"profile.aliasHelper" = "3-20 caratteri. Solo lettere, numeri e underscore.";
+"profile.privacyTitle" = "I tuoi dati non lasciano mai il tuo dispositivo";
+"profile.privacyDesc" = "Yala memorizza i tuoi dati personali solo sul tuo dispositivo. Non abbiamo accesso ad essi e non li condividiamo con terzi. Se elimini l'app, tutti i tuoi dati verranno cancellati.";
+"profile.aliasFutureNote" = "Nota: La validazione dell'unicita dell'alias sara disponibile quando verra implementata la funzionalita di spese condivise.";
+
+"settings.currencyDescription" = "Scegli la tua valuta principale e consulta i tassi di cambio aggiornati.";
+"settings.preferredCurrency" = "Valuta preferita";
+"settings.exchangeRate" = "Tasso di cambio";
+"settings.secondaryCurrencies" = "Valute secondarie";
+"settings.secondaryCurrenciesHint" = "Seleziona fino a 2 valute da confrontare con la tua valuta preferita nel widget dei tassi di cambio.";
+"common.lastUpdate" = "Ultimo aggiornamento:";
+
+
+"common.inactive" = "Inattive";
+"common.hidden" = "Nascoste";
+"common.archived" = "Archiviate";
+"empty.tagsDescription" = "Crea etichette per organizzare le tue transazioni in modo flessibile.";
+"empty.categoriesDescription" = "Crea categorie per classificare le tue entrate e spese.";
+"empty.accountsDescription" = "Crea conti per organizzare le tue finanze per banca, contanti o altro.";
+
+
+"profile.appearance" = "Aspetto";
+"settings.theme" = "Temi";
+"settings.themeDescription" = "Scegli come vuoi che appaia Yala.";
+"settings.system" = "Sistema";
+"settings.light" = "Chiaro";
+"settings.dark" = "Scuro";
+"settings.appIcon" = "Icona dell'app";
+"settings.appIconDescription" = "Scegli l'icona che si adatta meglio al tuo stile.";
+"settings.personalization" = "Personalizzazione";
+"settings.personalizationDescription" = "Regola come funziona Yala secondo le tue preferenze.";
+"settings.defaultPeriod" = "Periodo predefinito";
+"settings.defaultPeriodDescription" = "Questo periodo verra applicato per impostazione predefinita ogni volta che apri l'app. Puoi cambiarlo temporaneamente dal selettore di periodo in qualsiasi momento.";
+"settings.colorfulIcons" = "Icone colorate";
+"settings.colorfulIconsDescription" = "Mostra icone colorate nella sezione profilo, stile Impostazioni iOS.";
+"settings.firstWeekday" = "Primo giorno della settimana";
+"settings.firstWeekdayDescription" = "Imposta quale giorno considerare come inizio settimana per filtri come 'Questa settimana'.";
+"settings.sunday" = "Domenica";
+"settings.monday" = "Lunedi";
+"settings.resetData" = "Cancella dati";
+"settings.resetDataDescription" = "Questa operazione eliminera permanentemente i tuoi conti, transazioni, budget, tassi di cambio, categorie e qualsiasi altro dato associato al tuo profilo Yala. Dopo l'eliminazione, l'app tornera a uno stato simile a quello iniziale.";
+"settings.deleteAllData" = "Elimina tutti i tuoi dati";
+"settings.deleteDataConfirmation" = "Eliminare tutti i tuoi dati?";
+"settings.deleteDataWarning" = "Questa azione e irreversibile. Tutti i tuoi conti, transazioni, budget, tassi di cambio e categorie verranno eliminati. Dopo cio, Yala verra ripristinato a uno stato simile a quello iniziale e non potrai recuperare i tuoi dati.";
+"settings.delete" = "Elimina";
+"settings.cancel" = "Annulla";
+"settings.iconOriginal" = "Originale";
+"settings.iconDark" = "Scuro";
+"settings.iconLight" = "Chiaro";
+"settings.iconNeon" = "Neon";
+"settings.deleteAllDataAction" = "Elimina definitivamente";
+"settings.deletingData" = "Eliminazione dati...";
+"settings.appIconTitle" = "Icona dell'app";
+"settings.iconNotSupported" = "Questo dispositivo non supporta icone alternative.";
+"settings.iconChangeFailed" = "Impossibile cambiare l'icona: %@";
+"settings.deleteDataError" = "Errore durante l'eliminazione";
+"settings.deleteDataUnknownError" = "Si e verificato un errore sconosciuto durante l'eliminazione dei dati.";
+
+
+"transaction.newTransaction" = "Nuova registrazione";
+"transaction.editTransaction" = "Modifica registrazione";
+"transaction.description" = "Descrizione";
+"transaction.sourceAccount" = "Conto di origine";
+"transaction.destinationAccount" = "Conto di destinazione";
+"transaction.account" = "Conto";
+"tag.newTag" = "Nuova etichetta";
+"tag.editTag" = "Modifica etichetta";
+"tag.createFirstDescription" = "Crea la tua prima etichetta per organizzare le tue transazioni";
+"tag.deleteConfirmation" = "Eliminare l'etichetta?";
+"tag.namePlaceholder" = "Nome (max. 20)";
+"tag.color" = "Colore";
+"tag.colorSelected" = "Selezionato: %@";
+
+// MARK: - Currency Names
+"currency.pen" = "sol peruviano";
+"currency.usd" = "dollaro americano";
+"currency.eur" = "euro";
+"currency.mxn" = "peso messicano";
+"currency.cop" = "peso colombiano";
+"currency.brl" = "real brasiliano";
+"currency.gbp" = "sterlina britannica";
+
+"common.selectColor" = "Seleziona un colore";
+"common.useThisColor" = "Usa questo colore";
+"common.newColor" = "Nuovo colore";
+"common.understood" = "Capito";
+"common.cannotUndo" = "Questa azione non puo essere annullata.";
+"common.general" = "Generale";
+"common.status" = "Stato";
+"common.actions" = "Azioni";
+"account.configure" = "Configura conto";
+"account.deleteError" = "Impossibile eliminare questo conto";
+"account.accountName" = "Nome del conto";
+"account.accountNumber" = "Numero di conto";
+"category.editTitle" = "Modifica categoria";
+"category.hiddenTitle" = "Categoria nascosta";
+"category.hiddenDescription" = "La categoria e le sue sottocategorie non appariranno piu nei selettori, ma i dati storici non andranno persi.";
+"category.addOneSubcategory" = "Aggiungi almeno una sottocategoria";
+"category.newCategory" = "Nuova categoria";
+"category.namePlaceholder" = "Nome della categoria";
+"category.activeSubcategories" = "Sottocategorie attive";
+"category.hiddenSubcategories" = "Sottocategorie nascoste";
+"category.details" = "Dettagli";
+"category.delete" = "Elimina categoria";
+"category.deleteConfirmTitle" = "Eliminare la categoria?";
+"category.deleteConfirmMessage" = "La categoria e tutte le sue sottocategorie verranno eliminate. Questa azione non puo essere annullata.";
+"category.cannotDeleteTitle" = "Impossibile eliminare";
+"category.cannotDeleteMessage" = "Questa categoria ha sottocategorie con %d transazioni. Per eliminarla, elimina o trasferisci prima le transazioni da ogni sottocategoria.";
+"subcategory.newTitle" = "Nuova sottocategoria";
+"subcategory.editTitle" = "Modifica sottocategoria";
+"subcategory.delete" = "Elimina sottocategoria";
+"subcategory.deleteConfirmTitle" = "Eliminare la sottocategoria?";
+"subcategory.deleteConfirmMessage" = "Questa azione non puo essere annullata.";
+"subcategory.cannotDeleteTitle" = "Impossibile eliminare";
+"subcategory.cannotDeleteMessage" = "Questa sottocategoria ha %d transazioni associate. Trasferisci le transazioni a un'altra sottocategoria prima di eliminarla.";
+"subcategory.transferTitle" = "Trasferisci transazioni";
+"subcategory.transferHeader" = "Questa sottocategoria ha transazioni";
+"subcategory.transferDescription" = "Ci sono %d transazioni in \"%@\". Scegli cosa farne prima di eliminare.";
+"subcategory.transferToSpecific" = "Trasferisci a un'altra sottocategoria";
+"subcategory.transferToSpecificDesc" = "Seleziona una sottocategoria di destinazione per spostare le transazioni";
+"subcategory.transferToUnassigned" = "Sposta in Non assegnato";
+"subcategory.transferToUnassignedDesc" = "Le transazioni verranno spostate nella sottocategoria \"Non assegnato\" in Altri";
+"subcategory.deleteTransactions" = "Elimina transazioni";
+"subcategory.deleteTransactionsDesc" = "Tutte le transazioni verranno eliminate permanentemente";
+"subcategory.selectDestination" = "Seleziona destinazione";
+"subcategory.deleteTransactionsConfirmTitle" = "Eliminare le transazioni?";
+"subcategory.deleteTransactionsConfirm" = "Elimina";
+"subcategory.details" = "Dettagli della sottocategoria";
+"subcategory.namePlaceholder" = "Nome della sottocategoria";
+"subcategory.unassigned" = "Non assegnato";
+"subcategory.deleteTransactionsConfirmMessage" = "%d transazioni verranno eliminate permanentemente. Questa azione non puo essere annullata.";
+
+
+"account.deleteBalanceError" = "Non puoi eliminare questo conto perche ha un saldo diverso da zero. Regola il saldo a 0 prima di eliminarlo.";
+"account.type.general" = "Generale";
+"account.type.cash" = "Contanti";
+"account.type.current" = "Conto Corrente";
+"account.type.savings" = "Risparmio";
+"account.type.creditCard" = "Carta di Credito";
+"account.type.investment" = "Investimento";
+"account.type.loan" = "Prestito";
+"account.type.other" = "Altro";
+
+
+"nature.essential" = "Essenziale";
+"nature.essentialDesc" = "Spese vitali che non puoi evitare (affitto, cibo base, salute).";
+"nature.priority" = "Prioritario";
+"nature.priorityDesc" = "Importanti per il tuo benessere o futuro, ma regolabili se necessario.";
+"nature.optional" = "Opzionale";
+"nature.optionalDesc" = "Spese per piacere o desiderio, le prime da tagliare in caso di problemi.";
+"nature.unclassified" = "Non classificato";
+"nature.unclassifiedDesc" = "Nessuna natura specifica definita.";
+
+"iconPicker.title" = "Personalizza";
+"iconPicker.preview" = "Anteprima";
+"iconPicker.shopping" = "Acquisti";
+"iconPicker.food" = "Alimentazione";
+"iconPicker.transport" = "Trasporto";
+"iconPicker.finance" = "Finanze";
+"iconPicker.home" = "Casa";
+"iconPicker.services" = "Servizi";
+"iconPicker.entertainment" = "Intrattenimento";
+"iconPicker.sports" = "Sport";
+"iconPicker.health" = "Salute";
+"iconPicker.personalCare" = "Cura Personale";
+"iconPicker.education" = "Istruzione";
+"iconPicker.work" = "Lavoro";
+"iconPicker.pets" = "Animali";
+"iconPicker.nature" = "Natura";
+"iconPicker.tech" = "Tecnologia";
+"iconPicker.travel" = "Viaggi";
+"iconPicker.communication" = "Comunicazione";
+"iconPicker.tools" = "Strumenti";
+"iconPicker.security" = "Sicurezza";
+"iconPicker.symbols" = "Simboli";
+"iconPicker.direction" = "Direzione";
+"iconPicker.other" = "Altri";
+
+
+"nature.title" = "Natura";
+
+// MARK: - Balance Adjustments
+
+"account.newBalance" = "Nuovo saldo";
+"account.currentBalance" = "Saldo attuale";
+"account.adjustmentPreview" = "Verra creata una rettifica di %@";
+"account.initialBalanceNote" = "Saldo iniziale";
+"account.adjustmentNote" = "Rettifica del saldo";
+"account.existingInitialBalance" = "Hai gia un saldo iniziale di %@. Vuoi modificarlo?";
+"account.modifyInitialBalance" = "Modifica saldo iniziale";
+"account.adjustmentDate" = "Data della rettifica";
+"account.finalBalance" = "Saldo finale";
+"account.adjustByEntry" = "Rettifica per registrazione";
+"account.adjustByEntryDesc" = "Inserisci il saldo corretto e creeremo una registrazione di correzione. Usalo se hai dimenticato di registrare alcune spese.";
+"account.changeInitialBalanceName" = "Modifica saldo iniziale";
+"account.changeInitialBalanceDesc" = "Inserisci il saldo corretto e modificheremo il saldo iniziale del tuo conto. Usalo se non hai registrato per molto tempo.";
+"category.others" = "Altri";
+"subcategory.balanceAdjustment" = "Rettifiche del saldo";
+
+// MARK: - Validation
+
+"validation.enterAmountGreaterThanZero" = "Inserisci un importo maggiore di 0";
+"validation.selectSourceAccount" = "Seleziona un conto di origine";
+"validation.selectDestinationAccount" = "Seleziona un conto di destinazione";
+"validation.accountsMustBeDifferent" = "I conti devono essere diversi";
+"validation.selectAccount" = "Seleziona un conto";
+"validation.selectSubcategory" = "Seleziona una sottocategoria";
+
+// MARK: - Transfer
+
+"transfer.transferTo" = "Trasferimento a %@";
+"transfer.transferFrom" = "Trasferimento da %@";
+"transfer.categoryName" = "Trasferimento tra conti";
+
+// MARK: - More
+"more.sections" = "Sezioni";
+
+// MARK: - Scheduled Payments
+
+// Recurrence Types
+"scheduled.recurrence.weekly" = "Settimanale";
+"scheduled.recurrence.monthly" = "Mensile";
+"scheduled.recurrence.yearly" = "Annuale";
+
+// Payment Categories
+"scheduled.category.recurring" = "Ricorrente";
+"scheduled.category.subscription" = "Abbonamento";
+
+// Due Status
+"scheduled.status.past" = "Scaduti";
+"scheduled.status.today" = "Oggi";
+"scheduled.status.upcoming" = "In arrivo";
+
+// Tabs
+"scheduled.tab.recurring" = "Ricorrenti";
+"scheduled.tab.subscriptions" = "Abbonamenti";
+"scheduled.tab.all" = "Tutti";
+
+// Empty State
+"scheduled.empty.title" = "Nessun pagamento programmato";
+"scheduled.empty.message" = "Crea promemoria per i tuoi pagamenti ricorrenti e abbonamenti.";
+
+// Due Text
+"scheduled.due.yesterday" = "Ieri";
+"scheduled.due.today" = "Oggi";
+"scheduled.due.tomorrow" = "Domani";
+"scheduled.due.days.ago" = "%d giorni fa";
+"scheduled.due.in.days" = "Tra %d giorni";
+
+// Actions
+"scheduled.new" = "Nuovo pagamento programmato";
+"scheduled.edit" = "Modifica pagamento programmato";
+"scheduled.delete" = "Elimina pagamento";
+"scheduled.delete.confirm.title" = "Eliminare il pagamento programmato?";
+"scheduled.delete.confirm.message" = "Questa azione non puo essere annullata.";
+
+// Editor Sections
+"scheduled.editor.basic.info" = "Informazioni di base";
+"scheduled.editor.options" = "Opzioni";
+"scheduled.editor.name.placeholder" = "Nome del pagamento";
+"scheduled.editor.note.placeholder" = "Nota (opzionale)";
+"scheduled.editor.type" = "Tipo di transazione";
+"scheduled.editor.payment.category" = "Categoria di pagamento";
+"scheduled.editor.classification" = "Classificazione";
+"scheduled.editor.account" = "Conto";
+"scheduled.editor.subcategory" = "Sottocategoria";
+"scheduled.editor.recurrence" = "Ricorrenza";
+"scheduled.editor.next.due" = "Prossima scadenza";
+"scheduled.editor.day.of.month" = "Giorno del mese";
+"scheduled.editor.day.of.week" = "Giorno della settimana";
+"scheduled.editor.notifications" = "Notifiche";
+"scheduled.notify.on.due" = "Notifica alla scadenza";
+"scheduled.notify.days.before" = "Notifica giorni prima";
+"scheduled.select.subcategory" = "Seleziona sottocategoria";
+"scheduled.is.subscription" = "E' un abbonamento?";
+
+// Recurrence - New logic
+"scheduled.recurrence.onetime" = "Una tantum";
+"scheduled.recurrence.recurring" = "Ricorrente";
+"scheduled.recurrence.daily" = "Giornaliero";
+"scheduled.recurrence.day" = "Giorno";
+"scheduled.recurrence.week" = "Settimana";
+"scheduled.recurrence.month" = "Mese";
+"scheduled.recurrence.year" = "Anno";
+"scheduled.recurrence.days" = "Giorni";
+"scheduled.recurrence.weeks" = "Settimane";
+"scheduled.recurrence.months" = "Mesi";
+"scheduled.recurrence.years" = "Anni";
+"scheduled.every" = "Ogni";
+"scheduled.which.days" = "Quali giorni?";
+"scheduled.payment.date" = "Data di pagamento";
+"scheduled.start.date" = "Data di inizio";
+"scheduled.has.end.date" = "Ha data di fine";
+"scheduled.end.date" = "Data di fine";
+"scheduled.yearly.date" = "Data annuale";
+
+// Scheduled Payments - Settings & Detail
+"settings.scheduled.payments" = "Pagamenti ricorrenti";
+"scheduled.empty.settings.hint" = "Crea pagamenti ricorrenti per ricordare le tue spese e entrate regolari.";
+"scheduled.inactive" = "Inattivo";
+"scheduled.status.inactive" = "Pagamento inattivo";
+"scheduled.detail.frequency" = "Frequenza";
+"scheduled.detail.next.date" = "Prossima data";
+"scheduled.detail.end.date" = "Data di fine";
+"scheduled.detail.upcoming" = "In arrivo";
+"scheduled.detail.history" = "Cronologia";
+"scheduled.detail.info.note" = "Questa cronologia mostra le date di pagamento stimate in base alle impostazioni di ricorrenza.";
+"scheduled.detail.not.found" = "Pagamento non trovato";
+"scheduled.next.first" = "Prossimo pagamento";
+"scheduled.next.second" = "Secondo pagamento";
+"scheduled.next.third" = "Terzo pagamento";
+
+// Subscriptions View
+"subscriptions.title" = "Abbonamenti";
+"subscriptions.count" = "%d abbonamenti attivi";
+"subscriptions.empty.title" = "Nessun abbonamento";
+"subscriptions.empty.message" = "Aggiungi i tuoi servizi in abbonamento come Netflix, Spotify, ecc.";
+"subscriptions.calendar.empty" = "Nessun abbonamento questo mese";
+"subscriptions.day.empty" = "Nessun abbonamento in questo giorno";
+"subscriptions.show.all" = "Mostra tutto";
+
+// Weekdays
+"weekday.sunday" = "Domenica";
+"weekday.monday" = "Lunedi";
+"weekday.tuesday" = "Martedi";
+"weekday.wednesday" = "Mercoledi";
+"weekday.thursday" = "Giovedi";
+"weekday.friday" = "Venerdi";
+"weekday.saturday" = "Sabato";
+
+// Weekdays - Short
+"weekday.short.sunday" = "D";
+"weekday.short.monday" = "L";
+"weekday.short.tuesday" = "M";
+"weekday.short.wednesday" = "M";
+"weekday.short.thursday" = "G";
+"weekday.short.friday" = "V";
+"weekday.short.saturday" = "S";
+
+// Common (if not already present)
+"common.select" = "Seleziona";
+"common.disabled" = "Disabilitato";
+"common.none" = "Nessuno";
+"filters.none" = "Nessuno";
+"filters.transaction.type" = "Tipo di transazione";
+"filters.title" = "Filtri";
+"filters.clear" = "Cancella";
+"action.close" = "Chiudi";
+
+// MARK: - Widget Hints
+
+"settings.widgetHints" = "Testi di aiuto";
+"settings.widgetHintsDescription" = "Mostra pulsanti info sui widget con spiegazioni su ogni grafico.";
+"settings.roundedAmounts" = "Importi arrotondati";
+"settings.roundedAmountsDescription" = "Mostra tutti gli importi senza decimali per una lettura più rapida.";
+
+"widget.hint.trend" = "Mostra l'evoluzione del tuo saldo, entrate o spese nel periodo selezionato.";
+"widget.hint.topCategories" = "Le categorie in cui hai speso di piu in questo periodo.";
+"widget.hint.topSubcategories" = "Le sottocategorie con la spesa piu alta, filtrate per categoria.";
+"widget.hint.categoriesPie" = "Distribuzione percentuale della spesa per categoria.";
+"widget.hint.subcategoriesPie" = "Distribuzione percentuale della spesa per sottocategoria.";
+"widget.hint.tagsPie" = "Distribuzione della spesa per etichette assegnate.";
+"widget.hint.natureTrend" = "Classifica le tue spese come essenziali, prioritarie o opzionali.";
+"widget.hint.cashFlow" = "Confronta le tue entrate e spese per vedere il flusso netto.";
+"widget.hint.recentRecords" = "Le tue transazioni piu recenti.";
+"widget.hint.budgets" = "Stato dei tuoi budget attivi.";
+"widget.hint.exchangeRate" = "Tassi di cambio aggiornati per la tua valuta preferita.";
+"widget.hint.scheduledPayments" = "Prossimi pagamenti programmati e abbonamenti.";
+"widget.hint.spendingAnalysis" = "Distribuzione delle spese per categorie, sottocategorie, tag e tipo di spesa.";
+"widget.hint.incomeAnalysis" = "Distribuzione delle entrate per categorie, sottocategorie e tag.";
+
+// MARK: - Onboarding
+
+"onboarding.welcomeTitle" = "Benvenuto su Yala";
+"onboarding.welcomeSubtitle" = "Configura la tua app di finanze personali in pochi secondi.";
+"onboarding.nameLabel" = "Come ti chiami?";
+"onboarding.namePlaceholder" = "Il tuo nome";
+"onboarding.currencyTitle" = "Valuta principale";
+"onboarding.currencySubtitle" = "Seleziona la valuta che usi più frequentemente.";
+"onboarding.secondaryTitle" = "Valute secondarie";
+"onboarding.secondarySubtitle" = "Usi altre valute? Seleziona fino a 2 per vedere i tassi di cambio.";
+"onboarding.secondaryHint" = "%d di %d selezionate";
+"onboarding.periodTitle" = "Periodo predefinito";
+"onboarding.periodSubtitle" = "Quale intervallo di tempo preferisci vedere all'apertura dell'app?";
+"onboarding.finish" = "Inizia";
+
+// MARK: - Inbox
+
+"inbox.title" = "Posta in arrivo";
+"inbox.pending" = "In sospeso";
+"inbox.archived" = "Archiviati";
+"inbox.noPending" = "Nessuna bozza in sospeso";
+"inbox.noPendingDescription" = "Le bozze da voce e immagini appariranno qui.";
+"inbox.noArchived" = "Nessuna bozza archiviata";
+"inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";
+"inbox.noAmount" = "Senza importo";
+"inbox.needsAccount" = "Conto";
+"inbox.needsSubcategory" = "Categoria";
+"inbox.delete" = "Elimina";
+"inbox.approve" = "Approva";
+
+// MARK: - Bulk Edit
+"bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";
+"bulkEdit.editCount" = "Modifica %d transazioni";
+"bulkEdit.successMessage" = "Transazioni aggiornate con successo";
+"bulkEdit.commonTags" = "In tutte le selezionate";
+"bulkEdit.partialTags" = "In alcune selezionate";
+"bulkEdit.availableTags" = "Disponibili da aggiungere";

@@ -5,7 +5,7 @@
 ## Languages
 
 **Primary:**
-- Swift 5.0 - All application code (`Neto.xcodeproj/project.pbxproj`)
+- Swift 5.0 - All application code (`Yala.xcodeproj/project.pbxproj`)
 
 **Secondary:**
 - None (pure Swift project)
@@ -13,25 +13,25 @@
 ## Runtime
 
 **Environment:**
-- iOS 26.1+ (deployment target in `Neto.xcodeproj/project.pbxproj`)
+- iOS 26.1+ (deployment target in `Yala.xcodeproj/project.pbxproj`)
 - Xcode project (.xcodeproj)
 
 **Package Manager:**
 - Swift Package Manager (SPM)
-- Dependencies in `Neto.xcodeproj/project.pbxproj` (XCRemoteSwiftPackageReference)
+- Dependencies in `Yala.xcodeproj/project.pbxproj` (XCRemoteSwiftPackageReference)
 
 ## Frameworks
 
 **Core:**
-- SwiftUI - Primary UI framework (`Neto/App/NetoApp.swift`, all Views)
-- SwiftData - Persistence layer (`Neto/App/NetoApp.swift`)
-- Charts - Data visualization (`Neto/App/Views/Statistics/`, `Neto/App/Views/Panel/`)
+- SwiftUI - Primary UI framework (`Yala/App/YalaApp.swift`, all Views)
+- SwiftData - Persistence layer (`Yala/App/YalaApp.swift`)
+- Charts - Data visualization (`Yala/App/Views/Statistics/`, `Yala/App/Views/Panel/`)
 
 **Platform:**
 - Foundation - Core utilities
-- PhotosUI - Photo selection (`Neto/App/Views/Profile/PersonalDetailsView.swift`)
+- PhotosUI - Photo selection (`Yala/App/Views/Profile/PersonalDetailsView.swift`)
 - UniformTypeIdentifiers - File type handling
-- BackgroundTasks - Daily refresh (`Neto/Services/BackgroundJobs.swift`)
+- BackgroundTasks - Daily refresh (`Yala/Services/BackgroundJobs.swift`)
 
 **Testing:**
 - Testing framework (new Swift Testing with `@Test` macro)
@@ -44,7 +44,7 @@
 ## Key Dependencies
 
 **External (SPM):**
-- CoreXLSX v0.14.2+ - Excel file import/export (`Neto.xcodeproj/project.pbxproj`)
+- CoreXLSX v0.14.2+ - Excel file import/export (`Yala.xcodeproj/project.pbxproj`)
 
 **Infrastructure:**
 - URLSession - Native HTTP client for API calls
@@ -53,20 +53,20 @@
 ## Configuration
 
 **Environment:**
-- `Neto/Secrets.xcconfig` - API keys (gitignored)
+- `Yala/Secrets.xcconfig` - API keys (gitignored)
 - API key injected via `EXCHANGE_RATE_API_KEY` build setting
-- `Neto/Resources/Info.plist` - App metadata, background modes
+- `Yala/Resources/Info.plist` - App metadata, background modes
 
 **Build:**
-- `Neto.xcodeproj/project.pbxproj` - Build settings
+- `Yala.xcodeproj/project.pbxproj` - Build settings
 - SWIFT_VERSION = 5.0
 - CLANG_ENABLE_MODULES = YES
 - ENABLE_PREVIEWS = YES
 
 **Bundle Identifiers:**
-- Main app: `com.jurgenschmidt.finaria.dev`
-- Unit tests: `com.jurgenschmidt.NetoTests`
-- UI tests: `com.jurgenschmidt.NetoUITests`
+- Main app: `com.jurgenschmidt.yala.dev`
+- Unit tests: `com.jurgenschmidt.YalaTests`
+- UI tests: `com.jurgenschmidt.YalaUITests`
 
 ## Platform Requirements
 

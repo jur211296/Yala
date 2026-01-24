@@ -5,10 +5,10 @@
 ## Directory Layout
 
 ```
-Neto/
-├── Neto/                       # Main application source
+Yala/
+├── Yala/                       # Main application source
 │   ├── App/                    # Application layer
-│   │   ├── NetoApp.swift       # @main entry, ModelContainer setup
+│   │   ├── YalaApp.swift       # @main entry, ModelContainer setup
 │   │   ├── ContentView.swift   # Tab navigation root
 │   │   ├── Views/              # UI components by feature
 │   │   ├── ViewModels/         # State management
@@ -22,14 +22,14 @@ Neto/
 │   ├── Utils/                  # Utilities, helpers
 │   ├── Seed/                   # Initial data
 │   └── Resources/              # Assets, localization
-├── NetoTests/                  # Unit tests
-├── NetoUITests/                # UI tests
-└── Neto.xcodeproj/             # Xcode project
+├── YalaTests/                  # Unit tests
+├── YalaUITests/                # UI tests
+└── Yala.xcodeproj/             # Xcode project
 ```
 
 ## Directory Purposes
 
-**Neto/App/Views/:**
+**Yala/App/Views/:**
 - Purpose: All SwiftUI views organized by feature
 - Contains: Feature directories with `*View.swift` files
 - Key subdirectories:
@@ -49,7 +49,7 @@ Neto/
   - `Categories/` - Category detail and management
   - `Favorites/` - Favorite payments
 
-**Neto/App/ViewModels/:**
+**Yala/App/ViewModels/:**
 - Purpose: State management classes
 - Contains: `@Observable` ViewModels
 - Key files:
@@ -60,7 +60,7 @@ Neto/
   - `BudgetsViewModel.swift` - Budget management
   - `WidgetConfigManager.swift` - Widget preferences
 
-**Neto/App/Models/:**
+**Yala/App/Models/:**
 - Purpose: App-level models (not SwiftData)
 - Contains: SessionState, enums, view-specific types
 - Key files:
@@ -70,7 +70,7 @@ Neto/
   - `TransactionFormModels.swift` - Form types
   - `BudgetModels.swift` - Budget types
 
-**Neto/App/Logic/:**
+**Yala/App/Logic/:**
 - Purpose: Pure business calculations
 - Subdirectories:
   - `Calculators/` - Data aggregation
@@ -81,7 +81,7 @@ Neto/
   - `TopSpendingCategoriesCalculator.swift`
   - `TrendProcessingHelper.swift`
 
-**Neto/Models/:**
+**Yala/Models/:**
 - Purpose: SwiftData entities (source of truth)
 - Contains: 8 `@Model` classes
 - Key files:
@@ -94,7 +94,7 @@ Neto/
   - `ExchangeRate.swift` - Currency rates
   - `FavoritePayment.swift` - Payment templates
 
-**Neto/Services/:**
+**Yala/Services/:**
 - Purpose: Business operations, API integration
 - Contains: Singleton services (`@MainActor`)
 - Key files:
@@ -105,7 +105,7 @@ Neto/
   - `CurrencyConverter.swift` - Conversion utils
   - `TrendDataProcessor.swift` - Chart data
 
-**Neto/Utils/:**
+**Yala/Utils/:**
 - Purpose: Utilities and helpers
 - Contains: Extensions, parsers, import/export
 - Key files:
@@ -117,7 +117,7 @@ Neto/
   - `Color+Hex.swift` - Hex color parsing
   - `AccountBalanceCalculator.swift` - Balance calc
 
-**Neto/Resources/:**
+**Yala/Resources/:**
 - Purpose: Assets and localization
 - Contains: xcassets, .lproj folders
 - Key files:
@@ -129,22 +129,22 @@ Neto/
 ## Key File Locations
 
 **Entry Points:**
-- `Neto/App/NetoApp.swift` - App entry, SwiftData setup
-- `Neto/App/ContentView.swift` - Tab navigation
+- `Yala/App/YalaApp.swift` - App entry, SwiftData setup
+- `Yala/App/ContentView.swift` - Tab navigation
 
 **Configuration:**
-- `Neto.xcodeproj/project.pbxproj` - Build settings, SPM deps
-- `Neto/Secrets.xcconfig` - API keys (gitignored)
-- `Neto/Resources/Info.plist` - App metadata
+- `Yala.xcodeproj/project.pbxproj` - Build settings, SPM deps
+- `Yala/Secrets.xcconfig` - API keys (gitignored)
+- `Yala/Resources/Info.plist` - App metadata
 
 **Core Logic:**
-- `Neto/Services/` - Business services
-- `Neto/App/Logic/` - Calculators
-- `Neto/App/ViewModels/` - State management
+- `Yala/Services/` - Business services
+- `Yala/App/Logic/` - Calculators
+- `Yala/App/ViewModels/` - State management
 
 **Testing:**
-- `NetoTests/` - Unit tests
-- `NetoUITests/` - UI tests
+- `YalaTests/` - Unit tests
+- `YalaUITests/` - UI tests
 
 **Documentation:**
 - `CLAUDE.md` - Development instructions
@@ -170,33 +170,33 @@ Neto/
 ## Where to Add New Code
 
 **New Feature:**
-- Primary code: `Neto/App/Views/{FeatureName}/`
-- ViewModel: `Neto/App/ViewModels/{Feature}ViewModel.swift`
-- Tests: `NetoTests/{Feature}Tests.swift`
+- Primary code: `Yala/App/Views/{FeatureName}/`
+- ViewModel: `Yala/App/ViewModels/{Feature}ViewModel.swift`
+- Tests: `YalaTests/{Feature}Tests.swift`
 
 **New SwiftData Model:**
-- Model: `Neto/Models/{ModelName}.swift`
-- Update schema in `Neto/App/NetoApp.swift`
+- Model: `Yala/Models/{ModelName}.swift`
+- Update schema in `Yala/App/YalaApp.swift`
 
 **New Service:**
-- Implementation: `Neto/Services/{Name}Service.swift`
+- Implementation: `Yala/Services/{Name}Service.swift`
 - Mark `@MainActor` if using ModelContext
 
 **New Calculator/Helper:**
-- Calculator: `Neto/App/Logic/Calculators/{Name}Calculator.swift`
-- Helper: `Neto/App/Logic/Helpers/{Name}Helper.swift`
+- Calculator: `Yala/App/Logic/Calculators/{Name}Calculator.swift`
+- Helper: `Yala/App/Logic/Helpers/{Name}Helper.swift`
 
 **New Utility:**
-- Shared helpers: `Neto/Utils/{Name}.swift`
+- Shared helpers: `Yala/Utils/{Name}.swift`
 
 ## Special Directories
 
-**Neto/Seed/:**
+**Yala/Seed/:**
 - Purpose: Initial database data
 - Contains: `CategorySeed.swift` - Default categories
 - Committed: Yes
 
-**Neto/Resources/:**
+**Yala/Resources/:**
 - Purpose: App resources
 - Contains: Assets, localization strings
 - Committed: Yes

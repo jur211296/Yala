@@ -1,11 +1,11 @@
-# Neto
+# Yala
 
 App iOS de finanzas personales (SwiftUI) para registrar y entender gastos, cuentas, presupuestos y reportes con claridad.
 
 ## Stack
 
 - **Persistencia:** SwiftData
-- **ModelContainer:** `NetoApp.swift`
+- **ModelContainer:** `YalaApp.swift`
 - **Entidades:** Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
 - **Design System:** `DesignTokens.swift` — namespace DS con tokens de spacing, radius, typography
 
@@ -13,8 +13,8 @@ App iOS de finanzas personales (SwiftUI) para registrar y entender gastos, cuent
 
 - **Archivo:** `Neto.xcodeproj`
 - **Scheme:** Neto
-- **Unit Tests:** NetoTests
-- **UI Tests:** NetoUITests
+- **Unit Tests:** YalaTests
+- **UI Tests:** YalaUITests
 
 ## Design System (DS)
 
@@ -138,7 +138,7 @@ static func calculateNextOccurrence(from: Date, frequency: String, customDays: I
 
 #### Consideraciones
 
-- Agregar ScheduledPayment al ModelContainer en NetoApp.swift
+- Agregar ScheduledPayment al ModelContainer en YalaApp.swift
 - Integrar con BackgroundJobs para ejecucion automatica
 - Widget Medium: 3 proximos pagos
 - Widget Large: calendario mensual

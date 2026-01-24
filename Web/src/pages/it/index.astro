@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import HomePage from '../../components/HomePage.astro';
+import { getTranslations } from '../../i18n/translations';
+
+const t = getTranslations('it');
+---
+
+<Layout title={t.title} description={t.description} lang="it">
+  <HomePage lang="it" />
+</Layout>

@@ -1,0 +1,198 @@
+//
+//  DataWipeService.swift
+//  Yala
+//
+//  Servicio central para eliminar todos los datos del usuario
+//  y resembrar la app a un estado inicial.
+//
+
+import Foundation
+import SwiftData
+
+// Clase de utilidad para operaciones de borrado masivo de datos de usuario.
+// Marcada como @MainActor porque ModelContext debe usarse desde el hilo principal.
+@MainActor
+final class DataWipeService {
+
+    // MARK: - Punto de entrada principal
+    // Llama a esta función cuando quieras vaciar los datos del usuario.
+    // 1. Elimina datos de todos los modelos relevantes.
+    // 2. Resetea todas las preferencias de usuario a valores por defecto.
+    // 3. Opcionalmente vuelve a lanzar la semilla inicial (categorías, etc.).
+    static func wipeAllUserData(
+        in context: ModelContext,
+        reseedInitialData: Bool = true
+    ) throws {
+        // ============================================================
+        // PASO 1: Borrar todos los datos de SwiftData
+        // ============================================================
+        // Orden de dependencias (de más dependiente a menos):
+        // TransactionItem → Budget → FavoritePayment → ScheduledPayment →
+        // Tag → ExchangeRate → Account → Subcategory → Category
+
+        // 1.1 Limpiar relaciones many-to-many de TransactionItem y Tag
+        let transactionDescriptor = FetchDescriptor<TransactionItem>()
+        let allTransactions = try context.fetch(transactionDescriptor)
+        for transaction in allTransactions {
+            transaction.tags = []
+        }
+
+        let tagDescriptor = FetchDescriptor<Tag>()
+        let allTags = try context.fetch(tagDescriptor)
+        for tag in allTags {
+            tag.transactions = []
+            tag.favoritePayments = []
+            tag.budgets = []
+        }
+        try context.save()
+
+        // 1.2 Eliminar todas las transacciones
+        for transaction in allTransactions {
+            context.delete(transaction)
+        }
+        try context.save()
+
+        // 1.3 Limpiar relaciones de Budget y eliminar
+        let budgetDescriptor = FetchDescriptor<Budget>()
+        let allBudgets = try context.fetch(budgetDescriptor)
+        for budget in allBudgets {
+            budget.accounts = []
+            budget.subcategories = []
+            budget.tags = []
+        }
+        try context.save()
+        for budget in allBudgets {
+            context.delete(budget)
+        }
+        try context.save()
+
+        // 1.4 Limpiar relaciones de FavoritePayment y eliminar
+        let favoriteDescriptor = FetchDescriptor<FavoritePayment>()
+        let allFavorites = try context.fetch(favoriteDescriptor)
+        for favorite in allFavorites {
+            favorite.tags = []
+        }
+        try context.save()
+        for favorite in allFavorites {
+            context.delete(favorite)
+        }
+        try context.save()
+
+        // 1.5 Eliminar todos los pagos programados
+        let scheduledDescriptor = FetchDescriptor<ScheduledPayment>()
+        let allScheduled = try context.fetch(scheduledDescriptor)
+        for scheduled in allScheduled {
+            context.delete(scheduled)
+        }
+        try context.save()
+
+        // 1.6 Eliminar todos los tags
+        let remainingTags = try context.fetch(tagDescriptor)
+        for tag in remainingTags {
+            context.delete(tag)
+        }
+        try context.save()
+
+        // 1.7 Eliminar todos los tipos de cambio
+        let exchangeDescriptor = FetchDescriptor<ExchangeRate>()
+        let allExchangeRates = try context.fetch(exchangeDescriptor)
+        for rate in allExchangeRates {
+            context.delete(rate)
+        }
+        try context.save()
+
+        // 1.8 Limpiar relaciones de Account y eliminar
+        let accountDescriptor = FetchDescriptor<Account>()
+        let allAccounts = try context.fetch(accountDescriptor)
+        for account in allAccounts {
+            account.budgets = []
+        }
+        try context.save()
+        for account in allAccounts {
+            context.delete(account)
+        }
+        try context.save()
+
+        // 1.9 Limpiar relaciones de Subcategory y eliminar
+        let subcategoryDescriptor = FetchDescriptor<Subcategory>()
+        let allSubcategories = try context.fetch(subcategoryDescriptor)
+        for subcategory in allSubcategories {
+            subcategory.budgets = []
+        }
+        try context.save()
+        for subcategory in allSubcategories {
+            context.delete(subcategory)
+        }
+        try context.save()
+        context.processPendingChanges()
+
+        // 1.10 Eliminar todas las categorías
+        let categoryDescriptor = FetchDescriptor<Category>()
+        let allCategories = try context.fetch(categoryDescriptor)
+        for category in allCategories {
+            context.delete(category)
+        }
+        try context.save()
+        context.processPendingChanges()
+
+        // ============================================================
+        // PASO 2: Resetear todas las preferencias de usuario (UserDefaults)
+        // ============================================================
+        resetAllUserPreferences()
+
+        // ============================================================
+        // PASO 3: Reseed de datos iniciales si corresponde
+        // ============================================================
+        if reseedInitialData {
+            try reseedInitialAppState(in: context)
+        }
+    }
+
+    // MARK: - Reset de preferencias de usuario
+    private static func resetAllUserPreferences() {
+        let defaults = UserDefaults.standard
+
+        // --- Personalización ---
+        defaults.removeObject(forKey: "defaultPeriod")          // Default: DetailPeriod.allTime.rawValue
+        defaults.removeObject(forKey: "userTheme")              // Default: AppTheme.system.rawValue (0)
+        defaults.removeObject(forKey: "colorfulIcons")          // Default: true
+        defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
+        defaults.removeObject(forKey: "showWidgetHints")        // Default: true
+        defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: "PEN"
+
+        // --- Perfil de usuario ---
+        defaults.removeObject(forKey: "userName")               // Default: "Usuario"
+        defaults.removeObject(forKey: "userAlias")              // Default: ""
+        defaults.removeObject(forKey: "userProfileImageData")   // Default: nil
+
+        // --- Orden de listas ---
+        defaults.removeObject(forKey: "accountsSortOrderNames") // Default: ""
+        defaults.removeObject(forKey: "tagsSortOrderNames")     // Default: ""
+
+        // --- Configuración de widgets ---
+        defaults.removeObject(forKey: "widgetConfigs")
+
+        // --- Estado del servicio de tipos de cambio ---
+        defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
+        defaults.removeObject(forKey: "exchangeRate_lastTodayUpdate")
+
+        // --- Preferencias de presupuestos ---
+        defaults.removeObject(forKey: "budgets.hideInactive")   // Default: false
+
+        // --- Onboarding ---
+        defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
+        defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
+
+        // Forzar sincronización inmediata
+        defaults.synchronize()
+    }
+
+    // MARK: - Reseed de estado inicial
+    // Encapsula aquí la lógica para volver al estado "recien instalada".
+    private static func reseedInitialAppState(in context: ModelContext) throws {
+        // Semilla inicial de categorías y subcategorías.
+        // La función es idempotente: si ya existen categorías, no hace nada.
+        // Como acabamos de borrar todo, SIEMPRE sembrará.
+        seedCategoriesIfNeeded(in: context)
+    }
+}

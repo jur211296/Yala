@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PrivacyPage from '../../components/PrivacyPage.astro';
+import { getTranslations } from '../../i18n/translations';
+
+const t = getTranslations('it');
+---
+
+<Layout title={t.privacyPageTitle} lang="it">
+  <PrivacyPage lang="it" />
+</Layout>

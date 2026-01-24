@@ -27,15 +27,15 @@ PASOS:
    | *Account*.swift | (buscar en tests) |
 
 3. SI NO HAY MAPEO CLARO:
-   - Busca en NetoTests/ archivos que importen o mencionen las clases modificadas
-   - Usa: `grep -l "NombreClase" NetoTests/*.swift`
+   - Busca en YalaTests/ archivos que importen o mencionen las clases modificadas
+   - Usa: `grep -l "NombreClase" YalaTests/*.swift`
 
 4. EJECUTAR TESTS SELECTIVOS:
    ```bash
-   xcodebuild -scheme Neto \
+   xcodebuild -scheme Yala \
      -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
      -quiet \
-     test -only-testing:NetoTests/[TestClass] \
+     test -only-testing:YalaTests/[TestClass] \
      2>&1 | grep -E "(Test Suite|Test Case|Executed|passed|failed|error:)"
    ```
 

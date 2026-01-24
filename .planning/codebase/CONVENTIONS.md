@@ -148,7 +148,7 @@ static func filter(
 ## Module Design
 
 **Exports:**
-- Single module (Neto)
+- Single module (Yala)
 - No explicit barrel files
 - Types accessed directly
 
@@ -202,7 +202,7 @@ final class FeatureViewModel {
 
 ## Design System
 
-**Tokens Location:** `Neto/App/Theme/DesignTokens.swift`
+**Tokens Location:** `Yala/App/Theme/DesignTokens.swift`
 
 **Spacing:**
 - `DS.Spacing.xxs` (2pt) through `DS.Spacing.xxxxl` (48pt)

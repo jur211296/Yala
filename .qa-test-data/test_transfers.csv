@@ -1,0 +1,6 @@
+date,amount,currency,category,subcategory,note
+2026-01-15,-500.00,PEN,Otros,Transferencia entre cuentas,Transferencia saliente a cuenta USD
+2026-01-15,500.00,PEN,Ingresos,Transferencia entre cuentas,Transferencia entrante desde efectivo
+2026-01-14,-200.00,PEN,Otros,Transferencia entre cuentas,Pago de tarjeta
+2026-01-14,200.00,PEN,Ingresos,Transferencia entre cuentas,Recibo en cuenta principal
+2026-01-13,-1000.00,PEN,Otros,Ajustes de saldo,Ajuste por diferencia

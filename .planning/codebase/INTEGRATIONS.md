@@ -7,10 +7,10 @@
 **Exchange Rate API (exchangerate.host):**
 - Provider: https://api.exchangerate.host
 - Purpose: Currency conversion for multi-currency transactions
-- Service File: `Neto/Services/ExchangeRateAPIService.swift`
-- Protocol: `Neto/Services/ExchangeRateProvider.swift` (`ExchangeRateProviderProtocol`)
+- Service File: `Yala/Services/ExchangeRateAPIService.swift`
+- Protocol: `Yala/Services/ExchangeRateProvider.swift` (`ExchangeRateProviderProtocol`)
 - Auth: API key in `EXCHANGE_RATE_API_KEY` build setting
-- Configuration: `Neto/Secrets.xcconfig` (gitignored)
+- Configuration: `Yala/Secrets.xcconfig` (gitignored)
 - Endpoints Used:
   - `/live` - Current exchange rates
   - `/timeframe` - Historical rates (up to 365 days)
@@ -34,7 +34,7 @@
 
 **Local Database:**
 - SwiftData (on-device persistence)
-- Configuration: `Neto/App/NetoApp.swift` (ModelContainer setup)
+- Configuration: `Yala/App/YalaApp.swift` (ModelContainer setup)
 - 8 Core Entities: Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
 
 **Cloud Storage:**
@@ -79,7 +79,7 @@
 ## Environment Configuration
 
 **Development:**
-- Required: `Neto/Secrets.xcconfig` with `EXCHANGE_RATE_API_KEY`
+- Required: `Yala/Secrets.xcconfig` with `EXCHANGE_RATE_API_KEY`
 - Local SwiftData database
 - No mock services configured
 
@@ -91,19 +91,19 @@
 ## Background Tasks
 
 **Daily Refresh:**
-- Identifier: `com.jurgenschmidt.finaria.daily`
-- Configuration: `Neto/Resources/Info.plist` (BGTaskSchedulerPermittedIdentifiers)
-- Handler: `Neto/Services/BackgroundJobs.swift`
+- Identifier: `com.jurgenschmidt.yala.daily`
+- Configuration: `Yala/Resources/Info.plist` (BGTaskSchedulerPermittedIdentifiers)
+- Handler: `Yala/Services/BackgroundJobs.swift`
 - Purpose: Update exchange rates daily
 
 ## Localization
 
 **Supported Languages:**
-- English (en) - `Neto/Resources/en.lproj/Localizable.strings`
-- Spanish (es) - `Neto/Resources/es.lproj/Localizable.strings`
+- English (en) - `Yala/Resources/en.lproj/Localizable.strings`
+- Spanish (es) - `Yala/Resources/es.lproj/Localizable.strings`
 
 **Localization System:**
-- Type-safe L10n enum: `Neto/Utils/L10n.swift`
+- Type-safe L10n enum: `Yala/Utils/L10n.swift`
 - Pattern: `L10n.Panel.accounts`, `L10n.Tab.statistics`
 
 ## Webhooks & Callbacks
