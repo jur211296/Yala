@@ -121,7 +121,7 @@ struct ExportFiltersStepView: View {
                         showPeriodPicker = false
                     }
                 )
-                .presentationDetents([.medium])
+                .presentationDetents([.large])
             }
     }
 
@@ -532,7 +532,7 @@ struct ExportFiltersStepView: View {
 
                 Spacer()
 
-                Text(selectedPeriod.rawValue)
+                Text(selectedPeriod.displayName)
                     .font(.body)
                     .foregroundStyle(.secondary)
 
@@ -609,7 +609,7 @@ private struct ExportPeriodPickerSheet: View {
             onSelect(period)
         } label: {
             HStack {
-                Text(period.rawValue)
+                Text(period.displayName)
                     .font(.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 

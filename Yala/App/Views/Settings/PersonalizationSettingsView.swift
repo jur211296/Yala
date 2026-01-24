@@ -337,7 +337,7 @@ struct PersonalizationSettingsView: View {
                     showingPeriodPicker = false
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
         }
         .sheet(isPresented: $showingTabBarConfig) {
             TabBarConfigView()
