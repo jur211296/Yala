@@ -4,6 +4,16 @@ description: Inicia una nueva sesión de trabajo con logging automático.
 
 Inicia una nueva sesión de trabajo con logging automático.
 
+PASO 0 - CONFIGURACIÓN DE ENTORNO:
+Pregunta al usuario: "¿En qué Mac estás trabajando? (jur/work)"
+
+Según la respuesta, usa la ruta base:
+- jur → /Users/jur/Yala
+- work → /Users/work/Yala
+
+Esta ruta se usará para todos los comandos y referencias a archivos durante la sesión.
+Guarda esta configuración: `echo "[jur|work]" > /tmp/yala-mac-env`
+
 PASOS:
 1. Crea archivo de session log con timestamp:
    ```bash

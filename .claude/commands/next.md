@@ -4,6 +4,15 @@ description: Analiza STATE y ROADMAP para proponer automáticamente el siguiente
 
 Analiza STATE y ROADMAP para proponer automáticamente el siguiente incremento de trabajo.
 
+PASO 0 - CONFIGURACIÓN DE ENTORNO:
+Pregunta al usuario: "¿En qué Mac estás trabajando? (jur/work)"
+
+Según la respuesta, usa la ruta base:
+- jur → /Users/jur/Yala
+- work → /Users/work/Yala
+
+Esta ruta se usará para todos los comandos y referencias a archivos durante la sesión.
+
 PASOS OBLIGATORIOS:
 1. CONTEXTO ACTUAL:
    - Lee ROADMAP.md para identificar la fase actual

@@ -8,7 +8,7 @@ Corre Unit Tests del target YalaTests.
 DISPOSITIVO ESTÁNDAR: iPhone 17 Pro (NO usar otros para evitar demoras)
 
 COMANDO (con -quiet para reducir ruido):
-!`cd /Users/work/Neto && xcodebuild -scheme Yala -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet test -only-testing:YalaTests 2>&1 | grep -E "(Test Suite|Test Case|Executed|passed|failed|error:)"`
+!`xcodebuild -scheme Yala -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet test -only-testing:YalaTests 2>&1 | grep -E "(Test Suite|Test Case|Executed|passed|failed|error:)"`
 
 TIMEOUT:
 - Si después de 3 minutos no hay output, informar al usuario que los tests están tardando

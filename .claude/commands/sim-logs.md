@@ -9,7 +9,7 @@ PARÁMETROS OPCIONALES:
 - level: debug|info|error (default: all)
 
 PASOS:
-1. Lee /tmp/neto-sim-logs.txt
+1. Lee /tmp/yala-sim-logs.txt
 2. Filtra últimos N minutos basándote en timestamps
 3. Si se especificó level, filtra por ese nivel
 4. Formatea salida:

@@ -52,8 +52,8 @@ CASOS ESPECIALES:
 EJEMPLO:
 ```
 Cambios detectados:
-- Neto/Models/Tag.swift
-- Neto/Services/FilterService.swift
+- Yala/Models/Tag.swift
+- Yala/Services/FilterService.swift
 
 Tests relevantes identificados:
 - TagTests (6 tests)
