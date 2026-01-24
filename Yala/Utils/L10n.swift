@@ -26,6 +26,9 @@ enum L10n {
         static func greeting(_ name: String) -> String {
             String(format: NSLocalizedString("panel.greeting", comment: ""), name)
         }
+        static func title(_ name: String) -> String {
+            String(format: NSLocalizedString("panel.title", comment: ""), name)
+        }
     }
 
     // MARK: - Trend

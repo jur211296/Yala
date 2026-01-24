@@ -461,7 +461,9 @@
 "tab.search" = "Cerca";
 "common.moreOptions" = "Altre opzioni";
 "common.comingSoon" = "Prossimamente";
-"panel.greeting" = "Pronto per neto, %@";
+"panel.greeting" = "Ciao, %@";
+"panel.title" = "Pannello di %@";
+
 "widget.today" = "Oggi";
 
 // Widget Preferences
