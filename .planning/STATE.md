@@ -22,6 +22,7 @@ Progress: ███░░░░░░░░░░░ 25% (V1.1 - Fase 8 en progr
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-24T07:30:00-05:00] b25d225 feat(inbox): add cached display values and improve archived drafts handling
 - [2026-01-22T19:25:37-05:00] 4b6fbef feat(voice): redesign FAB menu and voice instructions UI
 - [2026-01-22T18:58:41-05:00] d3abd90 feat(inbox): improve draft approval UX with type selector and category chips
 - [2026-01-22T18:08:00-05:00] 41ac5d3 feat(voice): add smart entity extraction and improved instructions UI
