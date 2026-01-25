@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-24] f156c32 docs(qa): add QA scenarios for Image Input (Section 18)
 - [2026-01-24] 06bf36d feat(image): complete ImageSelectionView with PhotosPicker and OCR integration
 - [2026-01-24] 8b6509f feat(ocr): add ScreenshotList extractor with row clustering
 - [2026-01-24] dacfa11 feat(ocr): add ScreenshotSingle extractor with amount and date parsers
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-24] bf9175d feat(settings): add image input toggle and missing localizations
 - [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
 - [2026-01-24] 6883fad feat(panel): change welcome message to static panel title
-- [2026-01-24] 6e7753c feat(export): add custom period picker and fix share sheet crash
 
 ## Completed in Current Phase
 
@@ -48,6 +48,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
 - **Bugfixes TestFlight Ronda 2** - SSOT para filtros, smart alignment para gráficas comparativas, clasificación correcta de transferencias (entrantes a Ingresos, salientes a Otros), protección de categorías/subcategorías del sistema, migración automática de transferencias existentes, 4 escenarios QA nuevos
 - **Soporte XLSX completo** - Fix importación de fechas Excel (números seriales a ISO), XLSXWriter para crear archivos Excel usando ZIPFoundation, descarga de plantilla en CSV o XLSX, exportación de datos en CSV o XLSX, localizaciones actualizadas en 6 idiomas
+- **Subfase 8.4: Imágenes MVP** - Toggle imagen input en Settings, opción FAB imagen (naranja), ImageSelectionView con PhotosPicker, Vision OCR (VNRecognizeTextRequest), clasificador heurístico (screenshotSingle/List/receiptPhoto), AmountParser ($€£, europeo/americano, negativos), DateParser (relativas/absolutas), ScreenshotSingleExtractor (alertas bancarias), RowClusterer + ScreenshotListExtractor (listas de transacciones), navegación automática a Inbox, localizaciones en 6 idiomas, 40 escenarios QA (Sección 18)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
