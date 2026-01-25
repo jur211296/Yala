@@ -83,8 +83,8 @@
 | 7.3 | Bulk actions → ¿es descubrible? | UX | Pendiente |
 | 7.4 | Filtros útiles (Pendientes/Archivados) | UX | Pendiente |
 | 7.5 | Empty state instructivo | UX | Pendiente |
-| 7.6 | **Contador de archivados incluye eliminados** | **Bug** | Pendiente |
-| 7.7 | **Montos siempre con decimales** (consistencia con resto de app) | **Bug** | ✅ Completado |
+| 7.6 | **Contador de archivados incluye eliminados** | **Bug** | ✅ Completado (41c10e3) |
+| 7.7 | **Montos siempre con decimales** (consistencia con resto de app) | **Bug** | ✅ Completado (ff9bf1b) |
 
 ---
 
@@ -132,8 +132,8 @@
 ## Resumen Priorizado
 
 ### Bugs (arreglar primero)
-- [ ] 7.6 - Contador archivados incluye eliminados
-- [x] 7.7 - Montos sin decimales en Inbox
+- [x] 7.6 - Contador archivados incluye eliminados (41c10e3)
+- [x] 7.7 - Montos sin decimales en Inbox (ff9bf1b)
 
 ### UX Crítico
 - [ ] 6.3 - Cerrar sheet sin guardar → confirmación
