@@ -79,6 +79,15 @@ struct InboxDraftEditSheet: View {
         selectedAccount != nil && amount != nil && selectedSubcategory != nil
     }
 
+    private var missingFieldsText: String? {
+        var missing: [String] = []
+        if selectedAccount == nil { missing.append(L10n.Transaction.account) }
+        if amount == nil { missing.append(L10n.Transaction.amount) }
+        if selectedSubcategory == nil { missing.append(L10n.Transaction.subcategory) }
+        guard !missing.isEmpty else { return nil }
+        return "\(L10n.Inbox.missingLabel) \(missing.joined(separator: ", "))"
+    }
+
     private var currencyCode: String {
         selectedAccount?.currencyCode ?? "PEN"
     }
@@ -531,42 +540,51 @@ struct InboxDraftEditSheet: View {
     // MARK: - Action Buttons
 
     private var actionButtons: some View {
-        HStack(spacing: DS.Spacing.md) {
-            // Save button (secondary) - "Aprobar luego" - only for pending drafts
-            if initialStatus == .pending {
+        VStack(spacing: DS.Spacing.sm) {
+            // Validation message when not ready
+            if let missingText = missingFieldsText {
+                Text(missingText)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            HStack(spacing: DS.Spacing.md) {
+                // Save button (secondary) - "Aprobar luego" - only for pending drafts
+                if initialStatus == .pending {
+                    Button {
+                        saveDraft()
+                        dismiss()
+                    } label: {
+                        Text(L10n.Inbox.saveLater)
+                            .font(.headline)
+                            .foregroundStyle(Color.electricIndigo)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.lg)
+                            .background(
+                                Capsule()
+                                    .fill(Color.electricIndigo.opacity(0.12))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                // Approve button (primary)
                 Button {
-                    saveDraft()
-                    dismiss()
+                    approveDraft()
                 } label: {
-                    Text(L10n.Inbox.saveLater)
+                    Text(L10n.Inbox.approve)
                         .font(.headline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.lg)
                         .background(
-                            RoundedRectangle(cornerRadius: DS.Radius.md)
-                                .fill(Color.electricIndigo.opacity(0.12))
+                            Capsule()
+                                .fill(isReadyToApprove ? Color.electricIndigo : Color.gray)
                         )
                 }
                 .buttonStyle(.plain)
+                .disabled(!isReadyToApprove)
             }
-
-            // Approve button (primary)
-            Button {
-                approveDraft()
-            } label: {
-                Text(L10n.Inbox.approve)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.lg)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .fill(isReadyToApprove ? Color.electricIndigo : Color.gray)
-                    )
-            }
-            .buttonStyle(.plain)
-            .disabled(!isReadyToApprove)
         }
     }
 
