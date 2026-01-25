@@ -135,6 +135,7 @@
 "action.savedAsFavorite" = "Saved as favorite";
 "action.savedAsRecurring" = "Saved as recurring";
 "action.duplicated" = "Duplicated - save to create new";
+"action.select" = "Select";
 
 // MARK: - Search
 
@@ -1128,6 +1129,11 @@
 "inbox.createAnyway" = "Create anyway";
 "inbox.deleteConfirmMessage" = "Are you sure you want to delete %d draft(s)?";
 "inbox.approveableCount" = "%d of %d ready to approve";
+"inbox.saveLater" = "Approve later";
+"inbox.deleteTitle" = "Delete draft";
+"inbox.deleteMessage" = "This action cannot be undone.";
+"inbox.reject" = "Reject";
+"inbox.returnToPending" = "Return to pending";
 
 // MARK: - Image Input
 "image.title" = "Image";

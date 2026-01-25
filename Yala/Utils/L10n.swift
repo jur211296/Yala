@@ -336,6 +336,7 @@ enum L10n {
         static var savedAsFavorite: String { NSLocalizedString("action.savedAsFavorite", comment: "") }
         static var savedAsRecurring: String { NSLocalizedString("action.savedAsRecurring", comment: "") }
         static var duplicated: String { NSLocalizedString("action.duplicated", comment: "") }
+        static var select: String { NSLocalizedString("action.select", comment: "") }
     }
 
     // MARK: - Search
@@ -1742,6 +1743,9 @@ enum L10n {
         }
         static var reject: String {
             NSLocalizedString("inbox.reject", comment: "")
+        }
+        static var returnToPending: String {
+            NSLocalizedString("inbox.returnToPending", comment: "")
         }
     }
 

@@ -11,11 +11,13 @@ import SwiftUI
 
 // MARK: - Bulk Action Option
 
-enum InboxBulkOption: String, CaseIterable, Identifiable {
+enum InboxBulkOption: String, Identifiable {
     case account
     case subcategory
     case approve
+    case reject
     case delete
+    case returnToPending
 
     var id: String { rawValue }
 
@@ -24,7 +26,9 @@ enum InboxBulkOption: String, CaseIterable, Identifiable {
         case .account: return L10n.Settings.accounts
         case .subcategory: return L10n.Transaction.subcategory
         case .approve: return L10n.Inbox.approve
+        case .reject: return L10n.Inbox.reject
         case .delete: return L10n.Inbox.delete
+        case .returnToPending: return L10n.Inbox.returnToPending
         }
     }
 
@@ -33,7 +37,9 @@ enum InboxBulkOption: String, CaseIterable, Identifiable {
         case .account: return "building.columns"
         case .subcategory: return "folder"
         case .approve: return "checkmark.circle"
+        case .reject: return "xmark.circle"
         case .delete: return "trash"
+        case .returnToPending: return "arrow.uturn.backward"
         }
     }
 
@@ -42,7 +48,9 @@ enum InboxBulkOption: String, CaseIterable, Identifiable {
         case .account: return .blue
         case .subcategory: return .purple
         case .approve: return .green
+        case .reject: return .orange
         case .delete: return .red
+        case .returnToPending: return .teal
         }
     }
 }
@@ -56,7 +64,17 @@ struct InboxBulkActionsSheet: View {
     @Query(sort: \Account.name) private var accounts: [Account]
 
     let selectedDrafts: [InboxDraft]
+    let filter: InboxFilter
     let onComplete: () -> Void
+
+    private var availableOptions: [InboxBulkOption] {
+        switch filter {
+        case .pending:
+            return [.account, .subcategory, .approve, .reject, .delete]
+        case .archived:
+            return [.returnToPending, .delete]
+        }
+    }
 
     // Sheet navigation state
     @State private var showAccountSelector = false
@@ -90,7 +108,7 @@ struct InboxBulkActionsSheet: View {
                         // Options list
                         SectionBox(title: "") {
                             VStack(spacing: 0) {
-                                ForEach(Array(InboxBulkOption.allCases.enumerated()), id: \.element.id) { index, option in
+                                ForEach(Array(availableOptions.enumerated()), id: \.element.id) { index, option in
                                     if index > 0 {
                                         SubsectionDivider()
                                     }
@@ -241,8 +259,12 @@ struct InboxBulkActionsSheet: View {
             showSubcategorySelector = true
         case .approve:
             approveSelected()
+        case .reject:
+            rejectSelected()
         case .delete:
             showDeleteConfirmation = true
+        case .returnToPending:
+            returnToPendingSelected()
         }
     }
 
@@ -292,13 +314,43 @@ struct InboxBulkActionsSheet: View {
         appliedChanges.insert(.approve)
     }
 
-    private func deleteSelected() {
+    private func rejectSelected() {
         for draft in selectedDrafts {
+            // Cache values for display in archived list
+            if let account = draft.account {
+                draft.cachedAccountName = account.name
+                draft.cachedCurrencyCode = account.currencyCode
+            }
+            if let subcategory = draft.subcategory {
+                draft.cachedSubcategoryName = subcategory.name
+                draft.cachedCategoryColorHex = subcategory.category.colorHex
+                draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+            }
             draft.status = .rejected
             draft.updatedAt = Date()
         }
         saveChanges()
+        appliedChanges.insert(.reject)
+        finishEditing()
+    }
+
+    private func deleteSelected() {
+        for draft in selectedDrafts {
+            modelContext.delete(draft)
+        }
+        saveChanges()
         appliedChanges.insert(.delete)
+        finishEditing()
+    }
+
+    private func returnToPendingSelected() {
+        for draft in selectedDrafts {
+            draft.status = .pending
+            draft.updatedAt = Date()
+            updateNeedsUserInput(draft)
+        }
+        saveChanges()
+        appliedChanges.insert(.returnToPending)
         finishEditing()
     }
 
@@ -327,6 +379,7 @@ struct InboxBulkActionsSheet: View {
 #Preview {
     InboxBulkActionsSheet(
         selectedDrafts: [],
+        filter: .pending,
         onComplete: {}
     )
 }

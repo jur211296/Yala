@@ -94,7 +94,7 @@ struct InboxView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    if !filteredDrafts.isEmpty && selectedFilter == .pending {
+                    if !filteredDrafts.isEmpty {
                         Button {
                             withAnimation {
                                 if isSelectionMode {
@@ -104,7 +104,7 @@ struct InboxView: View {
                                 }
                             }
                         } label: {
-                            Text(isSelectionMode ? L10n.Action.cancel : L10n.Action.multipleEdit)
+                            Text(isSelectionMode ? L10n.Action.cancel : L10n.Action.select)
                         }
                     }
                 }
@@ -123,6 +123,7 @@ struct InboxView: View {
             .sheet(isPresented: $showBulkActions) {
                 InboxBulkActionsSheet(
                     selectedDrafts: selectedDrafts,
+                    filter: selectedFilter,
                     onComplete: {
                         exitSelectionMode()
                     }
@@ -274,13 +275,33 @@ struct InboxView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
-                .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && selectedFilter == .pending) {
-                    if !isSelectionMode && selectedFilter == .pending {
-                        Button(role: .destructive) {
-                            deleteDraft(draft)
-                        } label: {
-                            Label(L10n.Inbox.delete, systemImage: "trash")
+                .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)) {
+                    if !isSelectionMode {
+                        if selectedFilter == .pending {
+                            // Pending: Delete + Reject
+                            Button {
+                                deleteDraftPermanently(draft)
+                            } label: {
+                                Label(L10n.Inbox.delete, systemImage: "trash")
+                            }
+                            .tint(.red)
+
+                            Button {
+                                rejectDraft(draft)
+                            } label: {
+                                Label(L10n.Inbox.reject, systemImage: "xmark.circle")
+                            }
+                            .tint(.orange)
+                        } else if draft.status == .rejected {
+                            // Archived (rejected only): Delete
+                            Button {
+                                deleteDraftPermanently(draft)
+                            } label: {
+                                Label(L10n.Inbox.delete, systemImage: "trash")
+                            }
+                            .tint(.red)
                         }
+                        // Approved drafts in archived: no swipe actions
                     }
                 }
                 .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending) {
@@ -332,7 +353,7 @@ struct InboxView: View {
 
     // MARK: - Actions
 
-    private func deleteDraft(_ draft: InboxDraft) {
+    private func rejectDraft(_ draft: InboxDraft) {
         withAnimation {
             // Cache display values BEFORE changing status (if available)
             // (archived drafts use ONLY cached values to avoid accessing deleted relationships)
@@ -348,6 +369,17 @@ struct InboxView: View {
 
             draft.status = .rejected
             draft.updatedAt = Date()
+            do {
+                try modelContext.save()
+            } catch {
+                print("Error rejecting draft: \(error)")
+            }
+        }
+    }
+
+    private func deleteDraftPermanently(_ draft: InboxDraft) {
+        withAnimation {
+            modelContext.delete(draft)
             do {
                 try modelContext.save()
             } catch {
@@ -418,10 +450,7 @@ struct InboxView: View {
             }
 
         case .rejected:
-            // Allow re-attempting rejected drafts - change status back to pending and open editor
-            draft.status = .pending
-            draft.updatedAt = Date()
-            try? modelContext.save()
+            // Open editor for rejected drafts (status stays .rejected until user takes action)
             selectedDraft = draft
         }
     }

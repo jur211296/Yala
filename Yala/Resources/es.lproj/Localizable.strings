@@ -135,6 +135,7 @@
 "action.savedAsFavorite" = "Guardado como favorito";
 "action.savedAsRecurring" = "Guardado como recurrente";
 "action.duplicated" = "Duplicado - guarda para crear nueva";
+"action.select" = "Seleccionar";
 
 // MARK: - Search
 
@@ -1132,6 +1133,7 @@
 "inbox.deleteTitle" = "Eliminar borrador";
 "inbox.deleteMessage" = "Esta acción no se puede deshacer.";
 "inbox.reject" = "Rechazar";
+"inbox.returnToPending" = "Regresar a pendientes";
 
 // MARK: - Image Input
 "image.title" = "Imagen";

@@ -53,6 +53,9 @@ struct InboxDraftEditSheet: View {
     @State private var shouldCreateDespiteDuplicate = false
     @State private var showDeleteConfirmation = false
 
+    // Track initial status to prevent toolbar flash on reject
+    @State private var initialStatus: DraftStatus = .pending
+
     // Callback for when draft is approved
     var onApproved: (() -> Void)?
 
@@ -227,20 +230,21 @@ struct InboxDraftEditSheet: View {
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Menu {
+            if initialStatus == .rejected {
+                // Rejected drafts: delete button
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
-                    Label(L10n.Inbox.delete, systemImage: "trash")
+                    Image(systemName: "trash")
                 }
-
+            } else {
+                // Pending drafts: reject button only
                 Button {
                     rejectDraft()
                 } label: {
-                    Label(L10n.Inbox.reject, systemImage: "xmark.circle")
+                    Image(systemName: "xmark.circle")
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle")
+                .foregroundStyle(.orange)
             }
         }
     }
@@ -506,22 +510,24 @@ struct InboxDraftEditSheet: View {
 
     private var actionButtons: some View {
         HStack(spacing: DS.Spacing.md) {
-            // Save button (secondary) - "Aprobar luego"
-            Button {
-                saveDraft()
-                dismiss()
-            } label: {
-                Text(L10n.Inbox.saveLater)
-                    .font(.headline)
-                    .foregroundStyle(Color.electricIndigo)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.lg)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .fill(Color.electricIndigo.opacity(0.12))
-                    )
+            // Save button (secondary) - "Aprobar luego" - only for pending drafts
+            if initialStatus == .pending {
+                Button {
+                    saveDraft()
+                    dismiss()
+                } label: {
+                    Text(L10n.Inbox.saveLater)
+                        .font(.headline)
+                        .foregroundStyle(Color.electricIndigo)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.lg)
+                        .background(
+                            RoundedRectangle(cornerRadius: DS.Radius.md)
+                                .fill(Color.electricIndigo.opacity(0.12))
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             // Approve button (primary)
             Button {
@@ -610,6 +616,7 @@ struct InboxDraftEditSheet: View {
     // MARK: - Actions
 
     private func prefillFromDraft() {
+        initialStatus = draft.status
         note = draft.note
         transactionDate = draft.effectiveDate
         selectedAccount = draft.account
@@ -756,12 +763,30 @@ struct InboxDraftEditSheet: View {
     }
 
     private func rejectDraft() {
+        // Save current selections to draft before rejecting
+        // (so they persist if draft is returned to pending later)
+        draft.account = selectedAccount
+        draft.subcategory = selectedSubcategory
+        draft.tags = selectedTags
+        draft.note = note
+        if let amt = amount {
+            draft.amount = isExpense ? -abs(amt) : abs(amt)
+        }
+        draft.date = transactionDate
+
+        // Update needsUserInput based on saved values
+        var needs: [String] = []
+        if draft.account == nil { needs.append("account") }
+        if draft.subcategory == nil { needs.append("subcategory") }
+        if draft.amount == nil { needs.append("amount") }
+        draft.needsUserInput = needs
+
         // Cache values for display in archived list
-        if let account = draft.account ?? selectedAccount {
+        if let account = draft.account {
             draft.cachedAccountName = account.name
             draft.cachedCurrencyCode = account.currencyCode
         }
-        if let subcategory = draft.subcategory ?? selectedSubcategory {
+        if let subcategory = draft.subcategory {
             draft.cachedSubcategoryName = subcategory.name
             draft.cachedCategoryColorHex = subcategory.category.colorHex
             draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName

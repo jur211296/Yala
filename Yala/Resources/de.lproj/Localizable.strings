@@ -133,6 +133,7 @@
 "action.savedAsFavorite" = "Als Favorit gespeichert";
 "action.savedAsRecurring" = "Als wiederkehrend gespeichert";
 "action.duplicated" = "Dupliziert - speichern für neue";
+"action.select" = "Auswählen";
 
 // MARK: - Search
 
@@ -1127,7 +1128,12 @@
 "inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";
 "inbox.deleteConfirmMessage" = "Delete %d draft(s)?";
-"inbox.approveableCount" = "%d of %d ready to approve";
+"inbox.approveableCount" = "%d von %d bereit zur Genehmigung";
+"inbox.saveLater" = "Später genehmigen";
+"inbox.deleteTitle" = "Entwurf löschen";
+"inbox.deleteMessage" = "Diese Aktion kann nicht rückgängig gemacht werden.";
+"inbox.reject" = "Ablehnen";
+"inbox.returnToPending" = "Zu ausstehend zurückkehren";
 
 // MARK: - Image Input
 "image.title" = "Bild";
