@@ -66,7 +66,7 @@
 |---|-------|------|--------|
 | 6.1 | Campos obligatorios no claros visualmente | UX | Pendiente |
 | 6.2 | Validación al intentar aprobar (mensaje o botón deshabilitado) | UX | Pendiente |
-| 6.3 | Cerrar sheet sin guardar → confirmación "¿Descartar cambios?" | Edge case | Pendiente |
+| 6.3 | Cerrar sheet sin guardar → confirmación "¿Descartar cambios?" | Edge case | ✅ Completado (1312846) |
 | 6.4 | Editar monto con signo → toggle gasto/ingreso claro | UX | Pendiente |
 | 6.5 | Ver texto original (rawText) para verificar | UX | Pendiente |
 | 6.6 | Confidence indicators → ¿son útiles para el usuario? | UX | Pendiente |
@@ -136,7 +136,7 @@
 - [x] 7.7 - Montos sin decimales en Inbox (ff9bf1b)
 
 ### UX Crítico
-- [ ] 6.3 - Cerrar sheet sin guardar → confirmación
+- [x] 6.3 - Cerrar sheet sin guardar → confirmación (1312846)
 - [ ] 6.1/6.2 - Campos obligatorios claros
 - [ ] 5.4 - Navegación clara post-crear
 - [ ] 7.2 - Indicador de drafts incompletos

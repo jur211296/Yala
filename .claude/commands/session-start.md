@@ -4,93 +4,93 @@ description: Inicia una nueva sesión de trabajo con logging automático.
 
 Inicia una nueva sesión de trabajo con logging automático.
 
-PASO 0 - CONFIGURACIÓN DE ENTORNO:
-Pregunta al usuario: "¿En qué Mac estás trabajando? (jur/work)"
+## DETECCIÓN DE CONTEXTO
 
-Según la respuesta, usa la ruta base:
-- jur → /Users/jur/Yala
-- work → /Users/work/Yala
+Detecta automáticamente:
+- Mac: del directorio actual (/Users/jur/Yala o /Users/work/Yala)
+- Si viene de /next: ya tenemos objetivo y plan definidos en la conversación
 
-Esta ruta se usará para todos los comandos y referencias a archivos durante la sesión.
-Guarda esta configuración: `echo "[jur|work]" > /tmp/yala-mac-env`
+## MODO RÁPIDO (viene de /next)
 
-PASOS:
-1. Crea archivo de session log con timestamp:
+Si en la conversación actual ya se definió:
+- El item/objetivo a trabajar
+- El plan de incrementos (opcional)
+
+Entonces:
+1. Crear archivo de sesión
+2. Registrar objetivo y plan en el log
+3. Preguntar: "¿Comenzamos con el incremento 1?"
+4. NO volver a preguntar objetivo ni planificar
+
+## MODO NORMAL (ejecución directa)
+
+Si se ejecuta `/session-start` sin contexto previo de `/next`:
+
+1. Crear archivo de sesión:
    ```bash
    SESSION_FILE=".claude/sessions/$(date +%Y-%m-%d-%H%M%S).log"
    echo "# Session Started: $(date -Iseconds)" > $SESSION_FILE
-   echo "## Context" >> $SESSION_FILE
    ```
 
-2. Lee y registra contexto inicial:
-   - Fase actual del ROADMAP
-   - Últimos 3 commits de git log
-   - Next Steps de STATE.md
-   - Cualquier Risk activo
-
-3. Pregunta al usuario: "¿En qué vas a trabajar en esta sesión?"
-
-4. Registra el objetivo de la sesión en el log
-
-5. PLANIFICACIÓN DE INCREMENTOS:
-   - Analiza el objetivo declarado
-   - Divide el trabajo en incrementos pequeños y verificables
-   - Cada incremento debe poder completarse con un /commit-one
-   - Presenta el plan al usuario en formato:
-     ```
-     ## Plan de trabajo para esta sesión:
-     1. [Incremento 1] - [qué se logra]
-     2. [Incremento 2] - [qué se logra]
-     3. [Incremento N] - [qué se logra]
-
-     ¿Comenzamos con el incremento 1?
-     ```
-   - ESPERA confirmación del usuario antes de implementar
-
-6. Guarda la ruta del session file en archivo temporal:
-   ```bash
-   echo $SESSION_FILE > /tmp/current-session
+2. Mostrar contexto rápido (sin preguntas):
+   ```
+   Fase actual: [fase]
+   Últimos commits: [3 commits]
    ```
 
-7. CICLO POR CADA INCREMENTO:
-   a) Implementa el incremento actual
-   b) Ejecuta /verify-ios (o /verify-quick si es apropiado)
-   c) Si hay tests relevantes, ejecuta /test-smart
-   d) PRESENTA resultado al usuario:
-      ```
-      ✓ Incremento [N] implementado
-      - Build: OK/Error
-      - Tests: OK/Error/N/A
+3. Preguntar: "¿En qué vas a trabajar en esta sesión?"
 
-      ¿Validaste que funciona correctamente? (sí/no/ajustes)
-      ```
-   e) ESPERA confirmación del usuario:
-      - Si "sí": procede a commit con /commit-one, luego pasa al siguiente incremento
-      - Si "no" o "ajustes": el usuario indica qué corregir, vuelve a (a)
-   f) NUNCA marcar como completado sin confirmación explícita del usuario
+4. Preguntar: "¿Quieres que divida el trabajo en incrementos?"
+   - Si sí: proponer plan
+   - Si no: empezar directo
 
-FORMATO DEL LOG:
+5. Guardar ruta: `echo $SESSION_FILE > /tmp/current-session`
+
+## CICLO DE TRABAJO
+
+Una vez iniciada la sesión, por cada incremento:
+
+1. Implementar el incremento
+2. Ejecutar /verify-ios (o /verify-quick)
+3. Si hay tests relevantes: /test-smart
+4. Presentar resultado:
+   ```
+   ✓ Incremento [N] implementado
+   - Build: OK/Error
+   - Tests: OK/Error/N/A
+
+   ¿Validaste que funciona? (sí/no/ajustes)
+   ```
+5. Esperar confirmación:
+   - "sí" → /commit-one → siguiente incremento
+   - "no/ajustes" → corregir → volver a 1
+
+## FORMATO DEL LOG
+
 ```markdown
 # Session Started: [timestamp ISO]
 
 ## Context
-- Current Phase: [fase del ROADMAP]
-- Recent Commits:
-  - [hash] [mensaje]
-- Next Steps: [lista de STATE]
-- Active Risks: [si hay]
+- Phase: [fase]
+- Recent: [commits]
 
-## Session Goal
-[Lo que el usuario declaró que va a trabajar]
+## Goal
+[objetivo]
+
+## Plan
+1. [incremento 1]
+2. [incremento 2]
 
 ## Timeline
-[Se irá poblando automáticamente con eventos]
+[eventos conforme ocurren]
 
 ## Outcomes
-[Se llenará al final con session-end]
+[se llena con /session-end]
 ```
 
-REGLAS:
-- Este comando SOLO registra el inicio de sesión, NO implementa código
-- La implementación comienza cuando el usuario lo indique explícitamente
-- Si el usuario ya tiene un plan de incrementos de /gsd:next, debe referirse a ellos por número
+## REGLAS
+
+- Detectar Mac automáticamente, NO preguntar
+- Si viene de /next, NO repetir preguntas ya respondidas
+- Ser conciso en el output
+- La implementación comienza solo cuando el usuario confirme

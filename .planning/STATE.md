@@ -22,6 +22,8 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] f2040bd chore: improve commit-one to update work documents and mark 6.3 complete
+- [2026-01-25] 1312846 feat(inbox): add discard changes confirmation when closing edit sheet
 - [2026-01-25] ff9bf1b fix(inbox): show amounts with decimals for consistency
 - [2026-01-25] 41c10e3 fix(inbox): improve reject/delete flow and archived tab actions
 - [2026-01-25] d9cfe97 feat(inbox): add Vision currency detection and smart navigation
@@ -30,9 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-24] 8b6509f feat(ocr): add ScreenshotList extractor with row clustering
 - [2026-01-24] dacfa11 feat(ocr): add ScreenshotSingle extractor with amount and date parsers
 - [2026-01-24] b702f7d feat(ocr): add heuristic image classifier
-- [2026-01-24] fc1e9ff feat(ocr): add Vision-based OCR service for text extraction
-- [2026-01-24] e0bcc7b feat(panel): add image option to FAB menu
-- [2026-01-24] bf9175d feat(settings): add image input toggle and missing localizations
 
 ## Completed in Current Phase
 
@@ -210,16 +209,14 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Vision API currency detection + smart navigation (commit d9cfe97)
-Next step: Refinamiento y testing de Vision API + Inbox flow
+Stopped at: Item 6.3 completado - confirmación al cerrar InboxDraftEditSheet con cambios (commit 1312846)
+Next step: Siguiente item UX Crítico del REFINAMIENTO-8.3-8.4.md (6.1/6.2: campos obligatorios claros)
 Resume file: N/A
 Resume context:
-- Vision API ahora extrae currency de símbolos ($ → USD, € → EUR, S/ → PEN)
-- Auto-asigna cuenta cuando solo hay una con la divisa detectada
-- Navegación inteligente: 1 draft → edit sheet, múltiples → alert con link a inbox
-- Botón "Guardar" → "Aprobar luego"
-- Menú con Eliminar (permanente) y Rechazar (archivo) separados
-- Pendiente: testing con imágenes reales, edge cases, UX feedback
+- Item 6.3 implementado: hasUnsavedChanges() detecta cambios, alerta antes de cerrar
+- Bugs 7.6 y 7.7 ya estaban completados
+- Comando /commit-one mejorado para actualizar documentos de trabajo
+- Siguiente bloque: UX Crítico (6.1/6.2, 5.4, 7.2)
 
 ## V1.1 (Futuro)
 
