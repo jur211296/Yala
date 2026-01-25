@@ -127,7 +127,7 @@ struct InboxDraftRowView: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode, forceFullPrecision: true))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(amount >= 0 ? Color.electricIndigo : Color.hotPink)
             } else {
