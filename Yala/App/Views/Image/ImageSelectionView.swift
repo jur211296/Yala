@@ -16,18 +16,16 @@ struct ImageSelectionView: View {
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isProcessing = false
+    @State private var showingResult = false
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var showInbox = false
     @State private var draftsCreated = 0
 
-    // Navigation for single draft (direct edit)
+    // Navigation for drafts
+    @State private var createdDrafts: [InboxDraft] = []
     @State private var createdDraft: InboxDraft?
     @State private var draftWasApproved = false
-
-    // Navigation for multiple drafts (alert)
-    @State private var showMultipleDraftsAlert = false
-    @State private var multipleDraftsCount = 0
 
     /// Callback when draft is saved but not approved (user should go to Inbox)
     var onSavedToInbox: (() -> Void)?
@@ -44,7 +42,9 @@ struct ImageSelectionView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: DS.Spacing.xl) {
-                if isProcessing {
+                if showingResult {
+                    resultView
+                } else if isProcessing {
                     processingView
                 } else {
                     selectionView
@@ -98,19 +98,6 @@ struct ImageSelectionView: View {
                 if newValue == nil {
                     draftWasApproved = false
                 }
-            }
-            .alert(L10n.Image.transactionsDetected, isPresented: $showMultipleDraftsAlert) {
-                Button(L10n.Image.goToInbox) {
-                    dismiss()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showInbox = true
-                    }
-                }
-                Button(L10n.Common.cancel, role: .cancel) {
-                    dismiss()
-                }
-            } message: {
-                Text(L10n.Image.transactionsDetectedMessage(multipleDraftsCount))
             }
         }
     }
@@ -173,6 +160,66 @@ struct ImageSelectionView: View {
                 .multilineTextAlignment(.center)
 
             Spacer()
+        }
+    }
+
+    // MARK: - Result View
+
+    private var resultView: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            Spacer()
+
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(Color.green)
+
+            Text("\(draftsCreated)")
+                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.orange)
+
+            Text(draftsCreated == 1 ? L10n.Image.transactionDetected : L10n.Image.transactionsDetectedCount)
+                .font(.title3.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            // Action button
+            if draftsCreated == 1 {
+                // Single draft: Review button
+                Button {
+                    createdDraft = createdDrafts.first
+                } label: {
+                    HStack {
+                        Image(systemName: "pencil")
+                        Text(L10n.Image.reviewDraft)
+                    }
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Spacing.md)
+                    .background(Color.orange)
+                    .cornerRadius(DS.Radius.sm)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+            } else {
+                // Multiple drafts: Go to Inbox button
+                Button {
+                    onSavedToInbox?()
+                    dismiss()
+                } label: {
+                    HStack {
+                        Image(systemName: "tray")
+                        Text(L10n.Image.goToInbox)
+                    }
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Spacing.md)
+                    .background(Color.orange)
+                    .cornerRadius(DS.Radius.sm)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+            }
         }
     }
 
@@ -289,18 +336,12 @@ struct ImageSelectionView: View {
     }
 
     /// Handles navigation after drafts are created
-    /// - 1 draft: Opens edit sheet directly
-    /// - Multiple: Shows alert with count and option to go to inbox
+    /// - Stores drafts and shows result view with action button
     private func handleNavigation(drafts: [InboxDraft]) async {
-        try? await Task.sleep(for: .milliseconds(300))
         await MainActor.run {
-            if drafts.count == 1, let draft = drafts.first {
-                // Single draft: open edit sheet directly
-                createdDraft = draft
-            } else {
-                // Multiple drafts: show alert with count
-                multipleDraftsCount = drafts.count
-                showMultipleDraftsAlert = true
+            createdDrafts = drafts
+            withAnimation(.easeOut(duration: 0.3)) {
+                showingResult = true
             }
         }
     }

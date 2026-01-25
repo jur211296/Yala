@@ -1862,6 +1862,15 @@ enum L10n {
         static var errorGeneric: String {
             NSLocalizedString("image.errorGeneric", comment: "")
         }
+        static var transactionDetected: String {
+            NSLocalizedString("image.transactionDetected", comment: "")
+        }
+        static var transactionsDetectedCount: String {
+            NSLocalizedString("image.transactionsDetectedCount", comment: "")
+        }
+        static var reviewDraft: String {
+            NSLocalizedString("image.reviewDraft", comment: "")
+        }
         static var transactionsDetected: String {
             NSLocalizedString("image.transactionsDetected", comment: "")
         }

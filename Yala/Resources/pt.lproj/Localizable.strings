@@ -1151,3 +1151,9 @@
 "image.errorNoData" = "Nenhuma transação detectada na imagem";
 "image.errorUnrecognized" = "Tipo de imagem não reconhecido";
 "image.errorGeneric" = "Erro ao processar a imagem";
+"image.transactionDetected" = "transação detectada";
+"image.transactionsDetectedCount" = "transações detectadas";
+"image.reviewDraft" = "Revisar";
+"image.transactionsDetected" = "Transações detectadas";
+"image.goToInbox" = "Ir para caixa";
+"image.transactionsDetectedMessage" = "Detectamos %d transações. Você pode revisá-las e aprová-las na caixa de entrada.";
