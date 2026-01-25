@@ -1,56 +1,52 @@
 ---
 import type { Language } from '../i18n/translations';
-import { getTranslations, languages } from '../i18n/translations';
+import { getTranslation, languages } from '../i18n/translations';
 
 interface Props {
   lang: Language;
 }
 
 const { lang } = Astro.props;
-const t = getTranslations(lang);
+const t = getTranslation(lang);
 
-// Build language URLs
 const langUrls = Object.keys(languages).map(l => ({
   code: l,
   name: languages[l as Language],
   url: l === 'es' ? '/' : `/${l}/`,
   active: l === lang,
 }));
+
+const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
 ---
 
 <!-- Header -->
-<header class="fixed top-0 left-0 right-0 z-50 header-bg border-b border-theme">
+<header class="fixed top-0 left-0 right-0 z-50 header-blur" style="background: var(--header-bg); border-bottom: 1px solid var(--border-color);">
   <div class="container-wide">
     <nav class="flex items-center justify-between h-16">
       <a href={lang === 'es' ? '/' : `/${lang}/`} class="flex items-center">
-        <img src="/images/logo.png" alt="Neto" class="h-7 logo-dark" />
-        <img src="/images/logo-light.png" alt="Neto" class="h-7 logo-light" />
+        <img src="/images/logo.png" alt="Yala" class="h-7 logo-dark" />
+        <img src="/images/logo-light.png" alt="Yala" class="h-7 logo-light" />
       </a>
 
-      <div class="hidden sm:flex items-center gap-8">
-        <a href="#features" class="text-sm text-secondary hover:text-primary transition-colors">{t.navFeatures}</a>
-        <a href="#analytics" class="text-sm text-secondary hover:text-primary transition-colors">{t.navAnalytics}</a>
-        <a href="#privacy" class="text-sm text-secondary hover:text-primary transition-colors">{t.navPrivacy}</a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navFeatures}</a>
+        <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navHow}</a>
+        <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPricing}</a>
+        <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPrivacy}</a>
       </div>
 
       <div class="flex items-center gap-3">
         <!-- Language Selector -->
         <div class="relative">
-          <button
-            id="lang-toggle"
-            class="flex items-center gap-1.5 text-sm text-secondary hover:text-primary px-3 py-2 rounded-full border border-theme hover:border-theme-hover transition-colors"
-          >
+          <button id="lang-toggle" class="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white px-3 py-2 rounded-full border border-neutral-700 hover:border-neutral-500 transition-colors">
             <span class="uppercase font-medium">{lang}</span>
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </button>
-          <div id="lang-menu" class="hidden absolute right-0 mt-2 py-2 w-36 bg-card border border-theme rounded-xl shadow-xl z-50">
+          <div id="lang-menu" class="hidden absolute right-0 mt-2 py-2 w-36 rounded-xl shadow-xl z-50" style="background: var(--bg-card); border: 1px solid var(--border-color);">
             {langUrls.map(({ code, name, url, active }) => (
-              <a
-                href={url}
-                class={`block px-4 py-2 text-sm transition-colors ${active ? 'text-accent font-medium' : 'text-secondary hover:text-primary hover:bg-card-hover'}`}
-              >
+              <a href={url} class={`block px-4 py-2 text-sm transition-colors ${active ? 'text-yala-cyan font-medium' : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'}`}>
                 {name}
               </a>
             ))}
@@ -58,23 +54,16 @@ const langUrls = Object.keys(languages).map(l => ({
         </div>
 
         <!-- Theme Toggle -->
-        <button
-          id="theme-toggle"
-          class="w-9 h-9 rounded-full flex items-center justify-center bg-card border border-theme hover:border-theme-hover transition-colors"
-          aria-label="Toggle theme"
-        >
-          <svg class="w-4 h-4 text-secondary icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="theme-toggle" class="w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label="Toggle theme">
+          <svg class="w-4 h-4 text-neutral-400 icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
           </svg>
-          <svg class="w-4 h-4 text-secondary icon-moon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-neutral-400 icon-moon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
           </svg>
         </button>
 
-        <a
-          href="#"
-          class="hidden sm:inline-flex text-sm font-medium text-primary bg-card hover:bg-card-hover border border-theme px-4 py-2 rounded-full transition-colors"
-        >
+        <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="hidden sm:inline-flex btn-primary text-sm">
           {t.navDownload}
         </a>
       </div>
@@ -84,265 +73,671 @@ const langUrls = Object.keys(languages).map(l => ({
 
 <main class="pt-16">
 
-  <!-- Hero: 2 columns -->
-  <section class="container-wide py-20 md:py-28">
-    <div class="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
-      <div class="space-y-6 animate-on-scroll">
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tighter text-primary leading-[1.08]">
-          {t.heroTitle}
-        </h1>
-        <p class="text-lg text-secondary max-w-md leading-relaxed">
-          {t.heroSubtitle}
-        </p>
-        <div class="flex flex-wrap gap-3 pt-2">
-          <a
-            href="#"
-            class="inline-flex items-center justify-center gap-2 btn-primary px-5 py-3 rounded-full font-medium transition-colors text-sm"
-          >
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-            </svg>
-            {t.heroAppStore}
-          </a>
-          <a
-            href="#features"
-            class="inline-flex items-center justify-center gap-2 btn-secondary px-5 py-3 rounded-full font-medium transition-colors text-sm"
-          >
-            {t.heroLearnMore}
-          </a>
-        </div>
+  <!-- HERO SECTION -->
+  <section class="container-wide py-20 md:py-32">
+    <div class="max-w-4xl mx-auto text-center space-y-8 animate-on-scroll">
+      <!-- Tagline -->
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-yala-cyan/30 bg-yala-cyan/5">
+        <span class="w-2 h-2 rounded-full bg-yala-cyan animate-pulse"></span>
+        <span class="text-sm font-medium text-yala-cyan">{t.heroTagline}</span>
       </div>
 
-      <div class="animate-on-scroll flex justify-center md:justify-end">
-        <div class="relative">
-          <img
-            src="/images/screenshots/dark/dashboard.png"
-            alt="Neto App Dashboard"
-            class="screenshot-dark w-[280px] lg:w-[320px] rounded-[2.5rem] shadow-2xl shadow-black/60"
-          />
-          <img
-            src="/images/screenshots/light/dashboard.png"
-            alt="Neto App Dashboard"
-            class="screenshot-light w-[280px] lg:w-[320px] rounded-[2.5rem] shadow-2xl shadow-black/30"
-          />
-          <div class="absolute -inset-8 bg-accent/10 blur-3xl -z-10 rounded-full"></div>
-        </div>
-      </div>
-    </div>
-  </section>
+      <!-- Main Headline -->
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tighter leading-[1.1]">
+        <span class="text-white">{t.heroTitle}</span>
+        <br />
+        <span class="text-gradient">{t.heroTitleAccent}</span>
+      </h1>
 
-  <!-- Features Grid -->
-  <section id="features" class="container-wide py-16 scroll-mt-20">
-    <div class="animate-on-scroll mb-10">
-      <h2 class="text-2xl sm:text-3xl font-semibold text-primary tracking-tight">
-        {t.featuresTitle}
-      </h2>
-    </div>
-
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="animate-on-scroll stagger-1 group p-5 rounded-2xl bg-card border border-theme hover:border-theme-hover transition-all">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center mb-4">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-          </svg>
-        </div>
-        <h3 class="text-base font-semibold text-primary mb-1.5">{t.feature1Title}</h3>
-        <p class="text-sm text-secondary leading-relaxed">{t.feature1Desc}</p>
-      </div>
-
-      <div class="animate-on-scroll stagger-2 group p-5 rounded-2xl bg-card border border-theme hover:border-theme-hover transition-all">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mb-4">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-          </svg>
-        </div>
-        <h3 class="text-base font-semibold text-primary mb-1.5">{t.feature2Title}</h3>
-        <p class="text-sm text-secondary leading-relaxed">{t.feature2Desc}</p>
-      </div>
-
-      <div class="animate-on-scroll stagger-3 group p-5 rounded-2xl bg-card border border-theme hover:border-theme-hover transition-all">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-        </div>
-        <h3 class="text-base font-semibold text-primary mb-1.5">{t.feature3Title}</h3>
-        <p class="text-sm text-secondary leading-relaxed">{t.feature3Desc}</p>
-      </div>
-
-      <div class="animate-on-scroll group p-5 rounded-2xl bg-card border border-theme hover:border-theme-hover transition-all">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center mb-4">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
-        </div>
-        <h3 class="text-base font-semibold text-primary mb-1.5">{t.feature4Title}</h3>
-        <p class="text-sm text-secondary leading-relaxed">{t.feature4Desc}</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Stats -->
-  <section class="container-wide py-12">
-    <div class="animate-on-scroll flex flex-wrap justify-center gap-8 md:gap-16 text-center">
-      <div>
-        <div class="text-3xl font-bold text-primary">100%</div>
-        <div class="text-sm text-muted mt-1">{t.stat1}</div>
-      </div>
-      <div>
-        <div class="text-3xl font-bold text-primary">∞</div>
-        <div class="text-sm text-muted mt-1">{t.stat2}</div>
-      </div>
-      <div>
-        <div class="text-3xl font-bold text-primary">50+</div>
-        <div class="text-sm text-muted mt-1">{t.stat3}</div>
-      </div>
-      <div>
-        <div class="text-3xl font-bold text-primary">0</div>
-        <div class="text-sm text-muted mt-1">{t.stat4}</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Screenshots -->
-  <section class="container-wide py-16 overflow-hidden">
-    <div class="animate-on-scroll mb-10">
-      <h2 class="text-2xl sm:text-3xl font-semibold text-primary tracking-tight text-center">
-        {t.screenshotsTitle}
-      </h2>
-      <p class="text-secondary text-center mt-3 max-w-lg mx-auto">
-        {t.screenshotsSubtitle}
+      <!-- Subtitle -->
+      <p class="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+        {t.heroSubtitle}
       </p>
+
+      <!-- CTAs -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+        <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-primary inline-flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          </svg>
+          {t.heroAppStore}
+        </a>
+        <a href="#how" class="btn-secondary inline-flex items-center justify-center gap-2">
+          {t.heroLearnMore}
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Trust Badges -->
+      <p class="text-sm text-neutral-500 pt-4">{t.heroTrust}</p>
     </div>
 
-    <div class="animate-on-scroll">
-      <!-- Dark mode screenshots -->
-      <div class="screenshots-dark flex justify-center gap-4 md:gap-6">
-        <div class="w-[160px] sm:w-[200px] md:w-[240px] shrink-0">
-          <img src="/images/screenshots/dark/dashboard.png" alt="Panel" class="rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl shadow-black/50" />
-        </div>
-        <div class="w-[160px] sm:w-[200px] md:w-[240px] shrink-0 mt-8">
-          <img src="/images/screenshots/dark/stats.png" alt="Stats" class="rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl shadow-black/50" />
-        </div>
-        <div class="hidden sm:block w-[200px] md:w-[240px] shrink-0 mt-16">
-          <img src="/images/screenshots/dark/categories.png" alt="Categories" class="rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl shadow-black/50" />
-        </div>
-      </div>
-      <!-- Light mode screenshots -->
-      <div class="screenshots-light flex justify-center gap-4 md:gap-6">
-        <div class="w-[160px] sm:w-[200px] md:w-[240px] shrink-0">
-          <img src="/images/screenshots/light/dashboard.png" alt="Panel" class="rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl shadow-black/30" />
-        </div>
-        <div class="w-[160px] sm:w-[200px] md:w-[240px] shrink-0 mt-8">
-          <img src="/images/screenshots/light/stats.png" alt="Stats" class="rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl shadow-black/30" />
-        </div>
-        <div class="hidden sm:block w-[200px] md:w-[240px] shrink-0 mt-16">
-          <img src="/images/screenshots/light/categories.png" alt="Categories" class="rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl shadow-black/30" />
+    <!-- App Screenshot Placeholder -->
+    <div class="mt-16 max-w-sm mx-auto">
+      <div class="aspect-[9/19] rounded-[3rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-3 shadow-2xl shadow-yala-indigo/20">
+        <div class="w-full h-full rounded-[2.5rem] bg-neutral-800 flex items-center justify-center">
+          <div class="text-center space-y-3">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-yala-indigo to-yala-pink flex items-center justify-center">
+              <span class="text-2xl font-bold text-white">Y</span>
+            </div>
+            <p class="text-neutral-500 text-sm">Screenshot placeholder</p>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Analytics Section -->
-  <section id="analytics" class="container-wide py-16 scroll-mt-20">
-    <div class="grid md:grid-cols-2 gap-12 items-center">
-      <div class="animate-on-scroll order-2 md:order-1 flex justify-center">
-        <img src="/images/screenshots/dark/stats.png" alt="Analytics" class="screenshot-dark w-[260px] rounded-[2rem] shadow-2xl shadow-black/50" />
-        <img src="/images/screenshots/light/stats.png" alt="Analytics" class="screenshot-light w-[260px] rounded-[2rem] shadow-2xl shadow-black/30" />
+  <!-- PROBLEM SECTION -->
+  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+      <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.problemTitle}</h2>
+
+      <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <!-- Problem Card 1 -->
+        <div class="card p-8 animate-on-scroll stagger-1">
+          <div class="w-14 h-14 rounded-2xl bg-nature-essential/10 flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">{t.problemCard1Title}</h3>
+          <p class="text-neutral-400 leading-relaxed">{t.problemCard1Desc}</p>
+        </div>
+
+        <!-- Problem Card 2 -->
+        <div class="card p-8 animate-on-scroll stagger-2">
+          <div class="w-14 h-14 rounded-2xl bg-yala-pink/10 flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">{t.problemCard2Title}</h3>
+          <p class="text-neutral-400 leading-relaxed">{t.problemCard2Desc}</p>
+        </div>
+
+        <!-- Problem Card 3 -->
+        <div class="card p-8 animate-on-scroll stagger-3">
+          <div class="w-14 h-14 rounded-2xl bg-nature-priority/10 flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">{t.problemCard3Title}</h3>
+          <p class="text-neutral-400 leading-relaxed">{t.problemCard3Desc}</p>
+        </div>
       </div>
-      <div class="animate-on-scroll order-1 md:order-2 space-y-5">
-        <h2 class="text-2xl sm:text-3xl font-semibold text-primary tracking-tight">
-          {t.analyticsTitle}
-        </h2>
-        <p class="text-secondary leading-relaxed">
-          {t.analyticsDesc}
-        </p>
-        <ul class="space-y-3 text-secondary text-sm">
+
+      <p class="text-center text-neutral-500 mt-12 text-lg animate-on-scroll">{t.problemConclusion}</p>
+    </div>
+  </section>
+
+  <!-- DIFFERENCE SECTION -->
+  <section class="container-wide py-20 md:py-28">
+    <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.differenceTitle}</h2>
+
+    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <!-- Other Apps -->
+      <div class="card p-8 border-neutral-700/50 animate-on-scroll stagger-1">
+        <h3 class="text-lg font-semibold text-neutral-500 mb-6">{t.differenceOthers}</h3>
+        <ul class="space-y-4">
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-accent shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
-            {t.analyticsBullet1}
+            <span class="text-neutral-500">{t.differenceOther1}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-accent shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
-            {t.analyticsBullet2}
+            <span class="text-neutral-500">{t.differenceOther2}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-accent shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span class="text-neutral-500">{t.differenceOther3}</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span class="text-neutral-500">{t.differenceOther4}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- With Yala -->
+      <div class="card-glow p-8 border-yala-indigo/30 animate-on-scroll stagger-2">
+        <h3 class="text-lg font-semibold text-yala-cyan mb-6">{t.differenceYala}</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
-            {t.analyticsBullet3}
+            <span class="text-neutral-200">{t.differenceYala1}</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-neutral-200">{t.differenceYala2}</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-neutral-200">{t.differenceYala3}</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-neutral-200">{t.differenceYala4}</span>
           </li>
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- Privacy -->
-  <section id="privacy" class="container-wide py-16 scroll-mt-20">
-    <div class="animate-on-scroll max-w-2xl mx-auto text-center">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-neutral-600 to-neutral-700 flex items-center justify-center mx-auto mb-5">
-        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-        </svg>
+  <!-- FEATURES SECTION (Bento Grid) -->
+  <section id="features" class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+      <div class="text-center mb-16 animate-on-scroll">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.featuresTitle}</h2>
+        <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.featuresSubtitle}</p>
       </div>
-      <h2 class="text-2xl sm:text-3xl font-semibold text-primary tracking-tight mb-3">
-        {t.privacyTitle}
-      </h2>
-      <p class="text-secondary leading-relaxed">
-        {t.privacyDesc}
-      </p>
-      <a href={lang === 'es' ? '/privacy' : `/${lang}/privacy`} class="inline-block mt-5 text-sm text-accent hover:text-accent-light transition-colors">
-        {t.privacyLink} →
-      </a>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        <!-- Feature 1 - Large -->
+        <div class="col-span-2 row-span-2 card-glow p-8 flex flex-col justify-between min-h-[320px] animate-on-scroll stagger-1">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-yala-indigo/20 flex items-center justify-center mb-6">
+              <svg class="w-7 h-7 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-semibold mb-3">{t.feature1Title}</h3>
+            <p class="text-neutral-400 leading-relaxed">{t.feature1Desc}</p>
+          </div>
+          <div class="mt-6 h-32 rounded-xl bg-gradient-to-br from-yala-indigo/10 to-transparent border border-yala-indigo/20 flex items-center justify-center">
+            <span class="text-neutral-600 text-sm">Screenshot placeholder</span>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="col-span-2 card p-6 animate-on-scroll stagger-2">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-yala-cyan/20 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold mb-2">{t.feature2Title}</h3>
+              <p class="text-neutral-400 text-sm">{t.feature2Desc}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="card p-6 animate-on-scroll stagger-3">
+          <div class="w-12 h-12 rounded-xl bg-yala-teal/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature3Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature3Desc}</p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="card p-6 animate-on-scroll stagger-4">
+          <div class="w-12 h-12 rounded-xl bg-nature-priority/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature4Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature4Desc}</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="card p-6 animate-on-scroll stagger-5">
+          <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature5Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature5Desc}</p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="card p-6 animate-on-scroll stagger-5">
+          <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature6Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature6Desc}</p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- CTA -->
-  <section class="container-wide py-20">
-    <div class="animate-on-scroll bg-card-cta border border-theme rounded-3xl p-10 md:p-14 text-center">
-      <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold text-primary tracking-tight mb-4">
-        {t.ctaTitle}
-      </h2>
-      <p class="text-secondary mb-8 max-w-md mx-auto">
-        {t.ctaSubtitle}
-      </p>
-      <a
-        href="#"
-        class="inline-flex items-center justify-center gap-2 btn-primary px-7 py-3.5 rounded-full font-medium transition-colors"
-      >
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-        </svg>
-        {t.heroAppStore}
-      </a>
+  <!-- HOW IT WORKS -->
+  <section id="how" class="container-wide py-20 md:py-28">
+    <div class="text-center mb-16 animate-on-scroll">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.howTitle}</h2>
+      <p class="text-neutral-400 text-lg">{t.howSubtitle}</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <!-- Step 1 -->
+      <div class="text-center animate-on-scroll stagger-1">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yala-indigo to-yala-cyan flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-white">1</div>
+        <h3 class="text-xl font-semibold mb-3">{t.howStep1Title}</h3>
+        <p class="text-neutral-400">{t.howStep1Desc}</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="text-center animate-on-scroll stagger-2">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yala-cyan to-yala-teal flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-white">2</div>
+        <h3 class="text-xl font-semibold mb-3">{t.howStep2Title}</h3>
+        <p class="text-neutral-400">{t.howStep2Desc}</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="text-center animate-on-scroll stagger-3">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yala-teal to-yala-pink flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-white">3</div>
+        <h3 class="text-xl font-semibold mb-3">{t.howStep3Title}</h3>
+        <p class="text-neutral-400">{t.howStep3Desc}</p>
+      </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="container-wide py-10 border-t border-theme">
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div class="flex items-center gap-6">
-        <img src="/images/logo.png" alt="Neto" class="h-5 logo-dark" />
-        <img src="/images/logo-light.png" alt="Neto" class="h-5 logo-light" />
-        <span class="text-muted text-sm">© 2026</span>
-      </div>
-      <div class="flex gap-6 text-sm text-muted">
-        <a href={lang === 'es' ? '/privacy' : `/${lang}/privacy`} class="hover:text-secondary transition-colors">{t.footerPrivacy}</a>
-        <a href="#" class="hover:text-secondary transition-colors">{t.footerTerms}</a>
-        <a href="mailto:admin@neto.com.pe" class="hover:text-secondary transition-colors">{t.footerContact}</a>
+  <!-- ANALYTICS SECTION -->
+  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+      <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+        <div class="animate-on-scroll">
+          <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.analyticsTitle}</h2>
+          <p class="text-2xl sm:text-3xl font-bold text-gradient mb-8">{t.analyticsSubtitle}</p>
+
+          <ul class="space-y-4">
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.analyticsBullet1}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.analyticsBullet2}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.analyticsBullet3}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Analytics Screenshot Placeholder -->
+        <div class="animate-on-scroll stagger-2">
+          <div class="aspect-square max-w-md mx-auto rounded-3xl bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700 p-8 flex items-center justify-center">
+            <span class="text-neutral-600">Analytics screenshot placeholder</span>
+          </div>
+        </div>
       </div>
     </div>
-  </footer>
+  </section>
 
+  <!-- PRIVACY SECTION -->
+  <section id="privacy" class="container-wide py-20 md:py-28">
+    <div class="text-center mb-16 animate-on-scroll">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.privacyTitle}</h2>
+      <p class="text-xl text-neutral-400">{t.privacySubtitle}</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <!-- What we DON'T do -->
+      <div class="card p-8 animate-on-scroll stagger-1">
+        <h3 class="text-lg font-semibold text-yala-pink mb-6">{t.privacyNotTitle}</h3>
+        <ul class="space-y-4">
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span class="text-neutral-400">{t.privacyNot1}</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span class="text-neutral-400">{t.privacyNot2}</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span class="text-neutral-400">{t.privacyNot3}</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span class="text-neutral-400">{t.privacyNot4}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- What we DO -->
+      <div class="card-glow p-8 border-yala-teal/30 animate-on-scroll stagger-2">
+        <h3 class="text-lg font-semibold text-yala-teal mb-6">{t.privacyYesTitle}</h3>
+        <ul class="space-y-4">
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-neutral-300">{t.privacyYes1}</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-neutral-300">{t.privacyYes2}</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-neutral-300">{t.privacyYes3}</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-neutral-300">{t.privacyYes4}</span>
+          </li>
+        </ul>
+        <div class="mt-6 pt-6 border-t border-neutral-700">
+          <span class="inline-flex items-center gap-2 text-sm font-medium text-yala-teal">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            {t.privacyBadge}
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING SECTION -->
+  <section id="pricing" class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+      <div class="text-center mb-16 animate-on-scroll">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.pricingTitle}</h2>
+        <p class="text-xl text-neutral-400">{t.pricingSubtitle}</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <!-- Free Plan -->
+        <div class="card p-8 animate-on-scroll stagger-1">
+          <h3 class="text-2xl font-bold mb-2">{t.pricingFreeTitle}</h3>
+          <div class="flex items-baseline gap-1 mb-6">
+            <span class="text-4xl font-bold">{t.pricingFreePrice}</span>
+            <span class="text-neutral-500">{t.pricingFreePeriod}</span>
+          </div>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree1}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree2}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree3}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree4}</span>
+            </li>
+          </ul>
+          <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-secondary w-full text-center">{t.pricingFreeCta}</a>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2">
+          <div class="absolute top-0 right-0 bg-gradient-to-l from-yala-indigo to-yala-pink text-white text-xs font-bold px-4 py-1 rounded-bl-xl">PRO</div>
+          <h3 class="text-2xl font-bold mb-2">{t.pricingProTitle}</h3>
+          <div class="flex items-baseline gap-1 mb-1">
+            <span class="text-4xl font-bold text-gradient">{t.pricingProPrice}</span>
+            <span class="text-neutral-500">{t.pricingProPeriod}</span>
+          </div>
+          <p class="text-sm text-neutral-500 mb-6">{t.pricingProAnnual}</p>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro1}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro2}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro3}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro4}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro5}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro6}</span>
+            </li>
+          </ul>
+          <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-primary w-full text-center">{t.pricingProCta}</a>
+          <p class="text-center text-sm text-neutral-500 mt-4">{t.pricingProBadge}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY YALA SECTION -->
+  <section class="container-wide py-20 md:py-28">
+    <div class="max-w-3xl mx-auto text-center animate-on-scroll">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-8">{t.whyTitle}</h2>
+      <div class="space-y-6 text-lg text-neutral-400 leading-relaxed">
+        <p>{t.whyText1}</p>
+        <p>{t.whyText2}</p>
+        <p class="text-neutral-300">{t.whyText3}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+      <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.faqTitle}</h2>
+
+      <div class="max-w-3xl mx-auto space-y-4">
+        <!-- FAQ Items -->
+        <details class="card group animate-on-scroll stagger-1">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq1Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq1A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll stagger-2">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq2Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq2A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll stagger-3">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq3Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq3A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll stagger-4">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq4Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq4A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll stagger-5">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq5Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq5A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq6Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq6A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq7Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq7A}</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="py-20 md:py-28 bg-gradient-to-br from-yala-slate via-neutral-900 to-yala-slate">
+    <div class="container-wide text-center">
+      <div class="max-w-2xl mx-auto animate-on-scroll">
+        <h2 class="text-4xl sm:text-5xl font-bold mb-4">
+          <span class="text-gradient">{t.ctaTitle}</span>
+        </h2>
+        <p class="text-xl text-neutral-400 mb-8">{t.ctaSubtitle}</p>
+        <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-primary inline-flex items-center gap-2 text-lg px-8 py-4">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          </svg>
+          {t.heroAppStore}
+        </a>
+        <p class="text-sm text-neutral-500 mt-6">{t.ctaTrust}</p>
+      </div>
+    </div>
+  </section>
 </main>
+
+<!-- FOOTER -->
+<footer class="py-12 border-t" style="border-color: var(--border-color);">
+  <div class="container-wide">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-6">
+        <img src="/images/logo.png" alt="Yala" class="h-6 logo-dark" />
+        <img src="/images/logo-light.png" alt="Yala" class="h-6 logo-light" />
+        <span class="text-neutral-500 text-sm">© 2026 Yala</span>
+      </div>
+
+      <div class="flex items-center gap-6 text-sm">
+        <a href={privacyUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerPrivacy}</a>
+        <a href="#" class="text-neutral-500 hover:text-white transition-colors">{t.footerTerms}</a>
+        <a href="#" class="text-neutral-500 hover:text-white transition-colors">{t.footerHelp}</a>
+        <a href="mailto:hola@yala.app" class="text-neutral-500 hover:text-white transition-colors">{t.footerContact}</a>
+      </div>
+
+      <p class="text-neutral-500 text-sm">{t.footerMadeIn}</p>
+    </div>
+  </div>
+</footer>
 
 <!-- Scripts -->
 <script>
-  // Language menu toggle
+  // Theme Toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  const sunIcon = document.querySelector('.icon-sun');
+  const moonIcon = document.querySelector('.icon-moon');
+
+  function setTheme(isLight: boolean) {
+    document.body.classList.toggle('light', isLight);
+    sunIcon?.classList.toggle('hidden', isLight);
+    moonIcon?.classList.toggle('hidden', !isLight);
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  }
+
+  // Initialize theme
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(savedTheme === 'light' || (!savedTheme && !prefersDark));
+
+  themeToggle?.addEventListener('click', () => {
+    setTheme(!document.body.classList.contains('light'));
+  });
+
+  // Language Menu Toggle
   const langToggle = document.getElementById('lang-toggle');
   const langMenu = document.getElementById('lang-menu');
 
@@ -355,50 +750,7 @@ const langUrls = Object.keys(languages).map(l => ({
     langMenu?.classList.add('hidden');
   });
 
-  // Save language preference when user clicks a language link
-  document.querySelectorAll('#lang-menu a').forEach(link => {
-    link.addEventListener('click', () => {
-      const href = link.getAttribute('href');
-      if (href) {
-        const lang = href === '/' ? 'es' : href.replace(/\//g, '');
-        document.cookie = `lang=${lang}; path=/; max-age=31536000`; // 1 year
-      }
-    });
-  });
-
-  // Theme toggle
-  const toggle = document.getElementById('theme-toggle');
-  const iconSun = document.querySelector('.icon-sun');
-  const iconMoon = document.querySelector('.icon-moon');
-
-  function setTheme(isDark: boolean) {
-    if (isDark) {
-      document.body.classList.remove('light');
-      iconSun?.classList.remove('hidden');
-      iconMoon?.classList.add('hidden');
-    } else {
-      document.body.classList.add('light');
-      iconSun?.classList.add('hidden');
-      iconMoon?.classList.remove('hidden');
-    }
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  }
-
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (savedTheme) {
-    setTheme(savedTheme === 'dark');
-  } else {
-    setTheme(prefersDark);
-  }
-
-  toggle?.addEventListener('click', () => {
-    const isDark = !document.body.classList.contains('light');
-    setTheme(!isDark);
-  });
-
-  // Scroll animations
+  // Scroll Animations
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -407,50 +759,5 @@ const langUrls = Object.keys(languages).map(l => ({
     });
   }, { threshold: 0.1 });
 
-  document.querySelectorAll('.animate-on-scroll').forEach(el => {
-    observer.observe(el);
-  });
+  document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 </script>
-
-<style>
-  .text-primary { color: var(--text-primary); }
-  .text-secondary { color: var(--text-secondary); }
-  .text-muted { color: var(--text-muted); }
-  .bg-card { background-color: var(--bg-card); }
-  .bg-card-cta { background: linear-gradient(to bottom right, var(--bg-card), var(--bg-secondary)); }
-  .bg-card-hover { background-color: var(--bg-secondary); }
-  .border-theme { border-color: var(--border-color); }
-  .border-theme-hover { border-color: var(--border-hover); }
-  .header-bg { background-color: var(--header-bg); backdrop-filter: blur(12px); }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-  }
-  .btn-primary:hover {
-    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
-  }
-  .btn-secondary {
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-  }
-  .btn-secondary:hover {
-    background-color: var(--bg-card);
-  }
-
-  .text-accent { color: #6366f1; }
-  .text-accent-light { color: #818cf8; }
-
-  /* Screenshot theme switching */
-  .screenshot-dark { display: block; }
-  .screenshots-dark { display: flex; }
-  .screenshot-light,
-  .screenshots-light { display: none; }
-
-  :global(body.light) .screenshot-dark,
-  :global(body.light) .screenshots-dark { display: none; }
-  :global(body.light) .screenshot-light { display: block; }
-  :global(body.light) .screenshots-light { display: flex; }
-</style>
