@@ -75,11 +75,12 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            Image("YalaLogo")
+            // App icon with proper sizing (uses preview icon from Resources)
+            Image(uiImage: UIImage(named: "IconOriginal@3x") ?? UIImage())
                 .resizable()
                 .scaledToFit()
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 26))
 
             VStack(spacing: DS.Spacing.md) {
                 Text(L10n.Onboarding.welcomeTitle)

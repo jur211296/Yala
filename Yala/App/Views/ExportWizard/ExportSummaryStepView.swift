@@ -36,8 +36,7 @@ struct ExportSummaryStepView: View {
     @State private var isExporting = false
     @State private var exportError: (any Error)?
     @State private var showErrorAlert = false
-    @State private var exportedFileURL: URL?
-    @State private var showShareSheet = false
+    @State private var exportedFile: ExportedFile?
     @State private var showSuccessAlert = false
 
     // MARK: - Body
@@ -78,21 +77,17 @@ struct ExportSummaryStepView: View {
         } message: {
             Text(L10n.Export.csvGeneratedSuccess)
         }
-        .sheet(isPresented: $showShareSheet) {
-            if let url = exportedFileURL {
-                ShareSheet(
-                    activityItems: [url],
-                    onComplete: { completed in
-                        // Solo mostramos el mensaje de éxito si realmente se completó
-                        // alguna acción (guardar/compartir). Si el usuario cierra con la X,
-                        // `completed` será false y no mostraremos la confirmación.
-                        if completed {
-                            showSuccessAlert = true
-                        }
-                    }
-                )
-                .presentationDetents([.medium, .large])
+        .sheet(
+            item: $exportedFile,
+            onDismiss: {
+                // Always show success - file was generated successfully
+                // User can dismiss if they didn't actually share
+                showSuccessAlert = true
             }
+        ) { file in
+            ShareSheet(activityItems: [file.url])
+                .presentationDetents([.medium, .large])
+                .interactiveDismissDisabled(false)
         }
     }
 
@@ -165,15 +160,25 @@ struct ExportSummaryStepView: View {
     }
 
     private var exportButtonSection: some View {
-        Button {
-            performExport()
+        Menu {
+            Button {
+                performExport(format: .csv)
+            } label: {
+                Label("CSV", systemImage: "doc.text")
+            }
+
+            Button {
+                performExport(format: .xlsx)
+            } label: {
+                Label("Excel (XLSX)", systemImage: "tablecells")
+            }
         } label: {
             ZStack {
                 if isExporting {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Label(L10n.Export.exportToCSV, systemImage: "square.and.arrow.up")
+                    Label(L10n.Export.exportBtn, systemImage: "square.and.arrow.up")
                         .font(.headline)
                 }
             }
@@ -208,17 +213,15 @@ struct ExportSummaryStepView: View {
 
     private var accountsSummaryText: String {
         if exportFilters.selectedAccounts.isEmpty {
-            return "Ninguna"  // No debería pasar por validación previa
+            return L10n.Export.noneSelected
         }
-        // Aquí no tenemos el total de cuentas fácilmente accesible para comparar con "Todas",
-        // pero podemos mostrar el conteo.
-        return "\(exportFilters.selectedAccounts.count) seleccionadas"
+        return L10n.Export.accountsSelected(exportFilters.selectedAccounts.count)
     }
 
     private var periodSummaryText: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "d MMM yyyy"
+        formatter.locale = Locale.current
+        formatter.dateStyle = .medium
 
         let from = exportFilters.dateFrom
         let to = exportFilters.dateTo
@@ -231,30 +234,29 @@ struct ExportSummaryStepView: View {
 
         // Sin filtros: interpretamos como "todas las categorías"
         if catCount == 0 && subCount == 0 {
-            return "Todas las categorías"
+            return L10n.Export.allCategories
         }
 
         // Si no hay subcategorías seleccionadas en un contexto filtrado,
         // explicitamos que no hay selección a ese nivel.
         if subCount == 0 {
-            return "Ninguna subcategoría seleccionada"
+            return L10n.Export.noSubcategorySelected
         }
 
-        // Caso general: mostramos solo el conteo de subcategorías,
-        // sin mencionar el número de categorías.
-        return "\(subCount) subcategorías seleccionadas"
+        // Caso general: mostramos solo el conteo de subcategorías
+        return L10n.Export.subcategoriesSelected(subCount)
     }
 
     private var tagsSummaryText: String {
         if exportFilters.selectedTagNames.isEmpty {
-            return "Todas las etiquetas"
+            return L10n.Export.allTags
         }
-        return "\(exportFilters.selectedTagNames.count) seleccionadas"
+        return L10n.Export.accountsSelected(exportFilters.selectedTagNames.count)
     }
 
     private var currenciesSummaryText: String {
         if exportFilters.selectedCurrencies.isEmpty {
-            return "Todas"
+            return L10n.Export.allCurrencies
         }
         return exportFilters.selectedCurrencies.map { $0.rawValue }.joined(separator: ", ")
     }
@@ -277,7 +279,7 @@ struct ExportSummaryStepView: View {
         }
     }
 
-    private func performExport() {
+    private func performExport(format: ExportFormat) {
         isExporting = true
 
         // Ejecutamos en una Task para no bloquear la UI
@@ -286,7 +288,8 @@ struct ExportSummaryStepView: View {
             try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s
 
             do {
-                let result = try TransactionsExportService.exportToCSV(
+                let result = try TransactionsExportService.export(
+                    format: format,
                     using: exportFilters,
                     columns: exportColumns,
                     in: modelContext
@@ -294,8 +297,7 @@ struct ExportSummaryStepView: View {
 
                 await MainActor.run {
                     self.isExporting = false
-                    self.exportedFileURL = result.fileURL
-                    self.showShareSheet = true
+                    self.exportedFile = ExportedFile(url: result.fileURL)
                 }
             } catch {
                 await MainActor.run {
@@ -306,6 +308,13 @@ struct ExportSummaryStepView: View {
             }
         }
     }
+}
+
+// MARK: - Exported File Model
+
+struct ExportedFile: Identifiable {
+    let id = UUID()
+    let url: URL
 }
 
 // MARK: - Share Sheet Helper

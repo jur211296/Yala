@@ -61,7 +61,9 @@ struct TrendChartView: View {
             let yBase = min(max(yDomain.lowerBound, 0), yDomain.upperBound)
 
             // Interpolation Logic:
-            let interpolation: InterpolationMethod = .catmullRom
+            // Use .monotone to prevent overshoots at extreme points
+            // (.catmullRom can cause visual distortion at first/last points)
+            let interpolation: InterpolationMethod = .monotone
 
             // Past & Today: Solid Line & Area
             ForEach(pastPoints, id: \.date) { point in

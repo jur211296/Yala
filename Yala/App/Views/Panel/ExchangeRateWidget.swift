@@ -207,7 +207,7 @@ struct ExchangeRateWidget: View {
                         )
                         .foregroundStyle(index == 0 ? currencyAColor : currencyBColor)
                         .lineStyle(StrokeStyle(lineWidth: 2))
-                        .interpolationMethod(.catmullRom)
+                        .interpolationMethod(.monotone)
 
                         PointMark(
                             x: .value("Date", point.date),

@@ -228,9 +228,9 @@
 // MARK: - Import
 
 "import.title" = "Importa Transazioni";
-"import.selectFile" = "Importa file CSV";
+"import.selectFile" = "Seleziona file";
 "import.importing" = "Importazione...";
-"import.downloadTemplate" = "Scarica modello CSV";
+"import.downloadTemplate" = "Scarica modello";
 "import.createCategories" = "Crea nuove categorie";
 "import.continue" = "Continua";
 "import.noAccountsAvailable" = "Nessun conto disponibile";
@@ -238,8 +238,8 @@
 "import.completed" = "Importazione completata";
 "import.error" = "Errore di importazione";
 "import.templateGenerated" = "Modello generato";
-"import.templateGeneratedMessage" = "Il modello CSV e stato generato con successo. Ora puoi modificarlo e tornare a questa schermata per importarlo.";
-"import.introDescription" = "Aggiungi le tue transazioni finanziarie in blocco da un file CSV.";
+"import.templateGeneratedMessage" = "Il modello è stato generato con successo. Ora puoi modificarlo e tornare a questa schermata per importarlo.";
+"import.introDescription" = "Aggiungi le tue transazioni finanziarie in blocco da un file CSV o Excel.";
 "import.templateDescription" = "Usa il nostro modello ufficiale per garantire il formato corretto.";
 "import.categoriesDescription" = "Se il file include categorie che non esistono, verranno create automaticamente.";
 "import.selectAccount" = "Seleziona un conto";
@@ -422,7 +422,7 @@
 "common.updatingRecords" = "Aggiornamento registrazioni...";
 "common.recalculatingConversions" = "Ricalcolo conversioni storiche";
 "export.customizeFile" = "Personalizza il tuo file";
-"export.csvGeneratedSuccess" = "Il file CSV e stato generato e condiviso con successo.";
+"export.csvGeneratedSuccess" = "Il file è stato generato con successo.";
 "export.confirmExport" = "Conferma la tua esportazione";
 "export.selectColumns" = "Seleziona colonne";
 "export.availableColumns" = "Colonne disponibili";
@@ -432,6 +432,7 @@
 "export.filtersSummary" = "Riepilogo filtri";
 "export.columnsToExport" = "Colonne da esportare";
 "export.exportToCSV" = "Esporta in CSV";
+"export.exportBtn" = "Esporta";
 "export.exportError" = "Errore di esportazione";
 "export.exportCompleted" = "Esportazione completata";
 "export.backToSettings" = "Torna alle impostazioni";
@@ -445,6 +446,12 @@
 "export.any" = "Qualsiasi";
 "export.between" = "Tra";
 "export.condition" = "Condizione";
+"export.noneSelected" = "Nessuna";
+"export.accountsSelected" = "%d selezionate";
+"export.allCategories" = "Tutte le categorie";
+"export.subcategoriesSelected" = "%d sottocategorie selezionate";
+"export.allTags" = "Tutte le etichette";
+"export.allCurrencies" = "Tutte";
 "common.next" = "Avanti";
 "settings.versionInfo" = "Versione 1.0.0 (Build 1)";
 "tab.panel" = "Home";
@@ -454,9 +461,9 @@
 "tab.search" = "Cerca";
 "common.moreOptions" = "Altre opzioni";
 "common.comingSoon" = "Prossimamente";
-"panel.greeting" = "Pronto per neto, %@";
-"panel.fab.voice" = "Voce";
-"panel.fab.manual" = "Manuale";
+"panel.greeting" = "Ciao, %@";
+"panel.title" = "Pannello di %@";
+
 "widget.today" = "Oggi";
 
 // Widget Preferences
@@ -1009,8 +1016,15 @@
 
 "settings.widgetHints" = "Testi di aiuto";
 "settings.widgetHintsDescription" = "Mostra pulsanti info sui widget con spiegazioni su ogni grafico.";
-"settings.roundedAmounts" = "Importi arrotondati";
-"settings.roundedAmountsDescription" = "Mostra tutti gli importi senza decimali per una lettura più rapida.";
+"settings.decimalPlaces" = "Decimali";
+"settings.decimalPlacesDescription" = "Si applica solo a totali e grafici. I record individuali mostrano sempre 2 decimali.";
+"settings.decimalsNone" = "Senza decimali";
+"settings.decimalsOne" = "1 decimale";
+"settings.decimalsTwo" = "2 decimali";
+"settings.currencyFormat" = "Formato valuta";
+"settings.currencyFormatDescription" = "Scegli se mostrare il codice valuta (EUR) o il simbolo (€).";
+"settings.currencyCode" = "Codice (PEN, USD)";
+"settings.currencySymbol" = "Simbolo (S/, $)";
 
 "widget.hint.trend" = "Mostra l'evoluzione del tuo saldo, entrate o spese nel periodo selezionato.";
 "widget.hint.topCategories" = "Le categorie in cui hai speso di piu in questo periodo.";
@@ -1042,39 +1056,6 @@
 "onboarding.periodSubtitle" = "Quale intervallo di tempo preferisci vedere all'apertura dell'app?";
 "onboarding.finish" = "Inizia";
 
-// MARK: - Inbox
-
-"inbox.title" = "Posta in arrivo";
-"inbox.pending" = "In sospeso";
-"inbox.archived" = "Archiviati";
-"inbox.noPending" = "Nessuna bozza in sospeso";
-"inbox.noPendingDescription" = "Le bozze da voce e immagini appariranno qui.";
-"inbox.noArchived" = "Nessuna bozza archiviata";
-"inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";
-"inbox.noAmount" = "Senza importo";
-"inbox.noDescription" = "Senza descrizione";
-"inbox.missingLabel" = "Manca:";
-"inbox.needsAccount" = "Conto";
-"inbox.needsSubcategory" = "Categoria";
-"inbox.delete" = "Elimina";
-"inbox.approve" = "Approva";
-"inbox.editDraft" = "Modifica bozza";
-"inbox.cannotApprove" = "Impossibile approvare";
-"inbox.sourceVoice" = "Voce";
-"inbox.sourceReceipt" = "Ricevuta";
-"inbox.sourceScreenshotList" = "Lista";
-"inbox.sourceScreenshot" = "Screenshot";
-"inbox.sourceEmail" = "Email";
-"inbox.errorNoAccount" = "Seleziona un conto";
-"inbox.errorNoAmount" = "Inserisci un importo";
-"inbox.errorNoSubcategory" = "Seleziona una categoria";
-"inbox.selectedCount" = "%d selezionati";
-"inbox.approveableCount" = "%d di %d pronti per l'approvazione";
-"inbox.deleteConfirmMessage" = "%d bozze verranno eliminate. Questa azione non può essere annullata.";
-"inbox.duplicateWarningTitle" = "Possibile duplicato";
-"inbox.duplicateWarningMessage" = "Esiste già una transazione con lo stesso importo e data. Vuoi crearne un'altra comunque?";
-"inbox.createAnyway" = "Crea comunque";
-
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";
 "bulkEdit.editCount" = "Modifica %d transazioni";
@@ -1082,41 +1063,3 @@
 "bulkEdit.commonTags" = "In tutte le selezionate";
 "bulkEdit.partialTags" = "In alcune selezionate";
 "bulkEdit.availableTags" = "Disponibili da aggiungere";
-
-// MARK: - Voice Language
-"voiceLanguage.system" = "Sistema";
-"voiceLanguage.spanish" = "Spagnolo";
-"voiceLanguage.english" = "Inglese";
-"settings.voiceInputEnabled" = "Inserimento vocale con IA";
-"settings.voiceLanguage" = "Lingua";
-
-// Voice Recording
-"voice.title" = "Inserimento vocale";
-"voice.tapToRecord" = "Tocca per registrare";
-"voice.instruction" = "Esempio: \"Speso 50 da Starbucks ristoranti tag viaggio\"";
-"voice.youCanSay" = "Puoi menzionare:";
-"voice.hint.type" = "Tipo:";
-"voice.hint.type.example" = "\"speso\" o \"ricevuto\"";
-"voice.hint.amount" = "Importo:";
-"voice.hint.amount.example" = "\"50 euro\"";
-"voice.hint.subcategory" = "Sottocategoria:";
-"voice.hint.subcategory.example" = "\"nei ristoranti\"";
-"voice.hint.merchant" = "Commerciante:";
-"voice.hint.merchant.example" = "\"da Starbucks\"";
-"voice.hint.tag" = "Tag:";
-"voice.hint.tag.example" = "\"tag viaggio\"";
-"voice.hint.date" = "Data:";
-"voice.hint.date.example" = "\"ieri\" (oggi di default)";
-"voice.example.label" = "Esempio completo:";
-"voice.example.text" = "\"Oggi ho speso 50 euro da Starbucks ristoranti tag viaggio\"";
-"voice.example1" = "Ho speso 25 euro per il taxi";
-"voice.example2" = "Ieri ho ricevuto 500 euro di stipendio";
-"voice.example3" = "150 in farmacia tag salute";
-"voice.errorNoAmount" = "Non è stato possibile identificare un importo. Prova a essere più chiaro nel menzionare la quantità.";
-"voice.recording" = "Registrazione...";
-"voice.pleaseWait" = "Attendere...";
-"voice.processingAudio" = "Elaborazione audio...";
-"voice.transcribing" = "Trascrizione...";
-"voice.analyzing" = "Analisi...";
-"voice.parsing" = "Analisi...";
-"voice.saving" = "Salvataggio...";

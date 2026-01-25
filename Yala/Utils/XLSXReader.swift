@@ -179,6 +179,7 @@ enum XLSXReader {
     // MARK: - Private Helpers
 
     /// Extrae los valores de todas las celdas de una fila como strings.
+    /// Para la columna de fecha (índice 0), convierte valores numéricos de Excel a formato ISO.
     private static func extractCellValues(from row: Row, sharedStrings: SharedStrings, columnCount: Int) -> [String] {
         var values = Array(repeating: "", count: columnCount)
 
@@ -193,23 +194,67 @@ enum XLSXReader {
             }
 
             // Obtener valor de la celda
-            let value: String
+            var value: String
             if let stringValue = cell.stringValue(sharedStrings) {
                 value = stringValue
             } else if let inlineString = cell.inlineString?.text {
                 value = inlineString
             } else if let numericValue = cell.value {
-                // Para fechas en Excel, el valor numérico representa días desde 1899-12-30
-                // Pero CoreXLSX ya convierte las celdas con formato fecha a string si es posible
                 value = numericValue
             } else {
                 value = ""
             }
 
-            values[columnIndex] = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Columna 0 es la fecha - si el valor es un número puro (Excel serial date), convertirlo
+            if columnIndex == 0, !value.isEmpty {
+                // Check if value is a pure number (Excel serial date)
+                // Excel dates are typically 5-digit numbers (e.g., 45658 for dates in 2024+)
+                if let serialDate = Double(value), serialDate > 1000 && serialDate < 100000 {
+                    value = excelSerialDateToISO(serialDate)
+                }
+            }
+
+            values[columnIndex] = value
         }
 
         return values
+    }
+
+    /// Convierte un número serial de Excel a fecha ISO (yyyy-MM-dd).
+    /// Excel cuenta días desde 1899-12-30 (con el bug del año 1900 bisiesto).
+    private static func excelSerialDateToISO(_ serialDate: Double) -> String {
+        // Excel's epoch is December 30, 1899 (accounting for the 1900 leap year bug)
+        // Serial number 1 = January 1, 1900
+        // Serial number 2 = January 2, 1900
+        // But Excel incorrectly treats 1900 as a leap year, so dates after Feb 28, 1900
+        // are off by one day. For modern dates (>= 61), we subtract 1 to correct.
+        let correctedSerial = serialDate > 60 ? serialDate - 1 : serialDate
+
+        // Reference date: December 31, 1899 (day 1 = Jan 1, 1900)
+        var components = DateComponents()
+        components.year = 1899
+        components.month = 12
+        components.day = 31
+        components.hour = 12  // Noon to avoid timezone issues
+
+        let calendar = Calendar(identifier: .gregorian)
+        guard let baseDate = calendar.date(from: components) else {
+            return String(format: "%.0f", serialDate)  // Fallback to raw value
+        }
+
+        // Add the serial days
+        let days = Int(correctedSerial)
+        guard let resultDate = calendar.date(byAdding: .day, value: days, to: baseDate) else {
+            return String(format: "%.0f", serialDate)
+        }
+
+        // Format as ISO date
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.string(from: resultDate)
     }
 
     /// Convierte referencia de columna (A, B, ..., Z, AA, AB, ...) a índice numérico.

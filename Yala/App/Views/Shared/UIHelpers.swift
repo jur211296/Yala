@@ -270,38 +270,67 @@ extension Color {
 // MARK: - Formatters
 
 struct YalaFormatter {
-    /// Check if user prefers rounded amounts (no decimals)
-    /// Defaults to true (rounded) on first launch
-    private static var useRoundedAmounts: Bool {
-        // If key doesn't exist, default to true (rounded)
-        if UserDefaults.standard.object(forKey: "useRoundedAmounts") == nil {
-            return true
+    /// Number of decimal places for aggregated amounts (totals, charts, KPIs)
+    /// 0 = no decimals, 1 = one decimal, 2 = two decimals
+    /// Defaults to 0 (no decimals) on first launch
+    private static var decimalPlaces: Int {
+        // Migration: convert old boolean to new int format
+        if UserDefaults.standard.object(forKey: "decimalPlaces") == nil {
+            // Check if old key exists for migration
+            if UserDefaults.standard.object(forKey: "useRoundedAmounts") != nil {
+                let oldValue = UserDefaults.standard.bool(forKey: "useRoundedAmounts")
+                return oldValue ? 0 : 2
+            }
+            return 0  // Default to no decimals
         }
-        return UserDefaults.standard.bool(forKey: "useRoundedAmounts")
+        return UserDefaults.standard.integer(forKey: "decimalPlaces")
     }
 
-    /// Formats a currency value with standard format: `PEN 20,000.00` or `PEN -20,000.00`
+    /// Currency display format: "code" (PEN) or "symbol" (S/)
+    /// Defaults to "code" on first launch
+    private static var currencyDisplayFormat: String {
+        UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
+    }
+
+    /// Map currency codes to their symbols
+    private static let currencySymbols: [String: String] = [
+        "PEN": "S/",
+        "USD": "$",
+        "EUR": "€",
+        "MXN": "$",
+        "COP": "$",
+        "BRL": "R$",
+        "GBP": "£",
+    ]
+
+    /// Returns the currency identifier (code or symbol) based on user preference
+    private static func currencyIdentifier(for code: String) -> String {
+        if currencyDisplayFormat == "symbol", let symbol = currencySymbols[code] {
+            return symbol
+        }
+        return code
+    }
+
+    /// Formats a currency value with standard format: `PEN 20,000.00` or `S/ 20,000.00`
     /// - Parameters:
     ///   - value: The numeric value to format
     ///   - currencyCode: 3-letter currency code (e.g., "PEN", "USD")
     ///   - forceSign: If true, adds '+' for positive values (only for tooltips like CashFlow)
-    /// - Returns: Formatted string like "PEN 20,000.00" or "PEN -20,000.00"
+    ///   - forceFullPrecision: If true, always shows 2 decimals (use for individual records)
+    /// - Returns: Formatted string like "PEN 20,000.00" or "S/ -20,000.00"
     static func currency(
-        value: Double, currencyCode: String, forceSign: Bool = false
+        value: Double, currencyCode: String, forceSign: Bool = false, forceFullPrecision: Bool = false
     ) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
 
-        if useRoundedAmounts {
-            formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = 0
-        } else {
-            formatter.minimumFractionDigits = 2
-            formatter.maximumFractionDigits = 2
-        }
+        let decimals = forceFullPrecision ? 2 : decimalPlaces
+        formatter.minimumFractionDigits = decimals
+        formatter.maximumFractionDigits = decimals
 
         let absoluteValue = abs(value)
-        let formattedNumber = formatter.string(from: NSNumber(value: absoluteValue)) ?? (useRoundedAmounts ? "0" : "0.00")
+        let fallback = decimals == 0 ? "0" : (decimals == 1 ? "0.0" : "0.00")
+        let formattedNumber = formatter.string(from: NSNumber(value: absoluteValue)) ?? fallback
 
         // Build sign prefix (attached to number, no extra space)
         var signedNumber = formattedNumber
@@ -311,8 +340,9 @@ struct YalaFormatter {
             signedNumber = "+\(formattedNumber)"
         }
 
-        // Format: "PEN 20,000.00" or "PEN -20,000.00"
-        return "\(currencyCode) \(signedNumber)"
+        // Format: "PEN 20,000.00" or "S/ -20,000.00" based on user preference
+        let identifier = currencyIdentifier(for: currencyCode)
+        return "\(identifier) \(signedNumber)"
     }
 
     static func compactCurrency(value: Double) -> String {
@@ -320,20 +350,19 @@ struct YalaFormatter {
     }
 
     /// Formats a number with standard format: `20,000.00` or `-20,000.00` (no currency)
-    /// - Parameter value: The numeric value to format
+    /// - Parameters:
+    ///   - value: The numeric value to format
+    ///   - forceFullPrecision: If true, always shows 2 decimals (use for individual records)
     /// - Returns: Formatted string like "20,000.00" or "-20,000.00"
-    static func number(value: Double) -> String {
+    static func number(value: Double, forceFullPrecision: Bool = false) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
 
-        if useRoundedAmounts {
-            formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = 0
-        } else {
-            formatter.minimumFractionDigits = 2
-            formatter.maximumFractionDigits = 2
-        }
+        let decimals = forceFullPrecision ? 2 : decimalPlaces
+        formatter.minimumFractionDigits = decimals
+        formatter.maximumFractionDigits = decimals
 
-        return formatter.string(from: NSNumber(value: value)) ?? (useRoundedAmounts ? "0" : "0.00")
+        let fallback = decimals == 0 ? "0" : (decimals == 1 ? "0.0" : "0.00")
+        return formatter.string(from: NSNumber(value: value)) ?? fallback
     }
 }

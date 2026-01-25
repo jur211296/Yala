@@ -228,9 +228,9 @@
 // MARK: - Import
 
 "import.title" = "Importer des Transactions";
-"import.selectFile" = "Importer un fichier CSV";
+"import.selectFile" = "Sélectionner un fichier";
 "import.importing" = "Importation...";
-"import.downloadTemplate" = "Telecharger le modele CSV";
+"import.downloadTemplate" = "Télécharger le modèle";
 "import.createCategories" = "Creer de nouvelles categories";
 "import.continue" = "Continuer";
 "import.noAccountsAvailable" = "Aucun compte disponible";
@@ -238,8 +238,8 @@
 "import.completed" = "Importation terminee";
 "import.error" = "Erreur d'importation";
 "import.templateGenerated" = "Modele genere";
-"import.templateGeneratedMessage" = "Le modele CSV a ete genere avec succes. Vous pouvez maintenant le modifier et revenir a cet ecran pour l'importer.";
-"import.introDescription" = "Ajoutez vos transactions financieres en masse a partir d'un fichier CSV.";
+"import.templateGeneratedMessage" = "Le modèle a été généré avec succès. Vous pouvez maintenant le modifier et revenir à cet écran pour l'importer.";
+"import.introDescription" = "Ajoutez vos transactions financières en masse à partir d'un fichier CSV ou Excel.";
 "import.templateDescription" = "Utilisez notre modele officiel pour garantir le bon format.";
 "import.categoriesDescription" = "Si le fichier contient des categories qui n'existent pas, elles seront creees automatiquement.";
 "import.selectAccount" = "Selectionnez un compte";
@@ -422,7 +422,7 @@
 "common.updatingRecords" = "Mise a jour des enregistrements...";
 "common.recalculatingConversions" = "Recalcul des conversions historiques";
 "export.customizeFile" = "Personnalisez votre fichier";
-"export.csvGeneratedSuccess" = "Le fichier CSV a ete genere et partage avec succes.";
+"export.csvGeneratedSuccess" = "Le fichier a été généré avec succès.";
 "export.confirmExport" = "Confirmez votre exportation";
 "export.selectColumns" = "Selectionner les colonnes";
 "export.availableColumns" = "Colonnes disponibles";
@@ -432,6 +432,7 @@
 "export.filtersSummary" = "Resume des filtres";
 "export.columnsToExport" = "Colonnes a exporter";
 "export.exportToCSV" = "Exporter en CSV";
+"export.exportBtn" = "Exporter";
 "export.exportError" = "Erreur d'exportation";
 "export.exportCompleted" = "Exportation terminee";
 "export.backToSettings" = "Retour aux parametres";
@@ -445,6 +446,12 @@
 "export.any" = "N'importe lequel";
 "export.between" = "Entre";
 "export.condition" = "Condition";
+"export.noneSelected" = "Aucune";
+"export.accountsSelected" = "%d sélectionnées";
+"export.allCategories" = "Toutes les catégories";
+"export.subcategoriesSelected" = "%d sous-catégories sélectionnées";
+"export.allTags" = "Toutes les étiquettes";
+"export.allCurrencies" = "Toutes";
 "common.next" = "Suivant";
 "settings.versionInfo" = "Version 1.0.0 (Build 1)";
 "tab.panel" = "Accueil";
@@ -454,9 +461,9 @@
 "tab.search" = "Rechercher";
 "common.moreOptions" = "Plus d'options";
 "common.comingSoon" = "Bientot disponible";
-"panel.greeting" = "Pret pour neto, %@";
-"panel.fab.voice" = "Voix";
-"panel.fab.manual" = "Manuel";
+"panel.greeting" = "Bonjour, %@";
+"panel.title" = "Panel de %@";
+
 "widget.today" = "Aujourd'hui";
 
 // Widget Preferences
@@ -1009,10 +1016,17 @@
 
 "settings.widgetHints" = "Textes d'aide";
 "settings.widgetHintsDescription" = "Afficher des boutons d'info sur les widgets avec des explications sur chaque graphique.";
-"settings.roundedAmounts" = "Montants arrondis";
-"settings.roundedAmountsDescription" = "Affiche tous les montants sans décimales pour une lecture plus rapide.";
+"settings.decimalPlaces" = "Décimales";
+"settings.decimalPlacesDescription" = "S'applique uniquement aux totaux et graphiques. Les enregistrements individuels affichent toujours 2 décimales.";
+"settings.decimalsNone" = "Sans décimales";
+"settings.decimalsOne" = "1 décimale";
+"settings.decimalsTwo" = "2 décimales";
+"settings.currencyFormat" = "Format de devise";
+"settings.currencyFormatDescription" = "Choisissez d'afficher le code de devise (EUR) ou le symbole (€).";
+"settings.currencyCode" = "Code (PEN, USD)";
+"settings.currencySymbol" = "Symbole (S/, $)";
 
-"widget.hint.trend" = "Affiche l'evolution de votre solde, revenus ou depenses sur la periode selectionnee.";
+"widget.hint.trend" = "Affiche l'évolution de votre solde, revenus ou dépenses sur la période sélectionnée.";
 "widget.hint.topCategories" = "Les categories ou vous avez le plus depense cette periode.";
 "widget.hint.topSubcategories" = "Les sous-categories avec les depenses les plus elevees, filtrees par categorie.";
 "widget.hint.categoriesPie" = "Repartition en pourcentage des depenses par categorie.";
@@ -1042,39 +1056,6 @@
 "onboarding.periodSubtitle" = "Quelle plage de temps préférez-vous voir à l'ouverture de l'application ?";
 "onboarding.finish" = "Commencer";
 
-// MARK: - Inbox
-
-"inbox.title" = "Boîte de réception";
-"inbox.pending" = "En attente";
-"inbox.archived" = "Archivés";
-"inbox.noPending" = "Aucun brouillon en attente";
-"inbox.noPendingDescription" = "Les brouillons vocaux et d'images apparaîtront ici.";
-"inbox.noArchived" = "Aucun brouillon archivé";
-"inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
-"inbox.noAmount" = "Sans montant";
-"inbox.noDescription" = "Sans description";
-"inbox.missingLabel" = "Manque:";
-"inbox.needsAccount" = "Compte";
-"inbox.needsSubcategory" = "Catégorie";
-"inbox.delete" = "Supprimer";
-"inbox.approve" = "Approuver";
-"inbox.editDraft" = "Modifier le brouillon";
-"inbox.cannotApprove" = "Impossible d'approuver";
-"inbox.sourceVoice" = "Voix";
-"inbox.sourceReceipt" = "Reçu";
-"inbox.sourceScreenshotList" = "Liste";
-"inbox.sourceScreenshot" = "Capture";
-"inbox.sourceEmail" = "Email";
-"inbox.errorNoAccount" = "Sélectionnez un compte";
-"inbox.errorNoAmount" = "Entrez un montant";
-"inbox.errorNoSubcategory" = "Sélectionnez une catégorie";
-"inbox.selectedCount" = "%d sélectionnés";
-"inbox.approveableCount" = "%d sur %d prêts à approuver";
-"inbox.deleteConfirmMessage" = "%d brouillons seront supprimés. Cette action est irréversible.";
-"inbox.duplicateWarningTitle" = "Doublon possible";
-"inbox.duplicateWarningMessage" = "Une transaction avec le même montant et la même date existe déjà. Voulez-vous en créer une autre quand même?";
-"inbox.createAnyway" = "Créer quand même";
-
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";
 "bulkEdit.editCount" = "Modifier %d transactions";
@@ -1082,41 +1063,3 @@
 "bulkEdit.commonTags" = "Dans toutes les sélectionnées";
 "bulkEdit.partialTags" = "Dans certaines sélectionnées";
 "bulkEdit.availableTags" = "Disponibles à ajouter";
-
-// MARK: - Voice Language
-"voiceLanguage.system" = "Système";
-"voiceLanguage.spanish" = "Espagnol";
-"voiceLanguage.english" = "Anglais";
-"settings.voiceInputEnabled" = "Saisie vocale avec IA";
-"settings.voiceLanguage" = "Langue";
-
-// Voice Recording
-"voice.title" = "Saisie vocale";
-"voice.tapToRecord" = "Appuyez pour enregistrer";
-"voice.instruction" = "Exemple: \"Dépensé 50 chez Starbucks restaurants tag voyage\"";
-"voice.youCanSay" = "Vous pouvez mentionner:";
-"voice.hint.type" = "Type:";
-"voice.hint.type.example" = "\"dépensé\" ou \"reçu\"";
-"voice.hint.amount" = "Montant:";
-"voice.hint.amount.example" = "\"50 euros\"";
-"voice.hint.subcategory" = "Sous-catégorie:";
-"voice.hint.subcategory.example" = "\"aux restaurants\"";
-"voice.hint.merchant" = "Commerce:";
-"voice.hint.merchant.example" = "\"chez Starbucks\"";
-"voice.hint.tag" = "Tag:";
-"voice.hint.tag.example" = "\"tag voyage\"";
-"voice.hint.date" = "Date:";
-"voice.hint.date.example" = "\"hier\" (aujourd'hui par défaut)";
-"voice.example.label" = "Exemple complet:";
-"voice.example.text" = "\"Aujourd'hui j'ai dépensé 50 euros chez Starbucks restaurants tag voyage\"";
-"voice.example1" = "J'ai dépensé 25 euros en taxi";
-"voice.example2" = "Hier j'ai reçu 500 euros de salaire";
-"voice.example3" = "150 à la pharmacie tag santé";
-"voice.errorNoAmount" = "Impossible d'identifier un montant. Essayez d'être plus clair en mentionnant la quantité.";
-"voice.recording" = "Enregistrement...";
-"voice.pleaseWait" = "Veuillez patienter...";
-"voice.processingAudio" = "Traitement audio...";
-"voice.transcribing" = "Transcription...";
-"voice.analyzing" = "Analyse...";
-"voice.parsing" = "Analyse...";
-"voice.saving" = "Enregistrement...";

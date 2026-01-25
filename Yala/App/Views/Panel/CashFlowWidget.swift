@@ -347,7 +347,7 @@ struct CashFlowWidget: View {
                                 )
                                 .foregroundStyle(Color.brandPrimary)
                                 .lineStyle(StrokeStyle(lineWidth: 2))
-                                .interpolationMethod(.catmullRom)
+                                .interpolationMethod(.monotone)
 
                                 // Points on Line
                                 PointMark(

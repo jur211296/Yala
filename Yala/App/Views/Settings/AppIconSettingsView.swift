@@ -32,12 +32,12 @@ enum AppIconOption: String, CaseIterable, Identifiable {
         switch self {
         case .original: return nil  // Uses CFBundlePrimaryIcon (IconOriginal)
         case .dark: return "IconDark"
-        case .light: return "IconLight"
-        case .neon: return "IconNeon"
+        case .light: return "AppIconLight"  // Asset Catalog name
+        case .neon: return "AppIconNeon"    // Asset Catalog name
         }
     }
 
-    /// Preview image name (use @3x versions for display, they're 180x180)
+    /// Preview image name (use @3x PNG files for display)
     var previewImageName: String {
         switch self {
         case .original: return "IconOriginal@3x"
@@ -130,8 +130,9 @@ struct AppIconSettingsView: View {
             setAppIcon(icon)
         } label: {
             VStack(spacing: DS.Spacing.md) {
-                // Icon Preview - Load from bundle using UIImage
-                if let uiImage = UIImage(named: icon.previewImageName) {
+                // Icon Preview - Load with fixed light trait to prevent dark mode changes
+                if let uiImage = UIImage(named: icon.previewImageName)?
+                    .imageAsset?.image(with: UITraitCollection(userInterfaceStyle: .light)) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)

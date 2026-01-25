@@ -112,7 +112,7 @@ struct PanelView: View {
     var body: some View {
         NavigationStack {
             mainContent
-                .navigationTitle(L10n.Panel.greeting(userName))
+                .navigationTitle(L10n.Panel.title(userName))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {

@@ -230,9 +230,9 @@
 // MARK: - Import
 
 "import.title" = "Import Transactions";
-"import.selectFile" = "Import CSV file";
+"import.selectFile" = "Select file";
 "import.importing" = "Importing...";
-"import.downloadTemplate" = "Download CSV template";
+"import.downloadTemplate" = "Download template";
 "import.createCategories" = "Create new categories";
 "import.continue" = "Continue";
 "import.noAccountsAvailable" = "No accounts available";
@@ -240,8 +240,8 @@
 "import.completed" = "Import completed";
 "import.error" = "Import error";
 "import.templateGenerated" = "Template generated";
-"import.templateGeneratedMessage" = "The CSV template was generated successfully. You can now edit it and come back to this screen to import it.";
-"import.introDescription" = "Add your financial transactions in bulk from a CSV file.";
+"import.templateGeneratedMessage" = "The template was generated successfully. You can now edit it and come back to this screen to import it.";
+"import.introDescription" = "Add your financial transactions in bulk from a CSV or Excel file.";
 "import.templateDescription" = "Use our official template to ensure the correct format.";
 "import.categoriesDescription" = "If the file includes categories that don't exist, they will be created automatically.";
 "import.selectAccount" = "Select an account";
@@ -424,7 +424,7 @@
 "common.updatingRecords" = "Updating records...";
 "common.recalculatingConversions" = "Recalculating historical conversions";
 "export.customizeFile" = "Customize your file";
-"export.csvGeneratedSuccess" = "The CSV file has been generated and shared successfully.";
+"export.csvGeneratedSuccess" = "The file has been generated successfully.";
 "export.confirmExport" = "Confirm your export";
 "export.selectColumns" = "Select columns";
 "export.availableColumns" = "Available columns";
@@ -434,6 +434,7 @@
 "export.filtersSummary" = "Filters summary";
 "export.columnsToExport" = "Columns to export";
 "export.exportToCSV" = "Export to CSV";
+"export.exportBtn" = "Export";
 "export.exportError" = "Export error";
 "export.exportCompleted" = "Export completed";
 "export.backToSettings" = "Back to settings";
@@ -447,6 +448,12 @@
 "export.any" = "Any";
 "export.between" = "Between";
 "export.condition" = "Condition";
+"export.noneSelected" = "None";
+"export.accountsSelected" = "%d selected";
+"export.allCategories" = "All categories";
+"export.subcategoriesSelected" = "%d subcategories selected";
+"export.allTags" = "All tags";
+"export.allCurrencies" = "All";
 "common.next" = "Next";
 "settings.versionInfo" = "Version 1.0.0 (Build 1)";
 "tab.panel" = "Home";
@@ -456,9 +463,9 @@
 "tab.search" = "Search";
 "common.moreOptions" = "More options";
 "common.comingSoon" = "Coming soon";
-"panel.greeting" = "Ready for neto, %@";
-"panel.fab.voice" = "Voice";
-"panel.fab.manual" = "Manual";
+"panel.greeting" = "Hello, %@";
+"panel.title" = "%@'s Panel";
+
 "widget.today" = "Today";
 
 // Widget Preferences
@@ -1009,8 +1016,15 @@
 
 "settings.widgetHints" = "Help hints";
 "settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
-"settings.roundedAmounts" = "Rounded amounts";
-"settings.roundedAmountsDescription" = "Show all amounts without decimals for faster reading.";
+"settings.decimalPlaces" = "Decimal places";
+"settings.decimalPlacesDescription" = "Applies only to totals and charts. Individual records always show 2 decimals.";
+"settings.decimalsNone" = "No decimals";
+"settings.decimalsOne" = "1 decimal";
+"settings.decimalsTwo" = "2 decimals";
+"settings.currencyFormat" = "Currency format";
+"settings.currencyFormatDescription" = "Choose whether to show the currency code (USD) or symbol ($).";
+"settings.currencyCode" = "Code (PEN, USD)";
+"settings.currencySymbol" = "Symbol (S/, $)";
 
 "widget.hint.trend" = "Shows the evolution of your balance, income, or expenses in the selected period.";
 "widget.hint.topCategories" = "The categories where you spent the most this period.";
@@ -1042,39 +1056,6 @@
 "onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
 "onboarding.finish" = "Get Started";
 
-// MARK: - Inbox
-
-"inbox.title" = "Inbox";
-"inbox.pending" = "Pending";
-"inbox.archived" = "Archived";
-"inbox.noPending" = "No pending drafts";
-"inbox.noPendingDescription" = "Drafts from voice and images will appear here.";
-"inbox.noArchived" = "No archived drafts";
-"inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";
-"inbox.noAmount" = "No amount";
-"inbox.noDescription" = "No description";
-"inbox.missingLabel" = "Missing:";
-"inbox.needsAccount" = "Account";
-"inbox.needsSubcategory" = "Category";
-"inbox.delete" = "Delete";
-"inbox.approve" = "Approve";
-"inbox.editDraft" = "Edit draft";
-"inbox.cannotApprove" = "Cannot approve";
-"inbox.sourceVoice" = "Voice";
-"inbox.sourceReceipt" = "Receipt";
-"inbox.sourceScreenshotList" = "List";
-"inbox.sourceScreenshot" = "Screenshot";
-"inbox.sourceEmail" = "Email";
-"inbox.errorNoAccount" = "Select an account";
-"inbox.errorNoAmount" = "Enter an amount";
-"inbox.errorNoSubcategory" = "Select a category";
-"inbox.selectedCount" = "%d selected";
-"inbox.approveableCount" = "%d of %d ready to approve";
-"inbox.deleteConfirmMessage" = "%d drafts will be deleted. This action cannot be undone.";
-"inbox.duplicateWarningTitle" = "Possible duplicate";
-"inbox.duplicateWarningMessage" = "A transaction with the same amount and date already exists. Do you want to create another one anyway?";
-"inbox.createAnyway" = "Create anyway";
-
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
 "bulkEdit.editCount" = "Edit %d transactions";
@@ -1082,41 +1063,3 @@
 "bulkEdit.commonTags" = "In all selected";
 "bulkEdit.partialTags" = "In some selected";
 "bulkEdit.availableTags" = "Available to add";
-
-// MARK: - Voice Language
-"voiceLanguage.system" = "System";
-"voiceLanguage.spanish" = "Spanish";
-"voiceLanguage.english" = "English";
-"settings.voiceInputEnabled" = "Voice Input with AI";
-"settings.voiceLanguage" = "Language";
-
-// Voice Recording
-"voice.title" = "Voice Entry";
-"voice.tapToRecord" = "Tap to record";
-"voice.instruction" = "Example: \"Spent 50 at Starbucks restaurants tag travel\"";
-"voice.youCanSay" = "You can mention:";
-"voice.hint.type" = "Type:";
-"voice.hint.type.example" = "\"spent\" or \"received\"";
-"voice.hint.amount" = "Amount:";
-"voice.hint.amount.example" = "\"50 dollars\"";
-"voice.hint.subcategory" = "Subcategory:";
-"voice.hint.subcategory.example" = "\"at restaurants\"";
-"voice.hint.merchant" = "Merchant:";
-"voice.hint.merchant.example" = "\"at Starbucks\"";
-"voice.hint.tag" = "Tag:";
-"voice.hint.tag.example" = "\"tag travel\"";
-"voice.hint.date" = "Date:";
-"voice.hint.date.example" = "\"yesterday\" (today by default)";
-"voice.example.label" = "Full example:";
-"voice.example.text" = "\"Today I spent 50 dollars at Starbucks restaurants tag travel\"";
-"voice.example1" = "I spent 25 dollars on the taxi";
-"voice.example2" = "Yesterday I received 500 salary";
-"voice.example3" = "150 at pharmacy tag health";
-"voice.errorNoAmount" = "Could not identify an amount. Try to be clearer when mentioning the quantity.";
-"voice.recording" = "Recording...";
-"voice.pleaseWait" = "Please wait...";
-"voice.processingAudio" = "Processing audio...";
-"voice.transcribing" = "Transcribing...";
-"voice.analyzing" = "Analyzing...";
-"voice.parsing" = "Analyzing...";
-"voice.saving" = "Saving...";

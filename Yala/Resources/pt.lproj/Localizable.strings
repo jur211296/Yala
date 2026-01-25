@@ -228,9 +228,9 @@
 // MARK: - Import
 
 "import.title" = "Importar Transacoes";
-"import.selectFile" = "Importar arquivo CSV";
+"import.selectFile" = "Selecionar arquivo";
 "import.importing" = "Importando...";
-"import.downloadTemplate" = "Baixar modelo CSV";
+"import.downloadTemplate" = "Baixar modelo";
 "import.createCategories" = "Criar novas categorias";
 "import.continue" = "Continuar";
 "import.noAccountsAvailable" = "Nenhuma conta disponivel";
@@ -238,8 +238,8 @@
 "import.completed" = "Importacao concluida";
 "import.error" = "Erro na importacao";
 "import.templateGenerated" = "Modelo gerado";
-"import.templateGeneratedMessage" = "O modelo CSV foi gerado com sucesso. Agora voce pode edita-lo e voltar a esta tela para importa-lo.";
-"import.introDescription" = "Adicione suas transacoes financeiras em massa a partir de um arquivo CSV.";
+"import.templateGeneratedMessage" = "O modelo foi gerado com sucesso. Agora você pode editá-lo e voltar a esta tela para importá-lo.";
+"import.introDescription" = "Adicione suas transações financeiras em massa a partir de um arquivo CSV ou Excel.";
 "import.templateDescription" = "Use nosso modelo oficial para garantir o formato correto.";
 "import.categoriesDescription" = "Se o arquivo incluir categorias que nao existem, elas serao criadas automaticamente.";
 "import.selectAccount" = "Selecione uma conta";
@@ -422,7 +422,7 @@
 "common.updatingRecords" = "Atualizando registros...";
 "common.recalculatingConversions" = "Recalculando conversoes historicas";
 "export.customizeFile" = "Personalize seu arquivo";
-"export.csvGeneratedSuccess" = "O arquivo CSV foi gerado e compartilhado com sucesso.";
+"export.csvGeneratedSuccess" = "O arquivo foi gerado com sucesso.";
 "export.confirmExport" = "Confirme sua exportacao";
 "export.selectColumns" = "Selecionar colunas";
 "export.availableColumns" = "Colunas disponiveis";
@@ -432,6 +432,7 @@
 "export.filtersSummary" = "Resumo dos filtros";
 "export.columnsToExport" = "Colunas a exportar";
 "export.exportToCSV" = "Exportar para CSV";
+"export.exportBtn" = "Exportar";
 "export.exportError" = "Erro de exportacao";
 "export.exportCompleted" = "Exportacao concluida";
 "export.backToSettings" = "Voltar as configuracoes";
@@ -444,8 +445,14 @@
 "export.noSubcategorySelected" = "Nenhuma subcategoria selecionada";
 "export.any" = "Qualquer";
 "export.between" = "Entre";
-"export.condition" = "Condicao";
-"common.next" = "Proximo";
+"export.condition" = "Condição";
+"export.noneSelected" = "Nenhuma";
+"export.accountsSelected" = "%d selecionadas";
+"export.allCategories" = "Todas as categorias";
+"export.subcategoriesSelected" = "%d subcategorias selecionadas";
+"export.allTags" = "Todas as etiquetas";
+"export.allCurrencies" = "Todas";
+"common.next" = "Próximo";
 "settings.versionInfo" = "Versao 1.0.0 (Build 1)";
 "tab.panel" = "Inicio";
 "tab.statistics" = "Estatisticas";
@@ -454,9 +461,9 @@
 "tab.search" = "Buscar";
 "common.moreOptions" = "Mais opcoes";
 "common.comingSoon" = "Em breve";
-"panel.greeting" = "Pronto para neto, %@";
-"panel.fab.voice" = "Voz";
-"panel.fab.manual" = "Manual";
+"panel.greeting" = "Olá, %@";
+"panel.title" = "Painel de %@";
+
 "widget.today" = "Hoje";
 
 // Widget Preferences
@@ -1009,10 +1016,17 @@
 
 "settings.widgetHints" = "Textos de ajuda";
 "settings.widgetHintsDescription" = "Mostra botoes de info nos widgets com explicacoes sobre cada grafico.";
-"settings.roundedAmounts" = "Valores arredondados";
-"settings.roundedAmountsDescription" = "Mostra todos os valores sem decimais para leitura mais rápida.";
+"settings.decimalPlaces" = "Casas decimais";
+"settings.decimalPlacesDescription" = "Aplica-se apenas a totais e gráficos. Os registros individuais sempre mostram 2 decimais.";
+"settings.decimalsNone" = "Sem decimais";
+"settings.decimalsOne" = "1 decimal";
+"settings.decimalsTwo" = "2 decimais";
+"settings.currencyFormat" = "Formato de moeda";
+"settings.currencyFormatDescription" = "Escolha se mostra o código da moeda (BRL) ou o símbolo (R$).";
+"settings.currencyCode" = "Código (PEN, USD)";
+"settings.currencySymbol" = "Símbolo (S/, $)";
 
-"widget.hint.trend" = "Mostra a evolucao do seu saldo, receitas ou despesas no periodo selecionado.";
+"widget.hint.trend" = "Mostra a evolução do seu saldo, receitas ou despesas no período selecionado.";
 "widget.hint.topCategories" = "As categorias onde mais gastou neste periodo.";
 "widget.hint.topSubcategories" = "As subcategorias com maior gasto, filtradas por categoria.";
 "widget.hint.categoriesPie" = "Distribuicao percentual do gasto por categoria.";
@@ -1042,39 +1056,6 @@
 "onboarding.periodSubtitle" = "Qual intervalo de tempo você prefere ver ao abrir o aplicativo?";
 "onboarding.finish" = "Começar";
 
-// MARK: - Inbox
-
-"inbox.title" = "Caixa de entrada";
-"inbox.pending" = "Pendentes";
-"inbox.archived" = "Arquivados";
-"inbox.noPending" = "Sem rascunhos pendentes";
-"inbox.noPendingDescription" = "Rascunhos de voz e imagens aparecerão aqui.";
-"inbox.noArchived" = "Sem rascunhos arquivados";
-"inbox.noArchivedDescription" = "Rascunhos aprovados ou rejeitados aparecerão aqui.";
-"inbox.noAmount" = "Sem valor";
-"inbox.noDescription" = "Sem descrição";
-"inbox.missingLabel" = "Falta:";
-"inbox.needsAccount" = "Conta";
-"inbox.needsSubcategory" = "Categoria";
-"inbox.delete" = "Excluir";
-"inbox.approve" = "Aprovar";
-"inbox.editDraft" = "Editar rascunho";
-"inbox.cannotApprove" = "Não é possível aprovar";
-"inbox.sourceVoice" = "Voz";
-"inbox.sourceReceipt" = "Recibo";
-"inbox.sourceScreenshotList" = "Lista";
-"inbox.sourceScreenshot" = "Captura";
-"inbox.sourceEmail" = "Email";
-"inbox.errorNoAccount" = "Selecione uma conta";
-"inbox.errorNoAmount" = "Insira um valor";
-"inbox.errorNoSubcategory" = "Selecione uma categoria";
-"inbox.selectedCount" = "%d selecionados";
-"inbox.approveableCount" = "%d de %d prontos para aprovar";
-"inbox.deleteConfirmMessage" = "%d rascunhos serão excluídos. Esta ação não pode ser desfeita.";
-"inbox.duplicateWarningTitle" = "Possível duplicado";
-"inbox.duplicateWarningMessage" = "Já existe uma transação com o mesmo valor e data. Deseja criar outra mesmo assim?";
-"inbox.createAnyway" = "Criar mesmo assim";
-
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";
 "bulkEdit.editCount" = "Editar %d transações";
@@ -1082,41 +1063,3 @@
 "bulkEdit.commonTags" = "Em todas as selecionadas";
 "bulkEdit.partialTags" = "Em algumas selecionadas";
 "bulkEdit.availableTags" = "Disponíveis para adicionar";
-
-// MARK: - Voice Language
-"voiceLanguage.system" = "Sistema";
-"voiceLanguage.spanish" = "Espanhol";
-"voiceLanguage.english" = "Inglês";
-"settings.voiceInputEnabled" = "Entrada por voz com IA";
-"settings.voiceLanguage" = "Idioma";
-
-// Voice Recording
-"voice.title" = "Registro por voz";
-"voice.tapToRecord" = "Toque para gravar";
-"voice.instruction" = "Exemplo: \"Gastei 50 no Starbucks restaurantes tag viagem\"";
-"voice.youCanSay" = "Você pode mencionar:";
-"voice.hint.type" = "Tipo:";
-"voice.hint.type.example" = "\"gastei\" ou \"recebi\"";
-"voice.hint.amount" = "Valor:";
-"voice.hint.amount.example" = "\"50 reais\"";
-"voice.hint.subcategory" = "Subcategoria:";
-"voice.hint.subcategory.example" = "\"em restaurantes\"";
-"voice.hint.merchant" = "Comerciante:";
-"voice.hint.merchant.example" = "\"no Starbucks\"";
-"voice.hint.tag" = "Tag:";
-"voice.hint.tag.example" = "\"tag viagem\"";
-"voice.hint.date" = "Data:";
-"voice.hint.date.example" = "\"ontem\" (hoje por padrão)";
-"voice.example.label" = "Exemplo completo:";
-"voice.example.text" = "\"Hoje gastei 50 reais no Starbucks restaurantes tag viagem\"";
-"voice.example1" = "Gastei 25 reais no táxi";
-"voice.example2" = "Ontem recebi 500 reais de salário";
-"voice.example3" = "150 na farmácia tag saúde";
-"voice.errorNoAmount" = "Não foi possível identificar um valor. Tente ser mais claro ao mencionar a quantia.";
-"voice.recording" = "Gravando...";
-"voice.pleaseWait" = "Por favor aguarde...";
-"voice.processingAudio" = "Processando audio...";
-"voice.transcribing" = "Transcrevendo...";
-"voice.analyzing" = "Analisando...";
-"voice.parsing" = "Analisando...";
-"voice.saving" = "Salvando...";

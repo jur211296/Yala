@@ -2,10 +2,10 @@
 //  TransactionsExportService.swift
 //  Yala
 //
-//  Servicio central de exportación de transacciones a CSV.
+//  Servicio central de exportación de transacciones a CSV y XLSX.
 //  - Aplica filtros definidos en `ExportFilters`.
 //  - Respeta las columnas activas definidas en `ExportColumns`.
-//  - Genera un archivo CSV en el directorio temporal y devuelve su URL.
+//  - Genera un archivo CSV o XLSX en el directorio temporal y devuelve su URL.
 //
 //  IMPORTANTE:
 //  - Este servicio NO presenta UI ni share sheet. Solo genera el archivo.
@@ -14,6 +14,27 @@
 
 import Foundation
 import SwiftData
+
+// MARK: - Export Format
+
+/// Formato de archivo para exportación.
+enum ExportFormat: String, CaseIterable, Identifiable {
+    case csv
+    case xlsx
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .csv: return "CSV"
+        case .xlsx: return "Excel (XLSX)"
+        }
+    }
+
+    var fileExtension: String {
+        rawValue
+    }
+}
 
 // MARK: - Errores específicos de exportación
 
@@ -33,7 +54,7 @@ enum TransactionsExportError: Error, LocalizedError {
         case .noTransactionsToExport:
             return "No se encontraron transacciones que cumplan los filtros seleccionados."
         case .fileWriteFailed:
-            return "Ocurrió un problema al generar el archivo CSV."
+            return "Ocurrió un problema al generar el archivo."
         }
     }
 }
@@ -115,6 +136,70 @@ struct TransactionsExportService {
         }
 
         // 5) Devolvemos el resultado.
+        return TransactionsExportResult(
+            fileURL: fileURL,
+            exportedCount: filteredTransactions.count
+        )
+    }
+
+    /// Genera un archivo en el formato especificado (CSV o XLSX).
+    ///
+    /// - Parameters:
+    ///   - format: Formato de exportación (.csv o .xlsx).
+    ///   - filters: Modelo de filtros de exportación.
+    ///   - columns: Conjunto de columnas activas y su orden.
+    ///   - modelContext: Contexto de SwiftData desde el que se leerán las transacciones.
+    /// - Returns: `TransactionsExportResult` con la URL del archivo y el conteo de filas.
+    static func export(
+        format: ExportFormat,
+        using filters: ExportFilters,
+        columns: ExportColumns,
+        in modelContext: ModelContext
+    ) throws -> TransactionsExportResult {
+
+        // Validación mínima: debe haber al menos una columna activa.
+        guard columns.hasAtLeastOneActiveColumn else {
+            throw TransactionsExportError.noTransactionsToExport
+        }
+
+        // Obtenemos el intervalo de fechas efectivo.
+        let effectiveInterval = filters.effectiveDateInterval()
+
+        // Construimos el descriptor base de búsqueda en SwiftData.
+        let fetchDescriptor = makeFetchDescriptor(
+            effectiveInterval: effectiveInterval
+        )
+
+        // 1) Traemos las transacciones desde SwiftData.
+        let fetchedTransactions = try modelContext.fetch(fetchDescriptor)
+
+        // 2) Aplicamos el resto de filtros en memoria.
+        let filteredTransactions = applyInMemoryFilters(
+            fetchedTransactions,
+            filters: filters
+        )
+
+        // Si después de todos los filtros no queda nada, devolvemos error.
+        guard !filteredTransactions.isEmpty else {
+            throw TransactionsExportError.noTransactionsToExport
+        }
+
+        // 3) Generamos el archivo según el formato.
+        let fileURL: URL
+        do {
+            switch format {
+            case .csv:
+                let csvData = makeCSVData(transactions: filteredTransactions, columns: columns)
+                fileURL = try writeToTemporaryFile(data: csvData, extension: "csv")
+
+            case .xlsx:
+                let (headers, rows) = makeExportData(transactions: filteredTransactions, columns: columns)
+                fileURL = try writeXLSXToTemporaryFile(headers: headers, rows: rows)
+            }
+        } catch {
+            throw TransactionsExportError.fileWriteFailed(underlying: error)
+        }
+
         return TransactionsExportResult(
             fileURL: fileURL,
             exportedCount: filteredTransactions.count
@@ -351,17 +436,97 @@ struct TransactionsExportService {
 
     /// Escribe los datos CSV en un archivo temporal y devuelve su URL.
     private static func writeCSVToTemporaryFile(data: Data) throws -> URL {
+        return try writeToTemporaryFile(data: data, extension: "csv")
+    }
+
+    /// Escribe datos en un archivo temporal con la extensión especificada.
+    private static func writeToTemporaryFile(data: Data, extension ext: String) throws -> URL {
         let tempDirectory = FileManager.default.temporaryDirectory
 
-        // Nombre de archivo con timestamp para evitar colisiones.
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
         let timestamp = dateFormatter.string(from: Date())
 
-        let fileName = "Yala_Transacciones_\(timestamp).csv"
+        let fileName = "Yala_Transacciones_\(timestamp).\(ext)"
         let fileURL = tempDirectory.appendingPathComponent(fileName)
 
         try data.write(to: fileURL, options: .atomic)
+
+        return fileURL
+    }
+
+    /// Genera headers y filas de datos para exportación (usado por XLSX).
+    private static func makeExportData(
+        transactions: [TransactionItem],
+        columns: ExportColumns
+    ) -> (headers: [String], rows: [[String]]) {
+
+        let orderedColumns = columns.orderedActiveColumns
+        let headers = columns.csvHeaderTitles
+
+        // Formatters
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .gregorian)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let amountFormatter = NumberFormatter()
+        amountFormatter.locale = Locale(identifier: "en_US_POSIX")
+        amountFormatter.numberStyle = .decimal
+        amountFormatter.minimumFractionDigits = 2
+        amountFormatter.maximumFractionDigits = 2
+        amountFormatter.groupingSeparator = ""
+
+        var rows: [[String]] = []
+
+        for transaction in transactions {
+            var rowValues: [String] = []
+
+            for column in orderedColumns {
+                let value: String
+
+                switch column {
+                case .date:
+                    value = dateFormatter.string(from: transaction.date)
+                case .amount:
+                    let number = NSNumber(value: transaction.amount)
+                    value = amountFormatter.string(from: number) ?? "0.00"
+                case .currency:
+                    value = normalizeCurrencyCode(transaction.currencyCode)
+                case .account:
+                    value = transaction.account?.name ?? ""
+                case .category:
+                    value = transaction.category?.name ?? ""
+                case .subcategory:
+                    value = transaction.subcategory?.name ?? ""
+                case .tags:
+                    let names = transaction.tags.map { $0.name }
+                    value = names.joined(separator: ";")
+                case .note:
+                    value = transaction.note ?? ""
+                }
+
+                rowValues.append(value)
+            }
+
+            rows.append(rowValues)
+        }
+
+        return (headers, rows)
+    }
+
+    /// Escribe un archivo XLSX temporal usando XLSXWriter.
+    private static func writeXLSXToTemporaryFile(headers: [String], rows: [[String]]) throws -> URL {
+        let tempDirectory = FileManager.default.temporaryDirectory
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
+        let timestamp = dateFormatter.string(from: Date())
+
+        let fileName = "Yala_Transacciones_\(timestamp).xlsx"
+        let fileURL = tempDirectory.appendingPathComponent(fileName)
+
+        try XLSXWriter.write(to: fileURL, headers: headers, rows: rows)
 
         return fileURL
     }

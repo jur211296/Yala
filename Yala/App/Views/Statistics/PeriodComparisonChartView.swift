@@ -79,7 +79,7 @@ struct PeriodComparisonChartView: View {
                 )
                 .foregroundStyle(previousLineColor.opacity(0.5))
                 .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(.monotone)
             }
 
             // Current period line - separate series
@@ -91,7 +91,7 @@ struct PeriodComparisonChartView: View {
                 )
                 .foregroundStyle(primaryLineColor)
                 .lineStyle(StrokeStyle(lineWidth: 2))
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(.monotone)
             }
 
             // Zero baseline (for balance metric)
