@@ -1,0 +1,159 @@
+# Refinamientos de Flujo UX (Subfases 8.3 + 8.4)
+
+**Creado:** 2026-01-25
+**Alcance:** Flujo completo desde FAB hasta aprobación de draft
+
+---
+
+## 1. FAB MENU (Punto de entrada)
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 1.1 | Orden de opciones en menú (¿Voz→Imagen→Manual?) | UX | Pendiente |
+| 1.2 | Feedback/transición al seleccionar opción | UX | Pendiente |
+
+---
+
+## 2. VOZ: VoiceRecordingView
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 2.1 | Sin monto detectado → ¿permitir crear draft igual para editar después? | UX | Pendiente |
+| 2.2 | Confirmación antes de procesar (preview duración) | UX | Pendiente |
+| 2.3 | Cancelar durante procesamiento STT/LLM | UX | Pendiente |
+| 2.4 | Múltiples drafts de una grabación ("50 en café y 100 en uber") | Feature | Pendiente |
+| 2.5 | Retry después de error sin cerrar la vista | UX | Pendiente |
+
+---
+
+## 3. IMAGEN: ImageSelectionView
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 3.1 | Preview de imagen mientras procesa | UX | Pendiente |
+| 3.2 | Contador de drafts detectados antes de navegar | UX | Pendiente |
+| 3.3 | Sin transacciones → ¿crear draft manual con imagen como referencia? | UX | Pendiente |
+| 3.4 | Cancelar durante procesamiento OCR | UX | Pendiente |
+| 3.5 | Selección múltiple de imágenes | Feature | Pendiente |
+
+---
+
+## 4. CREACIÓN DEL DRAFT
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 4.1 | Currency sin cuenta match → ¿guardar hint para mostrar al usuario? | Lógica | Pendiente |
+| 4.2 | Subcategoría ambigua → ¿mostrar sugerencias? | Lógica | Pendiente |
+| 4.3 | Tags nuevos creados automáticamente → ¿informar al usuario? | UX | Pendiente |
+| 4.4 | Evidence/rawText accesible para verificar extracción | UX | Pendiente |
+
+---
+
+## 5. NAVEGACIÓN POST-CREACIÓN
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 5.1 | 1 draft → edit sheet directo vs ir a Inbox siempre | UX | Pendiente |
+| 5.2 | N drafts → alert con opciones | UX | Implementado |
+| 5.3 | Toast/confirmación visual de draft creado | UX | Pendiente |
+| 5.4 | Volver atrás después de crear → ¿a dónde va? ¿se pierde? | UX | Pendiente |
+
+---
+
+## 6. EDICIÓN: InboxDraftEditSheet
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 6.1 | Campos obligatorios no claros visualmente | UX | Pendiente |
+| 6.2 | Validación al intentar aprobar (mensaje o botón deshabilitado) | UX | Pendiente |
+| 6.3 | Cerrar sheet sin guardar → confirmación "¿Descartar cambios?" | Edge case | Pendiente |
+| 6.4 | Editar monto con signo → toggle gasto/ingreso claro | UX | Pendiente |
+| 6.5 | Ver texto original (rawText) para verificar | UX | Pendiente |
+| 6.6 | Confidence indicators → ¿son útiles para el usuario? | UX | Pendiente |
+| 6.7 | Quick actions (duplicar draft, dividir en múltiples) | Feature | Pendiente |
+
+---
+
+## 7. LISTA: InboxView
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 7.1 | Ordenar por prioridad (completos vs incompletos) | UX | Pendiente |
+| 7.2 | Indicador visual de campos faltantes en cada celda | UX | Pendiente |
+| 7.3 | Bulk actions → ¿es descubrible? | UX | Pendiente |
+| 7.4 | Filtros útiles (Pendientes/Archivados) | UX | Pendiente |
+| 7.5 | Empty state instructivo | UX | Pendiente |
+| 7.6 | **Contador de archivados incluye eliminados** | **Bug** | Pendiente |
+| 7.7 | **Montos siempre con decimales** (consistencia con resto de app) | **Bug** | ✅ Completado |
+
+---
+
+## 8. APROBACIÓN
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 8.1 | Feedback al aprobar (toast, animación) | UX | Pendiente |
+| 8.2 | Navegación post-aprobar (¿lista? ¿cierra? ¿transacción?) | UX | Pendiente |
+| 8.3 | Aprobar con campos mínimos (¿sin nota? ¿sin tags?) | Lógica | Pendiente |
+| 8.4 | Aprobar múltiples (bulk) → feedback y manejo de errores | UX | Pendiente |
+| 8.5 | Deshacer aprobación | Feature | Pendiente |
+
+---
+
+## 9. ERRORES Y EDGE CASES
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 9.1 | Sin conexión (voz) → sugerir usar imagen (offline) | Error | Pendiente |
+| 9.2 | API key inválida → link a Settings | Error | Pendiente |
+| 9.3 | Draft huérfano si falla save | Edge case | Pendiente |
+| 9.4 | Imagen corrupta → mensaje claro + reintentar | Error | Pendiente |
+| 9.5 | Permisos denegados → deep link a Settings sistema | Error | Pendiente |
+
+---
+
+## 10. MEJORAS UI (al final)
+
+| # | Punto | Tipo | Estado |
+|---|-------|------|--------|
+| 10.1 | Consistencia de colores/iconos entre Voz e Imagen | UI | Pendiente |
+| 10.2 | Animaciones de transición entre estados | UI | Pendiente |
+| 10.3 | Tamaños de botones y áreas touch | UI | Pendiente |
+| 10.4 | Tipografía y espaciado en celdas de Inbox | UI | Pendiente |
+| 10.5 | Dark mode verificar contraste | UI | Pendiente |
+| 10.6 | Iconos de sourceType claros y distintivos | UI | Pendiente |
+| 10.7 | Estados de carga consistentes (spinners, skeletons) | UI | Pendiente |
+| 10.8 | Feedback háptico en acciones importantes | UI | Pendiente |
+| 10.9 | Accesibilidad (VoiceOver labels) | UI | Pendiente |
+| 10.10 | Pulido general de InboxDraftEditSheet | UI | Pendiente |
+
+---
+
+## Resumen Priorizado
+
+### Bugs (arreglar primero)
+- [ ] 7.6 - Contador archivados incluye eliminados
+- [x] 7.7 - Montos sin decimales en Inbox
+
+### UX Crítico
+- [ ] 6.3 - Cerrar sheet sin guardar → confirmación
+- [ ] 6.1/6.2 - Campos obligatorios claros
+- [ ] 5.4 - Navegación clara post-crear
+- [ ] 7.2 - Indicador de drafts incompletos
+
+### UX Importante
+- [ ] 3.2 - Contador de drafts en imagen
+- [ ] 2.1 - Sin monto → permitir crear draft
+- [ ] 6.5 - Ver rawText en edición
+- [ ] 8.1/8.2 - Feedback post-aprobar
+
+### Features deseables
+- [ ] 2.4 - Múltiples drafts de una grabación
+- [ ] 3.5 - Selección múltiple de imágenes
+
+### UI (al final)
+- [ ] 10.1-10.10 - Pulido visual general
+
+---
+
+*Actualizar conforme se completen items*

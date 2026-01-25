@@ -22,6 +22,8 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] ff9bf1b fix(inbox): show amounts with decimals for consistency
+- [2026-01-25] 41c10e3 fix(inbox): improve reject/delete flow and archived tab actions
 - [2026-01-25] d9cfe97 feat(inbox): add Vision currency detection and smart navigation
 - [2026-01-24] f156c32 docs(qa): add QA scenarios for Image Input (Section 18)
 - [2026-01-24] 06bf36d feat(image): complete ImageSelectionView with PhotosPicker and OCR integration
@@ -31,7 +33,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-24] fc1e9ff feat(ocr): add Vision-based OCR service for text extraction
 - [2026-01-24] e0bcc7b feat(panel): add image option to FAB menu
 - [2026-01-24] bf9175d feat(settings): add image input toggle and missing localizations
-- [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
 
 ## Completed in Current Phase
 
