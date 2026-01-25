@@ -20,6 +20,7 @@ struct ProfileView: View {
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
+    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
 
     @Query private var allTransactions: [TransactionItem]
     @Query private var accounts: [Account]
@@ -276,6 +277,8 @@ struct ProfileView: View {
                 SubsectionDivider()
                 voiceInputRow
                 SubsectionDivider()
+                imageInputRow
+                SubsectionDivider()
                 profileRow(
                     icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
                     destination: .notifications)
@@ -358,6 +361,38 @@ struct ProfileView: View {
                 .padding(.vertical, DS.FormRow.paddingV)
             }
         }
+    }
+
+    private var imageInputRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            if colorfulIcons {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.orange)
+                    )
+            } else {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .frame(width: 28)
+            }
+
+            Text(L10n.Settings.imageInputEnabled)
+                .font(.body)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Toggle("", isOn: $imageInputEnabled)
+                .labelsHidden()
+                .tint(Color.brandPrimary)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
     }
 
     private var datosSection: some View {

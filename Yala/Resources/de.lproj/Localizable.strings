@@ -309,6 +309,9 @@
 "settings.tabBarConfigMinWarning" = "Du musst mindestens einen Bereich haben";
 "settings.tabBarConfigMaxWarning" = "Maximal 3 Bereiche";
 "settings.plannedPayments" = "Geplante Zahlungen";
+"settings.voiceInputEnabled" = "Spracheingabe";
+"settings.voiceLanguage" = "Sprachsprache";
+"settings.imageInputEnabled" = "Bildeingabe";
 "settings.resetData" = "Daten löschen";
 "settings.version" = "Version";
 "settings.light" = "Hell";
@@ -463,6 +466,8 @@
 "common.comingSoon" = "Demnächst";
 "panel.greeting" = "Hallo, %@";
 "panel.title" = "%@s Panel";
+"panel.fabVoice" = "Sprache";
+"panel.fabManual" = "Manuell";
 
 "widget.today" = "Heute";
 
@@ -1063,3 +1068,62 @@
 "bulkEdit.commonTags" = "In allen ausgewählten";
 "bulkEdit.partialTags" = "In einigen ausgewählten";
 "bulkEdit.availableTags" = "Verfügbar zum Hinzufügen";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "System";
+"voiceLanguage.spanish" = "Spanisch";
+"voiceLanguage.english" = "Englisch";
+
+// MARK: - Voice Input
+"voice.title" = "Sprachnotiz";
+"voice.recording" = "Aufnahme...";
+"voice.pleaseWait" = "Bitte warten";
+"voice.tapToRecord" = "Tippen zum Aufnehmen";
+"voice.youCanSay" = "Sie können sagen:";
+"voice.hintTypeExample" = "Ausgabe/Einnahme/Überweisung";
+"voice.hintAmountExample" = "50 Euro";
+"voice.hintSubcategoryExample" = "Restaurants";
+"voice.hintMerchantExample" = "Starbucks";
+"voice.hintTagExample" = "Arbeit";
+"voice.hintDateExample" = "Heute/Gestern";
+"voice.exampleLabel" = "Beispiele";
+"voice.example1" = "50 Euro bei Starbucks für Kaffee ausgegeben";
+"voice.example2" = "Einnahme von 1000 Euro aus freiberuflicher Tätigkeit";
+"voice.example3" = "Überweisung von 200 Euro auf Sparkonto";
+"voice.processingAudio" = "Audio wird verarbeitet...";
+"voice.analyzing" = "Analysieren...";
+"voice.parsing" = "Daten extrahieren...";
+"voice.saving" = "Speichern...";
+"voice.errorNoAmount" = "Betrag konnte nicht erkannt werden. Versuchen Sie es erneut.";
+
+// MARK: - Inbox
+"inbox.title" = "Posteingang";
+"inbox.pending" = "Ausstehend";
+"inbox.archived" = "Archiviert";
+"inbox.noDescription" = "Keine Beschreibung";
+"inbox.noAmount" = "Kein Betrag";
+"inbox.missingLabel" = "Fehlende Daten";
+"inbox.needsAccount" = "Konto auswählen";
+"inbox.needsSubcategory" = "Unterkategorie auswählen";
+"inbox.approve" = "Genehmigen";
+"inbox.delete" = "Löschen";
+"inbox.noPending" = "Keine ausstehenden Entwürfe";
+"inbox.noPendingDescription" = "Neue Sprach- und Bildentwürfe werden hier angezeigt.";
+"inbox.noArchived" = "Keine archivierten Entwürfe";
+"inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";
+"inbox.selectedCount" = "%d ausgewählt";
+"inbox.editDraft" = "Edit draft";
+"inbox.cannotApprove" = "Cannot approve";
+"inbox.sourceVoice" = "Voice";
+"inbox.sourceEmail" = "Email";
+"inbox.sourceScreenshot" = "Screenshot";
+"inbox.sourceScreenshotList" = "List";
+"inbox.sourceReceipt" = "Receipt";
+"inbox.errorNoAccount" = "Select account";
+"inbox.errorNoAmount" = "Specify amount";
+"inbox.errorNoSubcategory" = "Select subcategory";
+"inbox.duplicateWarningTitle" = "Possible duplicate";
+"inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
+"inbox.createAnyway" = "Create anyway";
+"inbox.deleteConfirmMessage" = "Delete %d draft(s)?";
+"inbox.approveableCount" = "%d of %d ready to approve";
