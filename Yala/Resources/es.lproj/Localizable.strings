@@ -1103,9 +1103,9 @@
 "inbox.archived" = "Archivados";
 "inbox.noDescription" = "Sin descripción";
 "inbox.noAmount" = "Sin monto";
-"inbox.missingLabel" = "Faltan datos";
-"inbox.needsAccount" = "Selecciona cuenta";
-"inbox.needsSubcategory" = "Selecciona subcategoría";
+"inbox.missingLabel" = "Falta:";
+"inbox.needsAccount" = "Cuenta";
+"inbox.needsSubcategory" = "Subcategoría";
 "inbox.approve" = "Aprobar";
 "inbox.delete" = "Eliminar";
 "inbox.noPending" = "Sin borradores pendientes";
@@ -1128,6 +1128,10 @@
 "inbox.createAnyway" = "Crear de todas formas";
 "inbox.deleteConfirmMessage" = "¿Estás seguro de eliminar %d borrador(es)?";
 "inbox.approveableCount" = "%d de %d listo(s) para aprobar";
+"inbox.saveLater" = "Aprobar luego";
+"inbox.deleteTitle" = "Eliminar borrador";
+"inbox.deleteMessage" = "Esta acción no se puede deshacer.";
+"inbox.reject" = "Rechazar";
 
 // MARK: - Image Input
 "image.title" = "Imagen";
@@ -1141,3 +1145,6 @@
 "image.errorNoData" = "No se detectaron transacciones en la imagen";
 "image.errorUnrecognized" = "Tipo de imagen no reconocido";
 "image.errorGeneric" = "Error al procesar la imagen";
+"image.transactionsDetected" = "Transacciones detectadas";
+"image.goToInbox" = "Ir a bandeja";
+"image.transactionsDetectedMessage" = "Hemos detectado %d transacciones. Puedes revisarlas y aprobarlas en la bandeja de entrada.";

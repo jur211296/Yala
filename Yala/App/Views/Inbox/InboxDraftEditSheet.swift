@@ -51,6 +51,7 @@ struct InboxDraftEditSheet: View {
     @State private var showDuplicateWarning = false
     @State private var duplicateTransaction: TransactionItem?
     @State private var shouldCreateDespiteDuplicate = false
+    @State private var showDeleteConfirmation = false
 
     // Callback for when draft is approved
     var onApproved: (() -> Void)?
@@ -139,6 +140,14 @@ struct InboxDraftEditSheet: View {
                         createTransactionAndApprove(skipDuplicateCheck: true)
                     }
                 }
+                .alert(L10n.Inbox.deleteTitle, isPresented: $showDeleteConfirmation) {
+                    Button(L10n.Common.cancel, role: .cancel) {}
+                    Button(L10n.Inbox.delete, role: .destructive) {
+                        deleteDraftPermanently()
+                    }
+                } message: {
+                    Text(L10n.Inbox.deleteMessage)
+                }
         }
     }
 
@@ -218,11 +227,20 @@ struct InboxDraftEditSheet: View {
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                rejectDraft()
+            Menu {
+                Button(role: .destructive) {
+                    showDeleteConfirmation = true
+                } label: {
+                    Label(L10n.Inbox.delete, systemImage: "trash")
+                }
+
+                Button {
+                    rejectDraft()
+                } label: {
+                    Label(L10n.Inbox.reject, systemImage: "xmark.circle")
+                }
             } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(.red)
+                Image(systemName: "ellipsis.circle")
             }
         }
     }
@@ -488,12 +506,12 @@ struct InboxDraftEditSheet: View {
 
     private var actionButtons: some View {
         HStack(spacing: DS.Spacing.md) {
-            // Save button (secondary)
+            // Save button (secondary) - "Aprobar luego"
             Button {
                 saveDraft()
                 dismiss()
             } label: {
-                Text(L10n.Action.save)
+                Text(L10n.Inbox.saveLater)
                     .font(.headline)
                     .foregroundStyle(Color.electricIndigo)
                     .frame(maxWidth: .infinity)
@@ -738,6 +756,17 @@ struct InboxDraftEditSheet: View {
     }
 
     private func rejectDraft() {
+        // Cache values for display in archived list
+        if let account = draft.account ?? selectedAccount {
+            draft.cachedAccountName = account.name
+            draft.cachedCurrencyCode = account.currencyCode
+        }
+        if let subcategory = draft.subcategory ?? selectedSubcategory {
+            draft.cachedSubcategoryName = subcategory.name
+            draft.cachedCategoryColorHex = subcategory.category.colorHex
+            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+        }
+
         draft.status = .rejected
         draft.updatedAt = Date()
 
@@ -746,6 +775,16 @@ struct InboxDraftEditSheet: View {
             dismiss()
         } catch {
             print("Error rejecting draft: \(error)")
+        }
+    }
+
+    private func deleteDraftPermanently() {
+        modelContext.delete(draft)
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            print("Error deleting draft: \(error)")
         }
     }
 }

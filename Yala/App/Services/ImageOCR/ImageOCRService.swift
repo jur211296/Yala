@@ -54,7 +54,7 @@ final class ImageOCRService {
         }
 
         // Extract results
-        guard let observations = request.results as? [VNRecognizedTextObservation],
+        guard let observations = request.results,
               !observations.isEmpty else {
             throw OCRError.noTextDetected
         }

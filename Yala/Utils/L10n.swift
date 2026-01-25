@@ -1731,6 +1731,18 @@ enum L10n {
         static func approveableCount(_ count: Int, _ total: Int) -> String {
             String(format: NSLocalizedString("inbox.approveableCount", comment: ""), count, total)
         }
+        static var saveLater: String {
+            NSLocalizedString("inbox.saveLater", comment: "")
+        }
+        static var deleteTitle: String {
+            NSLocalizedString("inbox.deleteTitle", comment: "")
+        }
+        static var deleteMessage: String {
+            NSLocalizedString("inbox.deleteMessage", comment: "")
+        }
+        static var reject: String {
+            NSLocalizedString("inbox.reject", comment: "")
+        }
     }
 
     // MARK: - Voice Input
@@ -1833,6 +1845,15 @@ enum L10n {
         }
         static var errorGeneric: String {
             NSLocalizedString("image.errorGeneric", comment: "")
+        }
+        static var transactionsDetected: String {
+            NSLocalizedString("image.transactionsDetected", comment: "")
+        }
+        static var goToInbox: String {
+            NSLocalizedString("image.goToInbox", comment: "")
+        }
+        static func transactionsDetectedMessage(_ count: Int) -> String {
+            String(format: NSLocalizedString("image.transactionsDetectedMessage", comment: ""), count)
         }
     }
 }

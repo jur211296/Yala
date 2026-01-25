@@ -21,6 +21,17 @@ struct ImageSelectionView: View {
     @State private var showInbox = false
     @State private var draftsCreated = 0
 
+    // Navigation for single draft (direct edit)
+    @State private var createdDraft: InboxDraft?
+
+    // Navigation for multiple drafts (alert)
+    @State private var showMultipleDraftsAlert = false
+    @State private var multipleDraftsCount = 0
+
+    // Vision API service (online, preferred)
+    private let visionService = ImageVisionService.shared
+
+    // Local OCR services (offline fallback)
     private let ocrService = ImageOCRService()
     private let classifier = ImageClassifier()
     private let singleExtractor = ScreenshotSingleExtractor()
@@ -64,6 +75,22 @@ struct ImageSelectionView: View {
             }
             .sheet(isPresented: $showInbox) {
                 InboxView()
+            }
+            .sheet(item: $createdDraft) { draft in
+                InboxDraftEditSheet(draft: draft)
+            }
+            .alert(L10n.Image.transactionsDetected, isPresented: $showMultipleDraftsAlert) {
+                Button(L10n.Image.goToInbox) {
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showInbox = true
+                    }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {
+                    dismiss()
+                }
+            } message: {
+                Text(L10n.Image.transactionsDetectedMessage(multipleDraftsCount))
             }
         }
     }
@@ -146,48 +173,19 @@ struct ImageSelectionView: View {
                 throw ImageError.loadFailed
             }
 
-            // 2. Extract text with OCR
-            let ocrResult = try await ocrService.extractText(from: uiImage)
-
-            // 3. Classify image type
-            let imageType = classifier.classify(ocrResult: ocrResult)
-
-            // 4. Extract data based on type
-            switch imageType {
-            case .screenshotSingle:
-                // Single transaction
-                if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
-                    draftsCreated = 1
-                    try modelContext.save()
-                    await showInboxAfterDelay()
-                } else {
-                    throw ImageError.noDataExtracted
+            // 2. Try Vision API first if available
+            if visionService.isAvailable {
+                do {
+                    try await processImageWithVision(uiImage)
+                    return
+                } catch {
+                    // Vision failed, fall through to offline processing
+                    print("Vision API failed, falling back to OCR: \(error.localizedDescription)")
                 }
-
-            case .screenshotList:
-                // Multiple transactions
-                let drafts = listExtractor.extract(from: ocrResult, context: modelContext)
-                if !drafts.isEmpty {
-                    draftsCreated = drafts.count
-                    try modelContext.save()
-                    await showInboxAfterDelay()
-                } else {
-                    throw ImageError.noDataExtracted
-                }
-
-            case .receiptPhoto:
-                // Receipt - use single extractor as fallback
-                if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
-                    draftsCreated = 1
-                    try modelContext.save()
-                    await showInboxAfterDelay()
-                } else {
-                    throw ImageError.noDataExtracted
-                }
-
-            case .unknown:
-                throw ImageError.unrecognizedType
             }
+
+            // 3. Fallback to local OCR processing
+            try await processImageOffline(uiImage)
 
         } catch let error as ImageOCRService.OCRError {
             handleError(error.localizedDescription)
@@ -198,13 +196,91 @@ struct ImageSelectionView: View {
         }
     }
 
-    private func showInboxAfterDelay() async {
+    /// Process image using GPT-4o Vision API (online)
+    private func processImageWithVision(_ uiImage: UIImage) async throws {
+        let response = try await visionService.analyze(image: uiImage)
+
+        // Check if we got valid transactions
+        guard !response.transactions.isEmpty,
+              response.imageType != "unknown" else {
+            throw ImageError.noDataExtracted
+        }
+
+        // Create drafts from Vision response
+        let drafts = VisionDraftFactory.createDrafts(
+            from: response,
+            rawText: nil,
+            context: modelContext
+        )
+
+        guard !drafts.isEmpty else {
+            throw ImageError.noDataExtracted
+        }
+
+        draftsCreated = drafts.count
+        try modelContext.save()
+        await handleNavigation(drafts: drafts)
+    }
+
+    /// Process image using local OCR pipeline (offline fallback)
+    private func processImageOffline(_ uiImage: UIImage) async throws {
+        // Extract text with OCR
+        let ocrResult = try await ocrService.extractText(from: uiImage)
+
+        // Classify image type
+        let imageType = classifier.classify(ocrResult: ocrResult)
+
+        // Extract data based on type
+        switch imageType {
+        case .screenshotSingle:
+            // Single transaction
+            if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
+                draftsCreated = 1
+                try modelContext.save()
+                await handleNavigation(drafts: [draft])
+            } else {
+                throw ImageError.noDataExtracted
+            }
+
+        case .screenshotList:
+            // Multiple transactions
+            let drafts = listExtractor.extract(from: ocrResult, context: modelContext)
+            if !drafts.isEmpty {
+                draftsCreated = drafts.count
+                try modelContext.save()
+                await handleNavigation(drafts: drafts)
+            } else {
+                throw ImageError.noDataExtracted
+            }
+
+        case .receiptPhoto:
+            // Receipt - use single extractor as fallback
+            if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
+                draftsCreated = 1
+                try modelContext.save()
+                await handleNavigation(drafts: [draft])
+            } else {
+                throw ImageError.noDataExtracted
+            }
+
+        case .unknown:
+            throw ImageError.unrecognizedType
+        }
+    }
+
+    /// Handles navigation after drafts are created
+    /// - 1 draft: Opens edit sheet directly
+    /// - Multiple: Shows alert with count and option to go to inbox
+    private func handleNavigation(drafts: [InboxDraft]) async {
         try? await Task.sleep(for: .milliseconds(300))
         await MainActor.run {
-            dismiss()
-            // Small delay to allow dismiss animation to complete
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                showInbox = true
+            if drafts.count == 1, let draft = drafts.first {
+                // Single draft: open edit sheet directly
+                createdDraft = draft
+            } else {
+                // Multiple drafts: show alert with count
+                multipleDraftsCount = drafts.count
+                showMultipleDraftsAlert = true
             }
         }
     }

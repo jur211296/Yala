@@ -2480,7 +2480,57 @@ Funcionalidad de entrada de transacciones desde imágenes usando Vision OCR + cl
 
 ---
 
+### Escenarios de Vision API (GPT-4o Online)
+
+Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor precisión en extracción.
+
+**Precondiciones específicas:**
+- API key de OpenAI configurada en Secrets.xcconfig
+- Conexión a internet activa
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.41 | Vision API disponible | Con API key configurada, procesar imagen | Usa Vision API (no OCR local) |
+| 18.42 | Vision API no disponible | Sin API key configurada, procesar imagen | Fallback automático a OCR local |
+| 18.43 | Vision exitoso - Screenshot single | Seleccionar alerta bancaria | Draft creado con datos de Vision, sourceType=screenshotSingle |
+| 18.44 | Vision exitoso - Screenshot list | Seleccionar historial bancario | Múltiples drafts creados, sourceType=screenshotList |
+| 18.45 | Vision exitoso - Receipt | Seleccionar foto de recibo | Draft con TOTAL extraído, sourceType=receiptPhoto |
+| 18.46 | Vision - Monto negativo (gasto) | Imagen con gasto | amount < 0 en draft |
+| 18.47 | Vision - Monto positivo (ingreso) | Imagen con ingreso | amount > 0 en draft |
+| 18.48 | Vision - Fecha formato ES abreviado | Imagen con "13 ene 2026" | date = 2026-01-13 |
+| 18.49 | Vision - Fecha formato ES completo | Imagen con "13 de enero de 2026" | date = 2026-01-13 |
+| 18.50 | Vision - Fecha formato EN | Imagen con "Jan 13, 2026" | date = 2026-01-13 |
+| 18.51 | Vision - Fecha relativa "hoy" | Imagen con "hoy" | date = fecha actual |
+| 18.52 | Vision - Fecha relativa "ayer" | Imagen con "ayer" | date = fecha actual - 1 |
+| 18.53 | Vision - Merchant extraído | Imagen con comercio | note contiene nombre del comercio |
+
+---
+
+### Escenarios de Fallback Vision → OCR
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.54 | Fallback por error de red | Desconectar internet durante proceso | Cae a OCR local, draft creado |
+| 18.55 | Fallback por respuesta vacía | Vision retorna imageType=unknown | Cae a OCR local |
+| 18.56 | Fallback por sin transacciones | Vision retorna transactions=[] | Cae a OCR local |
+| 18.57 | Fallback exitoso | Error de Vision + OCR funciona | Draft creado vía OCR, sin error visible |
+| 18.58 | Ambos fallan | Error de Vision + Error de OCR | Muestra error "No se detectaron transacciones" |
+
+---
+
+### Validaciones de Vision API
+
+| Elemento | Verificación |
+|----------|--------------|
+| Confidencia | confidence.overall en respuesta ≥ 0.7 |
+| JSON válido | Respuesta parseable como VisionResponse |
+| Montos firmados | Gastos negativos, ingresos positivos |
+| Fechas ISO | Formato YYYY-MM-DD interno |
+| Fallback silencioso | Usuario no ve mensaje de error de Vision si OCR funciona |
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-24*
-*Total escenarios: ~250*
-*Total verificaciones: ~460+*
+*Última actualización: 2026-01-25*
+*Total escenarios: ~270*
+*Total verificaciones: ~490+*
