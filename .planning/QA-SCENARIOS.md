@@ -72,6 +72,9 @@ Ordenado por dependencias de datos para ejecución secuencial.
 | 12 | Filtros | Todo | Opera sobre todo |
 | 13 | Import/Export | Todo | Manipula datos |
 | 14 | Settings | Independiente | Configuración |
+| 15 | Inbox | Transacciones | Depende de drafts generados |
+| 16 | Voz | API Key + Internet | Genera drafts en Inbox |
+| 17 | Imagen | Ninguna | Genera drafts en Inbox |
 
 ---
 
@@ -2353,7 +2356,131 @@ Funcionalidad de entrada de transacciones por voz usando OpenAI Whisper (STT) y 
 
 ---
 
+## Sección 18: Entrada por Imagen (Imágenes MVP) - V1.1
+
+### Vista: ImageSelectionView + ProfileView (Settings)
+
+Funcionalidad de entrada de transacciones desde imágenes usando Vision OCR + clasificación heurística + extractores.
+
+### Precondiciones Generales
+
+- iOS 16+ (Vision framework)
+- Permiso de acceso a fotos otorgado (o disponible para solicitar)
+- Imágenes de prueba en biblioteca de fotos
+
+---
+
+### Escenarios de Configuración (ProfileView)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.1 | Toggle imagen deshabilitado (default) | Abrir Profile → Personalización | Toggle "Entrada por imagen" está OFF |
+| 18.2 | Habilitar entrada por imagen | Activar toggle "Entrada por imagen" | Toggle ON |
+| 18.3 | Deshabilitar entrada por imagen | Desactivar toggle | Toggle OFF, opción desaparece del FAB |
+| 18.4 | Persistencia de configuración | Cerrar y abrir app | Toggle mantiene valor |
+
+---
+
+### Escenarios de FAB Condicional
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.5 | FAB sin imagen (imagen OFF) | Con imagen OFF, ver PanelView | FAB muestra solo opciones habilitadas (Manual o Voz+Manual) |
+| 18.6 | FAB con imagen (imagen ON) | Con imagen ON, tap en FAB "+" | Menú muestra "Imagen" con icono naranja |
+| 18.7 | FAB con voz+imagen | Con voz ON e imagen ON | Menú muestra 3 opciones: "Voz", "Imagen", "Manual" |
+| 18.8 | Seleccionar "Imagen" del menú | Tap en "Imagen" | Abre ImageSelectionView |
+
+---
+
+### Escenarios de Selección de Imagen
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.9 | UI inicial | Abrir ImageSelectionView | Instrucciones, botón "Seleccionar imagen" |
+| 18.10 | Abrir PhotosPicker | Tap en botón | PhotosPicker del sistema se abre |
+| 18.11 | Cancelar PhotosPicker | Tap en Cancelar en picker | Picker se cierra, vuelve a ImageSelectionView |
+| 18.12 | Seleccionar imagen válida | Elegir screenshot bancario | Picker se cierra, inicia procesamiento |
+| 18.13 | Estado "Procesando" | Después de seleccionar | ProgressView, texto "Procesando..." |
+
+---
+
+### Escenarios de Procesamiento OCR
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.14 | OCR exitoso - Screenshot single | Seleccionar alerta bancaria individual | Texto extraído, draft creado en Inbox |
+| 18.15 | OCR exitoso - Screenshot list | Seleccionar lista de transacciones | Múltiples drafts creados (uno por fila) |
+| 18.16 | OCR exitoso - Receipt | Seleccionar foto de recibo | Draft creado con monto total |
+| 18.17 | Navegación a Inbox | Después de procesar exitosamente | ImageSelectionView cierra, Inbox se abre automáticamente |
+
+---
+
+### Escenarios de Extracción de Datos
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.18 | Extracción monto con símbolo $ | Imagen con "$50.00" | Draft muestra 50.00 |
+| 18.19 | Extracción monto con símbolo € | Imagen con "€100" | Draft muestra 100.00 |
+| 18.20 | Extracción monto negativo (paréntesis) | Imagen con "($25.50)" | Draft muestra -25.50 |
+| 18.21 | Extracción formato europeo | Imagen con "1.234,56" | Draft muestra 1234.56 |
+| 18.22 | Extracción formato americano | Imagen con "1,234.56" | Draft muestra 1234.56 |
+| 18.23 | Extracción fecha relativa "hoy" | Imagen con "hoy" | Draft muestra fecha de hoy |
+| 18.24 | Extracción fecha relativa "ayer" | Imagen con "ayer" | Draft muestra fecha de ayer |
+| 18.25 | Extracción fecha absoluta DD/MM/YYYY | Imagen con "24/01/2026" | Draft muestra 24 enero 2026 |
+| 18.26 | Extracción nombre comercio | Imagen con "en STARBUCKS" | Draft nota contiene "Starbucks" |
+
+---
+
+### Escenarios de Clasificación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.27 | Clasificar screenshot single | Imagen con keywords "consumo", "tarjeta" + 1 monto | Clasificado como screenshotSingle, 1 draft |
+| 18.28 | Clasificar screenshot list | Imagen con 3+ líneas con montos | Clasificado como screenshotList, múltiples drafts |
+| 18.29 | Clasificar receipt | Imagen con "total", "subtotal" + monto | Clasificado como receiptPhoto, 1 draft |
+| 18.30 | Clasificar unknown | Imagen sin montos ni keywords | Error "Tipo de imagen no reconocido" |
+
+---
+
+### Escenarios de Errores
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.31 | Error carga imagen | Seleccionar imagen corrupta | Alert: "No se pudo cargar la imagen" |
+| 18.32 | Error OCR sin texto | Seleccionar imagen sin texto | Alert: "No se detectó texto en la imagen" |
+| 18.33 | Error sin transacciones | Seleccionar imagen con texto pero sin montos | Alert: "No se detectaron transacciones" |
+| 18.34 | Error tipo no reconocido | Seleccionar imagen no bancaria | Alert: "Tipo de imagen no reconocido" |
+
+---
+
+### Escenarios de Integración con Inbox
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.35 | Draft en Inbox | Después de procesar imagen | Draft aparece en InboxView con sourceType correcto |
+| 18.36 | Icono de fuente correcto | Ver draft en Inbox | Icono "rectangle.on.rectangle" para screenshot single |
+| 18.37 | Icono lista | Ver drafts de screenshot list | Icono "list.bullet.rectangle" |
+| 18.38 | Raw text preservado | Abrir draft | rawText contiene texto OCR completo |
+| 18.39 | Evidence visible | Ver draft | evidence muestra primera línea de texto |
+| 18.40 | Campos detectados | Ver draft | amount, date (si detectados) marcados con confianza |
+
+---
+
+### Validaciones de UI
+
+| Elemento | Verificación |
+|----------|--------------|
+| Toggle imagen | Estilo consistente con otros toggles de Settings |
+| Icono FAB | "photo" naranja en menú |
+| Botón selección | Tamaño grande, fácil de presionar |
+| PhotosPicker | Picker nativo del sistema |
+| ProgressView | Indicador de carga durante procesamiento |
+| Estados de error | Alertas claras con texto accionable |
+| Transición a Inbox | Animación suave al abrir Inbox |
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-22*
-*Total escenarios: ~210*
-*Total verificaciones: ~400+*
+*Última actualización: 2026-01-24*
+*Total escenarios: ~250*
+*Total verificaciones: ~460+*
