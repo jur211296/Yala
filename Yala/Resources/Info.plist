@@ -19,23 +19,15 @@
 				<key>UIPrerenderedIcon</key>
 				<false/>
 			</dict>
-			<key>IconLight</key>
+			<key>AppIconLight</key>
 			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>IconLight</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
+				<key>CFBundleIconName</key>
+				<string>AppIconLight</string>
 			</dict>
-			<key>IconNeon</key>
+			<key>AppIconNeon</key>
 			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>IconNeon</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
+				<key>CFBundleIconName</key>
+				<string>AppIconNeon</string>
 			</dict>
 		</dict>
 		<key>CFBundlePrimaryIcon</key>
@@ -61,23 +53,15 @@
 				<key>UIPrerenderedIcon</key>
 				<false/>
 			</dict>
-			<key>IconLight</key>
+			<key>AppIconLight</key>
 			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>IconLight</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
+				<key>CFBundleIconName</key>
+				<string>AppIconLight</string>
 			</dict>
-			<key>IconNeon</key>
+			<key>AppIconNeon</key>
 			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>IconNeon</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
+				<key>CFBundleIconName</key>
+				<string>AppIconNeon</string>
 			</dict>
 		</dict>
 		<key>CFBundlePrimaryIcon</key>
