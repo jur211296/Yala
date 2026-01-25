@@ -11,21 +11,21 @@
 
   /* Dark mode (default) */
   body {
-    @apply bg-neutral-950 text-neutral-100 font-sans;
+    @apply bg-yala-slate text-neutral-100 font-sans;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
 
   /* Light mode */
   body.light {
-    @apply bg-white text-neutral-900;
+    @apply bg-neutral-50 text-neutral-900;
   }
 
   ::selection {
-    @apply bg-indigo-500/30 text-white;
+    @apply bg-yala-indigo/30 text-white;
   }
 
   body.light ::selection {
-    @apply bg-indigo-500/30 text-neutral-900;
+    @apply bg-yala-indigo/30 text-neutral-900;
   }
 }
 
@@ -38,12 +38,98 @@
     @apply max-w-6xl mx-auto px-6;
   }
 
+  .container-xl {
+    @apply max-w-7xl mx-auto px-6;
+  }
+
   /* Logo switching */
   .logo-dark { display: block; }
   .logo-light { display: none; }
 
   body.light .logo-dark { display: none; }
   body.light .logo-light { display: block; }
+
+  /* Yala Brand Buttons */
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold text-white;
+    @apply bg-gradient-to-r from-yala-indigo to-yala-pink;
+    @apply hover:shadow-yala transition-all duration-300;
+    @apply hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply border-2 border-yala-indigo text-yala-indigo;
+    @apply hover:bg-yala-indigo hover:text-white transition-all duration-300;
+  }
+
+  .btn-ghost {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply text-neutral-400 hover:text-yala-cyan transition-colors;
+  }
+
+  /* Cards */
+  .card {
+    @apply rounded-2xl border transition-all duration-300;
+    background: var(--bg-card);
+    border-color: var(--border-color);
+  }
+
+  .card:hover {
+    border-color: var(--border-hover);
+  }
+
+  .card-glow {
+    @apply card;
+    @apply hover:shadow-yala;
+  }
+
+  /* Bento Grid */
+  .bento-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto;
+  }
+
+  @media (max-width: 768px) {
+    .bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Gradient Text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-yala-indigo via-yala-cyan to-yala-pink;
+  }
+
+  .text-gradient-subtle {
+    @apply bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-yala-indigo to-yala-cyan;
+  }
+
+  /* Cyan Glow Effect */
+  .glow-cyan {
+    text-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+  }
+
+  /* Pink Accent Dot */
+  .dot-pink::after {
+    content: '.';
+    @apply text-yala-pink;
+  }
+
+  /* Cyan Accent Dot */
+  .dot-cyan::after {
+    content: '●';
+    @apply text-yala-cyan ml-1 text-sm;
+  }
 }
 
 /* Scroll animations */
@@ -63,29 +149,106 @@
   .stagger-1 { transition-delay: 0.1s; }
   .stagger-2 { transition-delay: 0.2s; }
   .stagger-3 { transition-delay: 0.3s; }
+  .stagger-4 { transition-delay: 0.4s; }
+  .stagger-5 { transition-delay: 0.5s; }
+
+  /* Fade variations */
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Float animation for decorative elements */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* Pulse glow */
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
+  }
 }
 
 /* Theme-specific colors using CSS custom properties */
 :root {
-  --bg-primary: #0a0a0b;
-  --bg-secondary: rgba(23, 23, 26, 0.6);
-  --bg-card: rgba(23, 23, 26, 0.6);
-  --border-color: rgba(38, 38, 42, 0.6);
-  --border-hover: rgba(63, 63, 70, 1);
-  --text-primary: #f4f4f5;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --header-bg: rgba(10, 10, 11, 0.8);
+  --bg-primary: #0F172A;
+  --bg-secondary: rgba(30, 41, 59, 0.6);
+  --bg-card: rgba(28, 41, 71, 0.6);
+  --border-color: rgba(51, 65, 85, 0.6);
+  --border-hover: rgba(71, 85, 105, 1);
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --header-bg: rgba(15, 23, 42, 0.85);
+
+  /* Brand colors as CSS vars */
+  --yala-indigo: #6366F1;
+  --yala-cyan: #00F3FF;
+  --yala-pink: #FF0080;
+  --yala-teal: #00C2CB;
 }
 
 body.light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f9fafb;
-  --bg-card: #f3f4f6;
-  --border-color: #e5e7eb;
-  --border-hover: #d1d5db;
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
-  --header-bg: rgba(255, 255, 255, 0.8);
+  --bg-primary: #FAFAFC;
+  --bg-secondary: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --border-color: #E2E8F0;
+  --border-hover: #CBD5E1;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --header-bg: rgba(250, 250, 252, 0.85);
+}
+
+/* Backdrop blur for header */
+.header-blur {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Custom scrollbar for dark mode */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
 }
