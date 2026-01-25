@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] d9cfe97 feat(inbox): add Vision currency detection and smart navigation
 - [2026-01-24] f156c32 docs(qa): add QA scenarios for Image Input (Section 18)
 - [2026-01-24] 06bf36d feat(image): complete ImageSelectionView with PhotosPicker and OCR integration
 - [2026-01-24] 8b6509f feat(ocr): add ScreenshotList extractor with row clustering
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-24] e0bcc7b feat(panel): add image option to FAB menu
 - [2026-01-24] bf9175d feat(settings): add image input toggle and missing localizations
 - [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
-- [2026-01-24] 6883fad feat(panel): change welcome message to static panel title
 
 ## Completed in Current Phase
 
@@ -88,6 +88,17 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Optimización de cálculos** - N+1 queries eliminados en TrendsTabView, TagSpendingCalculator extraído como servicio, recordsSummary cacheado en ViewModel, onChange handlers consolidados
 
 ## Next Steps
+
+### Mejoras Vision API + Inbox (pendiente de refinamiento)
+
+Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesión:
+- [ ] Testing manual con imágenes reales de diferentes bancos
+- [ ] Ajustar prompt de Vision para mejor precisión en fechas relativas
+- [ ] Considerar fallback cuando Vision no detecta currency
+- [ ] UX: feedback visual mientras procesa imagen
+- [ ] Edge cases: qué pasa si InboxDraftEditSheet se cierra sin guardar
+
+---
 
 ### Fase 7.1: Acciones Rápidas en Transacciones ✅ COMPLETADA
 
@@ -197,16 +208,17 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Session Continuity
 
-Last session: 2026-01-24
-Stopped at: Mejoras de Export y fix de plantilla de importación
-Next step: V1.0 listo - continuar con V1.1 o más polish
+Last session: 2026-01-25
+Stopped at: Vision API currency detection + smart navigation (commit d9cfe97)
+Next step: Refinamiento y testing de Vision API + Inbox flow
 Resume file: N/A
 Resume context:
-- Fix plantilla importación: ahora usa @Query para cargar subcategorías correctamente
-- Export con periodo personalizado: DatePicker para seleccionar rango de fechas
-- Personalización: excluido "Personalizado" de periodo por defecto (no tiene sentido)
-- Fix crash share sheet: refactorizado a sheet(item:) pattern
-- Mensaje de éxito actualizado: no dice "compartido" ya que no sabemos si lo fue
+- Vision API ahora extrae currency de símbolos ($ → USD, € → EUR, S/ → PEN)
+- Auto-asigna cuenta cuando solo hay una con la divisa detectada
+- Navegación inteligente: 1 draft → edit sheet, múltiples → alert con link a inbox
+- Botón "Guardar" → "Aprobar luego"
+- Menú con Eliminar (permanente) y Rechazar (archivo) separados
+- Pendiente: testing con imágenes reales, edge cases, UX feedback
 
 ## V1.1 (Futuro)
 
