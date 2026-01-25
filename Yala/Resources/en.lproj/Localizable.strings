@@ -1134,6 +1134,10 @@
 "inbox.deleteMessage" = "This action cannot be undone.";
 "inbox.reject" = "Reject";
 "inbox.returnToPending" = "Return to pending";
+"inbox.discardChangesTitle" = "Discard changes?";
+"inbox.discardChanges" = "Discard";
+"inbox.keepEditing" = "Keep editing";
+"inbox.discardChangesMessage" = "You have unsaved changes that will be lost.";
 
 // MARK: - Image Input
 "image.title" = "Image";

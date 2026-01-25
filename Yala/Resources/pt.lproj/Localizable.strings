@@ -1134,6 +1134,10 @@
 "inbox.deleteMessage" = "Esta ação não pode ser desfeita.";
 "inbox.reject" = "Rejeitar";
 "inbox.returnToPending" = "Voltar para pendentes";
+"inbox.discardChangesTitle" = "Descartar alterações?";
+"inbox.discardChanges" = "Descartar";
+"inbox.keepEditing" = "Continuar editando";
+"inbox.discardChangesMessage" = "Suas alterações não salvas serão perdidas.";
 
 // MARK: - Image Input
 "image.title" = "Imagem";

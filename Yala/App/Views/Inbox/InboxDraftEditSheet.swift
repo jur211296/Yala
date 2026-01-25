@@ -52,9 +52,19 @@ struct InboxDraftEditSheet: View {
     @State private var duplicateTransaction: TransactionItem?
     @State private var shouldCreateDespiteDuplicate = false
     @State private var showDeleteConfirmation = false
+    @State private var showDiscardChangesAlert = false
 
     // Track initial status to prevent toolbar flash on reject
     @State private var initialStatus: DraftStatus = .pending
+
+    // Track initial values to detect unsaved changes
+    @State private var initialNote: String = ""
+    @State private var initialAmountString: String = ""
+    @State private var initialDate: Date = Date()
+    @State private var initialAccount: Account?
+    @State private var initialSubcategory: Subcategory?
+    @State private var initialTags: [Tag] = []
+    @State private var initialIsExpense: Bool = true
 
     // Callback for when draft is approved
     var onApproved: (() -> Void)?
@@ -85,6 +95,14 @@ struct InboxDraftEditSheet: View {
             .tint(Color.electricIndigo)
             .onAppear {
                 prefillFromDraft()
+            }
+            .alert(L10n.Inbox.discardChangesTitle, isPresented: $showDiscardChangesAlert) {
+                Button(L10n.Inbox.discardChanges, role: .destructive) {
+                    dismiss()
+                }
+                Button(L10n.Inbox.keepEditing, role: .cancel) {}
+            } message: {
+                Text(L10n.Inbox.discardChangesMessage)
             }
     }
 
@@ -226,7 +244,11 @@ struct InboxDraftEditSheet: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             YalaToolbarButton(systemName: "xmark") {
-                dismiss()
+                if hasUnsavedChanges() {
+                    showDiscardChangesAlert = true
+                } else {
+                    dismiss()
+                }
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -630,6 +652,32 @@ struct InboxDraftEditSheet: View {
             amountString = "0.00"
             isExpense = true // Default to expense
         }
+
+        // Save initial values for change detection
+        initialNote = note
+        initialAmountString = amountString
+        initialDate = transactionDate
+        initialAccount = selectedAccount
+        initialSubcategory = selectedSubcategory
+        initialTags = selectedTags
+        initialIsExpense = isExpense
+    }
+
+    private func hasUnsavedChanges() -> Bool {
+        // Compare current values with initial values
+        if note != initialNote { return true }
+        if amountString != initialAmountString { return true }
+        if !Calendar.current.isDate(transactionDate, inSameDayAs: initialDate) { return true }
+        if selectedAccount?.persistentModelID != initialAccount?.persistentModelID { return true }
+        if selectedSubcategory?.persistentModelID != initialSubcategory?.persistentModelID { return true }
+        if isExpense != initialIsExpense { return true }
+
+        // Compare tags by ID
+        let currentTagIDs = Set(selectedTags.map { $0.persistentModelID })
+        let initialTagIDs = Set(initialTags.map { $0.persistentModelID })
+        if currentTagIDs != initialTagIDs { return true }
+
+        return false
     }
 
     private func saveDraft() {

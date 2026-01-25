@@ -1747,6 +1747,18 @@ enum L10n {
         static var returnToPending: String {
             NSLocalizedString("inbox.returnToPending", comment: "")
         }
+        static var discardChangesTitle: String {
+            NSLocalizedString("inbox.discardChangesTitle", comment: "")
+        }
+        static var discardChanges: String {
+            NSLocalizedString("inbox.discardChanges", comment: "")
+        }
+        static var keepEditing: String {
+            NSLocalizedString("inbox.keepEditing", comment: "")
+        }
+        static var discardChangesMessage: String {
+            NSLocalizedString("inbox.discardChangesMessage", comment: "")
+        }
     }
 
     // MARK: - Voice Input

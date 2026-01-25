@@ -1134,6 +1134,10 @@
 "inbox.deleteMessage" = "Diese Aktion kann nicht rückgängig gemacht werden.";
 "inbox.reject" = "Ablehnen";
 "inbox.returnToPending" = "Zu ausstehend zurückkehren";
+"inbox.discardChangesTitle" = "Änderungen verwerfen?";
+"inbox.discardChanges" = "Verwerfen";
+"inbox.keepEditing" = "Weiter bearbeiten";
+"inbox.discardChangesMessage" = "Nicht gespeicherte Änderungen gehen verloren.";
 
 // MARK: - Image Input
 "image.title" = "Bild";

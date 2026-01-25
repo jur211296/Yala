@@ -1134,6 +1134,10 @@
 "inbox.deleteMessage" = "Questa azione non può essere annullata.";
 "inbox.reject" = "Rifiuta";
 "inbox.returnToPending" = "Torna a in sospeso";
+"inbox.discardChangesTitle" = "Annullare le modifiche?";
+"inbox.discardChanges" = "Annulla";
+"inbox.keepEditing" = "Continua a modificare";
+"inbox.discardChangesMessage" = "Le modifiche non salvate andranno perse.";
 
 // MARK: - Image Input
 "image.title" = "Immagine";
