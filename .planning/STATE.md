@@ -22,6 +22,8 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
+- [2026-01-24] 6883fad feat(panel): change welcome message to static panel title
 - [2026-01-24] 6e7753c feat(export): add custom period picker and fix share sheet crash
 - [2026-01-24] cad0eea fix(import): use @Query for subcategories in template generation
 - [2026-01-24] bfc1109 chore(project): update build settings and deployment target
@@ -30,8 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-24] 2761284 feat(import): add XLSX template download option
 - [2026-01-24] b0f3707 feat(export): add XLSXWriter for creating Excel files
 - [2026-01-24] 8af4c8d fix(import): convert Excel serial dates to ISO format in XLSX import
-- [2026-01-23] 9d8e1b7 fix(ui): onboarding logo, period sheets, and chart smoothing
-- [2026-01-23] ae80677 feat(personalization): add decimal places selector and currency format preference
 
 ## Completed in Current Phase
 
