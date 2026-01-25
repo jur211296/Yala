@@ -2,6 +2,26 @@
 
 App iOS de finanzas personales (SwiftUI) para registrar y entender gastos, cuentas, presupuestos y reportes con claridad.
 
+## Posicionamiento de Marca
+
+**Propuesta central:** "Finanzas sin esfuerzo" - Yala elimina el tedioso registro manual de gastos.
+
+**Significado del nombre:** "Yala" viene de "ya la hice" - sensación de logro sin esfuerzo extra.
+
+**Target:** Perú primero, luego hispanohablantes global.
+
+**Tono:** Cercano pero profesional. Simplicidad y confianza. Alejado del tono bancario tradicional.
+
+**Diferenciadores clave:**
+- OCR para recibos (fotos)
+- Reconocimiento de voz con IA
+- Atajos de iOS (Shortcuts/Siri)
+- Importación CSV/Excel
+- Personalización completa
+- Privacidad real (100% local)
+
+Ver `.planning/MARKETING.md` para estrategia completa.
+
 ## Stack
 
 - **Persistencia:** SwiftData
