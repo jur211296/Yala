@@ -1,91 +1,110 @@
 ---
 import type { Language } from '../i18n/translations';
-import { getTranslations } from '../i18n/translations';
+import { getTranslation } from '../i18n/translations';
 
 interface Props {
   lang: Language;
 }
 
 const { lang } = Astro.props;
-const t = getTranslations(lang);
+const t = getTranslation(lang);
 const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
 ---
 
-<main class="min-h-screen bg-primary">
+<main class="min-h-screen bg-yala-slate">
   <div class="max-w-3xl mx-auto px-6 py-24">
-    <a href={homeUrl} class="text-accent hover:text-accent-light transition-colors mb-8 block">
-      {t.privacyBackHome}
+    <a href={homeUrl} class="text-yala-indigo hover:text-yala-cyan transition-colors mb-8 inline-flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      {t.privacy.backHome}
     </a>
 
-    <div class="prose-container p-8 rounded-3xl">
-      <p class="text-muted text-sm mb-6">{t.privacyLastUpdate}</p>
+    <div class="prose-container p-8 rounded-3xl mt-8">
+      <p class="text-neutral-500 text-sm mb-6">{t.privacy.lastUpdate}</p>
 
-      <h1 class="text-3xl font-bold text-primary mb-8">{t.privacyH1}</h1>
+      <h1 class="text-3xl font-bold text-white mb-8">{t.privacy.h1}</h1>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyIntroTitle}</h2>
-        <p class="text-secondary leading-relaxed" set:html={t.privacyIntroText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')} />
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.introTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed" set:html={t.privacy.introText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')} />
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyDataTitle}</h2>
-        <p class="text-secondary leading-relaxed mb-4">{t.privacyDataIntro}</p>
-        <ul class="space-y-3 text-secondary">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.dataTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed mb-4">{t.privacy.dataIntro}</p>
+        <ul class="space-y-3 text-neutral-300">
           <li class="flex items-start gap-3">
-            <span class="text-accent mt-1">•</span>
-            <span set:html={t.privacyDataBullet1.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+            <span class="text-yala-cyan mt-1">●</span>
+            <span set:html={t.privacy.dataBullet1.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
           <li class="flex items-start gap-3">
-            <span class="text-accent mt-1">•</span>
-            <span set:html={t.privacyDataBullet2.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+            <span class="text-yala-cyan mt-1">●</span>
+            <span set:html={t.privacy.dataBullet2.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
           <li class="flex items-start gap-3">
-            <span class="text-accent mt-1">•</span>
-            <span set:html={t.privacyDataBullet3.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+            <span class="text-yala-cyan mt-1">●</span>
+            <span set:html={t.privacy.dataBullet3.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
         </ul>
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyIcloudTitle}</h2>
-        <p class="text-secondary leading-relaxed">{t.privacyIcloudText}</p>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.icloudTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed">{t.privacy.icloudText}</p>
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyAnalyticsTitle}</h2>
-        <p class="text-secondary leading-relaxed" set:html={t.privacyAnalyticsText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')} />
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.analyticsTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed" set:html={t.privacy.analyticsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyChangesTitle}</h2>
-        <p class="text-secondary leading-relaxed">{t.privacyChangesText}</p>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.changesTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed">{t.privacy.changesText}</p>
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-primary mb-3">{t.privacyContactTitle}</h2>
-        <p class="text-secondary leading-relaxed">
-          {t.privacyContactText} <a href="mailto:admin@neto.com.pe" class="text-accent hover:text-accent-light">admin@neto.com.pe</a>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.contactTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed">
+          {t.privacy.contactText} <a href="mailto:hola@yala.app" class="text-yala-cyan hover:text-yala-indigo transition-colors">hola@yala.app</a>
         </p>
       </section>
+
+      <!-- Trust badges -->
+      <div class="mt-12 pt-8 border-t border-neutral-700">
+        <div class="flex flex-wrap gap-6 justify-center text-neutral-400 text-sm">
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>100% Local</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>Sin servidores</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            </svg>
+            <span>iCloud Sync</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </main>
 
 <style>
-  .bg-primary { background-color: var(--bg-primary); }
-  .text-primary { color: var(--text-primary); }
-  .text-secondary { color: var(--text-secondary); }
-  .text-muted { color: var(--text-muted); }
-  .text-accent { color: #6366f1; }
-  .text-accent-light { color: #818cf8; }
-
   .prose-container {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: rgba(28, 41, 71, 0.6);
+    border: 1px solid rgba(51, 65, 85, 0.6);
   }
 
-  .prose-container strong {
-    color: var(--text-primary);
-    font-weight: 600;
+  .prose-container:hover {
+    border-color: rgba(71, 85, 105, 1);
   }
 </style>
