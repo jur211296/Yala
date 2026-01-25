@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-24] d96efd3 feat(ocr): add heuristic image classifier
 - [2026-01-24] 72ea0b4 feat(ocr): add Vision-based OCR service for text extraction
 - [2026-01-24] 6304e42 feat(panel): add image option to FAB menu
 - [2026-01-24] bf9175d feat(settings): add image input toggle and missing localizations
