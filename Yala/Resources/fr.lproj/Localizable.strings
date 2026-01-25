@@ -467,6 +467,7 @@
 "panel.greeting" = "Bonjour, %@";
 "panel.title" = "Panel de %@";
 "panel.fabVoice" = "Voix";
+"panel.fabImage" = "Image";
 "panel.fabManual" = "Manuel";
 
 "widget.today" = "Aujourd'hui";

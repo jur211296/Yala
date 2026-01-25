@@ -81,9 +81,13 @@ struct PanelView: View {
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
+
+    /// Image selection sheet
+    @State private var showImageSelection = false
 
     /// FAB menu expanded state
     @State private var showFABMenu = false
@@ -181,6 +185,9 @@ struct PanelView: View {
                 }
                 .sheet(isPresented: $showVoiceRecording) {
                     VoiceRecordingView()
+                }
+                .sheet(isPresented: $showImageSelection) {
+                    ImageSelectionView()
                 }
                 .sheet(isPresented: $showCustomPeriodPicker) {
                     CustomPeriodPickerSheet(
@@ -302,24 +309,45 @@ struct PanelView: View {
     @ViewBuilder
     private var newRecordFAB: some View {
         let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+        let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
+                                (voiceInputEnabled && !imageInputEnabled) ||
+                                (!voiceInputEnabled && imageInputEnabled)
 
-        if voiceInputEnabled && canUseVoiceInput {
+        if hasMultipleInputs && canUseVoiceInput {
             // Custom FAB with popup menu above
             VStack(alignment: .trailing, spacing: DS.Spacing.md) {
                 // Menu options (shown when expanded)
                 if showFABMenu {
                     VStack(spacing: DS.Spacing.sm) {
-                        fabMenuButton(
-                            icon: "waveform",
-                            text: L10n.Panel.fabVoice,
-                            color: .electricIndigo
-                        ) {
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
+                        // Voice option (if enabled)
+                        if voiceInputEnabled {
+                            fabMenuButton(
+                                icon: "waveform",
+                                text: L10n.Panel.fabVoice,
+                                color: .electricIndigo
+                            ) {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    showFABMenu = false
+                                }
+                                showVoiceRecording = true
                             }
-                            showVoiceRecording = true
                         }
 
+                        // Image option (if enabled)
+                        if imageInputEnabled {
+                            fabMenuButton(
+                                icon: "photo",
+                                text: L10n.Panel.fabImage,
+                                color: .orange
+                            ) {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    showFABMenu = false
+                                }
+                                showImageSelection = true
+                            }
+                        }
+
+                        // Manual option (always shown)
                         fabMenuButton(
                             icon: "square.and.pencil",
                             text: L10n.Panel.fabManual,
@@ -358,6 +386,7 @@ struct PanelView: View {
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         } else {
+            // Simple FAB (no special inputs enabled)
             Button {
                 if canUseVoiceInput {
                     showNewTransaction = true

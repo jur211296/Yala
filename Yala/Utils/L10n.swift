@@ -32,6 +32,9 @@ enum L10n {
         static var fabVoice: String {
             NSLocalizedString("panel.fabVoice", comment: "")
         }
+        static var fabImage: String {
+            NSLocalizedString("panel.fabImage", comment: "")
+        }
         static var fabManual: String {
             NSLocalizedString("panel.fabManual", comment: "")
         }

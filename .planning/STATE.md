@@ -22,6 +22,8 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-24] 6304e42 feat(panel): add image option to FAB menu
+- [2026-01-24] bf9175d feat(settings): add image input toggle and missing localizations
 - [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
 - [2026-01-24] 6883fad feat(panel): change welcome message to static panel title
 - [2026-01-24] 6e7753c feat(export): add custom period picker and fix share sheet crash
