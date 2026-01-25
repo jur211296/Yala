@@ -22,6 +22,9 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
+- [2026-01-25] d3e8c17 feat(inbox): navigate to Inbox when closing draft edit sheet
+- [2026-01-25] 49c7abc feat(inbox): add validation message and capsule buttons in edit sheet
 - [2026-01-25] f2040bd chore: improve commit-one to update work documents and mark 6.3 complete
 - [2026-01-25] 1312846 feat(inbox): add discard changes confirmation when closing edit sheet
 - [2026-01-25] ff9bf1b fix(inbox): show amounts with decimals for consistency
@@ -30,8 +33,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-24] f156c32 docs(qa): add QA scenarios for Image Input (Section 18)
 - [2026-01-24] 06bf36d feat(image): complete ImageSelectionView with PhotosPicker and OCR integration
 - [2026-01-24] 8b6509f feat(ocr): add ScreenshotList extractor with row clustering
-- [2026-01-24] dacfa11 feat(ocr): add ScreenshotSingle extractor with amount and date parsers
-- [2026-01-24] b702f7d feat(ocr): add heuristic image classifier
 
 ## Completed in Current Phase
 
@@ -209,14 +210,13 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Item 6.3 completado - confirmación al cerrar InboxDraftEditSheet con cambios (commit 1312846)
-Next step: Siguiente item UX Crítico del REFINAMIENTO-8.3-8.4.md (6.1/6.2: campos obligatorios claros)
+Stopped at: Item 3.2 completado - pantalla de resultado con contador de drafts en ImageSelectionView (commit 7b65b05)
+Next step: Siguiente item UX del REFINAMIENTO-8.3-8.4.md (2.1: permitir crear draft sin monto o 6.5: ver rawText)
 Resume file: N/A
 Resume context:
-- Item 6.3 implementado: hasUnsavedChanges() detecta cambios, alerta antes de cerrar
-- Bugs 7.6 y 7.7 ya estaban completados
-- Comando /commit-one mejorado para actualizar documentos de trabajo
-- Siguiente bloque: UX Crítico (6.1/6.2, 5.4, 7.2)
+- Items completados hoy: 6.1/6.2, 6.3, 5.4, 3.2
+- 3.2 incluye: resultView con contador, botón Revisar/Ir al Inbox, sin alert
+- Siguiente bloque UX Importante: 2.1, 6.5, 8.1/8.2
 
 ## V1.1 (Futuro)
 

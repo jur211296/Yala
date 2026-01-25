@@ -31,7 +31,7 @@
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
 | 3.1 | Preview de imagen mientras procesa | UX | Pendiente |
-| 3.2 | Contador de drafts detectados antes de navegar | UX | Pendiente |
+| 3.2 | Contador de drafts detectados antes de navegar | UX | ✅ Completado (7b65b05) |
 | 3.3 | Sin transacciones → ¿crear draft manual con imagen como referencia? | UX | Pendiente |
 | 3.4 | Cancelar durante procesamiento OCR | UX | Pendiente |
 | 3.5 | Selección múltiple de imágenes | Feature | Pendiente |
@@ -56,7 +56,7 @@
 | 5.1 | 1 draft → edit sheet directo vs ir a Inbox siempre | UX | Pendiente |
 | 5.2 | N drafts → alert con opciones | UX | Implementado |
 | 5.3 | Toast/confirmación visual de draft creado | UX | Pendiente |
-| 5.4 | Volver atrás después de crear → ¿a dónde va? ¿se pierde? | UX | Pendiente |
+| 5.4 | Volver atrás después de crear → ¿a dónde va? ¿se pierde? | UX | ✅ Completado (d3e8c17) |
 
 ---
 
@@ -138,11 +138,11 @@
 ### UX Crítico
 - [x] 6.3 - Cerrar sheet sin guardar → confirmación (1312846)
 - [x] 6.1/6.2 - Campos obligatorios claros + validación (49c7abc)
-- [ ] 5.4 - Navegación clara post-crear
+- [x] 5.4 - Navegación clara post-crear (d3e8c17)
 - [ ] 7.2 - Indicador de drafts incompletos
 
 ### UX Importante
-- [ ] 3.2 - Contador de drafts en imagen
+- [x] 3.2 - Contador de drafts en imagen (7b65b05)
 - [ ] 2.1 - Sin monto → permitir crear draft
 - [ ] 6.5 - Ver rawText en edición
 - [ ] 8.1/8.2 - Feedback post-aprobar
