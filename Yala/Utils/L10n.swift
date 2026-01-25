@@ -1797,6 +1797,44 @@ enum L10n {
             NSLocalizedString("voice.errorNoAmount", comment: "")
         }
     }
+
+    // MARK: - Image Input
+
+    enum Image {
+        static var title: String {
+            NSLocalizedString("image.title", comment: "")
+        }
+        static var selectTitle: String {
+            NSLocalizedString("image.selectTitle", comment: "")
+        }
+        static var selectSubtitle: String {
+            NSLocalizedString("image.selectSubtitle", comment: "")
+        }
+        static var selectButton: String {
+            NSLocalizedString("image.selectButton", comment: "")
+        }
+        static var processing: String {
+            NSLocalizedString("image.processing", comment: "")
+        }
+        static var processingSubtitle: String {
+            NSLocalizedString("image.processingSubtitle", comment: "")
+        }
+        static var errorTitle: String {
+            NSLocalizedString("image.errorTitle", comment: "")
+        }
+        static var errorLoad: String {
+            NSLocalizedString("image.errorLoad", comment: "")
+        }
+        static var errorNoData: String {
+            NSLocalizedString("image.errorNoData", comment: "")
+        }
+        static var errorUnrecognized: String {
+            NSLocalizedString("image.errorUnrecognized", comment: "")
+        }
+        static var errorGeneric: String {
+            NSLocalizedString("image.errorGeneric", comment: "")
+        }
+    }
 }
 
 // MARK: - App Locale

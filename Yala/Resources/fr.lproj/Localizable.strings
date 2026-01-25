@@ -1128,3 +1128,16 @@
 "inbox.createAnyway" = "Create anyway";
 "inbox.deleteConfirmMessage" = "Delete %d draft(s)?";
 "inbox.approveableCount" = "%d of %d ready to approve";
+
+// MARK: - Image Input
+"image.title" = "Image";
+"image.selectTitle" = "Sélectionnez une image";
+"image.selectSubtitle" = "Scannez des captures d'écran bancaires ou des reçus pour créer des transactions automatiquement.";
+"image.selectButton" = "Sélectionner l'image";
+"image.processing" = "Traitement...";
+"image.processingSubtitle" = "Extraction des données de l'image";
+"image.errorTitle" = "Erreur";
+"image.errorLoad" = "Impossible de charger l'image";
+"image.errorNoData" = "Aucune transaction détectée dans l'image";
+"image.errorUnrecognized" = "Type d'image non reconnu";
+"image.errorGeneric" = "Erreur lors du traitement de l'image";
