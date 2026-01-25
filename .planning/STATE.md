@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-24] 06bf36d feat(image): complete ImageSelectionView with PhotosPicker and OCR integration
 - [2026-01-24] 8b6509f feat(ocr): add ScreenshotList extractor with row clustering
 - [2026-01-24] dacfa11 feat(ocr): add ScreenshotSingle extractor with amount and date parsers
 - [2026-01-24] b702f7d feat(ocr): add heuristic image classifier
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
 - [2026-01-24] 6883fad feat(panel): change welcome message to static panel title
 - [2026-01-24] 6e7753c feat(export): add custom period picker and fix share sheet crash
-- [2026-01-24] cad0eea fix(import): use @Query for subcategories in template generation
 
 ## Completed in Current Phase
 
