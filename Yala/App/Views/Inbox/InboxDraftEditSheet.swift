@@ -45,6 +45,9 @@ struct InboxDraftEditSheet: View {
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
 
+    // Raw text expansion
+    @State private var showRawText = false
+
     // Alert states
     @State private var showApproveError = false
     @State private var approveErrorMessage = ""
@@ -421,19 +424,51 @@ struct InboxDraftEditSheet: View {
     }
 
     private var sourceIndicator: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: draft.sourceIcon)
-                .font(.caption)
-            Text(sourceTypeName)
-                .font(.caption)
+        VStack(spacing: DS.Spacing.sm) {
+            // Source type button (tap to expand/collapse rawText)
+            Button {
+                if draft.rawText != nil {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showRawText.toggle()
+                    }
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: draft.sourceIcon)
+                        .font(.caption)
+                    Text(sourceTypeName)
+                        .font(.caption)
+                    if draft.rawText != nil {
+                        Image(systemName: showRawText ? "chevron.up" : "chevron.down")
+                            .font(.caption2)
+                    }
+                }
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(
+                    Capsule()
+                        .fill(Color(UIColor.label).opacity(0.05))
+                )
+            }
+            .buttonStyle(.plain)
+
+            // Expandable rawText
+            if showRawText, let rawText = draft.rawText, !rawText.isEmpty {
+                Text(rawText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .frame(maxWidth: 280)
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                            .fill(Color(UIColor.label).opacity(0.03))
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
         }
-        .foregroundStyle(.tertiary)
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.xs)
-        .background(
-            Capsule()
-                .fill(Color(UIColor.label).opacity(0.05))
-        )
     }
 
     private var sourceTypeName: String {

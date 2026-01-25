@@ -18,7 +18,7 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 2.1 | Sin monto detectado → ¿permitir crear draft igual para editar después? | UX | Pendiente |
+| 2.1 | Sin monto detectado → ¿permitir crear draft igual para editar después? | UX | ❌ Descartado |
 | 2.2 | Confirmación antes de procesar (preview duración) | UX | Pendiente |
 | 2.3 | Cancelar durante procesamiento STT/LLM | UX | Pendiente |
 | 2.4 | Múltiples drafts de una grabación ("50 en café y 100 en uber") | Feature | Pendiente |
@@ -68,7 +68,7 @@
 | 6.2 | Validación al intentar aprobar (mensaje o botón deshabilitado) | UX | ✅ Completado (49c7abc) |
 | 6.3 | Cerrar sheet sin guardar → confirmación "¿Descartar cambios?" | Edge case | ✅ Completado (1312846) |
 | 6.4 | Editar monto con signo → toggle gasto/ingreso claro | UX | Pendiente |
-| 6.5 | Ver texto original (rawText) para verificar | UX | Pendiente |
+| 6.5 | Ver texto original (rawText) para verificar | UX | ✅ Completado |
 | 6.6 | Confidence indicators → ¿son útiles para el usuario? | UX | Pendiente |
 | 6.7 | Quick actions (duplicar draft, dividir en múltiples) | Feature | Pendiente |
 
@@ -79,7 +79,7 @@
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
 | 7.1 | Ordenar por prioridad (completos vs incompletos) | UX | Pendiente |
-| 7.2 | Indicador visual de campos faltantes en cada celda | UX | Pendiente |
+| 7.2 | Indicador visual de campos faltantes en cada celda | UX | ✅ Ya implementado |
 | 7.3 | Bulk actions → ¿es descubrible? | UX | Pendiente |
 | 7.4 | Filtros útiles (Pendientes/Archivados) | UX | Pendiente |
 | 7.5 | Empty state instructivo | UX | Pendiente |
@@ -139,12 +139,12 @@
 - [x] 6.3 - Cerrar sheet sin guardar → confirmación (1312846)
 - [x] 6.1/6.2 - Campos obligatorios claros + validación (49c7abc)
 - [x] 5.4 - Navegación clara post-crear (d3e8c17)
-- [ ] 7.2 - Indicador de drafts incompletos
+- [x] 7.2 - Indicador de drafts incompletos (ya implementado en InboxDraftRowView)
 
 ### UX Importante
 - [x] 3.2 - Contador de drafts en imagen (7b65b05)
-- [ ] 2.1 - Sin monto → permitir crear draft
-- [ ] 6.5 - Ver rawText en edición
+- [x] 2.1 - Sin monto → permitir crear draft (descartado - re-grabar es mejor UX)
+- [x] 6.5 - Ver rawText en edición
 - [ ] 8.1/8.2 - Feedback post-aprobar
 
 ### Features deseables
