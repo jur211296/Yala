@@ -20,6 +20,10 @@ struct VoiceRecordingView: View {
     @State private var isProcessing = false
     @State private var processingStatus: String = ""
     @State private var createdDraft: InboxDraft?
+    @State private var draftWasApproved = false
+
+    /// Callback when draft is saved but not approved (user should go to Inbox)
+    var onSavedToInbox: (() -> Void)?
 
     private var voiceLanguage: VoiceLanguage {
         VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
@@ -64,8 +68,21 @@ struct VoiceRecordingView: View {
             .interactiveDismissDisabled(recorder.state != .idle || createdDraft != nil)
             .sheet(item: $createdDraft) { draft in
                 InboxDraftEditSheet(draft: draft) {
-                    // onApproved callback - dismiss voice view
+                    // onApproved callback - mark as approved and dismiss voice view
+                    draftWasApproved = true
                     dismiss()
+                }
+            }
+            .onChange(of: createdDraft) { oldValue, newValue in
+                // Detect when EditSheet is dismissed (draft becomes nil)
+                if oldValue != nil && newValue == nil && !draftWasApproved {
+                    // Draft was saved but not approved - navigate to Inbox
+                    onSavedToInbox?()
+                    dismiss()
+                }
+                // Reset flag for next use
+                if newValue == nil {
+                    draftWasApproved = false
                 }
             }
         }

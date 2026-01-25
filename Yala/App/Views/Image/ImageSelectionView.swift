@@ -23,10 +23,14 @@ struct ImageSelectionView: View {
 
     // Navigation for single draft (direct edit)
     @State private var createdDraft: InboxDraft?
+    @State private var draftWasApproved = false
 
     // Navigation for multiple drafts (alert)
     @State private var showMultipleDraftsAlert = false
     @State private var multipleDraftsCount = 0
+
+    /// Callback when draft is saved but not approved (user should go to Inbox)
+    var onSavedToInbox: (() -> Void)?
 
     // Vision API service (online, preferred)
     private let visionService = ImageVisionService.shared
@@ -77,7 +81,23 @@ struct ImageSelectionView: View {
                 InboxView()
             }
             .sheet(item: $createdDraft) { draft in
-                InboxDraftEditSheet(draft: draft)
+                InboxDraftEditSheet(draft: draft) {
+                    // onApproved callback - mark as approved and dismiss image view
+                    draftWasApproved = true
+                    dismiss()
+                }
+            }
+            .onChange(of: createdDraft) { oldValue, newValue in
+                // Detect when EditSheet is dismissed (draft becomes nil)
+                if oldValue != nil && newValue == nil && !draftWasApproved {
+                    // Draft was saved but not approved - navigate to Inbox
+                    onSavedToInbox?()
+                    dismiss()
+                }
+                // Reset flag for next use
+                if newValue == nil {
+                    draftWasApproved = false
+                }
             }
             .alert(L10n.Image.transactionsDetected, isPresented: $showMultipleDraftsAlert) {
                 Button(L10n.Image.goToInbox) {

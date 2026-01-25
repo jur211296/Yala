@@ -85,9 +85,11 @@ struct PanelView: View {
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
+    @State private var navigateToInboxAfterVoice = false
 
     /// Image selection sheet
     @State private var showImageSelection = false
+    @State private var navigateToInboxAfterImage = false
 
     /// FAB menu expanded state
     @State private var showFABMenu = false
@@ -183,11 +185,25 @@ struct PanelView: View {
                         prefillSubcategoryName: prefillSubcategoryName
                     )
                 }
-                .sheet(isPresented: $showVoiceRecording) {
-                    VoiceRecordingView()
+                .sheet(isPresented: $showVoiceRecording, onDismiss: {
+                    if navigateToInboxAfterVoice {
+                        navigateToInboxAfterVoice = false
+                        showInbox = true
+                    }
+                }) {
+                    VoiceRecordingView(onSavedToInbox: {
+                        navigateToInboxAfterVoice = true
+                    })
                 }
-                .sheet(isPresented: $showImageSelection) {
-                    ImageSelectionView()
+                .sheet(isPresented: $showImageSelection, onDismiss: {
+                    if navigateToInboxAfterImage {
+                        navigateToInboxAfterImage = false
+                        showInbox = true
+                    }
+                }) {
+                    ImageSelectionView(onSavedToInbox: {
+                        navigateToInboxAfterImage = true
+                    })
                 }
                 .sheet(isPresented: $showCustomPeriodPicker) {
                     CustomPeriodPickerSheet(
