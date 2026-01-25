@@ -22,20 +22,16 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-24] d96efd3 feat(ocr): add heuristic image classifier
-- [2026-01-24] 72ea0b4 feat(ocr): add Vision-based OCR service for text extraction
-- [2026-01-24] 6304e42 feat(panel): add image option to FAB menu
+- [2026-01-24] 8b6509f feat(ocr): add ScreenshotList extractor with row clustering
+- [2026-01-24] dacfa11 feat(ocr): add ScreenshotSingle extractor with amount and date parsers
+- [2026-01-24] b702f7d feat(ocr): add heuristic image classifier
+- [2026-01-24] fc1e9ff feat(ocr): add Vision-based OCR service for text extraction
+- [2026-01-24] e0bcc7b feat(panel): add image option to FAB menu
 - [2026-01-24] bf9175d feat(settings): add image input toggle and missing localizations
 - [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
 - [2026-01-24] 6883fad feat(panel): change welcome message to static panel title
 - [2026-01-24] 6e7753c feat(export): add custom period picker and fix share sheet crash
 - [2026-01-24] cad0eea fix(import): use @Query for subcategories in template generation
-- [2026-01-24] bfc1109 chore(project): update build settings and deployment target
-- [2026-01-24] e9e302d fix(i18n): update export success messages to be format-agnostic
-- [2026-01-24] 3e0addf feat(export): add XLSX export option
-- [2026-01-24] 2761284 feat(import): add XLSX template download option
-- [2026-01-24] b0f3707 feat(export): add XLSXWriter for creating Excel files
-- [2026-01-24] 8af4c8d fix(import): convert Excel serial dates to ISO format in XLSX import
 
 ## Completed in Current Phase
 
