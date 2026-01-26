@@ -67,6 +67,9 @@ struct InboxBulkActionsSheet: View {
     let filter: InboxFilter
     let onComplete: () -> Void
 
+    /// Callback for navigating to Records tab
+    var onNavigateToRecords: (() -> Void)?
+
     private var availableOptions: [InboxBulkOption] {
         switch filter {
         case .pending:
@@ -88,60 +91,79 @@ struct InboxBulkActionsSheet: View {
     @State private var selectedAccount: Account?
     @State private var selectedSubcategory: Subcategory?
 
+    // Bulk approve success
+    @State private var showBulkSuccessView = false
+    @State private var bulkApprovedCount = 0
+
     private var approveableCount: Int {
         selectedDrafts.filter { $0.isReadyToApprove }.count
     }
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            Group {
+                if showBulkSuccessView {
+                    InboxBulkApproveSuccessView(
+                        approvedCount: bulkApprovedCount,
+                        onViewRecords: {
+                            onNavigateToRecords?()
+                            finishEditing()
+                        },
+                        onBackToInbox: {
+                            finishEditing()
+                        }
+                    )
+                } else {
+                    ZStack {
+                        PanelBackgroundView()
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        // Header with count
-                        Text(L10n.Inbox.selectedCount(selectedDrafts.count))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ScrollView {
+                            VStack(spacing: DS.Spacing.xxl) {
+                                // Header with count
+                                Text(L10n.Inbox.selectedCount(selectedDrafts.count))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                        // Options list
-                        SectionBox(title: "") {
-                            VStack(spacing: 0) {
-                                ForEach(Array(availableOptions.enumerated()), id: \.element.id) { index, option in
-                                    if index > 0 {
-                                        SubsectionDivider()
+                                // Options list
+                                SectionBox(title: "") {
+                                    VStack(spacing: 0) {
+                                        ForEach(Array(availableOptions.enumerated()), id: \.element.id) { index, option in
+                                            if index > 0 {
+                                                SubsectionDivider()
+                                            }
+
+                                            bulkOptionRow(option)
+                                        }
                                     }
-
-                                    bulkOptionRow(option)
                                 }
+
+                                // Applied changes summary
+                                if !appliedChanges.isEmpty {
+                                    appliedChangesSummary
+                                }
+                            }
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.Spacing.xxl)
+                        }
+                    }
+                    .navigationTitle(L10n.Action.edit)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            YalaToolbarButton(systemName: "xmark") {
+                                finishEditing()
                             }
                         }
 
-                        // Applied changes summary
                         if !appliedChanges.isEmpty {
-                            appliedChangesSummary
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button(L10n.Action.done) {
+                                    finishEditing()
+                                }
+                                .fontWeight(.semibold)
+                            }
                         }
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
-                }
-            }
-            .navigationTitle(L10n.Action.edit)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
-                        finishEditing()
-                    }
-                }
-
-                if !appliedChanges.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Action.done) {
-                            finishEditing()
-                        }
-                        .fontWeight(.semibold)
                     }
                 }
             }
@@ -289,6 +311,8 @@ struct InboxBulkActionsSheet: View {
     }
 
     private func approveSelected() {
+        var approvedCount = 0
+
         for draft in selectedDrafts where draft.isReadyToApprove {
             guard let account = draft.account,
                   let amount = draft.amount,
@@ -307,11 +331,29 @@ struct InboxBulkActionsSheet: View {
 
             modelContext.insert(transaction)
 
+            // Cache display values BEFORE changing status
+            draft.cachedAccountName = account.name
+            draft.cachedSubcategoryName = subcategory.name
+            draft.cachedCategoryColorHex = subcategory.category.colorHex
+            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+            draft.cachedCurrencyCode = account.currencyCode
+
             draft.status = .approved
+            draft.approvedTransaction = transaction
             draft.updatedAt = Date()
+            approvedCount += 1
         }
+
         saveChanges()
         appliedChanges.insert(.approve)
+
+        // Show bulk success view
+        if approvedCount > 0 {
+            bulkApprovedCount = approvedCount
+            withAnimation(.easeOut(duration: 0.3)) {
+                showBulkSuccessView = true
+            }
+        }
     }
 
     private func rejectSelected() {

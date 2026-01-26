@@ -2212,6 +2212,20 @@ Bandeja para borradores de transacciones generados por extractores (voz, imagen,
 | 16.28 | Aprobar con algunos inválidos | Mezcla de válidos e inválidos | Solo válidos se aprueban, muestra conteo |
 | 16.29 | Eliminar varios | Seleccionar → Eliminar | Confirmación → todos rejected |
 
+### Escenarios de Pantalla de Éxito (8.1/8.2)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.30 | Aprobar desde editor | Completar campos + Tap "Aprobar" | Pantalla éxito con checkmark, detalles de transacción |
+| 16.31 | Editar desde éxito | Tap "Editar" en pantalla éxito | Abre NewTransactionView con la transacción |
+| 16.32 | Aceptar desde éxito | Tap "Aceptar" en pantalla éxito | Vuelve a InboxView |
+| 16.33 | Aprobar siguiente | Con otro draft pending, tap "Aprobar siguiente" | Abre editor del siguiente draft |
+| 16.34 | Aprobar siguiente (único) | Sin más drafts, verificar | Botón "Aprobar siguiente" no visible |
+| 16.35 | Swipe approve con éxito | Swipe derecha en draft válido | Pantalla éxito aparece como sheet |
+| 16.36 | Bulk approve éxito | Aprobar 3 drafts en lote | Pantalla éxito con "3 transacciones creadas" |
+| 16.37 | Ver en registros desde bulk | Tap "Ver en registros" en éxito bulk | Cierra Inbox, navega a Statistics |
+| 16.38 | Volver a bandeja desde bulk | Tap "Volver a bandeja" en éxito bulk | Cierra sheet, queda en InboxView |
+
 ### Validaciones de UI
 
 | Elemento | Verificación |

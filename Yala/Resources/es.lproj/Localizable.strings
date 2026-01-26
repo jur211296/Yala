@@ -1138,6 +1138,12 @@
 "inbox.discardChanges" = "Descartar";
 "inbox.keepEditing" = "Seguir editando";
 "inbox.discardChangesMessage" = "Tienes cambios sin guardar que se perderán.";
+"inbox.approveSuccess" = "Transacción creada";
+"inbox.approveNext" = "Aprobar siguiente";
+"inbox.transactionCreated" = "transacción creada";
+"inbox.transactionsCreated" = "transacciones creadas";
+"inbox.viewInRecords" = "Ver en registros";
+"inbox.backToInbox" = "Volver a bandeja";
 
 // MARK: - Image Input
 "image.title" = "Imagen";

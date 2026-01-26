@@ -218,7 +218,9 @@ struct PanelView: View {
                     }
                 }
                 .sheet(isPresented: $showInbox) {
-                    InboxView()
+                    InboxView(onNavigateToRecords: {
+                        navigateToStatistics(.records)
+                    })
                 }
         }
         .onAppear {

@@ -1138,6 +1138,12 @@
 "inbox.discardChanges" = "Annulla";
 "inbox.keepEditing" = "Continua a modificare";
 "inbox.discardChangesMessage" = "Le modifiche non salvate andranno perse.";
+"inbox.approveSuccess" = "Transazione creata";
+"inbox.approveNext" = "Approva successiva";
+"inbox.transactionCreated" = "transazione creata";
+"inbox.transactionsCreated" = "transazioni create";
+"inbox.viewInRecords" = "Visualizza nei registri";
+"inbox.backToInbox" = "Torna alla posta in arrivo";
 
 // MARK: - Image Input
 "image.title" = "Immagine";

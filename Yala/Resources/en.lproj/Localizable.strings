@@ -1138,6 +1138,12 @@
 "inbox.discardChanges" = "Discard";
 "inbox.keepEditing" = "Keep editing";
 "inbox.discardChangesMessage" = "You have unsaved changes that will be lost.";
+"inbox.approveSuccess" = "Transaction created";
+"inbox.approveNext" = "Approve next";
+"inbox.transactionCreated" = "transaction created";
+"inbox.transactionsCreated" = "transactions created";
+"inbox.viewInRecords" = "View in records";
+"inbox.backToInbox" = "Back to inbox";
 
 // MARK: - Image Input
 "image.title" = "Image";

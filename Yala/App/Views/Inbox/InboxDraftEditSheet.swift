@@ -21,6 +21,13 @@ struct InboxDraftEditSheet: View {
 
     @Bindable var draft: InboxDraft
 
+    // Query for pending drafts (to enable "Approve Next")
+    @Query(
+        filter: #Predicate<InboxDraft> { $0.statusRaw == "pending" },
+        sort: \InboxDraft.createdAt,
+        order: .reverse
+    ) private var pendingDrafts: [InboxDraft]
+
     // MARK: - State
 
     @State private var note: String = ""
@@ -69,8 +76,15 @@ struct InboxDraftEditSheet: View {
     @State private var initialTags: [Tag] = []
     @State private var initialIsExpense: Bool = true
 
-    // Callback for when draft is approved
+    // Success view state
+    @State private var showSuccessView = false
+    @State private var approvedTransaction: TransactionItem?
+    @State private var successData: InboxApproveSuccessData?
+
+    // Callbacks
     var onApproved: (() -> Void)?
+    var onApproveNext: ((InboxDraft) -> Void)?
+    var onEditTransaction: ((TransactionItem) -> Void)?
 
     // MARK: - Computed
 
@@ -100,22 +114,64 @@ struct InboxDraftEditSheet: View {
         return isExpense ? Color.hotPink : Color.electricIndigo
     }
 
+    /// Next pending draft (excluding current one)
+    private var nextPendingDraft: InboxDraft? {
+        pendingDrafts.first { $0.persistentModelID != draft.persistentModelID }
+    }
+
     // MARK: - Body
 
     var body: some View {
-        mainNavigationStack
-            .tint(Color.electricIndigo)
-            .onAppear {
-                prefillFromDraft()
+        Group {
+            if showSuccessView, let data = successData {
+                InboxApproveSuccessView(
+                    data: data,
+                    hasNextDraft: nextPendingDraft != nil,
+                    onEdit: {
+                        if let transaction = approvedTransaction {
+                            onEditTransaction?(transaction)
+                        }
+                        dismiss()
+                    },
+                    onAccept: {
+                        onApproved?()
+                        dismiss()
+                    },
+                    onApproveNext: {
+                        if let next = nextPendingDraft {
+                            onApproveNext?(next)
+                        }
+                        dismiss()
+                    }
+                )
+            } else {
+                mainNavigationStack
             }
-            .alert(L10n.Inbox.discardChangesTitle, isPresented: $showDiscardChangesAlert) {
-                Button(L10n.Inbox.discardChanges, role: .destructive) {
-                    dismiss()
-                }
-                Button(L10n.Inbox.keepEditing, role: .cancel) {}
-            } message: {
-                Text(L10n.Inbox.discardChangesMessage)
+        }
+        .id(draft.persistentModelID)  // Force new view when draft changes
+        .tint(Color.electricIndigo)
+        .onAppear {
+            // Reset success view state when appearing
+            showSuccessView = false
+            successData = nil
+            approvedTransaction = nil
+            prefillFromDraft()
+        }
+        .onChange(of: draft.persistentModelID) { _, _ in
+            // Reset state if draft changes (shouldn't happen, but safety)
+            showSuccessView = false
+            successData = nil
+            approvedTransaction = nil
+            prefillFromDraft()
+        }
+        .alert(L10n.Inbox.discardChangesTitle, isPresented: $showDiscardChangesAlert) {
+            Button(L10n.Inbox.discardChanges, role: .destructive) {
+                dismiss()
             }
+            Button(L10n.Inbox.keepEditing, role: .cancel) {}
+        } message: {
+            Text(L10n.Inbox.discardChangesMessage)
+        }
     }
 
     private var mainNavigationStack: some View {
@@ -834,8 +890,26 @@ struct InboxDraftEditSheet: View {
 
         do {
             try modelContext.save()
-            onApproved?()
-            dismiss()
+
+            // Prepare success view data
+            approvedTransaction = transaction
+            successData = InboxApproveSuccessData(
+                date: transactionDate,
+                accountName: account.name,
+                accountColorHex: account.colorHex,
+                note: note,
+                amount: finalAmount,
+                currencyCode: account.currencyCode,
+                subcategoryName: subcategory.name,
+                categoryName: subcategory.category.name,
+                categoryColorHex: subcategory.category.colorHex,
+                isExpense: isExpense
+            )
+
+            // Show success view with animation
+            withAnimation(.easeOut(duration: 0.3)) {
+                showSuccessView = true
+            }
         } catch {
             print("Error approving draft: \(error)")
         }

@@ -1759,6 +1759,24 @@ enum L10n {
         static var discardChangesMessage: String {
             NSLocalizedString("inbox.discardChangesMessage", comment: "")
         }
+        static var approveSuccess: String {
+            NSLocalizedString("inbox.approveSuccess", comment: "")
+        }
+        static var approveNext: String {
+            NSLocalizedString("inbox.approveNext", comment: "")
+        }
+        static var transactionCreated: String {
+            NSLocalizedString("inbox.transactionCreated", comment: "")
+        }
+        static var transactionsCreated: String {
+            NSLocalizedString("inbox.transactionsCreated", comment: "")
+        }
+        static var viewInRecords: String {
+            NSLocalizedString("inbox.viewInRecords", comment: "")
+        }
+        static var backToInbox: String {
+            NSLocalizedString("inbox.backToInbox", comment: "")
+        }
     }
 
     // MARK: - Voice Input

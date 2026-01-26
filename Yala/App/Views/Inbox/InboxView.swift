@@ -41,6 +41,9 @@ struct InboxView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("preferredCurrency") private var preferredCurrency: String = "PEN"
 
+    /// Callback for navigating to Records tab (bulk approve success)
+    var onNavigateToRecords: (() -> Void)?
+
     @State private var selectedFilter: InboxFilter = .pending
     @State private var selectedDraft: InboxDraft?
     @State private var selectedTransaction: TransactionItem?
@@ -50,9 +53,24 @@ struct InboxView: View {
     @State private var selectedDraftIDs: Set<PersistentIdentifier> = []
     @State private var showBulkActions = false
 
+    // Success view state (for swipe approve)
+    @State private var showSwipeSuccessView = false
+    @State private var swipeSuccessData: InboxApproveSuccessData?
+    @State private var swipeApprovedTransaction: TransactionItem?
+
+    // Pending next draft (for "Approve Next" flow)
+    @State private var pendingNextDraftID: PersistentIdentifier?
+
     // Query all drafts
     @Query(sort: \InboxDraft.createdAt, order: .reverse)
     private var allDrafts: [InboxDraft]
+
+    // Query for pending drafts (needed for "Approve Next")
+    @Query(
+        filter: #Predicate<InboxDraft> { $0.statusRaw == "pending" },
+        sort: \InboxDraft.createdAt,
+        order: .reverse
+    ) private var pendingDrafts: [InboxDraft]
 
 
     private var filteredDrafts: [InboxDraft] {
@@ -115,7 +133,32 @@ struct InboxView: View {
                 }
             }
             .sheet(item: $selectedDraft) { draft in
-                InboxDraftEditSheet(draft: draft)
+                InboxDraftEditSheet(
+                    draft: draft,
+                    onApproved: nil,
+                    onApproveNext: { nextDraft in
+                        // Store the ID and close sheet - onChange will open the next
+                        pendingNextDraftID = nextDraft.persistentModelID
+                    },
+                    onEditTransaction: { transaction in
+                        // Open transaction editor after sheet dismiss
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            selectedTransaction = transaction
+                        }
+                    }
+                )
+            }
+            .onChange(of: selectedDraft) { oldValue, newValue in
+                // When sheet closes and we have a pending next draft, open it
+                if oldValue != nil && newValue == nil, let nextID = pendingNextDraftID {
+                    pendingNextDraftID = nil
+                    // Find the draft by ID and open it
+                    if let nextDraft = pendingDrafts.first(where: { $0.persistentModelID == nextID }) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            selectedDraft = nextDraft
+                        }
+                    }
+                }
             }
             .sheet(item: $selectedTransaction) { transaction in
                 NewTransactionView(transactionToEdit: transaction)
@@ -126,8 +169,40 @@ struct InboxView: View {
                     filter: selectedFilter,
                     onComplete: {
                         exitSelectionMode()
+                    },
+                    onNavigateToRecords: {
+                        // Call parent's navigation callback and dismiss
+                        onNavigateToRecords?()
+                        dismiss()
                     }
                 )
+            }
+            .sheet(isPresented: $showSwipeSuccessView) {
+                if let data = swipeSuccessData {
+                    InboxApproveSuccessView(
+                        data: data,
+                        hasNextDraft: !pendingDrafts.isEmpty,
+                        onEdit: {
+                            showSwipeSuccessView = false
+                            if let transaction = swipeApprovedTransaction {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    selectedTransaction = transaction
+                                }
+                            }
+                        },
+                        onAccept: {
+                            showSwipeSuccessView = false
+                        },
+                        onApproveNext: {
+                            showSwipeSuccessView = false
+                            if let next = pendingDrafts.first {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    selectedDraft = next
+                                }
+                            }
+                        }
+                    )
+                }
             }
             .safeAreaInset(edge: .bottom) {
                 if isSelectionMode {
@@ -423,6 +498,22 @@ struct InboxView: View {
 
             do {
                 try modelContext.save()
+
+                // Prepare and show success view
+                swipeApprovedTransaction = transaction
+                swipeSuccessData = InboxApproveSuccessData(
+                    date: draft.effectiveDate,
+                    accountName: account.name,
+                    accountColorHex: account.colorHex,
+                    note: draft.note,
+                    amount: amount,
+                    currencyCode: account.currencyCode,
+                    subcategoryName: subcategory.name,
+                    categoryName: subcategory.category.name,
+                    categoryColorHex: subcategory.category.colorHex,
+                    isExpense: amount < 0
+                )
+                showSwipeSuccessView = true
             } catch {
                 print("Error approving draft: \(error)")
             }

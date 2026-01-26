@@ -92,10 +92,10 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 8.1 | Feedback al aprobar (toast, animación) | UX | Pendiente |
-| 8.2 | Navegación post-aprobar (¿lista? ¿cierra? ¿transacción?) | UX | Pendiente |
+| 8.1 | Feedback al aprobar (toast, animación) | UX | ✅ Completado |
+| 8.2 | Navegación post-aprobar (¿lista? ¿cierra? ¿transacción?) | UX | ✅ Completado |
 | 8.3 | Aprobar con campos mínimos (¿sin nota? ¿sin tags?) | Lógica | Pendiente |
-| 8.4 | Aprobar múltiples (bulk) → feedback y manejo de errores | UX | Pendiente |
+| 8.4 | Aprobar múltiples (bulk) → feedback y manejo de errores | UX | ✅ Completado |
 | 8.5 | Deshacer aprobación | Feature | Pendiente |
 
 ---
@@ -145,7 +145,7 @@
 - [x] 3.2 - Contador de drafts en imagen (7b65b05)
 - [x] 2.1 - Sin monto → permitir crear draft (descartado - re-grabar es mejor UX)
 - [x] 6.5 - Ver rawText en edición
-- [ ] 8.1/8.2 - Feedback post-aprobar
+- [x] 8.1/8.2 - Feedback post-aprobar (pantalla éxito con Editar/Aceptar/Aprobar siguiente)
 
 ### Features deseables
 - [ ] 2.4 - Múltiples drafts de una grabación
