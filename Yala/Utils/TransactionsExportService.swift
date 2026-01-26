@@ -406,7 +406,11 @@ struct TransactionsExportService {
 
         // 3) Unimos todas las líneas con salto de línea Unix.
         let csvString = lines.joined(separator: "\n")
-        return Data(csvString.utf8)
+
+        // 4) Prepend UTF-8 BOM for Excel compatibility with special characters
+        var csvData = Data([0xEF, 0xBB, 0xBF])  // UTF-8 BOM
+        csvData.append(Data(csvString.utf8))
+        return csvData
     }
 
     /// Escapa un valor para uso en CSV:

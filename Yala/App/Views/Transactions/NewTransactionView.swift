@@ -434,9 +434,11 @@ struct NewTransactionView: View {
 
     private var amountDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-            Text(currencySymbol)
-                .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
-                .foregroundStyle(viewModel.amountColor.opacity(0.7))
+            if let symbol = currencySymbol {
+                Text(symbol)
+                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
+                    .foregroundStyle(viewModel.amountColor.opacity(0.7))
+            }
 
             TextField("0.00", text: $viewModel.amountString)
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
@@ -512,9 +514,9 @@ struct NewTransactionView: View {
         return result
     }
 
-    /// Currency code for display (PEN, USD, EUR, etc.)
-    private var currencySymbol: String {
-        viewModel.effectiveCurrencyCode
+    /// Currency code for display (PEN, USD, EUR, etc.) - only when account is selected
+    private var currencySymbol: String? {
+        viewModel.effectiveAccount != nil ? viewModel.effectiveCurrencyCode : nil
     }
 
     // MARK: - Quick Actions Bar
@@ -1026,14 +1028,9 @@ struct NewTransactionView: View {
             return
         }
 
-        // If no prefill account, use account from last transaction
-        var accountToUse = prefillAccountID
-        if accountToUse == nil, let lastTransaction = transactions.first {
-            accountToUse = lastTransaction.account?.persistentModelID
-        }
-
+        // Only use explicitly provided prefill account (no fallback to last transaction)
         viewModel.prefill(
-            accountID: accountToUse,
+            accountID: prefillAccountID,
             categoryID: prefillCategoryID,
             subcategoryName: prefillSubcategoryName,
             accounts: accounts,

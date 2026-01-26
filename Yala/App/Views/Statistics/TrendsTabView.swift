@@ -486,32 +486,44 @@ struct TrendsTabView: View {
         !trendsViewModel.trendPoints.isEmpty
     }
 
+    /// Check if there's comparison data to display
+    private var hasComparisonData: Bool {
+        !currentPeriodPoints.isEmpty
+    }
+
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header with variation chip
-            HStack(alignment: .top) {
-                chartHeader
+            // Header with variation chip (only show full header when there's data)
+            if hasTrendData {
+                HStack(alignment: .top) {
+                    chartHeader
 
-                Spacer()
+                    Spacer()
 
-                // Variation chip with "vs period" text below (hidden for All Time or when no data)
-                if trendsViewModel.detailPeriod != .allTime && hasTrendData {
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        VariationChip(
-                            currentAmount: currentPeriodTotal,
-                            previousAmount: previousPeriodTotal,
-                            size: .medium,
-                            showNAWhenNil: true,
-                            isExpenseContext: trendsViewModel.selectedMetric == .expense
-                        )
+                    // Variation chip with "vs period" text below (hidden for All Time)
+                    if trendsViewModel.detailPeriod != .allTime {
+                        VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                            VariationChip(
+                                currentAmount: currentPeriodTotal,
+                                previousAmount: previousPeriodTotal,
+                                size: .medium,
+                                showNAWhenNil: true,
+                                isExpenseContext: trendsViewModel.selectedMetric == .expense
+                            )
 
-                        Text(comparisonPeriodText)
-                            .font(.caption2)
-                            .foregroundStyle(Color.yalaSecondaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            Text(comparisonPeriodText)
+                                .font(.caption2)
+                                .foregroundStyle(Color.yalaSecondaryText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        }
                     }
                 }
+            } else {
+                // Simple title when no data
+                Text(chartTitle)
+                    .font(.headline)
+                    .foregroundStyle(Color.yalaPrimaryText)
             }
 
             if hasTrendData {
@@ -557,6 +569,21 @@ struct TrendsTabView: View {
         .frame(height: 220)
     }
 
+    private var comparisonEmptyState: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Spacer()
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.system(size: 32))
+                .foregroundStyle(.secondary)
+            Text(L10n.Empty.noData)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 220)
+    }
+
     /// Dynamic title for period comparison card based on comparison mode
     private var periodComparisonTitle: String {
         switch sessionState.comparisonMode {
@@ -569,71 +596,82 @@ struct TrendsTabView: View {
 
     private var periodComparisonCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header with KPI and variation chip (same style as chartCard)
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(periodComparisonTitle)
-                        .font(.headline)
-                        .foregroundStyle(Color.yalaPrimaryText)
-
-                    // KPI value with "vs" previous (same as chartHeader)
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        Text(currentKPIValue)
-                            .font(.callout.weight(.bold))
+            // Header with KPI and variation chip (only show full header when there's data)
+            if hasComparisonData {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        Text(periodComparisonTitle)
+                            .font(.headline)
                             .foregroundStyle(Color.yalaPrimaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
 
-                        if let prevTotal = previousPeriodTotal {
-                            Text("vs \(YalaFormatter.number(value: prevTotal))")
-                                .font(.caption)
-                                .foregroundStyle(Color.yalaSecondaryText)
+                        // KPI value with "vs" previous
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                            Text(currentKPIValue)
+                                .font(.callout.weight(.bold))
+                                .foregroundStyle(Color.yalaPrimaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
+
+                            if let prevTotal = previousPeriodTotal {
+                                Text("vs \(YalaFormatter.number(value: prevTotal))")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.yalaSecondaryText)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+                            }
                         }
+                        .padding(.top, 4)
                     }
-                    .padding(.top, 4)
+
+                    Spacer()
+
+                    // Variation chip with "vs period" text below
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                        VariationChip(
+                            currentAmount: currentPeriodTotal,
+                            previousAmount: previousPeriodTotal,
+                            size: .medium,
+                            showNAWhenNil: true,
+                            isExpenseContext: trendsViewModel.selectedMetric == .expense
+                        )
+
+                        Text(comparisonPeriodText)
+                            .font(.caption2)
+                            .foregroundStyle(Color.yalaSecondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
                 }
-
-                Spacer()
-
-                // Variation chip with "vs period" text below
-                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                    VariationChip(
-                        currentAmount: currentPeriodTotal,
-                        previousAmount: previousPeriodTotal,
-                        size: .medium,
-                        showNAWhenNil: true,
-                        isExpenseContext: trendsViewModel.selectedMetric == .expense
-                    )
-
-                    Text(comparisonPeriodText)
-                        .font(.caption2)
-                        .foregroundStyle(Color.yalaSecondaryText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
+            } else {
+                // Simple title when no data
+                Text(periodComparisonTitle)
+                    .font(.headline)
+                    .foregroundStyle(Color.yalaPrimaryText)
             }
 
-            // Chart
-            PeriodComparisonChartView(
-                currentPeriodPoints: currentPeriodPoints,
-                previousPeriodPoints: previousPeriodPoints,
-                yDomain: comparisonYDomain,
-                grouping: .day,
-                currentInterval: trendsViewModel.currentInterval,
-                previousInterval: PreviousPeriodHelper.previousInterval(
-                    for: trendsViewModel.detailPeriod,
-                    mode: sessionState.comparisonMode,
-                    customRange: sessionState.customDateRange
-                ),
-                currencyCode: defaultCurrencyCode,
-                trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                chartHeight: 220,
-                period: trendsViewModel.detailPeriod,
-                comparisonMode: sessionState.comparisonMode
-            )
-            .padding(.top, DS.Spacing.sm)
+            // Chart or empty state
+            if hasComparisonData {
+                PeriodComparisonChartView(
+                    currentPeriodPoints: currentPeriodPoints,
+                    previousPeriodPoints: previousPeriodPoints,
+                    yDomain: comparisonYDomain,
+                    grouping: .day,
+                    currentInterval: trendsViewModel.currentInterval,
+                    previousInterval: PreviousPeriodHelper.previousInterval(
+                        for: trendsViewModel.detailPeriod,
+                        mode: sessionState.comparisonMode,
+                        customRange: sessionState.customDateRange
+                    ),
+                    currencyCode: defaultCurrencyCode,
+                    trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
+                    chartHeight: 220,
+                    period: trendsViewModel.detailPeriod,
+                    comparisonMode: sessionState.comparisonMode
+                )
+                .padding(.top, DS.Spacing.sm)
+            } else {
+                comparisonEmptyState
+            }
         }
         .padding(DS.Card.padding)
         .background(Color.yalaCard)

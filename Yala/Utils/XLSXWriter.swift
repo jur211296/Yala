@@ -241,7 +241,18 @@ enum XLSXWriter {
     }
 
     private static func escapeXML(_ string: String) -> String {
-        var escaped = string
+        // First, remove invalid XML characters (control chars except tab, newline, carriage return)
+        let validChars = string.unicodeScalars.filter { scalar in
+            let value = scalar.value
+            // Valid XML 1.0 chars: #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+            return value == 0x9 || value == 0xA || value == 0xD ||
+                   (value >= 0x20 && value <= 0xD7FF) ||
+                   (value >= 0xE000 && value <= 0xFFFD) ||
+                   (value >= 0x10000 && value <= 0x10FFFF)
+        }
+        var escaped = String(String.UnicodeScalarView(validChars))
+
+        // Then escape XML special characters
         escaped = escaped.replacingOccurrences(of: "&", with: "&amp;")
         escaped = escaped.replacingOccurrences(of: "<", with: "&lt;")
         escaped = escaped.replacingOccurrences(of: ">", with: "&gt;")
