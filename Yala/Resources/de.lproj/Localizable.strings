@@ -1099,6 +1099,11 @@
 "voice.parsing" = "Daten extrahieren...";
 "voice.saving" = "Speichern...";
 "voice.errorNoAmount" = "Betrag konnte nicht erkannt werden. Versuchen Sie es erneut.";
+"voice.errorNoApiKey" = "Verbindung zum Sprachdienst fehlgeschlagen. Versuchen Sie es später erneut.";
+"voice.errorNoConnection" = "Keine Internetverbindung. Versuchen Sie Bild (funktioniert offline).";
+"voice.errorMicPermission" = "Mikrofonberechtigung verweigert. Aktivieren Sie sie in den Einstellungen.";
+"voice.openSettings" = "Einstellungen öffnen";
+"voice.tryImage" = "Bild verwenden";
 
 // MARK: - Inbox
 "inbox.title" = "Posteingang";
@@ -1161,6 +1166,9 @@
 "image.errorNoData" = "Keine Transaktionen im Bild erkannt";
 "image.errorUnrecognized" = "Nicht erkannter Bildtyp";
 "image.errorGeneric" = "Fehler beim Verarbeiten des Bildes";
+"image.errorPhotoPermission" = "Fotoberechtigung verweigert. Aktivieren Sie sie in den Einstellungen.";
+"image.errorCorrupted" = "Bild konnte nicht verarbeitet werden. Versuchen Sie ein anderes Bild.";
+"image.openSettings" = "Einstellungen öffnen";
 "image.transactionDetected" = "Transaktion erkannt";
 "image.transactionsDetectedCount" = "Transaktionen erkannt";
 "image.reviewDraft" = "Überprüfen";

@@ -1852,6 +1852,21 @@ enum L10n {
         static var errorNoAmount: String {
             NSLocalizedString("voice.errorNoAmount", comment: "")
         }
+        static var errorNoApiKey: String {
+            NSLocalizedString("voice.errorNoApiKey", comment: "")
+        }
+        static var errorNoConnection: String {
+            NSLocalizedString("voice.errorNoConnection", comment: "")
+        }
+        static var errorMicPermission: String {
+            NSLocalizedString("voice.errorMicPermission", comment: "")
+        }
+        static var openSettings: String {
+            NSLocalizedString("voice.openSettings", comment: "")
+        }
+        static var tryImage: String {
+            NSLocalizedString("voice.tryImage", comment: "")
+        }
     }
 
     // MARK: - Image Input
@@ -1889,6 +1904,15 @@ enum L10n {
         }
         static var errorGeneric: String {
             NSLocalizedString("image.errorGeneric", comment: "")
+        }
+        static var errorPhotoPermission: String {
+            NSLocalizedString("image.errorPhotoPermission", comment: "")
+        }
+        static var errorCorrupted: String {
+            NSLocalizedString("image.errorCorrupted", comment: "")
+        }
+        static var openSettings: String {
+            NSLocalizedString("image.openSettings", comment: "")
         }
         static var transactionDetected: String {
             NSLocalizedString("image.transactionDetected", comment: "")

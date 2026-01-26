@@ -23,6 +23,7 @@ struct ImageSelectionView: View {
     @State private var showingResult = false
     @State private var errorMessage: String?
     @State private var showError = false
+    @State private var errorType: ImageErrorType = .generic
     @State private var showInbox = false
     @State private var draftsCreated = 0
 
@@ -77,8 +78,26 @@ struct ImageSelectionView: View {
                 }
             }
             .alert(L10n.Image.errorTitle, isPresented: $showError) {
-                Button(L10n.Common.accept) {
-                    showError = false
+                switch errorType {
+                case .photoPermission:
+                    Button(L10n.Image.openSettings) {
+                        openSystemSettings()
+                    }
+                    Button(L10n.Common.cancel, role: .cancel) {
+                        showError = false
+                    }
+                case .corrupted, .loadFailed:
+                    Button(L10n.Action.retry) {
+                        showError = false
+                        resetForRetry()
+                    }
+                    Button(L10n.Common.cancel, role: .cancel) {
+                        showError = false
+                    }
+                case .generic, .noData, .unrecognized:
+                    Button(L10n.Common.accept) {
+                        showError = false
+                    }
                 }
             } message: {
                 if let errorMessage {
@@ -399,7 +418,7 @@ struct ImageSelectionView: View {
             }
 
         } catch {
-            handleError(L10n.Image.errorLoad)
+            handleError(L10n.Image.errorLoad, type: .loadFailed)
         }
     }
 
@@ -444,11 +463,22 @@ struct ImageSelectionView: View {
             try await processImageOffline(uiImage)
 
         } catch let error as ImageOCRService.OCRError {
-            handleError(error.localizedDescription)
+            handleError(error.localizedDescription, type: .corrupted)
         } catch let error as ImageError {
-            handleError(error.localizedDescription)
+            let errorType: ImageErrorType
+            switch error {
+            case .loadFailed:
+                errorType = .loadFailed
+            case .noDataExtracted:
+                errorType = .noData
+            case .unrecognizedType:
+                errorType = .unrecognized
+            case .corrupted:
+                errorType = .corrupted
+            }
+            handleError(error.localizedDescription, type: errorType)
         } catch {
-            handleError(L10n.Image.errorGeneric)
+            handleError(L10n.Image.errorGeneric, type: .generic)
         }
     }
 
@@ -544,17 +574,43 @@ struct ImageSelectionView: View {
         }
     }
 
-    private func handleError(_ message: String) {
+    private func handleError(_ message: String, type: ImageErrorType = .generic) {
         errorMessage = message
+        errorType = type
         showError = true
     }
 
+    private func openSystemSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(settingsURL)
+    }
+
+    private func resetForRetry() {
+        selectedPhoto = nil
+        selectedImage = nil
+        isCountingDown = false
+        isProcessing = false
+        showingResult = false
+        countdownValue = 3
+    }
+
     // MARK: - Error Types
+
+    /// Types of errors that need special handling
+    enum ImageErrorType {
+        case photoPermission
+        case corrupted
+        case loadFailed
+        case noData
+        case unrecognized
+        case generic
+    }
 
     enum ImageError: LocalizedError {
         case loadFailed
         case noDataExtracted
         case unrecognizedType
+        case corrupted
 
         var errorDescription: String? {
             switch self {
@@ -564,6 +620,8 @@ struct ImageSelectionView: View {
                 return L10n.Image.errorNoData
             case .unrecognizedType:
                 return L10n.Image.errorUnrecognized
+            case .corrupted:
+                return L10n.Image.errorCorrupted
             }
         }
     }

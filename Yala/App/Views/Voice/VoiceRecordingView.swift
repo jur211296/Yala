@@ -13,10 +13,12 @@ struct VoiceRecordingView: View {
     @Environment(\.modelContext) private var modelContext
 
     @StateObject private var recorder = AudioRecorderService.shared
+    @StateObject private var networkMonitor = NetworkMonitor.shared
 
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
 
     @State private var errorMessage: String?
+    @State private var errorType: VoiceErrorType?
     @State private var isProcessing = false
     @State private var processingStatus: String = ""
     @State private var createdDraft: InboxDraft?
@@ -35,6 +37,17 @@ struct VoiceRecordingView: View {
     /// Callback when draft is saved but not approved (user should go to Inbox)
     var onSavedToInbox: (() -> Void)?
 
+    /// Callback to switch to image input mode
+    var onSwitchToImage: (() -> Void)?
+
+    /// Types of errors that need special handling
+    private enum VoiceErrorType {
+        case noApiKey
+        case noConnection
+        case micPermission
+        case generic
+    }
+
     private var voiceLanguage: VoiceLanguage {
         VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
     }
@@ -50,29 +63,9 @@ struct VoiceRecordingView: View {
                 // Status text
                 statusText
 
-                // Error message with retry button
+                // Error message with action buttons
                 if let error = errorMessage {
-                    VStack(spacing: DS.Spacing.md) {
-                        Text(error)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                            .multilineTextAlignment(.center)
-
-                        // Show retry button if we have pending audio
-                        if pendingAudioData != nil {
-                            Button {
-                                retryProcessing()
-                            } label: {
-                                HStack(spacing: DS.Spacing.xs) {
-                                    Image(systemName: "arrow.clockwise")
-                                    Text(L10n.Action.retry)
-                                }
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(Color.electricIndigo)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
+                    errorView(message: error)
                 }
 
                 Spacer()
@@ -365,6 +358,76 @@ struct VoiceRecordingView: View {
         return String(format: "%d:%02d.%d", minutes, seconds, tenths)
     }
 
+    // MARK: - Error View
+
+    private func errorView(message: String) -> some View {
+        VStack(spacing: DS.Spacing.md) {
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.red)
+                .multilineTextAlignment(.center)
+
+            // Action buttons based on error type
+            HStack(spacing: DS.Spacing.md) {
+                switch errorType {
+                case .noApiKey:
+                    // No action available - feature requires build-time configuration
+                    EmptyView()
+
+                case .noConnection:
+                    // Suggest using image (works offline)
+                    if onSwitchToImage != nil {
+                        Button {
+                            dismiss()
+                            onSwitchToImage?()
+                        } label: {
+                            HStack(spacing: DS.Spacing.xs) {
+                                Image(systemName: "photo")
+                                Text(L10n.Voice.tryImage)
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.electricIndigo)
+                        }
+                    }
+
+                case .micPermission:
+                    // Open system Settings
+                    Button {
+                        openSystemSettings()
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "gear")
+                            Text(L10n.Voice.openSettings)
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.electricIndigo)
+                    }
+
+                case .generic, .none:
+                    // Show retry button if we have pending audio
+                    if pendingAudioData != nil {
+                        Button {
+                            retryProcessing()
+                        } label: {
+                            HStack(spacing: DS.Spacing.xs) {
+                                Image(systemName: "arrow.clockwise")
+                                Text(L10n.Action.retry)
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.electricIndigo)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.xl)
+    }
+
+    private func openSystemSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(settingsURL)
+    }
+
     // MARK: - Action Buttons
 
     private var actionButtons: some View {
@@ -487,12 +550,39 @@ struct VoiceRecordingView: View {
 
     private func startRecording() async {
         errorMessage = nil
+        errorType = nil
+
+        // Check for API key first
+        guard APIKeyService.hasOpenAIAPIKey else {
+            errorType = .noApiKey
+            errorMessage = L10n.Voice.errorNoApiKey
+            return
+        }
+
+        // Check for network connection
+        guard networkMonitor.isConnected else {
+            errorType = .noConnection
+            errorMessage = L10n.Voice.errorNoConnection
+            return
+        }
 
         do {
             try await recorder.startRecording()
         } catch let error as RecordingError {
-            errorMessage = error.localizedDescription
+            handleRecordingError(error)
         } catch {
+            errorType = .generic
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func handleRecordingError(_ error: RecordingError) {
+        switch error {
+        case .microphonePermissionDenied, .microphonePermissionRestricted:
+            errorType = .micPermission
+            errorMessage = L10n.Voice.errorMicPermission
+        default:
+            errorType = .generic
             errorMessage = error.localizedDescription
         }
     }
@@ -627,12 +717,39 @@ struct VoiceRecordingView: View {
 
         } catch let error as TranscriptionError {
             isProcessing = false
-            errorMessage = error.localizedDescription
+            handleTranscriptionError(error)
         } catch let error as ParserError {
             isProcessing = false
+            errorType = .generic
             errorMessage = error.localizedDescription
         } catch {
             isProcessing = false
+            // Check if it's a network error
+            if !networkMonitor.isConnected {
+                errorType = .noConnection
+                errorMessage = L10n.Voice.errorNoConnection
+            } else {
+                errorType = .generic
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func handleTranscriptionError(_ error: TranscriptionError) {
+        switch error {
+        case .noAPIKey:
+            errorType = .noApiKey
+            errorMessage = L10n.Voice.errorNoApiKey
+        case .networkError:
+            if !networkMonitor.isConnected {
+                errorType = .noConnection
+                errorMessage = L10n.Voice.errorNoConnection
+            } else {
+                errorType = .generic
+                errorMessage = error.localizedDescription
+            }
+        default:
+            errorType = .generic
             errorMessage = error.localizedDescription
         }
     }

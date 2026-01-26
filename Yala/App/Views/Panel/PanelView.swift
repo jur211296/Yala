@@ -86,6 +86,7 @@ struct PanelView: View {
     /// Voice recording sheet
     @State private var showVoiceRecording = false
     @State private var navigateToInboxAfterVoice = false
+    @State private var switchToImageAfterVoice = false
 
     /// Image selection sheet
     @State private var showImageSelection = false
@@ -190,10 +191,22 @@ struct PanelView: View {
                         navigateToInboxAfterVoice = false
                         showInbox = true
                     }
+                    if switchToImageAfterVoice {
+                        switchToImageAfterVoice = false
+                        // Small delay to allow sheet dismiss animation
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            showImageSelection = true
+                        }
+                    }
                 }) {
-                    VoiceRecordingView(onSavedToInbox: {
-                        navigateToInboxAfterVoice = true
-                    })
+                    VoiceRecordingView(
+                        onSavedToInbox: {
+                            navigateToInboxAfterVoice = true
+                        },
+                        onSwitchToImage: {
+                            switchToImageAfterVoice = true
+                        }
+                    )
                 }
                 .sheet(isPresented: $showImageSelection, onDismiss: {
                     if navigateToInboxAfterImage {

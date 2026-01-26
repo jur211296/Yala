@@ -1099,6 +1099,11 @@
 "voice.parsing" = "Extrayendo datos...";
 "voice.saving" = "Guardando...";
 "voice.errorNoAmount" = "No se pudo detectar el monto. Intenta de nuevo.";
+"voice.errorNoApiKey" = "No se pudo conectar con el servicio de voz. Intenta más tarde.";
+"voice.errorNoConnection" = "Sin conexión a internet. Prueba con imagen (funciona sin conexión).";
+"voice.errorMicPermission" = "Permiso de micrófono denegado. Habilítalo en Configuración.";
+"voice.openSettings" = "Abrir Configuración";
+"voice.tryImage" = "Usar imagen";
 
 // MARK: - Inbox
 "inbox.title" = "Bandeja de Entrada";
@@ -1161,6 +1166,9 @@
 "image.errorNoData" = "No se detectaron transacciones en la imagen";
 "image.errorUnrecognized" = "Tipo de imagen no reconocido";
 "image.errorGeneric" = "Error al procesar la imagen";
+"image.errorPhotoPermission" = "Permiso de fotos denegado. Habilítalo en Configuración.";
+"image.errorCorrupted" = "La imagen no se pudo procesar. Intenta con otra imagen.";
+"image.openSettings" = "Abrir Configuración";
 "image.transactionDetected" = "transacción detectada";
 "image.transactionsDetectedCount" = "transacciones detectadas";
 "image.reviewDraft" = "Revisar";

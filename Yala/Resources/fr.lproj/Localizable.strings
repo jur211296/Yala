@@ -1099,6 +1099,11 @@
 "voice.parsing" = "Extraction des données...";
 "voice.saving" = "Sauvegarde...";
 "voice.errorNoAmount" = "Impossible de détecter le montant. Réessayez.";
+"voice.errorNoApiKey" = "Impossible de se connecter au service vocal. Réessayez plus tard.";
+"voice.errorNoConnection" = "Pas de connexion internet. Essayez l'image (fonctionne hors ligne).";
+"voice.errorMicPermission" = "Autorisation du microphone refusée. Activez-la dans les Réglages.";
+"voice.openSettings" = "Ouvrir les Réglages";
+"voice.tryImage" = "Utiliser une image";
 
 // MARK: - Inbox
 "inbox.title" = "Boîte de réception";
@@ -1161,6 +1166,9 @@
 "image.errorNoData" = "Aucune transaction détectée dans l'image";
 "image.errorUnrecognized" = "Type d'image non reconnu";
 "image.errorGeneric" = "Erreur lors du traitement de l'image";
+"image.errorPhotoPermission" = "Autorisation photos refusée. Activez-la dans les Réglages.";
+"image.errorCorrupted" = "Impossible de traiter l'image. Essayez une autre image.";
+"image.openSettings" = "Ouvrir les Réglages";
 "image.transactionDetected" = "transaction détectée";
 "image.transactionsDetectedCount" = "transactions détectées";
 "image.reviewDraft" = "Vérifier";
