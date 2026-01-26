@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
 - [2026-01-25] 6e5860a feat(voice): support multiple transactions in single recording
 - [2026-01-25] b145887 feat(image): support multiple image selection (up to 10)
 - [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
@@ -31,9 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
 - [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
 - [2026-01-25] d3e8c17 feat(inbox): navigate to Inbox when closing draft edit sheet
-- [2026-01-25] 49c7abc feat(inbox): add validation message and capsule buttons in edit sheet
-- [2026-01-25] f2040bd chore: improve commit-one to update work documents and mark 6.3 complete
-- [2026-01-25] 1312846 feat(inbox): add discard changes confirmation when closing edit sheet
 
 ## Completed in Current Phase
 
@@ -211,13 +209,13 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Múltiples drafts de voz completado (commit 6e5860a)
-Next step: Items UI polish (10.x) en REFINAMIENTO o nuevos features
+Stopped at: Refinamientos de divisa/subcategoría/error handling (commit f38f8fb)
+Next step: Items UI polish (10.x) en REFINAMIENTO
 Resume file: N/A
 Resume context:
-- Task 6 completado: Selección múltiple de imágenes (hasta 10)
-- Task 9 completado: Múltiples transacciones en una grabación de voz
-- Error handling completo para voz e imagen
+- Divisa oculta cuando no hay cuenta seleccionada (drafts y manual)
+- LLM ahora recibe subcategorías del usuario para inferencia inteligente
+- Alert si falla guardado de draft (voz e imagen)
 - REFINAMIENTO-8.3-8.4.md casi completo, quedan items 10.x (UI polish)
 
 ## V1.1 (Futuro)

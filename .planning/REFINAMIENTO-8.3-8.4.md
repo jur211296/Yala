@@ -42,10 +42,10 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 4.1 | Currency sin cuenta match → ¿guardar hint para mostrar al usuario? | Lógica | Pendiente |
-| 4.2 | Subcategoría ambigua → ¿mostrar sugerencias? | Lógica | Pendiente |
+| 4.1 | Currency sin cuenta match → ¿guardar hint para mostrar al usuario? | Lógica | ✅ Completado (f38f8fb) - Sin cuenta = no mostrar divisa |
+| 4.2 | Subcategoría ambigua → ¿mostrar sugerencias? | Lógica | ✅ Completado (f38f8fb) - LLM recibe subcategorías del usuario |
 | 4.3 | Tags nuevos creados automáticamente → ¿informar al usuario? | UX | ✅ Completado (badge "Nuevo") |
-| 4.4 | Evidence/rawText accesible para verificar extracción | UX | Pendiente |
+| 4.4 | Evidence/rawText accesible para verificar extracción | UX | ❌ Descartado |
 
 ---
 
@@ -106,7 +106,7 @@
 |---|-------|------|--------|
 | 9.1 | Sin conexión (voz) → sugerir usar imagen (offline) | Error | ✅ Completado (0a203f0) |
 | 9.2 | API key inválida → mensaje genérico de servicio | Error | ✅ Completado (0a203f0) |
-| 9.3 | Draft huérfano si falla save | Edge case | Pendiente |
+| 9.3 | Draft huérfano si falla save | Edge case | ✅ Completado (f38f8fb) - Alert de error si falla |
 | 9.4 | Imagen corrupta → mensaje claro + reintentar | Error | ✅ Completado (0a203f0) |
 | 9.5 | Permisos denegados → deep link a Settings sistema | Error | ✅ Completado (0a203f0) |
 
