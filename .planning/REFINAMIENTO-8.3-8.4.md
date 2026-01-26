@@ -30,10 +30,10 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 3.1 | Preview de imagen mientras procesa | UX | Pendiente |
+| 3.1 | Preview de imagen mientras procesa | UX | ✅ Completado (fbff205) |
 | 3.2 | Contador de drafts detectados antes de navegar | UX | ✅ Completado (7b65b05) |
 | 3.3 | Sin transacciones → ¿crear draft manual con imagen como referencia? | UX | Pendiente |
-| 3.4 | Cancelar durante procesamiento OCR | UX | Pendiente |
+| 3.4 | Cancelar durante procesamiento OCR | UX | ✅ Completado (fbff205) |
 | 3.5 | Selección múltiple de imágenes | Feature | Pendiente |
 
 ---
@@ -142,7 +142,9 @@
 - [x] 7.2 - Indicador de drafts incompletos (ya implementado en InboxDraftRowView)
 
 ### UX Importante
+- [x] 3.1 - Preview imagen con countdown 3s antes de procesar (fbff205)
 - [x] 3.2 - Contador de drafts en imagen (7b65b05)
+- [x] 3.4 - Cancelar durante countdown (antes de gastar tokens) (fbff205)
 - [x] 2.1 - Sin monto → permitir crear draft (descartado - re-grabar es mejor UX)
 - [x] 6.5 - Ver rawText en edición
 - [x] 8.1/8.2 - Feedback post-aprobar (pantalla éxito con Editar/Aceptar/Aprobar siguiente)

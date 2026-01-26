@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
 - [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
 - [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
 - [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] 1312846 feat(inbox): add discard changes confirmation when closing edit sheet
 - [2026-01-25] ff9bf1b fix(inbox): show amounts with decimals for consistency
 - [2026-01-25] 41c10e3 fix(inbox): improve reject/delete flow and archived tab actions
-- [2026-01-25] d9cfe97 feat(inbox): add Vision currency detection and smart navigation
 
 ## Completed in Current Phase
 
@@ -209,14 +209,15 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Items 8.1, 8.2, 8.4 completados - pantallas de éxito post-aprobar en Inbox (commit 70b05ab)
-Next step: Siguiente item UX del REFINAMIENTO-8.3-8.4.md (3.1: preview de imagen o 7.1: ordenar por prioridad)
+Stopped at: Rediseño completo flujo imagen con countdown 3s, diseño unificado Voice/Image/BulkSuccess (commit fbff205)
+Next step: Siguiente item UX del REFINAMIENTO-8.3-8.4.md (7.1: ordenar por prioridad, 2.4: múltiples drafts voz)
 Resume file: N/A
 Resume context:
-- Items completados hoy: 8.1/8.2 (feedback post-aprobar), 8.4 (bulk approve success)
-- 8.1/8.2: InboxApproveSuccessView con Editar/Aceptar/Aprobar siguiente
-- 8.4: InboxBulkApproveSuccessView con Ver en registros/Volver a bandeja
-- Siguiente bloque: 3.1, 7.1, 2.4
+- 3.1 + 3.4: Preview imagen con countdown 3s antes de procesar, botón cancelar
+- Rediseño visual completo: círculos con gradiente, color teal, fondos yalaBackground
+- YalaPrimaryButton/YalaSecondaryButton ahora usan Capsule()
+- 1 transacción → edit sheet directo, múltiples → resultView con "Ir a bandeja"
+- Diseño unificado entre InboxBulkApproveSuccessView e ImageSelectionView resultView
 
 ## V1.1 (Futuro)
 
