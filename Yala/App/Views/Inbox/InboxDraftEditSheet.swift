@@ -586,7 +586,9 @@ struct InboxDraftEditSheet: View {
     }
 
     private func tagChip(for tag: Tag) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
+        let isNewlyCreated = draft.newlyCreatedTagNames.contains(tag.name)
+
+        return HStack(spacing: DS.Spacing.sm) {
             Button {
                 dismissKeyboard()
                 showTagSelector = true
@@ -597,6 +599,16 @@ struct InboxDraftEditSheet: View {
                     Text(tag.name)
                         .font(.subheadline.weight(.medium))
                         .lineLimit(1)
+
+                    // Show "New" badge for newly created tags
+                    if isNewlyCreated {
+                        Text(L10n.Inbox.newTag)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.electricIndigo))
+                    }
                 }
             }
             .buttonStyle(.plain)

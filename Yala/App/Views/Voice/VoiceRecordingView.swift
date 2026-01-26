@@ -22,6 +22,16 @@ struct VoiceRecordingView: View {
     @State private var createdDraft: InboxDraft?
     @State private var draftWasApproved = false
 
+    // Preview state (after recording, before processing)
+    @State private var isPreviewMode = false
+    @State private var previewDuration: TimeInterval = 0
+    @State private var countdownValue = 3
+    @State private var countdownTimer: Timer?
+    @State private var pendingAudioData: Data?
+
+    // Processing cancellation
+    @State private var processingTask: Task<Void, Never>?
+
     /// Callback when draft is saved but not approved (user should go to Inbox)
     var onSavedToInbox: (() -> Void)?
 
@@ -40,13 +50,29 @@ struct VoiceRecordingView: View {
                 // Status text
                 statusText
 
-                // Error message
+                // Error message with retry button
                 if let error = errorMessage {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.xl)
+                    VStack(spacing: DS.Spacing.md) {
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+
+                        // Show retry button if we have pending audio
+                        if pendingAudioData != nil {
+                            Button {
+                                retryProcessing()
+                            } label: {
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text(L10n.Action.retry)
+                                }
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.electricIndigo)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
                 }
 
                 Spacer()
@@ -203,6 +229,21 @@ struct VoiceRecordingView: View {
                 Text(L10n.Voice.recording)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+            } else if isPreviewMode {
+                // Preview mode: show recorded duration and countdown
+                Text(formatDuration(previewDuration))
+                    .font(.system(size: 48, weight: .light, design: .monospaced))
+                    .foregroundStyle(.primary)
+
+                Text(L10n.Voice.recorded)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                // Countdown indicator
+                Text("\(countdownValue)")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.electricIndigo)
+                    .padding(.top, DS.Spacing.md)
             } else if isProcessing {
                 Text(processingStatus)
                     .font(.headline)
@@ -345,10 +386,10 @@ struct VoiceRecordingView: View {
                         )
                 }
 
-                // Stop and process button
+                // Stop and enter preview mode
                 Button {
                     Task {
-                        await stopAndProcess()
+                        await stopAndEnterPreview()
                     }
                 } label: {
                     Image(systemName: "checkmark")
@@ -365,7 +406,58 @@ struct VoiceRecordingView: View {
                         .clipShape(Circle())
                         .shadow(color: Color.electricIndigo.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
-            } else if !isProcessing {
+            } else if isPreviewMode {
+                // Cancel button (stops countdown and returns to idle)
+                Button {
+                    cancelPreview()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.title2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                        )
+                }
+
+                // Process now button (skips countdown)
+                Button {
+                    processNow()
+                } label: {
+                    Image(systemName: "arrow.right")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 72, height: 72)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.electricIndigo, Color.electricIndigo.opacity(0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(Circle())
+                        .shadow(color: Color.electricIndigo.opacity(0.4), radius: 12, x: 0, y: 6)
+                }
+            } else if isProcessing {
+                // Cancel processing button
+                Button {
+                    cancelProcessing()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.title2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                        )
+                }
+            } else {
                 // Start recording button
                 Button {
                     Task {
@@ -405,25 +497,116 @@ struct VoiceRecordingView: View {
         }
     }
 
-    private func stopAndProcess() async {
+    private func stopAndEnterPreview() async {
+        errorMessage = nil
+
+        do {
+            // Stop recording and get audio data
+            previewDuration = recorder.recordingDuration
+            let audioData = try await recorder.stopRecording()
+            pendingAudioData = audioData
+
+            // Enter preview mode with countdown
+            withAnimation(.easeOut(duration: 0.3)) {
+                isPreviewMode = true
+                countdownValue = 3
+            }
+
+            // Start countdown timer
+            startCountdown()
+
+        } catch let error as RecordingError {
+            errorMessage = error.localizedDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func startCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if countdownValue > 1 {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    countdownValue -= 1
+                }
+            } else {
+                countdownTimer?.invalidate()
+                countdownTimer = nil
+                processNow()
+            }
+        }
+    }
+
+    private func cancelPreview() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        pendingAudioData = nil
+        withAnimation(.easeOut(duration: 0.3)) {
+            isPreviewMode = false
+            previewDuration = 0
+            countdownValue = 3
+        }
+    }
+
+    private func processNow() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+
+        guard let audioData = pendingAudioData else { return }
+
+        withAnimation(.easeOut(duration: 0.3)) {
+            isPreviewMode = false
+        }
+
+        processingTask = Task {
+            await processAudio(audioData)
+        }
+    }
+
+    private func cancelProcessing() {
+        processingTask?.cancel()
+        processingTask = nil
+        isProcessing = false
+        pendingAudioData = nil
+        errorMessage = nil
+    }
+
+    private func retryProcessing() {
+        guard let audioData = pendingAudioData else { return }
+        errorMessage = nil
+
+        processingTask = Task {
+            await processAudio(audioData)
+        }
+    }
+
+    private func processAudio(_ audioData: Data) async {
         errorMessage = nil
         isProcessing = true
 
         do {
-            // Step 1: Stop recording and get audio data
-            processingStatus = L10n.Voice.processingAudio
-            let audioData = try await recorder.stopRecording()
-
-            // Step 2: Transcribe audio
+            // Step 1: Transcribe audio
             processingStatus = L10n.Voice.analyzing
             let transcription = try await VoiceTranscriptionService.shared.transcribe(
                 audioData: audioData,
                 language: voiceLanguage
             )
 
-            // Step 3: Parse transcription
+            // Check cancellation after transcription
+            guard !Task.isCancelled else {
+                isProcessing = false
+                return
+            }
+
+            // Step 2: Parse transcription
             processingStatus = L10n.Voice.parsing
             let parsed = try await TranscriptionParserService.shared.parse(text: transcription.text)
+
+            // Check cancellation after parsing
+            guard !Task.isCancelled else {
+                isProcessing = false
+                return
+            }
 
             // Validate: Must have amount to create draft
             guard parsed.amount != nil else {
@@ -432,18 +615,16 @@ struct VoiceRecordingView: View {
                 return
             }
 
-            // Step 4: Create InboxDraft
+            // Step 3: Create InboxDraft (only if not cancelled)
             processingStatus = L10n.Voice.saving
             let draft = createInboxDraft(from: parsed, transcription: transcription.text)
 
             isProcessing = false
+            pendingAudioData = nil
 
             // Open the draft in approval screen directly
             createdDraft = draft
 
-        } catch let error as RecordingError {
-            isProcessing = false
-            errorMessage = error.localizedDescription
         } catch let error as TranscriptionError {
             isProcessing = false
             errorMessage = error.localizedDescription
@@ -487,8 +668,11 @@ struct VoiceRecordingView: View {
 
         // Try to match tag hints with existing tags
         var matchedTags: [Tag] = []
+        var newlyCreatedTagNames: [String] = []
         if !parsed.tagHints.isEmpty {
-            matchedTags = findTags(matching: parsed.tagHints)
+            let result = findTags(matching: parsed.tagHints)
+            matchedTags = result.tags
+            newlyCreatedTagNames = result.newlyCreatedNames
         }
 
         let draft = InboxDraft(
@@ -504,7 +688,8 @@ struct VoiceRecordingView: View {
             confidenceDate: parsed.confidence.date,
             confidenceMerchant: parsed.confidence.merchant,
             confidenceSubcategory: matchedSubcategory != nil ? parsed.confidence.subcategory : nil,
-            needsUserInput: needsUserInputFields
+            needsUserInput: needsUserInputFields,
+            newlyCreatedTagNames: newlyCreatedTagNames
         )
         modelContext.insert(draft)
         try? modelContext.save()
@@ -564,7 +749,8 @@ struct VoiceRecordingView: View {
 
     /// Finds or creates tags matching the hints (case-insensitive)
     /// Creates new tags if they don't exist
-    private func findTags(matching hints: [String]) -> [Tag] {
+    /// Returns tuple: (matched tags, names of newly created tags)
+    private func findTags(matching hints: [String]) -> (tags: [Tag], newlyCreatedNames: [String]) {
         let descriptor = FetchDescriptor<Tag>(
             predicate: #Predicate<Tag> { tag in
                 tag.isActive == true
@@ -572,10 +758,11 @@ struct VoiceRecordingView: View {
         )
 
         guard let allTags = try? modelContext.fetch(descriptor) else {
-            return []
+            return ([], [])
         }
 
         var matched: [Tag] = []
+        var newlyCreatedNames: [String] = []
         var usedColors = allTags.map { $0.colorHex }
 
         for hint in hints {
@@ -605,9 +792,10 @@ struct VoiceRecordingView: View {
             usedColors.append(nextColor)
             modelContext.insert(newTag)
             matched.append(newTag)
+            newlyCreatedNames.append(capitalizedName)
         }
 
-        return matched
+        return (matched, newlyCreatedNames)
     }
 
     /// Finds an account matching the currency code

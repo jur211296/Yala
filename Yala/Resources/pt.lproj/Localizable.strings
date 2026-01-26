@@ -134,6 +134,7 @@
 "action.savedAsRecurring" = "Salvo como recorrente";
 "action.duplicated" = "Duplicado - salve para criar novo";
 "action.select" = "Selecionar";
+"action.retry" = "Tentar novamente";
 
 // MARK: - Search
 
@@ -1079,6 +1080,7 @@
 // MARK: - Voice Input
 "voice.title" = "Nota de voz";
 "voice.recording" = "Gravando...";
+"voice.recorded" = "Gravado";
 "voice.pleaseWait" = "Por favor aguarde";
 "voice.tapToRecord" = "Toque para gravar";
 "voice.youCanSay" = "Você pode dizer:";
@@ -1111,6 +1113,8 @@
 "inbox.delete" = "Excluir";
 "inbox.noPending" = "Sem rascunhos pendentes";
 "inbox.noPendingDescription" = "Novos rascunhos de voz e imagem aparecerão aqui.";
+"inbox.bulkHint" = "Toque em Selecionar para ações em massa";
+"inbox.newTag" = "Nova";
 "inbox.noArchived" = "Sem rascunhos arquivados";
 "inbox.noArchivedDescription" = "Rascunhos aprovados ou rejeitados aparecerão aqui.";
 "inbox.selectedCount" = "%d selecionados";

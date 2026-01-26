@@ -86,6 +86,17 @@ struct InboxView: View {
         }
     }
 
+    /// Drafts grouped by transaction date (effectiveDate), sorted newest first
+    private var groupedDrafts: [(date: Date, drafts: [InboxDraft])] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: filteredDrafts) { draft in
+            calendar.startOfDay(for: draft.effectiveDate)
+        }
+        return grouped
+            .map { (date: $0.key, drafts: $0.value.sorted { $0.effectiveDate > $1.effectiveDate }) }
+            .sorted { $0.date > $1.date }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -97,6 +108,18 @@ struct InboxView: View {
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.sm)
                         .padding(.bottom, DS.Spacing.md)
+
+                    // Bulk action hint (shown when 2+ pending drafts and not in selection mode)
+                    if !isSelectionMode && selectedFilter == .pending && filteredDrafts.count >= 2 {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "hand.tap")
+                                .font(.caption2)
+                            Text(L10n.Inbox.bulkHint)
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.bottom, DS.Spacing.sm)
+                    }
 
                     // Content
                     if filteredDrafts.isEmpty {
@@ -333,67 +356,86 @@ struct InboxView: View {
 
     private var draftsList: some View {
         List {
-            ForEach(filteredDrafts, id: \.persistentModelID) { draft in
-                InboxDraftRowView(
-                    draft: draft,
-                    currencyCode: draft.displayCurrencyCode ?? preferredCurrency,
-                    isSelectionMode: isSelectionMode,
-                    isSelected: selectedDraftIDs.contains(draft.persistentModelID),
-                    onTap: {
-                        if isSelectionMode {
-                            toggleSelection(draft)
-                        } else {
-                            handleDraftTap(draft)
-                        }
+            ForEach(groupedDrafts, id: \.date) { group in
+                Section {
+                    ForEach(group.drafts, id: \.persistentModelID) { draft in
+                        draftRow(for: draft)
                     }
-                )
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
-                .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)) {
-                    if !isSelectionMode {
-                        if selectedFilter == .pending {
-                            // Pending: Delete + Reject
-                            Button {
-                                deleteDraftPermanently(draft)
-                            } label: {
-                                Label(L10n.Inbox.delete, systemImage: "trash")
-                            }
-                            .tint(.red)
-
-                            Button {
-                                rejectDraft(draft)
-                            } label: {
-                                Label(L10n.Inbox.reject, systemImage: "xmark.circle")
-                            }
-                            .tint(.orange)
-                        } else if draft.status == .rejected {
-                            // Archived (rejected only): Delete
-                            Button {
-                                deleteDraftPermanently(draft)
-                            } label: {
-                                Label(L10n.Inbox.delete, systemImage: "trash")
-                            }
-                            .tint(.red)
-                        }
-                        // Approved drafts in archived: no swipe actions
-                    }
-                }
-                .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending) {
-                    if !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending {
-                        Button {
-                            approveDraft(draft)
-                        } label: {
-                            Label(L10n.Inbox.approve, systemImage: "checkmark.circle")
-                        }
-                        .tint(Color.electricIndigo)
-                    }
+                } header: {
+                    Text(formattedDate(group.date))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(nil)
                 }
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .animation(nil, value: filteredDrafts.count)
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("d MMMM")
+        return formatter.string(from: date)
+    }
+
+    private func draftRow(for draft: InboxDraft) -> some View {
+        InboxDraftRowView(
+            draft: draft,
+            currencyCode: draft.displayCurrencyCode ?? preferredCurrency,
+            isSelectionMode: isSelectionMode,
+            isSelected: selectedDraftIDs.contains(draft.persistentModelID),
+            onTap: {
+                if isSelectionMode {
+                    toggleSelection(draft)
+                } else {
+                    handleDraftTap(draft)
+                }
+            }
+        )
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
+        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)) {
+            if !isSelectionMode {
+                if selectedFilter == .pending {
+                    // Pending: Delete + Reject
+                    Button {
+                        deleteDraftPermanently(draft)
+                    } label: {
+                        Label(L10n.Inbox.delete, systemImage: "trash")
+                    }
+                    .tint(.red)
+
+                    Button {
+                        rejectDraft(draft)
+                    } label: {
+                        Label(L10n.Inbox.reject, systemImage: "xmark.circle")
+                    }
+                    .tint(.orange)
+                } else if draft.status == .rejected {
+                    // Archived (rejected only): Delete
+                    Button {
+                        deleteDraftPermanently(draft)
+                    } label: {
+                        Label(L10n.Inbox.delete, systemImage: "trash")
+                    }
+                    .tint(.red)
+                }
+                // Approved drafts in archived: no swipe actions
+            }
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending) {
+            if !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending {
+                Button {
+                    approveDraft(draft)
+                } label: {
+                    Label(L10n.Inbox.approve, systemImage: "checkmark.circle")
+                }
+                .tint(Color.electricIndigo)
+            }
+        }
     }
 
     private func toggleSelection(_ draft: InboxDraft) {

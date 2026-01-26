@@ -9,8 +9,8 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 1.1 | Orden de opciones en menú (¿Voz→Imagen→Manual?) | UX | Pendiente |
-| 1.2 | Feedback/transición al seleccionar opción | UX | Pendiente |
+| 1.1 | Orden de opciones en menú (¿Voz→Imagen→Manual?) | UX | ❌ Descartado (orden actual OK) |
+| 1.2 | Feedback/transición al seleccionar opción | UX | ❌ Descartado (animación actual OK) |
 
 ---
 
@@ -19,10 +19,10 @@
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
 | 2.1 | Sin monto detectado → ¿permitir crear draft igual para editar después? | UX | ❌ Descartado |
-| 2.2 | Confirmación antes de procesar (preview duración) | UX | Pendiente |
-| 2.3 | Cancelar durante procesamiento STT/LLM | UX | Pendiente |
+| 2.2 | Confirmación antes de procesar (preview duración) | UX | ✅ Completado |
+| 2.3 | Cancelar durante procesamiento STT/LLM | UX | ✅ Completado |
 | 2.4 | Múltiples drafts de una grabación ("50 en café y 100 en uber") | Feature | Pendiente |
-| 2.5 | Retry después de error sin cerrar la vista | UX | Pendiente |
+| 2.5 | Retry después de error sin cerrar la vista | UX | ✅ Completado |
 
 ---
 
@@ -32,7 +32,7 @@
 |---|-------|------|--------|
 | 3.1 | Preview de imagen mientras procesa | UX | ✅ Completado (fbff205) |
 | 3.2 | Contador de drafts detectados antes de navegar | UX | ✅ Completado (7b65b05) |
-| 3.3 | Sin transacciones → ¿crear draft manual con imagen como referencia? | UX | Pendiente |
+| 3.3 | Sin transacciones → ¿crear draft manual con imagen como referencia? | UX | ❌ Descartado (solo mostrar mensaje) |
 | 3.4 | Cancelar durante procesamiento OCR | UX | ✅ Completado (fbff205) |
 | 3.5 | Selección múltiple de imágenes | Feature | Pendiente |
 
@@ -44,7 +44,7 @@
 |---|-------|------|--------|
 | 4.1 | Currency sin cuenta match → ¿guardar hint para mostrar al usuario? | Lógica | Pendiente |
 | 4.2 | Subcategoría ambigua → ¿mostrar sugerencias? | Lógica | Pendiente |
-| 4.3 | Tags nuevos creados automáticamente → ¿informar al usuario? | UX | Pendiente |
+| 4.3 | Tags nuevos creados automáticamente → ¿informar al usuario? | UX | ✅ Completado (badge "Nuevo") |
 | 4.4 | Evidence/rawText accesible para verificar extracción | UX | Pendiente |
 
 ---
@@ -53,9 +53,9 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 5.1 | 1 draft → edit sheet directo vs ir a Inbox siempre | UX | Pendiente |
+| 5.1 | 1 draft → edit sheet directo vs ir a Inbox siempre | UX | ✅ Ya implementado (voz e imagen) |
 | 5.2 | N drafts → alert con opciones | UX | Implementado |
-| 5.3 | Toast/confirmación visual de draft creado | UX | Pendiente |
+| 5.3 | Toast/confirmación visual de draft creado | UX | ✅ Ya implementado (edit sheet o result view) |
 | 5.4 | Volver atrás después de crear → ¿a dónde va? ¿se pierde? | UX | ✅ Completado (d3e8c17) |
 
 ---
@@ -67,10 +67,10 @@
 | 6.1 | Campos obligatorios no claros visualmente | UX | ✅ Completado (49c7abc) |
 | 6.2 | Validación al intentar aprobar (mensaje o botón deshabilitado) | UX | ✅ Completado (49c7abc) |
 | 6.3 | Cerrar sheet sin guardar → confirmación "¿Descartar cambios?" | Edge case | ✅ Completado (1312846) |
-| 6.4 | Editar monto con signo → toggle gasto/ingreso claro | UX | Pendiente |
+| 6.4 | Editar monto con signo → toggle gasto/ingreso claro | UX | ✅ Ya implementado (transactionTypeSelector) |
 | 6.5 | Ver texto original (rawText) para verificar | UX | ✅ Completado |
-| 6.6 | Confidence indicators → ¿son útiles para el usuario? | UX | Pendiente |
-| 6.7 | Quick actions (duplicar draft, dividir en múltiples) | Feature | Pendiente |
+| 6.6 | Confidence indicators → ¿son útiles para el usuario? | UX | ❌ Descartado (no mostrar al usuario) |
+| 6.7 | Quick actions (duplicar draft, dividir en múltiples) | Feature | ❌ Descartado (solo en transacciones) |
 
 ---
 
@@ -78,11 +78,11 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 7.1 | Ordenar por prioridad (completos vs incompletos) | UX | Pendiente |
+| 7.1 | Ordenar por fecha de transacción, dividir por días (como RecordsTabView) | UX | ✅ Completado |
 | 7.2 | Indicador visual de campos faltantes en cada celda | UX | ✅ Ya implementado |
-| 7.3 | Bulk actions → ¿es descubrible? | UX | Pendiente |
-| 7.4 | Filtros útiles (Pendientes/Archivados) | UX | Pendiente |
-| 7.5 | Empty state instructivo | UX | Pendiente |
+| 7.3 | Bulk actions → ¿es descubrible? | UX | ✅ Completado (hint visual) |
+| 7.4 | Filtros útiles (Pendientes/Archivados) | UX | ❌ Descartado (no filtros en bandeja) |
+| 7.5 | Empty state instructivo | UX | ✅ Ya implementado |
 | 7.6 | **Contador de archivados incluye eliminados** | **Bug** | ✅ Completado (41c10e3) |
 | 7.7 | **Montos siempre con decimales** (consistencia con resto de app) | **Bug** | ✅ Completado (ff9bf1b) |
 
@@ -94,9 +94,9 @@
 |---|-------|------|--------|
 | 8.1 | Feedback al aprobar (toast, animación) | UX | ✅ Completado |
 | 8.2 | Navegación post-aprobar (¿lista? ¿cierra? ¿transacción?) | UX | ✅ Completado |
-| 8.3 | Aprobar con campos mínimos (¿sin nota? ¿sin tags?) | Lógica | Pendiente |
+| 8.3 | Aprobar con campos mínimos (¿sin nota? ¿sin tags?) | Lógica | ✅ Ya implementado (monto+cuenta requeridos) |
 | 8.4 | Aprobar múltiples (bulk) → feedback y manejo de errores | UX | ✅ Completado |
-| 8.5 | Deshacer aprobación | Feature | Pendiente |
+| 8.5 | Deshacer aprobación | Feature | ❌ Descartado (usuario puede eliminar transacción) |
 
 ---
 

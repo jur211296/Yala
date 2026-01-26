@@ -337,6 +337,7 @@ enum L10n {
         static var savedAsRecurring: String { NSLocalizedString("action.savedAsRecurring", comment: "") }
         static var duplicated: String { NSLocalizedString("action.duplicated", comment: "") }
         static var select: String { NSLocalizedString("action.select", comment: "") }
+        static var retry: String { NSLocalizedString("action.retry", comment: "") }
     }
 
     // MARK: - Search
@@ -1678,6 +1679,12 @@ enum L10n {
         static var noPendingDescription: String {
             NSLocalizedString("inbox.noPendingDescription", comment: "")
         }
+        static var bulkHint: String {
+            NSLocalizedString("inbox.bulkHint", comment: "")
+        }
+        static var newTag: String {
+            NSLocalizedString("inbox.newTag", comment: "")
+        }
         static var noArchived: String {
             NSLocalizedString("inbox.noArchived", comment: "")
         }
@@ -1787,6 +1794,9 @@ enum L10n {
         }
         static var recording: String {
             NSLocalizedString("voice.recording", comment: "")
+        }
+        static var recorded: String {
+            NSLocalizedString("voice.recorded", comment: "")
         }
         static var pleaseWait: String {
             NSLocalizedString("voice.pleaseWait", comment: "")

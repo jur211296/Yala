@@ -134,6 +134,7 @@
 "action.savedAsRecurring" = "Als wiederkehrend gespeichert";
 "action.duplicated" = "Dupliziert - speichern für neue";
 "action.select" = "Auswählen";
+"action.retry" = "Erneut versuchen";
 
 // MARK: - Search
 
@@ -1079,6 +1080,7 @@
 // MARK: - Voice Input
 "voice.title" = "Sprachnotiz";
 "voice.recording" = "Aufnahme...";
+"voice.recorded" = "Aufgenommen";
 "voice.pleaseWait" = "Bitte warten";
 "voice.tapToRecord" = "Tippen zum Aufnehmen";
 "voice.youCanSay" = "Sie können sagen:";
@@ -1111,6 +1113,8 @@
 "inbox.delete" = "Löschen";
 "inbox.noPending" = "Keine ausstehenden Entwürfe";
 "inbox.noPendingDescription" = "Neue Sprach- und Bildentwürfe werden hier angezeigt.";
+"inbox.bulkHint" = "Tippen Sie auf Auswählen für Massenaktionen";
+"inbox.newTag" = "Neu";
 "inbox.noArchived" = "Keine archivierten Entwürfe";
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";
 "inbox.selectedCount" = "%d ausgewählt";

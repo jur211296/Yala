@@ -134,6 +134,7 @@
 "action.savedAsRecurring" = "Enregistré comme récurrent";
 "action.duplicated" = "Dupliqué - enregistrer pour créer";
 "action.select" = "Sélectionner";
+"action.retry" = "Réessayer";
 
 // MARK: - Search
 
@@ -1079,6 +1080,7 @@
 // MARK: - Voice Input
 "voice.title" = "Note vocale";
 "voice.recording" = "Enregistrement...";
+"voice.recorded" = "Enregistré";
 "voice.pleaseWait" = "Veuillez patienter";
 "voice.tapToRecord" = "Appuyez pour enregistrer";
 "voice.youCanSay" = "Vous pouvez dire:";
@@ -1111,6 +1113,8 @@
 "inbox.delete" = "Supprimer";
 "inbox.noPending" = "Aucun brouillon en attente";
 "inbox.noPendingDescription" = "Les nouveaux brouillons vocaux et d'images apparaîtront ici.";
+"inbox.bulkHint" = "Appuyez sur Sélectionner pour les actions groupées";
+"inbox.newTag" = "Nouveau";
 "inbox.noArchived" = "Aucun brouillon archivé";
 "inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
 "inbox.selectedCount" = "%d sélectionnés";

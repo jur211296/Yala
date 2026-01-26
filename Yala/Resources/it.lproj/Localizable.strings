@@ -134,6 +134,7 @@
 "action.savedAsRecurring" = "Salvato come ricorrente";
 "action.duplicated" = "Duplicato - salva per creare nuovo";
 "action.select" = "Seleziona";
+"action.retry" = "Riprova";
 
 // MARK: - Search
 
@@ -1079,6 +1080,7 @@
 // MARK: - Voice Input
 "voice.title" = "Nota vocale";
 "voice.recording" = "Registrazione...";
+"voice.recorded" = "Registrato";
 "voice.pleaseWait" = "Attendere prego";
 "voice.tapToRecord" = "Tocca per registrare";
 "voice.youCanSay" = "Puoi dire:";
@@ -1111,6 +1113,8 @@
 "inbox.delete" = "Elimina";
 "inbox.noPending" = "Nessuna bozza in sospeso";
 "inbox.noPendingDescription" = "Le nuove bozze vocali e di immagini appariranno qui.";
+"inbox.bulkHint" = "Tocca Seleziona per azioni di massa";
+"inbox.newTag" = "Nuova";
 "inbox.noArchived" = "Nessuna bozza archiviata";
 "inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";
 "inbox.selectedCount" = "%d selezionati";

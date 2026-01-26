@@ -82,6 +82,9 @@ final class InboxDraft: Identifiable {
     /// Campos que requieren input del usuario (["account", "amount", etc.])
     var needsUserInput: [String]
 
+    /// Nombres de tags creados automáticamente (para mostrar badge "nuevo")
+    var newlyCreatedTagNames: [String] = []
+
     /// Estado del draft
     var statusRaw: String
 
@@ -229,7 +232,8 @@ final class InboxDraft: Identifiable {
         confidenceMerchant: Double? = nil,
         confidenceSubcategory: Double? = nil,
         needsUserInput: [String] = ["account", "subcategory"],
-        status: DraftStatus = .pending
+        status: DraftStatus = .pending,
+        newlyCreatedTagNames: [String] = []
     ) {
         self.note = note
         self.amount = amount
@@ -245,6 +249,7 @@ final class InboxDraft: Identifiable {
         self.confidenceMerchant = confidenceMerchant
         self.confidenceSubcategory = confidenceSubcategory
         self.needsUserInput = needsUserInput
+        self.newlyCreatedTagNames = newlyCreatedTagNames
         self.statusRaw = status.rawValue
         self.createdAt = Date()
         self.updatedAt = Date()

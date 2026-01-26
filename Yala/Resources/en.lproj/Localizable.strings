@@ -136,6 +136,7 @@
 "action.savedAsRecurring" = "Saved as recurring";
 "action.duplicated" = "Duplicated - save to create new";
 "action.select" = "Select";
+"action.retry" = "Retry";
 
 // MARK: - Search
 
@@ -1079,6 +1080,7 @@
 // MARK: - Voice Input
 "voice.title" = "Voice Note";
 "voice.recording" = "Recording...";
+"voice.recorded" = "Recorded";
 "voice.pleaseWait" = "Please wait";
 "voice.tapToRecord" = "Tap to record";
 "voice.youCanSay" = "You can say:";
@@ -1111,6 +1113,8 @@
 "inbox.delete" = "Delete";
 "inbox.noPending" = "No pending drafts";
 "inbox.noPendingDescription" = "New voice and image drafts will appear here.";
+"inbox.bulkHint" = "Tap Select for bulk actions";
+"inbox.newTag" = "New";
 "inbox.noArchived" = "No archived drafts";
 "inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";
 "inbox.selectedCount" = "%d selected";
