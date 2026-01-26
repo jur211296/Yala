@@ -54,9 +54,9 @@ enum ParserError: Error, LocalizedError {
     }
 }
 
-// MARK: - LLM Response Model
+// MARK: - LLM Response Models
 
-private struct LLMResponse: Codable {
+private struct LLMTransactionItem: Codable {
     let amount: Double?
     let date: String?
     let note: String
@@ -73,6 +73,10 @@ private struct LLMResponse: Codable {
         let subcategory: Double
         let tags: Double
     }
+}
+
+private struct LLMMultipleResponse: Codable {
+    let transactions: [LLMTransactionItem]
 }
 
 // MARK: - Transcription Parser Service
@@ -113,6 +117,11 @@ final class TranscriptionParserService {
         return """
         Eres un parser de gastos para una app de finanzas personales.
         Extrae información de la transcripción y devuelve SOLO JSON válido, sin markdown ni explicaciones.
+
+        IMPORTANTE - Múltiples transacciones:
+        - Si el usuario menciona más de una transacción (ej: "50 en café y 100 en uber", "gasté 30 en almuerzo, 15 en estacionamiento y me pagaron 200"), extrae CADA una por separado
+        - Cada transacción va como un objeto independiente en el array "transactions"
+        - Conjunciones como "y", "además", "también", "luego" suelen separar transacciones
 
         Reglas de fecha:
         - "hoy", "ahorita", "recién", "acabo de" → \(today)
@@ -160,20 +169,24 @@ final class TranscriptionParserService {
 
         Responde ÚNICAMENTE con este JSON (sin ```json ni nada más):
         {
-          "amount": number | null,
-          "date": "YYYY-MM-DD",
-          "note": "descripción breve",
-          "isExpense": true | false,
-          "subcategoryHint": "nombre subcategoría" | null,
-          "tagHints": ["tag1", "tag2"] | [],
-          "currencyHint": "USD" | "EUR" | "PEN" | null,
-          "confidence": {
-            "amount": 0.0-1.0,
-            "date": 0.0-1.0,
-            "merchant": 0.0-1.0,
-            "subcategory": 0.0-1.0,
-            "tags": 0.0-1.0
-          }
+          "transactions": [
+            {
+              "amount": number | null,
+              "date": "YYYY-MM-DD",
+              "note": "descripción breve",
+              "isExpense": true | false,
+              "subcategoryHint": "nombre subcategoría" | null,
+              "tagHints": ["tag1", "tag2"] | [],
+              "currencyHint": "USD" | "EUR" | "PEN" | null,
+              "confidence": {
+                "amount": 0.0-1.0,
+                "date": 0.0-1.0,
+                "merchant": 0.0-1.0,
+                "subcategory": 0.0-1.0,
+                "tags": 0.0-1.0
+              }
+            }
+          ]
         }
         """
     }
@@ -181,9 +194,22 @@ final class TranscriptionParserService {
     // MARK: - Public Methods
 
     /// Parses transcribed text to extract structured transaction data.
+    /// Returns the first transaction if multiple are detected.
     /// - Parameter text: The transcribed text from voice input
     /// - Returns: ParsedTransaction with extracted data and confidence scores
     func parse(text: String) async throws -> ParsedTransaction {
+        let transactions = try await parseMultiple(text: text)
+        guard let first = transactions.first else {
+            throw ParserError.invalidResponse
+        }
+        return first
+    }
+
+    /// Parses transcribed text to extract multiple transactions.
+    /// Supports phrases like "50 en café y 100 en uber" returning 2 transactions.
+    /// - Parameter text: The transcribed text from voice input
+    /// - Returns: Array of ParsedTransaction with extracted data and confidence scores
+    func parseMultiple(text: String) async throws -> [ParsedTransaction] {
         guard let client = openAI else {
             throw ParserError.noAPIKey
         }
@@ -209,7 +235,7 @@ final class TranscriptionParserService {
                 throw ParserError.invalidResponse
             }
 
-            return try parseResponse(content)
+            return try parseMultipleResponse(content)
         } catch let error as ParserError {
             throw error
         } catch {
@@ -219,7 +245,7 @@ final class TranscriptionParserService {
 
     // MARK: - Private Methods
 
-    private func parseResponse(_ content: String) throws -> ParsedTransaction {
+    private func parseMultipleResponse(_ content: String) throws -> [ParsedTransaction] {
         // Clean the response (remove any markdown formatting if present)
         var jsonString = content.trimmingCharacters(in: .whitespacesAndNewlines)
         if jsonString.hasPrefix("```json") {
@@ -238,19 +264,25 @@ final class TranscriptionParserService {
         }
 
         let decoder = JSONDecoder()
-        let llmResponse: LLMResponse
+        let llmResponse: LLMMultipleResponse
 
         do {
-            llmResponse = try decoder.decode(LLMResponse.self, from: data)
+            llmResponse = try decoder.decode(LLMMultipleResponse.self, from: data)
         } catch {
             throw ParserError.parsingFailed("JSON decode error: \(error.localizedDescription)")
         }
 
-        // Convert to ParsedTransaction
-        let amount: Decimal? = llmResponse.amount.map { Decimal($0) }
+        // Convert each transaction item to ParsedTransaction
+        return llmResponse.transactions.map { item in
+            convertToParsedTransaction(item)
+        }
+    }
+
+    private func convertToParsedTransaction(_ item: LLMTransactionItem) -> ParsedTransaction {
+        let amount: Decimal? = item.amount.map { Decimal($0) }
 
         var date: Date? = nil
-        if let dateString = llmResponse.date {
+        if let dateString = item.date {
             // Try simple date format with local timezone
             let simpleFormatter = DateFormatter()
             simpleFormatter.dateFormat = "yyyy-MM-dd"
@@ -267,17 +299,17 @@ final class TranscriptionParserService {
         return ParsedTransaction(
             amount: amount,
             date: date,
-            note: llmResponse.note,
-            isExpense: llmResponse.isExpense,
-            subcategoryHint: llmResponse.subcategoryHint,
-            tagHints: llmResponse.tagHints ?? [],
-            currencyHint: llmResponse.currencyHint,
+            note: item.note,
+            isExpense: item.isExpense,
+            subcategoryHint: item.subcategoryHint,
+            tagHints: item.tagHints ?? [],
+            currencyHint: item.currencyHint,
             confidence: ParsedTransaction.TransactionConfidence(
-                amount: llmResponse.confidence.amount,
-                date: llmResponse.confidence.date,
-                merchant: llmResponse.confidence.merchant,
-                subcategory: llmResponse.confidence.subcategory,
-                tags: llmResponse.confidence.tags
+                amount: item.confidence.amount,
+                date: item.confidence.date,
+                merchant: item.confidence.merchant,
+                subcategory: item.confidence.subcategory,
+                tags: item.confidence.tags
             )
         )
     }

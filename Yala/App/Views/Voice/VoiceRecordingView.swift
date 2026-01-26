@@ -22,6 +22,7 @@ struct VoiceRecordingView: View {
     @State private var isProcessing = false
     @State private var processingStatus: String = ""
     @State private var createdDraft: InboxDraft?
+    @State private var createdDrafts: [InboxDraft] = []
     @State private var draftWasApproved = false
 
     // Preview state (after recording, before processing)
@@ -688,9 +689,9 @@ struct VoiceRecordingView: View {
                 return
             }
 
-            // Step 2: Parse transcription
+            // Step 2: Parse transcription (supports multiple transactions)
             processingStatus = L10n.Voice.parsing
-            let parsed = try await TranscriptionParserService.shared.parse(text: transcription.text)
+            let parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(text: transcription.text)
 
             // Check cancellation after parsing
             guard !Task.isCancelled else {
@@ -698,22 +699,35 @@ struct VoiceRecordingView: View {
                 return
             }
 
-            // Validate: Must have amount to create draft
-            guard parsed.amount != nil else {
+            // Filter only transactions with amounts
+            let validTransactions = parsedTransactions.filter { $0.amount != nil }
+
+            // Validate: At least one transaction must have amount
+            guard !validTransactions.isEmpty else {
                 isProcessing = false
                 errorMessage = L10n.Voice.errorNoAmount
                 return
             }
 
-            // Step 3: Create InboxDraft (only if not cancelled)
+            // Step 3: Create InboxDrafts (only if not cancelled)
             processingStatus = L10n.Voice.saving
-            let draft = createInboxDraft(from: parsed, transcription: transcription.text)
+            let drafts = validTransactions.map { parsed in
+                createInboxDraft(from: parsed, transcription: transcription.text)
+            }
 
             isProcessing = false
             pendingAudioData = nil
 
-            // Open the draft in approval screen directly
-            createdDraft = draft
+            // Navigation based on number of drafts
+            if drafts.count == 1 {
+                // Single draft: open edit sheet directly
+                createdDraft = drafts.first
+            } else {
+                // Multiple drafts: save and navigate to Inbox
+                createdDrafts = drafts
+                onSavedToInbox?()
+                dismiss()
+            }
 
         } catch let error as TranscriptionError {
             isProcessing = false

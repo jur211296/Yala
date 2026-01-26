@@ -34,7 +34,7 @@
 | 3.2 | Contador de drafts detectados antes de navegar | UX | ✅ Completado (7b65b05) |
 | 3.3 | Sin transacciones → ¿crear draft manual con imagen como referencia? | UX | ❌ Descartado (solo mostrar mensaje) |
 | 3.4 | Cancelar durante procesamiento OCR | UX | ✅ Completado (fbff205) |
-| 3.5 | Selección múltiple de imágenes | Feature | Pendiente |
+| 3.5 | Selección múltiple de imágenes | Feature | ✅ Completado (b145887) |
 
 ---
 
@@ -151,7 +151,7 @@
 
 ### Features deseables
 - [ ] 2.4 - Múltiples drafts de una grabación
-- [ ] 3.5 - Selección múltiple de imágenes
+- [x] 3.5 - Selección múltiple de imágenes (b145887)
 
 ### UI (al final)
 - [ ] 10.1-10.10 - Pulido visual general

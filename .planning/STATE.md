@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] b145887 feat(image): support multiple image selection (up to 10)
 - [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
 - [2026-01-25] 8b4f8cb feat(voice,inbox): UX refinements for draft flow
 - [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
@@ -209,15 +210,14 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Error handling completo para voz e imagen (commit 0a203f0)
-Next step: Items pendientes de REFINAMIENTO: 2.4 múltiples drafts voz, 3.5 selección múltiple imágenes, UI polish (10.x)
+Stopped at: Selección múltiple de imágenes (commit b145887)
+Next step: Item 2.4 múltiples drafts de voz
 Resume file: N/A
 Resume context:
-- Errores completados: API key, permisos micrófono, sin conexión, imagen corrupta
-- NetworkMonitor.swift nuevo para detectar conectividad
-- Botones de acción según tipo de error (Settings, Retry, Usar imagen)
-- Localizaciones en 6 idiomas para todos los errores
-- REFINAMIENTO-8.3-8.4.md sección 9 completada
+- Selección múltiple de imágenes implementada (hasta 10)
+- Grid de previews, progreso X/Y al procesar
+- Errores individuales no detienen el batch
+- Task 9 pendiente: múltiples drafts de una grabación de voz
 
 ## V1.1 (Futuro)
 
