@@ -1176,3 +1176,4 @@
 "image.goToInbox" = "Ir a bandeja";
 "image.transactionsDetectedMessage" = "Hemos detectado %d transacciones. Puedes revisarlas y aprobarlas en la bandeja de entrada.";
 "image.analyzingIn" = "Analizando en %d...";
+"image.imagesSelected" = "%d imágenes seleccionadas";

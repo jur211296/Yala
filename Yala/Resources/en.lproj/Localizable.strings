@@ -1176,3 +1176,4 @@
 "image.goToInbox" = "Go to Inbox";
 "image.transactionsDetectedMessage" = "We detected %d transactions. You can review and approve them in the inbox.";
 "image.analyzingIn" = "Analyzing in %d...";
+"image.imagesSelected" = "%d images selected";

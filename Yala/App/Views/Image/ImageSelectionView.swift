@@ -14,12 +14,13 @@ struct ImageSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @State private var selectedPhoto: PhotosPickerItem?
-    @State private var selectedImage: UIImage?
+    @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var selectedImages: [UIImage] = []
     @State private var isCountingDown = false
     @State private var countdownValue = 3
     @State private var countdownTask: Task<Void, Never>?
     @State private var isProcessing = false
+    @State private var processingProgress: (current: Int, total: Int) = (0, 0)
     @State private var showingResult = false
     @State private var errorMessage: String?
     @State private var showError = false
@@ -70,10 +71,10 @@ struct ImageSelectionView: View {
                     .disabled(isProcessing || isCountingDown)
                 }
             }
-            .onChange(of: selectedPhoto) { oldValue, newValue in
-                if let photo = newValue {
+            .onChange(of: selectedPhotos) { oldValue, newValue in
+                if !newValue.isEmpty {
                     Task {
-                        await loadImageAndStartCountdown(from: photo)
+                        await loadImagesAndStartCountdown(from: newValue)
                     }
                 }
             }
@@ -183,7 +184,8 @@ struct ImageSelectionView: View {
 
             // Select button (circle style like Voice)
             PhotosPicker(
-                selection: $selectedPhoto,
+                selection: $selectedPhotos,
+                maxSelectionCount: 10,
                 matching: .images
             ) {
                 Image(systemName: "photo.badge.plus")
@@ -210,14 +212,45 @@ struct ImageSelectionView: View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
 
-            // Image preview with subtle styling
-            if let image = selectedImage {
+            // Image preview(s) with subtle styling
+            if selectedImages.count == 1, let image = selectedImages.first {
+                // Single image: show large preview
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
                     .frame(maxHeight: 280)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
+            } else if selectedImages.count > 1 {
+                // Multiple images: show grid preview
+                VStack(spacing: DS.Spacing.sm) {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: DS.Spacing.sm) {
+                        ForEach(selectedImages.prefix(6).indices, id: \.self) { index in
+                            Image(uiImage: selectedImages[index])
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                        }
+                        if selectedImages.count > 6 {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: DS.Radius.md)
+                                    .fill(Color.teal.opacity(0.2))
+                                    .frame(width: 80, height: 80)
+                                Text("+\(selectedImages.count - 6)")
+                                    .font(.headline)
+                                    .foregroundStyle(Color.teal)
+                            }
+                        }
+                    }
+                    Text(L10n.Image.imagesSelected(selectedImages.count))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             // Countdown display
@@ -310,9 +343,15 @@ struct ImageSelectionView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text(L10n.Image.processingSubtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                if processingProgress.total > 1 {
+                    Text("\(processingProgress.current)/\(processingProgress.total)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(L10n.Image.processingSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()
@@ -382,43 +421,51 @@ struct ImageSelectionView: View {
 
     // MARK: - Countdown Logic
 
-    /// Loads the image and starts 2-second countdown before processing
-    private func loadImageAndStartCountdown(from photo: PhotosPickerItem) async {
-        do {
-            // Load image data
-            guard let imageData = try await photo.loadTransferable(type: Data.self),
-                  let uiImage = UIImage(data: imageData) else {
-                throw ImageError.loadFailed
-            }
+    /// Loads multiple images and starts countdown before processing
+    private func loadImagesAndStartCountdown(from photos: [PhotosPickerItem]) async {
+        var loadedImages: [UIImage] = []
 
-            // Show preview and start countdown
-            await MainActor.run {
-                selectedImage = uiImage
-                countdownValue = 3
-                isCountingDown = true
-            }
-
-            // Start countdown task
-            countdownTask = Task {
-                for i in (1...3).reversed() {
-                    await MainActor.run {
-                        countdownValue = i
-                    }
-                    try? await Task.sleep(for: .seconds(1))
-
-                    // Check if cancelled
-                    if Task.isCancelled { return }
+        for photo in photos {
+            do {
+                guard let imageData = try await photo.loadTransferable(type: Data.self),
+                      let uiImage = UIImage(data: imageData) else {
+                    continue // Skip failed images
                 }
-
-                // Countdown finished - start processing
-                await MainActor.run {
-                    isCountingDown = false
-                }
-                await processImage()
+                loadedImages.append(uiImage)
+            } catch {
+                continue // Skip failed images
             }
+        }
 
-        } catch {
+        guard !loadedImages.isEmpty else {
             handleError(L10n.Image.errorLoad, type: .loadFailed)
+            return
+        }
+
+        // Show preview and start countdown
+        await MainActor.run {
+            selectedImages = loadedImages
+            countdownValue = 3
+            isCountingDown = true
+        }
+
+        // Start countdown task
+        countdownTask = Task {
+            for i in (1...3).reversed() {
+                await MainActor.run {
+                    countdownValue = i
+                }
+                try? await Task.sleep(for: .seconds(1))
+
+                // Check if cancelled
+                if Task.isCancelled { return }
+            }
+
+            // Countdown finished - start processing
+            await MainActor.run {
+                isCountingDown = false
+            }
+            await processAllImages()
         }
     }
 
@@ -427,63 +474,69 @@ struct ImageSelectionView: View {
         countdownTask?.cancel()
         countdownTask = nil
         isCountingDown = false
-        selectedImage = nil
-        selectedPhoto = nil
+        selectedImages = []
+        selectedPhotos = []
         countdownValue = 3
     }
 
     // MARK: - Processing Logic
 
-    private func processImage() async {
-        guard let uiImage = selectedImage else { return }
+    /// Process all selected images
+    private func processAllImages() async {
+        guard !selectedImages.isEmpty else { return }
 
         await MainActor.run {
             isProcessing = true
+            processingProgress = (0, selectedImages.count)
         }
 
-        defer {
-            Task { @MainActor in
-                isProcessing = false
+        var allDrafts: [InboxDraft] = []
+
+        for (index, uiImage) in selectedImages.enumerated() {
+            await MainActor.run {
+                processingProgress = (index + 1, selectedImages.count)
+            }
+
+            do {
+                let drafts = try await processSingleImage(uiImage)
+                allDrafts.append(contentsOf: drafts)
+            } catch {
+                // Continue processing other images even if one fails
             }
         }
 
-        do {
-            // Try Vision API first if available
-            if visionService.isAvailable {
-                do {
-                    try await processImageWithVision(uiImage)
-                    return
-                } catch {
-                    // Vision failed, fall through to offline processing
-                    print("Vision API failed, falling back to OCR: \(error.localizedDescription)")
-                }
-            }
-
-            // Fallback to local OCR processing
-            try await processImageOffline(uiImage)
-
-        } catch let error as ImageOCRService.OCRError {
-            handleError(error.localizedDescription, type: .corrupted)
-        } catch let error as ImageError {
-            let errorType: ImageErrorType
-            switch error {
-            case .loadFailed:
-                errorType = .loadFailed
-            case .noDataExtracted:
-                errorType = .noData
-            case .unrecognizedType:
-                errorType = .unrecognized
-            case .corrupted:
-                errorType = .corrupted
-            }
-            handleError(error.localizedDescription, type: errorType)
-        } catch {
-            handleError(L10n.Image.errorGeneric, type: .generic)
+        await MainActor.run {
+            isProcessing = false
         }
+
+        if allDrafts.isEmpty {
+            handleError(L10n.Image.errorNoData, type: .noData)
+            return
+        }
+
+        draftsCreated = allDrafts.count
+        try? modelContext.save()
+        await handleNavigation(drafts: allDrafts)
     }
 
-    /// Process image using GPT-4o Vision API (online)
-    private func processImageWithVision(_ uiImage: UIImage) async throws {
+    /// Process a single image and return drafts
+    private func processSingleImage(_ uiImage: UIImage) async throws -> [InboxDraft] {
+        // Try Vision API first if available
+        if visionService.isAvailable {
+            do {
+                return try await processImageWithVisionReturning(uiImage)
+            } catch {
+                // Vision failed, fall through to offline processing
+                print("Vision API failed, falling back to OCR: \(error.localizedDescription)")
+            }
+        }
+
+        // Fallback to local OCR processing
+        return try await processImageOfflineReturning(uiImage)
+    }
+
+    /// Process image using GPT-4o Vision API (online) - returns drafts
+    private func processImageWithVisionReturning(_ uiImage: UIImage) async throws -> [InboxDraft] {
         let response = try await visionService.analyze(image: uiImage)
 
         // Check if we got valid transactions
@@ -503,13 +556,11 @@ struct ImageSelectionView: View {
             throw ImageError.noDataExtracted
         }
 
-        draftsCreated = drafts.count
-        try modelContext.save()
-        await handleNavigation(drafts: drafts)
+        return drafts
     }
 
-    /// Process image using local OCR pipeline (offline fallback)
-    private func processImageOffline(_ uiImage: UIImage) async throws {
+    /// Process image using local OCR pipeline (offline fallback) - returns drafts
+    private func processImageOfflineReturning(_ uiImage: UIImage) async throws -> [InboxDraft] {
         // Extract text with OCR
         let ocrResult = try await ocrService.extractText(from: uiImage)
 
@@ -519,35 +570,23 @@ struct ImageSelectionView: View {
         // Extract data based on type
         switch imageType {
         case .screenshotSingle:
-            // Single transaction
             if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
-                draftsCreated = 1
-                try modelContext.save()
-                await handleNavigation(drafts: [draft])
-            } else {
-                throw ImageError.noDataExtracted
+                return [draft]
             }
+            throw ImageError.noDataExtracted
 
         case .screenshotList:
-            // Multiple transactions
             let drafts = listExtractor.extract(from: ocrResult, context: modelContext)
             if !drafts.isEmpty {
-                draftsCreated = drafts.count
-                try modelContext.save()
-                await handleNavigation(drafts: drafts)
-            } else {
-                throw ImageError.noDataExtracted
+                return drafts
             }
+            throw ImageError.noDataExtracted
 
         case .receiptPhoto:
-            // Receipt - use single extractor as fallback
             if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
-                draftsCreated = 1
-                try modelContext.save()
-                await handleNavigation(drafts: [draft])
-            } else {
-                throw ImageError.noDataExtracted
+                return [draft]
             }
+            throw ImageError.noDataExtracted
 
         case .unknown:
             throw ImageError.unrecognizedType
@@ -586,12 +625,13 @@ struct ImageSelectionView: View {
     }
 
     private func resetForRetry() {
-        selectedPhoto = nil
-        selectedImage = nil
+        selectedPhotos = []
+        selectedImages = []
         isCountingDown = false
         isProcessing = false
         showingResult = false
         countdownValue = 3
+        processingProgress = (0, 0)
     }
 
     // MARK: - Error Types

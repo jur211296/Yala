@@ -1176,3 +1176,4 @@
 "image.goToInbox" = "Ir para caixa";
 "image.transactionsDetectedMessage" = "Detectamos %d transações. Você pode revisá-las e aprová-las na caixa de entrada.";
 "image.analyzingIn" = "Analisando em %d...";
+"image.imagesSelected" = "%d imagens selecionadas";

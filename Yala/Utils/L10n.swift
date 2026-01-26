@@ -1935,6 +1935,9 @@ enum L10n {
         static func analyzingIn(_ seconds: Int) -> String {
             String(format: NSLocalizedString("image.analyzingIn", comment: ""), seconds)
         }
+        static func imagesSelected(_ count: Int) -> String {
+            String(format: NSLocalizedString("image.imagesSelected", comment: ""), count)
+        }
     }
 }
 
