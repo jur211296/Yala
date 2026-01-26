@@ -86,8 +86,8 @@
 
 "records.title" = "Records";
 "records.latest" = "Latest Records";
-"records.noRecords" = "No records";
-"records.deleteConfirmTitle" = "Delete %d record(s)?";
+"records.noRecords" = "No records in this period";
+"records.deleteConfirmTitle" = "Delete %d records?";
 
 // MARK: - Filters
 
@@ -138,24 +138,24 @@
 
 // MARK: - Search
 
-"search.noResults" = "No results";
+"search.noResults" = "We didn't find any results";
 "search.tryAnotherTerm" = "Try a different search term";
 
 // MARK: - Exchange Rate
 
 "exchangeRate.title" = "Exchange Rate";
 "exchangeRate.updated" = "Updated";
-"exchangeRate.loadError" = "Could not load exchange rate for this period. Please try again later.";
+"exchangeRate.loadError" = "We couldn't get the exchange rate. Try again in a moment.";
 
 // MARK: - Empty States
 
-"empty.noData" = "No data to display yet";
-"empty.noTransactions" = "No transactions yet";
-"empty.noFavorites" = "No favorites yet";
-"empty.noTags" = "No tags yet";
-"empty.noAccounts" = "No accounts yet";
-"empty.noCategories" = "No categories yet";
-"empty.noSubcategories" = "No subcategories yet";
+"empty.noData" = "Your data will appear here";
+"empty.noTransactions" = "Your transactions will appear here";
+"empty.noFavorites" = "You don't have any favorites yet";
+"empty.noTags" = "You don't have any tags yet";
+"empty.noAccounts" = "You don't have any accounts yet";
+"empty.noCategories" = "You don't have any categories yet";
+"empty.noSubcategories" = "You don't have any subcategories yet";
 
 // MARK: - Transaction
 
@@ -221,11 +221,11 @@
 
 // MARK: - Alert
 
-"alert.unsavedChanges" = "Unsaved changes";
-"alert.discardChanges" = "Discard changes";
+"alert.unsavedChanges" = "You have unsaved changes";
+"alert.discardChanges" = "Discard";
 "alert.keepEditing" = "Keep editing";
-"alert.confirmDelete" = "Confirm deletion";
-"alert.deleteWarning" = "This action cannot be undone.";
+"alert.confirmDelete" = "Confirm";
+"alert.deleteWarning" = "This action cannot be undone";
 
 // MARK: - Import
 
@@ -238,14 +238,14 @@
 "import.noAccountsAvailable" = "No accounts available";
 "import.createAccountFirst" = "Create at least one account before importing transactions.";
 "import.completed" = "Import completed";
-"import.error" = "Import error";
+"import.error" = "There was a problem importing";
 "import.templateGenerated" = "Template generated";
 "import.templateGeneratedMessage" = "The template was generated successfully. You can now edit it and come back to this screen to import it.";
 "import.introDescription" = "Add your financial transactions in bulk from a CSV or Excel file.";
 "import.templateDescription" = "Use our official template to ensure the correct format.";
 "import.categoriesDescription" = "If the file includes categories that don't exist, they will be created automatically.";
 "import.selectAccount" = "Select an account";
-"import.fileUrlError" = "Could not get the URL of the selected file.";
+"import.fileUrlError" = "We couldn't read that file. Try selecting it again.";
 "import.createAccountBeforeImport" = "Create at least one account before importing transactions.";
 
 // Multi-currency import
@@ -274,7 +274,7 @@
 "favorites.title" = "Favorite Payments";
 "favorites.new" = "New Favorite";
 "favorites.edit" = "Edit Favorite";
-"favorites.noFavorites" = "No favorites";
+"favorites.noFavorites" = "You don't have any favorites yet";
 "favorites.createTemplate" = "Create recurring payment templates to record them faster.";
 "favorites.newTitle" = "New Favorite";
 "favorites.editTitle" = "Edit Favorite";
@@ -359,9 +359,9 @@
 // MARK: - Budgets
 
 "budgets.title" = "Budgets";
-"budgets.empty.title" = "No budgets";
-"budgets.empty.message" = "Create budgets to control your spending.";
-"budgets.widget.noFavorites.title" = "No favorites";
+"budgets.empty.title" = "You don't have any budgets yet";
+"budgets.empty.message" = "Create budgets to better control your spending.";
+"budgets.widget.noFavorites.title" = "No favorite budgets";
 "budgets.widget.noFavorites.message" = "Mark budgets as favorites in Settings > Budgets to see them here.";
 "budgets.widget.selectFavorites" = "Select favorites";
 "budgets.new" = "New Budget";
@@ -414,7 +414,7 @@
 "profile.personalDetails" = "Personal Details";
 "profile.dataManagement" = "Data Management";
 "profile.appearance" = "Appearance";
-"empty.noExpenses" = "No expenses recorded yet";
+"empty.noExpenses" = "You don't have any expenses recorded yet";
 "empty.noSubcategories" = "No subcategories yet";
 "common.recent" = "Recent";
 "tag.new" = "New Tag";
@@ -435,7 +435,7 @@
 "export.columnsToExport" = "Columns to export";
 "export.exportToCSV" = "Export to CSV";
 "export.exportBtn" = "Export";
-"export.exportError" = "Export error";
+"export.exportError" = "There was a problem exporting";
 "export.exportCompleted" = "Export completed";
 "export.backToSettings" = "Back to settings";
 "export.exportData" = "Export data";
@@ -499,8 +499,8 @@
 
 // MARK: - Scheduled Payments Widget
 "scheduled.widget.count" = "%d active payments";
-"scheduled.widget.empty.title" = "No payments";
-"scheduled.widget.empty.message" = "Add scheduled payments to see them here";
+"scheduled.widget.empty.title" = "No upcoming payments";
+"scheduled.widget.empty.message" = "Your upcoming payments will appear here";
 "scheduled.widget.daysAgo" = "%d days ago";
 "scheduled.widget.tomorrow" = "Tomorrow";
 "scheduled.widget.inDays" = "In %d days";
@@ -533,7 +533,7 @@
 "widget.distributionBySubcategory" = "Subcategories";
 "widget.distributionByNature" = "Natures";
 "widget.distributionByTag" = "Distribution by tag";
-"widget.noDataForPeriod" = "No data for this period";
+"widget.noDataForPeriod" = "No data yet for this period";
 "widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
 "widget.currenciesToCompare" = "Currencies to compare";
 "widget.noRecordsForFilters" = "No records for this period and filters";
@@ -545,9 +545,9 @@
 "cashFlow.netFlow" = "Net Flow";
 
 
-"common.unknownError" = "Unknown error";
-"common.saveError" = "Couldn't save changes. Please try again.";
-"common.deleteError" = "Couldn't delete. Please try again.";
+"common.unknownError" = "Something went wrong";
+"common.saveError" = "Changes weren't saved. Try again.";
+"common.deleteError" = "Couldn't delete. Try once more.";
 "widget.noExpensesNaturePeriod" = "No nature expenses recorded for this period.";
 
 
@@ -606,7 +606,7 @@
 "comparison.monthShort" = "P-1";
 "comparison.yearShort" = "Y-1";
 
-"statistics.noRecordsFiltered" = "No records found with the applied filters.";
+"statistics.noRecordsFiltered" = "No records with these filters";
 "statistics.noRecordsDescription" = "When you add transactions, they will appear here.";
 "statistics.periodComparison" = "Comparison with previous period";
 "statistics.vsPreviousPeriod" = "vs Previous period";
@@ -619,7 +619,7 @@
 "statistics.noExpensesInPeriod" = "No expenses in the selected period";
 "statistics.topCategories" = "Top categories";
 "statistics.topSubcategories" = "Top subcategories";
-"statistics.noDataToShow" = "No data to show";
+"statistics.noDataToShow" = "No data to show yet";
 "statistics.noRecords" = "No records";
 "statistics.ofExpense" = "of expense";
 "statistics.spendingAnalysis" = "Spending Analysis";
@@ -717,8 +717,8 @@
 "settings.appIconTitle" = "App Icon";
 "settings.iconNotSupported" = "This device does not support alternate icons.";
 "settings.iconChangeFailed" = "Failed to change icon: %@";
-"settings.deleteDataError" = "Error Deleting Data";
-"settings.deleteDataUnknownError" = "An unknown error occurred while deleting data.";
+"settings.deleteDataError" = "There was a problem deleting data";
+"settings.deleteDataUnknownError" = "Something went wrong while deleting data. Try again.";
 
 
 "transaction.newTransaction" = "New Transaction";
@@ -748,12 +748,12 @@
 "common.useThisColor" = "Use This Color";
 "common.newColor" = "New Color";
 "common.understood" = "Understood";
-"common.cannotUndo" = "This action cannot be undone.";
+"common.cannotUndo" = "This action cannot be undone";
 "common.general" = "General";
 "common.status" = "Status";
 "common.actions" = "Actions";
 "account.configure" = "Configure Account";
-"account.deleteError" = "Cannot Delete This Account";
+"account.deleteError" = "This account can't be deleted";
 "account.accountName" = "Account Name";
 "account.accountNumber" = "Account Number";
 "category.editTitle" = "Edit Category";
@@ -774,7 +774,7 @@
 "subcategory.editTitle" = "Edit Subcategory";
 "subcategory.delete" = "Delete Subcategory";
 "subcategory.deleteConfirmTitle" = "Delete Subcategory?";
-"subcategory.deleteConfirmMessage" = "This action cannot be undone.";
+"subcategory.deleteConfirmMessage" = "This action cannot be undone";
 "subcategory.cannotDeleteTitle" = "Cannot Delete";
 "subcategory.cannotDeleteMessage" = "This subcategory has %d transactions. Transfer the transactions to another subcategory before deleting.";
 "subcategory.transferTitle" = "Transfer Transactions";
@@ -902,8 +902,8 @@
 "scheduled.tab.all" = "All";
 
 // Empty State
-"scheduled.empty.title" = "No scheduled payments";
-"scheduled.empty.message" = "Create reminders for your recurring payments and subscriptions.";
+"scheduled.empty.title" = "You don't have any scheduled payments yet";
+"scheduled.empty.message" = "Create reminders for your recurring payments and subscriptions";
 
 // Due Text
 "scheduled.due.yesterday" = "Yesterday";
@@ -978,8 +978,8 @@
 // Subscriptions View
 "subscriptions.title" = "Subscriptions";
 "subscriptions.count" = "%d active subscriptions";
-"subscriptions.empty.title" = "No subscriptions";
-"subscriptions.empty.message" = "Add your subscription services like Netflix, Spotify, etc.";
+"subscriptions.empty.title" = "You don't have any subscriptions yet";
+"subscriptions.empty.message" = "Add services like Netflix, Spotify, and more";
 "subscriptions.calendar.empty" = "No subscriptions this month";
 "subscriptions.day.empty" = "No subscriptions on this day";
 "subscriptions.show.all" = "Show all";
@@ -1043,18 +1043,18 @@
 
 // MARK: - Onboarding
 
-"onboarding.welcomeTitle" = "Welcome to Yala";
-"onboarding.welcomeSubtitle" = "Set up your personal finance app in seconds.";
+"onboarding.welcomeTitle" = "Hi! I'm Yala";
+"onboarding.welcomeSubtitle" = "Let's organize your finances together.";
 "onboarding.nameLabel" = "What's your name?";
 "onboarding.namePlaceholder" = "Your name";
-"onboarding.currencyTitle" = "Main currency";
+"onboarding.currencyTitle" = "Your main currency";
 "onboarding.currencySubtitle" = "Select the currency you use most frequently.";
 "onboarding.secondaryTitle" = "Secondary currencies";
 "onboarding.secondarySubtitle" = "Do you use other currencies? Select up to 2 to see exchange rates.";
 "onboarding.secondaryHint" = "%d of %d selected";
 "onboarding.periodTitle" = "Default period";
 "onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
-"onboarding.finish" = "Get Started";
+"onboarding.finish" = "Let's Go";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";

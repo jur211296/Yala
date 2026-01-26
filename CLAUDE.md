@@ -93,6 +93,20 @@ Reglas críticas:
 - Preguntar: "¿Quieres que agregue esta regla a UI-PATTERNS.md para que siempre se respete?"
 - Si el usuario confirma, actualizar el archivo en la sección correspondiente
 
+## Brand Voice (OBLIGATORIO para textos)
+**Antes de escribir cualquier texto visible al usuario, LEER:** `.planning/BRAND-VOICE.md`
+
+Reglas críticas:
+- SIEMPRE usar tono cercano y conversacional ("tú"), como un amigo experto
+- SIEMPRE usar español neutro (evitar regionalismos muy locales)
+- NUNCA usar tono negativo o regañar - proponer soluciones y celebrar logros
+- SIEMPRE preferir términos simples: "gasto" no "transacción", "dinero" no "plata"
+- Emojis moderados (1-2 máx) solo cuando aporten significado positivo
+
+**Mantenimiento de BRAND-VOICE.md:**
+- Cuando el usuario defina nuevo copy o ajuste el tono, PROPONER actualizarlo
+- Mantener el glosario de términos sincronizado con la UI
+
 ## System Files Structure
 - CLAUDE.md: Operational memory (current context)
 - .planning/PROJECT.md: Product definition and constraints
@@ -100,5 +114,7 @@ Reglas críticas:
 - .planning/STATE.md: Living memory of progress and decisions
 - .planning/DECISIONS.md: Architectural decisions record
 - .planning/UI-PATTERNS.md: Design system rules and UI patterns (OBLIGATORIO para UI)
+- .planning/BRAND-VOICE.md: Tono, estilo y mensajes de marca (OBLIGATORIO para textos)
+- .planning/MARKETING.md: Estrategia de marketing y posicionamiento
 - .claude/commands/: Automation macros
 - .claude/sessions/: Session logs (git-ignored)
