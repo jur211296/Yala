@@ -104,11 +104,11 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 9.1 | Sin conexión (voz) → sugerir usar imagen (offline) | Error | Pendiente |
-| 9.2 | API key inválida → link a Settings | Error | Pendiente |
+| 9.1 | Sin conexión (voz) → sugerir usar imagen (offline) | Error | ✅ Completado (0a203f0) |
+| 9.2 | API key inválida → mensaje genérico de servicio | Error | ✅ Completado (0a203f0) |
 | 9.3 | Draft huérfano si falla save | Edge case | Pendiente |
-| 9.4 | Imagen corrupta → mensaje claro + reintentar | Error | Pendiente |
-| 9.5 | Permisos denegados → deep link a Settings sistema | Error | Pendiente |
+| 9.4 | Imagen corrupta → mensaje claro + reintentar | Error | ✅ Completado (0a203f0) |
+| 9.5 | Permisos denegados → deep link a Settings sistema | Error | ✅ Completado (0a203f0) |
 
 ---
 

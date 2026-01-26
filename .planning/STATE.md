@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
 - [2026-01-25] 8b4f8cb feat(voice,inbox): UX refinements for draft flow
 - [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
 - [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] 49c7abc feat(inbox): add validation message and capsule buttons in edit sheet
 - [2026-01-25] f2040bd chore: improve commit-one to update work documents and mark 6.3 complete
 - [2026-01-25] 1312846 feat(inbox): add discard changes confirmation when closing edit sheet
-- [2026-01-25] ff9bf1b fix(inbox): show amounts with decimals for consistency
 
 ## Completed in Current Phase
 
@@ -209,14 +209,15 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: UX refinements batch - voice preview/cancel/retry, inbox grouping, new tag badges (commit 8b4f8cb)
-Next step: Items pendientes de REFINAMIENTO: 2.4 múltiples drafts voz, 3.5 selección múltiple imágenes, errores y pulido UI
+Stopped at: Error handling completo para voz e imagen (commit 0a203f0)
+Next step: Items pendientes de REFINAMIENTO: 2.4 múltiples drafts voz, 3.5 selección múltiple imágenes, UI polish (10.x)
 Resume file: N/A
 Resume context:
-- Voice: preview con countdown 3s, cancelar procesamiento (verifica Task.isCancelled), retry tras error
-- Inbox: agrupación por fecha con secciones, hint bulk actions, badge "Nuevo" en tags creados automáticamente
-- Model: InboxDraft.newlyCreatedTagNames para tracking de tags nuevos
-- REFINAMIENTO-8.3-8.4.md actualizado con items completados
+- Errores completados: API key, permisos micrófono, sin conexión, imagen corrupta
+- NetworkMonitor.swift nuevo para detectar conectividad
+- Botones de acción según tipo de error (Settings, Retry, Usar imagen)
+- Localizaciones en 6 idiomas para todos los errores
+- REFINAMIENTO-8.3-8.4.md sección 9 completada
 
 ## V1.1 (Futuro)
 
