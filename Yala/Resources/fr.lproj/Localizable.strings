@@ -1163,3 +1163,4 @@
 "image.transactionsDetected" = "Transactions détectées";
 "image.goToInbox" = "Aller à la boîte";
 "image.transactionsDetectedMessage" = "Nous avons détecté %d transactions. Tu peux les vérifier et les approuver dans la boîte de réception.";
+"image.analyzingIn" = "Analyse dans %d...";

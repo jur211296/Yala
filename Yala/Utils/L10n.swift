@@ -1898,6 +1898,9 @@ enum L10n {
         static func transactionsDetectedMessage(_ count: Int) -> String {
             String(format: NSLocalizedString("image.transactionsDetectedMessage", comment: ""), count)
         }
+        static func analyzingIn(_ seconds: Int) -> String {
+            String(format: NSLocalizedString("image.analyzingIn", comment: ""), seconds)
+        }
     }
 }
 

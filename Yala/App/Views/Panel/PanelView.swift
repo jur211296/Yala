@@ -356,7 +356,7 @@ struct PanelView: View {
                             fabMenuButton(
                                 icon: "photo",
                                 text: L10n.Panel.fabImage,
-                                color: .orange
+                                color: .teal
                             ) {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                     showFABMenu = false

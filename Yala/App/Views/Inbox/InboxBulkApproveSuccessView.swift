@@ -14,55 +14,71 @@ struct InboxBulkApproveSuccessView: View {
     let onBackToInbox: () -> Void
 
     var body: some View {
-        VStack(spacing: DS.Spacing.lg) {
+        VStack(spacing: DS.Spacing.xxl) {
             Spacer()
 
-            // Success icon
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(Color.green)
+            // Success circle (matching ImageSelectionView style)
+            ZStack {
+                // Main circle with gradient
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.green, Color.green.opacity(0.85)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+                    .shadow(color: Color.green.opacity(0.4), radius: 16, x: 0, y: 8)
 
-            // Count
-            Text("\(approvedCount)")
-                .font(.system(size: 48, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.electricIndigo)
+                // Glass overlay
+                Circle()
+                    .fill(.white.opacity(0.1))
+                    .frame(width: 100, height: 100)
+                    .mask(
+                        LinearGradient(
+                            colors: [.white, .clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                    )
 
-            // Label
-            Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.secondary)
+                // Checkmark icon
+                Image(systemName: "checkmark")
+                    .font(.system(size: 40, weight: .medium))
+                    .foregroundStyle(.white)
+            }
+
+            // Count and label
+            VStack(spacing: DS.Spacing.sm) {
+                Text("\(approvedCount)")
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.electricIndigo)
+
+                Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
 
             Spacer()
 
             // Action buttons
             VStack(spacing: DS.Spacing.md) {
                 // Primary: View in Records
-                Button(action: onViewRecords) {
-                    HStack {
-                        Image(systemName: "list.bullet.rectangle")
-                        Text(L10n.Inbox.viewInRecords)
-                    }
-                    .frame(maxWidth: .infinity)
+                YalaPrimaryButton(L10n.Inbox.viewInRecords, icon: "list.bullet.rectangle") {
+                    onViewRecords()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.electricIndigo)
-                .controlSize(.large)
 
                 // Secondary: Back to Inbox
-                Button(action: onBackToInbox) {
-                    HStack {
-                        Image(systemName: "tray")
-                        Text(L10n.Inbox.backToInbox)
-                    }
-                    .frame(maxWidth: .infinity)
+                YalaSecondaryButton(L10n.Inbox.backToInbox, icon: "tray") {
+                    onBackToInbox()
                 }
-                .buttonStyle(.bordered)
-                .tint(Color.electricIndigo)
-                .controlSize(.large)
             }
             .padding(.horizontal, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxxl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.yalaBackground)
     }
 }
 

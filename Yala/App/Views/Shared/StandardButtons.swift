@@ -86,7 +86,7 @@ struct YalaPrimaryButton: View {
             .frame(height: 50)
             .foregroundStyle(.white)
             .background(isDisabled ? Color.gray : Color.electricIndigo)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .clipShape(Capsule())
         }
         .disabled(isDisabled || isLoading)
     }
@@ -132,7 +132,7 @@ struct YalaSecondaryButton: View {
             .foregroundStyle(foregroundColor)
             .background(Color.clear)
             .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
+                Capsule()
                     .stroke(foregroundColor.opacity(0.3), lineWidth: 1)
             )
         }

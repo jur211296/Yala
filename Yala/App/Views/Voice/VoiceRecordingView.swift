@@ -55,6 +55,8 @@ struct VoiceRecordingView: View {
                 actionButtons
             }
             .padding(DS.Spacing.xl)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.yalaBackground)
             .navigationTitle(L10n.Voice.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
