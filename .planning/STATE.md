@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] 8b4f8cb feat(voice,inbox): UX refinements for draft flow
 - [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
 - [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
 - [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] f2040bd chore: improve commit-one to update work documents and mark 6.3 complete
 - [2026-01-25] 1312846 feat(inbox): add discard changes confirmation when closing edit sheet
 - [2026-01-25] ff9bf1b fix(inbox): show amounts with decimals for consistency
-- [2026-01-25] 41c10e3 fix(inbox): improve reject/delete flow and archived tab actions
 
 ## Completed in Current Phase
 
@@ -209,15 +209,14 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Rediseño completo flujo imagen con countdown 3s, diseño unificado Voice/Image/BulkSuccess (commit fbff205)
-Next step: Siguiente item UX del REFINAMIENTO-8.3-8.4.md (7.1: ordenar por prioridad, 2.4: múltiples drafts voz)
+Stopped at: UX refinements batch - voice preview/cancel/retry, inbox grouping, new tag badges (commit 8b4f8cb)
+Next step: Items pendientes de REFINAMIENTO: 2.4 múltiples drafts voz, 3.5 selección múltiple imágenes, errores y pulido UI
 Resume file: N/A
 Resume context:
-- 3.1 + 3.4: Preview imagen con countdown 3s antes de procesar, botón cancelar
-- Rediseño visual completo: círculos con gradiente, color teal, fondos yalaBackground
-- YalaPrimaryButton/YalaSecondaryButton ahora usan Capsule()
-- 1 transacción → edit sheet directo, múltiples → resultView con "Ir a bandeja"
-- Diseño unificado entre InboxBulkApproveSuccessView e ImageSelectionView resultView
+- Voice: preview con countdown 3s, cancelar procesamiento (verifica Task.isCancelled), retry tras error
+- Inbox: agrupación por fecha con secciones, hint bulk actions, badge "Nuevo" en tags creados automáticamente
+- Model: InboxDraft.newlyCreatedTagNames para tracking de tags nuevos
+- REFINAMIENTO-8.3-8.4.md actualizado con items completados
 
 ## V1.1 (Futuro)
 
