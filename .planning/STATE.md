@@ -22,6 +22,8 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
+- [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
 - [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
 - [2026-01-25] d3e8c17 feat(inbox): navigate to Inbox when closing draft edit sheet
 - [2026-01-25] 49c7abc feat(inbox): add validation message and capsule buttons in edit sheet
@@ -30,9 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] ff9bf1b fix(inbox): show amounts with decimals for consistency
 - [2026-01-25] 41c10e3 fix(inbox): improve reject/delete flow and archived tab actions
 - [2026-01-25] d9cfe97 feat(inbox): add Vision currency detection and smart navigation
-- [2026-01-24] f156c32 docs(qa): add QA scenarios for Image Input (Section 18)
-- [2026-01-24] 06bf36d feat(image): complete ImageSelectionView with PhotosPicker and OCR integration
-- [2026-01-24] 8b6509f feat(ocr): add ScreenshotList extractor with row clustering
 
 ## Completed in Current Phase
 
@@ -210,13 +209,14 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Item 3.2 completado - pantalla de resultado con contador de drafts en ImageSelectionView (commit 7b65b05)
-Next step: Siguiente item UX del REFINAMIENTO-8.3-8.4.md (2.1: permitir crear draft sin monto o 6.5: ver rawText)
+Stopped at: Items 8.1, 8.2, 8.4 completados - pantallas de éxito post-aprobar en Inbox (commit 70b05ab)
+Next step: Siguiente item UX del REFINAMIENTO-8.3-8.4.md (3.1: preview de imagen o 7.1: ordenar por prioridad)
 Resume file: N/A
 Resume context:
-- Items completados hoy: 6.1/6.2, 6.3, 5.4, 3.2
-- 3.2 incluye: resultView con contador, botón Revisar/Ir al Inbox, sin alert
-- Siguiente bloque UX Importante: 2.1, 6.5, 8.1/8.2
+- Items completados hoy: 8.1/8.2 (feedback post-aprobar), 8.4 (bulk approve success)
+- 8.1/8.2: InboxApproveSuccessView con Editar/Aceptar/Aprobar siguiente
+- 8.4: InboxBulkApproveSuccessView con Ver en registros/Volver a bandeja
+- Siguiente bloque: 3.1, 7.1, 2.4
 
 ## V1.1 (Futuro)
 
