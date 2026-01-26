@@ -13,8 +13,8 @@ Version: 1.0 (RELEASE READY)
 Phase: 7.1 of 7.1 en V1.0 (Acciones Rápidas en Transacciones) ✅ COMPLETADA
 Spec: None
 Plan: Complete
-Status: **V1.0 en TestFlight** — Soporte XLSX completo agregado
-Last activity: 2026-01-24 — Soporte XLSX (6 commits): import fecha fix, XLSXWriter, plantilla XLSX, export XLSX
+Status: **V1.0 en TestFlight** — Bugfixes UX y export
+Last activity: 2026-01-26 — Bugfixes: empty states, divisa, cuenta FAB, export encoding
 
 Progress: ██████████████ 100% (V1.0 Completa)
 
@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-26] 0061e80 fix(v1.0): resolve multiple UX and export issues
 - [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
 - [2026-01-25] 6e5860a feat(voice): support multiple transactions in single recording
 - [2026-01-25] b145887 feat(image): support multiple image selection (up to 10)
@@ -31,7 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
 - [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
 - [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
-- [2026-01-25] d3e8c17 feat(inbox): navigate to Inbox when closing draft edit sheet
 
 ## Completed in Current Phase
 
