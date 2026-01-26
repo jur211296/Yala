@@ -83,24 +83,20 @@ Combinar **automatización** y **personalización completa** en un solo producto
 
 ## 4. Tono de Marca
 
-### Características
-- **Cercano pero profesional**
-- **Simplicidad y confianza**
-- **Alejado del tono bancario tradicional**
-- **Empoderamiento sin complicaciones**
+> **Documento completo:** Ver `.planning/BRAND-VOICE.md` para lineamientos detallados de tono, estilo y mensajes.
 
-### Ejemplos de Copy
-| En lugar de... | Decir... |
-|----------------|----------|
-| "Monitoree sus transacciones financieras con tecnología OCR avanzada" | "Todas tus transacciones, registradas al instante. Olvídate de teclear datos." |
-| "Sistema de reconocimiento de voz" | "Dicta tus gastos y deja que la IA los registre por ti" |
-| "Gestión presupuestaria" | "Sigue tus gastos sin levantar un dedo" |
+### Resumen
+- **Cercano pero profesional** - Como un amigo que sabe de finanzas
+- **Simplicidad y confianza** - Términos simples, español neutro
+- **Alejado del tono bancario tradicional** - Nunca frío ni corporativo
+- **Empoderamiento sin complicaciones** - Proponer soluciones, celebrar logros
 
 ### Frases Clave
+- "Finanzas sin esfuerzo"
 - "Olvídate de guardar recibos"
 - "Sigue tus gastos sin levantar un dedo"
 - "Tu bolsillo, bajo control"
-- "Finanzas sin esfuerzo"
+- "¡Vas por buen camino, tus finanzas están 'yala'!"
 
 ---
 
