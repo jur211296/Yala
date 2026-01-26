@@ -1861,6 +1861,9 @@ enum L10n {
         static var errorMicPermission: String {
             NSLocalizedString("voice.errorMicPermission", comment: "")
         }
+        static var errorSaveFailed: String {
+            NSLocalizedString("voice.errorSaveFailed", comment: "")
+        }
         static var openSettings: String {
             NSLocalizedString("voice.openSettings", comment: "")
         }
@@ -1910,6 +1913,9 @@ enum L10n {
         }
         static var errorCorrupted: String {
             NSLocalizedString("image.errorCorrupted", comment: "")
+        }
+        static var errorSaveFailed: String {
+            NSLocalizedString("image.errorSaveFailed", comment: "")
         }
         static var openSettings: String {
             NSLocalizedString("image.openSettings", comment: "")

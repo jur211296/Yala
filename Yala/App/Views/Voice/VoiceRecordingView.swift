@@ -691,7 +691,15 @@ struct VoiceRecordingView: View {
 
             // Step 2: Parse transcription (supports multiple transactions)
             processingStatus = L10n.Voice.parsing
-            let parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(text: transcription.text)
+
+            // Get user's subcategories for intelligent matching
+            let (expenseSubcategories, incomeSubcategories) = fetchSubcategoryNames()
+
+            let parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(
+                text: transcription.text,
+                expenseSubcategories: expenseSubcategories,
+                incomeSubcategories: incomeSubcategories
+            )
 
             // Check cancellation after parsing
             guard !Task.isCancelled else {
@@ -713,6 +721,16 @@ struct VoiceRecordingView: View {
             processingStatus = L10n.Voice.saving
             let drafts = validTransactions.map { parsed in
                 createInboxDraft(from: parsed, transcription: transcription.text)
+            }
+
+            // Save all drafts to persistent storage
+            do {
+                try modelContext.save()
+            } catch {
+                isProcessing = false
+                errorType = .generic
+                errorMessage = L10n.Voice.errorSaveFailed
+                return
             }
 
             isProcessing = false
@@ -823,8 +841,32 @@ struct VoiceRecordingView: View {
             newlyCreatedTagNames: newlyCreatedTagNames
         )
         modelContext.insert(draft)
-        try? modelContext.save()
         return draft
+    }
+
+    // MARK: - Subcategory Helpers
+
+    /// Fetches all visible subcategory names, separated by expense/income
+    private func fetchSubcategoryNames() -> (expense: [String], income: [String]) {
+        let descriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate<Subcategory> { subcategory in
+                subcategory.isVisible == true
+            }
+        )
+
+        guard let subcategories = try? modelContext.fetch(descriptor) else {
+            return ([], [])
+        }
+
+        let expenseNames = subcategories
+            .filter { !$0.category.isIncome }
+            .map { $0.name }
+
+        let incomeNames = subcategories
+            .filter { $0.category.isIncome }
+            .map { $0.name }
+
+        return (expenseNames, incomeNames)
     }
 
     // MARK: - Entity Matching

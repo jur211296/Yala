@@ -1102,6 +1102,7 @@
 "voice.errorNoApiKey" = "Verbindung zum Sprachdienst fehlgeschlagen. Versuchen Sie es später erneut.";
 "voice.errorNoConnection" = "Keine Internetverbindung. Versuchen Sie Bild (funktioniert offline).";
 "voice.errorMicPermission" = "Mikrofonberechtigung verweigert. Aktivieren Sie sie in den Einstellungen.";
+"voice.errorSaveFailed" = "Entwurf konnte nicht gespeichert werden. Versuchen Sie es erneut.";
 "voice.openSettings" = "Einstellungen öffnen";
 "voice.tryImage" = "Bild verwenden";
 
@@ -1168,6 +1169,7 @@
 "image.errorGeneric" = "Fehler beim Verarbeiten des Bildes";
 "image.errorPhotoPermission" = "Fotoberechtigung verweigert. Aktivieren Sie sie in den Einstellungen.";
 "image.errorCorrupted" = "Bild konnte nicht verarbeitet werden. Versuchen Sie ein anderes Bild.";
+"image.errorSaveFailed" = "Entwurf konnte nicht gespeichert werden. Versuchen Sie es erneut.";
 "image.openSettings" = "Einstellungen öffnen";
 "image.transactionDetected" = "Transaktion erkannt";
 "image.transactionsDetectedCount" = "Transaktionen erkannt";

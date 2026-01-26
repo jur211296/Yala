@@ -515,7 +515,12 @@ struct ImageSelectionView: View {
         }
 
         draftsCreated = allDrafts.count
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            handleError(L10n.Image.errorSaveFailed, type: .generic)
+            return
+        }
         await handleNavigation(drafts: allDrafts)
     }
 

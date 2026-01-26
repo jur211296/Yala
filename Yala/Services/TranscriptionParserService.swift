@@ -106,13 +106,16 @@ final class TranscriptionParserService {
 
     // MARK: - System Prompt
 
-    private var systemPrompt: String {
+    private func buildSystemPrompt(expenseSubcategories: [String], incomeSubcategories: [String]) -> String {
         let today = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
         let yesterday = ISO8601DateFormatter.string(
             from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date(),
             timeZone: .current,
             formatOptions: [.withFullDate]
         )
+
+        let expenseList = expenseSubcategories.isEmpty ? "No hay subcategorías de gasto definidas" : expenseSubcategories.joined(separator: ", ")
+        let incomeList = incomeSubcategories.isEmpty ? "No hay subcategorías de ingreso definidas" : incomeSubcategories.joined(separator: ", ")
 
         return """
         Eres un parser de gastos para una app de finanzas personales.
@@ -138,11 +141,18 @@ final class TranscriptionParserService {
         - Por defecto asume gasto (isExpense: true)
         - Si menciona "ingreso", "cobré", "me pagaron", "recibí" → isExpense: false
 
-        Reglas de subcategoría:
-        - Si menciona explícitamente una categoría como "en restaurantes", "de transporte", "comida", "gasolina", etc. → extrae el nombre
-        - Solo extrae si es explícito, no inferir
-        - Ejemplos: "gasté en restaurantes" → "Restaurantes", "pagué la gasolina" → "Gasolina"
-        - Si no hay mención explícita → null
+        Reglas de subcategoría (MUY IMPORTANTE):
+        - SIEMPRE intenta inferir la subcategoría más apropiada del contexto
+        - DEBES elegir ÚNICAMENTE de las subcategorías disponibles del usuario (listadas abajo)
+        - Analiza el contexto semántico: "Uber" es taxi/app de transporte, "Netflix" es streaming, "Starbucks" es cafetería, etc.
+        - Elige la subcategoría que mejor coincida semánticamente, aunque el nombre no sea exacto
+        - Solo usa null si realmente no hay ninguna subcategoría que aplique
+
+        Subcategorías de GASTO disponibles:
+        \(expenseList)
+
+        Subcategorías de INGRESO disponibles:
+        \(incomeList)
 
         Reglas de etiquetas/tags:
         - Si dice "etiqueta X", "tag X", "con la etiqueta X", "para X" (donde X es un proyecto/contexto) → extrae X
@@ -162,10 +172,10 @@ final class TranscriptionParserService {
 
         Reglas de nota (IMPORTANTE):
         - La nota es para el merchant/comercio específico o información adicional
-        - NUNCA repetir la subcategoría en la nota
-        - Si hay subcategoría + merchant: note = merchant. Ej: "Starbucks restaurantes" → subcategoryHint: "Restaurantes", note: "Starbucks"
-        - Si hay subcategoría sin merchant: note = "". Ej: "gasté en restaurantes" → subcategoryHint: "Restaurantes", note: ""
-        - Si NO hay subcategoría: note = descripción. Ej: "gasté en almuerzo" → subcategoryHint: null, note: "almuerzo"
+        - NUNCA repetir la subcategoría inferida en la nota
+        - Si hay subcategoría + merchant: note = merchant. Ej: "Starbucks" → subcategoryHint: "Cafetería", note: "Starbucks"
+        - Si hay subcategoría sin merchant específico: note = "". Ej: "gasté en restaurantes" → subcategoryHint: "Restaurantes", note: ""
+        - Ej: "gasté en almuerzo" → subcategoryHint: "Restaurantes", note: "almuerzo"
 
         Responde ÚNICAMENTE con este JSON (sin ```json ni nada más):
         {
@@ -175,7 +185,7 @@ final class TranscriptionParserService {
               "date": "YYYY-MM-DD",
               "note": "descripción breve",
               "isExpense": true | false,
-              "subcategoryHint": "nombre subcategoría" | null,
+              "subcategoryHint": "nombre subcategoría exacto de la lista" | null,
               "tagHints": ["tag1", "tag2"] | [],
               "currencyHint": "USD" | "EUR" | "PEN" | null,
               "confidence": {
@@ -195,10 +205,21 @@ final class TranscriptionParserService {
 
     /// Parses transcribed text to extract structured transaction data.
     /// Returns the first transaction if multiple are detected.
-    /// - Parameter text: The transcribed text from voice input
+    /// - Parameters:
+    ///   - text: The transcribed text from voice input
+    ///   - expenseSubcategories: List of user's expense subcategory names for intelligent matching
+    ///   - incomeSubcategories: List of user's income subcategory names for intelligent matching
     /// - Returns: ParsedTransaction with extracted data and confidence scores
-    func parse(text: String) async throws -> ParsedTransaction {
-        let transactions = try await parseMultiple(text: text)
+    func parse(
+        text: String,
+        expenseSubcategories: [String] = [],
+        incomeSubcategories: [String] = []
+    ) async throws -> ParsedTransaction {
+        let transactions = try await parseMultiple(
+            text: text,
+            expenseSubcategories: expenseSubcategories,
+            incomeSubcategories: incomeSubcategories
+        )
         guard let first = transactions.first else {
             throw ParserError.invalidResponse
         }
@@ -207,9 +228,16 @@ final class TranscriptionParserService {
 
     /// Parses transcribed text to extract multiple transactions.
     /// Supports phrases like "50 en café y 100 en uber" returning 2 transactions.
-    /// - Parameter text: The transcribed text from voice input
+    /// - Parameters:
+    ///   - text: The transcribed text from voice input
+    ///   - expenseSubcategories: List of user's expense subcategory names for intelligent matching
+    ///   - incomeSubcategories: List of user's income subcategory names for intelligent matching
     /// - Returns: Array of ParsedTransaction with extracted data and confidence scores
-    func parseMultiple(text: String) async throws -> [ParsedTransaction] {
+    func parseMultiple(
+        text: String,
+        expenseSubcategories: [String] = [],
+        incomeSubcategories: [String] = []
+    ) async throws -> [ParsedTransaction] {
         guard let client = openAI else {
             throw ParserError.noAPIKey
         }
@@ -219,9 +247,14 @@ final class TranscriptionParserService {
             throw ParserError.emptyText
         }
 
+        let prompt = buildSystemPrompt(
+            expenseSubcategories: expenseSubcategories,
+            incomeSubcategories: incomeSubcategories
+        )
+
         let query = ChatQuery(
             messages: [
-                .system(.init(content: .textContent(systemPrompt))),
+                .system(.init(content: .textContent(prompt))),
                 .user(.init(content: .string(trimmedText)))
             ],
             model: .gpt4_o_mini,

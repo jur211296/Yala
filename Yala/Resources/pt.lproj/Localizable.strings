@@ -1102,6 +1102,7 @@
 "voice.errorNoApiKey" = "Não foi possível conectar ao serviço de voz. Tente novamente mais tarde.";
 "voice.errorNoConnection" = "Sem conexão com a internet. Tente imagem (funciona offline).";
 "voice.errorMicPermission" = "Permissão do microfone negada. Ative-a nas Configurações.";
+"voice.errorSaveFailed" = "Não foi possível salvar o rascunho. Tente novamente.";
 "voice.openSettings" = "Abrir Configurações";
 "voice.tryImage" = "Usar imagem";
 
@@ -1168,6 +1169,7 @@
 "image.errorGeneric" = "Erro ao processar a imagem";
 "image.errorPhotoPermission" = "Permissão de fotos negada. Ative-a nas Configurações.";
 "image.errorCorrupted" = "Não foi possível processar a imagem. Tente outra imagem.";
+"image.errorSaveFailed" = "Não foi possível salvar o rascunho. Tente novamente.";
 "image.openSettings" = "Abrir Configurações";
 "image.transactionDetected" = "transação detectada";
 "image.transactionsDetectedCount" = "transações detectadas";

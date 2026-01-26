@@ -1102,6 +1102,7 @@
 "voice.errorNoApiKey" = "No se pudo conectar con el servicio de voz. Intenta más tarde.";
 "voice.errorNoConnection" = "Sin conexión a internet. Prueba con imagen (funciona sin conexión).";
 "voice.errorMicPermission" = "Permiso de micrófono denegado. Habilítalo en Configuración.";
+"voice.errorSaveFailed" = "No se pudo guardar el borrador. Intenta de nuevo.";
 "voice.openSettings" = "Abrir Configuración";
 "voice.tryImage" = "Usar imagen";
 
@@ -1168,6 +1169,7 @@
 "image.errorGeneric" = "Error al procesar la imagen";
 "image.errorPhotoPermission" = "Permiso de fotos denegado. Habilítalo en Configuración.";
 "image.errorCorrupted" = "La imagen no se pudo procesar. Intenta con otra imagen.";
+"image.errorSaveFailed" = "No se pudo guardar el borrador. Intenta de nuevo.";
 "image.openSettings" = "Abrir Configuración";
 "image.transactionDetected" = "transacción detectada";
 "image.transactionsDetectedCount" = "transacciones detectadas";

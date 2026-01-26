@@ -1102,6 +1102,7 @@
 "voice.errorNoApiKey" = "Impossible de se connecter au service vocal. Réessayez plus tard.";
 "voice.errorNoConnection" = "Pas de connexion internet. Essayez l'image (fonctionne hors ligne).";
 "voice.errorMicPermission" = "Autorisation du microphone refusée. Activez-la dans les Réglages.";
+"voice.errorSaveFailed" = "Impossible d'enregistrer le brouillon. Réessayez.";
 "voice.openSettings" = "Ouvrir les Réglages";
 "voice.tryImage" = "Utiliser une image";
 
@@ -1168,6 +1169,7 @@
 "image.errorGeneric" = "Erreur lors du traitement de l'image";
 "image.errorPhotoPermission" = "Autorisation photos refusée. Activez-la dans les Réglages.";
 "image.errorCorrupted" = "Impossible de traiter l'image. Essayez une autre image.";
+"image.errorSaveFailed" = "Impossible d'enregistrer le brouillon. Réessayez.";
 "image.openSettings" = "Ouvrir les Réglages";
 "image.transactionDetected" = "transaction détectée";
 "image.transactionsDetectedCount" = "transactions détectées";

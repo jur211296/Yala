@@ -105,8 +105,8 @@ struct InboxDraftEditSheet: View {
         return "\(L10n.Inbox.missingLabel) \(missing.joined(separator: ", "))"
     }
 
-    private var currencyCode: String {
-        selectedAccount?.currencyCode ?? "PEN"
+    private var currencyCode: String? {
+        selectedAccount?.currencyCode
     }
 
     private var amountColor: Color {
@@ -447,9 +447,11 @@ struct InboxDraftEditSheet: View {
 
     private var amountDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-            Text(currencyCode)
-                .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
-                .foregroundStyle(amountColor.opacity(0.7))
+            if let code = currencyCode {
+                Text(code)
+                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
+                    .foregroundStyle(amountColor.opacity(0.7))
+            }
 
             TextField("0.00", text: $amountString)
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
