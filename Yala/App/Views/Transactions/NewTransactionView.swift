@@ -1028,14 +1028,9 @@ struct NewTransactionView: View {
             return
         }
 
-        // If no prefill account, use account from last transaction
-        var accountToUse = prefillAccountID
-        if accountToUse == nil, let lastTransaction = transactions.first {
-            accountToUse = lastTransaction.account?.persistentModelID
-        }
-
+        // Only use explicitly provided prefill account (no fallback to last transaction)
         viewModel.prefill(
-            accountID: accountToUse,
+            accountID: prefillAccountID,
             categoryID: prefillCategoryID,
             subcategoryName: prefillSubcategoryName,
             accounts: accounts,

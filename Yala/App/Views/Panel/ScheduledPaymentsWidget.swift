@@ -50,11 +50,19 @@ struct ScheduledPaymentsWidget: View {
 
             switch mode {
             case .summary:
-                summaryContent
+                if filteredPayments.isEmpty {
+                    emptyListState
+                } else {
+                    summaryContent
+                }
             case .list:
                 listContent
             case .calendar:
-                calendarContent
+                if filteredPayments.isEmpty {
+                    emptyListState
+                } else {
+                    calendarContent
+                }
             }
         }
         .padding(DS.Spacing.xl)
