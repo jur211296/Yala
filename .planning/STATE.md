@@ -22,16 +22,16 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-24] 869f6bf fix(icons): prevent iOS 18 auto-tinting for Light and Neon icons
-- [2026-01-24] 6883fad feat(panel): change welcome message to static panel title
-- [2026-01-24] 6e7753c feat(export): add custom period picker and fix share sheet crash
-- [2026-01-24] cad0eea fix(import): use @Query for subcategories in template generation
-- [2026-01-24] bfc1109 chore(project): update build settings and deployment target
-- [2026-01-24] e9e302d fix(i18n): update export success messages to be format-agnostic
-- [2026-01-24] 3e0addf feat(export): add XLSX export option
-- [2026-01-24] 2761284 feat(import): add XLSX template download option
-- [2026-01-24] b0f3707 feat(export): add XLSXWriter for creating Excel files
-- [2026-01-24] 8af4c8d fix(import): convert Excel serial dates to ISO format in XLSX import
+- [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
+- [2026-01-25] 6e5860a feat(voice): support multiple transactions in single recording
+- [2026-01-25] b145887 feat(image): support multiple image selection (up to 10)
+- [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
+- [2026-01-25] 8b4f8cb feat(voice,inbox): UX refinements for draft flow
+- [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
+- [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
+- [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
+- [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
+- [2026-01-25] d3e8c17 feat(inbox): navigate to Inbox when closing draft edit sheet
 
 ## Completed in Current Phase
 
@@ -48,6 +48,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Fase 7.1: Acciones Rápidas en Transacciones** - Barra de 4 botones (duplicar, eliminar, favorito, recurrente) debajo del monto en NewTransactionView; duplicar crea nueva transacción con datos prefilled; eliminar con confirmación; guardar como favorito/recurrente con alerts y toasts; localizaciones completas en 6 idiomas; 7 escenarios QA nuevos
 - **Bugfixes TestFlight Ronda 2** - SSOT para filtros, smart alignment para gráficas comparativas, clasificación correcta de transferencias (entrantes a Ingresos, salientes a Otros), protección de categorías/subcategorías del sistema, migración automática de transferencias existentes, 4 escenarios QA nuevos
 - **Soporte XLSX completo** - Fix importación de fechas Excel (números seriales a ISO), XLSXWriter para crear archivos Excel usando ZIPFoundation, descarga de plantilla en CSV o XLSX, exportación de datos en CSV o XLSX, localizaciones actualizadas en 6 idiomas
+- **Subfase 8.4: Imágenes MVP** - Toggle imagen input en Settings, opción FAB imagen (naranja), ImageSelectionView con PhotosPicker, Vision OCR (VNRecognizeTextRequest), clasificador heurístico (screenshotSingle/List/receiptPhoto), AmountParser ($€£, europeo/americano, negativos), DateParser (relativas/absolutas), ScreenshotSingleExtractor (alertas bancarias), RowClusterer + ScreenshotListExtractor (listas de transacciones), navegación automática a Inbox, localizaciones en 6 idiomas, 40 escenarios QA (Sección 18)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -87,6 +88,17 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Optimización de cálculos** - N+1 queries eliminados en TrendsTabView, TagSpendingCalculator extraído como servicio, recordsSummary cacheado en ViewModel, onChange handlers consolidados
 
 ## Next Steps
+
+### Mejoras Vision API + Inbox (pendiente de refinamiento)
+
+Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesión:
+- [ ] Testing manual con imágenes reales de diferentes bancos
+- [ ] Ajustar prompt de Vision para mejor precisión en fechas relativas
+- [ ] Considerar fallback cuando Vision no detecta currency
+- [ ] UX: feedback visual mientras procesa imagen
+- [ ] Edge cases: qué pasa si InboxDraftEditSheet se cierra sin guardar
+
+---
 
 ### Fase 7.1: Acciones Rápidas en Transacciones ✅ COMPLETADA
 
@@ -196,16 +208,15 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Session Continuity
 
-Last session: 2026-01-24
-Stopped at: Mejoras de Export y fix de plantilla de importación
-Next step: V1.0 listo - continuar con V1.1 o más polish
+Last session: 2026-01-25
+Stopped at: Refinamientos de divisa/subcategoría/error handling (commit f38f8fb)
+Next step: Items UI polish (10.x) en REFINAMIENTO
 Resume file: N/A
 Resume context:
-- Fix plantilla importación: ahora usa @Query para cargar subcategorías correctamente
-- Export con periodo personalizado: DatePicker para seleccionar rango de fechas
-- Personalización: excluido "Personalizado" de periodo por defecto (no tiene sentido)
-- Fix crash share sheet: refactorizado a sheet(item:) pattern
-- Mensaje de éxito actualizado: no dice "compartido" ya que no sabemos si lo fue
+- Divisa oculta cuando no hay cuenta seleccionada (drafts y manual)
+- LLM ahora recibe subcategorías del usuario para inferencia inteligente
+- Alert si falla guardado de draft (voz e imagen)
+- REFINAMIENTO-8.3-8.4.md casi completo, quedan items 10.x (UI polish)
 
 ## V1.1 (Futuro)
 
