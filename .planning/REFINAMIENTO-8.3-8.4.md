@@ -21,7 +21,7 @@
 | 2.1 | Sin monto detectado → ¿permitir crear draft igual para editar después? | UX | ❌ Descartado |
 | 2.2 | Confirmación antes de procesar (preview duración) | UX | ✅ Completado |
 | 2.3 | Cancelar durante procesamiento STT/LLM | UX | ✅ Completado |
-| 2.4 | Múltiples drafts de una grabación ("50 en café y 100 en uber") | Feature | Pendiente |
+| 2.4 | Múltiples drafts de una grabación ("50 en café y 100 en uber") | Feature | ✅ Completado (6e5860a) |
 | 2.5 | Retry después de error sin cerrar la vista | UX | ✅ Completado |
 
 ---
@@ -150,7 +150,7 @@
 - [x] 8.1/8.2 - Feedback post-aprobar (pantalla éxito con Editar/Aceptar/Aprobar siguiente)
 
 ### Features deseables
-- [ ] 2.4 - Múltiples drafts de una grabación
+- [x] 2.4 - Múltiples drafts de una grabación (6e5860a)
 - [x] 3.5 - Selección múltiple de imágenes (b145887)
 
 ### UI (al final)

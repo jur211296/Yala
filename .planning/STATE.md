@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-25] 6e5860a feat(voice): support multiple transactions in single recording
 - [2026-01-25] b145887 feat(image): support multiple image selection (up to 10)
 - [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
 - [2026-01-25] 8b4f8cb feat(voice,inbox): UX refinements for draft flow
@@ -210,14 +211,14 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Selección múltiple de imágenes (commit b145887)
-Next step: Item 2.4 múltiples drafts de voz
+Stopped at: Múltiples drafts de voz completado (commit 6e5860a)
+Next step: Items UI polish (10.x) en REFINAMIENTO o nuevos features
 Resume file: N/A
 Resume context:
-- Selección múltiple de imágenes implementada (hasta 10)
-- Grid de previews, progreso X/Y al procesar
-- Errores individuales no detienen el batch
-- Task 9 pendiente: múltiples drafts de una grabación de voz
+- Task 6 completado: Selección múltiple de imágenes (hasta 10)
+- Task 9 completado: Múltiples transacciones en una grabación de voz
+- Error handling completo para voz e imagen
+- REFINAMIENTO-8.3-8.4.md casi completo, quedan items 10.x (UI polish)
 
 ## V1.1 (Futuro)
 
