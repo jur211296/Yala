@@ -13,26 +13,56 @@ import SwiftUI
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding: Bool = false
+    @State private var showSplash: Bool = true
+    @State private var splashOpacity: Double = 1
+
+    /// Minimum splash duration (2.5 seconds to enjoy the animation)
+    private let minimumSplashDuration: Double = 2.5
 
     var body: some View {
-        MainTabView()
-            .onAppear {
-                // Show onboarding if not completed
-                if !hasCompletedOnboarding {
-                    showOnboarding = true
+        ZStack {
+            // Main content (always rendered underneath)
+            MainTabView()
+                .onAppear {
+                    // Show onboarding if not completed
+                    if !hasCompletedOnboarding {
+                        showOnboarding = true
+                    }
                 }
-            }
-            .onChange(of: hasCompletedOnboarding) { _, newValue in
-                // React to data wipe: show onboarding when flag is reset
-                if !newValue {
-                    showOnboarding = true
+                .onChange(of: hasCompletedOnboarding) { _, newValue in
+                    // React to data wipe: show onboarding when flag is reset
+                    if !newValue {
+                        showOnboarding = true
+                    }
                 }
-            }
-            .fullScreenCover(isPresented: $showOnboarding) {
-                OnboardingView {
-                    showOnboarding = false
+                .fullScreenCover(isPresented: $showOnboarding) {
+                    OnboardingView {
+                        showOnboarding = false
+                    }
                 }
+
+            // Splash screen overlay
+            if showSplash {
+                SplashScreenView()
+                    .opacity(splashOpacity)
+                    .ignoresSafeArea()
+                    .onAppear {
+                        // Dismiss splash after minimum duration
+                        DispatchQueue.main.asyncAfter(deadline: .now() + minimumSplashDuration) {
+                            dismissSplash()
+                        }
+                    }
             }
+        }
+    }
+
+    private func dismissSplash() {
+        withAnimation(.easeOut(duration: 0.4)) {
+            splashOpacity = 0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            showSplash = false
+        }
     }
 }
 
