@@ -23,6 +23,7 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] 12e054f feat(settings): request mic and photo permissions when enabling input toggles (10.3)
 - [2026-01-27] 669b537 fix(input): accent-insensitive tag matching and image option in Statistics FAB (10.1-10.2)
 - [2026-01-27] f932606 docs(state): close Phase 9 and mark V1.0 as complete
 - [2026-01-27] c598ca2 feat(settings): add FAQ page with 9 expandable questions (9.5)
@@ -32,7 +33,6 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 - [2026-01-27] d6b9230 feat(settings): wire Permissions, Contact, Rate App, and Privacy links (9.2)
 - [2026-01-27] d7f4fb3 feat(security): add Face ID / Touch ID biometric lock with configurable timeout (9.1)
 - [2026-01-27] dd0ee05 feat(merchant): add Merchant Memory for subcategory suggestions (8.5)
-- [2026-01-27] 772741b feat(vision): enhanced date context, draft deduplication, and processing progress
 
 ## Completed in Current Phase
 
@@ -181,14 +181,14 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Fase 10 iniciada — tildes voz fix, FAB imagen en Statistics, permisos pendiente
-Next step: Incremento 3 — Permisos micrófono/fotos al activar toggles en Settings
+Stopped at: Fase 10 — 3 items completados (tildes, FAB imagen, permisos toggles)
+Next step: Incremento 4 — QA-SCENARIOS para los 3 fixes
 Resume file: N/A
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
-- Done: tildes voz (normalización diacrítica), FAB imagen en DetailContainerView
-- Pendiente: permisos al activar toggles, QA-SCENARIOS
+- Done: tildes voz, FAB imagen en DetailContainerView, permisos al activar toggles
+- Pendiente: QA-SCENARIOS, resto de Fase 10
 
 ## V1.1 (Futuro)
 

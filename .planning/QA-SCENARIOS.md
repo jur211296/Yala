@@ -2668,7 +2668,75 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 
 ---
 
+## Sección 21: Refinamiento Registro Inteligente (Fase 10)
+
+### Escenario 21.1: Tildes no crean etiquetas duplicadas (voz)
+1. Crear manualmente una etiqueta llamada "cafe"
+2. Activar entrada por voz y decir: "gasto de 5 soles con etiqueta café" (con tilde)
+3. **Verificar:** Se reutiliza la etiqueta existente "cafe", no se crea "Café" como duplicada
+4. Verificar en Perfil → Etiquetas que solo existe una etiqueta
+
+### Escenario 21.2: Tildes no crean subcategorías duplicadas (voz)
+1. Tener subcategoría existente "Transporte publico"
+2. Dictar por voz: "gasto de 3 soles en transporte público" (con tilde)
+3. **Verificar:** Se asigna la subcategoría existente, no se crea match fallido
+
+### Escenario 21.3: Matching parcial con tildes (voz)
+1. Tener etiqueta "viaje"
+2. Dictar: "gasto con etiqueta viáje" (con tilde en la a)
+3. **Verificar:** Match correcto con etiqueta "viaje" existente
+
+### Escenario 21.4: FAB con imagen en Statistics (DetailContainerView)
+1. Activar entrada de imagen en Perfil → Preferencias
+2. Ir a Statistics → Records tab
+3. Tocar el FAB (+)
+4. **Verificar:** Menú muestra opciones: Voz (si habilitada), Imagen (teal), Manual (rosa)
+5. Tocar "Imagen"
+6. **Verificar:** Se abre ImageSelectionView correctamente
+
+### Escenario 21.5: FAB solo imagen en Statistics
+1. Activar solo imagen (desactivar voz) en Preferencias
+2. Ir a Statistics → Records tab
+3. Tocar FAB
+4. **Verificar:** Menú muestra: Imagen (teal) y Manual (rosa), sin opción de Voz
+
+### Escenario 21.6: FAB sin inputs especiales en Statistics
+1. Desactivar voz e imagen en Preferencias
+2. Ir a Statistics → Records tab
+3. **Verificar:** FAB es botón simple (+) que abre transacción manual directamente
+
+### Escenario 21.7: Permiso micrófono al activar toggle
+1. Ir a Perfil → Preferencias
+2. Activar toggle "Entrada de voz" (primera vez, permiso no determinado)
+3. **Verificar:** iOS muestra diálogo de permiso de micrófono
+4. Aceptar permiso
+5. **Verificar:** Toggle queda activado
+
+### Escenario 21.8: Permiso micrófono denegado
+1. Denegar permiso de micrófono desde Ajustes del sistema
+2. Ir a Perfil → Preferencias
+3. Activar toggle "Entrada de voz"
+4. **Verificar:** Aparece alerta con mensaje de permiso denegado
+5. **Verificar:** Botón "Abrir Ajustes" redirige a Settings del sistema
+6. **Verificar:** Botón "Cancelar" cierra la alerta
+
+### Escenario 21.9: Permiso fotos al activar toggle
+1. Ir a Perfil → Preferencias
+2. Activar toggle "Entrada de imagen" (primera vez)
+3. **Verificar:** iOS muestra diálogo de permiso de fotos
+4. Aceptar permiso
+5. **Verificar:** Toggle queda activado
+
+### Escenario 21.10: Permiso fotos denegado
+1. Denegar permiso de fotos desde Ajustes del sistema
+2. Ir a Perfil → Preferencias
+3. Activar toggle "Entrada de imagen"
+4. **Verificar:** Aparece alerta con mensaje de permiso denegado
+5. **Verificar:** Botón "Abrir Ajustes" redirige a Settings del sistema
+
+---
+
 *Documento creado: 2026-01-20*
 *Última actualización: 2026-01-27*
-*Total escenarios: ~292*
-*Total verificaciones: ~530+*
+*Total escenarios: ~302*
+*Total verificaciones: ~555+*

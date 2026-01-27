@@ -311,8 +311,8 @@ Incluye:
 - [ ] Integración con atajos y automatización con Apple Pay
 - [x] Revisar prompts voz: tildes crean etiquetas duplicadas en vez de reusar existentes ✅ (669b537)
 - [x] FAB fuera de PanelView no tiene opción de registro de imagen ✅ (669b537)
-- [ ] Pedir permiso de micrófono al activar toggle
-- [ ] Pedir permiso de fotos al activar toggle
+- [x] Pedir permiso de micrófono al activar toggle ✅ (12e054f)
+- [x] Pedir permiso de fotos al activar toggle ✅ (12e054f)
 - [ ] Mejorar onboarding: preguntar si cargar seed de categorías predeterminadas
 - [ ] Vaciar datos: preguntar si cargar seed de categorías predeterminadas
 
