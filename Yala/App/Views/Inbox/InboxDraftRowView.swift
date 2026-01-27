@@ -30,7 +30,7 @@ struct InboxDraftRowView: View {
                 leadingIcon
 
                 // Text content - different layout based on completeness
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     if draft.hasAllRequiredFields {
                         // Complete draft: show like RecordRowView
                         completeContentView
@@ -143,7 +143,7 @@ struct InboxDraftRowView: View {
                     .foregroundStyle(.tertiary)
             } else if let confidence = draft.confidenceAmount, confidence < 0.7 {
                 // Confidence indicator for incomplete drafts with low confidence
-                HStack(spacing: 2) {
+                HStack(spacing: DS.Spacing.xxs) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.caption2)
                     Text("\(Int(confidence * 100))%")
@@ -162,8 +162,8 @@ struct InboxDraftRowView: View {
                 Text(tag.name)
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color(hex: tag.colorHex))
@@ -309,8 +309,8 @@ struct InboxDraftRowView: View {
                 Text(localizedFieldName(field))
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color.hotPink.opacity(0.8))

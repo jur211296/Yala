@@ -60,30 +60,40 @@ struct VoiceRecordingView: View {
 
                 // Recording visualization
                 recordingVisualization
+                    .transition(.scale.combined(with: .opacity))
 
                 // Status text
                 statusText
+                    .transition(.opacity)
 
                 // Error message with action buttons
                 if let error = errorMessage {
                     errorView(message: error)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
 
                 Spacer()
 
                 // Action buttons
                 actionButtons
+                    .transition(.scale.combined(with: .opacity))
             }
             .padding(DS.Spacing.xl)
+            .animation(.easeInOut(duration: 0.3), value: recorder.state)
+            .animation(.easeInOut(duration: 0.3), value: isPreviewMode)
+            .animation(.easeInOut(duration: 0.3), value: isProcessing)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.yalaBackground)
             .navigationTitle(L10n.Voice.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Common.cancel) {
-                        recorder.cancelRecording()
-                        dismiss()
+                // Only show X when idle (during recording/preview/processing, there's an X below)
+                if recorder.state == .idle && !isPreviewMode && !isProcessing {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        YalaToolbarButton(systemName: "xmark") {
+                            recorder.cancelRecording()
+                            dismiss()
+                        }
                     }
                 }
             }
@@ -237,6 +247,7 @@ struct VoiceRecordingView: View {
                 Text("\(countdownValue)")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.electricIndigo)
+                    .contentTransition(.numericText())
                     .padding(.top, DS.Spacing.md)
             } else if isProcessing {
                 Text(processingStatus)
@@ -272,7 +283,7 @@ struct VoiceRecordingView: View {
     }
 
     private var hintsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
             Text(L10n.Voice.youCanSay)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -314,7 +325,7 @@ struct VoiceRecordingView: View {
     }
 
     private var examplesSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
             Text(L10n.Voice.exampleLabel)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -569,6 +580,8 @@ struct VoiceRecordingView: View {
 
         do {
             try await recorder.startRecording()
+            // Haptic feedback on start
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         } catch let error as RecordingError {
             handleRecordingError(error)
         } catch {
@@ -597,6 +610,9 @@ struct VoiceRecordingView: View {
             let audioData = try await recorder.stopRecording()
             pendingAudioData = audioData
 
+            // Haptic feedback on stop
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
             // Enter preview mode with countdown
             withAnimation(.easeOut(duration: 0.3)) {
                 isPreviewMode = true
@@ -616,6 +632,9 @@ struct VoiceRecordingView: View {
     private func startCountdown() {
         countdownTimer?.invalidate()
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            // Haptic feedback on each tick
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+
             if countdownValue > 1 {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     countdownValue -= 1

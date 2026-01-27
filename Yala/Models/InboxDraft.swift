@@ -208,9 +208,9 @@ final class InboxDraft: Identifiable {
     var sourceIcon: String {
         switch sourceType {
         case .voice: return "mic.fill"
-        case .receiptPhoto: return "doc.text.fill"
-        case .screenshotList: return "list.bullet.rectangle"
-        case .screenshotSingle: return "rectangle.on.rectangle"
+        case .receiptPhoto: return "camera.fill"
+        case .screenshotList: return "photo.stack.fill"
+        case .screenshotSingle: return "photo.fill"
         case .emailAlert: return "envelope.fill"
         }
     }

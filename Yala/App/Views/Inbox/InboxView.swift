@@ -134,27 +134,41 @@ struct InboxView: View {
             .navigationTitle(L10n.Inbox.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if !filteredDrafts.isEmpty {
-                        Button {
+                if isSelectionMode {
+                    // Selection mode: Cancel left, Select All right
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(L10n.Action.cancel) {
                             withAnimation {
-                                if isSelectionMode {
-                                    exitSelectionMode()
-                                } else {
+                                exitSelectionMode()
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(L10n.Export.selectAll) {
+                            withAnimation {
+                                selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                            }
+                        }
+                    }
+                } else {
+                    // Normal mode: X left, selection icon right
+                    ToolbarItem(placement: .topBarLeading) {
+                        YalaToolbarButton(systemName: "xmark") {
+                            dismiss()
+                        }
+                    }
+                    if !filteredDrafts.isEmpty {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            YalaToolbarButton(systemName: "checkmark.circle") {
+                                withAnimation {
                                     isSelectionMode = true
                                 }
                             }
-                        } label: {
-                            Text(isSelectionMode ? L10n.Action.cancel : L10n.Action.select)
                         }
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) {
-                        dismiss()
-                    }
-                }
             }
+            .tint(.primary)
             .sheet(item: $selectedDraft) { draft in
                 InboxDraftEditSheet(
                     draft: draft,
@@ -252,6 +266,7 @@ struct InboxView: View {
                 Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
                     .foregroundStyle(Color.electricIndigo)
+                    .frame(minWidth: 44, minHeight: 44)
             }
 
             // Count
@@ -269,6 +284,7 @@ struct InboxView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
+                    .frame(minHeight: 44)
                     .background(
                         Capsule()
                             .fill(selectedDraftIDs.isEmpty ? Color.gray : Color.electricIndigo)
@@ -333,6 +349,7 @@ struct InboxView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
+            .frame(minHeight: 44)
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
@@ -471,6 +488,9 @@ struct InboxView: View {
     // MARK: - Actions
 
     private func rejectDraft(_ draft: InboxDraft) {
+        // Haptic feedback
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
         withAnimation {
             // Cache display values BEFORE changing status (if available)
             // (archived drafts use ONLY cached values to avoid accessing deleted relationships)
@@ -495,6 +515,9 @@ struct InboxView: View {
     }
 
     private func deleteDraftPermanently(_ draft: InboxDraft) {
+        // Haptic feedback for destructive action
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+
         withAnimation {
             modelContext.delete(draft)
             do {
@@ -509,6 +532,9 @@ struct InboxView: View {
         guard let account = draft.account,
               let amount = draft.amount,
               let subcategory = draft.subcategory else { return }
+
+        // Haptic feedback for positive action
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
         withAnimation {
             // Create TransactionItem

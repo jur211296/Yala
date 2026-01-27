@@ -50,25 +50,34 @@ struct ImageSelectionView: View {
             VStack(spacing: DS.Spacing.xl) {
                 if showingResult {
                     resultView
+                        .transition(.scale.combined(with: .opacity))
                 } else if isCountingDown {
                     countdownView
+                        .transition(.scale.combined(with: .opacity))
                 } else if isProcessing {
                     processingView
+                        .transition(.scale.combined(with: .opacity))
                 } else {
                     selectionView
+                        .transition(.scale.combined(with: .opacity))
                 }
             }
             .padding(DS.Spacing.xl)
+            .animation(.easeInOut(duration: 0.3), value: showingResult)
+            .animation(.easeInOut(duration: 0.3), value: isCountingDown)
+            .animation(.easeInOut(duration: 0.3), value: isProcessing)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.yalaBackground)
             .navigationTitle(L10n.Image.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Common.cancel) {
-                        dismiss()
+                // Only show X in selection view (during countdown/processing, there's an X below)
+                if !isCountingDown && !isProcessing && !showingResult {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        YalaToolbarButton(systemName: "xmark") {
+                            dismiss()
+                        }
                     }
-                    .disabled(isProcessing || isCountingDown)
                 }
             }
             .onChange(of: selectedPhotos) { oldValue, newValue in
@@ -454,6 +463,8 @@ struct ImageSelectionView: View {
             for i in (1...3).reversed() {
                 await MainActor.run {
                     countdownValue = i
+                    // Haptic feedback on each tick
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                 }
                 try? await Task.sleep(for: .seconds(1))
 

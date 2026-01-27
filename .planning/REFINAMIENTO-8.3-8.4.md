@@ -116,16 +116,16 @@
 
 | # | Punto | Tipo | Estado |
 |---|-------|------|--------|
-| 10.1 | Consistencia de colores/iconos entre Voz e Imagen | UI | Pendiente |
-| 10.2 | Animaciones de transición entre estados | UI | Pendiente |
-| 10.3 | Tamaños de botones y áreas touch | UI | Pendiente |
-| 10.4 | Tipografía y espaciado en celdas de Inbox | UI | Pendiente |
-| 10.5 | Dark mode verificar contraste | UI | Pendiente |
-| 10.6 | Iconos de sourceType claros y distintivos | UI | Pendiente |
-| 10.7 | Estados de carga consistentes (spinners, skeletons) | UI | Pendiente |
-| 10.8 | Feedback háptico en acciones importantes | UI | Pendiente |
-| 10.9 | Accesibilidad (VoiceOver labels) | UI | Pendiente |
-| 10.10 | Pulido general de InboxDraftEditSheet | UI | Pendiente |
+| 10.1 | Consistencia de colores/iconos entre Voz e Imagen | UI | ✅ Completado (Voice=electricIndigo, Image=teal) |
+| 10.2 | Animaciones de transición entre estados | UI | ✅ Completado (transitions + animation modifiers) |
+| 10.3 | Tamaños de botones y áreas touch | UI | ✅ Completado (minHeight: 44 en chips/botones) |
+| 10.4 | Tipografía y espaciado en celdas de Inbox | UI | ✅ Completado (DS tokens en InboxDraftRowView) |
+| 10.5 | Dark mode verificar contraste | UI | ❌ Descartado |
+| 10.6 | Iconos de sourceType claros y distintivos | UI | ✅ Completado (photo.fill, camera.fill, etc.) |
+| 10.7 | Estados de carga consistentes (spinners, skeletons) | UI | ✅ Verificado (ya consistente) |
+| 10.8 | Feedback háptico en acciones importantes | UI | ✅ Completado (recording, countdown, approve/reject) |
+| 10.9 | Accesibilidad (VoiceOver labels) | UI | ❌ Descartado |
+| 10.10 | Pulido general de InboxDraftEditSheet | UI | ✅ Completado (toolbars, colores, layout) |
 
 ---
 
@@ -154,7 +154,8 @@
 - [x] 3.5 - Selección múltiple de imágenes (b145887)
 
 ### UI (al final)
-- [ ] 10.1-10.10 - Pulido visual general
+- [x] 10.1-10.8 - Pulido visual completado (excepto 10.5, 10.9 descartados)
+- [x] 10.10 - Pulido InboxDraftEditSheet, toolbars Voice/Image, colores botones
 
 ---
 

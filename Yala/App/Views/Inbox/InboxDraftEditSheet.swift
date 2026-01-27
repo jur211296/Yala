@@ -322,10 +322,11 @@ struct InboxDraftEditSheet: View {
         ToolbarItem(placement: .topBarTrailing) {
             if initialStatus == .rejected {
                 // Rejected drafts: delete button
-                Button(role: .destructive) {
+                Button {
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
+                        .foregroundStyle(.red)
                 }
             } else {
                 // Pending drafts: reject button only
@@ -333,8 +334,8 @@ struct InboxDraftEditSheet: View {
                     rejectDraft()
                 } label: {
                     Image(systemName: "xmark.circle")
+                        .foregroundStyle(.red)
                 }
-                .foregroundStyle(.orange)
             }
         }
     }
