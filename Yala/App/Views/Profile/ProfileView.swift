@@ -5,6 +5,7 @@
 //  Created by Yala Refactoring.
 //
 
+import StoreKit
 import SwiftData
 import SwiftUI
 
@@ -14,6 +15,8 @@ import SwiftUI
 /// Main profile screen acting as the Configuration Control Center
 struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @Environment(\.requestReview) private var requestReview
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
@@ -445,17 +448,29 @@ struct ProfileView: View {
                     iconColor: .green,
                     destination: .biometricSecurity)
                 SubsectionDivider()
-                profileRow(
-                    icon: "lock.shield.fill", title: L10n.Settings.permissions,
-                    iconColor: .blue, destination: .placeholder("Permisos"))
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                } label: {
+                    settingsRowContent(
+                        icon: "lock.shield.fill", title: L10n.Settings.permissions,
+                        iconColor: .blue)
+                }
+                .buttonStyle(.plain)
                 SubsectionDivider()
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.subscriptions,
                     iconColor: .purple, destination: .placeholder("Suscripciones"))
                 SubsectionDivider()
-                profileRow(
-                    icon: "star.bubble.fill", title: L10n.Settings.rateApp,
-                    iconColor: .yellow, destination: .placeholder("Calificar"))
+                Button {
+                    requestReview()
+                } label: {
+                    settingsRowContent(
+                        icon: "star.bubble.fill", title: L10n.Settings.rateApp,
+                        iconColor: .yellow)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -472,9 +487,16 @@ struct ProfileView: View {
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,
                     iconColor: .orange, destination: .placeholder("FAQ"))
                 SubsectionDivider()
-                profileRow(
-                    icon: "envelope.fill", title: L10n.Settings.contact,
-                    iconColor: .teal, destination: .placeholder("Contacta"))
+                Button {
+                    if let url = URL(string: "mailto:admin@yala-app.pe") {
+                        openURL(url)
+                    }
+                } label: {
+                    settingsRowContent(
+                        icon: "envelope.fill", title: L10n.Settings.contact,
+                        iconColor: .teal)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -483,9 +505,16 @@ struct ProfileView: View {
     private var legalSection: some View {
         SectionBox(title: L10n.Settings.legal) {
             VStack(spacing: 0) {
-                profileRow(
-                    icon: "hand.raised.fill", title: L10n.Settings.privacy,
-                    iconColor: .gray, destination: .placeholder("Privacidad"))
+                Button {
+                    if let url = URL(string: "https://yala-app.pe/privacy") {
+                        openURL(url)
+                    }
+                } label: {
+                    settingsRowContent(
+                        icon: "hand.raised.fill", title: L10n.Settings.privacy,
+                        iconColor: .gray)
+                }
+                .buttonStyle(.plain)
                 SubsectionDivider()
                 profileRow(
                     icon: "doc.text.fill", title: L10n.Settings.terms,
