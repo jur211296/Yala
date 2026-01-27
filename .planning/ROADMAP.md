@@ -283,8 +283,8 @@ Incluye:
 - [x] Contacta con nosotros → mail draft a admin@yala-app.pe ✅
 - [x] Valorar en App Store → SKStoreReviewController ✅
 - [x] Política de privacidad → redirige a web ✅
-- [ ] Sistema de suscripción Pro (StoreKit 2)
-- [ ] Página de administrar suscripción
+- [x] Sistema de suscripción Pro (StoreKit 2) ✅
+- [x] Página de administrar suscripción ✅ (integrada en SubscriptionView)
 - [ ] Consejos y trucos (página informativa)
 - [ ] Preguntas frecuentes (página informativa)
 - [x] Términos de uso → redirige a web ✅

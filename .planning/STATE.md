@@ -13,8 +13,8 @@ Version: 1.0
 Phase: 9 — Settings & Pre-Release
 Spec: None
 Plan: TBD
-Status: **Fase 9 en progreso** — Términos de uso web + iOS completados
-Last activity: 2026-01-27 — Terms of Use page (web 6 idiomas) + iOS link (9.2)
+Status: **Fase 9 en progreso** — Suscripción Pro con StoreKit 2 completada
+Last activity: 2026-01-27 — Yala Pro subscription system (9.3)
 
 Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progreso)
 
@@ -22,6 +22,7 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] 9e99f76 feat(subscription): add Yala Pro subscription system with StoreKit 2 (9.3)
 - [2026-01-27] 88fdcdb feat(web): add Terms of Use page in 6 languages and wire iOS link (9.2)
 - [2026-01-27] d6b9230 feat(settings): wire Permissions, Contact, Rate App, and Privacy links (9.2)
 - [2026-01-27] d7f4fb3 feat(security): add Face ID / Touch ID biometric lock with configurable timeout (9.1)
@@ -31,9 +32,6 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 - [2026-01-26] 879db81 polish(inbox): UI refinements for Voice, Image, and Inbox views
 - [2026-01-26] 0061e80 fix(v1.0): resolve multiple UX and export issues
 - [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
-- [2026-01-25] 6e5860a feat(voice): support multiple transactions in single recording
-- [2026-01-25] b145887 feat(image): support multiple image selection (up to 10)
-- [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
 
 ## Completed in Current Phase
 
@@ -99,8 +97,8 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 - [x] Contacta con nosotros → mail draft a admin@yala-app.pe ✅ (d6b9230)
 - [x] Valorar en App Store → SKStoreReviewController ✅ (d6b9230)
 - [x] Política de privacidad → web ✅ (d6b9230)
-- [ ] Sistema de suscripción Pro (StoreKit 2)
-- [ ] Página de administrar suscripción
+- [x] Sistema de suscripción Pro (StoreKit 2) ✅ (9e99f76)
+- [x] Página de administrar suscripción ✅ (integrada en SubscriptionView)
 - [ ] Consejos y trucos (página)
 - [ ] Preguntas frecuentes (página)
 - [x] Términos de uso → web ✅ (88fdcdb)
@@ -182,13 +180,15 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Fase 9.2 Términos de uso web + iOS completados (88fdcdb)
-Next step: Siguiente item Fase 9 (suscripción Pro, consejos y trucos, o FAQ)
+Stopped at: Fase 9.3 Suscripción Pro con StoreKit 2 completada (9e99f76)
+Next step: Siguiente item Fase 9 (Consejos y trucos o FAQ)
 Resume file: N/A
 Resume context:
-- Web: TermsPage.astro con 12 secciones legales en 6 idiomas, footer actualizado
-- iOS: ProfileView todos los links legales apuntan a yala-app.pe (privacy + terms)
-- Suscripciones, Consejos, FAQ siguen como placeholder
+- StoreKitManager service con load/purchase/restore/entitlements
+- SubscriptionView con paywall (hero gradient, features, plan selector) + vista activa
+- isProUser en SessionState, synced desde YalaApp al launch
+- Product IDs: com.yala.pro.monthly, com.yala.pro.yearly (configurar en App Store Connect)
+- Faltan: Consejos y trucos, FAQ
 
 ## V1.1 (Futuro)
 
