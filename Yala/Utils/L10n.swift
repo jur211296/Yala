@@ -1988,6 +1988,38 @@ enum L10n {
             NSLocalizedString("biometric.lockAfterHint", comment: "")
         }
     }
+
+    // MARK: - Subscription
+    enum Subscription {
+        static var title: String { NSLocalizedString("subscription.title", comment: "") }
+        static var paywallTitle: String { NSLocalizedString("subscription.paywallTitle", comment: "") }
+        static var paywallSubtitle: String { NSLocalizedString("subscription.paywallSubtitle", comment: "") }
+        static var subscribe: String { NSLocalizedString("subscription.subscribe", comment: "") }
+        static var processing: String { NSLocalizedString("subscription.processing", comment: "") }
+        static var restore: String { NSLocalizedString("subscription.restore", comment: "") }
+        static var planMonthly: String { NSLocalizedString("subscription.planMonthly", comment: "") }
+        static var planYearly: String { NSLocalizedString("subscription.planYearly", comment: "") }
+        static var perYear: String { NSLocalizedString("subscription.perYear", comment: "") }
+        static func perMonth(_ price: String) -> String {
+            String(format: NSLocalizedString("subscription.perMonth", comment: ""), price)
+        }
+        static func saveBadge(_ percent: Int) -> String {
+            String(format: NSLocalizedString("subscription.saveBadge", comment: ""), percent)
+        }
+        static var featureVoice: String { NSLocalizedString("subscription.feature.voice", comment: "") }
+        static var featureImage: String { NSLocalizedString("subscription.feature.image", comment: "") }
+        static var featureReports: String { NSLocalizedString("subscription.feature.reports", comment: "") }
+        static var featureCurrencies: String { NSLocalizedString("subscription.feature.currencies", comment: "") }
+        static var featureThemes: String { NSLocalizedString("subscription.feature.themes", comment: "") }
+        static var featureExport: String { NSLocalizedString("subscription.feature.export", comment: "") }
+        static var legalFooter: String { NSLocalizedString("subscription.legalFooter", comment: "") }
+        static var errorTitle: String { NSLocalizedString("subscription.errorTitle", comment: "") }
+        static var activeTitle: String { NSLocalizedString("subscription.activeTitle", comment: "") }
+        static var activeSubtitle: String { NSLocalizedString("subscription.activeSubtitle", comment: "") }
+        static var currentPlan: String { NSLocalizedString("subscription.currentPlan", comment: "") }
+        static var renewsOn: String { NSLocalizedString("subscription.renewsOn", comment: "") }
+        static var manageInAppStore: String { NSLocalizedString("subscription.manageInAppStore", comment: "") }
+    }
 }
 
 // MARK: - App Locale

@@ -133,6 +133,8 @@
 "action.savedAsFavorite" = "Als Favorit gespeichert";
 "action.savedAsRecurring" = "Als wiederkehrend gespeichert";
 "action.duplicated" = "Dupliziert - speichern für neue";
+"action.select" = "Auswählen";
+"action.retry" = "Erneut versuchen";
 
 // MARK: - Search
 
@@ -309,6 +311,9 @@
 "settings.tabBarConfigMinWarning" = "Du musst mindestens einen Bereich haben";
 "settings.tabBarConfigMaxWarning" = "Maximal 3 Bereiche";
 "settings.plannedPayments" = "Geplante Zahlungen";
+"settings.voiceInputEnabled" = "Spracheingabe";
+"settings.voiceLanguage" = "Sprachsprache";
+"settings.imageInputEnabled" = "Bildeingabe";
 "settings.resetData" = "Daten löschen";
 "settings.version" = "Version";
 "settings.light" = "Hell";
@@ -463,6 +468,9 @@
 "common.comingSoon" = "Demnächst";
 "panel.greeting" = "Hallo, %@";
 "panel.title" = "%@s Panel";
+"panel.fabVoice" = "Sprache";
+"panel.fabImage" = "Bild";
+"panel.fabManual" = "Manuell";
 
 "widget.today" = "Heute";
 
@@ -1083,3 +1091,139 @@
 "bulkEdit.commonTags" = "In allen ausgewählten";
 "bulkEdit.partialTags" = "In einigen ausgewählten";
 "bulkEdit.availableTags" = "Verfügbar zum Hinzufügen";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "System";
+"voiceLanguage.spanish" = "Spanisch";
+"voiceLanguage.english" = "Englisch";
+
+// MARK: - Voice Input
+"voice.title" = "Sprachnotiz";
+"voice.recording" = "Aufnahme...";
+"voice.recorded" = "Aufgenommen";
+"voice.pleaseWait" = "Bitte warten";
+"voice.tapToRecord" = "Tippen zum Aufnehmen";
+"voice.youCanSay" = "Sie können sagen:";
+"voice.hintTypeExample" = "Ausgabe/Einnahme/Überweisung";
+"voice.hintAmountExample" = "50 Euro";
+"voice.hintSubcategoryExample" = "Restaurants";
+"voice.hintMerchantExample" = "Starbucks";
+"voice.hintTagExample" = "Arbeit";
+"voice.hintDateExample" = "Heute/Gestern";
+"voice.exampleLabel" = "Beispiele";
+"voice.example1" = "50 Euro bei Starbucks für Kaffee ausgegeben";
+"voice.example2" = "Einnahme von 1000 Euro aus freiberuflicher Tätigkeit";
+"voice.example3" = "Überweisung von 200 Euro auf Sparkonto";
+"voice.processingAudio" = "Audio wird verarbeitet...";
+"voice.analyzing" = "Analysieren...";
+"voice.parsing" = "Daten extrahieren...";
+"voice.saving" = "Speichern...";
+"voice.errorNoAmount" = "Betrag konnte nicht erkannt werden. Versuchen Sie es erneut.";
+"voice.errorNoApiKey" = "Verbindung zum Sprachdienst fehlgeschlagen. Versuchen Sie es später erneut.";
+"voice.errorNoConnection" = "Keine Internetverbindung. Sie benötigen eine Verbindung für diese Funktion.";
+"voice.errorMicPermission" = "Mikrofonberechtigung verweigert. Aktivieren Sie sie in den Einstellungen.";
+"voice.errorSaveFailed" = "Entwurf konnte nicht gespeichert werden. Versuchen Sie es erneut.";
+"voice.openSettings" = "Einstellungen öffnen";
+"voice.tryImage" = "Bild verwenden";
+
+// MARK: - Inbox
+"inbox.title" = "Posteingang";
+"inbox.pending" = "Ausstehend";
+"inbox.archived" = "Archiviert";
+"inbox.noDescription" = "Keine Beschreibung";
+"inbox.noAmount" = "Kein Betrag";
+"inbox.missingLabel" = "Fehlende Daten";
+"inbox.needsAccount" = "Konto auswählen";
+"inbox.needsSubcategory" = "Unterkategorie auswählen";
+"inbox.approve" = "Genehmigen";
+"inbox.delete" = "Löschen";
+"inbox.noPending" = "Keine ausstehenden Entwürfe";
+"inbox.noPendingDescription" = "Neue Sprach- und Bildentwürfe werden hier angezeigt.";
+"inbox.bulkHint" = "Tippen Sie auf Auswählen für Massenaktionen";
+"inbox.newTag" = "Neu";
+"inbox.noArchived" = "Keine archivierten Entwürfe";
+"inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";
+"inbox.selectedCount" = "%d ausgewählt";
+"inbox.editDraft" = "Edit draft";
+"inbox.cannotApprove" = "Cannot approve";
+"inbox.sourceVoice" = "Voice";
+"inbox.sourceEmail" = "Email";
+"inbox.sourceScreenshot" = "Screenshot";
+"inbox.sourceScreenshotList" = "List";
+"inbox.sourceReceipt" = "Receipt";
+"inbox.errorNoAccount" = "Select account";
+"inbox.errorNoAmount" = "Specify amount";
+"inbox.errorNoSubcategory" = "Select subcategory";
+"inbox.duplicateWarningTitle" = "Possible duplicate";
+"inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
+"inbox.createAnyway" = "Create anyway";
+"inbox.deleteConfirmMessage" = "Delete %d draft(s)?";
+"inbox.approveableCount" = "%d von %d bereit zur Genehmigung";
+"inbox.saveLater" = "Später genehmigen";
+"inbox.deleteTitle" = "Entwurf löschen";
+"inbox.deleteMessage" = "Diese Aktion kann nicht rückgängig gemacht werden.";
+"inbox.reject" = "Ablehnen";
+"inbox.returnToPending" = "Zu ausstehend zurückkehren";
+"inbox.discardChangesTitle" = "Änderungen verwerfen?";
+"inbox.discardChanges" = "Verwerfen";
+"inbox.keepEditing" = "Weiter bearbeiten";
+"inbox.discardChangesMessage" = "Nicht gespeicherte Änderungen gehen verloren.";
+"inbox.approveSuccess" = "Transaktion erstellt";
+"inbox.approveNext" = "Nächste genehmigen";
+"inbox.transactionCreated" = "Transaktion erstellt";
+"inbox.transactionsCreated" = "Transaktionen erstellt";
+"inbox.viewInRecords" = "In Aufzeichnungen anzeigen";
+"inbox.backToInbox" = "Zurück zum Posteingang";
+
+// MARK: - Image Input
+"image.title" = "Bild";
+"image.selectTitle" = "Wählen Sie ein Bild";
+"image.selectSubtitle" = "Scannen Sie Bank-Screenshots oder Quittungen, um automatisch Transaktionen zu erstellen.";
+"image.selectButton" = "Bild auswählen";
+"image.processing" = "Verarbeitung...";
+"image.processingSubtitle" = "Daten aus Bild extrahieren";
+"image.errorTitle" = "Fehler";
+"image.errorLoad" = "Bild konnte nicht geladen werden";
+"image.errorNoData" = "Keine Transaktionen im Bild erkannt";
+"image.errorUnrecognized" = "Nicht erkannter Bildtyp";
+"image.errorGeneric" = "Fehler beim Verarbeiten des Bildes";
+"image.errorPhotoPermission" = "Fotoberechtigung verweigert. Aktivieren Sie sie in den Einstellungen.";
+"image.errorCorrupted" = "Bild konnte nicht verarbeitet werden. Versuchen Sie ein anderes Bild.";
+"image.errorSaveFailed" = "Entwurf konnte nicht gespeichert werden. Versuchen Sie es erneut.";
+"image.errorNoApiKey" = "Verbindung zum Bilddienst fehlgeschlagen. Versuchen Sie es später erneut.";
+"image.errorNoConnection" = "Keine Internetverbindung. Sie benötigen eine Verbindung zur Bildanalyse.";
+"image.openSettings" = "Einstellungen öffnen";
+"image.transactionDetected" = "Transaktion erkannt";
+"image.transactionsDetectedCount" = "Transaktionen erkannt";
+"image.reviewDraft" = "Überprüfen";
+"image.transactionsDetected" = "Transaktionen erkannt";
+"image.goToInbox" = "Zum Posteingang";
+"image.transactionsDetectedMessage" = "Wir haben %d Transaktionen erkannt. Du kannst sie im Posteingang überprüfen und genehmigen.";
+"image.analyzingIn" = "Analyse in %d...";
+"image.imagesSelected" = "%d Bilder ausgewählt";
+
+// MARK: - Subscription
+"subscription.title" = "Yala Pro";
+"subscription.paywallTitle" = "Schalte das volle Potenzial von Yala frei";
+"subscription.paywallSubtitle" = "Bringe deine Finanzen mit erweiterten Tools auf das nächste Level";
+"subscription.subscribe" = "Abonnieren";
+"subscription.processing" = "Wird verarbeitet...";
+"subscription.restore" = "Käufe wiederherstellen";
+"subscription.planMonthly" = "Monatlich";
+"subscription.planYearly" = "Jährlich";
+"subscription.perYear" = "/ Jahr";
+"subscription.perMonth" = "%@ / Monat";
+"subscription.saveBadge" = "%d%% sparen";
+"subscription.feature.voice" = "Unbegrenzte Spracheingabe";
+"subscription.feature.image" = "Beleg- und Bilderkennung";
+"subscription.feature.reports" = "Erweiterte Berichte und Diagramme";
+"subscription.feature.currencies" = "Alle Währungen und Wechselkurse";
+"subscription.feature.themes" = "Exklusive Designs und Symbole";
+"subscription.feature.export" = "Export als Excel und CSV";
+"subscription.legalFooter" = "Die Zahlung wird über dein Apple-Konto abgerechnet. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ende des aktuellen Zeitraums gekündigt wird.";
+"subscription.errorTitle" = "Kauffehler";
+"subscription.activeTitle" = "Du bist Yala Pro";
+"subscription.activeSubtitle" = "Du hast Zugang zu allen Premium-Funktionen";
+"subscription.currentPlan" = "Aktueller Plan";
+"subscription.renewsOn" = "Verlängert sich am";
+"subscription.manageInAppStore" = "Im App Store verwalten";

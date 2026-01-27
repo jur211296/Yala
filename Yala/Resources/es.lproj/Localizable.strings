@@ -135,6 +135,8 @@
 "action.savedAsFavorite" = "Guardado como favorito";
 "action.savedAsRecurring" = "Guardado como recurrente";
 "action.duplicated" = "Duplicado - guarda para crear nueva";
+"action.select" = "Seleccionar";
+"action.retry" = "Reintentar";
 
 // MARK: - Search
 
@@ -311,6 +313,9 @@
 "settings.tabBarConfigMinWarning" = "Debes tener al menos una sección";
 "settings.tabBarConfigMaxWarning" = "Máximo 3 secciones";
 "settings.plannedPayments" = "Pagos planificados";
+"settings.voiceInputEnabled" = "Entrada con voz";
+"settings.voiceLanguage" = "Idioma de voz";
+"settings.imageInputEnabled" = "Entrada con imágenes";
 "settings.resetData" = "Borrar datos";
 "settings.version" = "Versión";
 "settings.light" = "Claro";
@@ -465,6 +470,9 @@
 "common.comingSoon" = "Próximamente";
 "panel.greeting" = "Hola, %@";
 "panel.title" = "Panel de %@";
+"panel.fabVoice" = "Voz";
+"panel.fabImage" = "Imagen";
+"panel.fabManual" = "Manual";
 
 "widget.today" = "Hoy";
 
@@ -1083,3 +1091,139 @@
 "bulkEdit.commonTags" = "En todas las seleccionadas";
 "bulkEdit.partialTags" = "En algunas seleccionadas";
 "bulkEdit.availableTags" = "Disponibles para añadir";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "Sistema";
+"voiceLanguage.spanish" = "Español";
+"voiceLanguage.english" = "Inglés";
+
+// MARK: - Voice Input
+"voice.title" = "Nota de Voz";
+"voice.recording" = "Grabando...";
+"voice.recorded" = "Grabado";
+"voice.pleaseWait" = "Por favor espera";
+"voice.tapToRecord" = "Toca para grabar";
+"voice.youCanSay" = "Puedes decir:";
+"voice.hintTypeExample" = "Gasto/Ingreso/Transferencia";
+"voice.hintAmountExample" = "50 pesos";
+"voice.hintSubcategoryExample" = "Restaurantes";
+"voice.hintMerchantExample" = "Starbucks";
+"voice.hintTagExample" = "Trabajo";
+"voice.hintDateExample" = "Hoy/Ayer";
+"voice.exampleLabel" = "Ejemplos";
+"voice.example1" = "Gasto de 50 pesos en Starbucks para café";
+"voice.example2" = "Ingreso de 1000 pesos por trabajo freelance";
+"voice.example3" = "Transferencia de 200 pesos a cuenta de ahorros";
+"voice.processingAudio" = "Procesando audio...";
+"voice.analyzing" = "Analizando...";
+"voice.parsing" = "Extrayendo datos...";
+"voice.saving" = "Guardando...";
+"voice.errorNoAmount" = "No se pudo detectar el monto. Intenta de nuevo.";
+"voice.errorNoApiKey" = "No se pudo conectar con el servicio de voz. Intenta más tarde.";
+"voice.errorNoConnection" = "Sin conexión a internet. Necesitas conexión para usar esta función.";
+"voice.errorMicPermission" = "Permiso de micrófono denegado. Habilítalo en Configuración.";
+"voice.errorSaveFailed" = "No se pudo guardar el borrador. Intenta de nuevo.";
+"voice.openSettings" = "Abrir Configuración";
+"voice.tryImage" = "Usar imagen";
+
+// MARK: - Inbox
+"inbox.title" = "Bandeja de Entrada";
+"inbox.pending" = "Pendientes";
+"inbox.archived" = "Archivados";
+"inbox.noDescription" = "Sin descripción";
+"inbox.noAmount" = "Sin monto";
+"inbox.missingLabel" = "Falta:";
+"inbox.needsAccount" = "Cuenta";
+"inbox.needsSubcategory" = "Subcategoría";
+"inbox.approve" = "Aprobar";
+"inbox.delete" = "Eliminar";
+"inbox.noPending" = "Sin borradores pendientes";
+"inbox.noPendingDescription" = "Los nuevos borradores de voz e imagen aparecerán aquí.";
+"inbox.bulkHint" = "Toca Seleccionar para acciones masivas";
+"inbox.newTag" = "Nueva";
+"inbox.noArchived" = "Sin borradores archivados";
+"inbox.noArchivedDescription" = "Los borradores aprobados o rechazados aparecerán aquí.";
+"inbox.selectedCount" = "%d seleccionados";
+"inbox.editDraft" = "Editar borrador";
+"inbox.cannotApprove" = "No se puede aprobar";
+"inbox.sourceVoice" = "Voz";
+"inbox.sourceEmail" = "Correo";
+"inbox.sourceScreenshot" = "Captura";
+"inbox.sourceScreenshotList" = "Lista";
+"inbox.sourceReceipt" = "Recibo";
+"inbox.errorNoAccount" = "Debes seleccionar una cuenta";
+"inbox.errorNoAmount" = "Debes especificar un monto";
+"inbox.errorNoSubcategory" = "Debes seleccionar una subcategoría";
+"inbox.duplicateWarningTitle" = "Posible duplicado";
+"inbox.duplicateWarningMessage" = "Ya existe una transacción similar. ¿Crear de todas formas?";
+"inbox.createAnyway" = "Crear de todas formas";
+"inbox.deleteConfirmMessage" = "¿Estás seguro de eliminar %d borrador(es)?";
+"inbox.approveableCount" = "%d de %d listo(s) para aprobar";
+"inbox.saveLater" = "Aprobar luego";
+"inbox.deleteTitle" = "Eliminar borrador";
+"inbox.deleteMessage" = "Esta acción no se puede deshacer.";
+"inbox.reject" = "Rechazar";
+"inbox.returnToPending" = "Regresar a pendientes";
+"inbox.discardChangesTitle" = "¿Descartar cambios?";
+"inbox.discardChanges" = "Descartar";
+"inbox.keepEditing" = "Seguir editando";
+"inbox.discardChangesMessage" = "Tienes cambios sin guardar que se perderán.";
+"inbox.approveSuccess" = "Transacción creada";
+"inbox.approveNext" = "Aprobar siguiente";
+"inbox.transactionCreated" = "transacción creada";
+"inbox.transactionsCreated" = "transacciones creadas";
+"inbox.viewInRecords" = "Ver en registros";
+"inbox.backToInbox" = "Volver a bandeja";
+
+// MARK: - Image Input
+"image.title" = "Imagen";
+"image.selectTitle" = "Selecciona una imagen";
+"image.selectSubtitle" = "Escanea capturas de pantalla bancarias o recibos para crear transacciones automáticamente.";
+"image.selectButton" = "Seleccionar imagen";
+"image.processing" = "Procesando...";
+"image.processingSubtitle" = "Extrayendo datos de la imagen";
+"image.errorTitle" = "Error";
+"image.errorLoad" = "No se pudo cargar la imagen";
+"image.errorNoData" = "No se detectaron transacciones en la imagen";
+"image.errorUnrecognized" = "Tipo de imagen no reconocido";
+"image.errorGeneric" = "Error al procesar la imagen";
+"image.errorPhotoPermission" = "Permiso de fotos denegado. Habilítalo en Configuración.";
+"image.errorCorrupted" = "La imagen no se pudo procesar. Intenta con otra imagen.";
+"image.errorSaveFailed" = "No se pudo guardar el borrador. Intenta de nuevo.";
+"image.errorNoApiKey" = "No se pudo conectar con el servicio de imagen. Intenta más tarde.";
+"image.errorNoConnection" = "Sin conexión a internet. Necesitas conexión para analizar imágenes.";
+"image.openSettings" = "Abrir Configuración";
+"image.transactionDetected" = "transacción detectada";
+"image.transactionsDetectedCount" = "transacciones detectadas";
+"image.reviewDraft" = "Revisar";
+"image.transactionsDetected" = "Transacciones detectadas";
+"image.goToInbox" = "Ir a bandeja";
+"image.transactionsDetectedMessage" = "Hemos detectado %d transacciones. Puedes revisarlas y aprobarlas en la bandeja de entrada.";
+"image.analyzingIn" = "Analizando en %d...";
+"image.imagesSelected" = "%d imágenes seleccionadas";
+
+// MARK: - Subscription
+"subscription.title" = "Yala Pro";
+"subscription.paywallTitle" = "Desbloquea todo el potencial de Yala";
+"subscription.paywallSubtitle" = "Lleva tus finanzas al siguiente nivel con herramientas avanzadas";
+"subscription.subscribe" = "Suscribirse";
+"subscription.processing" = "Procesando...";
+"subscription.restore" = "Restaurar compras";
+"subscription.planMonthly" = "Mensual";
+"subscription.planYearly" = "Anual";
+"subscription.perYear" = "/ año";
+"subscription.perMonth" = "%@ / mes";
+"subscription.saveBadge" = "Ahorra %d%%";
+"subscription.feature.voice" = "Registro por voz ilimitado";
+"subscription.feature.image" = "Escaneo de recibos e imágenes";
+"subscription.feature.reports" = "Reportes y gráficas avanzadas";
+"subscription.feature.currencies" = "Todas las divisas y tipos de cambio";
+"subscription.feature.themes" = "Temas e iconos exclusivos";
+"subscription.feature.export" = "Exportación en Excel y CSV";
+"subscription.legalFooter" = "El pago se carga a tu cuenta de Apple. La suscripción se renueva automáticamente a menos que la canceles al menos 24 horas antes del final del periodo actual.";
+"subscription.errorTitle" = "Error de compra";
+"subscription.activeTitle" = "Eres Yala Pro";
+"subscription.activeSubtitle" = "Tienes acceso a todas las funciones premium";
+"subscription.currentPlan" = "Plan actual";
+"subscription.renewsOn" = "Se renueva el";
+"subscription.manageInAppStore" = "Administrar en App Store";

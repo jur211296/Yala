@@ -212,6 +212,11 @@ class SessionState {
         globalFilters.dateInterval = selectedPeriod.dateInterval()
     }
 
+    // MARK: - Subscription State
+
+    /// Whether the user has an active Pro subscription (mirrors StoreKitManager)
+    var isProUser: Bool = false
+
     // MARK: - Data Wipe State
 
     /// Flag indicating data wipe is in progress
