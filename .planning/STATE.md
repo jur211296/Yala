@@ -5,23 +5,25 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 9 — Settings & Pre-Release (V1.0)
+**Current focus:** Fase 10 — Refinamiento & Notificaciones (V1.1)
 
 ## Current Position
 
-Version: 1.0
-Phase: 9 — Settings & Pre-Release
+Version: 1.1
+Phase: 10 — Refinamiento & Notificaciones
 Spec: None
 Plan: TBD
-Status: **Fase 9 en progreso** — Suscripción Pro con StoreKit 2 completada
-Last activity: 2026-01-27 — Yala Pro subscription system (9.3)
+Status: **V1.0 COMPLETA** — Iniciando V1.1
+Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
-Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progreso)
+Progress: V1.0 ████████████████ 100% ✅
+Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa, Fase 10 pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] c598ca2 feat(settings): add FAQ page with 9 expandable questions (9.5)
 - [2026-01-27] 33927e0 feat(settings): add Tips & Tricks page with 8 expandable tips (9.4)
 - [2026-01-27] 9e99f76 feat(subscription): add Yala Pro subscription system with StoreKit 2 (9.3)
 - [2026-01-27] 88fdcdb feat(web): add Terms of Use page in 6 languages and wire iOS link (9.2)
@@ -31,7 +33,6 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 - [2026-01-27] 772741b feat(vision): enhanced date context, draft deduplication, and processing progress
 - [2026-01-27] ff09010 fix(image): remove OCR fallback and require API key for voice/image
 - [2026-01-26] 879db81 polish(inbox): UI refinements for Voice, Image, and Inbox views
-- [2026-01-26] 0061e80 fix(v1.0): resolve multiple UX and export issues
 
 ## Completed in Current Phase
 
@@ -100,7 +101,7 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 - [x] Sistema de suscripción Pro (StoreKit 2) ✅ (9e99f76)
 - [x] Página de administrar suscripción ✅ (integrada en SubscriptionView)
 - [x] Consejos y trucos (página) ✅ (33927e0)
-- [ ] Preguntas frecuentes (página)
+- [x] Preguntas frecuentes (página) ✅ (c598ca2)
 - [x] Términos de uso → web ✅ (88fdcdb)
 
 ---
@@ -180,12 +181,13 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Fase 9.4 Tips & Tricks page completada (33927e0)
-Next step: Siguiente item Fase 9 (Preguntas frecuentes - FAQ)
+Stopped at: Fase 9 cerrada, V1.0 marcada como completa
+Next step: Iniciar Fase 10 (Refinamiento & Notificaciones)
 Resume file: N/A
 Resume context:
-- TipsAndTricksView con 8 tips expandibles en 3 secciones, localizaciones en 6 idiomas
-- Falta: FAQ (último item de Fase 9)
+- V1.0 completa (Fases 1-9 todas done)
+- V1.1 en progreso: Fase 8 (Registro Inteligente) ya completada
+- Siguiente: Fase 10 — Modo solo gastos, notificaciones, permisos, bugfixes
 
 ## V1.1 (Futuro)
 
