@@ -89,17 +89,12 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Next Steps
 
-### Mejoras Vision API + Inbox (pendiente de refinamiento)
+### Mejoras Vision API + Inbox ✅ COMPLETADA
 
 Implementación base completada (d9cfe97). Mejoras completadas (772741b):
 - [x] Ajustar prompt de Vision para mejor precisión en fechas relativas (DateContextProvider)
 - [x] UX: feedback visual mientras procesa imagen (ProcessingProgressView)
 - [x] Deduplicación de drafts (DraftDeduplicationService)
-
-Pendientes:
-- [ ] Testing manual con imágenes reales de diferentes bancos
-- [ ] Considerar fallback cuando Vision no detecta currency
-- [ ] Edge cases: qué pasa si InboxDraftEditSheet se cierra sin guardar
 
 ---
 
@@ -213,7 +208,7 @@ Pendientes:
 
 Last session: 2026-01-27
 Stopped at: Vision API enhancements — fechas expandidas, dedup, progress views (772741b)
-Next step: Testing manual con imágenes reales, verificar dedup funciona correctamente
+Next step: Subfase 8.5 Merchant Memory
 Resume file: N/A
 Resume context:
 - DateContextProvider inyecta contexto rico de fechas en prompts Voice e Image

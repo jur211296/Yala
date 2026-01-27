@@ -84,17 +84,33 @@ struct VisionDraftFactory {
             }
         }
 
+        // Merchant Memory: suggest subcategory from note
+        var matchedSubcategory: Subcategory?
+        if !note.trimmingCharacters(in: .whitespaces).isEmpty {
+            let merchantService = MerchantMemoryService(modelContext: context)
+            let suggestion = merchantService.suggest(for: note)
+            switch suggestion {
+            case .suggest(let sub), .autoAssign(let sub):
+                matchedSubcategory = sub
+                needsUserInput.removeAll { $0 == "subcategory" }
+            case .none:
+                break
+            }
+        }
+
         // Create the draft
         let draft = InboxDraft(
             note: note,
             amount: transaction.amount,
             date: parsedDate,
+            subcategory: matchedSubcategory,
             sourceType: sourceType,
             rawText: rawText,
             evidence: transaction.merchant,
             confidenceAmount: transaction.amount != nil ? confidence.overall : nil,
             confidenceDate: parsedDate != nil ? confidence.overall : nil,
             confidenceMerchant: transaction.merchant != nil ? confidence.overall : nil,
+            confidenceSubcategory: matchedSubcategory != nil ? confidence.overall : nil,
             needsUserInput: needsUserInput
         )
 

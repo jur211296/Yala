@@ -67,6 +67,9 @@ struct InboxDraftEditSheet: View {
     // Track initial status to prevent toolbar flash on reject
     @State private var initialStatus: DraftStatus = .pending
 
+    // Merchant Memory: track suggested subcategory to detect corrections
+    @State private var merchantSuggestedSubcategory: Subcategory?
+
     // Track initial values to detect unsaved changes
     @State private var initialNote: String = ""
     @State private var initialAmountString: String = ""
@@ -777,6 +780,20 @@ struct InboxDraftEditSheet: View {
             isExpense = true // Default to expense
         }
 
+        // Merchant Memory: suggest subcategory if not already set
+        merchantSuggestedSubcategory = nil
+        if selectedSubcategory == nil && !note.trimmingCharacters(in: .whitespaces).isEmpty {
+            let merchantService = MerchantMemoryService(modelContext: modelContext)
+            let suggestion = merchantService.suggest(for: note)
+            switch suggestion {
+            case .suggest(let subcategory), .autoAssign(let subcategory):
+                selectedSubcategory = subcategory
+                merchantSuggestedSubcategory = subcategory
+            case .none:
+                break
+            }
+        }
+
         // Save initial values for change detection
         initialNote = note
         initialAmountString = amountString
@@ -902,6 +919,18 @@ struct InboxDraftEditSheet: View {
         draft.cachedCategoryColorHex = subcategory.category.colorHex
         draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
         draft.cachedCurrencyCode = account.currencyCode
+
+        // Update Merchant Memory
+        if !note.trimmingCharacters(in: .whitespaces).isEmpty {
+            let merchantService = MerchantMemoryService(modelContext: modelContext)
+            let wasCorrection = merchantSuggestedSubcategory != nil &&
+                merchantSuggestedSubcategory?.persistentModelID != subcategory.persistentModelID
+            merchantService.updateMemory(
+                merchantRaw: note,
+                subcategory: subcategory,
+                wasCorrection: wasCorrection
+            )
+        }
 
         do {
             try modelContext.save()

@@ -25,6 +25,7 @@ struct YalaApp: App {
             FavoritePayment.self,
             ScheduledPayment.self,
             InboxDraft.self,
+            MerchantMemory.self,
         ])
 
         // Nombre lógico del contenedor / base de datos

@@ -856,6 +856,19 @@ struct VoiceRecordingView: View {
             }
         }
 
+        // Merchant Memory fallback: suggest subcategory if LLM didn't match one
+        if matchedSubcategory == nil && !parsed.note.trimmingCharacters(in: .whitespaces).isEmpty {
+            let merchantService = MerchantMemoryService(modelContext: modelContext)
+            let suggestion = merchantService.suggest(for: parsed.note)
+            switch suggestion {
+            case .suggest(let sub), .autoAssign(let sub):
+                matchedSubcategory = sub
+                needsUserInputFields.removeAll { $0 == "subcategory" }
+            case .none:
+                break
+            }
+        }
+
         // Try to match tag hints with existing tags
         var matchedTags: [Tag] = []
         var newlyCreatedTagNames: [String] = []

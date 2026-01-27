@@ -61,6 +61,18 @@ final class DataWipeService {
         }
         try context.save()
 
+        // 1.1c Eliminar MerchantMemory (limpiar relaciones y eliminar)
+        let merchantMemoryDescriptor = FetchDescriptor<MerchantMemory>()
+        let allMerchantMemories = try context.fetch(merchantMemoryDescriptor)
+        for memory in allMerchantMemories {
+            memory.subcategory = nil
+        }
+        try context.save()
+        for memory in allMerchantMemories {
+            context.delete(memory)
+        }
+        try context.save()
+
         // 1.2 Eliminar todas las transacciones
         for transaction in allTransactions {
             context.delete(transaction)

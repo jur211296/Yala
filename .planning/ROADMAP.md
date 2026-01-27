@@ -254,7 +254,7 @@ Subfases:
 - [x] 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación) ✅
 - [x] 8.2: Edición y Aprobación (sheet edición, validación, acciones lote) ✅
 - [x] 8.3: Voz MVP (OpenAI SDK, STT, LLM parser) ✅
-- [ ] 8.4: Imágenes MVP (OCR Vision, clasificación, extractores)
+- [x] 8.4: Imágenes MVP (OCR Vision, clasificación, extractores) ✅
 - [ ] 8.5: Merchant Memory (canonicalización, sugerencias)
 - [ ] 8.6: Refinamiento (sistema confianza, fallbacks)
 - [ ] 8.7: Cloud Fallback (opcional, AWS/GCP para recibos)
@@ -308,7 +308,7 @@ DoD:
 ### V1.1
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 8 | Registro Inteligente | 🔄 In Progress (8.1 ✅, 8.2 ✅, 8.3 ✅) | - |
+| 8 | Registro Inteligente | 🔄 In Progress (8.1-8.4 ✅) | - |
 | 9 | Plataforma y Polish | Not started | - |
 
 ---

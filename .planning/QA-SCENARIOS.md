@@ -2544,7 +2544,59 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 
 ---
 
+## Sección 19: Merchant Memory (Subfase 8.5)
+
+### Precondiciones
+- Al menos 1 cuenta creada
+- Al menos 1 subcategoría visible
+- Input de voz o imagen funcional (API key configurada)
+
+### 19.1 Canonicalización de Merchants
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 1 | Normalización básica | Aprobar draft con nota "Starbucks Coffee" → aprobar otro con "STARBUCKS COFFEE" | Ambos mapean a la misma memoria de comercio |
+| 2 | Prefijos de pago | Aprobar draft con nota "DP*Uber Eats" | La memoria guarda "UBER EATS" (sin prefijo DP*) |
+| 3 | Símbolos y espacios | Aprobar draft con nota "Pizza Hut #123" | La memoria guarda "PIZZA HUT 123" (sin #) |
+
+### 19.2 Sugerencia de Subcategoría
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 4 | Sin sugerencia (<3 aprobaciones) | Aprobar 2 drafts de "Starbucks" con subcategoría "Café" → crear nuevo draft "Starbucks" | NO se sugiere subcategoría automáticamente |
+| 5 | Sugerencia (>=3 aprobaciones) | Aprobar 3 drafts de "Starbucks" con subcategoría "Café" → abrir nuevo draft "Starbucks" | Subcategoría "Café" aparece preseleccionada |
+| 6 | Autoasignación (>=5, baja corrección) | Aprobar 5 drafts de "Starbucks" con "Café" sin corregir → crear nuevo draft | Subcategoría autoasignada en el draft |
+| 7 | Corrección reduce confianza | Aprobar 3 con "Café", cambiar 2 a "Restaurantes" → nuevo draft | No sugiere (tasa corrección alta) |
+
+### 19.3 Integración con Voz
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 8 | Voice draft con memoria | Tener 5+ aprobaciones para "Uber" → grabar "gasté 50 en Uber" | Draft creado con subcategoría prefilled de merchant memory |
+| 9 | LLM hint tiene prioridad | LLM sugiere subcategoría + merchant memory sugiere otra | Se usa la del LLM (merchant memory es fallback) |
+
+### 19.4 Integración con Imágenes
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 10 | Image draft con memoria | Tener 5+ aprobaciones para merchant → procesar imagen con ese merchant | Draft(s) creados con subcategoría prefilled |
+
+### 19.5 Corrección y Aprendizaje
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 11 | Corrección registrada | Abrir draft con subcategoría sugerida → cambiar a otra → aprobar | Memory registra corrección, countCorrected incrementa |
+| 12 | Aprobación sin corrección | Abrir draft con subcategoría sugerida → aprobar sin cambiar | countApproved incrementa |
+
+### 19.6 Data Wipe
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 13 | Wipe limpia memoria | Tener memorias de comercios → vaciar datos | Todas las memorias eliminadas, sin crash |
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-25*
-*Total escenarios: ~270*
-*Total verificaciones: ~490+*
+*Última actualización: 2026-01-27*
+*Total escenarios: ~283*
+*Total verificaciones: ~510+*
