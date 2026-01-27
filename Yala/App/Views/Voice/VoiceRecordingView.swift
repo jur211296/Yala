@@ -938,10 +938,17 @@ struct VoiceRecordingView: View {
 
     // MARK: - Entity Matching
 
-    /// Finds a subcategory matching the hint (case-insensitive, partial match)
+    /// Normalizes a string for accent-insensitive comparison (lowercased, trimmed, diacritics removed)
+    private func normalizeForMatching(_ text: String) -> String {
+        text.lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: .diacriticInsensitive, locale: .current)
+    }
+
+    /// Finds a subcategory matching the hint (case-insensitive, accent-insensitive, partial match)
     /// Returns nil if multiple matches found (ambiguous) to let user choose manually
     private func findSubcategory(matching hint: String, isExpense: Bool) -> Subcategory? {
-        let normalizedHint = hint.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedHint = normalizeForMatching(hint)
 
         let descriptor = FetchDescriptor<Subcategory>(
             predicate: #Predicate<Subcategory> { subcategory in
@@ -960,7 +967,7 @@ struct VoiceRecordingView: View {
         }
 
         // Try exact match first - check for duplicates
-        let exactMatches = filtered.filter { $0.name.lowercased() == normalizedHint }
+        let exactMatches = filtered.filter { normalizeForMatching($0.name) == normalizedHint }
         if exactMatches.count == 1 {
             return exactMatches.first
         } else if exactMatches.count > 1 {
@@ -969,7 +976,7 @@ struct VoiceRecordingView: View {
         }
 
         // Try contains match - check for duplicates
-        let partialMatches = filtered.filter { $0.name.lowercased().contains(normalizedHint) }
+        let partialMatches = filtered.filter { normalizeForMatching($0.name).contains(normalizedHint) }
         if partialMatches.count == 1 {
             return partialMatches.first
         } else if partialMatches.count > 1 {
@@ -978,7 +985,7 @@ struct VoiceRecordingView: View {
         }
 
         // Try if hint contains subcategory name - check for duplicates
-        let reverseMatches = filtered.filter { normalizedHint.contains($0.name.lowercased()) }
+        let reverseMatches = filtered.filter { normalizedHint.contains(normalizeForMatching($0.name)) }
         if reverseMatches.count == 1 {
             return reverseMatches.first
         }
@@ -987,7 +994,7 @@ struct VoiceRecordingView: View {
         return nil
     }
 
-    /// Finds or creates tags matching the hints (case-insensitive)
+    /// Finds or creates tags matching the hints (case-insensitive, accent-insensitive)
     /// Creates new tags if they don't exist
     /// Returns tuple: (matched tags, names of newly created tags)
     private func findTags(matching hints: [String]) -> (tags: [Tag], newlyCreatedNames: [String]) {
@@ -1006,11 +1013,11 @@ struct VoiceRecordingView: View {
         var usedColors = allTags.map { $0.colorHex }
 
         for hint in hints {
-            let normalizedHint = hint.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedHint = normalizeForMatching(hint)
             guard !normalizedHint.isEmpty else { continue }
 
             // Try exact match first
-            if let exact = allTags.first(where: { $0.name.lowercased() == normalizedHint }) {
+            if let exact = allTags.first(where: { normalizeForMatching($0.name) == normalizedHint }) {
                 if !matched.contains(where: { $0.persistentModelID == exact.persistentModelID }) {
                     matched.append(exact)
                 }
@@ -1018,7 +1025,7 @@ struct VoiceRecordingView: View {
             }
 
             // Try contains match
-            if let partial = allTags.first(where: { $0.name.lowercased().contains(normalizedHint) }) {
+            if let partial = allTags.first(where: { normalizeForMatching($0.name).contains(normalizedHint) }) {
                 if !matched.contains(where: { $0.persistentModelID == partial.persistentModelID }) {
                     matched.append(partial)
                 }
