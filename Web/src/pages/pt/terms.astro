@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TermsPage from '../../components/TermsPage.astro';
+import { getTranslations } from '../../i18n/translations';
+
+const t = getTranslations('pt');
+---
+
+<Layout title={t.termsPageTitle} lang="pt">
+  <TermsPage lang="pt" />
+</Layout>

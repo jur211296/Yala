@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** V1.0 Release Complete — Listo para TestFlight
+**Current focus:** Fase 9 — Settings & Pre-Release (V1.0)
 
 ## Current Position
 
-Version: 1.0 (RELEASE READY)
-Phase: 7.1 of 7.1 en V1.0 (Acciones Rápidas en Transacciones) ✅ COMPLETADA
+Version: 1.0
+Phase: 9 — Settings & Pre-Release
 Spec: None
-Plan: Complete
-Status: **V1.0 en TestFlight** — Bugfixes UX y export
-Last activity: 2026-01-26 — Bugfixes: empty states, divisa, cuenta FAB, export encoding
+Plan: TBD
+Status: **Fase 9 en progreso** — Links rápidos Settings completados
+Last activity: 2026-01-27 — Settings links: Permisos, Contacto, Valorar, Privacidad (9.2)
 
-Progress: ██████████████ 100% (V1.0 Completa)
+Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progreso)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] d6b9230 feat(settings): wire Permissions, Contact, Rate App, and Privacy links (9.2)
+- [2026-01-27] d7f4fb3 feat(security): add Face ID / Touch ID biometric lock with configurable timeout (9.1)
+- [2026-01-27] dd0ee05 feat(merchant): add Merchant Memory for subcategory suggestions (8.5)
+- [2026-01-27] 772741b feat(vision): enhanced date context, draft deduplication, and processing progress
+- [2026-01-27] ff09010 fix(image): remove OCR fallback and require API key for voice/image
+- [2026-01-26] 879db81 polish(inbox): UI refinements for Voice, Image, and Inbox views
 - [2026-01-26] 0061e80 fix(v1.0): resolve multiple UX and export issues
 - [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
 - [2026-01-25] 6e5860a feat(voice): support multiple transactions in single recording
 - [2026-01-25] b145887 feat(image): support multiple image selection (up to 10)
 - [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
-- [2026-01-25] 8b4f8cb feat(voice,inbox): UX refinements for draft flow
-- [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
-- [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
-- [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
-- [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
 
 ## Completed in Current Phase
 
@@ -49,6 +50,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - **Bugfixes TestFlight Ronda 2** - SSOT para filtros, smart alignment para gráficas comparativas, clasificación correcta de transferencias (entrantes a Ingresos, salientes a Otros), protección de categorías/subcategorías del sistema, migración automática de transferencias existentes, 4 escenarios QA nuevos
 - **Soporte XLSX completo** - Fix importación de fechas Excel (números seriales a ISO), XLSXWriter para crear archivos Excel usando ZIPFoundation, descarga de plantilla en CSV o XLSX, exportación de datos en CSV o XLSX, localizaciones actualizadas en 6 idiomas
 - **Subfase 8.4: Imágenes MVP** - Toggle imagen input en Settings, opción FAB imagen (naranja), ImageSelectionView con PhotosPicker, Vision OCR (VNRecognizeTextRequest), clasificador heurístico (screenshotSingle/List/receiptPhoto), AmountParser ($€£, europeo/americano, negativos), DateParser (relativas/absolutas), ScreenshotSingleExtractor (alertas bancarias), RowClusterer + ScreenshotListExtractor (listas de transacciones), navegación automática a Inbox, localizaciones en 6 idiomas, 40 escenarios QA (Sección 18)
+- **Subfase 8.5: Merchant Memory** - MerchantMemory model (SwiftData), MerchantCanonicalizer (normalización, strip prefijos pago, Levenshtein fuzzy match), MerchantMemoryService (suggest/updateMemory/applyDecay), política escalonada (<3=nada, >=3=sugerir, >=5=autoasignar), integrado en aprobación (detección correcciones), voice fallback, image fallback, DataWipeService, 13 escenarios QA (Sección 19)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -89,48 +91,18 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Next Steps
 
-### Mejoras Vision API + Inbox (pendiente de refinamiento)
+### Fase 9: Settings & Pre-Release (V1.0)
 
-Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesión:
-- [ ] Testing manual con imágenes reales de diferentes bancos
-- [ ] Ajustar prompt de Vision para mejor precisión en fechas relativas
-- [ ] Considerar fallback cuando Vision no detecta currency
-- [ ] UX: feedback visual mientras procesa imagen
-- [ ] Edge cases: qué pasa si InboxDraftEditSheet se cierra sin guardar
-
----
-
-### Fase 7.1: Acciones Rápidas en Transacciones ✅ COMPLETADA
-
-- [x] UI Base: Barra de acciones debajo del monto (4 botones con iconos)
-- [x] Duplicar: Crea copia de transacción actual (solo edición)
-- [x] Eliminar: Elimina con confirmación (solo edición)
-- [x] Guardar como favorito: Crea FavoritePayment desde transacción
-- [x] Guardar como recurrente: Crea ScheduledPayment desde transacción
-- [x] Localizaciones en 6 idiomas
-- [x] QA-SCENARIOS.md actualizado con 7 escenarios nuevos
-
----
-
-### Bugs TestFlight V1.0 - Ronda 2 (2026-01-21)
-
-| # | Bug | Complejidad | Estado |
-|---|-----|-------------|--------|
-| 1 | Gráfica naturaleza en CategoriesTabView no filtra por categoría/subcategoría | Media | ✅ Completado (0c0b938) |
-| 2 | Comparativa vs periodo anterior - fechas descuadradas | Media-Alta | ✅ Completado (4433200) |
-| 3 | Transferencias entrantes no se ven como ingreso en registros | Alta | ✅ Completado (b57c916) |
-| 4 | Saldo en RecordsTabView no cuadra con diferencia ingresos-egresos | Media | ✅ Completado (implícito con Bug 3) |
-| 5 | Preferencias widgets default desactualizadas | Baja | ✅ Completado (7fdb536) |
-
-**Todos los bugs de Ronda 2 completados.** La app está lista para validación manual.
-
----
-
-### Post V1.0 — Opciones
-
-1. Resolver bugs Ronda 2 arriba
-2. Capturar screenshots manuales con demo-data.csv
-3. Iniciar V1.1 (Fase 8: Registro Inteligente)
+- [x] Face ID / Touch ID con tiempo de bloqueo configurable ✅ (d7f4fb3)
+- [x] Permisos → redirige a Settings del sistema ✅ (d6b9230)
+- [x] Contacta con nosotros → mail draft a admin@yala-app.pe ✅ (d6b9230)
+- [x] Valorar en App Store → SKStoreReviewController ✅ (d6b9230)
+- [x] Política de privacidad → web ✅ (d6b9230)
+- [ ] Sistema de suscripción Pro (StoreKit 2)
+- [ ] Página de administrar suscripción
+- [ ] Consejos y trucos (página)
+- [ ] Preguntas frecuentes (página)
+- [ ] Términos de uso → web
 
 ---
 
@@ -208,15 +180,14 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 
 ## Session Continuity
 
-Last session: 2026-01-25
-Stopped at: Refinamientos de divisa/subcategoría/error handling (commit f38f8fb)
-Next step: Items UI polish (10.x) en REFINAMIENTO
+Last session: 2026-01-27
+Stopped at: Fase 9.2 Links rápidos Settings completados (d6b9230)
+Next step: Siguiente item Fase 9 (suscripción Pro, consejos y trucos, FAQ, o términos de uso)
 Resume file: N/A
 Resume context:
-- Divisa oculta cuando no hay cuenta seleccionada (drafts y manual)
-- LLM ahora recibe subcategorías del usuario para inferencia inteligente
-- Alert si falla guardado de draft (voz e imagen)
-- REFINAMIENTO-8.3-8.4.md casi completo, quedan items 10.x (UI polish)
+- ProfileView: Permisos (openSettingsURLString), Contacto (mailto:), Valorar (requestReview), Privacidad (openURL web)
+- Términos de uso pendiente (contenido web aún no creado)
+- Suscripciones, Consejos, FAQ siguen como placeholder
 
 ## V1.1 (Futuro)
 

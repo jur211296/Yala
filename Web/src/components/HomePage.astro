@@ -17,6 +17,7 @@ const langUrls = Object.keys(languages).map(l => ({
 }));
 
 const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
+const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 ---
 
 <!-- Header -->
@@ -734,7 +735,7 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
 
       <div class="flex items-center gap-6 text-sm">
         <a href={privacyUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerPrivacy}</a>
-        <a href="#" class="text-neutral-500 hover:text-white transition-colors">{t.footerTerms}</a>
+        <a href={termsUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerTerms}</a>
         <a href="#" class="text-neutral-500 hover:text-white transition-colors">{t.footerHelp}</a>
         <a href="mailto:hola@yala.app" class="text-neutral-500 hover:text-white transition-colors">{t.footerContact}</a>
       </div>

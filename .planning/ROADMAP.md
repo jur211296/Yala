@@ -26,10 +26,14 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 - [x] **Fase 6: Pagos Planificados** - Nuevo módulo de suscripciones y pagos futuros ✅
 - [x] **Fase 7: Beta Preparation** - Code quality, testing, UX y preparación App Store ✅
 - [x] **Fase 7.1: Acciones Rápidas en Transacciones** - Botones de acción en NewTransactionView ✅
+- [ ] **Fase 9: Settings & Pre-Release** - Face ID, suscripción Pro, legal, páginas informativas
 
 ### V1.1
-- [ ] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA
-- [ ] **Fase 9: Plataforma y Polish** - Widgets iOS, notificaciones, atajos, autenticación
+- [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
+- [ ] **Fase 10: Refinamiento & Notificaciones** - Modo solo gastos, notificaciones, permisos, correcciones
+
+### V1.2
+- [ ] **Fase 11: Plataforma Avanzada** - Widgets, Smart Insights, Watch, iPad, reportes
 
 ## Phase Details
 
@@ -243,52 +247,106 @@ DoD:
 
 ---
 
-### Fase 8: Registro Inteligente
+### Fase 8: Registro Inteligente ✅
 **Goal**: Automatizar entrada de transacciones con IA
 **Depends on**: Fase 7
 **Research**: Done
 **Spec**: .planning/PHASE8-REGISTRO-SPEC.md
-**Plans**: TBD
 
 Subfases:
-- 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación)
-- 8.2: Edición y Aprobación (sheet edición, validación, acciones lote)
-- 8.3: Voz MVP (OpenAI SDK, STT, LLM parser)
-- 8.4: Imágenes MVP (OCR Vision, clasificación, extractores)
-- 8.5: Merchant Memory (canonicalización, sugerencias)
-- 8.6: Refinamiento (sistema confianza, fallbacks)
-- 8.7: Cloud Fallback (opcional, AWS/GCP para recibos)
+- [x] 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación) ✅
+- [x] 8.2: Edición y Aprobación (sheet edición, validación, acciones lote) ✅
+- [x] 8.3: Voz MVP (OpenAI SDK, STT, LLM parser) ✅
+- [x] 8.4: Imágenes MVP (OCR Vision, clasificación, extractores) ✅
+- [x] 8.5: Merchant Memory (canonicalización, sugerencias) ✅
+- ~~8.6: Refinamiento~~ (descartada — sin valor incremental)
+- ~~8.7: Cloud Fallback~~ (descartada — sin valor incremental)
 
-DoD:
+DoD: ✅
 - Bandeja de entrada funcional con drafts pendientes
 - Voz → draft con monto/fecha/nota
 - Imagen → draft(s) según tipo
 - Aprobación → TransactionItem
 - Merchant Memory sugiere subcategorías
 
-### Fase 9: Plataforma y Polish
-**Goal**: Integración con sistema iOS y refinamiento final
+---
+
+### Fase 9: Settings & Pre-Release
+**Goal**: Completar pantallas de Settings, suscripción y legal para V1.0
 **Depends on**: Fase 8
-**Research**: Likely (WidgetKit, App Intents, Notifications)
-**Research topics**: WidgetKit timeline, App Intents/Shortcuts, UNNotification scheduling, Local Authentication
+**Research**: Likely (StoreKit 2, Local Authentication)
 **Plans**: TBD
 
 Incluye:
-- Widgets iOS (WidgetKit en pantalla inicio)
-- Notificaciones (UNNotificationCenter)
-- Atajos (App Intents / Shortcuts)
-- Share Sheet (importar datos)
-- Autenticación (Face ID / Touch ID)
-- Onboarding completo para nuevos usuarios
-- Vaciar datos: preguntar si cargar seed
+- [x] Face ID / Touch ID con tiempo de bloqueo configurable ✅
+- [x] Permisos → redirige a Settings del sistema ✅
+- [x] Contacta con nosotros → mail draft a admin@yala-app.pe ✅
+- [x] Valorar en App Store → SKStoreReviewController ✅
+- [x] Política de privacidad → redirige a web ✅
+- [ ] Sistema de suscripción Pro (StoreKit 2)
+- [ ] Página de administrar suscripción
+- [ ] Consejos y trucos (página informativa)
+- [ ] Preguntas frecuentes (página informativa)
+- [ ] Términos de uso → redirige a web
 
 DoD:
-- Widgets en pantalla de inicio
-- Atajos funcionales
-- Share Sheet importa datos
-- Notificaciones configurables
-- Autenticación activa
-- Onboarding guiado funcionando
+- Face ID funcional con opciones de tiempo de bloqueo
+- Suscripción Pro configurada y funcional
+- Todas las páginas de Settings conectadas y navegables
+- Links legales redirigen a web correctamente
+
+---
+
+### Fase 10: Refinamiento & Notificaciones
+**Goal**: Modo solo gastos, correcciones de registro inteligente y notificaciones
+**Depends on**: Fase 9
+**Research**: Likely (UNNotificationCenter, permisos iOS)
+**Plans**: TBD
+
+Incluye:
+- [ ] Modo "Solo gastos" — ocultar todo rastro de ingresos y saldos en toda la app
+- [ ] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios y ofertas
+- [ ] Pagos planificados crean transacción en bandeja de entrada
+- [ ] Integración Share Sheet para enviar imágenes directamente
+- [ ] Integración con atajos y automatización con Apple Pay
+- [ ] Revisar prompts voz: tildes crean etiquetas duplicadas en vez de reusar existentes
+- [ ] FAB fuera de PanelView no tiene opción de registro de imagen
+- [ ] Pedir permiso de micrófono al activar toggle
+- [ ] Pedir permiso de fotos al activar toggle
+- [ ] Mejorar onboarding: preguntar si cargar seed de categorías predeterminadas
+- [ ] Vaciar datos: preguntar si cargar seed de categorías predeterminadas
+
+DoD:
+- Modo solo gastos oculta ingresos/saldos globalmente
+- Notificaciones configurables por tipo
+- Pagos planificados generan drafts automáticamente
+- Share Sheet e imagen accesible desde cualquier FAB
+- Permisos se solicitan en el momento correcto
+- Onboarding y data wipe ofrecen carga de categorías seed
+
+---
+
+### Fase 11: Plataforma Avanzada
+**Goal**: Widgets, insights, Watch y plataformas extendidas
+**Depends on**: Fase 10
+**Research**: Likely (WidgetKit, WatchKit, App Intents, ML/heurísticas)
+**Plans**: TBD
+
+Incluye:
+- [ ] Acciones rápidas en centro de control y pantalla de bloqueo
+- [ ] Widgets iOS (WidgetKit)
+- [ ] Predicciones de saldo en gráficas de tendencia
+- [ ] Integración con Apple Watch
+- [ ] Refinamiento versión iPad
+- [ ] Vista de Smart Insights
+- [ ] Integrar Smart Insights a lo largo de la app
+- [ ] Vista de reporte financiero
+
+DoD:
+- Widgets funcionales en pantalla de inicio
+- Insights visibles en contexto relevante
+- App funcional en Watch y iPad
+- Reportes financieros exportables
 
 ## Progress
 
@@ -304,12 +362,18 @@ DoD:
 | 6 | Pagos Planificados | ✅ Done | 2026-01-19 |
 | 7 | Beta Preparation | ✅ Done | 2026-01-21 |
 | 7.1 | Acciones Rápidas en Transacciones | ✅ Done | 2026-01-21 |
+| 9 | Settings & Pre-Release | Not started | - |
 
 ### V1.1
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 8 | Registro Inteligente | Not started | - |
-| 9 | Plataforma y Polish | Not started | - |
+| 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
+| 10 | Refinamiento & Notificaciones | Not started | - |
+
+### V1.2
+| Fase | Nombre | Status | Completed |
+|------|--------|--------|-----------|
+| 11 | Plataforma Avanzada | Not started | - |
 
 ---
 

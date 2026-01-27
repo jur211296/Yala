@@ -401,9 +401,16 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 SubsectionDivider()
-                profileRow(
-                    icon: "doc.text.fill", title: L10n.Settings.terms,
-                    iconColor: .gray, destination: .placeholder("Términos"))
+                Button {
+                    if let url = URL(string: "https://yala-app.pe/terms") {
+                        openURL(url)
+                    }
+                } label: {
+                    settingsRowContent(
+                        icon: "doc.text.fill", title: L10n.Settings.terms,
+                        iconColor: .gray)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
