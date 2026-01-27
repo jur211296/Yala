@@ -309,8 +309,8 @@ Incluye:
 - [ ] Pagos planificados crean transacción en bandeja de entrada
 - [ ] Integración Share Sheet para enviar imágenes directamente
 - [ ] Integración con atajos y automatización con Apple Pay
-- [ ] Revisar prompts voz: tildes crean etiquetas duplicadas en vez de reusar existentes
-- [ ] FAB fuera de PanelView no tiene opción de registro de imagen
+- [x] Revisar prompts voz: tildes crean etiquetas duplicadas en vez de reusar existentes ✅ (669b537)
+- [x] FAB fuera de PanelView no tiene opción de registro de imagen ✅ (669b537)
 - [ ] Pedir permiso de micrófono al activar toggle
 - [ ] Pedir permiso de fotos al activar toggle
 - [ ] Mejorar onboarding: preguntar si cargar seed de categorías predeterminadas

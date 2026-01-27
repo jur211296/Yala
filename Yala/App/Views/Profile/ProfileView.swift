@@ -5,6 +5,8 @@
 //  Created by Yala Refactoring.
 //
 
+import AVFoundation
+import Photos
 import StoreKit
 import SwiftData
 import SwiftUI
@@ -36,6 +38,10 @@ struct ProfileView: View {
     // Import result - shown as alert after ImportIntroSheet dismisses
     @State private var importResult: ImportResult?
     @State private var showImportResult: Bool = false
+
+    // Permission denied alert
+    @State private var showPermissionDeniedAlert: Bool = false
+    @State private var permissionDeniedType: String = ""
 
     enum ProfileSheet: Identifiable {
         case personalDetails
@@ -135,6 +141,23 @@ struct ProfileView: View {
                 Button("OK", role: .cancel) {}
             } message: { result in
                 Text(result.message)
+            }
+            .alert(
+                permissionDeniedType,
+                isPresented: $showPermissionDeniedAlert
+            ) {
+                Button(L10n.Voice.openSettings) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                if permissionDeniedType == L10n.Settings.voiceInputEnabled {
+                    Text(L10n.Voice.errorMicPermission)
+                } else {
+                    Text(L10n.Image.errorPhotoPermission)
+                }
             }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
@@ -331,6 +354,16 @@ struct ProfileView: View {
                 Toggle("", isOn: $voiceInputEnabled)
                     .labelsHidden()
                     .tint(Color.brandPrimary)
+                    .onChange(of: voiceInputEnabled) { _, isEnabled in
+                        guard isEnabled else { return }
+                        let status = AVAudioApplication.shared.recordPermission
+                        if status == .undetermined {
+                            AVAudioApplication.requestRecordPermission { _ in }
+                        } else if status == .denied {
+                            permissionDeniedType = L10n.Settings.voiceInputEnabled
+                            showPermissionDeniedAlert = true
+                        }
+                    }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
@@ -405,6 +438,16 @@ struct ProfileView: View {
             Toggle("", isOn: $imageInputEnabled)
                 .labelsHidden()
                 .tint(Color.brandPrimary)
+                .onChange(of: imageInputEnabled) { _, isEnabled in
+                    guard isEnabled else { return }
+                    let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                    if status == .notDetermined {
+                        PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
+                    } else if status == .denied || status == .restricted {
+                        permissionDeniedType = L10n.Settings.imageInputEnabled
+                        showPermissionDeniedAlert = true
+                    }
+                }
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
