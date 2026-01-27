@@ -26,7 +26,7 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 - [x] **Fase 6: Pagos Planificados** - Nuevo módulo de suscripciones y pagos futuros ✅
 - [x] **Fase 7: Beta Preparation** - Code quality, testing, UX y preparación App Store ✅
 - [x] **Fase 7.1: Acciones Rápidas en Transacciones** - Botones de acción en NewTransactionView ✅
-- [ ] **Fase 9: Settings & Pre-Release** - Face ID, suscripción Pro, legal, páginas informativas
+- [x] **Fase 9: Settings & Pre-Release** - Face ID, suscripción Pro, legal, páginas informativas ✅
 
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
@@ -285,8 +285,8 @@ Incluye:
 - [x] Política de privacidad → redirige a web ✅
 - [x] Sistema de suscripción Pro (StoreKit 2) ✅
 - [x] Página de administrar suscripción ✅ (integrada en SubscriptionView)
-- [ ] Consejos y trucos (página informativa)
-- [ ] Preguntas frecuentes (página informativa)
+- [x] Consejos y trucos (página informativa) ✅
+- [x] Preguntas frecuentes (página informativa) ✅
 - [x] Términos de uso → redirige a web ✅
 
 DoD:
@@ -362,7 +362,7 @@ DoD:
 | 6 | Pagos Planificados | ✅ Done | 2026-01-19 |
 | 7 | Beta Preparation | ✅ Done | 2026-01-21 |
 | 7.1 | Acciones Rápidas en Transacciones | ✅ Done | 2026-01-21 |
-| 9 | Settings & Pre-Release | Not started | - |
+| 9 | Settings & Pre-Release | ✅ Done | 2026-01-27 |
 
 ### V1.1
 | Fase | Nombre | Status | Completed |
