@@ -17,57 +17,57 @@ const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
       </svg>
-      {t.privacy.backHome}
+      {t.privacyBackHome}
     </a>
 
     <div class="prose-container p-8 rounded-3xl mt-8">
-      <p class="text-neutral-500 text-sm mb-6">{t.privacy.lastUpdate}</p>
+      <p class="text-neutral-500 text-sm mb-6">{t.privacyLastUpdate}</p>
 
-      <h1 class="text-3xl font-bold text-white mb-8">{t.privacy.h1}</h1>
+      <h1 class="text-3xl font-bold text-white mb-8">{t.privacyH1}</h1>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.introTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed" set:html={t.privacy.introText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')} />
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyIntroTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed" set:html={t.privacyIntroText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')} />
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.dataTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed mb-4">{t.privacy.dataIntro}</p>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyDataTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed mb-4">{t.privacyDataIntro}</p>
         <ul class="space-y-3 text-neutral-300">
           <li class="flex items-start gap-3">
             <span class="text-yala-cyan mt-1">●</span>
-            <span set:html={t.privacy.dataBullet1.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+            <span set:html={t.privacyDataBullet1.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
           <li class="flex items-start gap-3">
             <span class="text-yala-cyan mt-1">●</span>
-            <span set:html={t.privacy.dataBullet2.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+            <span set:html={t.privacyDataBullet2.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
           <li class="flex items-start gap-3">
             <span class="text-yala-cyan mt-1">●</span>
-            <span set:html={t.privacy.dataBullet3.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+            <span set:html={t.privacyDataBullet3.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
         </ul>
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.icloudTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed">{t.privacy.icloudText}</p>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyIcloudTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed">{t.privacyIcloudText}</p>
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.analyticsTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed" set:html={t.privacy.analyticsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyAnalyticsTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed" set:html={t.privacyAnalyticsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.changesTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed">{t.privacy.changesText}</p>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyChangesTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed">{t.privacyChangesText}</p>
       </section>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacy.contactTitle}</h2>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyContactTitle}</h2>
         <p class="text-neutral-300 leading-relaxed">
-          {t.privacy.contactText} <a href="mailto:hola@yala.app" class="text-yala-cyan hover:text-yala-indigo transition-colors">hola@yala.app</a>
+          {t.privacyContactText} <a href="mailto:hola@yala.app" class="text-yala-cyan hover:text-yala-indigo transition-colors">hola@yala.app</a>
         </p>
       </section>
 

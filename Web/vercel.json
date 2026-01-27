@@ -1,0 +1,48 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "yala-pe.com"
+        }
+      ],
+      "destination": "https://yala-app.pe/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.yala-pe.com"
+        }
+      ],
+      "destination": "https://yala-app.pe/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "yala-app.com.pe"
+        }
+      ],
+      "destination": "https://yala-app.pe/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.yala-app.com.pe"
+        }
+      ],
+      "destination": "https://yala-app.pe/:path*",
+      "permanent": true
+    }
+  ]
+}

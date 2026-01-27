@@ -24,15 +24,16 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
   <div class="container-wide">
     <nav class="flex items-center justify-between h-16">
       <a href={lang === 'es' ? '/' : `/${lang}/`} class="flex items-center">
-        <img src="/images/logo.png" alt="Yala" class="h-7 logo-dark" />
-        <img src="/images/logo-light.png" alt="Yala" class="h-7 logo-light" />
+        <img src="/images/logo.png" alt="Yala" class="h-9 logo-dark" />
+        <img src="/images/logo-light.png" alt="Yala" class="h-9 logo-light" />
       </a>
 
       <div class="hidden md:flex items-center gap-8">
+        <a href="#why" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navWhy}</a>
         <a href="#features" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navFeatures}</a>
         <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navHow}</a>
-        <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPricing}</a>
         <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPrivacy}</a>
+        <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPricing}</a>
       </div>
 
       <div class="flex items-center gap-3">
@@ -76,10 +77,11 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
   <!-- HERO SECTION -->
   <section class="container-wide py-20 md:py-32">
     <div class="max-w-4xl mx-auto text-center space-y-8 animate-on-scroll">
-      <!-- Tagline -->
-      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-yala-cyan/30 bg-yala-cyan/5">
-        <span class="w-2 h-2 rounded-full bg-yala-cyan animate-pulse"></span>
+      <!-- Tagline Badge -->
+      <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-yala-cyan/30 bg-yala-cyan/5">
         <span class="text-sm font-medium text-yala-cyan">{t.heroTagline}</span>
+        <span class="w-1 h-1 rounded-full bg-yala-cyan/50"></span>
+        <span class="text-sm font-medium text-gradient">{t.heroBadgeAccent}</span>
       </div>
 
       <!-- Main Headline -->
@@ -90,7 +92,7 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
       </h1>
 
       <!-- Subtitle -->
-      <p class="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+      <p class="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed whitespace-pre-line">
         {t.heroSubtitle}
       </p>
 
@@ -102,36 +104,67 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
           </svg>
           {t.heroAppStore}
         </a>
-        <a href="#how" class="btn-secondary inline-flex items-center justify-center gap-2">
-          {t.heroLearnMore}
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-          </svg>
-        </a>
       </div>
 
       <!-- Trust Badges -->
       <p class="text-sm text-neutral-500 pt-4">{t.heroTrust}</p>
     </div>
 
-    <!-- App Screenshot Placeholder -->
-    <div class="mt-16 max-w-sm mx-auto">
-      <div class="aspect-[9/19] rounded-[3rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-3 shadow-2xl shadow-yala-indigo/20">
-        <div class="w-full h-full rounded-[2.5rem] bg-neutral-800 flex items-center justify-center">
-          <div class="text-center space-y-3">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-yala-indigo to-yala-pink flex items-center justify-center">
-              <span class="text-2xl font-bold text-white">Y</span>
+    <!-- Hero Screenshot - Panel Principal -->
+    <div class="mt-16 flex justify-center">
+      <div class="w-64 sm:w-72 md:w-80 rounded-[2.5rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-2 shadow-2xl shadow-yala-indigo/20 overflow-hidden animate-float">
+        <img src="/images/screenshots/panel-principal.png" alt="Yala - Panel Principal" class="w-full rounded-[2rem]" />
+      </div>
+    </div>
+  </section>
+
+  <!--
+    ============================================
+    VIDEO DEMO SECTION - COMENTADO PARA USO FUTURO
+    Descomentar cuando tengamos el video de demo listo.
+    Esta sección irá después del Hero y antes de Why Yala.
+    Tiene fondo var(--bg-secondary) para alternar con las demás secciones.
+    ============================================
+
+  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+      <div class="text-center mb-12 animate-on-scroll">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.videoTitle}</h2>
+        <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.videoSubtitle}</p>
+      </div>
+
+      <div class="max-w-3xl mx-auto animate-on-scroll stagger-1">
+        <div class="aspect-video rounded-2xl bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700 flex items-center justify-center">
+          <div class="text-center space-y-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-yala-indigo/20 flex items-center justify-center">
+              <svg class="w-10 h-10 text-yala-indigo" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
             </div>
-            <p class="text-neutral-500 text-sm">Screenshot placeholder</p>
+            <p class="text-neutral-500 text-sm">Video demo placeholder (45-60s)</p>
           </div>
         </div>
       </div>
     </div>
   </section>
+  -->
+
+  <!-- WHY YALA SECTION -->
+  <section id="why" class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+    <div class="max-w-3xl mx-auto text-center animate-on-scroll">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-8">{t.whyTitle}</h2>
+      <div class="space-y-6 text-lg text-neutral-400 leading-relaxed">
+        <p>{t.whyText1}</p>
+        <p>{t.whyText2}</p>
+        <p class="text-neutral-300 font-medium">{t.whyText3}</p>
+      </div>
+    </div>
+    </div>
+  </section>
 
   <!-- PROBLEM SECTION -->
-  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
+  <section class="container-wide py-20 md:py-28">
       <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.problemTitle}</h2>
 
       <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -170,11 +203,11 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
       </div>
 
       <p class="text-center text-neutral-500 mt-12 text-lg animate-on-scroll">{t.problemConclusion}</p>
-    </div>
   </section>
 
   <!-- DIFFERENCE SECTION -->
-  <section class="container-wide py-20 md:py-28">
+  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
     <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.differenceTitle}</h2>
 
     <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -240,50 +273,45 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
         </ul>
       </div>
     </div>
+    </div>
   </section>
 
   <!-- FEATURES SECTION (Bento Grid) -->
-  <section id="features" class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
+  <section id="features" class="container-wide py-20 md:py-28">
       <div class="text-center mb-16 animate-on-scroll">
         <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.featuresTitle}</h2>
         <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.featuresSubtitle}</p>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
-        <!-- Feature 1 - Large -->
-        <div class="col-span-2 row-span-2 card-glow p-8 flex flex-col justify-between min-h-[320px] animate-on-scroll stagger-1">
-          <div>
-            <div class="w-14 h-14 rounded-2xl bg-yala-indigo/20 flex items-center justify-center mb-6">
-              <svg class="w-7 h-7 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-            </div>
-            <h3 class="text-2xl font-semibold mb-3">{t.feature1Title}</h3>
-            <p class="text-neutral-400 leading-relaxed">{t.feature1Desc}</p>
+      <!-- 2 Large Cards Top Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-6">
+        <!-- Feature 1 - Captura Inteligente (Large) -->
+        <div class="card-glow p-8 flex flex-col min-h-[200px] animate-on-scroll stagger-1">
+          <div class="w-14 h-14 rounded-2xl bg-yala-indigo/20 flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
           </div>
-          <div class="mt-6 h-32 rounded-xl bg-gradient-to-br from-yala-indigo/10 to-transparent border border-yala-indigo/20 flex items-center justify-center">
-            <span class="text-neutral-600 text-sm">Screenshot placeholder</span>
-          </div>
+          <h3 class="text-2xl font-semibold mb-3">{t.feature1Title}</h3>
+          <p class="text-neutral-400 leading-relaxed">{t.feature1Desc}</p>
         </div>
 
-        <!-- Feature 2 -->
-        <div class="col-span-2 card p-6 animate-on-scroll stagger-2">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-xl bg-yala-cyan/20 flex items-center justify-center flex-shrink-0">
-              <svg class="w-6 h-6 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-lg font-semibold mb-2">{t.feature2Title}</h3>
-              <p class="text-neutral-400 text-sm">{t.feature2Desc}</p>
-            </div>
+        <!-- Feature 2 - Voz (Large) -->
+        <div class="card-glow p-8 flex flex-col min-h-[200px] animate-on-scroll stagger-2">
+          <div class="w-14 h-14 rounded-2xl bg-yala-cyan/20 flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+            </svg>
           </div>
+          <h3 class="text-2xl font-semibold mb-3">{t.feature2Title}</h3>
+          <p class="text-neutral-400 leading-relaxed">{t.feature2Desc}</p>
         </div>
+      </div>
 
-        <!-- Feature 3 -->
+      <!-- 4 Small Cards Bottom Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <!-- Feature 3 - Importa -->
         <div class="card p-6 animate-on-scroll stagger-3">
           <div class="w-12 h-12 rounded-xl bg-yala-teal/20 flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,7 +322,7 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
           <p class="text-neutral-400 text-sm">{t.feature3Desc}</p>
         </div>
 
-        <!-- Feature 4 -->
+        <!-- Feature 4 - Atajos Siri -->
         <div class="card p-6 animate-on-scroll stagger-4">
           <div class="w-12 h-12 rounded-xl bg-nature-priority/20 flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,7 +333,7 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
           <p class="text-neutral-400 text-sm">{t.feature4Desc}</p>
         </div>
 
-        <!-- Feature 5 -->
+        <!-- Feature 5 - Multi-cuenta -->
         <div class="card p-6 animate-on-scroll stagger-5">
           <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +344,7 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
           <p class="text-neutral-400 text-sm">{t.feature5Desc}</p>
         </div>
 
-        <!-- Feature 6 -->
+        <!-- Feature 6 - 50+ divisas -->
         <div class="card p-6 animate-on-scroll stagger-5">
           <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,43 +355,52 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
           <p class="text-neutral-400 text-sm">{t.feature6Desc}</p>
         </div>
       </div>
-    </div>
   </section>
 
   <!-- HOW IT WORKS -->
-  <section id="how" class="container-wide py-20 md:py-28">
+  <section id="how" class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
     <div class="text-center mb-16 animate-on-scroll">
       <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.howTitle}</h2>
       <p class="text-neutral-400 text-lg">{t.howSubtitle}</p>
     </div>
 
     <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-      <!-- Step 1 -->
+      <!-- Step 1: Registra -->
       <div class="text-center animate-on-scroll stagger-1">
-        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yala-indigo to-yala-cyan flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-white">1</div>
+        <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">1</div>
         <h3 class="text-xl font-semibold mb-3">{t.howStep1Title}</h3>
-        <p class="text-neutral-400">{t.howStep1Desc}</p>
+        <p class="text-neutral-400 mb-6">{t.howStep1Desc}</p>
+        <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
+          <img src="/images/screenshots/paso1.png" alt="Registrar gastos" class="w-full" loading="lazy" />
+        </div>
       </div>
 
-      <!-- Step 2 -->
+      <!-- Step 2: Organiza -->
       <div class="text-center animate-on-scroll stagger-2">
-        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yala-cyan to-yala-teal flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-white">2</div>
+        <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">2</div>
         <h3 class="text-xl font-semibold mb-3">{t.howStep2Title}</h3>
-        <p class="text-neutral-400">{t.howStep2Desc}</p>
+        <p class="text-neutral-400 mb-6">{t.howStep2Desc}</p>
+        <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
+          <img src="/images/screenshots/categorias.png" alt="Categorías organizadas" class="w-full" loading="lazy" />
+        </div>
       </div>
 
-      <!-- Step 3 -->
+      <!-- Step 3: Entiende -->
       <div class="text-center animate-on-scroll stagger-3">
-        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yala-teal to-yala-pink flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-white">3</div>
+        <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">3</div>
         <h3 class="text-xl font-semibold mb-3">{t.howStep3Title}</h3>
-        <p class="text-neutral-400">{t.howStep3Desc}</p>
+        <p class="text-neutral-400 mb-6">{t.howStep3Desc}</p>
+        <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
+          <img src="/images/screenshots/tendencias.png" alt="Gráficos y tendencias" class="w-full" loading="lazy" />
+        </div>
       </div>
+    </div>
     </div>
   </section>
 
   <!-- ANALYTICS SECTION -->
-  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
+  <section class="container-wide py-20 md:py-28">
       <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
         <div class="animate-on-scroll">
           <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.analyticsTitle}</h2>
@@ -391,18 +428,18 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
           </ul>
         </div>
 
-        <!-- Analytics Screenshot Placeholder -->
+        <!-- Analytics Screenshot - Estadísticas -->
         <div class="animate-on-scroll stagger-2">
-          <div class="aspect-square max-w-md mx-auto rounded-3xl bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700 p-8 flex items-center justify-center">
-            <span class="text-neutral-600">Analytics screenshot placeholder</span>
+          <div class="max-w-xs mx-auto rounded-[2rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-2 shadow-2xl shadow-yala-indigo/20 overflow-hidden">
+            <img src="/images/screenshots/estadisticas-categorias.png" alt="Estadísticas y análisis" class="w-full rounded-[1.5rem]" loading="lazy" />
           </div>
         </div>
       </div>
-    </div>
   </section>
 
   <!-- PRIVACY SECTION -->
-  <section id="privacy" class="container-wide py-20 md:py-28">
+  <section id="privacy" class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
     <div class="text-center mb-16 animate-on-scroll">
       <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.privacyTitle}</h2>
       <p class="text-xl text-neutral-400">{t.privacySubtitle}</p>
@@ -479,11 +516,11 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
         </div>
       </div>
     </div>
+    </div>
   </section>
 
   <!-- PRICING SECTION -->
-  <section id="pricing" class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
+  <section id="pricing" class="container-wide py-20 md:py-28">
       <div class="text-center mb-16 animate-on-scroll">
         <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.pricingTitle}</h2>
         <p class="text-xl text-neutral-400">{t.pricingSubtitle}</p>
@@ -522,13 +559,19 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
               </svg>
               <span class="text-neutral-400">{t.pricingFree4}</span>
             </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree5}</span>
+            </li>
           </ul>
           <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-secondary w-full text-center">{t.pricingFreeCta}</a>
         </div>
 
         <!-- Pro Plan -->
         <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2">
-          <div class="absolute top-0 right-0 bg-gradient-to-l from-yala-indigo to-yala-pink text-white text-xs font-bold px-4 py-1 rounded-bl-xl">PRO</div>
+          <div class="absolute top-0 right-0 bg-yala-indigo text-white text-xs font-bold px-4 py-1 rounded-bl-xl">PRO</div>
           <h3 class="text-2xl font-bold mb-2">{t.pricingProTitle}</h3>
           <div class="flex items-baseline gap-1 mb-1">
             <span class="text-4xl font-bold text-gradient">{t.pricingProPrice}</span>
@@ -577,19 +620,6 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
           <p class="text-center text-sm text-neutral-500 mt-4">{t.pricingProBadge}</p>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- WHY YALA SECTION -->
-  <section class="container-wide py-20 md:py-28">
-    <div class="max-w-3xl mx-auto text-center animate-on-scroll">
-      <h2 class="text-3xl sm:text-4xl font-bold mb-8">{t.whyTitle}</h2>
-      <div class="space-y-6 text-lg text-neutral-400 leading-relaxed">
-        <p>{t.whyText1}</p>
-        <p>{t.whyText2}</p>
-        <p class="text-neutral-300">{t.whyText3}</p>
-      </div>
-    </div>
   </section>
 
   <!-- FAQ SECTION -->
@@ -673,18 +703,18 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
   </section>
 
   <!-- CTA SECTION -->
-  <section class="py-20 md:py-28 bg-gradient-to-br from-yala-slate via-neutral-900 to-yala-slate">
+  <section class="py-20 md:py-28 cta-section">
     <div class="container-wide text-center">
       <div class="max-w-2xl mx-auto animate-on-scroll">
-        <h2 class="text-4xl sm:text-5xl font-bold mb-4">
+        <h2 class="text-4xl sm:text-5xl font-bold mb-2">
           <span class="text-gradient">{t.ctaTitle}</span>
         </h2>
-        <p class="text-xl text-neutral-400 mb-8">{t.ctaSubtitle}</p>
+        <p class="text-2xl text-neutral-300 mb-8">{t.ctaSubtitle}</p>
         <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-primary inline-flex items-center gap-2 text-lg px-8 py-4">
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
           </svg>
-          {t.heroAppStore}
+          {t.ctaCta}
         </a>
         <p class="text-sm text-neutral-500 mt-6">{t.ctaTrust}</p>
       </div>
@@ -728,10 +758,9 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
   }
 
-  // Initialize theme
+  // Initialize theme - dark mode by default, only light if user explicitly chose it
   const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  setTheme(savedTheme === 'light' || (!savedTheme && !prefersDark));
+  setTheme(savedTheme === 'light');
 
   themeToggle?.addEventListener('click', () => {
     setTheme(!document.body.classList.contains('light'));
