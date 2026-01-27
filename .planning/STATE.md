@@ -22,6 +22,8 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] 772741b feat(vision): enhanced date context, draft deduplication, and processing progress
+- [2026-01-27] ff09010 fix(image): remove OCR fallback and require API key for voice/image
 - [2026-01-26] 879db81 polish(inbox): UI refinements for Voice, Image, and Inbox views
 - [2026-01-26] 0061e80 fix(v1.0): resolve multiple UX and export issues
 - [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
@@ -30,8 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] 0a203f0 feat(voice,image): add specific error handling with user actions
 - [2026-01-25] 8b4f8cb feat(voice,inbox): UX refinements for draft flow
 - [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
-- [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
-- [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
 
 ## Completed in Current Phase
 
@@ -91,11 +91,14 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ### Mejoras Vision API + Inbox (pendiente de refinamiento)
 
-Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesión:
+Implementación base completada (d9cfe97). Mejoras completadas (772741b):
+- [x] Ajustar prompt de Vision para mejor precisión en fechas relativas (DateContextProvider)
+- [x] UX: feedback visual mientras procesa imagen (ProcessingProgressView)
+- [x] Deduplicación de drafts (DraftDeduplicationService)
+
+Pendientes:
 - [ ] Testing manual con imágenes reales de diferentes bancos
-- [ ] Ajustar prompt de Vision para mejor precisión en fechas relativas
 - [ ] Considerar fallback cuando Vision no detecta currency
-- [ ] UX: feedback visual mientras procesa imagen
 - [ ] Edge cases: qué pasa si InboxDraftEditSheet se cierra sin guardar
 
 ---
@@ -208,14 +211,16 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 
 ## Session Continuity
 
-Last session: 2026-01-26
-Stopped at: UI Polish 10.1-10.10 completado (commit 879db81)
-Next step: 10.10 usuario dará feedback visual en simulador; o iniciar siguiente feature
+Last session: 2026-01-27
+Stopped at: Vision API enhancements — fechas expandidas, dedup, progress views (772741b)
+Next step: Testing manual con imágenes reales, verificar dedup funciona correctamente
 Resume file: N/A
 Resume context:
-- REFINAMIENTO-8.3-8.4.md completamente terminado (todos los items ✅ o ❌)
-- UI polish: transiciones, haptics, toolbars, colores, touch areas, DS tokens
-- InboxView toolbar ahora sigue patrón de DetailContainerView (X + select icon)
+- DateContextProvider inyecta contexto rico de fechas en prompts Voice e Image
+- DraftDeduplicationService previene duplicados (amount ±0.01, same day, fuzzy note)
+- ProcessingProgressView reusable: .determinate (Image, teal) y .stepped (Voice, indigo)
+- Fix dedup: fetchPendingDrafts() se ejecuta ANTES de crear drafts para evitar auto-insert de SwiftData
+- VisionDraftFactory tiene makeDrafts() (sin insert) y createDrafts() (con insert)
 
 ## V1.1 (Futuro)
 
