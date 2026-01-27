@@ -654,6 +654,26 @@
 "settings.privacy" = "Política de privacidad";
 "settings.terms" = "Términos de uso";
 
+// Biometric
+"biometric.title" = "Seguridad biométrica";
+"biometric.description" = "Protege tu información financiera con autenticación biométrica o contraseña del dispositivo.";
+"biometric.enableLock" = "Activar bloqueo";
+"biometric.lockAfter" = "Bloquear después de";
+"biometric.timeout.immediate" = "Inmediatamente";
+"biometric.timeout.oneMinute" = "1 minuto";
+"biometric.timeout.fiveMinutes" = "5 minutos";
+"biometric.timeout.fifteenMinutes" = "15 minutos";
+"biometric.authReason" = "Desbloquea Yala para acceder a tus finanzas";
+"biometric.enableReason" = "Verifica tu identidad para activar el bloqueo";
+"biometric.authFailed" = "Autenticación fallida";
+"biometric.authFailedMessage" = "No se pudo verificar tu identidad. Intenta de nuevo.";
+"biometric.locked" = "Yala está bloqueada";
+"biometric.unlockPrompt" = "Toca el botón para desbloquear";
+"biometric.unlock" = "Desbloquear";
+"biometric.passcode" = "Contraseña";
+"biometric.enableLockHint" = "Se te pedirá verificar tu identidad cada vez que abras la app.";
+"biometric.lockAfterHint" = "Elige cuánto tiempo puede pasar en segundo plano antes de bloquearse.";
+
 "profile.title" = "Perfil";
 "profile.edit" = "Editar perfil";
 "profile.importSuccess" = "Importación completada";

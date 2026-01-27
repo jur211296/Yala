@@ -1951,6 +1951,43 @@ enum L10n {
             String(format: NSLocalizedString("image.imagesSelected", comment: ""), count)
         }
     }
+
+    // MARK: - Biometric
+
+    enum Biometric {
+        static var title: String { NSLocalizedString("biometric.title", comment: "") }
+        static var description: String { NSLocalizedString("biometric.description", comment: "") }
+        static var enableLock: String { NSLocalizedString("biometric.enableLock", comment: "") }
+        static var lockAfter: String { NSLocalizedString("biometric.lockAfter", comment: "") }
+        static var timeoutImmediate: String {
+            NSLocalizedString("biometric.timeout.immediate", comment: "")
+        }
+        static var timeoutOneMinute: String {
+            NSLocalizedString("biometric.timeout.oneMinute", comment: "")
+        }
+        static var timeoutFiveMinutes: String {
+            NSLocalizedString("biometric.timeout.fiveMinutes", comment: "")
+        }
+        static var timeoutFifteenMinutes: String {
+            NSLocalizedString("biometric.timeout.fifteenMinutes", comment: "")
+        }
+        static var authReason: String { NSLocalizedString("biometric.authReason", comment: "") }
+        static var enableReason: String { NSLocalizedString("biometric.enableReason", comment: "") }
+        static var authFailed: String { NSLocalizedString("biometric.authFailed", comment: "") }
+        static var authFailedMessage: String {
+            NSLocalizedString("biometric.authFailedMessage", comment: "")
+        }
+        static var locked: String { NSLocalizedString("biometric.locked", comment: "") }
+        static var unlockPrompt: String { NSLocalizedString("biometric.unlockPrompt", comment: "") }
+        static var unlock: String { NSLocalizedString("biometric.unlock", comment: "") }
+        static var passcode: String { NSLocalizedString("biometric.passcode", comment: "") }
+        static var enableLockHint: String {
+            NSLocalizedString("biometric.enableLockHint", comment: "")
+        }
+        static var lockAfterHint: String {
+            NSLocalizedString("biometric.lockAfterHint", comment: "")
+        }
+    }
 }
 
 // MARK: - App Locale

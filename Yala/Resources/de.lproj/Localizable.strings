@@ -655,6 +655,26 @@
 "settings.privacy" = "Datenschutzrichtlinie";
 "settings.terms" = "Nutzungsbedingungen";
 
+// Biometric
+"biometric.title" = "Biometrische Sicherheit";
+"biometric.description" = "Schützen Sie Ihre Finanzdaten mit biometrischer Authentifizierung oder dem Gerätecode.";
+"biometric.enableLock" = "Sperre aktivieren";
+"biometric.lockAfter" = "Sperren nach";
+"biometric.timeout.immediate" = "Sofort";
+"biometric.timeout.oneMinute" = "1 Minute";
+"biometric.timeout.fiveMinutes" = "5 Minuten";
+"biometric.timeout.fifteenMinutes" = "15 Minuten";
+"biometric.authReason" = "Entsperren Sie Yala, um auf Ihre Finanzen zuzugreifen";
+"biometric.enableReason" = "Bestätigen Sie Ihre Identität, um die Sperre zu aktivieren";
+"biometric.authFailed" = "Authentifizierung fehlgeschlagen";
+"biometric.authFailedMessage" = "Ihre Identität konnte nicht überprüft werden. Bitte versuchen Sie es erneut.";
+"biometric.locked" = "Yala ist gesperrt";
+"biometric.unlockPrompt" = "Tippen Sie auf die Schaltfläche zum Entsperren";
+"biometric.unlock" = "Entsperren";
+"biometric.passcode" = "Code";
+"biometric.enableLockHint" = "Sie werden bei jedem Öffnen der App aufgefordert, Ihre Identität zu bestätigen.";
+"biometric.lockAfterHint" = "Wählen Sie, wie lange die App im Hintergrund bleiben kann, bevor sie gesperrt wird.";
+
 "profile.title" = "Profil";
 "profile.edit" = "Profil bearbeiten";
 "profile.importSuccess" = "Import abgeschlossen";

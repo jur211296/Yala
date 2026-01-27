@@ -2594,9 +2594,81 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 |---|-----------|-------|--------------|
 | 13 | Wipe limpia memoria | Tener memorias de comercios → vaciar datos | Todas las memorias eliminadas, sin crash |
 
+## Sección 20: Seguridad Biométrica (Fase 9)
+
+### Precondiciones
+- Dispositivo con Face ID, Touch ID, o passcode configurado
+- App instalada y onboarding completado
+
+### Escenario 20.1: Activar bloqueo biométrico
+1. Ir a Perfil → Seguridad → Face ID / Touch ID
+2. Activar toggle "Activar bloqueo"
+3. **Verificar:** Sistema pide autenticación biométrica/passcode antes de activar
+4. **Verificar:** Toggle queda encendido tras autenticación exitosa
+5. **Verificar:** Si se cancela la autenticación, toggle vuelve a apagado
+
+### Escenario 20.2: Configurar tiempo de bloqueo
+1. Con bloqueo activado, verificar que aparece selector de tiempo
+2. Seleccionar cada opción: Inmediatamente, 1 min, 5 min, 15 min
+3. **Verificar:** Checkmark se mueve a la opción seleccionada
+4. **Verificar:** La preferencia persiste al cerrar y reabrir Settings
+
+### Escenario 20.3: Bloqueo al abrir la app
+1. Activar bloqueo con timeout "Inmediatamente"
+2. Cerrar la app completamente (kill)
+3. Abrir la app
+4. **Verificar:** Overlay de bloqueo aparece después del splash
+5. **Verificar:** Se muestra icono correcto (Face ID / Touch ID / Lock)
+6. **Verificar:** Botón "Desbloquear" visible
+7. Autenticarse correctamente
+8. **Verificar:** Overlay desaparece y se ve la app
+
+### Escenario 20.4: Bloqueo al volver del background
+1. Activar bloqueo con timeout "Inmediatamente"
+2. Poner app en background (Home button / swipe up)
+3. Esperar unos segundos
+4. Volver a la app
+5. **Verificar:** Overlay de bloqueo aparece
+6. Autenticarse correctamente
+7. **Verificar:** App desbloqueada
+
+### Escenario 20.5: Timeout de bloqueo respetado
+1. Activar bloqueo con timeout "5 minutos"
+2. Poner app en background
+3. Volver en menos de 5 minutos
+4. **Verificar:** App NO muestra overlay de bloqueo
+5. Poner app en background nuevamente
+6. Esperar más de 5 minutos
+7. Volver a la app
+8. **Verificar:** Overlay de bloqueo aparece
+
+### Escenario 20.6: Fallback a passcode del dispositivo
+1. Con bloqueo activado, intentar desbloquear
+2. Fallar la autenticación biométrica varias veces
+3. **Verificar:** iOS ofrece automáticamente ingresar passcode del dispositivo
+4. Ingresar passcode correcto
+5. **Verificar:** App se desbloquea
+
+### Escenario 20.7: Desactivar bloqueo
+1. Ir a Perfil → Seguridad → Face ID / Touch ID
+2. Desactivar toggle
+3. **Verificar:** Bloqueo desactivado sin pedir autenticación
+4. Cerrar y reabrir app
+5. **Verificar:** No aparece overlay de bloqueo
+
+### Escenario 20.8: Icono dinámico en Settings
+1. En dispositivo con Face ID: verificar icono "faceid" en la fila de seguridad
+2. En dispositivo con Touch ID: verificar icono "touchid"
+3. **Verificar:** El texto del título coincide con el tipo de biométrico
+
+### Escenario 20.9: Localizaciones
+1. Cambiar idioma del dispositivo a cada uno de los 6 idiomas soportados
+2. **Verificar:** Todos los textos de la vista de seguridad biométrica están traducidos
+3. **Verificar:** Textos del overlay de bloqueo están traducidos
+
 ---
 
 *Documento creado: 2026-01-20*
 *Última actualización: 2026-01-27*
-*Total escenarios: ~283*
-*Total verificaciones: ~510+*
+*Total escenarios: ~292*
+*Total verificaciones: ~530+*
