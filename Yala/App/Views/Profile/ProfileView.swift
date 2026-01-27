@@ -62,6 +62,7 @@ struct ProfileView: View {
         case planned
         case userDataReset
         case biometricSecurity
+        case subscription
         case placeholder(String)
     }
 
@@ -151,6 +152,8 @@ struct ProfileView: View {
                     AppIconSettingsView()
                 case .biometricSecurity:
                     BiometricSecurityView()
+                case .subscription:
+                    SubscriptionView()
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
@@ -461,7 +464,7 @@ struct ProfileView: View {
                 SubsectionDivider()
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.subscriptions,
-                    iconColor: .purple, destination: .placeholder("Suscripciones"))
+                    iconColor: .purple, destination: .subscription)
                 SubsectionDivider()
                 Button {
                     requestReview()

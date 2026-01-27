@@ -1201,3 +1201,29 @@
 "image.transactionsDetectedMessage" = "We detected %d transactions. You can review and approve them in the inbox.";
 "image.analyzingIn" = "Analyzing in %d...";
 "image.imagesSelected" = "%d images selected";
+
+// MARK: - Subscription
+"subscription.title" = "Yala Pro";
+"subscription.paywallTitle" = "Unlock the full power of Yala";
+"subscription.paywallSubtitle" = "Take your finances to the next level with advanced tools";
+"subscription.subscribe" = "Subscribe";
+"subscription.processing" = "Processing...";
+"subscription.restore" = "Restore purchases";
+"subscription.planMonthly" = "Monthly";
+"subscription.planYearly" = "Yearly";
+"subscription.perYear" = "/ year";
+"subscription.perMonth" = "%@ / month";
+"subscription.saveBadge" = "Save %d%%";
+"subscription.feature.voice" = "Unlimited voice input";
+"subscription.feature.image" = "Receipt and image scanning";
+"subscription.feature.reports" = "Advanced reports and charts";
+"subscription.feature.currencies" = "All currencies and exchange rates";
+"subscription.feature.themes" = "Exclusive themes and icons";
+"subscription.feature.export" = "Export to Excel and CSV";
+"subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.";
+"subscription.errorTitle" = "Purchase error";
+"subscription.activeTitle" = "You're Yala Pro";
+"subscription.activeSubtitle" = "You have access to all premium features";
+"subscription.currentPlan" = "Current plan";
+"subscription.renewsOn" = "Renews on";
+"subscription.manageInAppStore" = "Manage in App Store";

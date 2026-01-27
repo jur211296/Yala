@@ -5,6 +5,7 @@
 //  Punto de entrada principal de la aplicación.
 //
 
+import StoreKit
 import SwiftData
 import SwiftUI
 
@@ -53,6 +54,8 @@ struct YalaApp: App {
                 .task {
                     // Update exchange rates on app launch
                     await loadExchangeRates()
+                    // Load subscription status
+                    await loadSubscriptionStatus()
                 }
                 .onChange(of: sessionState.needsExchangeRateReload) { _, needsReload in
                     if needsReload {
@@ -66,6 +69,14 @@ struct YalaApp: App {
         // Adjunta el contenedor de modelos a la escena principal.
         .modelContainer(sharedModelContainer)
         .environment(sessionState)
+    }
+
+    /// Load subscription status and sync to SessionState
+    private func loadSubscriptionStatus() async {
+        let store = StoreKitManager.shared
+        await store.loadProducts()
+        await store.updateSubscriptionStatus()
+        sessionState.isProUser = store.isProUser
     }
 
     /// Load exchange rates (used on app launch and after data wipe)
