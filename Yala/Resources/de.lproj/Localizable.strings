@@ -1227,3 +1227,25 @@
 "subscription.currentPlan" = "Aktueller Plan";
 "subscription.renewsOn" = "Verlängert sich am";
 "subscription.manageInAppStore" = "Im App Store verwalten";
+
+// MARK: - Tips & Tricks
+"tips.subtitle" = "Hole das Beste aus Yala heraus";
+"tips.section.quickEntry" = "Schnelle Eingabe";
+"tips.section.organize" = "Organisiere dein Geld";
+"tips.section.advanced" = "Fortgeschrittene Tricks";
+"tips.voice.title" = "Diktiere deine Ausgaben";
+"tips.voice.detail" = "Aktiviere die Spracheingabe und sage z.B. \"Mittagessen 35 Euro\". Yala versteht Beträge, Daten und Notizen ganz natürlich.";
+"tips.camera.title" = "Scanne Belege und Screenshots";
+"tips.camera.detail" = "Mach ein Foto von deinem Beleg oder Bank-Screenshot. Yala erkennt die Beträge und erstellt automatisch Entwürfe.";
+"tips.favorites.title" = "Speichere häufige Zahlungen";
+"tips.favorites.detail" = "Zahlst du oft das Gleiche? Speichere eine Ausgabe als Favorit und erfasse sie beim nächsten Mal mit einem Tipp im + Menü.";
+"tips.budgets.title" = "Erstelle Budgets";
+"tips.budgets.detail" = "Lege fest, wie viel du pro Kategorie im Monat ausgeben möchtest. Yala warnt dich, wenn du dich dem Limit näherst.";
+"tips.tags.title" = "Markiere besondere Ausgaben";
+"tips.tags.detail" = "Verwende Tags wie \"Urlaub\" oder \"Hausprojekt\", um Ausgaben verschiedener Kategorien zu gruppieren und den Überblick zu behalten.";
+"tips.filters.title" = "Filtere und vergleiche Zeiträume";
+"tips.filters.detail" = "Nutze Filter, um nur das Wichtige zu sehen: nach Kategorie, Tag, Konto oder Zeitraum. Vergleiche Monat für Monat.";
+"tips.export.title" = "Exportiere deine Daten";
+"tips.export.detail" = "Lade deine Ausgaben als CSV oder Excel unter Einstellungen > Exportieren herunter. Ideal für Tabellenanalysen oder deine Unterlagen.";
+"tips.faceID.title" = "Schütze mit Face ID";
+"tips.faceID.detail" = "Aktiviere die biometrische Sperre unter Einstellungen > Sicherheit. Du kannst wählen, ob sie beim Verlassen der App oder nach einer Zeit aktiviert wird.";

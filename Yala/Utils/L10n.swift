@@ -2020,6 +2020,29 @@ enum L10n {
         static var renewsOn: String { NSLocalizedString("subscription.renewsOn", comment: "") }
         static var manageInAppStore: String { NSLocalizedString("subscription.manageInAppStore", comment: "") }
     }
+
+    enum Tips {
+        static var subtitle: String { NSLocalizedString("tips.subtitle", comment: "") }
+        static var sectionQuickEntry: String { NSLocalizedString("tips.section.quickEntry", comment: "") }
+        static var sectionOrganize: String { NSLocalizedString("tips.section.organize", comment: "") }
+        static var sectionAdvanced: String { NSLocalizedString("tips.section.advanced", comment: "") }
+        static var voiceTitle: String { NSLocalizedString("tips.voice.title", comment: "") }
+        static var voiceDetail: String { NSLocalizedString("tips.voice.detail", comment: "") }
+        static var cameraTitle: String { NSLocalizedString("tips.camera.title", comment: "") }
+        static var cameraDetail: String { NSLocalizedString("tips.camera.detail", comment: "") }
+        static var favoritesTitle: String { NSLocalizedString("tips.favorites.title", comment: "") }
+        static var favoritesDetail: String { NSLocalizedString("tips.favorites.detail", comment: "") }
+        static var budgetsTitle: String { NSLocalizedString("tips.budgets.title", comment: "") }
+        static var budgetsDetail: String { NSLocalizedString("tips.budgets.detail", comment: "") }
+        static var tagsTitle: String { NSLocalizedString("tips.tags.title", comment: "") }
+        static var tagsDetail: String { NSLocalizedString("tips.tags.detail", comment: "") }
+        static var filtersTitle: String { NSLocalizedString("tips.filters.title", comment: "") }
+        static var filtersDetail: String { NSLocalizedString("tips.filters.detail", comment: "") }
+        static var exportTitle: String { NSLocalizedString("tips.export.title", comment: "") }
+        static var exportDetail: String { NSLocalizedString("tips.export.detail", comment: "") }
+        static var faceIDTitle: String { NSLocalizedString("tips.faceID.title", comment: "") }
+        static var faceIDDetail: String { NSLocalizedString("tips.faceID.detail", comment: "") }
+    }
 }
 
 // MARK: - App Locale
