@@ -63,6 +63,7 @@ struct ProfileView: View {
         case userDataReset
         case biometricSecurity
         case subscription
+        case tips
         case placeholder(String)
     }
 
@@ -154,6 +155,8 @@ struct ProfileView: View {
                     BiometricSecurityView()
                 case .subscription:
                     SubscriptionView()
+                case .tips:
+                    TipsAndTricksView()
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
@@ -484,7 +487,7 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 profileRow(
                     icon: "lightbulb.fill", title: L10n.Settings.tips,
-                    iconColor: .yellow, destination: .placeholder("Consejos"))
+                    iconColor: .yellow, destination: .tips)
                 SubsectionDivider()
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,

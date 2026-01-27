@@ -1227,3 +1227,25 @@
 "subscription.currentPlan" = "Plan actual";
 "subscription.renewsOn" = "Se renueva el";
 "subscription.manageInAppStore" = "Administrar en App Store";
+
+// MARK: - Tips & Tricks
+"tips.subtitle" = "Sácale el máximo provecho a Yala";
+"tips.section.quickEntry" = "Registro rápido";
+"tips.section.organize" = "Organiza tu dinero";
+"tips.section.advanced" = "Trucos avanzados";
+"tips.voice.title" = "Dicta tus gastos";
+"tips.voice.detail" = "Activa la entrada por voz y di algo como \"Almuerzo 35 soles\". Yala entiende montos, fechas y notas de forma natural.";
+"tips.camera.title" = "Escanea recibos y capturas";
+"tips.camera.detail" = "Toma una foto de tu recibo o captura de pantalla bancaria. Yala extrae los montos y crea borradores automáticamente.";
+"tips.favorites.title" = "Guarda pagos frecuentes";
+"tips.favorites.detail" = "¿Pagas lo mismo seguido? Guarda un gasto como favorito y la próxima vez regístralo con un solo tap desde el menú +.";
+"tips.budgets.title" = "Crea presupuestos";
+"tips.budgets.detail" = "Define cuánto quieres gastar por categoría al mes. Yala te avisa cuando estés cerca del límite para que no te pases.";
+"tips.tags.title" = "Etiqueta gastos especiales";
+"tips.tags.detail" = "Usa etiquetas como \"Vacaciones\" o \"Proyecto casa\" para agrupar gastos de diferentes categorías y ver cuánto llevas.";
+"tips.filters.title" = "Filtra y compara periodos";
+"tips.filters.detail" = "Usa los filtros para ver solo lo que te interesa: por categoría, etiqueta, cuenta o periodo. Compara mes a mes para detectar cambios.";
+"tips.export.title" = "Exporta tus datos";
+"tips.export.detail" = "Descarga tus gastos en CSV o Excel desde Ajustes > Exportar. Ideal para análisis en hoja de cálculo o para tus registros.";
+"tips.faceID.title" = "Protege con Face ID";
+"tips.faceID.detail" = "Activa el bloqueo biométrico en Ajustes > Seguridad. Puedes elegir que se active al salir de la app o después de un tiempo.";

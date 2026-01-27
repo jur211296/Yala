@@ -1227,3 +1227,25 @@
 "subscription.currentPlan" = "Plan actuel";
 "subscription.renewsOn" = "Se renouvelle le";
 "subscription.manageInAppStore" = "Gérer dans l'App Store";
+
+// MARK: - Tips & Tricks
+"tips.subtitle" = "Profitez au maximum de Yala";
+"tips.section.quickEntry" = "Saisie rapide";
+"tips.section.organize" = "Organisez votre argent";
+"tips.section.advanced" = "Astuces avancées";
+"tips.voice.title" = "Dictez vos dépenses";
+"tips.voice.detail" = "Activez la saisie vocale et dites quelque chose comme \"Déjeuner 35 euros\". Yala comprend les montants, dates et notes naturellement.";
+"tips.camera.title" = "Scannez reçus et captures";
+"tips.camera.detail" = "Prenez une photo de votre reçu ou capture d'écran bancaire. Yala extrait les montants et crée des brouillons automatiquement.";
+"tips.favorites.title" = "Enregistrez les paiements fréquents";
+"tips.favorites.detail" = "Vous payez souvent la même chose ? Enregistrez une dépense comme favori et la prochaine fois saisissez-la en un tap depuis le menu +.";
+"tips.budgets.title" = "Créez des budgets";
+"tips.budgets.detail" = "Définissez combien vous voulez dépenser par catégorie chaque mois. Yala vous alerte quand vous approchez la limite.";
+"tips.tags.title" = "Étiquetez les dépenses spéciales";
+"tips.tags.detail" = "Utilisez des étiquettes comme \"Vacances\" ou \"Projet maison\" pour regrouper les dépenses de différentes catégories.";
+"tips.filters.title" = "Filtrez et comparez les périodes";
+"tips.filters.detail" = "Utilisez les filtres pour voir uniquement ce qui vous intéresse : par catégorie, étiquette, compte ou période. Comparez mois par mois.";
+"tips.export.title" = "Exportez vos données";
+"tips.export.detail" = "Téléchargez vos dépenses en CSV ou Excel depuis Réglages > Exporter. Idéal pour l'analyse en tableur ou vos archives.";
+"tips.faceID.title" = "Protégez avec Face ID";
+"tips.faceID.detail" = "Activez le verrouillage biométrique dans Réglages > Sécurité. Vous pouvez choisir de l'activer en quittant l'app ou après un délai.";

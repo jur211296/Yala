@@ -1227,3 +1227,25 @@
 "subscription.currentPlan" = "Piano attuale";
 "subscription.renewsOn" = "Si rinnova il";
 "subscription.manageInAppStore" = "Gestisci nell'App Store";
+
+// MARK: - Tips & Tricks
+"tips.subtitle" = "Ottieni il massimo da Yala";
+"tips.section.quickEntry" = "Registrazione rapida";
+"tips.section.organize" = "Organizza i tuoi soldi";
+"tips.section.advanced" = "Trucchi avanzati";
+"tips.voice.title" = "Ditta le tue spese";
+"tips.voice.detail" = "Attiva l'input vocale e di qualcosa come \"Pranzo 35 euro\". Yala capisce importi, date e note in modo naturale.";
+"tips.camera.title" = "Scansiona ricevute e screenshot";
+"tips.camera.detail" = "Scatta una foto della ricevuta o screenshot bancario. Yala estrae gli importi e crea bozze automaticamente.";
+"tips.favorites.title" = "Salva i pagamenti frequenti";
+"tips.favorites.detail" = "Paghi spesso la stessa cosa? Salva una spesa come preferita e la prossima volta registrala con un tap dal menu +.";
+"tips.budgets.title" = "Crea dei budget";
+"tips.budgets.detail" = "Definisci quanto vuoi spendere per categoria al mese. Yala ti avvisa quando sei vicino al limite per non sforare.";
+"tips.tags.title" = "Etichetta le spese speciali";
+"tips.tags.detail" = "Usa etichette come \"Vacanze\" o \"Progetto casa\" per raggruppare spese di diverse categorie e vedere quanto hai speso.";
+"tips.filters.title" = "Filtra e confronta periodi";
+"tips.filters.detail" = "Usa i filtri per vedere solo ciò che ti interessa: per categoria, etichetta, conto o periodo. Confronta mese per mese.";
+"tips.export.title" = "Esporta i tuoi dati";
+"tips.export.detail" = "Scarica le tue spese in CSV o Excel da Impostazioni > Esporta. Ideale per analisi su foglio di calcolo o per i tuoi archivi.";
+"tips.faceID.title" = "Proteggi con Face ID";
+"tips.faceID.detail" = "Attiva il blocco biometrico in Impostazioni > Sicurezza. Puoi scegliere di attivarlo uscendo dall'app o dopo un tempo.";
