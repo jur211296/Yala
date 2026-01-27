@@ -245,7 +245,7 @@ Links: Privacidad | T\u00e9rminos | Ayuda | Contacto
 
 Redes: Instagram | TikTok (si aplica)
 
-Email: hola@yala.app
+Email: admin@yala-app.pe
 
 Copyright: \u00a9 2026 Yala. Hecho con \u2764\ufe0f en Per\u00fa
 ```

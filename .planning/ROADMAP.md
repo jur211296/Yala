@@ -287,7 +287,7 @@ Incluye:
 - [ ] Página de administrar suscripción
 - [ ] Consejos y trucos (página informativa)
 - [ ] Preguntas frecuentes (página informativa)
-- [ ] Términos de uso → redirige a web
+- [x] Términos de uso → redirige a web ✅
 
 DoD:
 - Face ID funcional con opciones de tiempo de bloqueo

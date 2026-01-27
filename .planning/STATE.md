@@ -13,8 +13,8 @@ Version: 1.0
 Phase: 9 — Settings & Pre-Release
 Spec: None
 Plan: TBD
-Status: **Fase 9 en progreso** — Links rápidos Settings completados
-Last activity: 2026-01-27 — Settings links: Permisos, Contacto, Valorar, Privacidad (9.2)
+Status: **Fase 9 en progreso** — Términos de uso web + iOS completados
+Last activity: 2026-01-27 — Terms of Use page (web 6 idiomas) + iOS link (9.2)
 
 Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progreso)
 
@@ -22,6 +22,7 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] 88fdcdb feat(web): add Terms of Use page in 6 languages and wire iOS link (9.2)
 - [2026-01-27] d6b9230 feat(settings): wire Permissions, Contact, Rate App, and Privacy links (9.2)
 - [2026-01-27] d7f4fb3 feat(security): add Face ID / Touch ID biometric lock with configurable timeout (9.1)
 - [2026-01-27] dd0ee05 feat(merchant): add Merchant Memory for subcategory suggestions (8.5)
@@ -102,7 +103,7 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 - [ ] Página de administrar suscripción
 - [ ] Consejos y trucos (página)
 - [ ] Preguntas frecuentes (página)
-- [ ] Términos de uso → web
+- [x] Términos de uso → web ✅ (88fdcdb)
 
 ---
 
@@ -181,12 +182,12 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Fase 9.2 Links rápidos Settings completados (d6b9230)
-Next step: Siguiente item Fase 9 (suscripción Pro, consejos y trucos, FAQ, o términos de uso)
+Stopped at: Fase 9.2 Términos de uso web + iOS completados (88fdcdb)
+Next step: Siguiente item Fase 9 (suscripción Pro, consejos y trucos, o FAQ)
 Resume file: N/A
 Resume context:
-- ProfileView: Permisos (openSettingsURLString), Contacto (mailto:), Valorar (requestReview), Privacidad (openURL web)
-- Términos de uso pendiente (contenido web aún no creado)
+- Web: TermsPage.astro con 12 secciones legales en 6 idiomas, footer actualizado
+- iOS: ProfileView todos los links legales apuntan a yala-app.pe (privacy + terms)
 - Suscripciones, Consejos, FAQ siguen como placeholder
 
 ## V1.1 (Futuro)
