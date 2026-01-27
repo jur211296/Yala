@@ -85,52 +85,56 @@ final class ImageVisionService {
 
     // MARK: - System Prompt
 
-    private let systemPrompt = """
-    You are a financial transaction extractor. Analyze images and extract transaction data.
+    private var systemPrompt: String {
+        let dateContext = DateContextProvider.buildDateContext()
 
-    Image types:
-    - "single": One transaction (bank alert, notification)
-    - "list": Multiple transactions (bank history, statement)
-    - "receipt": Photo of a receipt (extract TOTAL only)
-    - "unknown": Cannot identify as financial
+        return """
+        You are a financial transaction extractor. Analyze images and extract transaction data.
 
-    Rules:
-    - Amounts: No currency symbol, expenses are NEGATIVE, income is POSITIVE
-    - Dates: ALWAYS convert to YYYY-MM-DD format
-    - Currency: Extract from symbols or explicit mentions
+        Image types:
+        - "single": One transaction (bank alert, notification)
+        - "list": Multiple transactions (bank history, statement)
+        - "receipt": Photo of a receipt (extract TOTAL only)
+        - "unknown": Cannot identify as financial
 
-    Currency extraction rules:
-    - "$" symbol alone or "US$" → "USD"
-    - "€" symbol → "EUR"
-    - "S/" symbol → "PEN"
-    - "£" symbol → "GBP"
-    - Explicit mentions: "dollars", "dólares", "USD" → "USD"
-    - Explicit mentions: "soles", "PEN" → "PEN"
-    - Explicit mentions: "euros", "EUR" → "EUR"
-    - If no currency indicator found → null
+        Rules:
+        - Amounts: No currency symbol, expenses are NEGATIVE, income is POSITIVE
+        - Dates: ALWAYS convert to YYYY-MM-DD format
+        - Currency: Extract from symbols or explicit mentions
 
-    Date formats to recognize and convert:
-    - Relative: "hoy", "today" → current date
-    - Relative: "ayer", "yesterday" → current date - 1
-    - Spanish abbreviated: "13 ene. 2026", "13 ene 2026" → 2026-01-13
-    - English abbreviated: "Jan 13, 2026", "13 Jan 2026" → 2026-01-13
-    - Spanish full: "13 de enero de 2026" → 2026-01-13
-    - English full: "January 13, 2026" → 2026-01-13
-    - Numeric short: "15/01/26", "15-01-26" → 2026-01-15
-    - Numeric long: "15/01/2026", "15-01-2026" → 2026-01-15
-    - ISO: "2026-01-15" → 2026-01-15
-    - Day/month only (assume current year): "15/01" → current-year-01-15
+        Currency extraction rules:
+        - "$" symbol alone or "US$" → "USD"
+        - "€" symbol → "EUR"
+        - "S/" symbol → "PEN"
+        - "£" symbol → "GBP"
+        - Explicit mentions: "dollars", "dólares", "USD" → "USD"
+        - Explicit mentions: "soles", "PEN" → "PEN"
+        - Explicit mentions: "euros", "EUR" → "EUR"
+        - If no currency indicator found → null
 
-    Spanish months: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic
-    English months: jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec
+        \(dateContext)
 
-    Respond ONLY with valid JSON (no markdown, no explanation):
-    {
-      "imageType": "single",
-      "transactions": [{"amount": -45.50, "date": "2026-01-25", "merchant": "Starbucks", "note": null, "currency": "USD"}],
-      "confidence": {"overall": 0.95, "imageType": 0.90}
+        Date formats to recognize and convert:
+        - Spanish abbreviated: "13 ene. 2026", "13 ene 2026" → 2026-01-13
+        - English abbreviated: "Jan 13, 2026", "13 Jan 2026" → 2026-01-13
+        - Spanish full: "13 de enero de 2026" → 2026-01-13
+        - English full: "January 13, 2026" → 2026-01-13
+        - Numeric short: "15/01/26", "15-01-26" → 2026-01-15
+        - Numeric long: "15/01/2026", "15-01-2026" → 2026-01-15
+        - ISO: "2026-01-15" → 2026-01-15
+        - Day/month only (assume current year): "15/01" → current-year-01-15
+
+        Spanish months: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic
+        English months: jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec
+
+        Respond ONLY with valid JSON (no markdown, no explanation):
+        {
+          "imageType": "single",
+          "transactions": [{"amount": -45.50, "date": "2026-01-25", "merchant": "Starbucks", "note": null, "currency": "USD"}],
+          "confidence": {"overall": 0.95, "imageType": 0.90}
+        }
+        """
     }
-    """
 
     // MARK: - Public Methods
 
@@ -150,7 +154,7 @@ final class ImageVisionService {
 
         // Build content parts for multimodal message
         let textPart = ChatQuery.ChatCompletionMessageParam.ContentPartTextParam(
-            text: "Extract transactions from this image. Today's date is \(currentDateString())."
+            text: "Extract transactions from this image. Today is \(currentDayAndDateString())."
         )
         let imagePart = ChatQuery.ChatCompletionMessageParam.ContentPartImageParam(
             imageUrl: .init(imageData: imageData, detail: .auto)
@@ -192,9 +196,13 @@ final class ImageVisionService {
 
     // MARK: - Private Methods
 
-    private func currentDateString() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: Date())
+    private func currentDayAndDateString() -> String {
+        let dayFmt = DateFormatter()
+        dayFmt.locale = Locale(identifier: "en")
+        dayFmt.dateFormat = "EEEE"
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "yyyy-MM-dd"
+        let now = Date()
+        return "\(dayFmt.string(from: now)), \(dateFmt.string(from: now))"
     }
 }

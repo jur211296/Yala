@@ -11,18 +11,31 @@ import SwiftData
 /// Factory for creating InboxDrafts from Vision API responses
 struct VisionDraftFactory {
 
-    /// Creates InboxDrafts from a VisionResponse
+    /// Creates InboxDrafts from a VisionResponse and inserts them into context.
     /// - Parameters:
     ///   - response: The VisionResponse from GPT-4o Vision
     ///   - rawText: Optional raw OCR text for reference
     ///   - context: SwiftData ModelContext for creating drafts
-    /// - Returns: Array of created InboxDrafts
+    /// - Returns: Array of created InboxDrafts (already inserted)
     static func createDrafts(
         from response: VisionResponse,
         rawText: String?,
         context: ModelContext
     ) -> [InboxDraft] {
-        // Determine source type based on image classification
+        let drafts = makeDrafts(from: response, rawText: rawText, context: context)
+        for draft in drafts {
+            context.insert(draft)
+        }
+        return drafts
+    }
+
+    /// Creates InboxDrafts from a VisionResponse WITHOUT inserting into context.
+    /// Use this when you need to deduplicate before insertion.
+    static func makeDrafts(
+        from response: VisionResponse,
+        rawText: String?,
+        context: ModelContext
+    ) -> [InboxDraft] {
         let sourceType = mapImageTypeToSource(response.imageType)
 
         var drafts: [InboxDraft] = []
@@ -90,7 +103,6 @@ struct VisionDraftFactory {
             draft.account = account
         }
 
-        context.insert(draft)
         return draft
     }
 

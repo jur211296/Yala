@@ -299,73 +299,14 @@ struct ImageSelectionView: View {
     // MARK: - Processing View
 
     private var processingView: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            Spacer()
-
-            // Processing circle (matching Voice style)
-            ZStack {
-                // Outer glow
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.teal.opacity(0.3), Color.clear],
-                            center: .center,
-                            startRadius: 50,
-                            endRadius: 90
-                        )
-                    )
-                    .frame(width: 180, height: 180)
-                    .blur(radius: 10)
-
-                // Main circle with gradient
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.teal.opacity(0.8), Color.teal.opacity(0.6)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 120, height: 120)
-                    .shadow(color: Color.teal.opacity(0.4), radius: 20, x: 0, y: 8)
-
-                // Glass overlay
-                Circle()
-                    .fill(.white.opacity(0.1))
-                    .frame(width: 120, height: 120)
-                    .mask(
-                        LinearGradient(
-                            colors: [.white, .clear],
-                            startPoint: .top,
-                            endPoint: .center
-                        )
-                    )
-
-                // Spinner
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-            }
-
-            // Status text
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Image.processing)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-
-                if processingProgress.total > 1 {
-                    Text("\(processingProgress.current)/\(processingProgress.total)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(L10n.Image.processingSubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-        }
+        ProcessingProgressView(
+            mode: .determinate(
+                current: processingProgress.current,
+                total: processingProgress.total
+            ),
+            accentColor: .teal,
+            statusText: L10n.Image.processing
+        )
     }
 
     // MARK: - Result View (only shown for multiple drafts)
@@ -514,6 +455,10 @@ struct ImageSelectionView: View {
             processingProgress = (0, selectedImages.count)
         }
 
+        // Snapshot existing pending drafts BEFORE processing to avoid
+        // SwiftData auto-insert interference with deduplication
+        let existingDrafts = fetchPendingDrafts()
+
         var allDrafts: [InboxDraft] = []
 
         for (index, uiImage) in selectedImages.enumerated() {
@@ -538,14 +483,28 @@ struct ImageSelectionView: View {
             return
         }
 
-        draftsCreated = allDrafts.count
+        // Deduplicate against pre-existing pending drafts
+        let uniqueDrafts = DraftDeduplicationService.deduplicate(
+            newDrafts: allDrafts,
+            existingDrafts: existingDrafts
+        )
+
+        // If all are duplicates, navigate to what already exists
+        let draftsToUse = uniqueDrafts.isEmpty ? allDrafts : uniqueDrafts
+
+        // Insert only unique drafts (no-op if SwiftData already auto-inserted)
+        for draft in draftsToUse {
+            modelContext.insert(draft)
+        }
+
+        draftsCreated = draftsToUse.count
         do {
             try modelContext.save()
         } catch {
             handleError(L10n.Image.errorSaveFailed, type: .generic)
             return
         }
-        await handleNavigation(drafts: allDrafts)
+        await handleNavigation(drafts: draftsToUse)
     }
 
     /// Process a single image and return drafts
@@ -553,7 +512,7 @@ struct ImageSelectionView: View {
         return try await processImageWithVisionReturning(uiImage)
     }
 
-    /// Process image using GPT-4o Vision API (online) - returns drafts
+    /// Process image using GPT-4o Vision API (online) - returns drafts (not yet inserted)
     private func processImageWithVisionReturning(_ uiImage: UIImage) async throws -> [InboxDraft] {
         let response = try await visionService.analyze(image: uiImage)
 
@@ -563,8 +522,8 @@ struct ImageSelectionView: View {
             throw ImageError.noDataExtracted
         }
 
-        // Create drafts from Vision response
-        let drafts = VisionDraftFactory.createDrafts(
+        // Create drafts from Vision response without inserting
+        let drafts = VisionDraftFactory.makeDrafts(
             from: response,
             rawText: nil,
             context: modelContext
@@ -606,6 +565,15 @@ struct ImageSelectionView: View {
     private func openSystemSettings() {
         guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(settingsURL)
+    }
+
+    private func fetchPendingDrafts() -> [InboxDraft] {
+        let descriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { draft in
+                draft.statusRaw == "pending"
+            }
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
     }
 
     private func resetForRetry() {

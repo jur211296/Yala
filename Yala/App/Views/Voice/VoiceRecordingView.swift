@@ -21,6 +21,7 @@ struct VoiceRecordingView: View {
     @State private var errorType: VoiceErrorType?
     @State private var isProcessing = false
     @State private var processingStatus: String = ""
+    @State private var processingStepIndex: Int = 0
     @State private var createdDraft: InboxDraft?
     @State private var createdDrafts: [InboxDraft] = []
     @State private var draftWasApproved = false
@@ -56,25 +57,42 @@ struct VoiceRecordingView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: DS.Spacing.xxl) {
-                Spacer()
-
-                // Recording visualization
-                recordingVisualization
+                if isProcessing {
+                    // Stepped progress view for voice processing
+                    ProcessingProgressView(
+                        mode: .stepped(
+                            currentStep: processingStepIndex,
+                            steps: [
+                                L10n.Voice.analyzing,
+                                L10n.Voice.parsing,
+                                L10n.Voice.saving
+                            ]
+                        ),
+                        accentColor: .electricIndigo,
+                        statusText: processingStatus
+                    )
                     .transition(.scale.combined(with: .opacity))
+                } else {
+                    Spacer()
 
-                // Status text
-                statusText
-                    .transition(.opacity)
+                    // Recording visualization
+                    recordingVisualization
+                        .transition(.scale.combined(with: .opacity))
 
-                // Error message with action buttons
-                if let error = errorMessage {
-                    errorView(message: error)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    // Status text
+                    statusText
+                        .transition(.opacity)
+
+                    // Error message with action buttons
+                    if let error = errorMessage {
+                        errorView(message: error)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    Spacer()
                 }
 
-                Spacer()
-
-                // Action buttons
+                // Action buttons (always shown)
                 actionButtons
                     .transition(.scale.combined(with: .opacity))
             }
@@ -171,18 +189,10 @@ struct VoiceRecordingView: View {
                 )
 
             // Icon
-            Group {
-                if isProcessing {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                        .tint(.white)
-                } else {
-                    Image(systemName: recorder.state == .recording ? "waveform" : "mic.fill")
-                        .font(.system(size: 40, weight: .medium))
-                        .foregroundStyle(.white)
-                        .symbolEffect(.variableColor.iterative, isActive: recorder.state == .recording)
-                }
-            }
+            Image(systemName: recorder.state == .recording ? "waveform" : "mic.fill")
+                .font(.system(size: 40, weight: .medium))
+                .foregroundStyle(.white)
+                .symbolEffect(.variableColor.iterative, isActive: recorder.state == .recording)
         }
     }
 
@@ -248,14 +258,6 @@ struct VoiceRecordingView: View {
                     .foregroundStyle(Color.electricIndigo)
                     .contentTransition(.numericText())
                     .padding(.top, DS.Spacing.md)
-            } else if isProcessing {
-                Text(processingStatus)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Voice.pleaseWait)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             } else {
                 instructionsView
             }
@@ -695,6 +697,7 @@ struct VoiceRecordingView: View {
 
         do {
             // Step 1: Transcribe audio
+            processingStepIndex = 0
             processingStatus = L10n.Voice.analyzing
             let transcription = try await VoiceTranscriptionService.shared.transcribe(
                 audioData: audioData,
@@ -708,6 +711,7 @@ struct VoiceRecordingView: View {
             }
 
             // Step 2: Parse transcription (supports multiple transactions)
+            processingStepIndex = 1
             processingStatus = L10n.Voice.parsing
 
             // Get user's subcategories for intelligent matching
@@ -735,10 +739,29 @@ struct VoiceRecordingView: View {
                 return
             }
 
+            // Snapshot existing pending drafts BEFORE creating new ones
+            // to avoid SwiftData auto-insert interference with deduplication
+            let existingDrafts = fetchPendingDrafts()
+
             // Step 3: Create InboxDrafts (only if not cancelled)
+            processingStepIndex = 2
             processingStatus = L10n.Voice.saving
-            let drafts = validTransactions.map { parsed in
-                createInboxDraft(from: parsed, transcription: transcription.text)
+            let newDrafts = validTransactions.map { parsed in
+                createInboxDraft(from: parsed, transcription: transcription.text, insertInContext: false)
+            }
+
+            // Deduplicate against pre-existing pending drafts
+            let uniqueDrafts = DraftDeduplicationService.deduplicate(
+                newDrafts: newDrafts,
+                existingDrafts: existingDrafts
+            )
+
+            // If all are duplicates, use originals (SwiftData may have auto-inserted them)
+            let drafts = uniqueDrafts.isEmpty ? newDrafts : uniqueDrafts
+
+            // Insert drafts (no-op if SwiftData already auto-inserted)
+            for draft in drafts {
+                modelContext.insert(draft)
             }
 
             // Save all drafts to persistent storage
@@ -804,7 +827,7 @@ struct VoiceRecordingView: View {
         }
     }
 
-    private func createInboxDraft(from parsed: ParsedTransaction, transcription: String) -> InboxDraft {
+    private func createInboxDraft(from parsed: ParsedTransaction, transcription: String, insertInContext: Bool = true) -> InboxDraft {
         // Convert Decimal to Double for amount, apply sign based on isExpense
         var amountDouble: Double? = nil
         if let amount = parsed.amount {
@@ -858,8 +881,21 @@ struct VoiceRecordingView: View {
             needsUserInput: needsUserInputFields,
             newlyCreatedTagNames: newlyCreatedTagNames
         )
-        modelContext.insert(draft)
+        if insertInContext {
+            modelContext.insert(draft)
+        }
         return draft
+    }
+
+    // MARK: - Deduplication Helpers
+
+    private func fetchPendingDrafts() -> [InboxDraft] {
+        let descriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { draft in
+                draft.statusRaw == "pending"
+            }
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
     }
 
     // MARK: - Subcategory Helpers

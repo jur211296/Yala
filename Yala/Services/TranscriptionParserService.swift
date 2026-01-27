@@ -107,15 +107,10 @@ final class TranscriptionParserService {
     // MARK: - System Prompt
 
     private func buildSystemPrompt(expenseSubcategories: [String], incomeSubcategories: [String]) -> String {
-        let today = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
-        let yesterday = ISO8601DateFormatter.string(
-            from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date(),
-            timeZone: .current,
-            formatOptions: [.withFullDate]
-        )
-
         let expenseList = expenseSubcategories.isEmpty ? "No hay subcategorías de gasto definidas" : expenseSubcategories.joined(separator: ", ")
         let incomeList = incomeSubcategories.isEmpty ? "No hay subcategorías de ingreso definidas" : incomeSubcategories.joined(separator: ", ")
+
+        let dateContext = DateContextProvider.buildDateContext()
 
         return """
         Eres un parser de gastos para una app de finanzas personales.
@@ -126,11 +121,7 @@ final class TranscriptionParserService {
         - Cada transacción va como un objeto independiente en el array "transactions"
         - Conjunciones como "y", "además", "también", "luego" suelen separar transacciones
 
-        Reglas de fecha:
-        - "hoy", "ahorita", "recién", "acabo de" → \(today)
-        - "ayer" → \(yesterday)
-        - Sin mención de fecha → \(today)
-        - Fecha explícita → usar esa fecha en formato YYYY-MM-DD
+        \(dateContext)
 
         Reglas de monto:
         - Extrae el número mencionado
