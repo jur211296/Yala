@@ -2043,6 +2043,31 @@ enum L10n {
         static var faceIDTitle: String { NSLocalizedString("tips.faceID.title", comment: "") }
         static var faceIDDetail: String { NSLocalizedString("tips.faceID.detail", comment: "") }
     }
+
+    enum FAQ {
+        static var subtitle: String { NSLocalizedString("faq.subtitle", comment: "") }
+        static var sectionGeneral: String { NSLocalizedString("faq.section.general", comment: "") }
+        static var sectionData: String { NSLocalizedString("faq.section.data", comment: "") }
+        static var sectionPro: String { NSLocalizedString("faq.section.pro", comment: "") }
+        static var whatIsYalaQ: String { NSLocalizedString("faq.whatIsYala.q", comment: "") }
+        static var whatIsYalaA: String { NSLocalizedString("faq.whatIsYala.a", comment: "") }
+        static var howToRecordQ: String { NSLocalizedString("faq.howToRecord.q", comment: "") }
+        static var howToRecordA: String { NSLocalizedString("faq.howToRecord.a", comment: "") }
+        static var multiCurrencyQ: String { NSLocalizedString("faq.multiCurrency.q", comment: "") }
+        static var multiCurrencyA: String { NSLocalizedString("faq.multiCurrency.a", comment: "") }
+        static var changeCategoryQ: String { NSLocalizedString("faq.changeCategory.q", comment: "") }
+        static var changeCategoryA: String { NSLocalizedString("faq.changeCategory.a", comment: "") }
+        static var importDataQ: String { NSLocalizedString("faq.importData.q", comment: "") }
+        static var importDataA: String { NSLocalizedString("faq.importData.a", comment: "") }
+        static var exportDataQ: String { NSLocalizedString("faq.exportData.q", comment: "") }
+        static var exportDataA: String { NSLocalizedString("faq.exportData.a", comment: "") }
+        static var deleteDataQ: String { NSLocalizedString("faq.deleteData.q", comment: "") }
+        static var deleteDataA: String { NSLocalizedString("faq.deleteData.a", comment: "") }
+        static var whatIsProQ: String { NSLocalizedString("faq.whatIsPro.q", comment: "") }
+        static var whatIsProA: String { NSLocalizedString("faq.whatIsPro.a", comment: "") }
+        static var cancelSubQ: String { NSLocalizedString("faq.cancelSub.q", comment: "") }
+        static var cancelSubA: String { NSLocalizedString("faq.cancelSub.a", comment: "") }
+    }
 }
 
 // MARK: - App Locale

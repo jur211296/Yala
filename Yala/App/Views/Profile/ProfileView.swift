@@ -61,6 +61,7 @@ struct ProfileView: View {
         case biometricSecurity
         case subscription
         case tips
+        case faq
         case placeholder(String)
     }
 
@@ -154,6 +155,8 @@ struct ProfileView: View {
                     SubscriptionView()
                 case .tips:
                     TipsAndTricksView()
+                case .faq:
+                    FAQView()
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
@@ -376,7 +379,7 @@ struct ProfileView: View {
                 SubsectionDivider()
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,
-                    iconColor: .orange, destination: .placeholder("FAQ"))
+                    iconColor: .orange, destination: .faq)
                 SubsectionDivider()
                 Button {
                     if let url = URL(string: "mailto:admin@yala-app.pe") {

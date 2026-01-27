@@ -1249,3 +1249,27 @@
 "tips.export.detail" = "Download your expenses in CSV or Excel from Settings > Export. Great for spreadsheet analysis or for your records.";
 "tips.faceID.title" = "Protect with Face ID";
 "tips.faceID.detail" = "Enable biometric lock in Settings > Security. You can choose to activate it when leaving the app or after a set time.";
+
+// MARK: - FAQ
+"faq.subtitle" = "Answers to the most common questions";
+"faq.section.general" = "General";
+"faq.section.data" = "Your data";
+"faq.section.pro" = "Yala Pro";
+"faq.whatIsYala.q" = "What is Yala?";
+"faq.whatIsYala.a" = "Yala is your personal finance app. It helps you track expenses and income, organize your money by categories and tags, create budgets, and see clear reports of how your finances are doing.";
+"faq.howToRecord.q" = "How do I record an expense?";
+"faq.howToRecord.a" = "Tap the + button on the main screen. You can type the amount manually, dictate by voice, or scan a receipt with the camera. Yala fills in the details for you.";
+"faq.multiCurrency.q" = "Can I use multiple currencies?";
+"faq.multiCurrency.a" = "Yes. Yala supports 7 currencies (PEN, USD, EUR, MXN, COP, BRL, GBP). Set your main currency and add secondary currencies in Settings > Currency.";
+"faq.changeCategory.q" = "How do I change an expense's category?";
+"faq.changeCategory.a" = "Open the expense and tap the category to change it. To change multiple at once, use bulk edit: long-press a record and select the ones you want to modify.";
+"faq.importData.q" = "Can I import my data?";
+"faq.importData.a" = "Yes. Go to Settings > Import and upload a CSV or Excel file. Yala detects the columns automatically and lets you assign accounts by currency.";
+"faq.exportData.q" = "How do I export my data?";
+"faq.exportData.a" = "Go to Settings > Export and choose CSV or Excel format. You can download all your records to analyze in a spreadsheet or keep as a backup.";
+"faq.deleteData.q" = "Can I delete all my data?";
+"faq.deleteData.a" = "Yes. In Settings > Wipe Data you can delete all your information. This action cannot be undone, so we recommend exporting a backup first.";
+"faq.whatIsPro.q" = "What does Yala Pro include?";
+"faq.whatIsPro.a" = "Yala Pro unlocks premium features like voice input, receipt scanning with camera, exclusive themes, and more. You can see all benefits in Settings > Subscription.";
+"faq.cancelSub.q" = "How do I cancel my subscription?";
+"faq.cancelSub.a" = "You can manage or cancel your subscription anytime from Settings > Subscription > Manage in App Store. Your Pro access continues until the end of the paid period.";

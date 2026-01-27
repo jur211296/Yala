@@ -22,6 +22,7 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] 33927e0 feat(settings): add Tips & Tricks page with 8 expandable tips (9.4)
 - [2026-01-27] 9e99f76 feat(subscription): add Yala Pro subscription system with StoreKit 2 (9.3)
 - [2026-01-27] 88fdcdb feat(web): add Terms of Use page in 6 languages and wire iOS link (9.2)
 - [2026-01-27] d6b9230 feat(settings): wire Permissions, Contact, Rate App, and Privacy links (9.2)
@@ -31,7 +32,6 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 - [2026-01-27] ff09010 fix(image): remove OCR fallback and require API key for voice/image
 - [2026-01-26] 879db81 polish(inbox): UI refinements for Voice, Image, and Inbox views
 - [2026-01-26] 0061e80 fix(v1.0): resolve multiple UX and export issues
-- [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
 
 ## Completed in Current Phase
 
@@ -99,7 +99,7 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 - [x] Política de privacidad → web ✅ (d6b9230)
 - [x] Sistema de suscripción Pro (StoreKit 2) ✅ (9e99f76)
 - [x] Página de administrar suscripción ✅ (integrada en SubscriptionView)
-- [ ] Consejos y trucos (página)
+- [x] Consejos y trucos (página) ✅ (33927e0)
 - [ ] Preguntas frecuentes (página)
 - [x] Términos de uso → web ✅ (88fdcdb)
 
@@ -180,15 +180,12 @@ Progress: V1.0 ██████████░░░░ ~78% (Fase 9 en progre
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Fase 9.3 Suscripción Pro con StoreKit 2 completada (9e99f76)
-Next step: Siguiente item Fase 9 (Consejos y trucos o FAQ)
+Stopped at: Fase 9.4 Tips & Tricks page completada (33927e0)
+Next step: Siguiente item Fase 9 (Preguntas frecuentes - FAQ)
 Resume file: N/A
 Resume context:
-- StoreKitManager service con load/purchase/restore/entitlements
-- SubscriptionView con paywall (hero gradient, features, plan selector) + vista activa
-- isProUser en SessionState, synced desde YalaApp al launch
-- Product IDs: com.yala.pro.monthly, com.yala.pro.yearly (configurar en App Store Connect)
-- Faltan: Consejos y trucos, FAQ
+- TipsAndTricksView con 8 tips expandibles en 3 secciones, localizaciones en 6 idiomas
+- Falta: FAQ (último item de Fase 9)
 
 ## V1.1 (Futuro)
 
