@@ -15,6 +15,9 @@ struct ContentView: View {
     @State private var showOnboarding: Bool = false
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
+    @Environment(\.scenePhase) private var scenePhase
+
+    private let authService = BiometricAuthService.shared
 
     /// Minimum splash duration (2.5 seconds to enjoy the animation)
     private let minimumSplashDuration: Double = 2.5
@@ -52,6 +55,27 @@ struct ContentView: View {
                             dismissSplash()
                         }
                     }
+            }
+
+            // Biometric lock overlay (above everything except splash)
+            if authService.isLocked && !showSplash {
+                BiometricLockOverlay()
+                    .transition(.opacity)
+                    .zIndex(10)
+            }
+        }
+        .onAppear {
+            // Lock on initial launch if biometric is enabled
+            authService.lockOnLaunchIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                authService.appDidEnterBackground()
+            case .active:
+                authService.appDidEnterForeground()
+            default:
+                break
             }
         }
     }

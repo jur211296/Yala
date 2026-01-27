@@ -72,6 +72,9 @@ Ordenado por dependencias de datos para ejecución secuencial.
 | 12 | Filtros | Todo | Opera sobre todo |
 | 13 | Import/Export | Todo | Manipula datos |
 | 14 | Settings | Independiente | Configuración |
+| 15 | Inbox | Transacciones | Depende de drafts generados |
+| 16 | Voz | API Key + Internet | Genera drafts en Inbox |
+| 17 | Imagen | Ninguna | Genera drafts en Inbox |
 
 ---
 
@@ -1742,6 +1745,7 @@ Ordenado por dependencias de datos para ejecución secuencial.
 **Formatos soportados:**
 - CSV simple (fecha, monto, descripción, categoría)
 - CSV multimoneda (incluye campo moneda)
+- XLSX (Excel) - mismo formato de columnas que CSV
 
 ### Export (ExportWizardView)
 
@@ -1790,6 +1794,73 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Monto no numérico
 - [ ] Categoría inexistente
 - [ ] Columnas faltantes
+
+### Escenarios de Import XLSX
+
+#### Escenario 12.3.1: Importar XLSX simple
+**Precondiciones:** Archivo XLSX válido con columnas: date,amount,currency,category,subcategory
+**Pasos:**
+1. Profile → Importar → seleccionar archivo .xlsx
+2. Sistema detecta formato Excel
+3. Mapear columnas si necesario
+4. Seleccionar cuenta destino
+5. Importar
+**Resultado esperado:**
+- [ ] XLSXReader parsea primera hoja
+- [ ] Transacciones creadas correctamente
+- [ ] Resumen de importación muestra conteo
+- [ ] Balances actualizados
+
+#### Escenario 12.3.2: Importar XLSX multimoneda
+**Precondiciones:** XLSX con columna currency con múltiples divisas (PEN, USD, EUR)
+**Pasos:**
+1. Importar archivo XLSX
+2. Sistema detecta múltiples monedas via scanCurrenciesFromFile()
+3. Sheet de asignación de cuentas por moneda aparece
+4. Asignar cuenta a cada moneda
+5. Importar
+**Resultado esperado:**
+- [ ] Detección automática de monedas funciona
+- [ ] Transacciones asignadas a cuentas correctas según moneda
+- [ ] Balances de cada cuenta actualizados
+
+#### Escenario 12.3.3: XLSX con columnas opcionales (tags, note)
+**Precondiciones:** XLSX con columnas: date,amount,currency,category,subcategory,tags,note
+**Pasos:**
+1. Importar archivo XLSX con 7 columnas
+2. Completar importación
+**Resultado esperado:**
+- [ ] Tags parseados correctamente (separados por coma)
+- [ ] Notas importadas
+- [ ] Tags nuevos creados con colores únicos
+
+#### Escenario 12.3.4: XLSX con errores de formato
+**Precondiciones:** XLSX con celdas inválidas (fecha como texto malformado, monto como texto)
+**Pasos:**
+1. Intentar importar XLSX con errores
+2. Ver reporte de errores
+**Resultado esperado:**
+- [ ] Filas válidas importadas
+- [ ] Errores específicos reportados por fila
+- [ ] Mensaje claro del tipo de error
+
+#### Escenario 12.3.5: XLSX vacío o sin datos
+**Precondiciones:** Archivo XLSX con solo encabezados, sin filas de datos
+**Pasos:**
+1. Intentar importar XLSX vacío
+**Resultado esperado:**
+- [ ] Error claro: "No hay datos para importar"
+- [ ] No se crean transacciones
+
+#### Escenario 12.3.6: Selector de archivo acepta .xlsx
+**Precondiciones:** Ninguna
+**Pasos:**
+1. Profile → Importar
+2. Verificar que el picker muestra archivos .xlsx y .csv
+**Resultado esperado:**
+- [ ] UTType.spreadsheet acepta .xlsx
+- [ ] UTType.commaSeparatedText acepta .csv
+- [ ] Ambos formatos seleccionables
 
 ### Escenarios de Export
 
@@ -2071,7 +2142,533 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ---
 
+## Sección 16: Bandeja de Entrada (Inbox) - V1.1
+
+### Vista: InboxView
+
+Bandeja para borradores de transacciones generados por extractores (voz, imagen, etc.).
+
+### Precondiciones
+
+- Tener drafts en la bandeja (requiere Fase 8.3+ para generar desde voz/imagen)
+- Para testing manual: crear drafts programáticamente o mediante debug tools
+
+### Escenarios de Lista
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.1 | Ver bandeja vacía (Pendientes) | Abrir bandeja sin drafts | Empty state: "Sin borradores pendientes" |
+| 16.2 | Ver bandeja vacía (Archivados) | Cambiar a filtro Archivados | Empty state: "Sin borradores archivados" |
+| 16.3 | Filtrar por Pendientes | Tap en chip "Pendientes" | Solo muestra drafts con status pending |
+| 16.4 | Filtrar por Archivados | Tap en chip "Archivados" | Muestra drafts approved + rejected |
+| 16.5 | Badge en Panel | Ver botón en PanelView | Badge muestra conteo de pendientes |
+
+### Escenarios de Edición Individual
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.6 | Abrir editor | Tap en draft | Sheet de edición estilo NewTransactionView |
+| 16.7 | Editar nota | Cambiar texto | Se actualiza al guardar |
+| 16.8 | Editar monto | Cambiar valor | Se actualiza al guardar |
+| 16.9 | Editar fecha | Tap en chip fecha | DatePicker funcional |
+| 16.10 | Asignar cuenta | Tap en chip cuenta | AccountSelectorSheet |
+| 16.11 | Asignar subcategoría | Tap en chip subcategoría | SubcategorySelectorSheet |
+| 16.12 | Asignar tags | Tap en chip tags | TagSelectorSheet |
+| 16.13 | Guardar cambios | Tap "Guardar" | Draft actualizado, sheet cierra |
+
+### Escenarios de Aprobación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.14 | Aprobar desde editor | Completar campos + Tap "Aprobar" | TransactionItem creado, draft → approved |
+| 16.15 | Aprobar incompleto | Intentar aprobar sin cuenta/monto/subcategoría | Alert con error específico |
+| 16.16 | Swipe right to approve | Swipe derecha en draft válido | Draft aprobado, transacción creada |
+| 16.17 | Swipe right bloqueado | Swipe derecha en draft incompleto | Swipe no disponible |
+
+### Escenarios de Eliminación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.18 | Swipe left to delete | Swipe izquierda | Draft → rejected, desaparece de Pendientes |
+| 16.19 | Ver eliminado en Archivados | Filtrar Archivados | Draft eliminado visible |
+
+### Escenarios de Selección Múltiple
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.20 | Entrar modo selección | Tap "Edición múltiple" | Círculos de selección aparecen |
+| 16.21 | Seleccionar draft | Tap en draft | Círculo se llena |
+| 16.22 | Seleccionar todos | Tap en círculo de barra | Todos seleccionados |
+| 16.23 | Deseleccionar todos | Tap en círculo lleno | Todos deseleccionados |
+| 16.24 | Salir modo selección | Tap "Cancelar" | Círculos desaparecen |
+
+### Escenarios de Acciones en Lote
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.25 | Asignar cuenta a varios | Seleccionar → Editar → Cuenta | Todos actualizados con cuenta |
+| 16.26 | Asignar subcategoría a varios | Seleccionar → Editar → Subcategoría | Todos actualizados |
+| 16.27 | Aprobar varios válidos | Seleccionar válidos → Aprobar | Transacciones creadas |
+| 16.28 | Aprobar con algunos inválidos | Mezcla de válidos e inválidos | Solo válidos se aprueban, muestra conteo |
+| 16.29 | Eliminar varios | Seleccionar → Eliminar | Confirmación → todos rejected |
+
+### Escenarios de Pantalla de Éxito (8.1/8.2)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 16.30 | Aprobar desde editor | Completar campos + Tap "Aprobar" | Pantalla éxito con checkmark, detalles de transacción |
+| 16.31 | Editar desde éxito | Tap "Editar" en pantalla éxito | Abre NewTransactionView con la transacción |
+| 16.32 | Aceptar desde éxito | Tap "Aceptar" en pantalla éxito | Vuelve a InboxView |
+| 16.33 | Aprobar siguiente | Con otro draft pending, tap "Aprobar siguiente" | Abre editor del siguiente draft |
+| 16.34 | Aprobar siguiente (único) | Sin más drafts, verificar | Botón "Aprobar siguiente" no visible |
+| 16.35 | Swipe approve con éxito | Swipe derecha en draft válido | Pantalla éxito aparece como sheet |
+| 16.36 | Bulk approve éxito | Aprobar 3 drafts en lote | Pantalla éxito con "3 transacciones creadas" |
+| 16.37 | Ver en registros desde bulk | Tap "Ver en registros" en éxito bulk | Cierra Inbox, navega a Statistics |
+| 16.38 | Volver a bandeja desde bulk | Tap "Volver a bandeja" en éxito bulk | Cierra sheet, queda en InboxView |
+
+### Validaciones de UI
+
+| Elemento | Verificación |
+|----------|--------------|
+| Icono de fuente | Correcto para tipo (voz, recibo, etc.) |
+| Indicadores campos faltantes | Chips rojos para account/subcategory/amount |
+| Fecha relativa | "Hoy", "Ayer", o fecha formateada |
+| Color de monto | Verde/morado para positivo, rosa para negativo |
+| Indicador confianza | Triángulo naranja si <70% |
+
+---
+
+## Sección 17: Entrada por Voz (Voz MVP) - V1.1
+
+### Vista: VoiceRecordingView + ProfileView (Settings)
+
+Funcionalidad de entrada de transacciones por voz usando OpenAI Whisper (STT) y GPT-4o-mini (parsing).
+
+### Precondiciones Generales
+
+- API Key de OpenAI configurada en Secrets.xcconfig
+- Permiso de micrófono otorgado (o disponible para solicitar)
+- Conexión a internet activa
+
+---
+
+### Escenarios de Configuración (ProfileView)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.1 | Toggle voz deshabilitado (default) | Abrir Profile → Personalización | Toggle "Entrada por voz con IA" está OFF |
+| 17.2 | Habilitar entrada por voz | Activar toggle "Entrada por voz con IA" | Toggle ON, selector de idioma aparece |
+| 17.3 | Deshabilitar entrada por voz | Desactivar toggle | Toggle OFF, selector de idioma desaparece |
+| 17.4 | Selector idioma - Sistema | Con voz habilitada, seleccionar "Sistema" | Usa idioma del dispositivo para transcripción |
+| 17.5 | Selector idioma - Español | Seleccionar "Español" | Whisper transcribe en español |
+| 17.6 | Selector idioma - Inglés | Seleccionar "English" | Whisper transcribe en inglés |
+| 17.7 | Persistencia de configuración | Cerrar y abrir app | Toggle y idioma mantienen valor |
+
+---
+
+### Escenarios de FAB Condicional
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.8 | FAB simple (voz deshabilitada) | Con voz OFF, ver PanelView | FAB "+" abre NewTransactionView directamente |
+| 17.9 | FAB menú (voz habilitada) | Con voz ON, tap en FAB "+" en PanelView | Menú con opciones: "Voz" y "Manual" |
+| 17.10 | FAB menú en Statistics | Con voz ON, tap en FAB "+" en DetailContainerView | Mismo menú: "Voz" y "Manual" |
+| 17.11 | Seleccionar "Manual" del menú | Tap en "Manual" | Abre NewTransactionView |
+| 17.12 | Seleccionar "Voz" del menú | Tap en "Voz" | Abre VoiceRecordingView |
+
+---
+
+### Escenarios de Permisos de Micrófono
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.13 | Primera solicitud de permiso | Primera vez que se abre VoiceRecordingView | Alert del sistema pidiendo permiso de micrófono |
+| 17.14 | Permiso otorgado | Aceptar permiso | Grabación disponible, botón de grabar activo |
+| 17.15 | Permiso denegado | Denegar permiso | Mensaje de error, enlace a Settings |
+| 17.16 | Permiso revocado posteriormente | Revocar en Settings del sistema, volver a app | Mensaje indicando que se necesita permiso |
+
+---
+
+### Escenarios de Grabación (VoiceRecordingView)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.17 | UI inicial | Abrir VoiceRecordingView | Botón grande de micrófono, instrucciones visibles |
+| 17.18 | Iniciar grabación | Tap en botón de micrófono | Círculo pulsante, contador de duración inicia (0:00) |
+| 17.19 | Contador en tiempo real | Grabar por 5 segundos | Duración muestra 0:05 en tiempo real |
+| 17.20 | Detener grabación | Tap en botón durante grabación | Grabación se detiene, inicia procesamiento |
+| 17.21 | Estado "Procesando" | Después de detener | Indicador de carga, texto "Procesando..." |
+| 17.22 | Cancelar grabación | Tap en X o swipe down durante grabación | Grabación cancelada, sheet se cierra |
+
+---
+
+### Escenarios de Transcripción y Parsing
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.23 | Transcripción exitosa | Grabar "Gasté veinte soles en almuerzo" | Whisper devuelve texto transcrito |
+| 17.24 | Parsing de monto | Transcripción con monto | GPT-4o-mini extrae amount: 20.00 |
+| 17.25 | Parsing de nota | Transcripción con descripción | Extrae note: "almuerzo" o similar |
+| 17.26 | Parsing de fecha implícita | "Gasté ayer..." | Extrae date: fecha de ayer |
+| 17.27 | Parsing de tipo (gasto) | "Gasté..." o "Pagué..." | isExpense: true |
+| 17.28 | Parsing de tipo (ingreso) | "Me pagaron..." o "Recibí..." | isExpense: false |
+| 17.29 | Confidence scores | Después de parsing | Cada campo tiene confidence (0.0-1.0) |
+
+---
+
+### Escenarios de Creación de InboxDraft
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.30 | Draft creado exitosamente | Flujo completo de voz | InboxDraft creado en bandeja |
+| 17.31 | Draft con sourceType correcto | Ver draft en Inbox | sourceType = .voice |
+| 17.32 | Draft con campos extraídos | Ver draft | amount, note, date poblados según parsing |
+| 17.33 | Draft con confidence | Ver indicadores | Campos con confidence <70% muestran indicador |
+| 17.34 | Navegación post-creación | Después de crear draft | Sheet se cierra, puede ir a Inbox |
+| 17.35 | Toast de confirmación | Después de crear draft | Toast: "Borrador creado" o similar |
+
+---
+
+### Escenarios de Errores
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.36 | Sin conexión a internet | Intentar grabar sin internet | Error claro: "Se requiere conexión a internet" |
+| 17.37 | API Key inválida/faltante | Grabar con key incorrecta | Error: "Error de autenticación" |
+| 17.38 | Timeout de transcripción | Simular timeout | Error con opción de reintentar |
+| 17.39 | Audio muy corto | Grabar <1 segundo | Error: "Grabación muy corta" |
+| 17.40 | Audio inaudible/silencio | Grabar silencio | Error o warning: "No se detectó audio" |
+| 17.41 | Parsing falla | Transcripción no parseable | Draft creado solo con nota (texto completo) |
+| 17.42 | Error de Whisper API | Error 500 de OpenAI | Mensaje de error, opción reintentar |
+
+---
+
+### Escenarios de Localización
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 17.43 | Labels en Español | Dispositivo en ES | "Entrada por voz con IA", "Idioma de voz", etc. |
+| 17.44 | Labels en Inglés | Dispositivo en EN | "Voice input with AI", "Voice language", etc. |
+| 17.45 | Labels en Alemán | Dispositivo en DE | Textos traducidos correctamente |
+| 17.46 | Labels en Francés | Dispositivo en FR | Textos traducidos correctamente |
+| 17.47 | Labels en Italiano | Dispositivo en IT | Textos traducidos correctamente |
+| 17.48 | Labels en Portugués | Dispositivo en PT | Textos traducidos correctamente |
+
+---
+
+### Validaciones de UI
+
+| Elemento | Verificación |
+|----------|--------------|
+| Toggle voz | Estilo consistente con otros toggles de Settings |
+| Selector idioma | Aparece/desaparece con animación al toggle |
+| Botón micrófono | Tamaño grande, fácil de presionar |
+| Círculo pulsante | Animación suave durante grabación |
+| Contador duración | Formato MM:SS, actualiza cada segundo |
+| Estados de carga | Indicadores claros para cada estado |
+| Mensajes de error | Texto claro, accionable |
+
+---
+
+## Sección 18: Entrada por Imagen (Imágenes MVP) - V1.1
+
+### Vista: ImageSelectionView + ProfileView (Settings)
+
+Funcionalidad de entrada de transacciones desde imágenes usando Vision OCR + clasificación heurística + extractores.
+
+### Precondiciones Generales
+
+- iOS 16+ (Vision framework)
+- Permiso de acceso a fotos otorgado (o disponible para solicitar)
+- Imágenes de prueba en biblioteca de fotos
+
+---
+
+### Escenarios de Configuración (ProfileView)
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.1 | Toggle imagen deshabilitado (default) | Abrir Profile → Personalización | Toggle "Entrada por imagen" está OFF |
+| 18.2 | Habilitar entrada por imagen | Activar toggle "Entrada por imagen" | Toggle ON |
+| 18.3 | Deshabilitar entrada por imagen | Desactivar toggle | Toggle OFF, opción desaparece del FAB |
+| 18.4 | Persistencia de configuración | Cerrar y abrir app | Toggle mantiene valor |
+
+---
+
+### Escenarios de FAB Condicional
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.5 | FAB sin imagen (imagen OFF) | Con imagen OFF, ver PanelView | FAB muestra solo opciones habilitadas (Manual o Voz+Manual) |
+| 18.6 | FAB con imagen (imagen ON) | Con imagen ON, tap en FAB "+" | Menú muestra "Imagen" con icono naranja |
+| 18.7 | FAB con voz+imagen | Con voz ON e imagen ON | Menú muestra 3 opciones: "Voz", "Imagen", "Manual" |
+| 18.8 | Seleccionar "Imagen" del menú | Tap en "Imagen" | Abre ImageSelectionView |
+
+---
+
+### Escenarios de Selección de Imagen
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.9 | UI inicial | Abrir ImageSelectionView | Instrucciones, botón "Seleccionar imagen" |
+| 18.10 | Abrir PhotosPicker | Tap en botón | PhotosPicker del sistema se abre |
+| 18.11 | Cancelar PhotosPicker | Tap en Cancelar en picker | Picker se cierra, vuelve a ImageSelectionView |
+| 18.12 | Seleccionar imagen válida | Elegir screenshot bancario | Picker se cierra, inicia procesamiento |
+| 18.13 | Estado "Procesando" | Después de seleccionar | ProgressView, texto "Procesando..." |
+
+---
+
+### Escenarios de Procesamiento OCR
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.14 | OCR exitoso - Screenshot single | Seleccionar alerta bancaria individual | Texto extraído, draft creado en Inbox |
+| 18.15 | OCR exitoso - Screenshot list | Seleccionar lista de transacciones | Múltiples drafts creados (uno por fila) |
+| 18.16 | OCR exitoso - Receipt | Seleccionar foto de recibo | Draft creado con monto total |
+| 18.17 | Navegación a Inbox | Después de procesar exitosamente | ImageSelectionView cierra, Inbox se abre automáticamente |
+
+---
+
+### Escenarios de Extracción de Datos
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.18 | Extracción monto con símbolo $ | Imagen con "$50.00" | Draft muestra 50.00 |
+| 18.19 | Extracción monto con símbolo € | Imagen con "€100" | Draft muestra 100.00 |
+| 18.20 | Extracción monto negativo (paréntesis) | Imagen con "($25.50)" | Draft muestra -25.50 |
+| 18.21 | Extracción formato europeo | Imagen con "1.234,56" | Draft muestra 1234.56 |
+| 18.22 | Extracción formato americano | Imagen con "1,234.56" | Draft muestra 1234.56 |
+| 18.23 | Extracción fecha relativa "hoy" | Imagen con "hoy" | Draft muestra fecha de hoy |
+| 18.24 | Extracción fecha relativa "ayer" | Imagen con "ayer" | Draft muestra fecha de ayer |
+| 18.25 | Extracción fecha absoluta DD/MM/YYYY | Imagen con "24/01/2026" | Draft muestra 24 enero 2026 |
+| 18.26 | Extracción nombre comercio | Imagen con "en STARBUCKS" | Draft nota contiene "Starbucks" |
+
+---
+
+### Escenarios de Clasificación
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.27 | Clasificar screenshot single | Imagen con keywords "consumo", "tarjeta" + 1 monto | Clasificado como screenshotSingle, 1 draft |
+| 18.28 | Clasificar screenshot list | Imagen con 3+ líneas con montos | Clasificado como screenshotList, múltiples drafts |
+| 18.29 | Clasificar receipt | Imagen con "total", "subtotal" + monto | Clasificado como receiptPhoto, 1 draft |
+| 18.30 | Clasificar unknown | Imagen sin montos ni keywords | Error "Tipo de imagen no reconocido" |
+
+---
+
+### Escenarios de Errores
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.31 | Error carga imagen | Seleccionar imagen corrupta | Alert: "No se pudo cargar la imagen" |
+| 18.32 | Error OCR sin texto | Seleccionar imagen sin texto | Alert: "No se detectó texto en la imagen" |
+| 18.33 | Error sin transacciones | Seleccionar imagen con texto pero sin montos | Alert: "No se detectaron transacciones" |
+| 18.34 | Error tipo no reconocido | Seleccionar imagen no bancaria | Alert: "Tipo de imagen no reconocido" |
+
+---
+
+### Escenarios de Integración con Inbox
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.35 | Draft en Inbox | Después de procesar imagen | Draft aparece en InboxView con sourceType correcto |
+| 18.36 | Icono de fuente correcto | Ver draft en Inbox | Icono "rectangle.on.rectangle" para screenshot single |
+| 18.37 | Icono lista | Ver drafts de screenshot list | Icono "list.bullet.rectangle" |
+| 18.38 | Raw text preservado | Abrir draft | rawText contiene texto OCR completo |
+| 18.39 | Evidence visible | Ver draft | evidence muestra primera línea de texto |
+| 18.40 | Campos detectados | Ver draft | amount, date (si detectados) marcados con confianza |
+
+---
+
+### Validaciones de UI
+
+| Elemento | Verificación |
+|----------|--------------|
+| Toggle imagen | Estilo consistente con otros toggles de Settings |
+| Icono FAB | "photo" naranja en menú |
+| Botón selección | Tamaño grande, fácil de presionar |
+| PhotosPicker | Picker nativo del sistema |
+| ProgressView | Indicador de carga durante procesamiento |
+| Estados de error | Alertas claras con texto accionable |
+| Transición a Inbox | Animación suave al abrir Inbox |
+
+---
+
+### Escenarios de Vision API (GPT-4o Online)
+
+Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor precisión en extracción.
+
+**Precondiciones específicas:**
+- API key de OpenAI configurada en Secrets.xcconfig
+- Conexión a internet activa
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.41 | Vision API disponible | Con API key configurada, procesar imagen | Usa Vision API (no OCR local) |
+| 18.42 | Vision API no disponible | Sin API key configurada, procesar imagen | Fallback automático a OCR local |
+| 18.43 | Vision exitoso - Screenshot single | Seleccionar alerta bancaria | Draft creado con datos de Vision, sourceType=screenshotSingle |
+| 18.44 | Vision exitoso - Screenshot list | Seleccionar historial bancario | Múltiples drafts creados, sourceType=screenshotList |
+| 18.45 | Vision exitoso - Receipt | Seleccionar foto de recibo | Draft con TOTAL extraído, sourceType=receiptPhoto |
+| 18.46 | Vision - Monto negativo (gasto) | Imagen con gasto | amount < 0 en draft |
+| 18.47 | Vision - Monto positivo (ingreso) | Imagen con ingreso | amount > 0 en draft |
+| 18.48 | Vision - Fecha formato ES abreviado | Imagen con "13 ene 2026" | date = 2026-01-13 |
+| 18.49 | Vision - Fecha formato ES completo | Imagen con "13 de enero de 2026" | date = 2026-01-13 |
+| 18.50 | Vision - Fecha formato EN | Imagen con "Jan 13, 2026" | date = 2026-01-13 |
+| 18.51 | Vision - Fecha relativa "hoy" | Imagen con "hoy" | date = fecha actual |
+| 18.52 | Vision - Fecha relativa "ayer" | Imagen con "ayer" | date = fecha actual - 1 |
+| 18.53 | Vision - Merchant extraído | Imagen con comercio | note contiene nombre del comercio |
+
+---
+
+### Escenarios de Fallback Vision → OCR
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 18.54 | Fallback por error de red | Desconectar internet durante proceso | Cae a OCR local, draft creado |
+| 18.55 | Fallback por respuesta vacía | Vision retorna imageType=unknown | Cae a OCR local |
+| 18.56 | Fallback por sin transacciones | Vision retorna transactions=[] | Cae a OCR local |
+| 18.57 | Fallback exitoso | Error de Vision + OCR funciona | Draft creado vía OCR, sin error visible |
+| 18.58 | Ambos fallan | Error de Vision + Error de OCR | Muestra error "No se detectaron transacciones" |
+
+---
+
+### Validaciones de Vision API
+
+| Elemento | Verificación |
+|----------|--------------|
+| Confidencia | confidence.overall en respuesta ≥ 0.7 |
+| JSON válido | Respuesta parseable como VisionResponse |
+| Montos firmados | Gastos negativos, ingresos positivos |
+| Fechas ISO | Formato YYYY-MM-DD interno |
+| Fallback silencioso | Usuario no ve mensaje de error de Vision si OCR funciona |
+
+---
+
+## Sección 19: Merchant Memory (Subfase 8.5)
+
+### Precondiciones
+- Al menos 1 cuenta creada
+- Al menos 1 subcategoría visible
+- Input de voz o imagen funcional (API key configurada)
+
+### 19.1 Canonicalización de Merchants
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 1 | Normalización básica | Aprobar draft con nota "Starbucks Coffee" → aprobar otro con "STARBUCKS COFFEE" | Ambos mapean a la misma memoria de comercio |
+| 2 | Prefijos de pago | Aprobar draft con nota "DP*Uber Eats" | La memoria guarda "UBER EATS" (sin prefijo DP*) |
+| 3 | Símbolos y espacios | Aprobar draft con nota "Pizza Hut #123" | La memoria guarda "PIZZA HUT 123" (sin #) |
+
+### 19.2 Sugerencia de Subcategoría
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 4 | Sin sugerencia (<3 aprobaciones) | Aprobar 2 drafts de "Starbucks" con subcategoría "Café" → crear nuevo draft "Starbucks" | NO se sugiere subcategoría automáticamente |
+| 5 | Sugerencia (>=3 aprobaciones) | Aprobar 3 drafts de "Starbucks" con subcategoría "Café" → abrir nuevo draft "Starbucks" | Subcategoría "Café" aparece preseleccionada |
+| 6 | Autoasignación (>=5, baja corrección) | Aprobar 5 drafts de "Starbucks" con "Café" sin corregir → crear nuevo draft | Subcategoría autoasignada en el draft |
+| 7 | Corrección reduce confianza | Aprobar 3 con "Café", cambiar 2 a "Restaurantes" → nuevo draft | No sugiere (tasa corrección alta) |
+
+### 19.3 Integración con Voz
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 8 | Voice draft con memoria | Tener 5+ aprobaciones para "Uber" → grabar "gasté 50 en Uber" | Draft creado con subcategoría prefilled de merchant memory |
+| 9 | LLM hint tiene prioridad | LLM sugiere subcategoría + merchant memory sugiere otra | Se usa la del LLM (merchant memory es fallback) |
+
+### 19.4 Integración con Imágenes
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 10 | Image draft con memoria | Tener 5+ aprobaciones para merchant → procesar imagen con ese merchant | Draft(s) creados con subcategoría prefilled |
+
+### 19.5 Corrección y Aprendizaje
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 11 | Corrección registrada | Abrir draft con subcategoría sugerida → cambiar a otra → aprobar | Memory registra corrección, countCorrected incrementa |
+| 12 | Aprobación sin corrección | Abrir draft con subcategoría sugerida → aprobar sin cambiar | countApproved incrementa |
+
+### 19.6 Data Wipe
+
+| # | Escenario | Pasos | Verificación |
+|---|-----------|-------|--------------|
+| 13 | Wipe limpia memoria | Tener memorias de comercios → vaciar datos | Todas las memorias eliminadas, sin crash |
+
+## Sección 20: Seguridad Biométrica (Fase 9)
+
+### Precondiciones
+- Dispositivo con Face ID, Touch ID, o passcode configurado
+- App instalada y onboarding completado
+
+### Escenario 20.1: Activar bloqueo biométrico
+1. Ir a Perfil → Seguridad → Face ID / Touch ID
+2. Activar toggle "Activar bloqueo"
+3. **Verificar:** Sistema pide autenticación biométrica/passcode antes de activar
+4. **Verificar:** Toggle queda encendido tras autenticación exitosa
+5. **Verificar:** Si se cancela la autenticación, toggle vuelve a apagado
+
+### Escenario 20.2: Configurar tiempo de bloqueo
+1. Con bloqueo activado, verificar que aparece selector de tiempo
+2. Seleccionar cada opción: Inmediatamente, 1 min, 5 min, 15 min
+3. **Verificar:** Checkmark se mueve a la opción seleccionada
+4. **Verificar:** La preferencia persiste al cerrar y reabrir Settings
+
+### Escenario 20.3: Bloqueo al abrir la app
+1. Activar bloqueo con timeout "Inmediatamente"
+2. Cerrar la app completamente (kill)
+3. Abrir la app
+4. **Verificar:** Overlay de bloqueo aparece después del splash
+5. **Verificar:** Se muestra icono correcto (Face ID / Touch ID / Lock)
+6. **Verificar:** Botón "Desbloquear" visible
+7. Autenticarse correctamente
+8. **Verificar:** Overlay desaparece y se ve la app
+
+### Escenario 20.4: Bloqueo al volver del background
+1. Activar bloqueo con timeout "Inmediatamente"
+2. Poner app en background (Home button / swipe up)
+3. Esperar unos segundos
+4. Volver a la app
+5. **Verificar:** Overlay de bloqueo aparece
+6. Autenticarse correctamente
+7. **Verificar:** App desbloqueada
+
+### Escenario 20.5: Timeout de bloqueo respetado
+1. Activar bloqueo con timeout "5 minutos"
+2. Poner app en background
+3. Volver en menos de 5 minutos
+4. **Verificar:** App NO muestra overlay de bloqueo
+5. Poner app en background nuevamente
+6. Esperar más de 5 minutos
+7. Volver a la app
+8. **Verificar:** Overlay de bloqueo aparece
+
+### Escenario 20.6: Fallback a passcode del dispositivo
+1. Con bloqueo activado, intentar desbloquear
+2. Fallar la autenticación biométrica varias veces
+3. **Verificar:** iOS ofrece automáticamente ingresar passcode del dispositivo
+4. Ingresar passcode correcto
+5. **Verificar:** App se desbloquea
+
+### Escenario 20.7: Desactivar bloqueo
+1. Ir a Perfil → Seguridad → Face ID / Touch ID
+2. Desactivar toggle
+3. **Verificar:** Bloqueo desactivado sin pedir autenticación
+4. Cerrar y reabrir app
+5. **Verificar:** No aparece overlay de bloqueo
+
+### Escenario 20.8: Icono dinámico en Settings
+1. En dispositivo con Face ID: verificar icono "faceid" en la fila de seguridad
+2. En dispositivo con Touch ID: verificar icono "touchid"
+3. **Verificar:** El texto del título coincide con el tipo de biométrico
+
+### Escenario 20.9: Localizaciones
+1. Cambiar idioma del dispositivo a cada uno de los 6 idiomas soportados
+2. **Verificar:** Todos los textos de la vista de seguridad biométrica están traducidos
+3. **Verificar:** Textos del overlay de bloqueo están traducidos
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-21*
-*Total escenarios: ~127*
-*Total verificaciones: ~280+*
+*Última actualización: 2026-01-27*
+*Total escenarios: ~292*
+*Total verificaciones: ~530+*

@@ -29,6 +29,15 @@ enum L10n {
         static func title(_ name: String) -> String {
             String(format: NSLocalizedString("panel.title", comment: ""), name)
         }
+        static var fabVoice: String {
+            NSLocalizedString("panel.fabVoice", comment: "")
+        }
+        static var fabImage: String {
+            NSLocalizedString("panel.fabImage", comment: "")
+        }
+        static var fabManual: String {
+            NSLocalizedString("panel.fabManual", comment: "")
+        }
     }
 
     // MARK: - Trend
@@ -327,6 +336,8 @@ enum L10n {
         static var savedAsFavorite: String { NSLocalizedString("action.savedAsFavorite", comment: "") }
         static var savedAsRecurring: String { NSLocalizedString("action.savedAsRecurring", comment: "") }
         static var duplicated: String { NSLocalizedString("action.duplicated", comment: "") }
+        static var select: String { NSLocalizedString("action.select", comment: "") }
+        static var retry: String { NSLocalizedString("action.retry", comment: "") }
     }
 
     // MARK: - Search
@@ -1004,6 +1015,15 @@ enum L10n {
         static var plannedPayments: String {
             NSLocalizedString("settings.plannedPayments", comment: "")
         }
+        static var voiceInputEnabled: String {
+            NSLocalizedString("settings.voiceInputEnabled", comment: "")
+        }
+        static var voiceLanguage: String {
+            NSLocalizedString("settings.voiceLanguage", comment: "")
+        }
+        static var imageInputEnabled: String {
+            NSLocalizedString("settings.imageInputEnabled", comment: "")
+        }
         static var resetData: String { NSLocalizedString("settings.resetData", comment: "") }
         static var version: String { NSLocalizedString("settings.version", comment: "") }
         static var light: String { NSLocalizedString("settings.light", comment: "") }
@@ -1603,6 +1623,369 @@ enum L10n {
         }
         static var availableTags: String {
             NSLocalizedString("bulkEdit.availableTags", comment: "")
+        }
+    }
+
+    // MARK: - Voice Language
+
+    enum VoiceLanguage {
+        static var system: String {
+            NSLocalizedString("voiceLanguage.system", comment: "")
+        }
+        static var spanish: String {
+            NSLocalizedString("voiceLanguage.spanish", comment: "")
+        }
+        static var english: String {
+            NSLocalizedString("voiceLanguage.english", comment: "")
+        }
+    }
+
+    // MARK: - Inbox
+
+    enum Inbox {
+        static var title: String {
+            NSLocalizedString("inbox.title", comment: "")
+        }
+        static var pending: String {
+            NSLocalizedString("inbox.pending", comment: "")
+        }
+        static var archived: String {
+            NSLocalizedString("inbox.archived", comment: "")
+        }
+        static var noDescription: String {
+            NSLocalizedString("inbox.noDescription", comment: "")
+        }
+        static var noAmount: String {
+            NSLocalizedString("inbox.noAmount", comment: "")
+        }
+        static var missingLabel: String {
+            NSLocalizedString("inbox.missingLabel", comment: "")
+        }
+        static var needsAccount: String {
+            NSLocalizedString("inbox.needsAccount", comment: "")
+        }
+        static var needsSubcategory: String {
+            NSLocalizedString("inbox.needsSubcategory", comment: "")
+        }
+        static var approve: String {
+            NSLocalizedString("inbox.approve", comment: "")
+        }
+        static var delete: String {
+            NSLocalizedString("inbox.delete", comment: "")
+        }
+        static var noPending: String {
+            NSLocalizedString("inbox.noPending", comment: "")
+        }
+        static var noPendingDescription: String {
+            NSLocalizedString("inbox.noPendingDescription", comment: "")
+        }
+        static var bulkHint: String {
+            NSLocalizedString("inbox.bulkHint", comment: "")
+        }
+        static var newTag: String {
+            NSLocalizedString("inbox.newTag", comment: "")
+        }
+        static var noArchived: String {
+            NSLocalizedString("inbox.noArchived", comment: "")
+        }
+        static var noArchivedDescription: String {
+            NSLocalizedString("inbox.noArchivedDescription", comment: "")
+        }
+        static func selectedCount(_ count: Int) -> String {
+            String(format: NSLocalizedString("inbox.selectedCount", comment: ""), count)
+        }
+        static var editDraft: String {
+            NSLocalizedString("inbox.editDraft", comment: "")
+        }
+        static var cannotApprove: String {
+            NSLocalizedString("inbox.cannotApprove", comment: "")
+        }
+        static var sourceVoice: String {
+            NSLocalizedString("inbox.sourceVoice", comment: "")
+        }
+        static var sourceEmail: String {
+            NSLocalizedString("inbox.sourceEmail", comment: "")
+        }
+        static var sourceScreenshot: String {
+            NSLocalizedString("inbox.sourceScreenshot", comment: "")
+        }
+        static var sourceScreenshotList: String {
+            NSLocalizedString("inbox.sourceScreenshotList", comment: "")
+        }
+        static var sourceReceipt: String {
+            NSLocalizedString("inbox.sourceReceipt", comment: "")
+        }
+        static var errorNoAccount: String {
+            NSLocalizedString("inbox.errorNoAccount", comment: "")
+        }
+        static var errorNoAmount: String {
+            NSLocalizedString("inbox.errorNoAmount", comment: "")
+        }
+        static var errorNoSubcategory: String {
+            NSLocalizedString("inbox.errorNoSubcategory", comment: "")
+        }
+        static var duplicateWarningTitle: String {
+            NSLocalizedString("inbox.duplicateWarningTitle", comment: "")
+        }
+        static var duplicateWarningMessage: String {
+            NSLocalizedString("inbox.duplicateWarningMessage", comment: "")
+        }
+        static var createAnyway: String {
+            NSLocalizedString("inbox.createAnyway", comment: "")
+        }
+        static func deleteConfirmMessage(_ count: Int) -> String {
+            String(format: NSLocalizedString("inbox.deleteConfirmMessage", comment: ""), count)
+        }
+        static func approveableCount(_ count: Int, _ total: Int) -> String {
+            String(format: NSLocalizedString("inbox.approveableCount", comment: ""), count, total)
+        }
+        static var saveLater: String {
+            NSLocalizedString("inbox.saveLater", comment: "")
+        }
+        static var deleteTitle: String {
+            NSLocalizedString("inbox.deleteTitle", comment: "")
+        }
+        static var deleteMessage: String {
+            NSLocalizedString("inbox.deleteMessage", comment: "")
+        }
+        static var reject: String {
+            NSLocalizedString("inbox.reject", comment: "")
+        }
+        static var returnToPending: String {
+            NSLocalizedString("inbox.returnToPending", comment: "")
+        }
+        static var discardChangesTitle: String {
+            NSLocalizedString("inbox.discardChangesTitle", comment: "")
+        }
+        static var discardChanges: String {
+            NSLocalizedString("inbox.discardChanges", comment: "")
+        }
+        static var keepEditing: String {
+            NSLocalizedString("inbox.keepEditing", comment: "")
+        }
+        static var discardChangesMessage: String {
+            NSLocalizedString("inbox.discardChangesMessage", comment: "")
+        }
+        static var approveSuccess: String {
+            NSLocalizedString("inbox.approveSuccess", comment: "")
+        }
+        static var approveNext: String {
+            NSLocalizedString("inbox.approveNext", comment: "")
+        }
+        static var transactionCreated: String {
+            NSLocalizedString("inbox.transactionCreated", comment: "")
+        }
+        static var transactionsCreated: String {
+            NSLocalizedString("inbox.transactionsCreated", comment: "")
+        }
+        static var viewInRecords: String {
+            NSLocalizedString("inbox.viewInRecords", comment: "")
+        }
+        static var backToInbox: String {
+            NSLocalizedString("inbox.backToInbox", comment: "")
+        }
+    }
+
+    // MARK: - Voice Input
+
+    enum Voice {
+        static var title: String {
+            NSLocalizedString("voice.title", comment: "")
+        }
+        static var recording: String {
+            NSLocalizedString("voice.recording", comment: "")
+        }
+        static var recorded: String {
+            NSLocalizedString("voice.recorded", comment: "")
+        }
+        static var pleaseWait: String {
+            NSLocalizedString("voice.pleaseWait", comment: "")
+        }
+        static var tapToRecord: String {
+            NSLocalizedString("voice.tapToRecord", comment: "")
+        }
+        static var youCanSay: String {
+            NSLocalizedString("voice.youCanSay", comment: "")
+        }
+        static var hintTypeExample: String {
+            NSLocalizedString("voice.hintTypeExample", comment: "")
+        }
+        static var hintAmountExample: String {
+            NSLocalizedString("voice.hintAmountExample", comment: "")
+        }
+        static var hintSubcategoryExample: String {
+            NSLocalizedString("voice.hintSubcategoryExample", comment: "")
+        }
+        static var hintMerchantExample: String {
+            NSLocalizedString("voice.hintMerchantExample", comment: "")
+        }
+        static var hintTagExample: String {
+            NSLocalizedString("voice.hintTagExample", comment: "")
+        }
+        static var hintDateExample: String {
+            NSLocalizedString("voice.hintDateExample", comment: "")
+        }
+        static var exampleLabel: String {
+            NSLocalizedString("voice.exampleLabel", comment: "")
+        }
+        static var example1: String {
+            NSLocalizedString("voice.example1", comment: "")
+        }
+        static var example2: String {
+            NSLocalizedString("voice.example2", comment: "")
+        }
+        static var example3: String {
+            NSLocalizedString("voice.example3", comment: "")
+        }
+        static var processingAudio: String {
+            NSLocalizedString("voice.processingAudio", comment: "")
+        }
+        static var analyzing: String {
+            NSLocalizedString("voice.analyzing", comment: "")
+        }
+        static var parsing: String {
+            NSLocalizedString("voice.parsing", comment: "")
+        }
+        static var saving: String {
+            NSLocalizedString("voice.saving", comment: "")
+        }
+        static var errorNoAmount: String {
+            NSLocalizedString("voice.errorNoAmount", comment: "")
+        }
+        static var errorNoApiKey: String {
+            NSLocalizedString("voice.errorNoApiKey", comment: "")
+        }
+        static var errorNoConnection: String {
+            NSLocalizedString("voice.errorNoConnection", comment: "")
+        }
+        static var errorMicPermission: String {
+            NSLocalizedString("voice.errorMicPermission", comment: "")
+        }
+        static var errorSaveFailed: String {
+            NSLocalizedString("voice.errorSaveFailed", comment: "")
+        }
+        static var openSettings: String {
+            NSLocalizedString("voice.openSettings", comment: "")
+        }
+        static var tryImage: String {
+            NSLocalizedString("voice.tryImage", comment: "")
+        }
+    }
+
+    // MARK: - Image Input
+
+    enum Image {
+        static var title: String {
+            NSLocalizedString("image.title", comment: "")
+        }
+        static var selectTitle: String {
+            NSLocalizedString("image.selectTitle", comment: "")
+        }
+        static var selectSubtitle: String {
+            NSLocalizedString("image.selectSubtitle", comment: "")
+        }
+        static var selectButton: String {
+            NSLocalizedString("image.selectButton", comment: "")
+        }
+        static var processing: String {
+            NSLocalizedString("image.processing", comment: "")
+        }
+        static var processingSubtitle: String {
+            NSLocalizedString("image.processingSubtitle", comment: "")
+        }
+        static var errorTitle: String {
+            NSLocalizedString("image.errorTitle", comment: "")
+        }
+        static var errorLoad: String {
+            NSLocalizedString("image.errorLoad", comment: "")
+        }
+        static var errorNoData: String {
+            NSLocalizedString("image.errorNoData", comment: "")
+        }
+        static var errorUnrecognized: String {
+            NSLocalizedString("image.errorUnrecognized", comment: "")
+        }
+        static var errorGeneric: String {
+            NSLocalizedString("image.errorGeneric", comment: "")
+        }
+        static var errorPhotoPermission: String {
+            NSLocalizedString("image.errorPhotoPermission", comment: "")
+        }
+        static var errorCorrupted: String {
+            NSLocalizedString("image.errorCorrupted", comment: "")
+        }
+        static var errorSaveFailed: String {
+            NSLocalizedString("image.errorSaveFailed", comment: "")
+        }
+        static var errorNoApiKey: String {
+            NSLocalizedString("image.errorNoApiKey", comment: "")
+        }
+        static var errorNoConnection: String {
+            NSLocalizedString("image.errorNoConnection", comment: "")
+        }
+        static var openSettings: String {
+            NSLocalizedString("image.openSettings", comment: "")
+        }
+        static var transactionDetected: String {
+            NSLocalizedString("image.transactionDetected", comment: "")
+        }
+        static var transactionsDetectedCount: String {
+            NSLocalizedString("image.transactionsDetectedCount", comment: "")
+        }
+        static var reviewDraft: String {
+            NSLocalizedString("image.reviewDraft", comment: "")
+        }
+        static var transactionsDetected: String {
+            NSLocalizedString("image.transactionsDetected", comment: "")
+        }
+        static var goToInbox: String {
+            NSLocalizedString("image.goToInbox", comment: "")
+        }
+        static func transactionsDetectedMessage(_ count: Int) -> String {
+            String(format: NSLocalizedString("image.transactionsDetectedMessage", comment: ""), count)
+        }
+        static func analyzingIn(_ seconds: Int) -> String {
+            String(format: NSLocalizedString("image.analyzingIn", comment: ""), seconds)
+        }
+        static func imagesSelected(_ count: Int) -> String {
+            String(format: NSLocalizedString("image.imagesSelected", comment: ""), count)
+        }
+    }
+
+    // MARK: - Biometric
+
+    enum Biometric {
+        static var title: String { NSLocalizedString("biometric.title", comment: "") }
+        static var description: String { NSLocalizedString("biometric.description", comment: "") }
+        static var enableLock: String { NSLocalizedString("biometric.enableLock", comment: "") }
+        static var lockAfter: String { NSLocalizedString("biometric.lockAfter", comment: "") }
+        static var timeoutImmediate: String {
+            NSLocalizedString("biometric.timeout.immediate", comment: "")
+        }
+        static var timeoutOneMinute: String {
+            NSLocalizedString("biometric.timeout.oneMinute", comment: "")
+        }
+        static var timeoutFiveMinutes: String {
+            NSLocalizedString("biometric.timeout.fiveMinutes", comment: "")
+        }
+        static var timeoutFifteenMinutes: String {
+            NSLocalizedString("biometric.timeout.fifteenMinutes", comment: "")
+        }
+        static var authReason: String { NSLocalizedString("biometric.authReason", comment: "") }
+        static var enableReason: String { NSLocalizedString("biometric.enableReason", comment: "") }
+        static var authFailed: String { NSLocalizedString("biometric.authFailed", comment: "") }
+        static var authFailedMessage: String {
+            NSLocalizedString("biometric.authFailedMessage", comment: "")
+        }
+        static var locked: String { NSLocalizedString("biometric.locked", comment: "") }
+        static var unlockPrompt: String { NSLocalizedString("biometric.unlockPrompt", comment: "") }
+        static var unlock: String { NSLocalizedString("biometric.unlock", comment: "") }
+        static var passcode: String { NSLocalizedString("biometric.passcode", comment: "") }
+        static var enableLockHint: String {
+            NSLocalizedString("biometric.enableLockHint", comment: "")
+        }
+        static var lockAfterHint: String {
+            NSLocalizedString("biometric.lockAfterHint", comment: "")
         }
     }
 }

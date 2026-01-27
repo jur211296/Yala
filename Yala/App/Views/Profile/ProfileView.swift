@@ -55,6 +55,7 @@ struct ProfileView: View {
         case budgetsFavorites
         case planned
         case userDataReset
+        case biometricSecurity
         case placeholder(String)
     }
 
@@ -142,6 +143,8 @@ struct ProfileView: View {
                     CurrencySettingsView()
                 case .appIcon:
                     AppIconSettingsView()
+                case .biometricSecurity:
+                    BiometricSecurityView()
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
@@ -322,8 +325,10 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.security) {
             VStack(spacing: 0) {
                 profileRow(
-                    icon: "faceid", title: L10n.Settings.faceId, iconColor: .green,
-                    destination: .placeholder("Face ID"))
+                    icon: BiometricAuthService.shared.biometricType.icon,
+                    title: BiometricAuthService.shared.biometricType.displayName,
+                    iconColor: .green,
+                    destination: .biometricSecurity)
                 SubsectionDivider()
                 profileRow(
                     icon: "lock.shield.fill", title: L10n.Settings.permissions,
