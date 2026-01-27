@@ -1249,3 +1249,27 @@
 "tips.export.detail" = "Descarga tus gastos en CSV o Excel desde Ajustes > Exportar. Ideal para análisis en hoja de cálculo o para tus registros.";
 "tips.faceID.title" = "Protege con Face ID";
 "tips.faceID.detail" = "Activa el bloqueo biométrico en Ajustes > Seguridad. Puedes elegir que se active al salir de la app o después de un tiempo.";
+
+// MARK: - FAQ
+"faq.subtitle" = "Respuestas a las dudas más comunes";
+"faq.section.general" = "General";
+"faq.section.data" = "Tus datos";
+"faq.section.pro" = "Yala Pro";
+"faq.whatIsYala.q" = "¿Qué es Yala?";
+"faq.whatIsYala.a" = "Yala es tu app de finanzas personales. Te ayuda a registrar gastos e ingresos, organizar tu dinero por categorías y etiquetas, crear presupuestos y ver reportes claros de cómo va tu economía.";
+"faq.howToRecord.q" = "¿Cómo registro un gasto?";
+"faq.howToRecord.a" = "Toca el botón + en la pantalla principal. Puedes escribir el monto manualmente, dictar por voz o escanear un recibo con la cámara. Yala completa los detalles por ti.";
+"faq.multiCurrency.q" = "¿Puedo usar varias monedas?";
+"faq.multiCurrency.a" = "Sí. Yala soporta 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP). Configura tu moneda principal y agrega divisas secundarias en Ajustes > Moneda.";
+"faq.changeCategory.q" = "¿Cómo cambio la categoría de un gasto?";
+"faq.changeCategory.a" = "Abre el gasto y toca la categoría para cambiarla. Si quieres cambiar varios a la vez, usa la edición masiva: mantén presionado un registro y selecciona los que quieras modificar.";
+"faq.importData.q" = "¿Puedo importar mis datos?";
+"faq.importData.a" = "Sí. Ve a Ajustes > Importar y sube un archivo CSV o Excel. Yala detecta las columnas automáticamente y te deja asignar cuentas por moneda.";
+"faq.exportData.q" = "¿Cómo exporto mis datos?";
+"faq.exportData.a" = "Ve a Ajustes > Exportar y elige formato CSV o Excel. Puedes descargar todos tus registros para analizarlos en una hoja de cálculo o guardarlos como respaldo.";
+"faq.deleteData.q" = "¿Puedo borrar todos mis datos?";
+"faq.deleteData.a" = "Sí. En Ajustes > Vaciar datos puedes eliminar toda tu información. Esta acción no se puede deshacer, así que te recomendamos exportar un respaldo antes.";
+"faq.whatIsPro.q" = "¿Qué incluye Yala Pro?";
+"faq.whatIsPro.a" = "Yala Pro desbloquea funciones premium como entrada por voz, escaneo de recibos con cámara, temas exclusivos y más. Puedes ver todos los beneficios en Ajustes > Suscripción.";
+"faq.cancelSub.q" = "¿Cómo cancelo mi suscripción?";
+"faq.cancelSub.a" = "Puedes administrar o cancelar tu suscripción en cualquier momento desde Ajustes > Suscripción > Administrar en App Store. Tu acceso Pro continúa hasta el final del periodo pagado.";

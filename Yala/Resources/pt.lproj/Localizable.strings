@@ -1249,3 +1249,27 @@
 "tips.export.detail" = "Baixe seus gastos em CSV ou Excel em Ajustes > Exportar. Ideal para análise em planilha ou para seus registros.";
 "tips.faceID.title" = "Proteja com Face ID";
 "tips.faceID.detail" = "Ative o bloqueio biométrico em Ajustes > Segurança. Você pode escolher ativar ao sair do app ou após um tempo.";
+
+// MARK: - FAQ
+"faq.subtitle" = "Respostas para as dúvidas mais comuns";
+"faq.section.general" = "Geral";
+"faq.section.data" = "Seus dados";
+"faq.section.pro" = "Yala Pro";
+"faq.whatIsYala.q" = "O que é Yala?";
+"faq.whatIsYala.a" = "Yala é seu app de finanças pessoais. Ajuda a registrar gastos e receitas, organizar seu dinheiro por categorias e etiquetas, criar orçamentos e ver relatórios claros da sua economia.";
+"faq.howToRecord.q" = "Como registro um gasto?";
+"faq.howToRecord.a" = "Toque no botão + na tela principal. Você pode digitar o valor, ditar por voz ou escanear um recibo com a câmera. Yala preenche os detalhes por você.";
+"faq.multiCurrency.q" = "Posso usar várias moedas?";
+"faq.multiCurrency.a" = "Sim. Yala suporta 7 moedas (PEN, USD, EUR, MXN, COP, BRL, GBP). Configure sua moeda principal e adicione moedas secundárias em Ajustes > Moeda.";
+"faq.changeCategory.q" = "Como mudo a categoria de um gasto?";
+"faq.changeCategory.a" = "Abra o gasto e toque na categoria para mudar. Para alterar vários de uma vez, use a edição em massa: mantenha pressionado um registro e selecione os que deseja modificar.";
+"faq.importData.q" = "Posso importar meus dados?";
+"faq.importData.a" = "Sim. Vá em Ajustes > Importar e envie um arquivo CSV ou Excel. Yala detecta as colunas automaticamente e permite atribuir contas por moeda.";
+"faq.exportData.q" = "Como exporto meus dados?";
+"faq.exportData.a" = "Vá em Ajustes > Exportar e escolha formato CSV ou Excel. Você pode baixar todos os registros para analisar em planilha ou guardar como backup.";
+"faq.deleteData.q" = "Posso apagar todos os meus dados?";
+"faq.deleteData.a" = "Sim. Em Ajustes > Limpar dados você pode apagar toda sua informação. Essa ação não pode ser desfeita, então recomendamos exportar um backup antes.";
+"faq.whatIsPro.q" = "O que inclui o Yala Pro?";
+"faq.whatIsPro.a" = "Yala Pro desbloqueia funções premium como entrada por voz, escaneamento de recibos com câmera, temas exclusivos e mais. Veja todos os benefícios em Ajustes > Assinatura.";
+"faq.cancelSub.q" = "Como cancelo minha assinatura?";
+"faq.cancelSub.a" = "Você pode gerenciar ou cancelar sua assinatura a qualquer momento em Ajustes > Assinatura > Gerenciar na App Store. Seu acesso Pro continua até o final do período pago.";

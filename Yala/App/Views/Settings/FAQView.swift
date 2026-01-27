@@ -1,0 +1,191 @@
+//
+//  FAQView.swift
+//  Yala
+//
+//  Created by Yala.
+//
+
+import SwiftUI
+
+struct FAQView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var expandedItem: FAQItem?
+
+    var body: some View {
+        ZStack {
+            PanelBackgroundView()
+
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    // Header
+                    VStack(spacing: DS.Spacing.sm) {
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.orange)
+                            .padding(.bottom, DS.Spacing.sm)
+
+                        Text(L10n.Settings.faq)
+                            .font(.title2.bold())
+                            .foregroundStyle(Color.yalaPrimaryText)
+
+                        Text(L10n.FAQ.subtitle)
+                            .font(.body)
+                            .foregroundStyle(Color.yalaSecondaryText)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, DS.Spacing.xxxl)
+
+                    // Sections
+                    faqSection(
+                        title: L10n.FAQ.sectionGeneral,
+                        icon: "info.circle.fill",
+                        items: FAQItem.general
+                    )
+
+                    faqSection(
+                        title: L10n.FAQ.sectionData,
+                        icon: "externaldrive.fill",
+                        items: FAQItem.data
+                    )
+
+                    faqSection(
+                        title: L10n.FAQ.sectionPro,
+                        icon: "crown.fill",
+                        items: FAQItem.pro
+                    )
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.safeBottom)
+            }
+        }
+        .navigationTitle(L10n.Settings.faq)
+        .navigationBarTitleDisplayMode(.inline)
+        .swipeBack()
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                YalaToolbarButton(systemName: "chevron.left") {
+                    dismiss()
+                }
+            }
+        }
+    }
+
+    // MARK: - Section
+
+    @ViewBuilder
+    private func faqSection(title: String, icon: String, items: [FAQItem]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.yalaSecondaryText)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.yalaSecondaryText)
+                    .textCase(.uppercase)
+            }
+            .padding(.horizontal, DS.Spacing.xs)
+
+            VStack(spacing: 0) {
+                ForEach(Array(items.enumerated()), id: \.element) { index, item in
+                    faqRow(item: item)
+
+                    if index < items.count - 1 {
+                        Divider()
+                            .padding(.horizontal, DS.Spacing.lg)
+                    }
+                }
+            }
+            .background(Color.yalaCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - FAQ Row
+
+    @ViewBuilder
+    private func faqRow(item: FAQItem) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                expandedItem = expandedItem == item ? nil : item
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: DS.Spacing.md) {
+                    Text(item.question)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(Color.yalaPrimaryText)
+                        .multilineTextAlignment(.leading)
+
+                    Spacer()
+
+                    Image(systemName: expandedItem == item ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.yalaSecondaryText)
+                }
+
+                if expandedItem == item {
+                    Text(item.answer)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.yalaSecondaryText)
+                        .padding(.top, DS.Spacing.sm)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - FAQ Data Model
+
+enum FAQItem: Hashable {
+    case whatIsYala
+    case howToRecord
+    case multiCurrency
+    case changeCategory
+    case importData
+    case exportData
+    case deleteData
+    case whatIsPro
+    case cancelSub
+
+    var question: String {
+        switch self {
+        case .whatIsYala: return L10n.FAQ.whatIsYalaQ
+        case .howToRecord: return L10n.FAQ.howToRecordQ
+        case .multiCurrency: return L10n.FAQ.multiCurrencyQ
+        case .changeCategory: return L10n.FAQ.changeCategoryQ
+        case .importData: return L10n.FAQ.importDataQ
+        case .exportData: return L10n.FAQ.exportDataQ
+        case .deleteData: return L10n.FAQ.deleteDataQ
+        case .whatIsPro: return L10n.FAQ.whatIsProQ
+        case .cancelSub: return L10n.FAQ.cancelSubQ
+        }
+    }
+
+    var answer: String {
+        switch self {
+        case .whatIsYala: return L10n.FAQ.whatIsYalaA
+        case .howToRecord: return L10n.FAQ.howToRecordA
+        case .multiCurrency: return L10n.FAQ.multiCurrencyA
+        case .changeCategory: return L10n.FAQ.changeCategoryA
+        case .importData: return L10n.FAQ.importDataA
+        case .exportData: return L10n.FAQ.exportDataA
+        case .deleteData: return L10n.FAQ.deleteDataA
+        case .whatIsPro: return L10n.FAQ.whatIsProA
+        case .cancelSub: return L10n.FAQ.cancelSubA
+        }
+    }
+
+    static var general: [FAQItem] { [.whatIsYala, .howToRecord, .multiCurrency, .changeCategory] }
+    static var data: [FAQItem] { [.importData, .exportData, .deleteData] }
+    static var pro: [FAQItem] { [.whatIsPro, .cancelSub] }
+}
