@@ -1100,7 +1100,7 @@
 "voice.saving" = "Saving...";
 "voice.errorNoAmount" = "Could not detect amount. Try again.";
 "voice.errorNoApiKey" = "Could not connect to voice service. Try again later.";
-"voice.errorNoConnection" = "No internet connection. Try image (works offline).";
+"voice.errorNoConnection" = "No internet connection. You need a connection to use this feature.";
 "voice.errorMicPermission" = "Microphone permission denied. Enable it in Settings.";
 "voice.errorSaveFailed" = "Could not save draft. Try again.";
 "voice.openSettings" = "Open Settings";
@@ -1170,6 +1170,8 @@
 "image.errorPhotoPermission" = "Photo permission denied. Enable it in Settings.";
 "image.errorCorrupted" = "Could not process image. Try another image.";
 "image.errorSaveFailed" = "Could not save draft. Try again.";
+"image.errorNoApiKey" = "Could not connect to image service. Try again later.";
+"image.errorNoConnection" = "No internet connection. You need a connection to analyze images.";
 "image.openSettings" = "Open Settings";
 "image.transactionDetected" = "transaction detected";
 "image.transactionsDetectedCount" = "transactions detected";

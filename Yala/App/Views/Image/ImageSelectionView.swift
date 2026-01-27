@@ -36,14 +36,11 @@ struct ImageSelectionView: View {
     /// Callback when draft is saved but not approved (user should go to Inbox)
     var onSavedToInbox: (() -> Void)?
 
-    // Vision API service (online, preferred)
+    // Vision API service (online)
     private let visionService = ImageVisionService.shared
 
-    // Local OCR services (offline fallback)
-    private let ocrService = ImageOCRService()
-    private let classifier = ImageClassifier()
-    private let singleExtractor = ScreenshotSingleExtractor()
-    private let listExtractor = ScreenshotListExtractor()
+    // Network monitor
+    private let networkMonitor = NetworkMonitor.shared
 
     var body: some View {
         NavigationStack {
@@ -104,6 +101,11 @@ struct ImageSelectionView: View {
                     Button(L10n.Common.cancel, role: .cancel) {
                         showError = false
                     }
+                case .noApiKey, .noConnection:
+                    // No action available - feature requires API key and network
+                    Button(L10n.Common.accept) {
+                        showError = false
+                    }
                 case .generic, .noData, .unrecognized:
                     Button(L10n.Common.accept) {
                         showError = false
@@ -127,8 +129,7 @@ struct ImageSelectionView: View {
             .onChange(of: createdDraft) { oldValue, newValue in
                 // Detect when EditSheet is dismissed (draft becomes nil)
                 if oldValue != nil && newValue == nil && !draftWasApproved {
-                    // Draft was saved but not approved - navigate to Inbox
-                    onSavedToInbox?()
+                    // Draft was not approved - just dismiss back to PanelView
                     dismiss()
                 }
                 // Reset flag for next use
@@ -496,6 +497,18 @@ struct ImageSelectionView: View {
     private func processAllImages() async {
         guard !selectedImages.isEmpty else { return }
 
+        // Check for API key first
+        guard APIKeyService.hasOpenAIAPIKey else {
+            handleError(L10n.Image.errorNoApiKey, type: .noApiKey)
+            return
+        }
+
+        // Check for network connection
+        guard networkMonitor.isConnected else {
+            handleError(L10n.Image.errorNoConnection, type: .noConnection)
+            return
+        }
+
         await MainActor.run {
             isProcessing = true
             processingProgress = (0, selectedImages.count)
@@ -537,18 +550,7 @@ struct ImageSelectionView: View {
 
     /// Process a single image and return drafts
     private func processSingleImage(_ uiImage: UIImage) async throws -> [InboxDraft] {
-        // Try Vision API first if available
-        if visionService.isAvailable {
-            do {
-                return try await processImageWithVisionReturning(uiImage)
-            } catch {
-                // Vision failed, fall through to offline processing
-                print("Vision API failed, falling back to OCR: \(error.localizedDescription)")
-            }
-        }
-
-        // Fallback to local OCR processing
-        return try await processImageOfflineReturning(uiImage)
+        return try await processImageWithVisionReturning(uiImage)
     }
 
     /// Process image using GPT-4o Vision API (online) - returns drafts
@@ -573,40 +575,6 @@ struct ImageSelectionView: View {
         }
 
         return drafts
-    }
-
-    /// Process image using local OCR pipeline (offline fallback) - returns drafts
-    private func processImageOfflineReturning(_ uiImage: UIImage) async throws -> [InboxDraft] {
-        // Extract text with OCR
-        let ocrResult = try await ocrService.extractText(from: uiImage)
-
-        // Classify image type
-        let imageType = classifier.classify(ocrResult: ocrResult)
-
-        // Extract data based on type
-        switch imageType {
-        case .screenshotSingle:
-            if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
-                return [draft]
-            }
-            throw ImageError.noDataExtracted
-
-        case .screenshotList:
-            let drafts = listExtractor.extract(from: ocrResult, context: modelContext)
-            if !drafts.isEmpty {
-                return drafts
-            }
-            throw ImageError.noDataExtracted
-
-        case .receiptPhoto:
-            if let draft = singleExtractor.extract(from: ocrResult, context: modelContext) {
-                return [draft]
-            }
-            throw ImageError.noDataExtracted
-
-        case .unknown:
-            throw ImageError.unrecognizedType
-        }
     }
 
     /// Handles navigation after drafts are created
@@ -659,6 +627,8 @@ struct ImageSelectionView: View {
         case loadFailed
         case noData
         case unrecognized
+        case noApiKey
+        case noConnection
         case generic
     }
 

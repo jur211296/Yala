@@ -1100,7 +1100,7 @@
 "voice.saving" = "Sauvegarde...";
 "voice.errorNoAmount" = "Impossible de détecter le montant. Réessayez.";
 "voice.errorNoApiKey" = "Impossible de se connecter au service vocal. Réessayez plus tard.";
-"voice.errorNoConnection" = "Pas de connexion internet. Essayez l'image (fonctionne hors ligne).";
+"voice.errorNoConnection" = "Pas de connexion internet. Une connexion est nécessaire pour cette fonction.";
 "voice.errorMicPermission" = "Autorisation du microphone refusée. Activez-la dans les Réglages.";
 "voice.errorSaveFailed" = "Impossible d'enregistrer le brouillon. Réessayez.";
 "voice.openSettings" = "Ouvrir les Réglages";
@@ -1170,6 +1170,8 @@
 "image.errorPhotoPermission" = "Autorisation photos refusée. Activez-la dans les Réglages.";
 "image.errorCorrupted" = "Impossible de traiter l'image. Essayez une autre image.";
 "image.errorSaveFailed" = "Impossible d'enregistrer le brouillon. Réessayez.";
+"image.errorNoApiKey" = "Impossible de se connecter au service d'image. Réessayez plus tard.";
+"image.errorNoConnection" = "Pas de connexion internet. Une connexion est nécessaire pour analyser les images.";
 "image.openSettings" = "Ouvrir les Réglages";
 "image.transactionDetected" = "transaction détectée";
 "image.transactionsDetectedCount" = "transactions détectées";

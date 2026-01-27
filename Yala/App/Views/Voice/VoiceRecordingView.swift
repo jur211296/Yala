@@ -108,8 +108,7 @@ struct VoiceRecordingView: View {
             .onChange(of: createdDraft) { oldValue, newValue in
                 // Detect when EditSheet is dismissed (draft becomes nil)
                 if oldValue != nil && newValue == nil && !draftWasApproved {
-                    // Draft was saved but not approved - navigate to Inbox
-                    onSavedToInbox?()
+                    // Draft was not approved - just dismiss back to PanelView
                     dismiss()
                 }
                 // Reset flag for next use

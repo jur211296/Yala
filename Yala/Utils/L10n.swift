@@ -1917,6 +1917,12 @@ enum L10n {
         static var errorSaveFailed: String {
             NSLocalizedString("image.errorSaveFailed", comment: "")
         }
+        static var errorNoApiKey: String {
+            NSLocalizedString("image.errorNoApiKey", comment: "")
+        }
+        static var errorNoConnection: String {
+            NSLocalizedString("image.errorNoConnection", comment: "")
+        }
         static var openSettings: String {
             NSLocalizedString("image.openSettings", comment: "")
         }

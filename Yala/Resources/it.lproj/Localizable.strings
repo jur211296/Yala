@@ -1100,7 +1100,7 @@
 "voice.saving" = "Salvataggio...";
 "voice.errorNoAmount" = "Impossibile rilevare l'importo. Riprova.";
 "voice.errorNoApiKey" = "Impossibile connettersi al servizio vocale. Riprova più tardi.";
-"voice.errorNoConnection" = "Nessuna connessione internet. Prova con immagine (funziona offline).";
+"voice.errorNoConnection" = "Nessuna connessione internet. È necessaria una connessione per questa funzione.";
 "voice.errorMicPermission" = "Permesso microfono negato. Abilitalo nelle Impostazioni.";
 "voice.errorSaveFailed" = "Impossibile salvare la bozza. Riprova.";
 "voice.openSettings" = "Apri Impostazioni";
@@ -1170,6 +1170,8 @@
 "image.errorPhotoPermission" = "Permesso foto negato. Abilitalo nelle Impostazioni.";
 "image.errorCorrupted" = "Impossibile elaborare l'immagine. Prova con un'altra immagine.";
 "image.errorSaveFailed" = "Impossibile salvare la bozza. Riprova.";
+"image.errorNoApiKey" = "Impossibile connettersi al servizio immagini. Riprova più tardi.";
+"image.errorNoConnection" = "Nessuna connessione internet. È necessaria una connessione per analizzare le immagini.";
 "image.openSettings" = "Apri Impostazioni";
 "image.transactionDetected" = "transazione rilevata";
 "image.transactionsDetectedCount" = "transazioni rilevate";
