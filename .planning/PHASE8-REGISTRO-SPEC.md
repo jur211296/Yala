@@ -783,11 +783,11 @@ final class IngestMetrics {
 - [ ] Extractor ScreenshotSingle
 - [ ] Extractor ScreenshotList básico
 
-### Subfase 8.5: Merchant Memory
-- [ ] Modelo MerchantMemory
-- [ ] Canonicalización
-- [ ] Actualización al aprobar
-- [ ] Sugerencia de subcategoría
+### Subfase 8.5: Merchant Memory ✅
+- [x] Modelo MerchantMemory
+- [x] Canonicalización
+- [x] Actualización al aprobar
+- [x] Sugerencia de subcategoría
 
 ### Subfase 8.6: Refinamiento
 - [ ] Sistema de confianza completo
