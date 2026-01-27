@@ -22,6 +22,7 @@ Progress: ██████████████ 100% (V1.0 Completa)
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-26] 879db81 polish(inbox): UI refinements for Voice, Image, and Inbox views
 - [2026-01-26] 0061e80 fix(v1.0): resolve multiple UX and export issues
 - [2026-01-25] f38f8fb feat(voice,image): improve draft UX with smarter inference and error handling
 - [2026-01-25] 6e5860a feat(voice): support multiple transactions in single recording
@@ -31,8 +32,6 @@ Progress: ██████████████ 100% (V1.0 Completa)
 - [2026-01-25] fbff205 feat(image): redesign image flow with preview countdown and unified styling
 - [2026-01-25] 70b05ab feat(inbox): add success screens after approving drafts
 - [2026-01-25] 38a2b62 feat(inbox): add expandable rawText in draft edit sheet
-- [2026-01-25] 7b65b05 feat(image): add result screen with transaction count before navigation
-- [2026-01-25] d3e8c17 feat(inbox): navigate to Inbox when closing draft edit sheet
 
 ## Completed in Current Phase
 
@@ -209,15 +208,14 @@ Implementación base completada (d9cfe97). Mejoras pendientes para próxima sesi
 
 ## Session Continuity
 
-Last session: 2026-01-25
-Stopped at: Refinamientos de divisa/subcategoría/error handling (commit f38f8fb)
-Next step: Items UI polish (10.x) en REFINAMIENTO
+Last session: 2026-01-26
+Stopped at: UI Polish 10.1-10.10 completado (commit 879db81)
+Next step: 10.10 usuario dará feedback visual en simulador; o iniciar siguiente feature
 Resume file: N/A
 Resume context:
-- Divisa oculta cuando no hay cuenta seleccionada (drafts y manual)
-- LLM ahora recibe subcategorías del usuario para inferencia inteligente
-- Alert si falla guardado de draft (voz e imagen)
-- REFINAMIENTO-8.3-8.4.md casi completo, quedan items 10.x (UI polish)
+- REFINAMIENTO-8.3-8.4.md completamente terminado (todos los items ✅ o ❌)
+- UI polish: transiciones, haptics, toolbars, colores, touch areas, DS tokens
+- InboxView toolbar ahora sigue patrón de DetailContainerView (X + select icon)
 
 ## V1.1 (Futuro)
 
