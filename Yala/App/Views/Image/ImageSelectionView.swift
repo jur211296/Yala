@@ -13,6 +13,7 @@ import SwiftData
 struct ImageSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
 
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var selectedImages: [UIImage] = []
@@ -137,6 +138,68 @@ struct ImageSelectionView: View {
                     draftWasApproved = false
                 }
             }
+            .onAppear {
+                checkForSharedImage()
+            }
+        }
+    }
+
+    // MARK: - Shared Image Handling
+
+    /// Check for pending shared image from Share Extension
+    private func checkForSharedImage() {
+        guard let imageURL = sessionState.pendingSharedImageURL else { return }
+
+        // Clear the pending state immediately to prevent double processing
+        sessionState.pendingSharedImageURL = nil
+        sessionState.hasPendingSharedImage = false
+
+        // Load the image
+        Task {
+            await loadSharedImage(from: imageURL)
+        }
+    }
+
+    /// Load shared image and start countdown
+    private func loadSharedImage(from url: URL) async {
+        do {
+            let imageData = try Data(contentsOf: url)
+            guard let uiImage = UIImage(data: imageData) else {
+                // Clean up the file
+                SharedContainerService.removePendingImage(at: url)
+                return
+            }
+
+            // Remove the temporary file
+            SharedContainerService.removePendingImage(at: url)
+
+            // Start the countdown flow with the loaded image
+            await MainActor.run {
+                selectedImages = [uiImage]
+                countdownValue = 3
+                isCountingDown = true
+            }
+
+            // Start countdown task
+            countdownTask = Task {
+                for i in (1...3).reversed() {
+                    await MainActor.run {
+                        countdownValue = i
+                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    }
+                    try? await Task.sleep(for: .seconds(1))
+
+                    if Task.isCancelled { return }
+                }
+
+                await MainActor.run {
+                    isCountingDown = false
+                }
+                await processAllImages()
+            }
+        } catch {
+            // Clean up on error
+            SharedContainerService.removePendingImage(at: url)
         }
     }
 

@@ -12,6 +12,8 @@ import SwiftUI
 @main
 struct YalaApp: App {
 
+    @Environment(\.scenePhase) private var scenePhase
+
     /// ModelContainer compartido para toda la app.
     /// Incluye todas las entidades del modelo de datos.
     var sharedModelContainer: ModelContainer = {
@@ -56,6 +58,8 @@ struct YalaApp: App {
                     await loadExchangeRates()
                     // Load subscription status
                     await loadSubscriptionStatus()
+                    // Check for pending shared images on launch
+                    checkForPendingSharedImage()
                 }
                 .onChange(of: sessionState.needsExchangeRateReload) { _, needsReload in
                     if needsReload {
@@ -65,10 +69,18 @@ struct YalaApp: App {
                         }
                     }
                 }
+                .onOpenURL { url in
+                    handleIncomingURL(url)
+                }
         }
         // Adjunta el contenedor de modelos a la escena principal.
         .modelContainer(sharedModelContainer)
         .environment(sessionState)
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                checkForPendingSharedImage()
+            }
+        }
     }
 
     /// Load subscription status and sync to SessionState
@@ -91,5 +103,28 @@ struct YalaApp: App {
 
         // Update any transactions with provisional exchange rates
         await TransactionUpdateService.updateProvisionalTransactions(context: context)
+    }
+
+    /// Handle incoming URL from Share Extension
+    private func handleIncomingURL(_ url: URL) {
+        guard url.scheme == "yala" else { return }
+
+        if url.host == "shared-image" {
+            checkForPendingSharedImage()
+        }
+    }
+
+    /// Check for pending shared images and trigger UI flow
+    private func checkForPendingSharedImage() {
+        let imageURLs = SharedContainerService.pendingImageURLs()
+        guard let firstImageURL = imageURLs.first else {
+            sessionState.hasPendingSharedImage = false
+            sessionState.pendingSharedImageURL = nil
+            return
+        }
+
+        // Set the pending image URL - PanelView will observe and show ImageSelectionView
+        sessionState.pendingSharedImageURL = firstImageURL
+        sessionState.hasPendingSharedImage = true
     }
 }

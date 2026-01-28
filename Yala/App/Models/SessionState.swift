@@ -239,6 +239,20 @@ class SessionState {
     /// Increment this to force views to re-render with new formatting
     var formattingVersion: Int = 0
 
+    // MARK: - Share Extension State
+
+    /// Flag indicating there's a pending shared image to process
+    /// Set by YalaApp when opened via Share Extension URL scheme
+    var hasPendingSharedImage: Bool = false
+
+    /// URL of shared image to process (from Share Extension)
+    /// When set, PanelView will open ImageSelectionView with this image
+    var pendingSharedImageURL: URL?
+
+    /// Flag to trigger Inbox sheet from anywhere in the app
+    /// Set by SharedImageProcessor after creating drafts
+    var shouldShowInbox: Bool = false
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

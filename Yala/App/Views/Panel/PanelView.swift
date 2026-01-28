@@ -293,6 +293,19 @@ struct PanelView: View {
             // Force recalculation when formatting settings change (rounded amounts, etc.)
             recalculateData()
         }
+        .onChange(of: sessionState.shouldShowInbox) { _, shouldShow in
+            // Open Inbox when triggered by Share Extension
+            if shouldShow {
+                showInbox = true
+                sessionState.shouldShowInbox = false
+            }
+        }
+        .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
+            // Open ImageSelectionView when shared image is pending
+            if hasPending && sessionState.pendingSharedImageURL != nil {
+                showImageSelection = true
+            }
+        }
         .onChange(of: viewModel.trendType) {
             // Sync trend type to SessionState when it changes
             viewModel.syncToSessionState(sessionState)
