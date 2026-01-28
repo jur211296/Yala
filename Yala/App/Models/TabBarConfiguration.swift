@@ -69,12 +69,26 @@ struct TabBarConfiguration: Codable, Equatable {
         return true
     }
 
-    /// Intenta desactivar un tab. Retorna false si solo queda 1 activo.
+    /// Intenta desactivar un tab. Retorna false si solo queda 1 activo o si es .panel (siempre requerido).
     mutating func deactivate(_ tab: ConfigurableTab) -> Bool {
+        guard tab != .panel else { return false } // Panel is always required
         guard activeTabs.contains(tab) else { return true }
         guard activeTabs.count > 1 else { return false }
         activeTabs.removeAll { $0 == tab }
         return true
+    }
+
+    /// Valida y corrige la configuración para asegurar que .panel esté siempre primero
+    mutating func ensurePanelFirst() {
+        // Add panel if missing
+        if !activeTabs.contains(.panel) {
+            activeTabs.insert(.panel, at: 0)
+        }
+        // Move panel to first position if not already
+        if let panelIndex = activeTabs.firstIndex(of: .panel), panelIndex != 0 {
+            activeTabs.remove(at: panelIndex)
+            activeTabs.insert(.panel, at: 0)
+        }
     }
 }
 
@@ -97,11 +111,13 @@ extension TabBarConfiguration {
     /// Deserializa desde JSON string
     static func fromJSON(_ string: String) -> TabBarConfiguration {
         guard let data = string.data(using: .utf8),
-            let config = try? JSONDecoder().decode(TabBarConfiguration.self, from: data),
+            var config = try? JSONDecoder().decode(TabBarConfiguration.self, from: data),
             config.isValid
         else {
             return .default
         }
+        // Ensure panel is always first
+        config.ensurePanelFirst()
         return config
     }
 }

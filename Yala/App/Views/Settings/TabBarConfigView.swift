@@ -150,8 +150,13 @@ struct TabBarConfigView: View {
 
             Spacer()
 
-            // Remove button (if can deactivate)
-            if canDeactivate {
+            // Panel is locked (always first, cannot remove)
+            if tab == .panel {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if canDeactivate {
+                // Remove button for other tabs
                 Button {
                     removeTab(tab)
                 } label: {
@@ -253,6 +258,11 @@ struct TabBarConfigView: View {
     // MARK: - Actions
 
     private func moveTab(from source: IndexSet, to destination: Int) {
+        // Prevent moving panel from first position
+        if source.contains(0) { return }
+        // Prevent moving other tabs to first position (before panel)
+        if destination == 0 { return }
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             localConfig.activeTabs.move(fromOffsets: source, toOffset: destination)
         }

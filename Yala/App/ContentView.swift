@@ -154,6 +154,12 @@ struct MainTabView: View {
                     )
                 }
             }
+            .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
+                // Navigate to Panel when shared image is pending (from Share Extension)
+                if hasPending && sessionState.selectedMainTab != .panel {
+                    sessionState.selectedMainTab = .panel
+                }
+            }
         }
     }
 
