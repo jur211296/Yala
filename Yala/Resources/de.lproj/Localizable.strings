@@ -1088,6 +1088,12 @@
 "onboarding.periodTitle" = "Standardzeitraum";
 "onboarding.periodSubtitle" = "Welchen Zeitraum möchten Sie beim Öffnen der App sehen?";
 "onboarding.finish" = "Los geht's";
+"onboarding.categoriesTitle" = "Kategorien zum Starten";
+"onboarding.categoriesSubtitle" = "Wir haben gängige Kategorien vorbereitet, um Ihre Ausgaben von Anfang an zu organisieren.";
+"onboarding.categoriesYes" = "Mit diesen Kategorien starten";
+"onboarding.categoriesNo" = "Von vorne anfangen";
+"onboarding.categoriesRecommended" = "Empfohlen";
+"onboarding.categoriesInfo" = "Jede Kategorie enthält detailliertere Unterkategorien. Sie können diese unter Profil > Kategorien ansehen und anpassen.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";

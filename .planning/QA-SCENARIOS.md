@@ -82,11 +82,12 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ### Vista: OnboardingView
 
-**Flujo completo de 4 pasos:**
+**Flujo completo de 5 pasos:**
 1. Bienvenida + Nombre de usuario
 2. Moneda principal
 3. Monedas secundarias
 4. Periodo por defecto
+5. Categorías iniciales (semilla)
 
 ### Campos por Paso
 
@@ -110,9 +111,14 @@ Ordenado por dependencias de datos para ejecución secuencial.
 |-------|------|-------------|----------|
 | Periodo | Single select | Sí | thisWeek, last7Days, last30Days, thisMonth, lastMonth, thisYear, lastYear, allTime |
 
+**Paso 5 - Categorías iniciales:**
+| Campo | Tipo | Obligatorio | Opciones |
+|-------|------|-------------|----------|
+| Cargar categorías | Single select | Sí | "Empezar con estas categorías" (recomendado), "Empezar desde cero" |
+
 ### Escenarios de Onboarding
 
-#### Escenario 1.1: Completar onboarding mínimo
+#### Escenario 1.1: Completar onboarding mínimo con categorías
 **Precondiciones:** App recién instalada o datos vaciados
 **Pasos:**
 1. Abrir app por primera vez
@@ -124,15 +130,20 @@ Ordenado por dependencias de datos para ejecución secuencial.
 7. No seleccionar monedas secundarias
 8. Tap "Siguiente"
 9. Seleccionar periodo (default: Este mes)
-10. Tap "Finalizar"
+10. Tap "Siguiente"
+11. Verificar grid visual de categorías con animación
+12. Dejar seleccionado "Empezar con estas categorías" (default)
+13. Tap "Empezar"
 **Resultado esperado:**
 - [ ] Nombre guardado como "Usuario"
 - [ ] Moneda PEN configurada
 - [ ] Sin monedas secundarias
 - [ ] Periodo "Este mes" activo
+- [ ] 11 categorías semilla creadas (Alimentación, Compras, Transporte, etc.)
+- [ ] Subcategorías correspondientes creadas
 - [ ] Navega a Panel principal
 
-#### Escenario 1.2: Completar onboarding completo
+#### Escenario 1.2: Completar onboarding sin categorías
 **Precondiciones:** App recién instalada
 **Pasos:**
 1. Ingresar nombre "Juan"
@@ -142,22 +153,28 @@ Ordenado por dependencias de datos para ejecución secuencial.
 5. Seleccionar EUR y GBP como secundarias
 6. Tap "Siguiente"
 7. Seleccionar "Últimos 30 días"
-8. Tap "Finalizar"
+8. Tap "Siguiente"
+9. Seleccionar "Empezar desde cero"
+10. Tap "Empezar"
 **Resultado esperado:**
 - [ ] Nombre "Juan" visible en Panel
 - [ ] Moneda USD configurada
 - [ ] EUR y GBP disponibles como secundarias
 - [ ] Periodo "Últimos 30 días" activo
+- [ ] 0 categorías creadas
+- [ ] Panel muestra empty state para categorías
 
 #### Escenario 1.3: Navegación entre pasos
 **Precondiciones:** En onboarding
 **Pasos:**
-1. Avanzar al paso 3
+1. Avanzar al paso 4
 2. Tap "Atrás"
-3. Verificar que vuelve al paso 2 con datos intactos
-4. Avanzar nuevamente
+3. Verificar que vuelve al paso 3 con datos intactos
+4. Avanzar hasta paso 5
+5. Tap "Atrás"
+6. Verificar que vuelve al paso 4
 **Resultado esperado:**
-- [ ] Navegación bidireccional funciona
+- [ ] Navegación bidireccional funciona en 5 pasos
 - [ ] Datos persisten entre navegaciones
 
 #### Escenario 1.4: Límite de monedas secundarias
@@ -169,6 +186,18 @@ Ordenado por dependencias de datos para ejecución secuencial.
 **Resultado esperado:**
 - [ ] MXN no se puede seleccionar (máximo 2)
 - [ ] Contador muestra "2/2"
+
+#### Escenario 1.5: Animación de categorías
+**Precondiciones:** En paso 4 de onboarding
+**Pasos:**
+1. Tap "Siguiente" para ir al paso 5
+2. Observar la pantalla de categorías
+**Resultado esperado:**
+- [ ] Grid de 11 iconos de categorías aparece
+- [ ] Animación staggered (iconos aparecen uno por uno)
+- [ ] Cada icono muestra color correcto de la categoría
+- [ ] Nombre corto debajo de cada icono
+- [ ] Badge "Recomendado" en opción de cargar categorías
 
 ---
 
@@ -1977,12 +2006,12 @@ Ordenado por dependencias de datos para ejecución secuencial.
 **Pasos:**
 1. Profile → Vaciar datos
 2. Primera confirmación
-3. Segunda confirmación (escribir texto)
+3. Segunda confirmación
 4. Confirmar
 **Resultado esperado:**
 - [ ] Todos los datos eliminados
-- [ ] Categorías semilla restauradas
-- [ ] Vuelve a onboarding
+- [ ] Vuelve a onboarding (5 pasos)
+- [ ] En paso 5 del onboarding puede elegir cargar categorías o no
 
 ---
 

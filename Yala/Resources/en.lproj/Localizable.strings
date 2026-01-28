@@ -1088,6 +1088,12 @@
 "onboarding.periodTitle" = "Default period";
 "onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
 "onboarding.finish" = "Let's Go";
+"onboarding.categoriesTitle" = "Categories to start";
+"onboarding.categoriesSubtitle" = "We've prepared common categories to help you organize your expenses from day one.";
+"onboarding.categoriesYes" = "Start with these categories";
+"onboarding.categoriesNo" = "Start from scratch";
+"onboarding.categoriesRecommended" = "Recommended";
+"onboarding.categoriesInfo" = "Each category includes more detailed subcategories. You can view and customize them in Profile > Categories.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";

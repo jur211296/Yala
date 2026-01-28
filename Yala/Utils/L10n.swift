@@ -1618,6 +1618,24 @@ enum L10n {
         static var finish: String {
             NSLocalizedString("onboarding.finish", comment: "")
         }
+        static var categoriesTitle: String {
+            NSLocalizedString("onboarding.categoriesTitle", comment: "")
+        }
+        static var categoriesSubtitle: String {
+            NSLocalizedString("onboarding.categoriesSubtitle", comment: "")
+        }
+        static var categoriesYes: String {
+            NSLocalizedString("onboarding.categoriesYes", comment: "")
+        }
+        static var categoriesNo: String {
+            NSLocalizedString("onboarding.categoriesNo", comment: "")
+        }
+        static var categoriesRecommended: String {
+            NSLocalizedString("onboarding.categoriesRecommended", comment: "")
+        }
+        static var categoriesInfo: String {
+            NSLocalizedString("onboarding.categoriesInfo", comment: "")
+        }
     }
 
     // MARK: - Bulk Edit

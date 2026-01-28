@@ -133,11 +133,11 @@ struct UserDataResetView: View {
         //    This is critical - without this delay, @Query observers may still be active during deletion
         try? await Task.sleep(for: .milliseconds(500))
 
-        // 4. Perform the actual wipe
+        // 4. Perform the actual wipe (without auto-seeding categories)
         do {
             try DataWipeService.wipeAllUserData(
                 in: modelContext,
-                reseedInitialData: true
+                reseedInitialData: false
             )
 
             // 5. Small delay to let SwiftData settle before removing overlay

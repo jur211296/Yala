@@ -3,22 +3,28 @@
 //  Yala
 //
 //  Simple onboarding flow for first-time users or after data wipe.
-//  Collects: user name, preferred currency, secondary currencies, default period.
+//  Collects: user name, preferred currency, secondary currencies, default period, seed categories.
 //
 
+import SwiftData
 import SwiftUI
 
 struct OnboardingView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
     @State private var selectedCurrency: CurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()
     @State private var selectedSecondaryCurrencies: Set<CurrencyCode> = []
     @State private var selectedPeriod: DetailPeriod = .thisMonth
+    @State private var loadSeedCategories: Bool = true
 
     // Current step in the onboarding flow
     @State private var currentStep: Int = 0
+
+    // Animation state for category grid
+    @State private var showCategoryIcons: Bool = false
 
     // Callback when onboarding completes
     var onComplete: () -> Void
@@ -42,6 +48,7 @@ struct OnboardingView: View {
                 currencyStep.tag(1)
                 secondaryCurrenciesStep.tag(2)
                 periodStep.tag(3)
+                categoriesStep.tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentStep)
@@ -60,7 +67,7 @@ struct OnboardingView: View {
 
     private var progressIndicator: some View {
         HStack(spacing: DS.Spacing.sm) {
-            ForEach(0..<4, id: \.self) { step in
+            ForEach(0..<5, id: \.self) { step in
                 Capsule()
                     .fill(step <= currentStep ? Color.electricIndigo : Color.yalaSecondaryText.opacity(0.2))
                     .frame(width: step == currentStep ? 24 : 8, height: 8)
@@ -236,6 +243,156 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Step 5: Seed Categories
+
+    private var categoriesStep: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            VStack(spacing: DS.Spacing.md) {
+                Image(systemName: "square.grid.2x2.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color.electricIndigo)
+
+                Text(L10n.Onboarding.categoriesTitle)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+
+                Text(L10n.Onboarding.categoriesSubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+            }
+            .padding(.top, DS.Spacing.md)
+
+            // Visual grid of category icons
+            categoryIconsGrid
+                .padding(.horizontal, DS.Spacing.lg)
+
+            // Info text about subcategories
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(L10n.Onboarding.categoriesInfo)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+
+            Spacer()
+
+            // Selection buttons
+            VStack(spacing: DS.Spacing.sm) {
+                Button {
+                    loadSeedCategories = true
+                } label: {
+                    HStack {
+                        Image(systemName: loadSeedCategories ? "checkmark.circle.fill" : "circle")
+                            .font(.title3)
+                            .foregroundStyle(loadSeedCategories ? Color.electricIndigo : .secondary)
+
+                        Text(L10n.Onboarding.categoriesYes)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        Text(L10n.Onboarding.categoriesRecommended)
+                            .font(.caption)
+                            .foregroundStyle(Color.electricIndigo)
+                    }
+                    .padding(DS.Spacing.md)
+                    .background(loadSeedCategories ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.md)
+                            .stroke(loadSeedCategories ? Color.electricIndigo.opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    loadSeedCategories = false
+                } label: {
+                    HStack {
+                        Image(systemName: loadSeedCategories ? "circle" : "checkmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(loadSeedCategories ? .secondary : Color.electricIndigo)
+
+                        Text(L10n.Onboarding.categoriesNo)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+                    }
+                    .padding(DS.Spacing.md)
+                    .background(loadSeedCategories ? Color.yalaCard : Color.electricIndigo.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.md)
+                            .stroke(loadSeedCategories ? Color.white.opacity(0.1) : Color.electricIndigo.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.md)
+        }
+    }
+
+    // MARK: - Category Icons Grid
+
+    /// Preview grid showing seed category icons with staggered animation
+    private var categoryIconsGrid: some View {
+        let seedCategories = SeedCategoryPreview.categories
+        let columns = [
+            GridItem(.flexible()),
+            GridItem(.flexible()),
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ]
+
+        return LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
+            ForEach(Array(seedCategories.enumerated()), id: \.offset) { index, category in
+                VStack(spacing: DS.Spacing.xs) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: category.colorHex).opacity(0.2))
+                            .frame(width: 52, height: 52)
+
+                        Image(systemName: category.iconName)
+                            .font(.system(size: 22))
+                            .foregroundStyle(Color(hex: category.colorHex))
+                    }
+
+                    Text(category.name)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .opacity(showCategoryIcons ? 1 : 0)
+                .scaleEffect(showCategoryIcons ? 1 : 0.5)
+                .animation(
+                    .spring(response: 0.4, dampingFraction: 0.7)
+                        .delay(Double(index) * 0.05),
+                    value: showCategoryIcons
+                )
+            }
+        }
+    }
+
+    private func triggerCategoryAnimation() {
+        showCategoryIcons = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation {
+                showCategoryIcons = true
+            }
+        }
+    }
+
     // MARK: - Reusable Components
 
     private func currencyRow(
@@ -337,15 +494,19 @@ struct OnboardingView: View {
                 // Dismiss keyboard (especially important on step 1)
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-                if currentStep < 3 {
+                if currentStep < 4 {
                     withAnimation {
                         currentStep += 1
+                    }
+                    // Trigger category icons animation when entering step 4
+                    if currentStep == 4 {
+                        triggerCategoryAnimation()
                     }
                 } else {
                     completeOnboarding()
                 }
             } label: {
-                Text(currentStep < 3 ? L10n.Action.next : L10n.Onboarding.finish)
+                Text(currentStep < 4 ? L10n.Action.next : L10n.Onboarding.finish)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -408,9 +569,40 @@ struct OnboardingView: View {
         // Apply period to SessionState immediately (since it was created before onboarding)
         SessionState.shared.selectedPeriod = selectedPeriod
 
+        // Seed categories if user chose to
+        if loadSeedCategories {
+            seedCategoriesIfNeeded(in: modelContext)
+        }
+
         // Notify completion
         onComplete()
     }
+}
+
+// MARK: - Seed Category Preview
+
+/// Provides a static preview of seed categories for the onboarding UI
+/// This avoids importing the full CategorySeed definitions
+enum SeedCategoryPreview {
+    struct CategoryInfo {
+        let name: String
+        let colorHex: String
+        let iconName: String
+    }
+
+    static let categories: [CategoryInfo] = [
+        CategoryInfo(name: "Alimentación", colorHex: "#22C55E", iconName: "cart.fill"),
+        CategoryInfo(name: "Compras", colorHex: "#F59E0B", iconName: "bag.fill"),
+        CategoryInfo(name: "Transporte", colorHex: "#0EA5E9", iconName: "car.fill"),
+        CategoryInfo(name: "Finanzas", colorHex: "#6366F1", iconName: "banknote.fill"),
+        CategoryInfo(name: "Hogar", colorHex: "#475569", iconName: "house.fill"),
+        CategoryInfo(name: "Entretenimiento", colorHex: "#FF0080", iconName: "sparkles"),
+        CategoryInfo(name: "Personal", colorHex: "#A855F7", iconName: "person.fill"),
+        CategoryInfo(name: "Mascotas", colorHex: "#84CC16", iconName: "pawprint.fill"),
+        CategoryInfo(name: "Vehículo", colorHex: "#64748B", iconName: "car.side.fill"),
+        CategoryInfo(name: "Ingresos", colorHex: "#14B8A6", iconName: "arrow.down.circle.fill"),
+        CategoryInfo(name: "Otros", colorHex: "#64748B", iconName: "ellipsis.circle.fill"),
+    ]
 }
 
 #Preview {

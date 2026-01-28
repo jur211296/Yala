@@ -1088,6 +1088,12 @@
 "onboarding.periodTitle" = "Periodo predefinito";
 "onboarding.periodSubtitle" = "Quale intervallo di tempo preferisci vedere all'apertura dell'app?";
 "onboarding.finish" = "Inizia";
+"onboarding.categoriesTitle" = "Categorie per iniziare";
+"onboarding.categoriesSubtitle" = "Abbiamo preparato categorie comuni per aiutarti a organizzare le tue spese fin dal primo giorno.";
+"onboarding.categoriesYes" = "Inizia con queste categorie";
+"onboarding.categoriesNo" = "Inizia da zero";
+"onboarding.categoriesRecommended" = "Consigliato";
+"onboarding.categoriesInfo" = "Ogni categoria include sottocategorie più dettagliate. Puoi visualizzarle e personalizzarle in Profilo > Categorie.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";

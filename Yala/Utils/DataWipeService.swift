@@ -19,9 +19,10 @@ final class DataWipeService {
     // 1. Elimina datos de todos los modelos relevantes.
     // 2. Resetea todas las preferencias de usuario a valores por defecto.
     // 3. Opcionalmente vuelve a lanzar la semilla inicial (categorías, etc.).
+    // Note: reseedInitialData defaults to false - the UI should ask the user
     static func wipeAllUserData(
         in context: ModelContext,
-        reseedInitialData: Bool = true
+        reseedInitialData: Bool = false
     ) throws {
         // ============================================================
         // PASO 1: Borrar todos los datos de SwiftData
