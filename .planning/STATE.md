@@ -23,6 +23,9 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-28] 616ec4d feat(tabs): auto-navigate to Panel on share and lock Panel as first tab
+- [2026-01-28] e960048 fix(planning): currency display and sheet dismiss improvements
+- [2026-01-28] 35de0f7 feat(inbox): auto-create drafts from due scheduled payments
 - [2026-01-28] 12f7830 feat(share): integrate Share Extension with main app UI flow (10.4)
 - [2026-01-28] ce2a3b5 fix: calculate amountInPreferredCurrency in Inbox approval flows
 - [2026-01-28] a66e009 fix: use endOfToday in DateInterval to include same-day transactions
@@ -30,9 +33,6 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 - [2026-01-28] e5c3dfd feat(share): implement Share Extension to receive images (10.4)
 - [2026-01-28] bc1eb61 chore: configure App Group and migrate bundle IDs to yala (10.4)
 - [2026-01-27] 705fc98 docs(qa): add 10 QA scenarios for Phase 10 fixes (tildes, FAB image, permissions)
-- [2026-01-27] 12e054f feat(settings): request mic and photo permissions when enabling input toggles (10.3)
-- [2026-01-27] 669b537 fix(input): accent-insensitive tag matching and image option in Statistics FAB (10.1-10.2)
-- [2026-01-27] f932606 docs(state): close Phase 9 and mark V1.0 as complete
 
 ## Completed in Current Phase
 
@@ -51,6 +51,8 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 - **Soporte XLSX completo** - Fix importación de fechas Excel (números seriales a ISO), XLSXWriter para crear archivos Excel usando ZIPFoundation, descarga de plantilla en CSV o XLSX, exportación de datos en CSV o XLSX, localizaciones actualizadas en 6 idiomas
 - **Subfase 8.4: Imágenes MVP** - Toggle imagen input en Settings, opción FAB imagen (naranja), ImageSelectionView con PhotosPicker, Vision OCR (VNRecognizeTextRequest), clasificador heurístico (screenshotSingle/List/receiptPhoto), AmountParser ($€£, europeo/americano, negativos), DateParser (relativas/absolutas), ScreenshotSingleExtractor (alertas bancarias), RowClusterer + ScreenshotListExtractor (listas de transacciones), navegación automática a Inbox, localizaciones en 6 idiomas, 40 escenarios QA (Sección 18)
 - **Subfase 8.5: Merchant Memory** - MerchantMemory model (SwiftData), MerchantCanonicalizer (normalización, strip prefijos pago, Levenshtein fuzzy match), MerchantMemoryService (suggest/updateMemory/applyDecay), política escalonada (<3=nada, >=3=sugerir, >=5=autoasignar), integrado en aprobación (detección correcciones), voice fallback, image fallback, DataWipeService, 13 escenarios QA (Sección 19)
+- **Pagos planificados → Inbox (10.5)** - ScheduledPaymentDraftService crea drafts automáticamente para pagos vencidos, modal personalizado de notificación, detección de duplicados por UUID, badge "Pagado" en lista de pagos, actualización de lastPaidDate y avance de nextDueDate al aprobar, nuevos DraftSourceTypes (scheduledPayment, subscription), localizaciones en 6 idiomas
+- **Mejoras UX divisas y sheets** - Divisa solo después de seleccionar cuenta en pago planificado, cierre automático de DetailView al eliminar, divisa de presupuesto sigue cuenta única, cálculo de gastos usa divisa correcta según número de cuentas
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -181,15 +183,15 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Share Sheet completo (10.4) + fixes de DateInterval y amountInPreferredCurrency
-Next step: Continuar con items pendientes de Fase 10 (modo solo gastos, notificaciones, etc.)
+Stopped at: Share Extension navega automáticamente a Panel, Panel bloqueado como primer tab
+Next step: Continuar con items pendientes de Fase 10 (modo solo gastos, notificaciones, onboarding seed)
 Resume file: N/A
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
-- V1.1: Fase 8 done, Fase 10 en progreso (6 items done de 11)
-- Share Sheet completo: App Group + Extension + URL scheme + UI flow integrado
-- Fixes aplicados: DateInterval usa endOfToday, amountInPreferredCurrency en Inbox approval
-- Pendiente: modo solo gastos, notificaciones, onboarding seed, pagos→bandeja
+- V1.1: Fase 8 done, Fase 10 en progreso
+- Share Extension ahora navega a Panel desde cualquier tab
+- Panel bloqueado: siempre primero, no removible, no reordenable
+- Pendiente: modo solo gastos, notificaciones, onboarding seed
 
 ## V1.1 (Futuro)
 
