@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC32EC3D721002AC31C /* CoreXLSX */; };
 		96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC72EC3D721002AC31C /* OpenAI */; };
+		CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CFADC3B82F2A42810040D198 /* YalaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,13 +27,35 @@
 			remoteGlobalIDString = 96CFFF922EC3CF06002AC31C;
 			remoteInfo = Yala;
 		};
+		CFADC3C02F2A42810040D198 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96CFFF8B2EC3CF06002AC31C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFADC3B72F2A42810040D198;
+			remoteInfo = YalaShare;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CFADC3C32F2A42810040D198 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		96CFFF932EC3CF06002AC31C /* Yala.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yala.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96CFFFA42EC3CF09002AC31C /* YalaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YalaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YalaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		CFADC3B82F2A42810040D198 /* YalaShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YalaShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -42,6 +65,13 @@
 				Resources/Info.plist,
 			);
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
+		};
+		CFADC3C92F2A42810040D198 /* Exceptions for "YalaShare" folder in "YalaShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CFADC3B72F2A42810040D198 /* YalaShare */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -62,6 +92,14 @@
 		96CFFFB12EC3CF09002AC31C /* YalaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = YalaUITests;
+			sourceTree = "<group>";
+		};
+		CFADC3B92F2A42810040D198 /* YalaShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CFADC3C92F2A42810040D198 /* Exceptions for "YalaShare" folder in "YalaShare" target */,
+			);
+			path = YalaShare;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -90,6 +128,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CFADC3B52F2A42810040D198 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -100,6 +145,7 @@
 				96CFFF952EC3CF06002AC31C /* Yala */,
 				96CFFFA72EC3CF09002AC31C /* YalaTests */,
 				96CFFFB12EC3CF09002AC31C /* YalaUITests */,
+				CFADC3B92F2A42810040D198 /* YalaShare */,
 				96CFFF942EC3CF06002AC31C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,6 +156,7 @@
 				96CFFF932EC3CF06002AC31C /* Yala.app */,
 				96CFFFA42EC3CF09002AC31C /* YalaTests.xctest */,
 				96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */,
+				CFADC3B82F2A42810040D198 /* YalaShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -124,10 +171,12 @@
 				96CFFF8F2EC3CF06002AC31C /* Sources */,
 				96CFFF902EC3CF06002AC31C /* Frameworks */,
 				96CFFF912EC3CF06002AC31C /* Resources */,
+				CFADC3C32F2A42810040D198 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CFADC3C12F2A42810040D198 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				96CFFF952EC3CF06002AC31C /* Yala */,
@@ -187,6 +236,28 @@
 			productReference = 96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		CFADC3B72F2A42810040D198 /* YalaShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFADC3C82F2A42810040D198 /* Build configuration list for PBXNativeTarget "YalaShare" */;
+			buildPhases = (
+				CFADC3B42F2A42810040D198 /* Sources */,
+				CFADC3B52F2A42810040D198 /* Frameworks */,
+				CFADC3B62F2A42810040D198 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CFADC3B92F2A42810040D198 /* YalaShare */,
+			);
+			name = YalaShare;
+			packageProductDependencies = (
+			);
+			productName = YalaShare;
+			productReference = CFADC3B82F2A42810040D198 /* YalaShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -194,7 +265,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2610;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					96CFFF922EC3CF06002AC31C = {
@@ -207,6 +278,9 @@
 					96CFFFAD2EC3CF09002AC31C = {
 						CreatedOnToolsVersion = 26.1;
 						TestTargetID = 96CFFF922EC3CF06002AC31C;
+					};
+					CFADC3B72F2A42810040D198 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -236,6 +310,7 @@
 				96CFFF922EC3CF06002AC31C /* Yala */,
 				96CFFFA32EC3CF09002AC31C /* YalaTests */,
 				96CFFFAD2EC3CF09002AC31C /* YalaUITests */,
+				CFADC3B72F2A42810040D198 /* YalaShare */,
 			);
 		};
 /* End PBXProject section */
@@ -256,6 +331,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		96CFFFAC2EC3CF09002AC31C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFADC3B62F2A42810040D198 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -286,6 +368,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CFADC3B42F2A42810040D198 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -298,6 +387,11 @@
 			isa = PBXTargetDependency;
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
 			targetProxy = 96CFFFAF2EC3CF09002AC31C /* PBXContainerItemProxy */;
+		};
+		CFADC3C12F2A42810040D198 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFADC3B72F2A42810040D198 /* YalaShare */;
+			targetProxy = CFADC3C02F2A42810040D198 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -890,6 +984,126 @@
 			};
 			name = "Release-Dev";
 		};
+		CFADC3C42F2A42810040D198 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CFADC3C52F2A42810040D198 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CFADC3C62F2A42810040D198 /* Debug-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-Dev";
+		};
+		CFADC3C72F2A42810040D198 /* Release-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-Dev";
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -933,6 +1147,17 @@
 				96CFFFC12EC3CF09002AC31C /* Release */,
 				96CFFFDE2EC3CF09002AC31C /* Debug-Dev */,
 				96CFFFDF2EC3CF09002AC31C /* Release-Dev */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFADC3C82F2A42810040D198 /* Build configuration list for PBXNativeTarget "YalaShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFADC3C42F2A42810040D198 /* Debug */,
+				CFADC3C52F2A42810040D198 /* Release */,
+				CFADC3C62F2A42810040D198 /* Debug-Dev */,
+				CFADC3C72F2A42810040D198 /* Release-Dev */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
