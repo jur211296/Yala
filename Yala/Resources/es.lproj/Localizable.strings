@@ -1286,3 +1286,47 @@
 "faq.whatIsPro.a" = "Yala Pro desbloquea funciones premium como entrada por voz, escaneo de recibos con cámara, temas exclusivos y más. Puedes ver todos los beneficios en Ajustes > Suscripción.";
 "faq.cancelSub.q" = "¿Cómo cancelo mi suscripción?";
 "faq.cancelSub.a" = "Puedes administrar o cancelar tu suscripción en cualquier momento desde Ajustes > Suscripción > Administrar en App Store. Tu acceso Pro continúa hasta el final del periodo pagado.";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "Registro rápido";
+"shortcut.quickExpense.description" = "Crea un nuevo registro en Yala con monto, cuenta, categoría y etiqueta.";
+"shortcut.quickExpense.shortTitle" = "Registro rápido";
+
+// Parameters
+"shortcut.param.type" = "Tipo";
+"shortcut.param.type.description" = "Gasto o ingreso";
+"shortcut.param.amount" = "Monto";
+"shortcut.param.amount.description" = "El monto a registrar";
+"shortcut.param.note" = "Descripción";
+"shortcut.param.note.description" = "Una nota o descripción";
+"shortcut.param.account" = "Cuenta";
+"shortcut.param.account.description" = "La cuenta donde registrar";
+"shortcut.param.subcategory" = "Subcategoría";
+"shortcut.param.subcategory.description" = "La subcategoría del registro";
+"shortcut.param.tag" = "Etiqueta";
+"shortcut.param.tag.description" = "Una etiqueta opcional";
+
+// Dialogs
+"shortcut.dialog.askType" = "¿Gasto o ingreso?";
+"shortcut.dialog.askAmount" = "¿Cuánto?";
+"shortcut.dialog.askNote" = "Descripción (opcional)";
+"shortcut.dialog.askAccount" = "¿En qué cuenta?";
+"shortcut.dialog.askSubcategory" = "¿Qué categoría?";
+"shortcut.dialog.askTag" = "Etiqueta (opcional)";
+
+// Entities
+"shortcut.entity.transactionType" = "Tipo";
+"shortcut.type.expense" = "Gasto";
+"shortcut.type.income" = "Ingreso";
+"shortcut.entity.account" = "Cuenta";
+"shortcut.entity.subcategory" = "Subcategoría";
+
+// Errors
+"shortcut.error.database" = "No se pudo acceder a la base de datos";
+"shortcut.error.noAccount" = "No hay cuentas disponibles. Crea una cuenta primero.";
+"shortcut.error.noSubcategory" = "No se encontró la subcategoría";
+"shortcut.error.save" = "No se pudo guardar el registro";
+
+// Results
+"shortcut.result.noTag" = "Sin etiqueta";
+"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Registrado en %@: %@ - %@ - %@ - %@";

@@ -1286,3 +1286,47 @@
 "faq.whatIsPro.a" = "Yala Pro schaltet Premium-Funktionen frei wie Spracheingabe, Belegscanning mit Kamera, exklusive Themes und mehr. Alle Vorteile findest du unter Einstellungen > Abonnement.";
 "faq.cancelSub.q" = "Wie kündige ich mein Abonnement?";
 "faq.cancelSub.a" = "Du kannst dein Abonnement jederzeit unter Einstellungen > Abonnement > Im App Store verwalten kündigen. Dein Pro-Zugang bleibt bis zum Ende des bezahlten Zeitraums bestehen.";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "Schneller Eintrag";
+"shortcut.quickExpense.description" = "Erstelle einen neuen Eintrag in Yala mit Betrag, Konto, Kategorie und Tag.";
+"shortcut.quickExpense.shortTitle" = "Schneller Eintrag";
+
+// Parameters
+"shortcut.param.type" = "Typ";
+"shortcut.param.type.description" = "Ausgabe oder Einnahme";
+"shortcut.param.amount" = "Betrag";
+"shortcut.param.amount.description" = "Der zu erfassende Betrag";
+"shortcut.param.note" = "Beschreibung";
+"shortcut.param.note.description" = "Eine Notiz oder Beschreibung";
+"shortcut.param.account" = "Konto";
+"shortcut.param.account.description" = "Das Konto zum Erfassen";
+"shortcut.param.subcategory" = "Unterkategorie";
+"shortcut.param.subcategory.description" = "Die Unterkategorie";
+"shortcut.param.tag" = "Tag";
+"shortcut.param.tag.description" = "Ein optionales Tag";
+
+// Dialogs
+"shortcut.dialog.askType" = "Ausgabe oder Einnahme?";
+"shortcut.dialog.askAmount" = "Wie viel?";
+"shortcut.dialog.askNote" = "Beschreibung (optional)";
+"shortcut.dialog.askAccount" = "Welches Konto?";
+"shortcut.dialog.askSubcategory" = "Welche Kategorie?";
+"shortcut.dialog.askTag" = "Tag (optional)";
+
+// Entities
+"shortcut.entity.transactionType" = "Typ";
+"shortcut.type.expense" = "Ausgabe";
+"shortcut.type.income" = "Einnahme";
+"shortcut.entity.account" = "Konto";
+"shortcut.entity.subcategory" = "Unterkategorie";
+
+// Errors
+"shortcut.error.database" = "Datenbankzugriff fehlgeschlagen";
+"shortcut.error.noAccount" = "Keine Konten verfügbar. Erstelle zuerst ein Konto.";
+"shortcut.error.noSubcategory" = "Unterkategorie nicht gefunden";
+"shortcut.error.save" = "Eintrag konnte nicht gespeichert werden";
+
+// Results
+"shortcut.result.noTag" = "Kein Tag";
+"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "In %@ erfasst: %@ - %@ - %@ - %@";

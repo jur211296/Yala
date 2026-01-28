@@ -1286,3 +1286,47 @@
 "faq.whatIsPro.a" = "Yala Pro débloque des fonctions premium comme la saisie vocale, le scan de reçus, des thèmes exclusifs et plus. Consultez tous les avantages dans Réglages > Abonnement.";
 "faq.cancelSub.q" = "Comment annuler mon abonnement ?";
 "faq.cancelSub.a" = "Vous pouvez gérer ou annuler votre abonnement à tout moment depuis Réglages > Abonnement > Gérer dans l'App Store. Votre accès Pro continue jusqu'à la fin de la période payée.";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "Entrée rapide";
+"shortcut.quickExpense.description" = "Créez une nouvelle entrée dans Yala avec montant, compte, catégorie et tag.";
+"shortcut.quickExpense.shortTitle" = "Entrée rapide";
+
+// Parameters
+"shortcut.param.type" = "Type";
+"shortcut.param.type.description" = "Dépense ou revenu";
+"shortcut.param.amount" = "Montant";
+"shortcut.param.amount.description" = "Le montant à enregistrer";
+"shortcut.param.note" = "Description";
+"shortcut.param.note.description" = "Une note ou description";
+"shortcut.param.account" = "Compte";
+"shortcut.param.account.description" = "Le compte pour enregistrer";
+"shortcut.param.subcategory" = "Sous-catégorie";
+"shortcut.param.subcategory.description" = "La sous-catégorie";
+"shortcut.param.tag" = "Tag";
+"shortcut.param.tag.description" = "Un tag optionnel";
+
+// Dialogs
+"shortcut.dialog.askType" = "Dépense ou revenu ?";
+"shortcut.dialog.askAmount" = "Combien ?";
+"shortcut.dialog.askNote" = "Description (optionnel)";
+"shortcut.dialog.askAccount" = "Quel compte ?";
+"shortcut.dialog.askSubcategory" = "Quelle catégorie ?";
+"shortcut.dialog.askTag" = "Tag (optionnel)";
+
+// Entities
+"shortcut.entity.transactionType" = "Type";
+"shortcut.type.expense" = "Dépense";
+"shortcut.type.income" = "Revenu";
+"shortcut.entity.account" = "Compte";
+"shortcut.entity.subcategory" = "Sous-catégorie";
+
+// Errors
+"shortcut.error.database" = "Impossible d'accéder à la base de données";
+"shortcut.error.noAccount" = "Aucun compte disponible. Créez d'abord un compte.";
+"shortcut.error.noSubcategory" = "Sous-catégorie non trouvée";
+"shortcut.error.save" = "Impossible d'enregistrer l'entrée";
+
+// Results
+"shortcut.result.noTag" = "Sans tag";
+"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Enregistré dans %@ : %@ - %@ - %@ - %@";

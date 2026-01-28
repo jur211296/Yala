@@ -2765,7 +2765,76 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 
 ---
 
+## Sección 22: Atajos de iOS (App Intents)
+
+### Escenario 22.1: Shortcut visible en app Atajos
+1. Abrir la app Atajos de iOS
+2. Ir a pestaña "Galería" o buscar "Yala"
+3. **Verificar:** Aparece el atajo "Gasto rápido" (o "Quick expense" en inglés)
+4. **Verificar:** Icono del atajo muestra símbolo de minus en círculo
+
+### Escenario 22.2: Flujo completo de gasto rápido
+1. En app Atajos, crear nuevo atajo
+2. Buscar "Yala" y seleccionar "Registrar gasto rápido"
+3. Ejecutar el atajo
+4. **Verificar:** Pregunta "¿Cuánto gastaste?" - ingresar 50
+5. **Verificar:** Pregunta "¿Qué compraste?" - ingresar "Starbucks"
+6. **Verificar:** Pregunta "¿En qué cuenta?" - seleccionar cuenta
+7. **Verificar:** Pregunta "¿Qué tipo de gasto?" - seleccionar subcategoría
+8. **Verificar:** Pregunta "¿Quieres añadir una etiqueta?" - seleccionar o saltar
+9. **Verificar:** Mensaje final muestra: "Gasto registrado en [cuenta]: [divisa] 50.00 - Starbucks - [subcategoría] - [etiqueta o Sin etiqueta]"
+10. Abrir Yala → Records
+11. **Verificar:** Transacción existe con todos los datos correctos
+
+### Escenario 22.3: Atajo con etiqueta
+1. Crear atajo y completar flujo hasta etiqueta
+2. Seleccionar una etiqueta existente
+3. **Verificar:** Mensaje final incluye nombre de la etiqueta
+4. **Verificar:** Transacción en Yala tiene la etiqueta asignada
+
+### Escenario 22.4: Atajo sin etiqueta
+1. Crear atajo y completar flujo
+2. En paso de etiqueta, no seleccionar ninguna (skip)
+3. **Verificar:** Mensaje final muestra "Sin etiqueta"
+4. **Verificar:** Transacción en Yala no tiene etiquetas
+
+### Escenario 22.5: Descripción vacía
+1. En paso "¿Qué compraste?" dejar vacío
+2. Completar resto del flujo
+3. **Verificar:** Mensaje final muestra "-" en lugar de descripción
+4. **Verificar:** Transacción en Yala tiene nota vacía
+
+### Escenario 22.6: Error si no hay cuentas
+1. Eliminar o archivar todas las cuentas
+2. Ejecutar atajo de gasto rápido
+3. **Verificar:** Mensaje de error indica que no hay cuentas disponibles
+
+### Escenario 22.7: Frases Siri español
+1. Activar Siri
+2. Decir: "Registra un gasto en Yala"
+3. **Verificar:** Siri inicia el flujo de preguntas
+4. Responder las preguntas de forma conversacional
+5. **Verificar:** Transacción creada exitosamente con mensaje detallado
+
+### Escenario 22.8: Frases Siri inglés
+1. Configurar Siri en inglés
+2. Decir: "Record an expense in Yala"
+3. **Verificar:** Siri reconoce el comando y procesa el flujo
+
+### Escenario 22.9: Multimoneda en atajos
+1. Tener cuentas en diferentes monedas (ej: PEN, USD)
+2. Ejecutar atajo y seleccionar cuenta en USD
+3. **Verificar:** Mensaje final muestra divisa correcta (USD)
+4. **Verificar:** amountInPreferredCurrency se calcula correctamente
+
+### Escenario 22.10: Subcategorías solo de gastos
+1. Crear atajo y llegar al paso de subcategoría
+2. **Verificar:** Lista muestra solo subcategorías de categorías de gasto
+3. **Verificar:** No aparecen subcategorías de categorías de ingreso
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-27*
-*Total escenarios: ~302*
-*Total verificaciones: ~555+*
+*Última actualización: 2026-01-28*
+*Total escenarios: ~312*
+*Total verificaciones: ~575+*

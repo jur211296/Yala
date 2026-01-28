@@ -1286,3 +1286,47 @@
 "faq.whatIsPro.a" = "Yala Pro unlocks premium features like voice input, receipt scanning with camera, exclusive themes, and more. You can see all benefits in Settings > Subscription.";
 "faq.cancelSub.q" = "How do I cancel my subscription?";
 "faq.cancelSub.a" = "You can manage or cancel your subscription anytime from Settings > Subscription > Manage in App Store. Your Pro access continues until the end of the paid period.";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "Quick entry";
+"shortcut.quickExpense.description" = "Create a new entry in Yala with amount, account, category and tag.";
+"shortcut.quickExpense.shortTitle" = "Quick entry";
+
+// Parameters
+"shortcut.param.type" = "Type";
+"shortcut.param.type.description" = "Expense or income";
+"shortcut.param.amount" = "Amount";
+"shortcut.param.amount.description" = "The amount to record";
+"shortcut.param.note" = "Description";
+"shortcut.param.note.description" = "A note or description";
+"shortcut.param.account" = "Account";
+"shortcut.param.account.description" = "The account to record";
+"shortcut.param.subcategory" = "Subcategory";
+"shortcut.param.subcategory.description" = "The subcategory";
+"shortcut.param.tag" = "Tag";
+"shortcut.param.tag.description" = "An optional tag";
+
+// Dialogs
+"shortcut.dialog.askType" = "Expense or income?";
+"shortcut.dialog.askAmount" = "How much?";
+"shortcut.dialog.askNote" = "Description (optional)";
+"shortcut.dialog.askAccount" = "Which account?";
+"shortcut.dialog.askSubcategory" = "Which category?";
+"shortcut.dialog.askTag" = "Tag (optional)";
+
+// Entities
+"shortcut.entity.transactionType" = "Type";
+"shortcut.type.expense" = "Expense";
+"shortcut.type.income" = "Income";
+"shortcut.entity.account" = "Account";
+"shortcut.entity.subcategory" = "Subcategory";
+
+// Errors
+"shortcut.error.database" = "Could not access database";
+"shortcut.error.noAccount" = "No accounts available. Create an account first.";
+"shortcut.error.noSubcategory" = "Subcategory not found";
+"shortcut.error.save" = "Could not save the entry";
+
+// Results
+"shortcut.result.noTag" = "No tag";
+"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Recorded in %@: %@ - %@ - %@ - %@";
