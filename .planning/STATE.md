@@ -23,16 +23,16 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-28] 12f7830 feat(share): integrate Share Extension with main app UI flow (10.4)
+- [2026-01-28] ce2a3b5 fix: calculate amountInPreferredCurrency in Inbox approval flows
+- [2026-01-28] a66e009 fix: use endOfToday in DateInterval to include same-day transactions
+- [2026-01-28] c040298 chore: align version 1.1 and fix Share Extension Dev bundle ID
+- [2026-01-28] e5c3dfd feat(share): implement Share Extension to receive images (10.4)
+- [2026-01-28] bc1eb61 chore: configure App Group and migrate bundle IDs to yala (10.4)
 - [2026-01-27] 705fc98 docs(qa): add 10 QA scenarios for Phase 10 fixes (tildes, FAB image, permissions)
 - [2026-01-27] 12e054f feat(settings): request mic and photo permissions when enabling input toggles (10.3)
 - [2026-01-27] 669b537 fix(input): accent-insensitive tag matching and image option in Statistics FAB (10.1-10.2)
 - [2026-01-27] f932606 docs(state): close Phase 9 and mark V1.0 as complete
-- [2026-01-27] c598ca2 feat(settings): add FAQ page with 9 expandable questions (9.5)
-- [2026-01-27] 33927e0 feat(settings): add Tips & Tricks page with 8 expandable tips (9.4)
-- [2026-01-27] 9e99f76 feat(subscription): add Yala Pro subscription system with StoreKit 2 (9.3)
-- [2026-01-27] 88fdcdb feat(web): add Terms of Use page in 6 languages and wire iOS link (9.2)
-- [2026-01-27] d6b9230 feat(settings): wire Permissions, Contact, Rate App, and Privacy links (9.2)
-- [2026-01-27] d7f4fb3 feat(security): add Face ID / Touch ID biometric lock with configurable timeout (9.1)
 
 ## Completed in Current Phase
 
@@ -180,15 +180,16 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 
 ## Session Continuity
 
-Last session: 2026-01-27
-Stopped at: Fase 10 — 3 fixes + QA completados (tildes, FAB imagen, permisos)
-Next step: Continuar Fase 10 — modo solo gastos, notificaciones, o siguiente item
+Last session: 2026-01-28
+Stopped at: Share Sheet completo (10.4) + fixes de DateInterval y amountInPreferredCurrency
+Next step: Continuar con items pendientes de Fase 10 (modo solo gastos, notificaciones, etc.)
 Resume file: N/A
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
-- V1.1: Fase 8 done, Fase 10 en progreso (4 items done de 11)
-- Done: tildes voz, FAB imagen, permisos toggles, QA-SCENARIOS
-- Pendiente: modo solo gastos, notificaciones, Share Sheet, onboarding seed, pagos→bandeja
+- V1.1: Fase 8 done, Fase 10 en progreso (6 items done de 11)
+- Share Sheet completo: App Group + Extension + URL scheme + UI flow integrado
+- Fixes aplicados: DateInterval usa endOfToday, amountInPreferredCurrency en Inbox approval
+- Pendiente: modo solo gastos, notificaciones, onboarding seed, pagos→bandeja
 
 ## V1.1 (Futuro)
 
