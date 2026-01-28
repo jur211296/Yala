@@ -2832,9 +2832,39 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 2. **Verificar:** Lista muestra solo subcategorías de categorías de gasto
 3. **Verificar:** No aparecen subcategorías de categorías de ingreso
 
+### Escenario 22.11: Atajo "Registro por voz" con toggle activo
+1. Activar toggle "Entrada por voz" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por voz"
+3. **Verificar:** App se abre y muestra VoiceRecordingSheet
+4. **Verificar:** Puedo dictar y registrar transacción
+
+### Escenario 22.12: Atajo "Registro por voz" con toggle desactivado
+1. Desactivar toggle "Entrada por voz" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por voz"
+3. **Verificar:** Mensaje: "No has activado la entrada por voz..."
+4. **Verificar:** App NO se abre
+
+### Escenario 22.13: Atajo "Registro por imagen" con toggle activo
+1. Activar toggle "Entrada por imagen" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por imagen"
+3. **Verificar:** App se abre y muestra ImageSelectionView
+4. **Verificar:** Puedo seleccionar imagen y procesarla
+
+### Escenario 22.14: Atajo "Registro por imagen" con toggle desactivado
+1. Desactivar toggle "Entrada por imagen" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por imagen"
+3. **Verificar:** Mensaje: "No has activado la entrada por imagen..."
+4. **Verificar:** App NO se abre
+
+### Escenario 22.15: Búsqueda inteligente de etiquetas
+1. Tener etiqueta "Devolución" creada
+2. Ejecutar atajo "Registro rápido"
+3. En paso de etiqueta, escribir "devolucion" (sin tilde, minúscula)
+4. **Verificar:** Encuentra y asigna etiqueta "Devolución"
+
 ---
 
 *Documento creado: 2026-01-20*
 *Última actualización: 2026-01-28*
-*Total escenarios: ~312*
-*Total verificaciones: ~575+*
+*Total escenarios: ~317*
+*Total verificaciones: ~590+*

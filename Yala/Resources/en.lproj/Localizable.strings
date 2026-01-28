@@ -1326,7 +1326,21 @@
 "shortcut.error.noAccount" = "No accounts available. Create an account first.";
 "shortcut.error.noSubcategory" = "Subcategory not found";
 "shortcut.error.save" = "Could not save the entry";
+"shortcut.error.voiceNotEnabled" = "Voice input is not enabled. Enable it in Settings > Personalization.";
+"shortcut.error.imageNotEnabled" = "Image input is not enabled. Enable it in Settings > Personalization.";
 
 // Results
 "shortcut.result.noTag" = "No tag";
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Recorded in %@: %@ - %@ - %@ - %@";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "Voice Entry";
+"shortcut.voiceEntry.description" = "Opens voice recording to record expenses by dictation";
+"shortcut.voiceEntry.shortTitle" = "Voice Entry";
+"shortcut.voiceEntry.opening" = "Opening voice entry...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "Image Entry";
+"shortcut.imageEntry.description" = "Opens image picker to record expenses from photos";
+"shortcut.imageEntry.shortTitle" = "Image Entry";
+"shortcut.imageEntry.opening" = "Opening image entry...";

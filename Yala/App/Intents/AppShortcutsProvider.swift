@@ -28,6 +28,38 @@ struct YalaShortcuts: AppShortcutsProvider {
             shortTitle: "shortcut.quickExpense.shortTitle",
             systemImageName: "plus.circle.fill"
         )
+
+        AppShortcut(
+            intent: VoiceEntryIntent(),
+            phrases: [
+                // Spanish
+                "Registra con voz en \(.applicationName)",
+                "Entrada por voz en \(.applicationName)",
+                "Dictar gasto en \(.applicationName)",
+                // English
+                "Record with voice in \(.applicationName)",
+                "Voice entry in \(.applicationName)",
+                "Dictate expense in \(.applicationName)"
+            ],
+            shortTitle: "shortcut.voiceEntry.shortTitle",
+            systemImageName: "mic.fill"
+        )
+
+        AppShortcut(
+            intent: ImageEntryIntent(),
+            phrases: [
+                // Spanish
+                "Registra con imagen en \(.applicationName)",
+                "Entrada por imagen en \(.applicationName)",
+                "Escanear gasto en \(.applicationName)",
+                // English
+                "Record with image in \(.applicationName)",
+                "Image entry in \(.applicationName)",
+                "Scan expense in \(.applicationName)"
+            ],
+            shortTitle: "shortcut.imageEntry.shortTitle",
+            systemImageName: "photo.fill"
+        )
     }
 
     static var shortcutTileColor: ShortcutTileColor {

@@ -107,12 +107,19 @@ struct YalaApp: App {
         await TransactionUpdateService.updateProvisionalTransactions(context: context)
     }
 
-    /// Handle incoming URL from Share Extension
+    /// Handle incoming URL from Share Extension and App Shortcuts
     private func handleIncomingURL(_ url: URL) {
         guard url.scheme == "yala" else { return }
 
-        if url.host == "shared-image" {
+        switch url.host {
+        case "shared-image":
             checkForPendingSharedImage()
+        case "voice-entry":
+            sessionState.shouldShowVoiceEntry = true
+        case "image-entry":
+            sessionState.shouldShowImageEntry = true
+        default:
+            break
         }
     }
 

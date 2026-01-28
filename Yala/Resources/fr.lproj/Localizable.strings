@@ -1326,7 +1326,21 @@
 "shortcut.error.noAccount" = "Aucun compte disponible. Créez d'abord un compte.";
 "shortcut.error.noSubcategory" = "Sous-catégorie non trouvée";
 "shortcut.error.save" = "Impossible d'enregistrer l'entrée";
+"shortcut.error.voiceNotEnabled" = "La saisie vocale n'est pas activée. Activez-la dans Paramètres > Personnalisation.";
+"shortcut.error.imageNotEnabled" = "La saisie par image n'est pas activée. Activez-la dans Paramètres > Personnalisation.";
 
 // Results
 "shortcut.result.noTag" = "Sans tag";
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Enregistré dans %@ : %@ - %@ - %@ - %@";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "Saisie vocale";
+"shortcut.voiceEntry.description" = "Ouvre l'enregistrement vocal pour dicter des dépenses";
+"shortcut.voiceEntry.shortTitle" = "Saisie vocale";
+"shortcut.voiceEntry.opening" = "Ouverture de la saisie vocale...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "Saisie par image";
+"shortcut.imageEntry.description" = "Ouvre le sélecteur d'images pour enregistrer des dépenses depuis des photos";
+"shortcut.imageEntry.shortTitle" = "Saisie par image";
+"shortcut.imageEntry.opening" = "Ouverture de la saisie par image...";

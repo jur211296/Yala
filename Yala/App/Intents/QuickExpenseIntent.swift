@@ -524,3 +524,74 @@ struct IncomeSubcategoryQuery: EntityQuery {
             }
     }
 }
+
+// MARK: - Voice Entry Intent
+
+@available(iOS 16.0, *)
+struct VoiceEntryIntent: AppIntent {
+
+    static var title: LocalizedStringResource = "shortcut.voiceEntry.title"
+    static var description = IntentDescription("shortcut.voiceEntry.description")
+
+    static var openAppWhenRun: Bool = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        let isEnabled = UserDefaults.standard.bool(forKey: "voiceInputEnabled")
+
+        guard isEnabled else {
+            throw VoiceImageIntentError.voiceNotEnabled
+        }
+
+        // Open the app with voice-entry URL
+        if let url = URL(string: "yala://voice-entry") {
+            await UIApplication.shared.open(url)
+        }
+
+        return .result()
+    }
+}
+
+// MARK: - Image Entry Intent
+
+@available(iOS 16.0, *)
+struct ImageEntryIntent: AppIntent {
+
+    static var title: LocalizedStringResource = "shortcut.imageEntry.title"
+    static var description = IntentDescription("shortcut.imageEntry.description")
+
+    static var openAppWhenRun: Bool = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        let isEnabled = UserDefaults.standard.bool(forKey: "imageInputEnabled")
+
+        guard isEnabled else {
+            throw VoiceImageIntentError.imageNotEnabled
+        }
+
+        // Open the app with image-entry URL
+        if let url = URL(string: "yala://image-entry") {
+            await UIApplication.shared.open(url)
+        }
+
+        return .result()
+    }
+}
+
+// MARK: - Voice/Image Intent Errors
+
+@available(iOS 16.0, *)
+enum VoiceImageIntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
+    case voiceNotEnabled
+    case imageNotEnabled
+
+    var localizedStringResource: LocalizedStringResource {
+        switch self {
+        case .voiceNotEnabled:
+            return "shortcut.error.voiceNotEnabled"
+        case .imageNotEnabled:
+            return "shortcut.error.imageNotEnabled"
+        }
+    }
+}

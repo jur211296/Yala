@@ -306,6 +306,20 @@ struct PanelView: View {
                 showImageSelection = true
             }
         }
+        .onChange(of: sessionState.shouldShowVoiceEntry) { _, shouldShow in
+            // Open VoiceRecordingSheet when triggered by App Shortcut
+            if shouldShow {
+                showVoiceRecording = true
+                sessionState.shouldShowVoiceEntry = false
+            }
+        }
+        .onChange(of: sessionState.shouldShowImageEntry) { _, shouldShow in
+            // Open ImageSelectionView when triggered by App Shortcut
+            if shouldShow {
+                showImageSelection = true
+                sessionState.shouldShowImageEntry = false
+            }
+        }
         .onChange(of: viewModel.trendType) {
             // Sync trend type to SessionState when it changes
             viewModel.syncToSessionState(sessionState)

@@ -257,6 +257,14 @@ class SessionState {
     /// When > 0, shows an alert to notify the user
     var pendingScheduledDraftsCount: Int = 0
 
+    /// Flag to trigger voice entry from App Shortcut
+    /// When true, PanelView will open VoiceRecordingSheet
+    var shouldShowVoiceEntry: Bool = false
+
+    /// Flag to trigger image entry from App Shortcut
+    /// When true, PanelView will open ImageSelectionView
+    var shouldShowImageEntry: Bool = false
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

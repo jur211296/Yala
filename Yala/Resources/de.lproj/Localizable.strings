@@ -1326,7 +1326,21 @@
 "shortcut.error.noAccount" = "Keine Konten verfügbar. Erstelle zuerst ein Konto.";
 "shortcut.error.noSubcategory" = "Unterkategorie nicht gefunden";
 "shortcut.error.save" = "Eintrag konnte nicht gespeichert werden";
+"shortcut.error.voiceNotEnabled" = "Spracheingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
+"shortcut.error.imageNotEnabled" = "Bildeingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
 
 // Results
 "shortcut.result.noTag" = "Kein Tag";
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "In %@ erfasst: %@ - %@ - %@ - %@";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "Spracheingabe";
+"shortcut.voiceEntry.description" = "Öffnet die Sprachaufnahme zum Diktieren von Ausgaben";
+"shortcut.voiceEntry.shortTitle" = "Spracheingabe";
+"shortcut.voiceEntry.opening" = "Spracheingabe wird geöffnet...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "Bildeingabe";
+"shortcut.imageEntry.description" = "Öffnet die Bildauswahl zum Erfassen von Ausgaben aus Fotos";
+"shortcut.imageEntry.shortTitle" = "Bildeingabe";
+"shortcut.imageEntry.opening" = "Bildeingabe wird geöffnet...";

@@ -1326,7 +1326,21 @@
 "shortcut.error.noAccount" = "Nenhuma conta disponível. Crie uma conta primeiro.";
 "shortcut.error.noSubcategory" = "Subcategoria não encontrada";
 "shortcut.error.save" = "Não foi possível salvar o registro";
+"shortcut.error.voiceNotEnabled" = "A entrada por voz não está ativada. Ative em Configurações > Personalização.";
+"shortcut.error.imageNotEnabled" = "A entrada por imagem não está ativada. Ative em Configurações > Personalização.";
 
 // Results
 "shortcut.result.noTag" = "Sem tag";
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Registrado em %@: %@ - %@ - %@ - %@";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "Entrada por voz";
+"shortcut.voiceEntry.description" = "Abre a gravação de voz para ditar despesas";
+"shortcut.voiceEntry.shortTitle" = "Entrada por voz";
+"shortcut.voiceEntry.opening" = "Abrindo entrada por voz...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "Entrada por imagem";
+"shortcut.imageEntry.description" = "Abre o seletor de imagens para registrar despesas de fotos";
+"shortcut.imageEntry.shortTitle" = "Entrada por imagem";
+"shortcut.imageEntry.opening" = "Abrindo entrada por imagem...";

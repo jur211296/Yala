@@ -1326,7 +1326,21 @@
 "shortcut.error.noAccount" = "Nessun conto disponibile. Crea prima un conto.";
 "shortcut.error.noSubcategory" = "Sottocategoria non trovata";
 "shortcut.error.save" = "Impossibile salvare la registrazione";
+"shortcut.error.voiceNotEnabled" = "L'inserimento vocale non è attivato. Attivalo in Impostazioni > Personalizzazione.";
+"shortcut.error.imageNotEnabled" = "L'inserimento da immagine non è attivato. Attivalo in Impostazioni > Personalizzazione.";
 
 // Results
 "shortcut.result.noTag" = "Senza tag";
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Registrato in %@: %@ - %@ - %@ - %@";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "Inserimento vocale";
+"shortcut.voiceEntry.description" = "Apre la registrazione vocale per dettare spese";
+"shortcut.voiceEntry.shortTitle" = "Inserimento vocale";
+"shortcut.voiceEntry.opening" = "Apertura inserimento vocale...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "Inserimento da immagine";
+"shortcut.imageEntry.description" = "Apre il selettore immagini per registrare spese da foto";
+"shortcut.imageEntry.shortTitle" = "Inserimento da immagine";
+"shortcut.imageEntry.opening" = "Apertura inserimento da immagine...";
