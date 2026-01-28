@@ -314,7 +314,7 @@ struct BudgetsListView: View {
                     ForEach(section.budgets) { summary in
                         BudgetRowView(
                             summary: summary,
-                            currencyCode: defaultCurrencyCode
+                            currencyCode: summary.budget.currencyCode
                         ) {
                             viewModel.editingBudget = summary.budget
                             viewModel.showBudgetEditor = true

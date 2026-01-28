@@ -19,6 +19,7 @@ struct ScheduledPaymentEditorView: View {
 
     let payment: ScheduledPayment?
     let defaultCategory: String?
+    var onDelete: (() -> Void)?
 
     // Basic Info
     @State private var name: String = ""
@@ -62,9 +63,10 @@ struct ScheduledPaymentEditorView: View {
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
 
-    init(payment: ScheduledPayment?, defaultCategory: String? = nil) {
+    init(payment: ScheduledPayment?, defaultCategory: String? = nil, onDelete: (() -> Void)? = nil) {
         self.payment = payment
         self.defaultCategory = defaultCategory
+        self.onDelete = onDelete
     }
 
     var body: some View {
@@ -192,9 +194,11 @@ struct ScheduledPaymentEditorView: View {
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        Text(defaultCurrencyCode)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        if let account = selectedAccount {
+                            Text(account.currencyCode)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                         TextField("0.00", text: $amount)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
@@ -865,7 +869,7 @@ struct ScheduledPaymentEditorView: View {
             existingPayment.name = name
             existingPayment.amount = amountValue
             existingPayment.note = note.isEmpty ? nil : note
-            existingPayment.currencyCode = defaultCurrencyCode
+            existingPayment.currencyCode = selectedAccount?.currencyCode ?? defaultCurrencyCode
             existingPayment.transactionType = transactionType
             existingPayment.paymentCategory = paymentCategory.rawValue
             existingPayment.account = selectedAccount
@@ -892,7 +896,7 @@ struct ScheduledPaymentEditorView: View {
                 name: name,
                 note: note.isEmpty ? nil : note,
                 amount: amountValue,
-                currencyCode: defaultCurrencyCode,
+                currencyCode: selectedAccount?.currencyCode ?? defaultCurrencyCode,
                 transactionType: transactionType,
                 account: selectedAccount,
                 subcategory: selectedSubcategory,
@@ -929,6 +933,7 @@ struct ScheduledPaymentEditorView: View {
         do {
             try modelContext.save()
             dismiss()
+            onDelete?()
         } catch {
             showSaveError = true
         }

@@ -194,7 +194,7 @@ struct ScheduledPaymentsListView: View {
                         ForEach(section.payments) { summary in
                             ScheduledPaymentRowView(
                                 summary: summary,
-                                currencyCode: currencyCode
+                                currencyCode: summary.payment.currencyCode
                             )
                         }
                     }

@@ -24,6 +24,7 @@ struct BudgetEditorView: View {
     // Basic Info
     @State private var name: String = ""
     @State private var limitAmount: String = ""
+    @State private var currencyCode: String = ""
 
     // Period
     @State private var selectedPeriodType: BudgetPeriodType = .monthly
@@ -124,6 +125,9 @@ struct BudgetEditorView: View {
                     }
                 }
             }
+            .onChange(of: selectedAccounts) { _, newAccounts in
+                updateCurrencyFromAccounts(newAccounts)
+            }
             .alert(
                 L10n.Common.error,
                 isPresented: $showSaveError,
@@ -161,7 +165,7 @@ struct BudgetEditorView: View {
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        Text(defaultCurrencyCode)
+                        Text(currencyCode)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $limitAmount)
@@ -540,10 +544,27 @@ struct BudgetEditorView: View {
 
     // MARK: - Data Management
 
+    /// Update currency based on selected accounts
+    /// - If exactly 1 account is selected, use its currency
+    /// - Otherwise, use the default/preferred currency
+    private func updateCurrencyFromAccounts(_ accountIds: Set<PersistentIdentifier>) {
+        if accountIds.count == 1,
+           let accountId = accountIds.first,
+           let account = activeAccounts.first(where: { $0.persistentModelID == accountId }) {
+            currencyCode = account.currencyCode
+        } else {
+            currencyCode = defaultCurrencyCode
+        }
+    }
+
     private func loadBudgetData() {
+        // Initialize currency code
+        currencyCode = defaultCurrencyCode
+
         guard let budget = budget else { return }
 
         name = budget.name
+        currencyCode = budget.currencyCode
         limitAmount = String(format: "%.2f", budget.limitAmount)
         selectedPeriodType = BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
         isActive = budget.isActive
@@ -580,6 +601,7 @@ struct BudgetEditorView: View {
             // Update existing budget
             existingBudget.name = name
             existingBudget.limitAmount = amount
+            existingBudget.currencyCode = currencyCode
             existingBudget.periodType = selectedPeriodType.rawValue
             existingBudget.isActive = isActive
             existingBudget.startDate = selectedPeriodType == .unique ? startDate : nil
@@ -591,7 +613,7 @@ struct BudgetEditorView: View {
         } else {
             // Create new budget
             let newBudget = Budget(
-                currencyCode: defaultCurrencyCode,
+                currencyCode: currencyCode,
                 limitAmount: amount,
                 name: name,
                 periodType: selectedPeriodType.rawValue,

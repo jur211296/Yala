@@ -163,14 +163,13 @@ final class BudgetsViewModel {
             transaction.category?.isIncome == false
         }
 
-        // Sum amounts (use preferred currency amount if available, otherwise use transaction amount)
+        // Sum amounts based on budget account configuration:
+        // - If exactly 1 account: use transaction.amount (same currency as budget)
+        // - If 0 or multiple accounts: use amountInPreferredCurrency (normalized)
+        let useBudgetCurrency = budget.accounts.count == 1
+
         let total = filtered.reduce(0.0) { sum, transaction in
-            let amount: Double
-            if transaction.preferredCurrencyCode == defaultCurrencyCode {
-                amount = transaction.amountInPreferredCurrency
-            } else {
-                amount = transaction.amount
-            }
+            let amount = useBudgetCurrency ? transaction.amount : transaction.amountInPreferredCurrency
             return sum + abs(amount)
         }
 

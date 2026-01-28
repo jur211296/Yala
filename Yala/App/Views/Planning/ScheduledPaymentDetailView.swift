@@ -68,7 +68,9 @@ struct ScheduledPaymentDetailView: View {
             }
         }
         .sheet(isPresented: $showEditor) {
-            ScheduledPaymentEditorView(payment: payment)
+            ScheduledPaymentEditorView(payment: payment, onDelete: {
+                dismiss()
+            })
         }
     }
 
