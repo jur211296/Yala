@@ -23,16 +23,16 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-27] 705fc98 docs(qa): add 10 QA scenarios for Phase 10 fixes (tildes, FAB image, permissions)
+- [2026-01-27] 12e054f feat(settings): request mic and photo permissions when enabling input toggles (10.3)
+- [2026-01-27] 669b537 fix(input): accent-insensitive tag matching and image option in Statistics FAB (10.1-10.2)
+- [2026-01-27] f932606 docs(state): close Phase 9 and mark V1.0 as complete
 - [2026-01-27] c598ca2 feat(settings): add FAQ page with 9 expandable questions (9.5)
 - [2026-01-27] 33927e0 feat(settings): add Tips & Tricks page with 8 expandable tips (9.4)
 - [2026-01-27] 9e99f76 feat(subscription): add Yala Pro subscription system with StoreKit 2 (9.3)
 - [2026-01-27] 88fdcdb feat(web): add Terms of Use page in 6 languages and wire iOS link (9.2)
 - [2026-01-27] d6b9230 feat(settings): wire Permissions, Contact, Rate App, and Privacy links (9.2)
 - [2026-01-27] d7f4fb3 feat(security): add Face ID / Touch ID biometric lock with configurable timeout (9.1)
-- [2026-01-27] dd0ee05 feat(merchant): add Merchant Memory for subcategory suggestions (8.5)
-- [2026-01-27] 772741b feat(vision): enhanced date context, draft deduplication, and processing progress
-- [2026-01-27] ff09010 fix(image): remove OCR fallback and require API key for voice/image
-- [2026-01-26] 879db81 polish(inbox): UI refinements for Voice, Image, and Inbox views
 
 ## Completed in Current Phase
 
@@ -181,13 +181,14 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Fase 9 cerrada, V1.0 marcada como completa
-Next step: Iniciar Fase 10 (Refinamiento & Notificaciones)
+Stopped at: Fase 10 — 3 fixes + QA completados (tildes, FAB imagen, permisos)
+Next step: Continuar Fase 10 — modo solo gastos, notificaciones, o siguiente item
 Resume file: N/A
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
-- V1.1 en progreso: Fase 8 (Registro Inteligente) ya completada
-- Siguiente: Fase 10 — Modo solo gastos, notificaciones, permisos, bugfixes
+- V1.1: Fase 8 done, Fase 10 en progreso (4 items done de 11)
+- Done: tildes voz, FAB imagen, permisos toggles, QA-SCENARIOS
+- Pendiente: modo solo gastos, notificaciones, Share Sheet, onboarding seed, pagos→bandeja
 
 ## V1.1 (Futuro)
 
