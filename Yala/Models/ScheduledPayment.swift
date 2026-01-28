@@ -15,6 +15,9 @@ import SwiftData
 final class ScheduledPayment {
     // MARK: - Identification
 
+    /// Unique identifier (stable across sessions)
+    var id: UUID = UUID()
+
     /// Display name for the scheduled payment (required)
     var name: String
 
@@ -100,6 +103,9 @@ final class ScheduledPayment {
     /// Last date a notification was sent (to avoid duplicates)
     var lastNotifiedDate: Date?
 
+    /// Last date this payment was marked as paid (from inbox approval)
+    var lastPaidDate: Date?
+
     // MARK: - Init
 
     init(
@@ -165,5 +171,33 @@ final class ScheduledPayment {
             return SubcategoryNature(rawValue: override)
         }
         return subcategory?.nature
+    }
+
+    /// Whether this payment has been paid for the current billing cycle
+    /// Returns true if lastPaidDate is within the current period (since last due date)
+    var isPaidForCurrentCycle: Bool {
+        guard let paidDate = lastPaidDate else { return false }
+
+        let calendar = Calendar.current
+
+        // Calculate the previous due date based on recurrence
+        guard let recurrence = RecurrenceType(rawValue: recurrenceType) else { return false }
+
+        let previousDueDate: Date?
+        switch recurrence {
+        case .daily:
+            previousDueDate = calendar.date(byAdding: .day, value: -recurrenceInterval, to: nextDueDate)
+        case .weekly:
+            previousDueDate = calendar.date(byAdding: .weekOfYear, value: -recurrenceInterval, to: nextDueDate)
+        case .monthly:
+            previousDueDate = calendar.date(byAdding: .month, value: -recurrenceInterval, to: nextDueDate)
+        case .yearly:
+            previousDueDate = calendar.date(byAdding: .year, value: -recurrenceInterval, to: nextDueDate)
+        }
+
+        guard let prevDate = previousDueDate else { return false }
+
+        // Payment is considered paid if lastPaidDate >= previousDueDate
+        return paidDate >= calendar.startOfDay(for: prevDate)
     }
 }

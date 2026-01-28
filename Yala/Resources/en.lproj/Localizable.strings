@@ -137,6 +137,7 @@
 "action.duplicated" = "Duplicated - save to create new";
 "action.select" = "Select";
 "action.retry" = "Retry";
+"action.later" = "Later";
 
 // MARK: - Search
 
@@ -288,6 +289,10 @@
 // MARK: - Scheduled
 
 "scheduled.saveDescription" = "Create a scheduled payment to remind you of this recurring expense or income. You'll find it in the Scheduled Payments section in your profile, where you can edit, activate, or deactivate it anytime.";
+"scheduled.paid" = "Paid";
+"scheduled.draftCreatedTitle" = "You have pending payments!";
+"scheduled.draftCreatedMessage" = "%d scheduled payments were added to your inbox. Check them when you're ready.";
+"scheduled.viewInbox" = "View inbox";
 
 // MARK: - Settings
 
@@ -1151,6 +1156,8 @@
 "inbox.sourceScreenshot" = "Screenshot";
 "inbox.sourceScreenshotList" = "List";
 "inbox.sourceReceipt" = "Receipt";
+"inbox.sourceScheduledPayment" = "Scheduled payment";
+"inbox.sourceSubscription" = "Subscription";
 "inbox.errorNoAccount" = "You must select an account";
 "inbox.errorNoAmount" = "You must specify an amount";
 "inbox.errorNoSubcategory" = "You must select a subcategory";

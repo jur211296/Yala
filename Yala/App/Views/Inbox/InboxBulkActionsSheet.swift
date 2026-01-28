@@ -361,6 +361,10 @@ struct InboxBulkActionsSheet: View {
             draft.status = .approved
             draft.approvedTransaction = transaction
             draft.updatedAt = Date()
+
+            // Update scheduled payment if this draft came from one
+            ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: modelContext)
+
             approvedCount += 1
         }
 

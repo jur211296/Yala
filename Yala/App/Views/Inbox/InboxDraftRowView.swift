@@ -294,6 +294,10 @@ struct InboxDraftRowView: View {
             return .teal
         case .emailAlert:
             return .blue
+        case .scheduledPayment:
+            return .purple
+        case .subscription:
+            return .indigo
         }
     }
 

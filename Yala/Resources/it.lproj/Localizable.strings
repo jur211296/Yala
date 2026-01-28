@@ -135,6 +135,7 @@
 "action.duplicated" = "Duplicato - salva per creare nuovo";
 "action.select" = "Seleziona";
 "action.retry" = "Riprova";
+"action.later" = "Più tardi";
 
 // MARK: - Search
 
@@ -286,6 +287,10 @@
 // MARK: - Scheduled
 
 "scheduled.saveDescription" = "Crea un pagamento pianificato per ricordarti di questa spesa o entrata ricorrente. Lo troverai nella sezione Pagamenti Pianificati nel tuo profilo, dove potrai modificarlo, attivarlo o disattivarlo in qualsiasi momento.";
+"scheduled.paid" = "Pagato";
+"scheduled.draftCreatedTitle" = "Hai pagamenti in sospeso!";
+"scheduled.draftCreatedMessage" = "%d pagamenti pianificati sono stati aggiunti alla tua casella. Controllali quando vuoi.";
+"scheduled.viewInbox" = "Vedi casella";
 
 // MARK: - Settings
 
@@ -1151,6 +1156,8 @@
 "inbox.sourceScreenshot" = "Screenshot";
 "inbox.sourceScreenshotList" = "List";
 "inbox.sourceReceipt" = "Receipt";
+"inbox.sourceScheduledPayment" = "Pagamento pianificato";
+"inbox.sourceSubscription" = "Abbonamento";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";

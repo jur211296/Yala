@@ -135,6 +135,7 @@
 "action.duplicated" = "Duplicado - salve para criar novo";
 "action.select" = "Selecionar";
 "action.retry" = "Tentar novamente";
+"action.later" = "Mais tarde";
 
 // MARK: - Search
 
@@ -286,6 +287,10 @@
 // MARK: - Scheduled
 
 "scheduled.saveDescription" = "Crie um pagamento agendado para lembrar desta despesa ou receita recorrente. Você o encontrará na seção Pagamentos Agendados no seu perfil, onde poderá editá-lo, ativá-lo ou desativá-lo a qualquer momento.";
+"scheduled.paid" = "Pago";
+"scheduled.draftCreatedTitle" = "Você tem pagamentos pendentes!";
+"scheduled.draftCreatedMessage" = "%d pagamentos agendados foram adicionados à sua caixa. Confira quando quiser.";
+"scheduled.viewInbox" = "Ver caixa";
 
 // MARK: - Settings
 
@@ -1151,6 +1156,8 @@
 "inbox.sourceScreenshot" = "Screenshot";
 "inbox.sourceScreenshotList" = "List";
 "inbox.sourceReceipt" = "Receipt";
+"inbox.sourceScheduledPayment" = "Pagamento agendado";
+"inbox.sourceSubscription" = "Assinatura";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";

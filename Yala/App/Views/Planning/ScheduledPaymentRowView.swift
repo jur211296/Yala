@@ -57,6 +57,7 @@ struct ScheduledPaymentRowView: View {
                 x: 0,
                 y: 3
             )
+            .opacity(summary.payment.isPaidForCurrentCycle ? 0.6 : 1.0)
         }
     }
 
@@ -80,14 +81,25 @@ struct ScheduledPaymentRowView: View {
 
     private var dueInfo: some View {
         HStack(spacing: 4) {
-            // Due status indicator
-            Circle()
-                .fill(dueStatusColor)
-                .frame(width: 6, height: 6)
+            // Paid badge (if paid for current cycle)
+            if summary.payment.isPaidForCurrentCycle {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
 
-            Text(dueText)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(dueStatusColor)
+                Text(L10n.Scheduled.paid)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.green)
+            } else {
+                // Due status indicator
+                Circle()
+                    .fill(dueStatusColor)
+                    .frame(width: 6, height: 6)
+
+                Text(dueText)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(dueStatusColor)
+            }
 
             if let accountName = summary.payment.account?.name {
                 Text("•")

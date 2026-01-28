@@ -540,6 +540,8 @@ struct InboxDraftEditSheet: View {
         case .screenshotList: return L10n.Inbox.sourceScreenshotList
         case .screenshotSingle: return L10n.Inbox.sourceScreenshot
         case .emailAlert: return L10n.Inbox.sourceEmail
+        case .scheduledPayment: return L10n.Inbox.sourceScheduledPayment
+        case .subscription: return L10n.Inbox.sourceSubscription
         }
     }
 
@@ -951,6 +953,9 @@ struct InboxDraftEditSheet: View {
                 wasCorrection: wasCorrection
             )
         }
+
+        // Update scheduled payment if this draft came from one
+        ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: modelContext)
 
         do {
             try modelContext.save()

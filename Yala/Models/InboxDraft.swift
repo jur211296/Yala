@@ -17,6 +17,8 @@ enum DraftSourceType: String, Codable {
     case screenshotList
     case screenshotSingle
     case emailAlert
+    case scheduledPayment
+    case subscription
 }
 
 enum DraftStatus: String, Codable {
@@ -104,6 +106,11 @@ final class InboxDraft: Identifiable {
 
     /// Código de moneda cacheado al aprobar
     var cachedCurrencyCode: String?
+
+    // MARK: - Scheduled Payment Link
+
+    /// ID del pago planificado que originó este draft (si aplica)
+    var sourceScheduledPaymentID: String?
 
     // MARK: - Timestamps
 
@@ -212,6 +219,8 @@ final class InboxDraft: Identifiable {
         case .screenshotList: return "photo.stack.fill"
         case .screenshotSingle: return "photo.fill"
         case .emailAlert: return "envelope.fill"
+        case .scheduledPayment: return "arrow.trianglehead.2.clockwise.rotate.90"
+        case .subscription: return "creditcard.and.123"
         }
     }
 

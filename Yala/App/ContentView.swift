@@ -141,6 +141,19 @@ struct MainTabView: View {
             }
             .tint(Color.electricIndigo)
             .transaction { $0.animation = nil }
+            .overlay {
+                if sessionState.pendingScheduledDraftsCount > 0 {
+                    ScheduledPaymentAlertModal(
+                        count: sessionState.pendingScheduledDraftsCount,
+                        onViewInbox: {
+                            sessionState.shouldShowInbox = true
+                        },
+                        onDismiss: {
+                            sessionState.pendingScheduledDraftsCount = 0
+                        }
+                    )
+                }
+            }
         }
     }
 

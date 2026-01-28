@@ -58,6 +58,8 @@ struct YalaApp: App {
                     await loadExchangeRates()
                     // Load subscription status
                     await loadSubscriptionStatus()
+                    // Process due scheduled payments (create inbox drafts)
+                    processDueScheduledPayments()
                     // Check for pending shared images on launch
                     checkForPendingSharedImage()
                 }
@@ -111,6 +113,18 @@ struct YalaApp: App {
 
         if url.host == "shared-image" {
             checkForPendingSharedImage()
+        }
+    }
+
+    /// Process due scheduled payments and create inbox drafts
+    private func processDueScheduledPayments() {
+        let context = sharedModelContainer.mainContext
+        let draftsCreated = ScheduledPaymentDraftService.processDuePayments(context: context)
+        if draftsCreated > 0 {
+            // Delay to show alert after splash screen dismisses
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                sessionState.pendingScheduledDraftsCount = draftsCreated
+            }
         }
     }
 

@@ -583,6 +583,9 @@ struct InboxView: View {
             draft.approvedTransaction = transaction
             draft.updatedAt = Date()
 
+            // Update scheduled payment if this draft came from one
+            ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: modelContext)
+
             do {
                 try modelContext.save()
 

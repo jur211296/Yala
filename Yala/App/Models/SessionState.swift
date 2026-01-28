@@ -253,6 +253,10 @@ class SessionState {
     /// Set by SharedImageProcessor after creating drafts
     var shouldShowInbox: Bool = false
 
+    /// Count of scheduled payment drafts created on app launch
+    /// When > 0, shows an alert to notify the user
+    var pendingScheduledDraftsCount: Int = 0
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

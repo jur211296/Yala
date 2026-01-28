@@ -338,6 +338,7 @@ enum L10n {
         static var duplicated: String { NSLocalizedString("action.duplicated", comment: "") }
         static var select: String { NSLocalizedString("action.select", comment: "") }
         static var retry: String { NSLocalizedString("action.retry", comment: "") }
+        static var later: String { NSLocalizedString("action.later", comment: "") }
     }
 
     // MARK: - Search
@@ -950,6 +951,22 @@ enum L10n {
     enum Scheduled {
         static var saveDescription: String {
             NSLocalizedString("scheduled.saveDescription", comment: "")
+        }
+
+        static var paid: String {
+            NSLocalizedString("scheduled.paid", comment: "Paid badge for scheduled payments")
+        }
+
+        static var draftCreatedTitle: String {
+            NSLocalizedString("scheduled.draftCreatedTitle", comment: "Alert title when drafts created")
+        }
+
+        static func draftCreatedMessage(_ count: Int) -> String {
+            String(format: NSLocalizedString("scheduled.draftCreatedMessage", comment: "Alert message"), count)
+        }
+
+        static var viewInbox: String {
+            NSLocalizedString("scheduled.viewInbox", comment: "Button to view inbox")
         }
     }
 
@@ -1714,6 +1731,12 @@ enum L10n {
         }
         static var sourceReceipt: String {
             NSLocalizedString("inbox.sourceReceipt", comment: "")
+        }
+        static var sourceScheduledPayment: String {
+            NSLocalizedString("inbox.sourceScheduledPayment", comment: "")
+        }
+        static var sourceSubscription: String {
+            NSLocalizedString("inbox.sourceSubscription", comment: "")
         }
         static var errorNoAccount: String {
             NSLocalizedString("inbox.errorNoAccount", comment: "")
