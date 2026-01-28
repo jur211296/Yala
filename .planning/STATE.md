@@ -17,12 +17,13 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██████████░░░░ ~70% (Fase 8 completa, Fase 10 en progreso)
+Progress: V1.1 ███████████░░░ ~75% (Fase 8 completa, Fase 10 en progreso)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-28] 93dbeeb feat(intents): add Voice Entry and Image Entry shortcuts
 - [2026-01-28] 9f6bd37 feat(intents): add Quick Entry shortcut for Siri/Shortcuts (10.x)
 - [2026-01-28] ecce7fb feat(onboarding): add category seed step with visual grid (10.6)
 - [2026-01-28] 616ec4d feat(tabs): auto-navigate to Panel on share and lock Panel as first tab
@@ -32,7 +33,6 @@ Progress: V1.1 ██████████░░░░ ~70% (Fase 8 completa,
 - [2026-01-28] ce2a3b5 fix: calculate amountInPreferredCurrency in Inbox approval flows
 - [2026-01-28] a66e009 fix: use endOfToday in DateInterval to include same-day transactions
 - [2026-01-28] c040298 chore: align version 1.1 and fix Share Extension Dev bundle ID
-- [2026-01-28] e5c3dfd feat(share): implement Share Extension to receive images (10.4)
 
 ## Completed in Current Phase
 
@@ -57,6 +57,7 @@ Progress: V1.1 ██████████░░░░ ~70% (Fase 8 completa,
 - **Onboarding seed (10.6)** - Grid visual de 11 categorías, usuario elige empezar con categorías o desde cero
 - **Permisos y correcciones registro inteligente** - Permisos micrófono/fotos al activar toggle, prompts voz sin duplicar tags, FAB imagen en todas las vistas
 - **App Intent "Registro rápido" (10.x)** - Shortcut Siri/Shortcuts con flujo conversacional (tipo → monto → nota → cuenta → subcategoría → etiqueta), subcategorías filtradas por tipo, búsqueda inteligente de etiquetas (insensible a mayúsculas/acentos), 6 idiomas, 10 escenarios QA
+- **App Intents Voz e Imagen (10.x)** - Shortcuts "Registro por voz" y "Registro por imagen", validan toggles activos, deep links yala://voice-entry y yala://image-entry, error si feature desactivada, 6 idiomas, 5 escenarios QA
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -112,7 +113,8 @@ Progress: V1.1 ██████████░░░░ ~70% (Fase 8 completa,
 **Pendientes:**
 - [ ] Modo "Solo gastos" — ocultar ingresos y saldos en toda la app
 - [ ] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios
-- [x] Integración con atajos y automatización con Apple Pay ✅ (9f6bd37)
+- [x] Atajos Siri/Shortcuts (Registro rápido, Voz, Imagen) ✅ (9f6bd37, 93dbeeb)
+- [ ] Automatización Apple Pay — campos para automatización al usar Apple Pay
 
 ---
 
@@ -191,14 +193,14 @@ Progress: V1.1 ██████████░░░░ ~70% (Fase 8 completa,
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: App Intent "Registro rápido" implementado con flujo conversacional
-Next step: Elegir siguiente item (modo solo gastos o notificaciones)
+Stopped at: App Intents completos (Registro rápido, Voz, Imagen)
+Next step: Automatización Apple Pay — habilitar campos para automatización al usar Apple Pay
 Resume file: N/A
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
-- V1.1: Fase 8 done, Fase 10 ~70% completada
-- Completado en Fase 10: Share Sheet, pagos planificados → inbox, onboarding seed, permisos, prompts voz, FAB imagen, App Intent
-- Pendiente: modo solo gastos, notificaciones
+- V1.1: Fase 8 done, Fase 10 ~75% completada
+- Completado en Fase 10: Share Sheet, pagos planificados → inbox, onboarding seed, permisos, prompts voz, FAB imagen, 3 App Intents (Registro rápido, Voz, Imagen)
+- Pendiente: Automatización Apple Pay, modo solo gastos, notificaciones
 
 ## V1.1 (Futuro)
 
