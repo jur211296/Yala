@@ -884,6 +884,23 @@ struct InboxDraftEditSheet: View {
               let subcategory = selectedSubcategory else { return }
 
         let finalAmount = isExpense ? -abs(amt) : abs(amt)
+
+        // Calculate amount in preferred currency for charts/statistics
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let amountInPreferred = CurrencyConverter.shared.convert(
+            Decimal(finalAmount),
+            from: account.currencyCode,
+            to: preferredCode,
+            on: transactionDate,
+            context: modelContext
+        )
+        let exchangeRate: Double
+        if abs(finalAmount) > 0.0001 {
+            exchangeRate = (amountInPreferred as NSDecimalNumber).doubleValue / finalAmount
+        } else {
+            exchangeRate = 1.0
+        }
+
         let transaction = TransactionItem(
             date: transactionDate,
             amount: finalAmount,
@@ -894,6 +911,9 @@ struct InboxDraftEditSheet: View {
         transaction.subcategory = subcategory
         transaction.category = subcategory.category
         transaction.tags = selectedTags
+        transaction.exchangeRate = abs(exchangeRate)
+        transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+        transaction.preferredCurrencyCode = preferredCode
 
         // Set nature override if user changed it
         if let nature = selectedNature, nature != subcategory.nature {

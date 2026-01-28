@@ -313,10 +313,27 @@ struct InboxBulkActionsSheet: View {
     private func approveSelected() {
         var approvedCount = 0
 
+        let preferredCode = CurrencyDefaults.currentPreferred
+
         for draft in selectedDrafts where draft.isReadyToApprove {
             guard let account = draft.account,
                   let amount = draft.amount,
                   let subcategory = draft.subcategory else { continue }
+
+            // Calculate amount in preferred currency for charts/statistics
+            let amountInPreferred = CurrencyConverter.shared.convert(
+                Decimal(amount),
+                from: account.currencyCode,
+                to: preferredCode,
+                on: draft.effectiveDate,
+                context: modelContext
+            )
+            let exchangeRate: Double
+            if abs(amount) > 0.0001 {
+                exchangeRate = (amountInPreferred as NSDecimalNumber).doubleValue / amount
+            } else {
+                exchangeRate = 1.0
+            }
 
             let transaction = TransactionItem(
                 date: draft.effectiveDate,
@@ -328,6 +345,9 @@ struct InboxBulkActionsSheet: View {
             transaction.subcategory = subcategory
             transaction.category = subcategory.category
             transaction.tags = draft.tags
+            transaction.exchangeRate = abs(exchangeRate)
+            transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+            transaction.preferredCurrencyCode = preferredCode
 
             modelContext.insert(transaction)
 
