@@ -306,23 +306,23 @@ DoD:
 Incluye:
 - [ ] Modo "Solo gastos" — ocultar todo rastro de ingresos y saldos en toda la app
 - [ ] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios y ofertas
-- [ ] Pagos planificados crean transacción en bandeja de entrada
-- [ ] Integración Share Sheet para enviar imágenes directamente
 - [ ] Integración con atajos y automatización con Apple Pay
+- [x] Pagos planificados crean transacción en bandeja de entrada ✅ (35de0f7)
+- [x] Integración Share Sheet para enviar imágenes directamente ✅ (e5c3dfd, 12f7830, 616ec4d)
 - [x] Revisar prompts voz: tildes crean etiquetas duplicadas en vez de reusar existentes ✅ (669b537)
 - [x] FAB fuera de PanelView no tiene opción de registro de imagen ✅ (669b537)
 - [x] Pedir permiso de micrófono al activar toggle ✅ (12e054f)
 - [x] Pedir permiso de fotos al activar toggle ✅ (12e054f)
-- [ ] Mejorar onboarding: preguntar si cargar seed de categorías predeterminadas
-- [ ] Vaciar datos: preguntar si cargar seed de categorías predeterminadas
+- [x] Mejorar onboarding: preguntar si cargar seed de categorías predeterminadas ✅ (ecce7fb)
+- [x] Vaciar datos: ofrece seed via onboarding (wipe → onboarding) ✅
 
 DoD:
 - Modo solo gastos oculta ingresos/saldos globalmente
 - Notificaciones configurables por tipo
-- Pagos planificados generan drafts automáticamente
-- Share Sheet e imagen accesible desde cualquier FAB
-- Permisos se solicitan en el momento correcto
-- Onboarding y data wipe ofrecen carga de categorías seed
+- ✅ Pagos planificados generan drafts automáticamente
+- ✅ Share Sheet e imagen accesible desde cualquier FAB
+- ✅ Permisos se solicitan en el momento correcto
+- ✅ Onboarding y data wipe ofrecen carga de categorías seed
 
 ---
 
@@ -368,7 +368,7 @@ DoD:
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
-| 10 | Refinamiento & Notificaciones | Not started | - |
+| 10 | Refinamiento & Notificaciones | In progress (~55%) | - |
 
 ### V1.2
 | Fase | Nombre | Status | Completed |

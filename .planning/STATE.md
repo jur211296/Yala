@@ -17,12 +17,13 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa, Fase 10 pendiente)
+Progress: V1.1 ████████░░░░░░ ~55% (Fase 8 completa, Fase 10 en progreso)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-28] ecce7fb feat(onboarding): add category seed step with visual grid (10.6)
 - [2026-01-28] 616ec4d feat(tabs): auto-navigate to Panel on share and lock Panel as first tab
 - [2026-01-28] e960048 fix(planning): currency display and sheet dismiss improvements
 - [2026-01-28] 35de0f7 feat(inbox): auto-create drafts from due scheduled payments
@@ -32,7 +33,6 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 - [2026-01-28] c040298 chore: align version 1.1 and fix Share Extension Dev bundle ID
 - [2026-01-28] e5c3dfd feat(share): implement Share Extension to receive images (10.4)
 - [2026-01-28] bc1eb61 chore: configure App Group and migrate bundle IDs to yala (10.4)
-- [2026-01-27] 705fc98 docs(qa): add 10 QA scenarios for Phase 10 fixes (tildes, FAB image, permissions)
 
 ## Completed in Current Phase
 
@@ -53,6 +53,9 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 - **Subfase 8.5: Merchant Memory** - MerchantMemory model (SwiftData), MerchantCanonicalizer (normalización, strip prefijos pago, Levenshtein fuzzy match), MerchantMemoryService (suggest/updateMemory/applyDecay), política escalonada (<3=nada, >=3=sugerir, >=5=autoasignar), integrado en aprobación (detección correcciones), voice fallback, image fallback, DataWipeService, 13 escenarios QA (Sección 19)
 - **Pagos planificados → Inbox (10.5)** - ScheduledPaymentDraftService crea drafts automáticamente para pagos vencidos, modal personalizado de notificación, detección de duplicados por UUID, badge "Pagado" en lista de pagos, actualización de lastPaidDate y avance de nextDueDate al aprobar, nuevos DraftSourceTypes (scheduledPayment, subscription), localizaciones en 6 idiomas
 - **Mejoras UX divisas y sheets** - Divisa solo después de seleccionar cuenta en pago planificado, cierre automático de DetailView al eliminar, divisa de presupuesto sigue cuenta única, cálculo de gastos usa divisa correcta según número de cuentas
+- **Share Extension (10.4)** - Recibir imágenes desde otras apps, App Group configurado, navegación automática a Panel, Panel bloqueado como primer tab
+- **Onboarding seed (10.6)** - Grid visual de 11 categorías, usuario elige empezar con categorías o desde cero
+- **Permisos y correcciones registro inteligente** - Permisos micrófono/fotos al activar toggle, prompts voz sin duplicar tags, FAB imagen en todas las vistas
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -93,18 +96,22 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 
 ## Next Steps
 
-### Fase 9: Settings & Pre-Release (V1.0)
+### Fase 10: Refinamiento & Notificaciones (V1.1)
 
-- [x] Face ID / Touch ID con tiempo de bloqueo configurable ✅ (d7f4fb3)
-- [x] Permisos → redirige a Settings del sistema ✅ (d6b9230)
-- [x] Contacta con nosotros → mail draft a admin@yala-app.pe ✅ (d6b9230)
-- [x] Valorar en App Store → SKStoreReviewController ✅ (d6b9230)
-- [x] Política de privacidad → web ✅ (d6b9230)
-- [x] Sistema de suscripción Pro (StoreKit 2) ✅ (9e99f76)
-- [x] Página de administrar suscripción ✅ (integrada en SubscriptionView)
-- [x] Consejos y trucos (página) ✅ (33927e0)
-- [x] Preguntas frecuentes (página) ✅ (c598ca2)
-- [x] Términos de uso → web ✅ (88fdcdb)
+**Completados:**
+- [x] Pagos planificados crean transacción en bandeja de entrada ✅ (35de0f7)
+- [x] Integración Share Sheet para enviar imágenes directamente ✅ (e5c3dfd, 12f7830, 616ec4d)
+- [x] Revisar prompts voz: tildes crean etiquetas duplicadas ✅ (669b537)
+- [x] FAB fuera de PanelView no tiene opción de registro de imagen ✅ (669b537)
+- [x] Pedir permiso de micrófono al activar toggle ✅ (12e054f)
+- [x] Pedir permiso de fotos al activar toggle ✅ (12e054f)
+- [x] Mejorar onboarding: seed de categorías predeterminadas ✅ (ecce7fb)
+- [x] Vaciar datos: ofrece seed via onboarding ✅
+
+**Pendientes:**
+- [ ] Modo "Solo gastos" — ocultar ingresos y saldos en toda la app
+- [ ] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios
+- [ ] Integración con atajos y automatización con Apple Pay
 
 ---
 
@@ -183,15 +190,14 @@ Progress: V1.1 ██░░░░░░░░░░░░ ~15% (Fase 8 completa,
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Share Extension navega automáticamente a Panel, Panel bloqueado como primer tab
-Next step: Continuar con items pendientes de Fase 10 (modo solo gastos, notificaciones, onboarding seed)
+Stopped at: Actualización de estado - Fase 10 al ~55%
+Next step: Elegir siguiente item (modo solo gastos, notificaciones, o atajos Apple Pay)
 Resume file: N/A
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
-- V1.1: Fase 8 done, Fase 10 en progreso
-- Share Extension ahora navega a Panel desde cualquier tab
-- Panel bloqueado: siempre primero, no removible, no reordenable
-- Pendiente: modo solo gastos, notificaciones, onboarding seed
+- V1.1: Fase 8 done, Fase 10 ~55% completada
+- Completado en Fase 10: Share Sheet, pagos planificados → inbox, onboarding seed, permisos, prompts voz, FAB imagen
+- Pendiente: modo solo gastos, notificaciones, atajos Apple Pay
 
 ## V1.1 (Futuro)
 
