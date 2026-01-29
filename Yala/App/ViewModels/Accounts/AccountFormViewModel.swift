@@ -14,13 +14,15 @@ import SwiftUI
     import AppKit
 #endif
 
+@MainActor
 @Observable
 final class AccountFormViewModel {
 
     // MARK: - Dependencies
+    private var modelContext: ModelContext?
     var accountToEdit: Account?
     var existingNames: [String] = []
-    var allTransactions: [TransactionItem] = []
+    private(set) var allTransactions: [TransactionItem] = []
 
     // MARK: - Form State
     var name: String = ""
@@ -149,6 +151,25 @@ final class AccountFormViewModel {
             self.customColor = Color(hex: "6366F1")
             self.isPositive = true
             self.balanceText = ""
+        }
+    }
+
+    // MARK: - Context Injection
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadTransactions()
+        initializeBalanceIfNeeded()
+    }
+
+    func loadTransactions() {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<TransactionItem>()
+        do {
+            allTransactions = try context.fetch(descriptor)
+        } catch {
+            print("AccountFormViewModel: Error loading transactions: \(error)")
+            allTransactions = []
         }
     }
 

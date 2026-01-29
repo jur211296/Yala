@@ -16,8 +16,6 @@ struct AccountFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(EntityDeletionService.self) private var deletionService
 
-    @Query private var allTransactions: [TransactionItem]
-
     @State private var viewModel: AccountFormViewModel
     @FocusState private var focusedField: Field?
 
@@ -92,20 +90,13 @@ struct AccountFormView: View {
                 if isPresenting { focusedField = nil }
             }
             .onAppear {
-                // Pass transactions to view model for balance calculation
-                viewModel.allTransactions = allTransactions
-                // Initialize balance field with existing initial balance (needs transactions loaded)
-                viewModel.initializeBalanceIfNeeded()
+                viewModel.setContext(modelContext)
                 // Auto-focus name field for new accounts
                 if !viewModel.isEditing {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         focusedField = .name
                     }
                 }
-            }
-            .onChange(of: allTransactions) { _, newTransactions in
-                viewModel.allTransactions = newTransactions
-                viewModel.initializeBalanceIfNeeded()
             }
         }
 
