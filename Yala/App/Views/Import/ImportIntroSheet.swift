@@ -91,8 +91,7 @@ struct ImportIntroSheet: View {
     let accounts: [Account]
     let categories: [Category]
 
-    // Query subcategories directly to ensure they're loaded for template generation
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var viewModel = ImportIntroViewModel()
 
     @State private var allowCreatingNewCategories: Bool = false
     @State private var isShowingAccountPicker: Bool = false
@@ -184,6 +183,9 @@ struct ImportIntroSheet: View {
             }
             .navigationTitle(L10n.Import.title)
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                viewModel.setContext(modelContext)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark") {
@@ -378,11 +380,11 @@ struct ImportIntroSheet: View {
         // Headers (English lowercase as expected by import service)
         let headers = ["date", "amount", "currency", "category", "subcategory", "tags", "note"]
 
-        // Generate one example row per subcategory (using @Query to ensure data is loaded)
+        // Generate one example row per subcategory
         var dataRows = [[String]]()
 
         // Group subcategories by category and sort
-        let subcategoriesByCategory = Dictionary(grouping: allSubcategories) { $0.category }
+        let subcategoriesByCategory = Dictionary(grouping: viewModel.allSubcategories) { $0.category }
         let sortedCategories = subcategoriesByCategory.keys
             .compactMap { $0 }
             .sorted { $0.sortOrder < $1.sortOrder }
