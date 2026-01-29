@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Observation
 import OpenAI
 
 // MARK: - Response Models
@@ -60,23 +61,34 @@ enum VisionError: Error, LocalizedError {
 
 // MARK: - Service
 
-/// Service for extracting transactions from images using GPT-4o Vision API
+/// Service for extracting transactions from images using GPT-4o Vision API.
+/// Supports @Environment injection in SwiftUI views.
+@Observable
 final class ImageVisionService {
 
-    // MARK: - Singleton
+    // MARK: - Singleton (for backward compatibility)
 
+    /// Shared instance for backward compatibility. Prefer @Environment injection in Views.
     static let shared = ImageVisionService()
 
-    private init() {}
+    init() {}
 
     // MARK: - Properties
 
-    private lazy var openAI: OpenAI? = {
-        guard let apiKey = APIKeyService.openAIAPIKey else {
-            return nil
+    @ObservationIgnored
+    private var _openAI: OpenAI?
+    @ObservationIgnored
+    private var _openAIInitialized = false
+
+    private var openAI: OpenAI? {
+        if !_openAIInitialized {
+            _openAIInitialized = true
+            if let apiKey = APIKeyService.openAIAPIKey {
+                _openAI = OpenAI(apiToken: apiKey)
+            }
         }
-        return OpenAI(apiToken: apiKey)
-    }()
+        return _openAI
+    }
 
     /// Returns true if the Vision API is available (API key configured)
     var isAvailable: Bool {

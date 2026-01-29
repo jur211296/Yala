@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Observation
 import OpenAI
 
 // MARK: - Parsed Transaction
@@ -81,23 +82,36 @@ private struct LLMMultipleResponse: Codable {
 
 // MARK: - Transcription Parser Service
 
+/// Service for parsing transcriptions into transaction data.
+/// Supports @Environment injection in SwiftUI views.
+@Observable
 final class TranscriptionParserService {
 
-    // MARK: - Singleton
+    // MARK: - Singleton (for backward compatibility)
 
+    /// Shared instance for backward compatibility. Prefer @Environment injection in Views.
     static let shared = TranscriptionParserService()
 
-    private init() {}
+    init() {}
 
     // MARK: - Properties
 
-    private lazy var openAI: OpenAI? = {
-        guard let apiKey = APIKeyService.openAIAPIKey else {
-            return nil
-        }
-        return OpenAI(apiToken: apiKey)
-    }()
+    @ObservationIgnored
+    private var _openAI: OpenAI?
+    @ObservationIgnored
+    private var _openAIInitialized = false
 
+    private var openAI: OpenAI? {
+        if !_openAIInitialized {
+            _openAIInitialized = true
+            if let apiKey = APIKeyService.openAIAPIKey {
+                _openAI = OpenAI(apiToken: apiKey)
+            }
+        }
+        return _openAI
+    }
+
+    @ObservationIgnored
     private let dateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withFullDate]

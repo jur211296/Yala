@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Observation
 import OpenAI
 
 // MARK: - Transcription Result
@@ -72,22 +73,34 @@ enum VoiceLanguage: String, CaseIterable, Identifiable {
 
 // MARK: - Voice Transcription Service
 
+/// Service for transcribing voice recordings.
+/// Supports @Environment injection in SwiftUI views.
+@Observable
 final class VoiceTranscriptionService {
 
-    // MARK: - Singleton
+    // MARK: - Singleton (for backward compatibility)
 
+    /// Shared instance for backward compatibility. Prefer @Environment injection in Views.
     static let shared = VoiceTranscriptionService()
 
-    private init() {}
+    init() {}
 
     // MARK: - Properties
 
-    private lazy var openAI: OpenAI? = {
-        guard let apiKey = APIKeyService.openAIAPIKey else {
-            return nil
+    @ObservationIgnored
+    private var _openAI: OpenAI?
+    @ObservationIgnored
+    private var _openAIInitialized = false
+
+    private var openAI: OpenAI? {
+        if !_openAIInitialized {
+            _openAIInitialized = true
+            if let apiKey = APIKeyService.openAIAPIKey {
+                _openAI = OpenAI(apiToken: apiKey)
+            }
         }
-        return OpenAI(apiToken: apiKey)
-    }()
+        return _openAI
+    }
 
     // MARK: - Public Methods
 

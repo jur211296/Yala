@@ -15,6 +15,7 @@ struct ImageSelectionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(ImageVisionService.self) private var imageVisionService
 
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var selectedImages: [UIImage] = []
@@ -37,9 +38,6 @@ struct ImageSelectionView: View {
 
     /// Callback when draft is saved but not approved (user should go to Inbox)
     var onSavedToInbox: (() -> Void)?
-
-    // Vision API service (online)
-    private let visionService = ImageVisionService.shared
 
     // Network monitor
     private let networkMonitor = NetworkMonitor.shared
@@ -578,7 +576,7 @@ struct ImageSelectionView: View {
 
     /// Process image using GPT-4o Vision API (online) - returns drafts (not yet inserted)
     private func processImageWithVisionReturning(_ uiImage: UIImage) async throws -> [InboxDraft] {
-        let response = try await visionService.analyze(image: uiImage)
+        let response = try await imageVisionService.analyze(image: uiImage)
 
         // Check if we got valid transactions
         guard !response.transactions.isEmpty,

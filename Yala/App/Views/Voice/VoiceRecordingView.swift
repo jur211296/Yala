@@ -12,6 +12,8 @@ struct VoiceRecordingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(VoiceTranscriptionService.self) private var voiceTranscriptionService
+    @Environment(TranscriptionParserService.self) private var transcriptionParserService
 
     @StateObject private var recorder = AudioRecorderService.shared
     @StateObject private var networkMonitor = NetworkMonitor.shared
@@ -700,7 +702,7 @@ struct VoiceRecordingView: View {
             // Step 1: Transcribe audio
             processingStepIndex = 0
             processingStatus = L10n.Voice.analyzing
-            let transcription = try await VoiceTranscriptionService.shared.transcribe(
+            let transcription = try await voiceTranscriptionService.transcribe(
                 audioData: audioData,
                 language: voiceLanguage
             )
@@ -718,7 +720,7 @@ struct VoiceRecordingView: View {
             // Get user's subcategories for intelligent matching
             let (expenseSubcategories, incomeSubcategories) = fetchSubcategoryNames()
 
-            let parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(
+            let parsedTransactions = try await transcriptionParserService.parseMultiple(
                 text: transcription.text,
                 expenseSubcategories: expenseSubcategories,
                 incomeSubcategories: incomeSubcategories
