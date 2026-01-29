@@ -13,25 +13,7 @@ struct ScheduledPaymentsSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \ScheduledPayment.name)
-    private var allPayments: [ScheduledPayment]
-
-    @State private var showEditor = false
-    @State private var paymentToEdit: ScheduledPayment?
-    @State private var selectedTab: ScheduledPaymentsTab = .all
-    @State private var showDeleteError = false
-
-    /// Payments filtered by selected tab
-    private var filteredPayments: [ScheduledPayment] {
-        switch selectedTab {
-        case .all:
-            return allPayments
-        case .recurring:
-            return allPayments.filter { $0.paymentCategory == PaymentCategory.recurring.rawValue }
-        case .subscriptions:
-            return allPayments.filter { $0.paymentCategory == PaymentCategory.subscription.rawValue }
-        }
-    }
+    @State private var viewModel = ScheduledPaymentsSettingsViewModel()
 
     var body: some View {
         ZStack {
@@ -39,7 +21,7 @@ struct ScheduledPaymentsSettingsView: View {
 
             VStack(spacing: 0) {
                 // Tab selector
-                Picker("Tab", selection: $selectedTab) {
+                Picker("Tab", selection: $viewModel.selectedTab) {
                     ForEach(ScheduledPaymentsTab.allCases) { tab in
                         Text(tab.localizedName).tag(tab)
                     }
@@ -50,7 +32,7 @@ struct ScheduledPaymentsSettingsView: View {
                 .padding(.bottom, DS.Spacing.md)
 
                 // Content
-                if filteredPayments.isEmpty {
+                if viewModel.isEmpty {
                     emptyState
                 } else {
                     paymentsList
@@ -68,20 +50,19 @@ struct ScheduledPaymentsSettingsView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 YalaToolbarButton(systemName: "plus") {
-                    paymentToEdit = nil
-                    showEditor = true
+                    viewModel.openEditor(for: nil)
                 }
             }
         }
-        .sheet(isPresented: $showEditor) {
+        .sheet(isPresented: $viewModel.showEditor, onDismiss: { viewModel.closeEditor() }) {
             ScheduledPaymentEditorView(
-                payment: paymentToEdit,
-                defaultCategory: selectedTab.categoryFilter
+                payment: viewModel.paymentToEdit,
+                defaultCategory: viewModel.selectedTab.categoryFilter
             )
         }
         .alert(
             L10n.Common.error,
-            isPresented: $showDeleteError,
+            isPresented: $viewModel.showDeleteError,
             actions: {
                 Button(L10n.Common.understood, role: .cancel) {}
             },
@@ -89,6 +70,9 @@ struct ScheduledPaymentsSettingsView: View {
                 Text(L10n.Common.deleteError)
             }
         )
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     // MARK: - Empty State
@@ -133,13 +117,13 @@ struct ScheduledPaymentsSettingsView: View {
 
     private var paymentsList: some View {
         List {
-            ForEach(filteredPayments, id: \.persistentModelID) { payment in
+            ForEach(viewModel.filteredPayments, id: \.persistentModelID) { payment in
                 paymentRow(payment)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .onDelete(perform: deletePayments)
+            .onDelete(perform: viewModel.deletePayments)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -151,8 +135,7 @@ struct ScheduledPaymentsSettingsView: View {
         let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
 
         return Button {
-            paymentToEdit = payment
-            showEditor = true
+            viewModel.openEditor(for: payment)
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 // Icon from subcategory
@@ -220,20 +203,6 @@ struct ScheduledPaymentsSettingsView: View {
             )
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Actions
-
-    private func deletePayments(at offsets: IndexSet) {
-        for index in offsets {
-            let payment = filteredPayments[index]
-            modelContext.delete(payment)
-        }
-        do {
-            try modelContext.save()
-        } catch {
-            showDeleteError = true
-        }
     }
 
     // MARK: - Helpers
