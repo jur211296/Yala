@@ -14,43 +14,7 @@ struct BudgetsFavoritesSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
 
-    @Query(filter: #Predicate<Budget> { $0.isActive })
-    private var activeBudgets: [Budget]
-
-    @State private var isEditMode = false
-    @State private var showSaveError = false
-
-    // Group budgets by period type
-    private var budgetsByPeriod: [(periodType: BudgetPeriodType, budgets: [Budget])] {
-        let grouped = Dictionary(grouping: activeBudgets) { budget in
-            BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
-        }
-
-        // Return in consistent order: weekly, monthly, yearly, unique
-        return BudgetPeriodType.allCases.compactMap { periodType in
-            guard let budgets = grouped[periodType], !budgets.isEmpty else { return nil }
-            // Sort: favorites first by favoriteOrder, then non-favorites by name
-            let sorted = budgets.sorted { a, b in
-                if a.isFavorite && b.isFavorite {
-                    return a.favoriteOrder < b.favoriteOrder
-                } else if a.isFavorite {
-                    return true
-                } else if b.isFavorite {
-                    return false
-                } else {
-                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-                }
-            }
-            return (periodType, sorted)
-        }
-    }
-
-    // Only favorite budgets for reordering
-    private var favoriteBudgets: [Budget] {
-        activeBudgets
-            .filter { $0.isFavorite }
-            .sorted { $0.favoriteOrder < $1.favoriteOrder }
-    }
+    @State private var viewModel = BudgetsFavoritesSettingsViewModel()
 
     var body: some View {
         ZStack {
@@ -61,14 +25,14 @@ struct BudgetsFavoritesSettingsView: View {
                     // Info header
                     infoHeader
 
-                    if activeBudgets.isEmpty {
+                    if viewModel.isEmpty {
                         emptyState
-                    } else if isEditMode {
+                    } else if viewModel.isEditMode {
                         // Edit mode: show only favorites for reordering
                         reorderSection
                     } else {
                         // Normal mode: show all budgets grouped by period
-                        ForEach(budgetsByPeriod, id: \.periodType) { group in
+                        ForEach(viewModel.budgetsByPeriod, id: \.periodType) { group in
                             periodSection(periodType: group.periodType, budgets: group.budgets)
                         }
                     }
@@ -87,10 +51,10 @@ struct BudgetsFavoritesSettingsView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if !favoriteBudgets.isEmpty {
-                    YalaToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down") {
+                if viewModel.hasFavorites {
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down") {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isEditMode.toggle()
+                            viewModel.isEditMode.toggle()
                         }
                     }
                 }
@@ -98,7 +62,7 @@ struct BudgetsFavoritesSettingsView: View {
         }
         .alert(
             L10n.Common.error,
-            isPresented: $showSaveError,
+            isPresented: $viewModel.showSaveError,
             actions: {
                 Button(L10n.Common.understood, role: .cancel) {}
             },
@@ -106,6 +70,9 @@ struct BudgetsFavoritesSettingsView: View {
                 Text(L10n.Common.saveError)
             }
         )
+        .onAppear {
+            viewModel.setContext(modelContext, sessionState: sessionState)
+        }
     }
 
     // MARK: - Info Header
@@ -187,7 +154,9 @@ struct BudgetsFavoritesSettingsView: View {
         HStack(spacing: DS.Spacing.md) {
             // Favorite toggle
             Button {
-                toggleFavorite(budget)
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    viewModel.toggleFavorite(budget)
+                }
             } label: {
                 Image(systemName: budget.isFavorite ? "star.fill" : "star")
                     .font(.body)
@@ -232,21 +201,21 @@ struct BudgetsFavoritesSettingsView: View {
                 .padding(.leading, 6)
 
             List {
-                ForEach(Array(favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in
+                ForEach(Array(viewModel.favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in
                     reorderRow(budget, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowBackground(Color.yalaCard)
                         .listRowSeparator(
-                            index == 0 || index == favoriteBudgets.count - 1 ? .hidden : .visible,
+                            index == 0 || index == viewModel.favoriteBudgets.count - 1 ? .hidden : .visible,
                             edges: index == 0 ? .top : .bottom
                         )
                 }
-                .onMove(perform: moveBudget)
+                .onMove(perform: viewModel.moveBudget)
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(favoriteBudgets.count) * 52)
+            .frame(height: CGFloat(viewModel.favoriteBudgets.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
@@ -280,57 +249,6 @@ struct BudgetsFavoritesSettingsView: View {
                 .foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
-    }
-
-    // MARK: - Actions
-
-    private func toggleFavorite(_ budget: Budget) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            if budget.isFavorite {
-                // Remove from favorites
-                budget.isFavorite = false
-                budget.favoriteOrder = 0
-                // Reindex remaining favorites
-                reindexFavorites()
-            } else {
-                // Add to favorites at the end
-                let maxOrder = favoriteBudgets.map { $0.favoriteOrder }.max() ?? -1
-                budget.isFavorite = true
-                budget.favoriteOrder = maxOrder + 1
-            }
-            do {
-                try modelContext.save()
-            } catch {
-                showSaveError = true
-            }
-            // Trigger widget refresh in PanelView
-            sessionState.needsBudgetsWidgetRefresh = true
-        }
-    }
-
-    private func moveBudget(from source: IndexSet, to destination: Int) {
-        var ordered = favoriteBudgets
-        ordered.move(fromOffsets: source, toOffset: destination)
-
-        // Update favorite order
-        for (index, budget) in ordered.enumerated() {
-            budget.favoriteOrder = index
-        }
-
-        do {
-            try modelContext.save()
-        } catch {
-            showSaveError = true
-        }
-        // Trigger widget refresh in PanelView
-        sessionState.needsBudgetsWidgetRefresh = true
-    }
-
-    private func reindexFavorites() {
-        let sorted = favoriteBudgets.sorted { $0.favoriteOrder < $1.favoriteOrder }
-        for (index, budget) in sorted.enumerated() {
-            budget.favoriteOrder = index
-        }
     }
 
     // MARK: - Helpers
