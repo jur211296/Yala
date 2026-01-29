@@ -186,7 +186,7 @@ struct ProfileView: View {
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
-                    SettingsPlaceholderView(title: L10n.Settings.notifications)
+                    NotificationsSettingsView()
                 case .favorites:
                     FavoritesListView(mode: .manage)
                 case .budgetsFavorites:
