@@ -23,19 +23,16 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-29] 7da2644 security(biometric): migrate settings from UserDefaults to Keychain (SEC-005)
-- [2026-01-29] 6d56b4b fix(audit): resolve remaining HIGH priority issues (SEC-006, PERF-005)
-- [2026-01-29] f613ffe fix(accessibility): add reduceMotion support and semantic colors (UI-001, UI-002)
-- [2026-01-29] 9e00484 docs(state): update audit progress - all critical issues resolved
-- [2026-01-29] 7011cb2 perf: optimize transactionDateRange from O(n log n) to O(n)
-- [2026-01-29] 3b3def0 fix(swiftdata): add missing @Relationship inverses for data consistency
-- [2026-01-29] f815624 fix: replace force unwraps with safe guard patterns
-- [2026-01-29] 2f3d7ef fix: replace try? with do-catch for proper error diagnostics
-- [2026-01-29] 053a416 security: remove hardcoded API key fallback from ExchangeRateAPIService
-- [2026-01-29] 8254669 docs(state): update progress with notification system
-- [2026-01-29] f0c9d74 docs(qa): add notification system test scenarios
-- [2026-01-29] 1f398a3 feat(notifications): add onboarding step and app integration
-- [2026-01-29] fbc89f5 feat(notifications): add settings views and editor sheet
+- [2026-01-29] b032d3f refactor(arch): remove unused @Query from InboxBulkActionsSheet (D.7.10)
+- [2026-01-29] 03b395c refactor(arch): migrate BulkEditSheet to ViewModel (D.7.9)
+- [2026-01-29] 64d2670 refactor(arch): migrate RecordsFiltersView to ViewModel (D.7.8)
+- [2026-01-29] 50e444a refactor(arch): migrate ImportIntroSheet to ViewModel (D.7.7)
+- [2026-01-29] f5ee072 refactor(arch): migrate ExportFiltersStepView to ViewModel (D.7.6)
+- [2026-01-29] 6c1286c refactor(arch): migrate ScheduledPaymentEditorView to ViewModel (D.7.5)
+- [2026-01-29] 0e74b65 refactor(arch): migrate BudgetEditorView to ViewModel (D.7.4)
+- [2026-01-29] 5be22d1 refactor(arch): migrate FavoriteEditorView to ViewModel (D.7.3)
+- [2026-01-29] 9cdd696 refactor(arch): migrate ProfileView to ViewModel (D.7.2)
+- [2026-01-29] 26df674 refactor(arch): migrate TopSubcategoriesWidget to ViewModel (D.7.1)
 
 ## Completed in Current Phase
 
@@ -201,29 +198,23 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Refactoring Arquitectural Fase D (D.3.3 completado)
-Next step: Continuar Fase D (@Query → ViewModels) o "Modo solo gastos"
+Stopped at: Refactoring Arquitectural Fase D (D.7 completado)
+Next step: Fase D.8 (vistas complejas) o "Modo solo gastos"
 Resume file: .planning/ARCH-REFACTOR-PROGRESS.md
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 ~95% completada
 - **Refactoring Arquitectural (ARCH-001 a ARCH-006):**
   - **Fase A: ✅ COMPLETADA** - Singletons → @Environment (3 incrementos)
-    - A.1: CurrencyConverter (e095c93)
-    - A.2: ExchangeRateService (451f1dd)
-    - A.3: Vision/Voice Services (d955c88)
   - **Fase B: ✅ COMPLETADA** - SessionState.shared → @Environment (2 incrementos)
-    - B.1: Widget refresh flags (c19f0e8)
-    - B.2: Otros accesos (c19f0e8)
   - **Fase C: ✅ COMPLETADA** - Services para ModelContext (3 incrementos)
-    - C.1: DraftService (62f0b83)
-    - C.2: EntityDeletionService (cf9a1df)
-    - C.3: TransactionService (461cc0e)
-  - **Fase D: 🔄 EN PROGRESO** - @Query → ViewModels (3/48 views migradas)
-    - D.3.1: TagFormView → TagFormViewModel ✅ (5952358)
-    - D.3.2: TagsSettingsListView → TagsSettingsListViewModel ✅ (5952358)
-    - D.3.3: AccountsSettingsListView → AccountsSettingsListViewModel ✅ (a248033)
-    - Restantes: 45 views (Panel, Statistics, otros Settings, etc.)
+  - **Fase D: 🔄 EN PROGRESO** - @Query → ViewModels (28/48 views migradas)
+    - D.3 Settings - Entities: ✅ COMPLETADO (7 views)
+    - D.4 Settings - Other: ✅ COMPLETADO (3 views)
+    - D.5 Selectors: ✅ COMPLETADO (3 views)
+    - D.6 Transaction Sheets: ✅ COMPLETADO (4 views)
+    - D.7 Other Views: ✅ COMPLETADO (10 views)
+    - D.8 Vistas Complejas: ⏳ PENDIENTE (~20 views)
 - **Patrón establecido para Fase D:**
   - ViewModel usa `setContext(ModelContext)` para DI
   - Manual `loadData()` on sheet dismiss para refrescar

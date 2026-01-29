@@ -6,8 +6,8 @@
 ## Estado Actual
 
 **Fase:** D - @Query → ViewModels 🔄 EN PROGRESO
-**Progreso:** 20 Views migradas (D.3-D.7 parcialmente completados)
-**Status:** Fases A, B, C completadas. D.3, D.4, D.5, D.6, D.7 (parcial) completados.
+**Progreso:** 28 Views migradas (D.3-D.7 completados)
+**Status:** Fases A, B, C completadas. D.3, D.4, D.5, D.6, D.7 completados. D.8 pendiente.
 
 ## Resumen de Fases
 
@@ -196,6 +196,54 @@ currencyConverter.convert(...)
 - **@Query migrado:** allTransactions, accounts, categories
 - **Beneficios:** Datos para import/export y estado de botones encapsulados
 
+### D.7.3: FavoriteEditorView
+- **Estado:** ✅ Completado (5be22d1)
+- **Archivos creados:** `Yala/App/ViewModels/FavoriteEditorViewModel.swift`
+- **@Query migrado:** favorites (para validación de límites)
+- **Beneficios:** Lógica de save y validación encapsulada
+
+### D.7.4: BudgetEditorView
+- **Estado:** ✅ Completado (0e74b65)
+- **Archivos creados:** `Yala/App/ViewModels/BudgetEditorViewModel.swift`
+- **@Query migrado:** accounts, tags, subcategories, categories
+- **Beneficios:** Lógica de filtros y save/delete encapsulada
+
+### D.7.5: ScheduledPaymentEditorView
+- **Estado:** ✅ Completado (6c1286c)
+- **Archivos creados:** `Yala/App/ViewModels/ScheduledPaymentEditorViewModel.swift`
+- **@Query migrado:** accounts, tags
+- **Beneficios:** Lógica de save/delete encapsulada
+
+### D.7.6: ExportFiltersStepView
+- **Estado:** ✅ Completado (f5ee072)
+- **Archivos creados:** `Yala/App/ViewModels/ExportFiltersStepViewModel.swift`
+- **@Query migrado:** accounts, categories, tags, subcategories
+- **Beneficios:** Lógica de filtros de export encapsulada
+
+### D.7.7: ImportIntroSheet
+- **Estado:** ✅ Completado (50e444a)
+- **Archivos creados:** `Yala/App/ViewModels/ImportIntroViewModel.swift`
+- **@Query migrado:** subcategories (para template generation)
+- **Beneficios:** Lógica de generación de template encapsulada
+
+### D.7.8: RecordsFiltersView
+- **Estado:** ✅ Completado (64d2670)
+- **Archivos creados:** `Yala/App/ViewModels/RecordsFiltersViewModel.swift`
+- **@Query migrado:** accounts, categories, tags, subcategories
+- **Beneficios:** Lógica de filtros encapsulada con helpers de texto
+
+### D.7.9: BulkEditSheet
+- **Estado:** ✅ Completado (03b395c)
+- **Archivos creados:** `Yala/App/ViewModels/BulkEditViewModel.swift`
+- **@Query migrado:** tags
+- **Beneficios:** Lógica de carga de tags encapsulada
+
+### D.7.10: InboxBulkActionsSheet
+- **Estado:** ✅ Completado (b032d3f)
+- **Archivos modificados:** Solo View (sin nuevo ViewModel)
+- **@Query eliminado:** accounts (no se usaba, AccountSelectorSheet tiene su propio ViewModel)
+- **Beneficios:** Cleanup de query no utilizado
+
 ### D.8: Vistas Complejas (Pendiente)
 - **Estado:** ⏳ Pendiente
 - **Views:** PanelView, NewTransactionView, InboxView, Statistics tabs, etc.
@@ -234,6 +282,14 @@ currencyConverter.convert(...)
 - `e9c0fd8` - refactor(arch): migrate SaveAsRecurringSheet to ViewModel (D.6.4)
 - `26df674` - refactor(arch): migrate TopSubcategoriesWidget to ViewModel (D.7.1)
 - `9cdd696` - refactor(arch): migrate ProfileView to ViewModel (D.7.2)
+- `5be22d1` - refactor(arch): migrate FavoriteEditorView to ViewModel (D.7.3)
+- `0e74b65` - refactor(arch): migrate BudgetEditorView to ViewModel (D.7.4)
+- `6c1286c` - refactor(arch): migrate ScheduledPaymentEditorView to ViewModel (D.7.5)
+- `f5ee072` - refactor(arch): migrate ExportFiltersStepView to ViewModel (D.7.6)
+- `50e444a` - refactor(arch): migrate ImportIntroSheet to ViewModel (D.7.7)
+- `64d2670` - refactor(arch): migrate RecordsFiltersView to ViewModel (D.7.8)
+- `03b395c` - refactor(arch): migrate BulkEditSheet to ViewModel (D.7.9)
+- `b032d3f` - refactor(arch): remove unused @Query from InboxBulkActionsSheet (D.7.10)
 
 ## Notas Técnicas
 
@@ -291,25 +347,15 @@ struct MyView: View {
 **D.4 Settings - Other:** ✅ COMPLETADO (3 views)
 **D.5 Selectors:** ✅ COMPLETADO (3 views)
 **D.6 Transaction Sheets:** ✅ COMPLETADO (4 views)
-**D.7 Other Views:** 🔄 PARCIAL (2 de ~10 views)
+**D.7 Other Views:** ✅ COMPLETADO (10 views)
 
 **Plan de priorización:**
 1. ✅ D.3 (Settings - Entities) - COMPLETADO
 2. ✅ D.4 (Settings - Other) - COMPLETADO
 3. ✅ D.5 (Selectors) - COMPLETADO
 4. ✅ D.6 (Transaction Sheets) - COMPLETADO
-5. 🔄 D.7 (Other views) - 2/10 completados
+5. ✅ D.7 (Other views) - COMPLETADO
 6. ⏳ D.8 (Panel, Statistics) - alto riesgo (vistas complejas)
-
-**Próximas views a migrar (D.7 continuación):**
-- FavoriteEditorView (4 @Query)
-- BudgetEditorView (4 @Query)
-- ScheduledPaymentEditorView (2 @Query)
-- ExportFiltersStepView (4 @Query)
-- ImportIntroSheet (1 @Query)
-- RecordsFiltersView (4 @Query)
-- BulkEditSheet (2 @Query)
-- InboxBulkActionsSheet (1 @Query)
 
 **Vistas complejas pendientes (D.8):**
 - PanelView (8 @Query)
