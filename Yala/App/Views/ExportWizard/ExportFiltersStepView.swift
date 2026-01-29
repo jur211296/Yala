@@ -12,12 +12,7 @@ struct ExportFiltersStepView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    // MARK: - Data Queries
-
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Category.sortOrder) private var allCategories: [Category]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var viewModel = ExportFiltersStepViewModel()
 
     // MARK: - Local State
 
@@ -71,44 +66,15 @@ struct ExportFiltersStepView: View {
     }
 
     private var exportFilters: ExportFilters {
-        // Resolve subcategory objects from PersistentIdentifiers
-        let selectedSubcategoryObjects = allSubcategories.filter {
-            selectedSubcategories.contains($0.persistentModelID)
-        }
-
-        // Derive categories from the selected subcategories
-        let finalCategories = Set(selectedSubcategoryObjects.compactMap { $0.category })
-
-        let selectedTagObjects = allTags.filter { selectedTags.contains($0.persistentModelID) }
-
-        let selectedTagNames: [String]
-        if !allTags.isEmpty && selectedTagObjects.count == allTags.count {
-            // Interpretar "todas seleccionadas" como "sin filtro por etiquetas"
-            selectedTagNames = []
-        } else {
-            selectedTagNames = selectedTagObjects.map { $0.name }
-        }
-
-        // Convert DetailPeriod to date interval (use custom range if selected)
-        let dateInterval: DateInterval
-        if selectedPeriod == .custom, let customRange = customDateRange {
-            dateInterval = customRange
-        } else {
-            dateInterval = selectedPeriod.dateInterval()
-        }
-
-        return ExportFilters(
-            selectedAccounts: allAccounts.filter {
-                selectedAccounts.contains($0.persistentModelID)
-            },
-            selectedCategories: Array(finalCategories),
-            selectedSubcategories: selectedSubcategoryObjects,
-            selectedTagNames: selectedTagNames,
-            selectedCurrencies: Array(selectedCurrencies),
+        viewModel.buildExportFilters(
+            selectedAccounts: selectedAccounts,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedCurrencies: selectedCurrencies,
             amountCondition: amountCondition,
-            dateFrom: dateInterval.start,
-            dateTo: dateInterval.end,
-            noteContains: noteContains.isEmpty ? nil : noteContains
+            selectedPeriod: selectedPeriod,
+            customDateRange: customDateRange,
+            noteContains: noteContains
         )
     }
 
@@ -116,6 +82,9 @@ struct ExportFiltersStepView: View {
 
     var body: some View {
         mainContent
+            .onAppear {
+                viewModel.setContext(modelContext)
+            }
             .sheet(isPresented: $showCategoriesSheet) {
                 categoriesSheetView
             }
@@ -191,14 +160,14 @@ struct ExportFiltersStepView: View {
 
     private var categoriesSheetView: some View {
         CategorySelectorSheet(
-            categories: allCategories,
-            subcategories: allSubcategories,
+            categories: viewModel.allCategories,
+            subcategories: viewModel.allSubcategories,
             selectedSubcategories: $selectedSubcategories
         )
         .onAppear {
             // Initialize with all selected if empty
             if selectedSubcategories.isEmpty {
-                let visibleSubs = allSubcategories.filter { $0.isVisible }
+                let visibleSubs = viewModel.allSubcategories.filter { $0.isVisible }
                 selectedSubcategories = Set(visibleSubs.map { $0.persistentModelID })
             }
         }
@@ -207,52 +176,27 @@ struct ExportFiltersStepView: View {
     // MARK: - Sections
 
     private var selectedAccountsText: String {
-        if selectedAccounts.isEmpty {
-            return L10n.Filters.noneSelected
-        }
-        if selectedAccounts.count == allAccounts.count {
-            return L10n.Filters.allAccounts
-        }
-        return L10n.Filters.selectedCount(selectedAccounts.count)
+        viewModel.selectedAccountsText(selectedAccounts: selectedAccounts)
     }
 
     private func syncAccountsSelection() {
-        if !hasInitializedAccounts && !allAccounts.isEmpty {
-            selectedAccounts = Set(allAccounts.map { $0.persistentModelID })
+        if !hasInitializedAccounts && !viewModel.allAccounts.isEmpty {
+            selectedAccounts = Set(viewModel.allAccounts.map { $0.persistentModelID })
             hasInitializedAccounts = true
         }
     }
 
     private var selectedCategoriesText: String {
-        let visibleSubs = allSubcategories.filter { $0.isVisible }
-
-        // Empty = all selected
-        if selectedSubcategories.isEmpty {
-            return L10n.Filters.allCategories
-        }
-
-        // All visible subcategories selected
-        if selectedSubcategories.count == visibleSubs.count {
-            return L10n.Filters.allCategories
-        }
-
-        // Partial selection
-        return L10n.Filters.subcategoriesSelectedCount(selectedSubcategories.count)
+        viewModel.selectedCategoriesText(selectedSubcategories: selectedSubcategories)
     }
 
     private var selectedTagsText: String {
-        if allTags.isEmpty {
-            return L10n.Filters.noTags
-        }
-        if selectedTags.isEmpty || selectedTags.count == allTags.count {
-            return L10n.Filters.allTags
-        }
-        return L10n.Filters.selectedCount(selectedTags.count)
+        viewModel.selectedTagsText(selectedTags: selectedTags)
     }
 
     private func syncTagsSelection() {
-        if selectedTags.isEmpty && !allTags.isEmpty {
-            selectedTags = Set(allTags.map { $0.persistentModelID })
+        if selectedTags.isEmpty && !viewModel.allTags.isEmpty {
+            selectedTags = Set(viewModel.allTags.map { $0.persistentModelID })
         }
     }
 
@@ -268,7 +212,7 @@ struct ExportFiltersStepView: View {
             icon: "creditcard",
             title: L10n.Settings.accounts,
             status: selectedAccountsText,
-            items: allAccounts,
+            items: viewModel.allAccounts,
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -280,7 +224,7 @@ struct ExportFiltersStepView: View {
             if newAccountIDs.isEmpty {
                 selectedCurrencies = Set(CurrencyCode.allCases)
             } else {
-                let selected = allAccounts.filter { newAccountIDs.contains($0.persistentModelID) }
+                let selected = viewModel.allAccounts.filter { newAccountIDs.contains($0.persistentModelID) }
                 let available = Set(
                     selected.map { CurrencyCode(rawValue: $0.currencyCode) ?? .pen })
                 selectedCurrencies = available
@@ -338,9 +282,7 @@ struct ExportFiltersStepView: View {
     }
 
     private func subcategories(for category: Category) -> [Subcategory] {
-        allSubcategories.filter { sub in
-            sub.category == category && sub.isVisible
-        }
+        viewModel.subcategories(for: category)
     }
 
     private var tagsContent: some View {
@@ -348,7 +290,7 @@ struct ExportFiltersStepView: View {
             icon: "number",
             title: L10n.Settings.tags,
             status: selectedTagsText,
-            items: allTags,
+            items: viewModel.allTags,
             showEmptyPlaceholder: true
         ) { tag in
             tagChip(tag)
@@ -436,13 +378,7 @@ struct ExportFiltersStepView: View {
     }
 
     private var availableCurrencies: [CurrencyCode] {
-        if selectedAccounts.isEmpty {
-            return CurrencyCode.allCases
-        }
-        let selected = allAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
-        let accountCurrencies = Set(
-            selected.map { CurrencyCode(rawValue: $0.currencyCode) ?? .pen })
-        return CurrencyCode.allCases.filter { accountCurrencies.contains($0) }
+        viewModel.availableCurrencies(selectedAccounts: selectedAccounts)
     }
 
     // MARK: - Natures Content
