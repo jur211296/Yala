@@ -12,8 +12,7 @@ struct SaveAsRecurringSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
+    @State private var viewModel = SaveAsRecurringViewModel()
 
     // Initial values from transaction
     let transactionType: TransactionType
@@ -99,14 +98,6 @@ struct SaveAsRecurringSheet: View {
         self._yearlyDay = State(initialValue: Calendar.current.component(.day, from: transactionDate))
     }
 
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
-    }
-
-    private var selectedTagObjects: [Tag] {
-        activeTags.filter { selectedTags.contains($0.persistentModelID) }
-    }
-
     private var parsedAmount: Double {
         Double(amountString.replacingOccurrences(of: ",", with: ".")) ?? 0
     }
@@ -167,6 +158,7 @@ struct SaveAsRecurringSheet: View {
             }
         }
         .onAppear {
+            viewModel.setContext(modelContext)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isNameFocused = true
             }
@@ -384,7 +376,7 @@ struct SaveAsRecurringSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        if activeTags.isEmpty {
+                        if viewModel.activeTags.isEmpty {
                             YalaEmptyState(
                                 icon: "tag.slash",
                                 title: L10n.Empty.noTags,
@@ -393,7 +385,7 @@ struct SaveAsRecurringSheet: View {
                         } else {
                             SectionBox(title: "") {
                                 VStack(spacing: 0) {
-                                    ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
+                                    ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
                                         }
@@ -760,7 +752,7 @@ struct SaveAsRecurringSheet: View {
             transactionType: transactionType.rawValue,
             account: selectedAccount,
             subcategory: selectedSubcategory,
-            tags: selectedTagObjects,
+            tags: viewModel.selectedTagObjects(from: selectedTags),
             natureOverride: natureOverride?.rawValue,
             isRecurring: isRecurring,
             recurrenceType: recurrenceType.rawValue,
