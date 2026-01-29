@@ -23,6 +23,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-29] 7da2644 security(biometric): migrate settings from UserDefaults to Keychain (SEC-005)
 - [2026-01-29] 6d56b4b fix(audit): resolve remaining HIGH priority issues (SEC-006, PERF-005)
 - [2026-01-29] f613ffe fix(accessibility): add reduceMotion support and semantic colors (UI-001, UI-002)
 - [2026-01-29] 9e00484 docs(state): update audit progress - all critical issues resolved
@@ -207,8 +208,8 @@ Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 ~95% completada
 - Auditoría CRÍTICOS: TODOS CERRADOS
-- Auditoría ALTOS resueltos: SEC-003/004/006, BUG-006/007/008/009/010/011, SWD-005/006/007, PERF-004/005/006, UI-001 (parcial), UI-002
-- Auditoría ALTOS pendientes: SEC-005 (Keychain migration - complejo), ARCH-* (refactors arquitecturales)
+- Auditoría ALTOS resueltos: SEC-003/004/005/006, BUG-006/007/008/009/010/011, SWD-005/006/007, PERF-004/005/006, UI-001 (parcial), UI-002
+- Auditoría ALTOS pendientes: ARCH-* (refactors arquitecturales - requieren planificación)
 - Pendiente de Fase 10: Solo "Modo solo gastos"
 
 ## V1.1 (Futuro)
