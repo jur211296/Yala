@@ -26,6 +26,15 @@ final class Account {
     /// Relación inversa con budgets (muchos-a-muchos)
     var budgets: [Budget] = []
 
+    /// Inverse relationship: transactions linked to this account
+    var transactions: [TransactionItem] = []
+
+    /// Inverse relationship: favorite payments linked to this account
+    var favoritePayments: [FavoritePayment] = []
+
+    /// Inverse relationship: scheduled payments linked to this account
+    var scheduledPayments: [ScheduledPayment] = []
+
     init(
         name: String,
         currencyCode: String,

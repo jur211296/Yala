@@ -40,9 +40,11 @@ final class ScheduledPayment {
     // MARK: - Classification
 
     /// Linked account (required for context)
+    @Relationship(inverse: \Account.scheduledPayments)
     var account: Account?
 
     /// Linked subcategory for categorization
+    @Relationship(inverse: \Subcategory.scheduledPayments)
     var subcategory: Subcategory?
 
     /// Linked tags (many-to-many)

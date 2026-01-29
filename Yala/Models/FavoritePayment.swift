@@ -26,9 +26,11 @@ final class FavoritePayment {
     var note: String?
 
     /// Optional linked account
+    @Relationship(inverse: \Account.favoritePayments)
     var account: Account?
 
     /// Optional linked subcategory
+    @Relationship(inverse: \Subcategory.favoritePayments)
     var subcategory: Subcategory?
 
     /// Optional linked tags (many-to-many)

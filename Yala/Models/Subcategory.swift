@@ -32,6 +32,15 @@ final class Subcategory {
     /// Relación inversa con budgets (muchos-a-muchos)
     var budgets: [Budget] = []
 
+    /// Inverse relationship: transactions linked to this subcategory
+    var transactions: [TransactionItem] = []
+
+    /// Inverse relationship: favorite payments linked to this subcategory
+    var favoritePayments: [FavoritePayment] = []
+
+    /// Inverse relationship: scheduled payments linked to this subcategory
+    var scheduledPayments: [ScheduledPayment] = []
+
     init(
         name: String,
         colorHex: String? = nil,

@@ -17,9 +17,15 @@ final class TransactionItem {
     var currencyCode: String
     var note: String?
 
+    @Relationship(inverse: \Category.transactions)
     var category: Category?
+
+    @Relationship(inverse: \Subcategory.transactions)
     var subcategory: Subcategory?
+
+    @Relationship(inverse: \Account.transactions)
     var account: Account?
+
     var tags: [Tag]
 
     // MARK: - Standardized Currency Data

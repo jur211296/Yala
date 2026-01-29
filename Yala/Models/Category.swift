@@ -29,8 +29,11 @@ final class Category {
 
     /// Relación 1 -> N con subcategorías
     /// NOTE: Using nullify instead of cascade - manual deletion handles subcategories to avoid SwiftUI @Query conflicts
-    @Relationship(deleteRule: .nullify)
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.category)
     var subcategories: [Subcategory]
+
+    /// Inverse relationship: transactions linked to this category
+    var transactions: [TransactionItem] = []
 
     init(
         name: String,
