@@ -13,12 +13,7 @@ struct NotificationsSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
-    @Query(sort: \NotificationItem.sortOrder) private var notifications: [NotificationItem]
-
-    @State private var selectedNotification: NotificationItem?
-    @State private var isCreatingNew = false
-    @State private var showPermissionAlert = false
-    @State private var permissionStatus: UNAuthorizationStatus = .notDetermined
+    @State private var viewModel = NotificationsSettingsViewModel()
 
     var body: some View {
         ZStack {
@@ -26,7 +21,7 @@ struct NotificationsSettingsView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    if notifications.isEmpty {
+                    if viewModel.isEmpty {
                         emptyState
                     } else {
                         notificationsList
@@ -48,22 +43,21 @@ struct NotificationsSettingsView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 YalaToolbarButton(systemName: "plus") {
-                    isCreatingNew = true
+                    viewModel.isCreatingNew = true
                 }
             }
         }
-        .sheet(isPresented: $isCreatingNew) {
+        .sheet(isPresented: $viewModel.isCreatingNew, onDismiss: { viewModel.closeEditor() }) {
             NotificationEditorSheet(notification: nil) { newNotification in
-                modelContext.insert(newNotification)
-                try? modelContext.save()
+                viewModel.insertNotification(newNotification)
                 Task {
                     await NotificationService.shared.scheduleNotification(for: newNotification)
                 }
             }
         }
-        .sheet(item: $selectedNotification) { notification in
+        .sheet(item: $viewModel.selectedNotification) { notification in
             NotificationEditorSheet(notification: notification) { _ in
-                try? modelContext.save()
+                viewModel.saveContext()
                 Task {
                     await NotificationService.shared.scheduleNotification(for: notification)
                 }
@@ -71,7 +65,7 @@ struct NotificationsSettingsView: View {
         }
         .alert(
             L10n.Notifications.permissionRequired,
-            isPresented: $showPermissionAlert
+            isPresented: $viewModel.showPermissionAlert
         ) {
             Button(L10n.Notifications.openSettings) {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -82,24 +76,27 @@ struct NotificationsSettingsView: View {
         } message: {
             Text(L10n.Notifications.permissionMessage)
         }
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
         .task {
-            permissionStatus = await NotificationService.shared.checkPermissionStatus()
+            viewModel.permissionStatus = await NotificationService.shared.checkPermissionStatus()
 
             // Request permission on first visit if not determined
-            if permissionStatus == .notDetermined {
+            if viewModel.permissionStatus == .notDetermined {
                 let granted = await NotificationService.shared.requestPermission()
-                permissionStatus = granted ? .authorized : .denied
+                viewModel.permissionStatus = granted ? .authorized : .denied
 
                 // If granted, schedule all active notifications
                 if granted {
-                    await NotificationService.shared.rescheduleAllNotifications(items: notifications)
+                    await NotificationService.shared.rescheduleAllNotifications(items: viewModel.notifications)
                 }
-            } else if permissionStatus == .denied {
+            } else if viewModel.permissionStatus == .denied {
                 // Show alert if previously denied
-                showPermissionAlert = true
-            } else if permissionStatus == .authorized || permissionStatus == .provisional {
+                viewModel.showPermissionAlert = true
+            } else if viewModel.permissionStatus == .authorized || viewModel.permissionStatus == .provisional {
                 // Ensure active notifications are scheduled
-                await NotificationService.shared.rescheduleAllNotifications(items: notifications)
+                await NotificationService.shared.rescheduleAllNotifications(items: viewModel.notifications)
             }
         }
     }
@@ -113,7 +110,7 @@ struct NotificationsSettingsView: View {
             message: L10n.Notifications.emptyMessage,
             actionTitle: L10n.Notifications.addNew
         ) {
-            isCreatingNew = true
+            viewModel.isCreatingNew = true
         }
         .padding(.top, 64)
     }
@@ -122,12 +119,12 @@ struct NotificationsSettingsView: View {
 
     private var notificationsList: some View {
         VStack(spacing: DS.Spacing.md) {
-            ForEach(notifications) { notification in
+            ForEach(viewModel.notifications) { notification in
                 NotificationCard(
                     notification: notification,
                     onToggle: { isActive in
                         notification.isActive = isActive
-                        try? modelContext.save()
+                        viewModel.saveContext()
                         Task {
                             if isActive {
                                 // Check permission status
@@ -142,7 +139,7 @@ struct NotificationsSettingsView: View {
                                     } else {
                                         await MainActor.run {
                                             notification.isActive = false
-                                            try? modelContext.save()
+                                            viewModel.saveContext()
                                         }
                                     }
 
@@ -150,8 +147,8 @@ struct NotificationsSettingsView: View {
                                     // Previously denied - show settings alert
                                     await MainActor.run {
                                         notification.isActive = false
-                                        try? modelContext.save()
-                                        showPermissionAlert = true
+                                        viewModel.saveContext()
+                                        viewModel.showPermissionAlert = true
                                     }
 
                                 case .authorized, .provisional, .ephemeral:
@@ -167,7 +164,7 @@ struct NotificationsSettingsView: View {
                         }
                     },
                     onTap: {
-                        selectedNotification = notification
+                        viewModel.selectedNotification = notification
                     },
                     onDelete: notification.notificationType.isDeletable ? {
                         deleteNotification(notification)
@@ -183,8 +180,7 @@ struct NotificationsSettingsView: View {
         Task {
             await NotificationService.shared.cancelNotification(for: notification)
         }
-        modelContext.delete(notification)
-        try? modelContext.save()
+        viewModel.deleteNotification(notification)
     }
 }
 
