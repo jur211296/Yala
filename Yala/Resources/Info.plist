@@ -15,6 +15,8 @@
 	</array>
 	<key>OPENAI_API_KEY</key>
 	<string>$(OPENAI_API_KEY)</string>
+	<key>EXCHANGE_RATE_API_KEY</key>
+	<string>$(EXCHANGE_RATE_API_KEY)</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Yala uses the microphone to record voice input for creating transactions. Your audio is processed to extract expense details.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
