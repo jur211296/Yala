@@ -84,6 +84,7 @@ struct ImportIntroSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(ExchangeRateService.self) private var exchangeRateService
 
     // Data passed from parent view (no @Query = no view reconstruction on save)
     let accounts: [Account]
@@ -572,7 +573,7 @@ struct ImportIntroSheet: View {
                     if let dateRange = dateRange {
                         Task {
                             print("🔵 [IMPORT] Fetching exchange rates for date range: \(dateRange)")
-                            await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
+                            await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
                             // Update any transactions with provisional rates
                             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
                             // Trigger widget refresh so Panel recalculates with new data
@@ -663,7 +664,7 @@ struct ImportIntroSheet: View {
                     if let dateRange = dateRange {
                         Task {
                             print("🔵 [IMPORT-MULTI] Fetching exchange rates for date range: \(dateRange)")
-                            await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
+                            await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
                             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
                             SessionState.shared.needsExchangeRateWidgetRefresh = true
                             print("🔵 [IMPORT-MULTI] Exchange rate fetch complete")

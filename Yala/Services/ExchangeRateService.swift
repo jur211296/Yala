@@ -7,17 +7,35 @@
 //
 
 import Foundation
+import Observation
 import SwiftData
+
+// MARK: - Exchange Rate Service Protocol
+
+/// Protocol for exchange rate management, enabling dependency injection and testing.
+protocol ExchangeRateServiceProtocol {
+    func preloadHistoricalIfNeeded(context: ModelContext) async
+    func updateTodayIfNeeded(context: ModelContext) async
+    func ensureRates(for dateRange: DateInterval, context: ModelContext) async
+    func getRate(for date: Date, context: ModelContext) -> ExchangeRate?
+    func getMostRecentRate(onOrBefore date: Date, context: ModelContext) -> ExchangeRate?
+    func getLatestRate(context: ModelContext) -> ExchangeRate?
+    func getOldestRate(context: ModelContext) -> ExchangeRate?
+    func getStoredDateRange(context: ModelContext) -> DateInterval?
+}
 
 // MARK: - Exchange Rate Service
 
 /// Service responsible for managing exchange rate data.
 /// Handles fetching from API and persisting to SwiftData.
+/// Supports @Environment injection in SwiftUI views.
+@Observable
 @MainActor
-final class ExchangeRateService {
+final class ExchangeRateService: ExchangeRateServiceProtocol {
 
-    // MARK: - Singleton
+    // MARK: - Singleton (for backward compatibility)
 
+    /// Shared instance for backward compatibility. Prefer @Environment injection in Views.
     static let shared = ExchangeRateService(provider: ExchangeRateAPIService())
 
     // MARK: - Properties

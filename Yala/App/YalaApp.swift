@@ -50,6 +50,7 @@ struct YalaApp: App {
 
     private var sessionState = SessionState.shared
     private var currencyConverter = CurrencyConverter.shared
+    private var exchangeRateService = ExchangeRateService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -85,6 +86,7 @@ struct YalaApp: App {
         .modelContainer(sharedModelContainer)
         .environment(sessionState)
         .environment(currencyConverter)
+        .environment(exchangeRateService)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 checkForPendingSharedImage()

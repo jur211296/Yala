@@ -12,6 +12,7 @@ struct CurrencySettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(CurrencyConverter.self) private var currencyConverter
+    @Environment(ExchangeRateService.self) private var exchangeRateService
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
@@ -273,7 +274,7 @@ struct CurrencySettingsView: View {
             }
 
             // Last updated disclaimer
-            if let latestRate = ExchangeRateService.shared.getLatestRate(context: modelContext) {
+            if let latestRate = exchangeRateService.getLatestRate(context: modelContext) {
                 // Use API timestamp if available, otherwise fall back to dateKey
                 let rateDate: Date? =
                     latestRate.timestamp
