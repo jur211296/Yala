@@ -6,8 +6,8 @@
 ## Estado Actual
 
 **Fase:** D - @Query → ViewModels 🔄 EN PROGRESO
-**Progreso:** 3/48 Views migradas
-**Status:** Fases A, B, C completadas. D en progreso.
+**Progreso:** 11 Views migradas (D.3 + D.4 completados)
+**Status:** Fases A, B, C completadas. D.3 y D.4 completados.
 
 ## Resumen de Fases
 
@@ -16,7 +16,7 @@
 | A | Singletons → @Environment | 3 | ✅ Completada |
 | B | SessionState consistente | 2 | ✅ Completada |
 | C | Services para ModelContext | 3 | ✅ Completada |
-| D | @Query → ViewModels | 7 | 🔄 3/48 migradas |
+| D | @Query → ViewModels | 7 | 🔄 D.3 + D.4 completados (11 views) |
 
 ## Fase A: Servicios Stateless → @Environment
 
@@ -100,7 +100,49 @@ currencyConverter.convert(...)
 - **@Query migrado:** accounts, transactions (para balance)
 - **Beneficios:** Lógica de ordenamiento y balance encapsulada en ViewModel
 
-### D.1-D.7: Resto (45 Views)
+### D.3.4: CategoriesSettingsListView
+- **Estado:** ✅ Completado (fcd71f6)
+- **Archivos creados:** `Yala/App/ViewModels/CategoriesSettingsListViewModel.swift`
+- **@Query migrado:** categories
+- **Beneficios:** Lógica de ordenamiento, filtrado active/hidden, y operaciones CRUD encapsuladas
+
+### D.3.5: CategoryDetailView
+- **Estado:** ✅ Completado (929abf9)
+- **Archivos creados:** `Yala/App/ViewModels/CategoryDetailViewModel.swift`
+- **@Query migrado:** allSubcategories
+- **Beneficios:** Lógica de save/delete, validación, y manejo de subcategorías encapsuladas
+
+### D.3.6: BudgetsListView
+- **Estado:** ✅ Completado (d73bd91)
+- **Archivos modificados:** `Yala/App/ViewModels/BudgetsViewModel.swift`
+- **@Query migrado:** allBudgets, allTransactions, accounts
+- **Beneficios:** ViewModel existente ahora maneja toda la carga de datos
+
+### D.3.7: FavoritesListView
+- **Estado:** ✅ Completado (dfdf33a)
+- **Archivos creados:** `Yala/App/ViewModels/FavoritesListViewModel.swift`
+- **@Query migrado:** favorites
+- **Beneficios:** Lógica de delete/move/reorder encapsulada en ViewModel
+
+### D.4.1: ScheduledPaymentsSettingsView
+- **Estado:** ✅ Completado (5c4ff02)
+- **Archivos creados:** `Yala/App/ViewModels/ScheduledPaymentsSettingsViewModel.swift`
+- **@Query migrado:** allPayments (scheduled payments)
+- **Beneficios:** Lógica de filtrado por tab y delete encapsulada en ViewModel
+
+### D.4.2: NotificationsSettingsView
+- **Estado:** ✅ Completado (6e7635b)
+- **Archivos creados:** `Yala/App/ViewModels/NotificationsSettingsViewModel.swift`
+- **@Query migrado:** notifications
+- **Beneficios:** Lógica de insert/save/delete encapsulada en ViewModel
+
+### D.4.3: BudgetsFavoritesSettingsView
+- **Estado:** ✅ Completado (929372b)
+- **Archivos creados:** `Yala/App/ViewModels/BudgetsFavoritesSettingsViewModel.swift`
+- **@Query migrado:** activeBudgets (con predicate isActive)
+- **Beneficios:** Lógica de favoritos (toggle, move, reindex) encapsulada en ViewModel
+
+### D.5-D.7: Resto
 - **Estado:** ⏳ Pendiente
 
 ## Commits Realizados
@@ -121,6 +163,13 @@ currencyConverter.convert(...)
 ### Fase D
 - `5952358` - refactor(arch): migrate Tag views to ViewModels (D.3.1, D.3.2)
 - `a248033` - refactor(arch): migrate AccountsSettingsListView to ViewModel (D.3.3)
+- `fcd71f6` - refactor(arch): migrate CategoriesSettingsListView to ViewModel (D.3.4)
+- `929abf9` - refactor(arch): migrate CategoryDetailView to ViewModel (D.3.5)
+- `d73bd91` - refactor(arch): migrate BudgetsListView @Query to ViewModel (D.3.6)
+- `dfdf33a` - refactor(arch): migrate FavoritesListView to ViewModel (D.3.7)
+- `5c4ff02` - refactor(arch): migrate ScheduledPaymentsSettingsView to ViewModel (D.4.1)
+- `6e7635b` - refactor(arch): migrate NotificationsSettingsView to ViewModel (D.4.2)
+- `929372b` - refactor(arch): migrate BudgetsFavoritesSettingsView to ViewModel (D.4.3)
 
 ## Notas Técnicas
 
@@ -174,18 +223,17 @@ struct MyView: View {
 
 ## Para Continuar
 
-**Próximas views a migrar (D.3 Settings - Entities):**
-- CategoriesSettingsListView
-- CategoryDetailView
-- SubcategoryDetailView (ya usa EntityDeletionService)
-- BudgetsListView
-- FavoritesListView
+**D.3 Settings - Entities:** ✅ COMPLETADO
+**D.4 Settings - Other:** ✅ COMPLETADO
 
 **Plan de priorización:**
-1. Continuar con D.3 (Settings - Entities) - bajo riesgo
-2. Luego D.4 (Settings - Other) - bajo riesgo
-3. Después D.5-D.7 (Transactions, Editors, Selectors) - medio riesgo
-4. Al final D.1-D.2 (Panel, Statistics) - alto riesgo (vistas complejas)
+1. ✅ D.3 (Settings - Entities) - COMPLETADO
+2. ✅ D.4 (Settings - Other) - COMPLETADO
+3. 🔄 D.5-D.7 (Transactions, Editors, Selectors) - medio riesgo
+4. ⏳ D.1-D.2 (Panel, Statistics) - alto riesgo (vistas complejas)
+
+**Próximas views a migrar (D.5 Transactions):**
+- Buscar views con @Query en Transactions, Selectors, etc.
 
 **Archivos clave:**
 - ViewModels creados: `Yala/App/ViewModels/`
