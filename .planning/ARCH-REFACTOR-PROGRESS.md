@@ -5,9 +5,9 @@
 
 ## Estado Actual
 
-**Fase:** C - Services para ModelContext ✅ COMPLETADA
-**Siguiente:** Fase D - @Query → ViewModels
-**Status:** Fases A, B, C completadas. D pendiente.
+**Fase:** D - @Query → ViewModels 🔄 EN PROGRESO
+**Progreso:** 3/48 Views migradas
+**Status:** Fases A, B, C completadas. D en progreso.
 
 ## Resumen de Fases
 
@@ -16,7 +16,7 @@
 | A | Singletons → @Environment | 3 | ✅ Completada |
 | B | SessionState consistente | 2 | ✅ Completada |
 | C | Services para ModelContext | 3 | ✅ Completada |
-| D | @Query → ViewModels | 7 | ⏳ Pendiente |
+| D | @Query → ViewModels | 7 | 🔄 3/48 migradas |
 
 ## Fase A: Servicios Stateless → @Environment
 
@@ -105,10 +105,89 @@ currencyConverter.convert(...)
 
 ## Commits Realizados
 
-(Se actualiza automáticamente)
+### Fase A
+- `e095c93` - refactor(arch): migrate CurrencyConverter to @Environment injection (A.1)
+- `451f1dd` - refactor(arch): migrate ExchangeRateService to @Environment injection (A.2)
+- `d955c88` - refactor(arch): migrate Vision/Voice services to @Environment injection (A.3)
+
+### Fase B
+- `c19f0e8` - refactor(arch): migrate SessionState.shared to @Environment (B.1 + B.2)
+
+### Fase C
+- `62f0b83` - refactor(arch): create DraftService for inbox draft operations (C.1)
+- `cf9a1df` - refactor(arch): create EntityDeletionService for standardized entity deletion (C.2)
+- `461cc0e` - refactor(arch): create TransactionService for standardized transaction operations (C.3)
+
+### Fase D
+- `5952358` - refactor(arch): migrate Tag views to ViewModels (D.3.1, D.3.2)
+- `a248033` - refactor(arch): migrate AccountsSettingsListView to ViewModel (D.3.3)
 
 ## Notas Técnicas
 
 - CurrencyConverter es stateless, ideal para @Environment
 - Mantener backward compatibility durante migración
 - Verificar que no hay dependencias circulares
+
+## Patrón de Migración Fase D (@Query → ViewModel)
+
+```swift
+// ANTES (View con @Query)
+struct MyView: View {
+    @Query var items: [Item]
+    var body: some View { ... }
+}
+
+// DESPUÉS (ViewModel + View)
+@MainActor
+@Observable
+final class MyViewModel {
+    private var modelContext: ModelContext?
+    private(set) var items: [Item] = []
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadItems()
+    }
+
+    func loadItems() {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<Item>(sortBy: [...])
+        do {
+            items = try context.fetch(descriptor)
+        } catch {
+            print("MyViewModel: Error: \(error)")
+        }
+    }
+}
+
+struct MyView: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var viewModel = MyViewModel()
+
+    var body: some View {
+        content
+            .onAppear { viewModel.setContext(modelContext) }
+            .sheet(isPresented: ..., onDismiss: { viewModel.loadItems() }) { ... }
+    }
+}
+```
+
+## Para Continuar
+
+**Próximas views a migrar (D.3 Settings - Entities):**
+- CategoriesSettingsListView
+- CategoryDetailView
+- SubcategoryDetailView (ya usa EntityDeletionService)
+- BudgetsListView
+- FavoritesListView
+
+**Plan de priorización:**
+1. Continuar con D.3 (Settings - Entities) - bajo riesgo
+2. Luego D.4 (Settings - Other) - bajo riesgo
+3. Después D.5-D.7 (Transactions, Editors, Selectors) - medio riesgo
+4. Al final D.1-D.2 (Panel, Statistics) - alto riesgo (vistas complejas)
+
+**Archivos clave:**
+- ViewModels creados: `Yala/App/ViewModels/`
+- Plan original: `.claude/plans/quirky-strolling-map.md`
+- Progreso: Este archivo

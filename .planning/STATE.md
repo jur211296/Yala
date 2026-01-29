@@ -165,7 +165,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 - [x] Privacy Policy (ES/EN)
 - [x] demo-data.csv para screenshots
 - [x] Documentado en .planning/appstore/
-- [ ] Screenshots (pendiente - captura manual en Xcode)
+- [x] Screenshots ✅
 
 **Subfase 7.7: Estabilidad Pre-Release** ✅
 - [x] Error handling consistente (13 operaciones de persistencia con alertas)
@@ -201,27 +201,34 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Auditoría verificada y sincronizada
-Next step: "Modo solo gastos" o continuar con MEDIUM priority audit items
-Resume file: .planning/AUDIT-REPORT.md
+Stopped at: Refactoring Arquitectural Fase D (D.3.3 completado)
+Next step: Continuar Fase D (@Query → ViewModels) o "Modo solo gastos"
+Resume file: .planning/ARCH-REFACTOR-PROGRESS.md
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 ~95% completada
-- **Auditoría CRÍTICOS: TODOS RESUELTOS ✅**
-  - SEC-001/002: Keys seguras (Secrets.xcconfig en .gitignore)
-  - BUG-001-005: Force unwraps → guard let (commit f815624)
-  - ERR-001-004: try? → do-catch (commit 2f3d7ef)
-  - SWD-001-004: Inversas SwiftData completas (commit 3b3def0)
-  - CFG-001/002: Configuración correcta
-- **Auditoría ALTOS: TODOS RESUELTOS ✅** (excepto ARCH-*)
-  - SEC-003/004: #if DEBUG, deep links validados (commit 9e00484)
-  - SEC-005: Keychain para biometría (commit 7da2644)
-  - SEC-006: FileProtection.complete en exports (commit 6d56b4b)
-  - BUG-006-011: Bounds checking, threading OK
-  - SWD-005/006/007: @MainActor en servicios (commit 9e00484)
-  - PERF-001-006: Optimizaciones completadas
-  - UI-001/002: reducedMotion y colores semánticos (commit f613ffe)
-- **Auditoría ALTOS pendientes:** ARCH-001 a ARCH-006 (refactors arquitecturales mayores)
+- **Refactoring Arquitectural (ARCH-001 a ARCH-006):**
+  - **Fase A: ✅ COMPLETADA** - Singletons → @Environment (3 incrementos)
+    - A.1: CurrencyConverter (e095c93)
+    - A.2: ExchangeRateService (451f1dd)
+    - A.3: Vision/Voice Services (d955c88)
+  - **Fase B: ✅ COMPLETADA** - SessionState.shared → @Environment (2 incrementos)
+    - B.1: Widget refresh flags (c19f0e8)
+    - B.2: Otros accesos (c19f0e8)
+  - **Fase C: ✅ COMPLETADA** - Services para ModelContext (3 incrementos)
+    - C.1: DraftService (62f0b83)
+    - C.2: EntityDeletionService (cf9a1df)
+    - C.3: TransactionService (461cc0e)
+  - **Fase D: 🔄 EN PROGRESO** - @Query → ViewModels (3/48 views migradas)
+    - D.3.1: TagFormView → TagFormViewModel ✅ (5952358)
+    - D.3.2: TagsSettingsListView → TagsSettingsListViewModel ✅ (5952358)
+    - D.3.3: AccountsSettingsListView → AccountsSettingsListViewModel ✅ (a248033)
+    - Restantes: 45 views (Panel, Statistics, otros Settings, etc.)
+- **Patrón establecido para Fase D:**
+  - ViewModel usa `setContext(ModelContext)` para DI
+  - Manual `loadData()` on sheet dismiss para refrescar
+  - AppStorage synced bidireccional View ↔ ViewModel
+  - Todo estado (UI + form) encapsulado en ViewModel
 - **Pendiente de Fase 10:** Solo "Modo solo gastos"
 
 ## V1.1 (Futuro)
