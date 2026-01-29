@@ -657,7 +657,7 @@ private struct DetailContainerSheets: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
-                RecordsFiltersView(viewModel: recordsViewModel)
+                RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { refreshRecordsData() }
             }
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
@@ -680,7 +680,7 @@ private struct DetailContainerSheets: ViewModifier {
                 }
             }
             .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
-                RecordsFiltersView(viewModel: recordsViewModel)
+                RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear {
                         syncFiltersToTrends()
                         calculateTrendsData()

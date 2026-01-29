@@ -12,16 +12,11 @@ struct RecordsFiltersView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    // MARK: - Data Queries
-
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Category.sortOrder) private var allCategories: [Category]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var filtersViewModel = RecordsFiltersViewModel()
 
     // MARK: - ViewModel Binding
 
-    @Bindable var viewModel: RecordsViewModel
+    @Bindable var recordsViewModel: RecordsViewModel
 
     // MARK: - Sheet Presentation State
 
@@ -36,16 +31,6 @@ struct RecordsFiltersView: View {
     @State private var hasInitializedTags = false
     @State private var hasInitializedCurrencies = false
     @State private var hasInitializedCategories = false
-
-    // MARK: - Computed Properties
-
-    private var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
-    }
-
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
-    }
 
     // MARK: - Body
 
@@ -97,7 +82,7 @@ struct RecordsFiltersView: View {
                         // Reset filters button
                         Button {
                             withAnimation {
-                                viewModel.clearFilters()
+                                recordsViewModel.clearFilters()
                             }
                         } label: {
                             Text(L10n.Filters.clearFilters)
@@ -116,6 +101,9 @@ struct RecordsFiltersView: View {
             }
             .navigationTitle(L10n.Filters.title)
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                filtersViewModel.setContext(modelContext)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark") {
@@ -142,7 +130,7 @@ struct RecordsFiltersView: View {
             icon: "creditcard",
             title: "Cuentas",
             status: selectedAccountsText,
-            items: activeAccounts,
+            items: filtersViewModel.activeAccounts,
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -153,13 +141,13 @@ struct RecordsFiltersView: View {
     }
 
     private func accountChip(_ account: Account) -> some View {
-        let isSelected = viewModel.selectedAccounts.contains(account.persistentModelID)
+        let isSelected = recordsViewModel.selectedAccounts.contains(account.persistentModelID)
 
         return Button {
             if isSelected {
-                viewModel.selectedAccounts.remove(account.persistentModelID)
+                recordsViewModel.selectedAccounts.remove(account.persistentModelID)
             } else {
-                viewModel.selectedAccounts.insert(account.persistentModelID)
+                recordsViewModel.selectedAccounts.insert(account.persistentModelID)
             }
         } label: {
             Text(account.name)
@@ -184,13 +172,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedAccountsText: String {
-        if viewModel.selectedAccounts.isEmpty {
-            return "Todas"
-        }
-        if viewModel.selectedAccounts.count == activeAccounts.count {
-            return "Todas"
-        }
-        return "\(viewModel.selectedAccounts.count)/\(activeAccounts.count)"
+        filtersViewModel.selectedAccountsText(selectedAccounts: recordsViewModel.selectedAccounts)
     }
 
     private var categoriesContent: some View {
@@ -226,36 +208,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedCategoriesText: String {
-        let subCount = viewModel.selectedSubcategories.count
-
-        if subCount == 0 {
-            return "Todas"
-        }
-
-        // All selected = no filter (equivalent to "Todas")
-        let allIDs = Set(allSubcategories.map { $0.persistentModelID })
-        if viewModel.selectedSubcategories == allIDs {
-            return "Todas"
-        }
-
-        // Count unique categories from selected subcategories
-        let selectedSubs = allSubcategories.filter {
-            viewModel.selectedSubcategories.contains($0.persistentModelID)
-        }
-        if selectedSubs.isEmpty {
-            return "Todas"
-        }
-
-        if let firstSub = selectedSubs.first {
-            let remainingCount = selectedSubs.count - 1
-            if remainingCount > 0 {
-                return "\(firstSub.name) +\(remainingCount)"
-            } else {
-                return firstSub.name
-            }
-        }
-
-        return "Todas"
+        filtersViewModel.selectedCategoriesText(selectedSubcategories: recordsViewModel.selectedSubcategories)
     }
 
     private var tagsContent: some View {
@@ -263,7 +216,7 @@ struct RecordsFiltersView: View {
             icon: "number",
             title: "Etiquetas",
             status: selectedTagsText,
-            items: activeTags,
+            items: filtersViewModel.activeTags,
             showEmptyPlaceholder: true
         ) { tag in
             tagChip(tag)
@@ -274,13 +227,13 @@ struct RecordsFiltersView: View {
     }
 
     private func tagChip(_ tag: Tag) -> some View {
-        let isSelected = viewModel.selectedTags.contains(tag.persistentModelID)
+        let isSelected = recordsViewModel.selectedTags.contains(tag.persistentModelID)
 
         return Button {
             if isSelected {
-                viewModel.selectedTags.remove(tag.persistentModelID)
+                recordsViewModel.selectedTags.remove(tag.persistentModelID)
             } else {
-                viewModel.selectedTags.insert(tag.persistentModelID)
+                recordsViewModel.selectedTags.insert(tag.persistentModelID)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
@@ -309,13 +262,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTagsText: String {
-        if viewModel.selectedTags.isEmpty {
-            return "Todas"
-        }
-        if viewModel.selectedTags.count == activeTags.count {
-            return "Todas"
-        }
-        return "\(viewModel.selectedTags.count)/\(activeTags.count)"
+        filtersViewModel.selectedTagsText(selectedTags: recordsViewModel.selectedTags)
     }
 
     // MARK: - Transaction Natures Content (Income/Expense)
@@ -344,13 +291,13 @@ struct RecordsFiltersView: View {
     }
 
     private func transactionNatureChip(_ nature: TransactionNature) -> some View {
-        let isSelected = viewModel.selectedTransactionNatures.contains(nature)
+        let isSelected = recordsViewModel.selectedTransactionNatures.contains(nature)
 
         return Button {
             if isSelected {
-                viewModel.selectedTransactionNatures.remove(nature)
+                recordsViewModel.selectedTransactionNatures.remove(nature)
             } else {
-                viewModel.selectedTransactionNatures.insert(nature)
+                recordsViewModel.selectedTransactionNatures.insert(nature)
             }
         } label: {
             Text(nature.displayName)
@@ -368,11 +315,11 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTransactionNaturesText: String {
-        if viewModel.selectedTransactionNatures.isEmpty { return "Todos" }
-        if viewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
+        if recordsViewModel.selectedTransactionNatures.isEmpty { return "Todos" }
+        if recordsViewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
             return "Todos"
         }
-        return viewModel.selectedTransactionNatures.first?.displayName ?? "Todos"
+        return recordsViewModel.selectedTransactionNatures.first?.displayName ?? "Todos"
     }
 
     // MARK: - Natures Content
@@ -401,13 +348,13 @@ struct RecordsFiltersView: View {
     }
 
     private func natureChip(_ nature: SubcategoryNature) -> some View {
-        let isSelected = viewModel.selectedNatures.contains(nature)
+        let isSelected = recordsViewModel.selectedNatures.contains(nature)
 
         return Button {
             if isSelected {
-                viewModel.selectedNatures.remove(nature)
+                recordsViewModel.selectedNatures.remove(nature)
             } else {
-                viewModel.selectedNatures.insert(nature)
+                recordsViewModel.selectedNatures.insert(nature)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
@@ -427,8 +374,8 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedNaturesText: String {
-        if viewModel.selectedNatures.isEmpty { return "Todas" }
-        return "\(viewModel.selectedNatures.count)"
+        if recordsViewModel.selectedNatures.isEmpty { return "Todas" }
+        return "\(recordsViewModel.selectedNatures.count)"
     }
 
     private var currencyContent: some View {
@@ -458,13 +405,13 @@ struct RecordsFiltersView: View {
     }
 
     private func currencyChip(_ currency: CurrencyCode) -> some View {
-        let isSelected = viewModel.selectedCurrencies.contains(currency)
+        let isSelected = recordsViewModel.selectedCurrencies.contains(currency)
 
         return Button {
             if isSelected {
-                viewModel.selectedCurrencies.remove(currency)
+                recordsViewModel.selectedCurrencies.remove(currency)
             } else {
-                viewModel.selectedCurrencies.insert(currency)
+                recordsViewModel.selectedCurrencies.insert(currency)
             }
         } label: {
             Text(currency.rawValue)
@@ -487,20 +434,20 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedCurrenciesText: String {
-        if viewModel.selectedCurrencies.isEmpty {
+        if recordsViewModel.selectedCurrencies.isEmpty {
             return "Todas"
         }
-        if viewModel.selectedCurrencies.count == CurrencyCode.allCases.count {
+        if recordsViewModel.selectedCurrencies.count == CurrencyCode.allCases.count {
             return "Todas"
         }
-        return "\(viewModel.selectedCurrencies.count)/\(CurrencyCode.allCases.count)"
+        return "\(recordsViewModel.selectedCurrencies.count)/\(CurrencyCode.allCases.count)"
     }
 
     private var amountContent: some View {
         AmountFilterView(
-            condition: $viewModel.amountCondition,
-            currencyCode: viewModel.selectedCurrencies.count == 1
-                ? viewModel.selectedCurrencies.first : nil
+            condition: $recordsViewModel.amountCondition,
+            currencyCode: recordsViewModel.selectedCurrencies.count == 1
+                ? recordsViewModel.selectedCurrencies.first : nil
         )
     }
 
@@ -511,7 +458,7 @@ struct RecordsFiltersView: View {
                 .foregroundStyle(.primary)
                 .frame(width: 24)
 
-            TextField(L10n.Filters.noteContains, text: $viewModel.searchText)
+            TextField(L10n.Filters.noteContains, text: $recordsViewModel.searchText)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -522,19 +469,19 @@ struct RecordsFiltersView: View {
     private var accountsSheetView: some View {
         NavigationStack {
             List {
-                ForEach(activeAccounts) { account in
+                ForEach(filtersViewModel.activeAccounts) { account in
                     Button {
-                        if viewModel.selectedAccounts.contains(account.persistentModelID) {
-                            viewModel.selectedAccounts.remove(account.persistentModelID)
+                        if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
+                            recordsViewModel.selectedAccounts.remove(account.persistentModelID)
                         } else {
-                            viewModel.selectedAccounts.insert(account.persistentModelID)
+                            recordsViewModel.selectedAccounts.insert(account.persistentModelID)
                         }
                     } label: {
                         HStack {
                             Text(account.name)
                                 .foregroundStyle(.primary)
                             Spacer()
-                            if viewModel.selectedAccounts.contains(account.persistentModelID) {
+                            if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(Color.brandPrimary)
                             }
@@ -558,38 +505,18 @@ struct RecordsFiltersView: View {
 
     private var categoriesSheetView: some View {
         CategorySelectorSheet(
-            categories: allCategories,
-            subcategories: allSubcategories,
-            selectedSubcategories: $viewModel.selectedSubcategories
+            categories: filtersViewModel.allCategories,
+            subcategories: filtersViewModel.allSubcategories,
+            selectedSubcategories: $recordsViewModel.selectedSubcategories
         )
     }
 
     private func subcategories(for category: Category) -> [Subcategory] {
-        allSubcategories.filter { sub in
-            sub.category == category && sub.isVisible
-        }
+        filtersViewModel.subcategories(for: category)
     }
 
     private func subcategorySelectionSummary(for category: Category) -> String {
-        let subs = subcategories(for: category)
-        let total = subs.count
-        let selectedCount = subs.filter {
-            viewModel.selectedSubcategories.contains($0.persistentModelID)
-        }.count
-
-        if total == 0 {
-            return L10n.Filters.noSubcategories
-        }
-
-        if selectedCount == 0 {
-            return L10n.Filters.noneSelected
-        }
-
-        if selectedCount == total {
-            return L10n.Filters.allSubcategories
-        }
-
-        return "\(selectedCount) / \(total)"
+        filtersViewModel.subcategorySelectionSummary(for: category, selectedSubcategories: recordsViewModel.selectedSubcategories)
     }
 
     // MARK: - Tags Sheet
@@ -597,12 +524,12 @@ struct RecordsFiltersView: View {
     private var tagsSheetView: some View {
         NavigationStack {
             List {
-                ForEach(allTags.filter { $0.isActive }) { tag in
+                ForEach(filtersViewModel.activeTags) { tag in
                     Button {
-                        if viewModel.selectedTags.contains(tag.persistentModelID) {
-                            viewModel.selectedTags.remove(tag.persistentModelID)
+                        if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
+                            recordsViewModel.selectedTags.remove(tag.persistentModelID)
                         } else {
-                            viewModel.selectedTags.insert(tag.persistentModelID)
+                            recordsViewModel.selectedTags.insert(tag.persistentModelID)
                         }
                     } label: {
                         HStack {
@@ -615,7 +542,7 @@ struct RecordsFiltersView: View {
 
                             Spacer()
 
-                            if viewModel.selectedTags.contains(tag.persistentModelID) {
+                            if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(Color.brandPrimary)
                             }
@@ -642,7 +569,7 @@ struct RecordsFiltersView: View {
             MultiSelectionList(
                 title: L10n.Filters.selectCurrencies,
                 items: CurrencyCode.allCases,
-                selection: $viewModel.selectedCurrencies,
+                selection: $recordsViewModel.selectedCurrencies,
                 label: { $0.rawValue }
             )
             .toolbar {
