@@ -97,7 +97,7 @@
 |----|---------|-------|-------------|---------|
 | SEC-003 | ✅ RESUELTO | - | Print statements envueltos con `#if DEBUG` | (commit 9e00484) |
 | SEC-004 | ✅ RESUELTO | - | Deep links con validación de feature toggles | (commit 9e00484) |
-| SEC-005 | BiometricAuthService.swift | - | Config biométrica en UserDefaults vs Keychain | Modificable externamente |
+| SEC-005 | ✅ RESUELTO | - | KeychainService creado, BiometricAuthService migrado a Keychain | Commit pendiente |
 | SEC-006 | ✅ RESUELTO | - | FileProtection.complete agregado a archivos de exportación | Commit pendiente |
 
 ### 🟡 Medios
