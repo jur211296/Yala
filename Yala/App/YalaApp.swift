@@ -29,6 +29,7 @@ struct YalaApp: App {
             ScheduledPayment.self,
             InboxDraft.self,
             MerchantMemory.self,
+            NotificationItem.self,
         ])
 
         // Nombre lógico del contenedor / base de datos
@@ -54,12 +55,16 @@ struct YalaApp: App {
             ContentView()
                 .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
                 .task {
+                    // Initialize notification delegate early (to show in foreground)
+                    _ = NotificationService.shared
                     // Update exchange rates on app launch
                     await loadExchangeRates()
                     // Load subscription status
                     await loadSubscriptionStatus()
                     // Process due scheduled payments (create inbox drafts)
                     processDueScheduledPayments()
+                    // Seed default notifications if needed
+                    seedDefaultNotifications()
                     // Check for pending shared images on launch
                     checkForPendingSharedImage()
                 }
@@ -147,5 +152,16 @@ struct YalaApp: App {
         // Set the pending image URL - PanelView will observe and show ImageSelectionView
         sessionState.pendingSharedImageURL = firstImageURL
         sessionState.hasPendingSharedImage = true
+    }
+
+    /// Seed default notifications if none exist
+    /// Only runs for existing users who already completed onboarding (pre-notification feature)
+    @MainActor
+    private func seedDefaultNotifications() {
+        // Don't seed if onboarding hasn't completed - onboarding will create notifications
+        guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return }
+
+        let context = sharedModelContainer.mainContext
+        NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 }

@@ -74,6 +74,9 @@ final class DataWipeService {
         }
         try context.save()
 
+        // 1.1d Eliminar notificaciones personalizadas y resetear default
+        NotificationService.shared.deleteAllNotifications(context: context)
+
         // 1.2 Eliminar todas las transacciones
         for transaction in allTransactions {
             context.delete(transaction)
@@ -222,5 +225,9 @@ final class DataWipeService {
         // La función es idempotente: si ya existen categorías, no hace nada.
         // Como acabamos de borrar todo, SIEMPRE sembrará.
         seedCategoriesIfNeeded(in: context)
+
+        // Note: Notifications are NOT seeded here.
+        // They are created during onboarding (step 6) based on user selection.
+        // For existing users upgrading, YalaApp.swift handles the seed.
     }
 }

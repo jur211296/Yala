@@ -26,6 +26,10 @@ struct OnboardingView: View {
     // Animation state for category grid
     @State private var showCategoryIcons: Bool = false
 
+    // Notification preferences
+    @State private var selectedNotifications: Set<NotificationType> = []
+    @State private var hasRequestedPermission: Bool = false
+
     // Callback when onboarding completes
     var onComplete: () -> Void
 
@@ -49,6 +53,7 @@ struct OnboardingView: View {
                 secondaryCurrenciesStep.tag(2)
                 periodStep.tag(3)
                 categoriesStep.tag(4)
+                notificationsStep.tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentStep)
@@ -67,7 +72,7 @@ struct OnboardingView: View {
 
     private var progressIndicator: some View {
         HStack(spacing: DS.Spacing.sm) {
-            ForEach(0..<5, id: \.self) { step in
+            ForEach(0..<6, id: \.self) { step in
                 Capsule()
                     .fill(step <= currentStep ? Color.electricIndigo : Color.yalaSecondaryText.opacity(0.2))
                     .frame(width: step == currentStep ? 24 : 8, height: 8)
@@ -342,6 +347,169 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Step 6: Notifications
+
+    private var notificationsStep: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            VStack(spacing: DS.Spacing.md) {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color.electricIndigo)
+
+                Text(L10n.Onboarding.notificationsTitle)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+
+                Text(L10n.Onboarding.notificationsSubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+            }
+            .padding(.top, DS.Spacing.md)
+
+            ScrollView {
+                VStack(spacing: DS.Spacing.sm) {
+                    // Reminders section
+                    notificationGroupHeader(L10n.Notifications.sectionReminders)
+                    notificationToggleRow(.endOfDay)
+                    notificationToggleRow(.lunchTime)
+
+                    // Reports section
+                    notificationGroupHeader(L10n.Notifications.sectionReports)
+                    notificationToggleRow(.dailyReport)
+                    notificationToggleRow(.weeklyReport)
+                    notificationToggleRow(.monthlyReport)
+
+                    // System section
+                    notificationGroupHeader(L10n.Notifications.sectionSystem)
+                    notificationToggleRow(.scheduledPayments)
+                    notificationToggleRow(.announcements)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+            }
+
+            // Skip button
+            Button {
+                selectedNotifications.removeAll()
+            } label: {
+                Text(L10n.Onboarding.notificationsSkip)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.bottom, DS.Spacing.sm)
+        }
+    }
+
+    private func notificationGroupHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Spacer()
+        }
+        .padding(.top, DS.Spacing.md)
+        .padding(.bottom, DS.Spacing.xs)
+    }
+
+    private func notificationToggleRow(_ type: NotificationType) -> some View {
+        let isSelected = selectedNotifications.contains(type)
+
+        return Button {
+            Task {
+                await toggleNotification(type)
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: type.defaultColor).opacity(0.2))
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: type.defaultIcon)
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color(hex: type.defaultColor))
+                }
+
+                // Name and description
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(notificationName(for: type))
+                        .font(.body)
+                        .foregroundStyle(.primary)
+
+                    Text(notificationHint(for: type))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                // Toggle indicator
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
+            }
+            .padding(DS.Spacing.md)
+            .background(isSelected ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.md)
+                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggleNotification(_ type: NotificationType) async {
+        // Request permission on first activation
+        if !hasRequestedPermission && !selectedNotifications.contains(type) {
+            let granted = await NotificationService.shared.requestPermission()
+            hasRequestedPermission = true
+
+            if !granted {
+                return // Don't activate if permission denied
+            }
+        }
+
+        // Toggle selection
+        if selectedNotifications.contains(type) {
+            selectedNotifications.remove(type)
+        } else {
+            selectedNotifications.insert(type)
+        }
+    }
+
+    private func notificationName(for type: NotificationType) -> String {
+        switch type {
+        case .endOfDay: return L10n.Notifications.endOfDayName
+        case .lunchTime: return L10n.Notifications.lunchTimeName
+        case .dailyReport: return L10n.Notifications.dailyReportName
+        case .weeklyReport: return L10n.Notifications.weeklyReportName
+        case .monthlyReport: return L10n.Notifications.monthlyReportName
+        case .scheduledPayments: return L10n.Notifications.scheduledPaymentsName
+        case .announcements: return L10n.Notifications.announcementsName
+        case .custom: return ""
+        }
+    }
+
+    private func notificationHint(for type: NotificationType) -> String {
+        switch type {
+        case .endOfDay: return "8:00 PM"
+        case .lunchTime: return "1:30 PM"
+        case .dailyReport: return "9:00 PM"
+        case .weeklyReport: return L10n.Notifications.dayMonday + " 9:00 AM"
+        case .monthlyReport: return L10n.Notifications.dayFirstOfMonth
+        case .scheduledPayments: return L10n.Notifications.scheduledPaymentsHint
+        case .announcements: return L10n.Notifications.announcementsHint
+        case .custom: return ""
+        }
+    }
+
     // MARK: - Category Icons Grid
 
     /// Preview grid showing seed category icons with staggered animation
@@ -494,7 +662,7 @@ struct OnboardingView: View {
                 // Dismiss keyboard (especially important on step 1)
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-                if currentStep < 4 {
+                if currentStep < 5 {
                     withAnimation {
                         currentStep += 1
                     }
@@ -506,7 +674,7 @@ struct OnboardingView: View {
                     completeOnboarding()
                 }
             } label: {
-                Text(currentStep < 4 ? L10n.Action.next : L10n.Onboarding.finish)
+                Text(currentStep < 5 ? L10n.Action.next : L10n.Onboarding.finish)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -574,8 +742,33 @@ struct OnboardingView: View {
             seedCategoriesIfNeeded(in: modelContext)
         }
 
+        // Create notifications based on user selection
+        createSelectedNotifications()
+
         // Notify completion
         onComplete()
+    }
+
+    private func createSelectedNotifications() {
+        // Create all default notifications
+        let allDefaults = NotificationItem.createDefaults()
+
+        for notification in allDefaults {
+            // Set active state based on user selection
+            let isSelected = selectedNotifications.contains(notification.notificationType)
+            notification.isActive = isSelected
+
+            modelContext.insert(notification)
+
+            // Schedule if active
+            if isSelected {
+                Task {
+                    await NotificationService.shared.scheduleNotification(for: notification)
+                }
+            }
+        }
+
+        try? modelContext.save()
     }
 }
 
