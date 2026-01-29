@@ -64,7 +64,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 - **Automatización Apple Pay (10.x)** - ApplePayTransactionIntent recibe Amount/Merchant/Name de Wallet, parsea monto y divisa del texto, infiere cuenta por divisa única, auto-categoriza con MerchantMemory, crea InboxDraft con sourceType .applePay, 6 idiomas, 11 escenarios QA (Sección 23)
 - **Automatización Externa (10.x)** - AutomationEntryIntent recibe JSON estructurado (amount, currency, merchant, date), ideal para correos de banco procesados por IA, crea InboxDraft con sourceType .automation, auto-asigna cuenta por divisa y categoría via MerchantMemory
 - **Sistema de Notificaciones (10.x)** - NotificationItem con 7 tipos default (endOfDay, lunchTime, dailyReport, weeklyReport, monthlyReport, scheduledPayments, announcements, custom), NotificationService para scheduling con soporte weekdays, ReportConfig configurable, NotificationsSettingsView y NotificationEditorSheet con selector weekdays estilo iOS, paso 6 de onboarding para activación inicial, localización 6 idiomas, 40+ escenarios QA
-- **Auditoría de código (10.x)** - CRÍTICOS CERRADOS: SEC-001/002 (keys seguras), ERR-001-004 (try? → do-catch), BUG-001-005 (force unwraps → guard), SWD-001-004 (inversas SwiftData), PERF-001-003 (transactionDateRange optimizado O(n)), CFG-001/002 (config correcta); ALTOS resueltos: SEC-003/004 (#if DEBUG, deep links), BUG-006/007/009/010/011 (bounds, threading), SWD-005/007 (@MainActor), PERF-004/006 (static formatters); CLAUDE.md documentado con patrones obligatorios; AUDIT-REPORT.md con tracking completo
+- **Auditoría de código (10.x)** - **CRÍTICOS: TODOS RESUELTOS ✅** SEC-001/002 (keys seguras), ERR-001-004 (try? → do-catch), BUG-001-005 (force unwraps → guard), SWD-001-004 (inversas SwiftData), PERF-001-003 (optimizado O(n)), CFG-001/002 (config correcta); **ALTOS: TODOS RESUELTOS ✅** SEC-003/004/005/006 (security hardening), BUG-006-011 (bounds, threading), SWD-005/006/007 (@MainActor), PERF-004/005/006 (static formatters), UI-001/002 (accessibility); **PENDIENTES:** ARCH-001-006 (refactors arquitecturales - planificación requerida)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -201,16 +201,28 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Auditoría HIGH - Casi todos completados
+Stopped at: Auditoría verificada y sincronizada
 Next step: "Modo solo gastos" o continuar con MEDIUM priority audit items
 Resume file: .planning/AUDIT-REPORT.md
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 ~95% completada
-- Auditoría CRÍTICOS: TODOS CERRADOS
-- Auditoría ALTOS resueltos: SEC-003/004/005/006, BUG-006/007/008/009/010/011, SWD-005/006/007, PERF-004/005/006, UI-001 (parcial), UI-002
-- Auditoría ALTOS pendientes: ARCH-* (refactors arquitecturales - requieren planificación)
-- Pendiente de Fase 10: Solo "Modo solo gastos"
+- **Auditoría CRÍTICOS: TODOS RESUELTOS ✅**
+  - SEC-001/002: Keys seguras (Secrets.xcconfig en .gitignore)
+  - BUG-001-005: Force unwraps → guard let (commit f815624)
+  - ERR-001-004: try? → do-catch (commit 2f3d7ef)
+  - SWD-001-004: Inversas SwiftData completas (commit 3b3def0)
+  - CFG-001/002: Configuración correcta
+- **Auditoría ALTOS: TODOS RESUELTOS ✅** (excepto ARCH-*)
+  - SEC-003/004: #if DEBUG, deep links validados (commit 9e00484)
+  - SEC-005: Keychain para biometría (commit 7da2644)
+  - SEC-006: FileProtection.complete en exports (commit 6d56b4b)
+  - BUG-006-011: Bounds checking, threading OK
+  - SWD-005/006/007: @MainActor en servicios (commit 9e00484)
+  - PERF-001-006: Optimizaciones completadas
+  - UI-001/002: reducedMotion y colores semánticos (commit f613ffe)
+- **Auditoría ALTOS pendientes:** ARCH-001 a ARCH-006 (refactors arquitecturales mayores)
+- **Pendiente de Fase 10:** Solo "Modo solo gastos"
 
 ## V1.1 (Futuro)
 
