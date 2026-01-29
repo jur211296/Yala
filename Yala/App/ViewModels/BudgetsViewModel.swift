@@ -3,14 +3,26 @@
 //  Yala
 //
 //  ViewModel for managing budgets, calculations, and UI state
+//  Fase D: Arquitectura - @Query → ViewModels
 //
 
 import Foundation
 import SwiftData
 import SwiftUI
 
+@MainActor
 @Observable
 final class BudgetsViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Data
+
+    private(set) var allBudgets: [Budget] = []
+    private(set) var allTransactions: [TransactionItem] = []
+    private(set) var accounts: [Account] = []
 
     // MARK: - Filter State
 
@@ -50,6 +62,76 @@ final class BudgetsViewModel {
         self.selectedWeek = calendar.startOfWeek(for: Date())
         self.selectedMonth = calendar.startOfMonth(for: Date())
         self.selectedYear = calendar.component(.year, from: Date())
+    }
+
+    // MARK: - Context Injection
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadData()
+    }
+
+    // MARK: - Data Loading
+
+    func loadData() {
+        guard let context = modelContext else { return }
+
+        // Load budgets
+        let budgetDescriptor = FetchDescriptor<Budget>(sortBy: [SortDescriptor(\Budget.createdAt, order: .reverse)])
+        do {
+            allBudgets = try context.fetch(budgetDescriptor)
+        } catch {
+            print("BudgetsViewModel: Error loading budgets: \(error)")
+            allBudgets = []
+        }
+
+        // Load transactions
+        let transactionDescriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)])
+        do {
+            allTransactions = try context.fetch(transactionDescriptor)
+        } catch {
+            print("BudgetsViewModel: Error loading transactions: \(error)")
+            allTransactions = []
+        }
+
+        // Load accounts
+        let accountDescriptor = FetchDescriptor<Account>(sortBy: [SortDescriptor(\Account.name)])
+        do {
+            accounts = try context.fetch(accountDescriptor)
+        } catch {
+            print("BudgetsViewModel: Error loading accounts: \(error)")
+            accounts = []
+        }
+    }
+
+    /// Check if there are inactive budgets for current period type
+    func hasInactiveBudgets(forPeriodTypeIndex segment: Int) -> Bool {
+        let budgets = allBudgets.filter { budget in
+            if segment == 3 {
+                return budget.periodType == BudgetPeriodType.unique.rawValue
+            } else {
+                return budget.periodType == selectedPeriodType.rawValue
+            }
+        }
+        return budgets.contains { !$0.isActive }
+    }
+
+    /// Refresh budget data with current filters
+    func refreshBudgetData(hideInactive: Bool, defaultCurrencyCode: String) {
+        var filteredBudgets = allBudgets.filter {
+            $0.periodType == selectedPeriodType.rawValue
+        }
+
+        if hideInactive {
+            filteredBudgets = filteredBudgets.filter { $0.isActive }
+        }
+
+        calculateBudgetData(
+            budgets: filteredBudgets,
+            transactions: allTransactions,
+            accounts: accounts,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
     }
 
     // MARK: - Budget Calculation

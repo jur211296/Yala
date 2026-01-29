@@ -11,16 +11,6 @@ import SwiftUI
 struct BudgetsListView: View {
     @Environment(\.modelContext) private var modelContext
 
-    // Data Queries
-    @Query(sort: \Budget.createdAt, order: .reverse)
-    private var allBudgets: [Budget]
-
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var allTransactions: [TransactionItem]
-
-    @Query(sort: \Account.name)
-    private var accounts: [Account]
-
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
 
@@ -62,13 +52,14 @@ struct BudgetsListView: View {
         .sheet(isPresented: $showPeriodSelector) {
             BudgetPeriodSelectorSheet(
                 viewModel: viewModel,
-                transactions: allTransactions,
+                transactions: viewModel.allTransactions,
                 onPeriodChange: { refreshData() }
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
         .onAppear {
+            viewModel.setContext(modelContext)
             refreshData()
         }
     }
@@ -247,19 +238,7 @@ struct BudgetsListView: View {
     }
 
     private var hasInactiveBudgets: Bool {
-        // Check if there are any inactive budgets in the current period type
-        let budgets = allBudgets.filter { budget in
-            if selectedSegment == 3 {
-                // Unique mode: show all unique budgets
-                return budget.periodType == BudgetPeriodType.unique.rawValue
-            } else {
-                // Other modes: filter by selected period type
-                return budget.periodType == viewModel.selectedPeriodType.rawValue
-            }
-        }
-
-        // Check if any budget is inactive (isActive == false)
-        return budgets.contains { !$0.isActive }
+        viewModel.hasInactiveBudgets(forPeriodTypeIndex: selectedSegment)
     }
 
     // MARK: - Empty State
@@ -360,21 +339,9 @@ struct BudgetsListView: View {
     // MARK: - Data Management
 
     private func refreshData() {
-        // Filter budgets based on selected period type
-        var filteredBudgets = allBudgets.filter {
-            $0.periodType == viewModel.selectedPeriodType.rawValue
-        }
-
-        // Apply hideInactive filter if enabled
-        if hideInactive {
-            filteredBudgets = filteredBudgets.filter { $0.isActive }
-        }
-
-        // Calculate budget data
-        viewModel.calculateBudgetData(
-            budgets: filteredBudgets,
-            transactions: allTransactions,
-            accounts: accounts,
+        viewModel.loadData()
+        viewModel.refreshBudgetData(
+            hideInactive: hideInactive,
             defaultCurrencyCode: defaultCurrencyCode
         )
     }
