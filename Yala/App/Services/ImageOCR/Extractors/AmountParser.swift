@@ -80,8 +80,21 @@ struct AmountParser {
         var cleaned = amount
 
         // Detect format: European (1.234,56) vs American (1,234.56)
-        let hasCommaAsDecimal = cleaned.contains(",") &&
-                               (cleaned.lastIndex(of: ",")! > cleaned.lastIndex(of: ".") ?? cleaned.startIndex)
+        let lastCommaIndex = cleaned.lastIndex(of: ",")
+        let lastDotIndex = cleaned.lastIndex(of: ".")
+
+        let hasCommaAsDecimal: Bool
+        if let commaIndex = lastCommaIndex {
+            // Has comma - check if it's the decimal separator (comes after the dot or no dot exists)
+            if let dotIndex = lastDotIndex {
+                hasCommaAsDecimal = commaIndex > dotIndex
+            } else {
+                // Only comma, no dot - comma is decimal separator
+                hasCommaAsDecimal = true
+            }
+        } else {
+            hasCommaAsDecimal = false
+        }
 
         if hasCommaAsDecimal {
             // European format: 1.234,56 -> remove dots, replace comma with dot

@@ -781,7 +781,7 @@ enum TransactionCSVImportService {
                         components.second = 0
 
                         var calendar = Calendar(identifier: .gregorian)
-                        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+                        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? TimeZone(identifier: "UTC")!
 
                         if let date = calendar.date(from: components) {
                             return date

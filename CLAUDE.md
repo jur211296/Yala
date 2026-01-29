@@ -55,6 +55,64 @@ Usar el comando apropiado según el tipo de cambio:
 - No introducir dependencias nuevas sin justificación
 - Mantener separación clara entre UI, lógica y capa SwiftData
 
+## Patrones de Código Obligatorios
+
+### Manejo de Errores (NUNCA silenciar errores)
+```swift
+// ❌ MAL - Error silenciado, pérdida de datos sin diagnóstico
+try? context.save()
+guard let items = try? context.fetch(descriptor) else { return }
+
+// ✅ BIEN - Error visible y diagnosticable
+do {
+    try context.save()
+} catch {
+    print("ServiceName: Error saving: \(error)")
+}
+
+let items: [Model]
+do {
+    items = try context.fetch(descriptor)
+} catch {
+    print("ServiceName: Error fetching: \(error)")
+    return
+}
+```
+
+### Force Unwraps (NUNCA usar `!` sin validación previa)
+```swift
+// ❌ MAL - Crash en producción
+let firstChar = text.first!
+let index = array.lastIndex(of: item)!
+
+// ✅ BIEN - Manejo seguro
+guard let firstChar = text.first else { return }
+guard let index = array.lastIndex(of: item) else { return }
+```
+
+### Seguridad de API Keys
+- NUNCA hardcodear API keys en código fuente
+- SIEMPRE usar `Secrets.xcconfig` (ignorado por git)
+- SIEMPRE leer keys desde `Info.plist` via `Bundle.main.object(forInfoDictionaryKey:)`
+- SIEMPRE validar que la key existe antes de usarla
+- Si falta key, lanzar error descriptivo (no fallback silencioso)
+
+### Logs en Producción
+```swift
+// ❌ MAL - Log siempre visible
+print("User data: \(sensitiveData)")
+
+// ✅ BIEN - Solo en debug
+#if DEBUG
+print("Debug info: \(nonSensitiveData)")
+#endif
+```
+
+### SwiftData Relaciones
+- SIEMPRE definir `@Relationship(inverse:)` en relaciones bidireccionales
+- Verificar cascadas de eliminación (`deleteRule`)
+- Usar `@MainActor` en servicios que manipulan `ModelContext`
+
 ## Control de Ejecución de Comandos
 
 **CRÍTICO:** Consultar EXECUTION-RULES.md para saber qué comandos requieren instrucción explícita del usuario vs cuáles pueden ejecutarse automáticamente.

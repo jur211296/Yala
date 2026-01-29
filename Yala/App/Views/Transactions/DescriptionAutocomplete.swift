@@ -60,9 +60,7 @@ struct MentionState: Equatable {
         guard searchStartIndex < text.endIndex else { return nil }
 
         let currentWord = String(text[searchStartIndex...])
-        guard !currentWord.isEmpty else { return nil }
-
-        let firstChar = currentWord.first!
+        guard let firstChar = currentWord.first else { return nil }
 
         let mentionType: MentionType?
         switch firstChar {

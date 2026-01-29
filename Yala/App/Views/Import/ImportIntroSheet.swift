@@ -486,10 +486,10 @@ struct ImportIntroSheet: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             self.onImportCompleted?(errorResult)
                         }
-                    } else if matchingAccounts.count == 1 {
+                    } else if matchingAccounts.count == 1, let account = matchingAccounts.first {
                         // Only one account matches - import directly
-                        selectedAccount = matchingAccounts.first
-                        performImport(from: url, into: matchingAccounts.first!)
+                        selectedAccount = account
+                        performImport(from: url, into: account)
                     } else {
                         // Multiple accounts - show picker filtered by currency
                         filteredCurrencyForAccountPicker = singleCurrency

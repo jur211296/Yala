@@ -234,7 +234,9 @@ enum XLSXWriter {
         var result = ""
         var num = index
         while num >= 0 {
-            result = String(UnicodeScalar(65 + (num % 26))!) + result
+            let scalarValue = 65 + (num % 26)
+            guard let scalar = UnicodeScalar(scalarValue) else { break }
+            result = String(scalar) + result
             num = num / 26 - 1
         }
         return result
