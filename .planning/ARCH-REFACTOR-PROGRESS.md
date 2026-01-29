@@ -75,7 +75,10 @@ currencyConverter.convert(...)
 - **Beneficios:** Consistente save()+processPendingChanges(), transaction counting helpers, fix para TagFormView que no guardaba
 
 ### C.3: TransactionService
-- **Estado:** ⏳ Pendiente
+- **Estado:** ✅ Completado
+- **Archivos creados:** `Yala/Services/TransactionService.swift`
+- **Operaciones:** create, delete, bulk update (account, subcategory, tags, note, amount)
+- **Nota:** RecordsViewModel y NewTransactionViewModel ya tienen buena separación de lógica; TransactionService disponible para uso futuro
 
 ## Fase D: @Query → ViewModels
 
