@@ -19,6 +19,9 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var viewModel = ProfileViewModel()
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
@@ -26,10 +29,6 @@ struct ProfileView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-
-    @Query private var allTransactions: [TransactionItem]
-    @Query private var accounts: [Account]
-    @Query private var categories: [Category]
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -116,8 +115,8 @@ struct ProfileView: View {
                     PersonalDetailsView()
                 case .importIntro:
                     ImportIntroSheet(
-                        accounts: accounts,
-                        categories: categories,
+                        accounts: viewModel.accounts,
+                        categories: viewModel.categories,
                         onImportCompleted: { result in
                             // Store result and show alert after sheet animation completes
                             activeSheet = nil
@@ -198,6 +197,9 @@ struct ProfileView: View {
                         dismiss()
                     })
                 }
+            }
+            .onAppear {
+                viewModel.setContext(modelContext)
             }
         }
     }
@@ -474,9 +476,9 @@ struct ProfileView: View {
                         icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
                         iconColor: .mint
                     )
-                    .opacity(allTransactions.isEmpty ? 0.5 : 1.0)
+                    .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
                 }
-                .disabled(allTransactions.isEmpty)
+                .disabled(!viewModel.hasTransactions)
                 .buttonStyle(.plain)
 
                 SubsectionDivider()
