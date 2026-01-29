@@ -69,7 +69,10 @@ currencyConverter.convert(...)
 - **Nota:** VoiceRecordingView e ImageSelectionView siguen usando lógica inline por complejidad adicional (Merchant Memory, OCR processing)
 
 ### C.2: EntityDeletionService
-- **Estado:** ⏳ Pendiente
+- **Estado:** ✅ Completado
+- **Archivos creados:** `Yala/Services/EntityDeletionService.swift`
+- **Views migradas:** TagFormView, BudgetEditorView, ScheduledPaymentEditorView, CategoryDetailView, SubcategoryDetailView, AccountFormView
+- **Beneficios:** Consistente save()+processPendingChanges(), transaction counting helpers, fix para TagFormView que no guardaba
 
 ### C.3: TransactionService
 - **Estado:** ⏳ Pendiente

@@ -17,6 +17,7 @@ import SwiftUI
 struct TagFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(EntityDeletionService.self) private var deletionService
 
     // Fetch all tags to check for uniqueness
     @Query private var existingTags: [Tag]
@@ -364,7 +365,12 @@ struct TagFormView: View {
 
     private func deleteTag() {
         guard let tag = tagToEdit else { return }
-        modelContext.delete(tag)
-        dismiss()
+        deletionService.setContext(modelContext)
+        do {
+            try deletionService.deleteTag(tag)
+            dismiss()
+        } catch {
+            print("TagFormView: Error deleting tag: \(error)")
+        }
     }
 }

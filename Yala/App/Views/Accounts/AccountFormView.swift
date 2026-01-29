@@ -14,6 +14,7 @@ struct AccountFormView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(EntityDeletionService.self) private var deletionService
 
     @Query private var allTransactions: [TransactionItem]
 
@@ -525,8 +526,13 @@ struct AccountFormView: View {
     // MARK: - Eliminación de cuenta
 
     private func handleDeleteTapped() {
-        if viewModel.deleteAccount(context: modelContext) {
+        guard let account = viewModel.accountToEdit else { return }
+        deletionService.setContext(modelContext)
+        do {
+            try deletionService.deleteAccount(account)
             dismiss()
+        } catch {
+            print("AccountFormView: Error deleting account: \(error)")
         }
     }
 }

@@ -12,6 +12,7 @@ import SwiftUI
 struct CategoryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(EntityDeletionService.self) private var deletionService
 
     let category: Category
     let isNewCategory: Bool
@@ -535,18 +536,13 @@ struct CategoryDetailView: View {
     }
 
     private func deleteCategory() {
-        // Delete subcategories first to avoid SwiftUI @Query conflicts
-        for subcategory in subcategories {
-            modelContext.delete(subcategory)
-        }
-        modelContext.delete(category)
+        deletionService.setContext(modelContext)
         do {
-            try modelContext.save()
-            modelContext.processPendingChanges()
+            try deletionService.deleteCategory(category, withSubcategories: subcategories)
+            dismiss()
         } catch {
-            print("Category: Error deleting category: \(error)")
+            print("CategoryDetailView: Error deleting category: \(error)")
         }
-        dismiss()
     }
 
     private func saveCategory() {
@@ -590,26 +586,18 @@ struct CategoryDetailView: View {
     }
 
     private func deleteSubcategory(_ subcategory: Subcategory) {
-        modelContext.delete(subcategory)
+        deletionService.setContext(modelContext)
         do {
-            try modelContext.save()
-            modelContext.processPendingChanges()
+            try deletionService.deleteSubcategory(subcategory)
         } catch {
-            print("Category: Error deleting subcategory: \(error)")
+            print("CategoryDetailView: Error deleting subcategory: \(error)")
         }
         subcategoryToDelete = nil
         subcategoryForTransfer = nil
     }
 
     private func countTransactionsForSubcategory(_ subcategory: Subcategory) -> Int {
-        let subcategoryID = subcategory.persistentModelID
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
-        } catch {
-            print("Category: Error counting transactions: \(error)")
-            return 0
-        }
+        deletionService.setContext(modelContext)
+        return deletionService.transactionCount(forSubcategory: subcategory)
     }
 }

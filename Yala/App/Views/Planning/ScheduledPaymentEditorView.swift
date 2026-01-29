@@ -11,6 +11,7 @@ import SwiftUI
 struct ScheduledPaymentEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(EntityDeletionService.self) private var deletionService
 
     @Query(sort: \Account.name) private var allAccounts: [Account]
     @Query(sort: \Tag.name) private var allTags: [Tag]
@@ -929,9 +930,9 @@ struct ScheduledPaymentEditorView: View {
 
     private func deletePayment() {
         guard let payment = payment else { return }
-        modelContext.delete(payment)
+        deletionService.setContext(modelContext)
         do {
-            try modelContext.save()
+            try deletionService.deleteScheduledPayment(payment)
             dismiss()
             onDelete?()
         } catch {

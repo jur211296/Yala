@@ -12,6 +12,7 @@ struct BudgetEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(EntityDeletionService.self) private var deletionService
 
     @Query(sort: \Category.name) private var categories: [Category]
     @Query(sort: \Account.name) private var allAccounts: [Account]
@@ -640,9 +641,9 @@ struct BudgetEditorView: View {
 
     private func deleteBudget() {
         guard let budget = budget else { return }
-        modelContext.delete(budget)
+        deletionService.setContext(modelContext)
         do {
-            try modelContext.save()
+            try deletionService.deleteBudget(budget)
             // Trigger widget refresh
             sessionState.needsBudgetsWidgetRefresh = true
             dismiss()

@@ -12,6 +12,7 @@ import SwiftUI
 struct SubcategoryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(EntityDeletionService.self) private var deletionService
 
     let parentCategory: Category
     let subcategoryToEdit: Subcategory?
@@ -319,27 +320,19 @@ struct SubcategoryDetailView: View {
     /// Counts transactions linked to this subcategory
     private func countTransactions() -> Int {
         guard let subcategory = subcategoryToEdit else { return 0 }
-        let subcategoryID = subcategory.persistentModelID
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
-        } catch {
-            print("Subcategory: Error counting transactions for subcategory: \(error)")
-            return 0
-        }
+        deletionService.setContext(modelContext)
+        return deletionService.transactionCount(forSubcategory: subcategory)
     }
 
     private func deleteSubcategory() {
         guard let subcategory = subcategoryToEdit else { return }
-        modelContext.delete(subcategory)
+        deletionService.setContext(modelContext)
         do {
-            try modelContext.save()
-            modelContext.processPendingChanges()
+            try deletionService.deleteSubcategory(subcategory)
+            dismiss()
         } catch {
-            print("Subcategory: Error deleting subcategory: \(error)")
+            print("SubcategoryDetailView: Error deleting subcategory: \(error)")
         }
-        dismiss()
     }
 
     private func saveSubcategory() {
