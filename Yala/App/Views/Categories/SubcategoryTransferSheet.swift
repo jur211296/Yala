@@ -13,9 +13,7 @@ struct SubcategoryTransferSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Subcategory.sortOrder, order: .forward) private var allSubcategories:
-        [Subcategory]
-    @Query(sort: \Category.sortOrder, order: .forward) private var allCategories: [Category]
+    @State private var viewModel = SubcategoryTransferViewModel()
 
     let subcategoryToDelete: Subcategory
     let onComplete: () -> Void
@@ -25,15 +23,7 @@ struct SubcategoryTransferSheet: View {
 
     /// Calculated transaction count for this subcategory
     private var transactionCount: Int {
-        let subcategoryID = subcategoryToDelete.persistentModelID
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
-        } catch {
-            print("Transfer: Error counting transactions in sheet: \(error)")
-            return 0
-        }
+        viewModel.transactionCount(for: subcategoryToDelete)
     }
 
     var body: some View {
@@ -79,6 +69,9 @@ struct SubcategoryTransferSheet: View {
             }
         }
         .tint(Color.electricIndigo)
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     // MARK: - Header Section
@@ -199,7 +192,7 @@ struct SubcategoryTransferSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.lg) {
-                        ForEach(availableDestinations, id: \.category.persistentModelID) { group in
+                        ForEach(viewModel.availableDestinations(excluding: subcategoryToDelete), id: \.category.persistentModelID) { group in
                             SectionBox(title: group.category.name) {
                                 VStack(spacing: 0) {
                                     ForEach(
@@ -264,22 +257,8 @@ struct SubcategoryTransferSheet: View {
 
     /// Transfers all transactions to the specified subcategory
     private func transferTransactions(to destination: Subcategory) {
-        let sourceID = subcategoryToDelete.persistentModelID
-
         do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            let transactionsToTransfer = allTransactions.filter {
-                $0.subcategory?.persistentModelID == sourceID
-            }
-
-            for transaction in transactionsToTransfer {
-                transaction.subcategory = destination
-                transaction.category = destination.category
-            }
-
-            try modelContext.save()
-            modelContext.processPendingChanges()
+            try viewModel.transferTransactions(from: subcategoryToDelete, to: destination)
             showingPicker = false
             dismiss()
             onComplete()
@@ -290,7 +269,7 @@ struct SubcategoryTransferSheet: View {
 
     /// Transfers all transactions to the "Unassigned" subcategory in "Others" category
     private func transferToUnassigned() {
-        guard let unassignedSubcategory = getOrCreateUnassignedSubcategory() else {
+        guard let unassignedSubcategory = viewModel.getOrCreateUnassignedSubcategory(for: subcategoryToDelete) else {
             print("Transfer: Could not get or create unassigned subcategory")
             return
         }
@@ -300,116 +279,12 @@ struct SubcategoryTransferSheet: View {
 
     /// Deletes all transactions associated with the subcategory
     private func deleteAllTransactions() {
-        let sourceID = subcategoryToDelete.persistentModelID
-
         do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            let transactionsToDelete = allTransactions.filter {
-                $0.subcategory?.persistentModelID == sourceID
-            }
-
-            for transaction in transactionsToDelete {
-                modelContext.delete(transaction)
-            }
-
-            try modelContext.save()
-            modelContext.processPendingChanges()
+            try viewModel.deleteTransactions(for: subcategoryToDelete)
             dismiss()
             onComplete()
         } catch {
             print("Transfer: Error deleting transactions: \(error)")
         }
-    }
-
-    /// Gets or creates the "Unassigned" subcategory in the "Others" category
-    private func getOrCreateUnassignedSubcategory() -> Subcategory? {
-        let isIncome = subcategoryToDelete.category.isIncome
-        let othersName = L10n.Category.others
-        let unassignedName = L10n.Subcategory.unassigned
-
-        // Find or create "Others" category
-        var othersCategory: Category? = allCategories.first {
-            $0.name == othersName && $0.isIncome == isIncome
-        }
-
-        if othersCategory == nil {
-            // Create "Others" category
-            let maxSortOrder = allCategories.map { $0.sortOrder }.max() ?? -1
-            let newCategory = Category(
-                name: othersName,
-                colorHex: "#8E8E93",  // Gray color
-                isIncome: isIncome,
-                isDefaultSeed: false,
-                isVisible: true,
-                sortOrder: maxSortOrder + 1,
-                iconName: "questionmark.folder"
-            )
-            modelContext.insert(newCategory)
-            othersCategory = newCategory
-        }
-
-        guard let category = othersCategory else { return nil }
-
-        // Find or create "Unassigned" subcategory
-        var unassignedSubcategory: Subcategory? = allSubcategories.first {
-            $0.name == unassignedName && $0.category.persistentModelID == category.persistentModelID
-        }
-
-        if unassignedSubcategory == nil {
-            // Create "Unassigned" subcategory
-            let maxSortOrder = category.subcategories.map { $0.sortOrder }.max() ?? -1
-            let newSubcategory = Subcategory(
-                name: unassignedName,
-                colorHex: category.colorHex,
-                isDefaultSeed: false,
-                isVisible: true,
-                sortOrder: maxSortOrder + 1,
-                natureRawValue: SubcategoryNature.unclassified.rawValue,
-                iconName: "questionmark",
-                category: category
-            )
-            modelContext.insert(newSubcategory)
-            unassignedSubcategory = newSubcategory
-        }
-
-        // Save to ensure IDs are generated
-        do {
-            try modelContext.save()
-        } catch {
-            print("Transfer: Error saving unassigned subcategory: \(error)")
-            return nil
-        }
-
-        return unassignedSubcategory
-    }
-
-    // MARK: - Available Destinations
-
-    /// Subcategorías disponibles agrupadas por categoría (excluyendo la que se va a eliminar)
-    private var availableDestinations: [(category: Category, subcategories: [Subcategory])] {
-        let parentCategory = subcategoryToDelete.category
-
-        // Filtrar subcategorías visibles, excluyendo la que se elimina
-        let filtered = allSubcategories.filter { subcategory in
-            guard subcategory.isVisible else { return false }
-            guard subcategory.persistentModelID != subcategoryToDelete.persistentModelID else {
-                return false
-            }
-            // Solo mostrar subcategorías del mismo tipo (ingreso/gasto)
-            return subcategory.category.isIncome == parentCategory.isIncome
-        }
-
-        // Agrupar por categoría
-        let grouped = Dictionary(grouping: filtered) { $0.category }
-
-        return
-            grouped
-            .sorted { $0.key.sortOrder < $1.key.sortOrder }
-            .map {
-                (category: $0.key, subcategories: $0.value.sorted {
-                    $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-                })
-            }
     }
 }
