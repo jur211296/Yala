@@ -60,6 +60,22 @@ struct YalaShortcuts: AppShortcutsProvider {
             shortTitle: "shortcut.imageEntry.shortTitle",
             systemImageName: "photo.fill"
         )
+
+        AppShortcut(
+            intent: ApplePayTransactionIntent(),
+            phrases: [
+                // Spanish
+                "Registra Apple Pay en \(.applicationName)",
+                "Pago Apple Pay en \(.applicationName)",
+                "Apple Pay en \(.applicationName)",
+                // English
+                "Record Apple Pay in \(.applicationName)",
+                "Apple Pay payment in \(.applicationName)",
+                "Apple Pay in \(.applicationName)"
+            ],
+            shortTitle: "shortcut.applePay.shortTitle",
+            systemImageName: "apple.logo"
+        )
     }
 
     static var shortcutTileColor: ShortcutTileColor {

@@ -2864,7 +2864,89 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 
 ---
 
+## Sección 23: Automatización Apple Pay (App Intent)
+
+### Escenario 23.1: Atajo visible en app Atajos
+1. Abrir la app Atajos de iOS
+2. Buscar "Yala" en la galería o crear nuevo atajo
+3. **Verificar:** Aparece acción "Registro Apple Pay" (o "Apple Pay Entry")
+4. **Verificar:** Descripción indica que crea borrador en bandeja de entrada
+
+### Escenario 23.2: Flujo básico - comercio nuevo
+1. Crear atajo con acción "Registro Apple Pay"
+2. Configurar parámetros: Monto=50, Comercio="Starbucks"
+3. Ejecutar el atajo
+4. **Verificar:** Mensaje confirma creación del borrador
+5. Abrir Yala → Panel → Bandeja de entrada
+6. **Verificar:** Existe draft con monto -50, nota "Starbucks"
+7. **Verificar:** Icono Apple logo junto al draft
+8. **Verificar:** Subcategoría vacía (comercio nuevo, sin memoria)
+9. **Verificar:** Campo account puede estar vacío si hay múltiples cuentas
+
+### Escenario 23.3: Auto-asignación de cuenta por divisa única
+1. Tener solo UNA cuenta en USD
+2. Ejecutar atajo con Monto=25, Comercio="Amazon", Divisa="USD"
+3. Abrir bandeja de entrada
+4. **Verificar:** Draft tiene cuenta USD asignada automáticamente
+5. **Verificar:** needsUserInput NO incluye "account"
+
+### Escenario 23.4: Múltiples cuentas misma divisa - sin auto-asignar
+1. Tener DOS cuentas en PEN (ej: "Efectivo PEN" y "BCP PEN")
+2. Ejecutar atajo con Monto=100, Comercio="Wong", Divisa="PEN"
+3. Abrir bandeja de entrada
+4. **Verificar:** Draft NO tiene cuenta asignada
+5. **Verificar:** needsUserInput incluye "account"
+6. **Verificar:** Usuario puede seleccionar cuenta al aprobar
+
+### Escenario 23.5: Auto-categorización con Merchant Memory
+**Precondición:** Tener MerchantMemory para "Starbucks" con ≥5 aprobaciones
+1. Ejecutar atajo con Monto=30, Comercio="STARBUCKS LIMA"
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft tiene subcategoría asignada automáticamente
+4. **Verificar:** confidenceSubcategory = 0.8
+5. Aprobar draft sin cambiar subcategoría
+6. **Verificar:** MerchantMemory.countApproved incrementa
+
+### Escenario 23.6: Sugerencia con Merchant Memory (confianza media)
+**Precondición:** Tener MerchantMemory para "McDonalds" con 3-4 aprobaciones
+1. Ejecutar atajo con Monto=20, Comercio="McDonalds"
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft tiene subcategoría sugerida
+4. **Verificar:** needsUserInput aún incluye "subcategory" (requiere confirmación)
+5. Aprobar confirmando la subcategoría
+
+### Escenario 23.7: Fecha opcional - con fecha
+1. Ejecutar atajo con Monto=75, Comercio="Ripley", Fecha=ayer
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft.date = fecha de ayer
+4. **Verificar:** confidenceDate = 1.0
+
+### Escenario 23.8: Fecha opcional - sin fecha
+1. Ejecutar atajo con Monto=40, Comercio="Plaza Vea" (sin fecha)
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft.date = ahora (momento de ejecución)
+4. **Verificar:** confidenceDate = nil
+
+### Escenario 23.9: Monto siempre negativo
+1. Ejecutar atajo con Monto=100 (positivo)
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft.amount = -100 (se convierte a gasto)
+4. **Verificar:** Al aprobar, transacción es gasto
+
+### Escenario 23.10: Notificación al abrir app
+1. Ejecutar atajo Apple Pay con pantalla bloqueada
+2. **Verificar:** Atajo completa sin abrir la app
+3. Desbloquear y abrir Yala
+4. **Verificar:** Badge en Inbox o notificación visible (igual que pagos planificados)
+
+### Escenario 23.11: Error de base de datos
+1. Simular error de acceso a BD (difícil de reproducir manualmente)
+2. **Verificar:** Mensaje de error indica problema de base de datos
+
+---
+
 *Documento creado: 2026-01-20*
+*Última actualización: 2026-01-28 - Sección 23 (Apple Pay)*
 *Última actualización: 2026-01-28*
 *Total escenarios: ~317*
 *Total verificaciones: ~590+*

@@ -19,6 +19,7 @@ enum DraftSourceType: String, Codable {
     case emailAlert
     case scheduledPayment
     case subscription
+    case applePay
 }
 
 enum DraftStatus: String, Codable {
@@ -221,6 +222,7 @@ final class InboxDraft: Identifiable {
         case .emailAlert: return "envelope.fill"
         case .scheduledPayment: return "arrow.trianglehead.2.clockwise.rotate.90"
         case .subscription: return "creditcard.and.123"
+        case .applePay: return "apple.logo"
         }
     }
 

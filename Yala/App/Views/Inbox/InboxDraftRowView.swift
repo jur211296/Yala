@@ -298,6 +298,8 @@ struct InboxDraftRowView: View {
             return .purple
         case .subscription:
             return .indigo
+        case .applePay:
+            return .pink
         }
     }
 

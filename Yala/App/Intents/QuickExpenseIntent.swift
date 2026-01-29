@@ -595,3 +595,268 @@ enum VoiceImageIntentError: Swift.Error, CustomLocalizedStringResourceConvertibl
         }
     }
 }
+
+// MARK: - Apple Pay Transaction Intent
+
+@available(iOS 16.0, *)
+struct ApplePayTransactionIntent: AppIntent {
+
+    static var title: LocalizedStringResource = "shortcut.applePay.title"
+    static var description = IntentDescription("shortcut.applePay.description")
+
+    static var openAppWhenRun: Bool = false
+
+    // MARK: - Parameter Summary (shows configurable fields in Shortcuts)
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("shortcut.applePay.summaryTitle") {
+            \.$amount
+            \.$name
+            \.$merchant
+        }
+    }
+
+    init() {}
+
+    init(amount: String?, merchant: String?, name: String? = nil) {
+        self.amount = amount
+        self.merchant = merchant
+        self.name = name
+    }
+
+    // MARK: - Parameters
+    // Parameters match Wallet Transaction output fields
+    // Using inputConnectionBehavior to allow connection to Wallet transaction outputs
+
+    @Parameter(
+        title: "shortcut.applePay.param.amount",
+        description: "shortcut.applePay.param.amount.description",
+        inputConnectionBehavior: .connectToPreviousIntentResult
+    )
+    var amount: String?
+
+    @Parameter(
+        title: "shortcut.applePay.param.merchant",
+        description: "shortcut.applePay.param.merchant.description",
+        inputConnectionBehavior: .connectToPreviousIntentResult
+    )
+    var merchant: String?
+
+    @Parameter(
+        title: "shortcut.applePay.param.name",
+        description: "shortcut.applePay.param.name.description",
+        inputConnectionBehavior: .connectToPreviousIntentResult
+    )
+    var name: String?
+
+    // MARK: - Perform
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        // Parse amount and currency from Wallet text (e.g., "$32.04", "S/ 25.90")
+        guard let amountString = amount,
+              let parsedResult = parseAmountAndCurrency(from: amountString) else {
+            return .result(dialog: "shortcut.applePay.error.noAmount")
+        }
+
+        let finalAmount = parsedResult.amount
+        let detectedCurrency = parsedResult.currency
+
+        // Use "name" if available (cleaner), otherwise "merchant"
+        let finalNote: String
+        if let nameValue = name, !nameValue.trimmingCharacters(in: .whitespaces).isEmpty {
+            finalNote = nameValue
+        } else if let merchantValue = merchant, !merchantValue.trimmingCharacters(in: .whitespaces).isEmpty {
+            finalNote = merchantValue
+        } else {
+            finalNote = ""
+        }
+
+        // Use current date (when automation runs)
+        let effectiveDate = Date()
+
+        // Create ModelContainer
+        let schema = Schema([
+            Category.self,
+            Subcategory.self,
+            Tag.self,
+            Account.self,
+            TransactionItem.self,
+            Budget.self,
+            ExchangeRate.self,
+            FavoritePayment.self,
+            ScheduledPayment.self,
+            InboxDraft.self,
+            MerchantMemory.self,
+        ])
+
+        let configuration = ModelConfiguration("YalaModel")
+
+        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+            return .result(dialog: "shortcut.error.database")
+        }
+
+        let context = container.mainContext
+
+        // Try to find account by detected currency (if unique match)
+        var matchedAccount: Account?
+        var needsUserInput: [String] = ["subcategory"]
+
+        if let currency = detectedCurrency {
+            matchedAccount = findAccount(byCurrency: currency, context: context)
+        }
+
+        if matchedAccount == nil {
+            needsUserInput.insert("account", at: 0)
+        }
+
+        // Try to auto-categorize using MerchantMemory
+        var matchedSubcategory: Subcategory?
+        if !finalNote.isEmpty {
+            let merchantService = MerchantMemoryService(modelContext: context)
+            let suggestion = merchantService.suggest(for: finalNote)
+
+            switch suggestion {
+            case .autoAssign(let sub):
+                // High confidence - auto-assign
+                matchedSubcategory = sub
+                needsUserInput.removeAll { $0 == "subcategory" }
+            case .suggest(let sub):
+                // Medium confidence - suggest but still needs confirmation
+                matchedSubcategory = sub
+                // Keep subcategory in needsUserInput so user confirms
+            case .none:
+                break
+            }
+        }
+
+        // Create InboxDraft
+        let draft = InboxDraft(
+            note: finalNote,
+            amount: -abs(finalAmount), // Apple Pay is always expense (negative)
+            date: effectiveDate,
+            account: matchedAccount,
+            subcategory: matchedSubcategory,
+            sourceType: .applePay,
+            rawText: amount, // Store original amount string for reference
+            evidence: finalNote.isEmpty ? nil : finalNote,
+            confidenceAmount: 1.0, // Amount from Apple Pay is always accurate
+            confidenceDate: 1.0, // Date is when automation runs
+            confidenceMerchant: finalNote.isEmpty ? nil : 1.0,
+            confidenceSubcategory: matchedSubcategory != nil ? 0.8 : nil,
+            needsUserInput: needsUserInput
+        )
+
+        context.insert(draft)
+
+        do {
+            try context.save()
+        } catch {
+            return .result(dialog: "shortcut.error.save")
+        }
+
+        // Format success message
+        let formattedAmount = formatCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
+        let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
+        return .result(dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)")
+    }
+
+    // MARK: - Helpers
+
+    /// Finds an account matching the currency code.
+    /// Returns nil if no match or multiple matches (ambiguous).
+    private func findAccount(byCurrency currencyCode: String, context: ModelContext) -> Account? {
+        let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate<Account> { account in
+                account.isArchived == false
+            }
+        )
+
+        guard let accounts = try? context.fetch(descriptor) else {
+            return nil
+        }
+
+        // Find accounts with matching currency
+        let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
+
+        // Return only if exactly one match
+        if matches.count == 1 {
+            return matches.first
+        }
+
+        return nil
+    }
+
+    private func formatCurrency(amount: Double, currencyCode: String) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
+    }
+
+    /// Parses amount and currency from Wallet text format
+    /// Examples: "$32.04" -> (32.04, "USD"), "S/ 25.90" -> (25.90, "PEN"), "€25,50" -> (25.50, "EUR")
+    private func parseAmountAndCurrency(from text: String) -> (amount: Double, currency: String?)? {
+        // Currency symbol to code mapping
+        let currencyMap: [String: String] = [
+            "$": "USD",
+            "€": "EUR",
+            "£": "GBP",
+            "¥": "JPY",
+            "S/": "PEN",
+            "S/.": "PEN",
+            "R$": "BRL",
+            "MX$": "MXN",
+            "COP$": "COP",
+            "COP": "COP",
+        ]
+
+        var detectedCurrency: String?
+
+        // Try to detect currency from symbol
+        for (symbol, code) in currencyMap {
+            if text.contains(symbol) {
+                detectedCurrency = code
+                break
+            }
+        }
+
+        // Also check for currency code at end (e.g., "25.00 USD")
+        let words = text.components(separatedBy: .whitespaces)
+        if let lastWord = words.last,
+           lastWord.count == 3,
+           lastWord.uppercased() == lastWord {
+            detectedCurrency = lastWord
+        }
+
+        // Extract numeric value
+        var cleaned = text.replacingOccurrences(of: "[^\\d.,\\-]", with: "", options: .regularExpression)
+
+        // Handle European format (comma as decimal separator)
+        if cleaned.contains(",") {
+            if !cleaned.contains(".") {
+                // Only comma: 25,50 -> 25.50
+                cleaned = cleaned.replacingOccurrences(of: ",", with: ".")
+            } else if let commaIndex = cleaned.lastIndex(of: ","),
+                      let dotIndex = cleaned.lastIndex(of: "."),
+                      commaIndex > dotIndex {
+                // Comma after dot: 1.234,56 -> 1234.56
+                cleaned = cleaned.replacingOccurrences(of: ".", with: "")
+                cleaned = cleaned.replacingOccurrences(of: ",", with: ".")
+            } else {
+                // Dot after comma: 1,234.56 -> 1234.56 (US format with thousands separator)
+                cleaned = cleaned.replacingOccurrences(of: ",", with: "")
+            }
+        }
+
+        guard let amount = Double(cleaned) else {
+            return nil
+        }
+
+        return (amount, detectedCurrency)
+    }
+
+}

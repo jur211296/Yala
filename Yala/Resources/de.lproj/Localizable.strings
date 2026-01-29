@@ -1164,6 +1164,7 @@
 "inbox.sourceReceipt" = "Receipt";
 "inbox.sourceScheduledPayment" = "Geplante Zahlung";
 "inbox.sourceSubscription" = "Abonnement";
+"inbox.sourceApplePay" = "Apple Pay";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
@@ -1344,3 +1345,20 @@
 "shortcut.imageEntry.description" = "Öffnet die Bildauswahl zum Erfassen von Ausgaben aus Fotos";
 "shortcut.imageEntry.shortTitle" = "Bildeingabe";
 "shortcut.imageEntry.opening" = "Bildeingabe wird geöffnet...";
+
+// MARK: - Apple Pay Intent
+
+"shortcut.applePay.title" = "Apple Pay Eintrag";
+"shortcut.applePay.description" = "Erstellt einen Entwurf im Posteingang aus einer Apple Pay Transaktion";
+"shortcut.applePay.shortTitle" = "Apple Pay";
+"shortcut.applePay.param.amount" = "Betrag";
+"shortcut.applePay.param.amount.description" = "Der Transaktionsbetrag (aus Wallet)";
+"shortcut.applePay.param.merchant" = "Händler";
+"shortcut.applePay.param.merchant.description" = "Der Händlername";
+"shortcut.applePay.param.name" = "Name";
+"shortcut.applePay.param.name.description" = "Sauberer Händlername (aus Wallet)";
+"shortcut.applePay.summaryTitle" = "Wallet-Zahlung erfassen";
+"shortcut.applePay.dialog.amount" = "Wie hoch ist der Betrag?";
+"shortcut.applePay.dialog.merchant" = "Wie heißt der Händler?";
+"shortcut.applePay.error.noAmount" = "Betrag erforderlich. Weisen Sie den Transaktionsbetrag aus Wallet zu.";
+"shortcut.applePay.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfen Sie Ihren Posteingang.";
