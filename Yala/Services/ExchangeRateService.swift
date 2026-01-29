@@ -85,9 +85,11 @@ final class ExchangeRateService {
                 // Small delay between requests to avoid rate limiting
                 try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             } catch {
+                #if DEBUG
                 print(
                     "ExchangeRateService: Error loading historical chunk: \(error.localizedDescription)"
                 )
+                #endif
                 // Continue with other chunks even if one fails
             }
         }
@@ -113,7 +115,9 @@ final class ExchangeRateService {
                 context: context)
             UserDefaults.standard.set(Date(), forKey: lastTodayUpdateKey)
         } catch {
+            #if DEBUG
             print("ExchangeRateService: Error updating today's rate: \(error.localizedDescription)")
+            #endif
             // Don't throw - app should continue working with cached rates
         }
     }
@@ -135,9 +139,11 @@ final class ExchangeRateService {
                 // Small delay between requests
                 try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
             } catch {
+                #if DEBUG
                 print(
                     "ExchangeRateService: Error fetching range \(range): \(error.localizedDescription)"
                 )
+                #endif
             }
         }
     }
@@ -163,7 +169,9 @@ final class ExchangeRateService {
             let results = try context.fetch(descriptor)
             return results.first
         } catch {
+            #if DEBUG
             print("ExchangeRateService: Error fetching fallback rate: \(error)")
+            #endif
             return nil
         }
     }
@@ -180,7 +188,9 @@ final class ExchangeRateService {
             let results = try context.fetch(fetchDescriptor)
             return results.first
         } catch {
+            #if DEBUG
             print("ExchangeRateService: Error fetching latest rate: \(error)")
+            #endif
             return nil
         }
     }
@@ -197,7 +207,9 @@ final class ExchangeRateService {
             let results = try context.fetch(fetchDescriptor)
             return results.first
         } catch {
+            #if DEBUG
             print("ExchangeRateService: Error fetching oldest rate: \(error)")
+            #endif
             return nil
         }
     }

@@ -570,7 +570,7 @@ struct ImportIntroSheet: View {
                     // Fire background task to fetch exchange rates for imported date range
                     // This runs after the main import is complete to avoid @Query issues
                     if let dateRange = dateRange {
-                        Task.detached { @MainActor in
+                        Task {
                             print("🔵 [IMPORT] Fetching exchange rates for date range: \(dateRange)")
                             await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
                             // Update any transactions with provisional rates
@@ -661,7 +661,7 @@ struct ImportIntroSheet: View {
 
                     // Fire background task to fetch exchange rates
                     if let dateRange = dateRange {
-                        Task.detached { @MainActor in
+                        Task {
                             print("🔵 [IMPORT-MULTI] Fetching exchange rates for date range: \(dateRange)")
                             await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
                             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)

@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 
 /// Extracts multiple transactions from screenshot lists (bank app transaction history)
+@MainActor
 struct ScreenshotListExtractor {
 
     private let rowClusterer = RowClusterer()

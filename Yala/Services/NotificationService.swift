@@ -42,7 +42,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             let granted = try await notificationCenter.requestAuthorization(options: [.alert, .sound, .badge])
             return granted
         } catch {
+            #if DEBUG
             print("Error requesting notification permission: \(error)")
+            #endif
             return false
         }
     }
@@ -101,7 +103,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                 do {
                     try await notificationCenter.add(request)
                 } catch {
+                    #if DEBUG
                     print("Error scheduling notification for weekday \(weekday): \(error)")
+                    #endif
                 }
             }
         } else {
@@ -117,7 +121,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             do {
                 try await notificationCenter.add(request)
             } catch {
+                #if DEBUG
                 print("Error scheduling notification: \(error)")
+                #endif
             }
         }
     }
@@ -157,7 +163,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         do {
             try await notificationCenter.add(request)
         } catch {
+            #if DEBUG
             print("Error sending test notification: \(error)")
+            #endif
         }
     }
 
@@ -227,7 +235,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         do {
             existingCount = try context.fetchCount(descriptor)
         } catch {
+            #if DEBUG
             print("NotificationService: Error checking existing notifications: \(error)")
+            #endif
             return
         }
 
@@ -242,7 +252,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("NotificationService: Error saving default notifications: \(error)")
+            #endif
         }
     }
 
@@ -257,7 +269,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         do {
             items = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("NotificationService: Error fetching notifications for deletion: \(error)")
+            #endif
             return
         }
 
@@ -268,7 +282,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("NotificationService: Error saving after deleting notifications: \(error)")
+            #endif
         }
     }
 }

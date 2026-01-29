@@ -19,6 +19,22 @@ struct RecentRecordsWidget: View {
 
     var onShowMore: (() -> Void)? = nil
 
+    // MARK: - Static Formatters (avoid recreation on each render)
+
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es")
+        formatter.dateFormat = "d MMM"
+        return formatter
+    }()
+
+    private static let secondaryDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.dateFormat = "d MMM"
+        return formatter
+    }()
+
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerSection
@@ -196,10 +212,7 @@ struct RecentRecordsWidget: View {
         }
 
         // Then date (instead of account)
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
-        let dateStr = formatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
+        let dateStr = Self.secondaryDateFormatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
         parts.append(dateStr)
 
         return parts.joined(separator: " • ")
@@ -211,10 +224,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func shortDateFormat(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
-        formatter.dateFormat = "d MMM"
-        return formatter.string(from: date).replacingOccurrences(of: ".", with: "")
+        Self.shortDateFormatter.string(from: date).replacingOccurrences(of: ".", with: "")
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {

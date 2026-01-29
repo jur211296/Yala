@@ -24,6 +24,16 @@ struct AccountsSettingsListView: View {
     @State private var accountToEdit: Account?
     @State private var isEditMode = false
 
+    // MARK: - Static Formatters (avoid recreation on each render)
+
+    private static let balanceFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return formatter
+    }()
+
     // Solo cuentas no archivadas para esta vista
     private var activeAccounts: [Account] {
         accounts.filter { !$0.isArchived }
@@ -300,12 +310,7 @@ struct AccountsSettingsListView: View {
         let nsNumber = currentDecimal as NSDecimalNumber
         let amountDouble = nsNumber.doubleValue
 
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-
-        let formattedAmount = formatter.string(from: NSNumber(value: amountDouble)) ?? "0.00"
+        let formattedAmount = Self.balanceFormatter.string(from: NSNumber(value: amountDouble)) ?? "0.00"
         return "\(info.code) \(formattedAmount)"
     }
 

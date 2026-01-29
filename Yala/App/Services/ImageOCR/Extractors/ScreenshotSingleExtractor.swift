@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 
 /// Extracts transaction data from single-transaction screenshots (bank alerts)
+@MainActor
 struct ScreenshotSingleExtractor {
 
     /// Extract a draft from a single-transaction screenshot

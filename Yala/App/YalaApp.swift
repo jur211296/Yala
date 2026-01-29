@@ -113,18 +113,41 @@ struct YalaApp: App {
     }
 
     /// Handle incoming URL from Share Extension and App Shortcuts
+    /// Note: In SwiftUI, onOpenURL doesn't provide source app info.
+    /// We validate that features are enabled before activating them.
     private func handleIncomingURL(_ url: URL) {
         guard url.scheme == "yala" else { return }
 
+        #if DEBUG
+        print("YalaApp: Received deep link: \(url.absoluteString)")
+        #endif
+
         switch url.host {
         case "shared-image":
+            // Share extension - always allowed
             checkForPendingSharedImage()
         case "voice-entry":
-            sessionState.shouldShowVoiceEntry = true
+            // Only activate if voice input is enabled in settings
+            if UserDefaults.standard.bool(forKey: "enableVoiceInput") {
+                sessionState.shouldShowVoiceEntry = true
+            } else {
+                #if DEBUG
+                print("YalaApp: voice-entry deep link blocked - feature disabled")
+                #endif
+            }
         case "image-entry":
-            sessionState.shouldShowImageEntry = true
+            // Only activate if image input is enabled in settings
+            if UserDefaults.standard.bool(forKey: "enableImageInput") {
+                sessionState.shouldShowImageEntry = true
+            } else {
+                #if DEBUG
+                print("YalaApp: image-entry deep link blocked - feature disabled")
+                #endif
+            }
         default:
-            break
+            #if DEBUG
+            print("YalaApp: Unknown deep link host: \(url.host ?? "nil")")
+            #endif
         }
     }
 

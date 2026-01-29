@@ -10,6 +10,7 @@ import Foundation
 import SwiftData
 
 /// Service that checks for due scheduled payments and creates drafts in the inbox
+@MainActor
 struct ScheduledPaymentDraftService {
 
     // MARK: - Main Entry Point
@@ -33,7 +34,9 @@ struct ScheduledPaymentDraftService {
         do {
             duePayments = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ScheduledPaymentDraftService: Error fetching due payments: \(error)")
+            #endif
             return 0
         }
 
@@ -56,7 +59,9 @@ struct ScheduledPaymentDraftService {
             do {
                 try context.save()
             } catch {
+                #if DEBUG
                 print("ScheduledPaymentDraftService: Error saving drafts: \(error)")
+                #endif
             }
         }
 
@@ -80,7 +85,9 @@ struct ScheduledPaymentDraftService {
         do {
             existingDrafts = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ScheduledPaymentDraftService: Error checking for existing draft: \(error)")
+            #endif
             return false
         }
 
@@ -198,7 +205,9 @@ struct ScheduledPaymentDraftService {
         do {
             payments = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ScheduledPaymentDraftService: Error fetching payments for approval: \(error)")
+            #endif
             return
         }
 

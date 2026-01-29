@@ -30,6 +30,15 @@ struct TopCategoriesWidget: View {
     var size: CardSize = .large
     var limit: Int? = nil  // nil = show all
 
+    // MARK: - Static Formatters (avoid recreation on each render)
+
+    fileprivate static let percentFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .percent
+        formatter.maximumFractionDigits = 1
+        return formatter
+    }()
+
     // MARK: - Period Comparison
 
     var period: DetailPeriod = .thisMonth
@@ -293,10 +302,7 @@ struct TopCategoriesWidget: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }
 
@@ -371,9 +377,6 @@ private struct CategoryRow: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        TopCategoriesWidget.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }
