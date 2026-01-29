@@ -15,12 +15,7 @@ struct FavoriteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(filter: #Predicate<Subcategory> { $0.isVisible }) private var subcategories:
-        [Subcategory]
-    @Query(sort: \FavoritePayment.displayOrder, order: .forward) private var existingFavorites:
-        [FavoritePayment]
+    @State private var viewModel = FavoriteEditorViewModel()
 
     // Editing mode
     let favorite: FavoritePayment?
@@ -50,7 +45,6 @@ struct FavoriteEditorView: View {
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showNatureSelector = false
-    @State private var showSaveError = false
 
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -149,7 +143,10 @@ struct FavoriteEditorView: View {
             }
             .alert(
                 L10n.Common.error,
-                isPresented: $showSaveError,
+                isPresented: Binding(
+                    get: { viewModel.showSaveError },
+                    set: { _ in viewModel.dismissSaveError() }
+                ),
                 actions: {
                     Button(L10n.Common.understood, role: .cancel) {}
                 },
@@ -160,6 +157,7 @@ struct FavoriteEditorView: View {
         }
         .tint(Color.electricIndigo)
         .onAppear {
+            viewModel.setContext(modelContext)
             loadFavoriteData()
             // Auto-focus name field for new favorites
             if favorite == nil {
@@ -398,48 +396,19 @@ struct FavoriteEditorView: View {
     }
 
     private func saveFavorite() {
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty else { return }
-
-        let amount: Double? = amountString.isEmpty ? nil : Double(amountString)
-        let natureOverride: String? =
-            selectedNature != selectedSubcategory?.nature
-            ? selectedNature?.rawValue
-            : nil
-
-        if let existing = favorite {
-            // Update existing
-            existing.name = trimmedName
-            existing.transactionType = transactionType.rawValue
-            existing.amount = amount
-            existing.note = note.isEmpty ? nil : note
-            existing.account = selectedAccount
-            existing.subcategory = selectedSubcategory
-            existing.tags = selectedTags
-            existing.natureOverride = natureOverride
-            existing.currencyCode = selectedAccount?.currencyCode
-        } else {
-            // Create new
-            let newFavorite = FavoritePayment(
-                name: trimmedName,
-                transactionType: transactionType.rawValue,
-                amount: amount,
-                note: note.isEmpty ? nil : note,
-                account: selectedAccount,
-                subcategory: selectedSubcategory,
-                tags: selectedTags,
-                natureOverride: natureOverride,
-                currencyCode: selectedAccount?.currencyCode,
-                displayOrder: existingFavorites.count
-            )
-            modelContext.insert(newFavorite)
-        }
-
-        do {
-            try modelContext.save()
+        let saved = viewModel.saveFavorite(
+            existing: favorite,
+            name: name,
+            transactionType: transactionType,
+            amountString: amountString,
+            note: note,
+            account: selectedAccount,
+            subcategory: selectedSubcategory,
+            tags: selectedTags,
+            natureOverride: selectedNature
+        )
+        if saved {
             dismiss()
-        } catch {
-            showSaveError = true
         }
     }
 
