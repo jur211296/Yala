@@ -54,6 +54,7 @@ struct YalaApp: App {
     private var imageVisionService = ImageVisionService.shared
     private var voiceTranscriptionService = VoiceTranscriptionService.shared
     private var transcriptionParserService = TranscriptionParserService.shared
+    private var draftService = DraftService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -93,6 +94,7 @@ struct YalaApp: App {
         .environment(imageVisionService)
         .environment(voiceTranscriptionService)
         .environment(transcriptionParserService)
+        .environment(draftService)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 checkForPendingSharedImage()

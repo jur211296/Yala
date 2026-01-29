@@ -40,6 +40,7 @@ struct InboxView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(CurrencyConverter.self) private var currencyConverter
+    @Environment(DraftService.self) private var draftService
     @AppStorage("preferredCurrency") private var preferredCurrency: String = "PEN"
 
     /// Callback for navigating to Records tab (bulk approve success)
@@ -493,24 +494,11 @@ struct InboxView: View {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
         withAnimation {
-            // Cache display values BEFORE changing status (if available)
-            // (archived drafts use ONLY cached values to avoid accessing deleted relationships)
-            if let account = draft.account {
-                draft.cachedAccountName = account.name
-                draft.cachedCurrencyCode = account.currencyCode
-            }
-            if let subcategory = draft.subcategory {
-                draft.cachedSubcategoryName = subcategory.name
-                draft.cachedCategoryColorHex = subcategory.category.colorHex
-                draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
-            }
-
-            draft.status = .rejected
-            draft.updatedAt = Date()
+            draftService.setContext(modelContext)
             do {
-                try modelContext.save()
+                try draftService.rejectDraft(draft)
             } catch {
-                print("Error rejecting draft: \(error)")
+                print("InboxView: Error rejecting draft: \(error)")
             }
         }
     }
@@ -520,11 +508,11 @@ struct InboxView: View {
         UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
 
         withAnimation {
-            modelContext.delete(draft)
+            draftService.setContext(modelContext)
             do {
-                try modelContext.save()
+                try draftService.deleteDraft(draft)
             } catch {
-                print("Error deleting draft: \(error)")
+                print("InboxView: Error deleting draft: \(error)")
             }
         }
     }
@@ -534,61 +522,16 @@ struct InboxView: View {
               let amount = draft.amount,
               let subcategory = draft.subcategory else { return }
 
-        // Calculate amount in preferred currency for charts/statistics
-        let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = currencyConverter.convert(
-            Decimal(amount),
-            from: account.currencyCode,
-            to: preferredCode,
-            on: draft.effectiveDate,
-            context: modelContext
-        )
-        let exchangeRate: Double
-        if abs(amount) > 0.0001 {
-            exchangeRate = (amountInPreferred as NSDecimalNumber).doubleValue / amount
-        } else {
-            exchangeRate = 1.0
-        }
-
         // Haptic feedback for positive action
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
         withAnimation {
-            // Create TransactionItem
-            let transaction = TransactionItem(
-                date: draft.effectiveDate,
-                amount: amount,
-                currencyCode: account.currencyCode
-            )
-            transaction.note = draft.note.isEmpty ? nil : draft.note
-            transaction.account = account
-            transaction.subcategory = subcategory
-            transaction.category = subcategory.category
-            transaction.tags = draft.tags
-            transaction.exchangeRate = abs(exchangeRate)
-            transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
-            transaction.preferredCurrencyCode = preferredCode
-
-            modelContext.insert(transaction)
-
-            // Cache display values BEFORE changing status
-            // (archived drafts use ONLY cached values to avoid accessing deleted relationships)
-            draft.cachedAccountName = account.name
-            draft.cachedSubcategoryName = subcategory.name
-            draft.cachedCategoryColorHex = subcategory.category.colorHex
-            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
-            draft.cachedCurrencyCode = account.currencyCode
-
-            // Update draft status and link to transaction
-            draft.status = .approved
-            draft.approvedTransaction = transaction
-            draft.updatedAt = Date()
-
-            // Update scheduled payment if this draft came from one
-            ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: modelContext)
-
+            draftService.setContext(modelContext)
             do {
-                try modelContext.save()
+                let transaction = try draftService.approveDraft(
+                    draft,
+                    currencyConverter: currencyConverter
+                )
 
                 // Prepare and show success view
                 swipeApprovedTransaction = transaction
@@ -606,7 +549,7 @@ struct InboxView: View {
                 )
                 showSwipeSuccessView = true
             } catch {
-                print("Error approving draft: \(error)")
+                print("InboxView: Error approving draft: \(error)")
             }
         }
     }

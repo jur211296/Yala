@@ -61,6 +61,7 @@ struct InboxBulkActionsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(CurrencyConverter.self) private var currencyConverter
+    @Environment(DraftService.self) private var draftService
 
     @Query(sort: \Account.name) private var accounts: [Account]
 
@@ -292,148 +293,76 @@ struct InboxBulkActionsSheet: View {
     }
 
     private func applyAccountChange(_ account: Account) {
-        for draft in selectedDrafts {
-            draft.account = account
-            draft.updatedAt = Date()
-            updateNeedsUserInput(draft)
+        draftService.setContext(modelContext)
+        do {
+            try draftService.bulkUpdateAccount(selectedDrafts, account: account)
+            appliedChanges.insert(.account)
+        } catch {
+            print("InboxBulkActionsSheet: Error applying account: \(error)")
         }
-        saveChanges()
-        appliedChanges.insert(.account)
     }
 
     private func applySubcategoryChange(_ subcategory: Subcategory) {
-        for draft in selectedDrafts {
-            draft.subcategory = subcategory
-            draft.updatedAt = Date()
-            updateNeedsUserInput(draft)
+        draftService.setContext(modelContext)
+        do {
+            try draftService.bulkUpdateSubcategory(selectedDrafts, subcategory: subcategory)
+            appliedChanges.insert(.subcategory)
+        } catch {
+            print("InboxBulkActionsSheet: Error applying subcategory: \(error)")
         }
-        saveChanges()
-        appliedChanges.insert(.subcategory)
     }
 
     private func approveSelected() {
-        var approvedCount = 0
-
-        let preferredCode = CurrencyDefaults.currentPreferred
-
-        for draft in selectedDrafts where draft.isReadyToApprove {
-            guard let account = draft.account,
-                  let amount = draft.amount,
-                  let subcategory = draft.subcategory else { continue }
-
-            // Calculate amount in preferred currency for charts/statistics
-            let amountInPreferred = currencyConverter.convert(
-                Decimal(amount),
-                from: account.currencyCode,
-                to: preferredCode,
-                on: draft.effectiveDate,
-                context: modelContext
+        draftService.setContext(modelContext)
+        do {
+            let transactions = try draftService.bulkApprove(
+                selectedDrafts,
+                currencyConverter: currencyConverter
             )
-            let exchangeRate: Double
-            if abs(amount) > 0.0001 {
-                exchangeRate = (amountInPreferred as NSDecimalNumber).doubleValue / amount
-            } else {
-                exchangeRate = 1.0
+            appliedChanges.insert(.approve)
+
+            // Show bulk success view
+            if !transactions.isEmpty {
+                bulkApprovedCount = transactions.count
+                withAnimation(.easeOut(duration: 0.3)) {
+                    showBulkSuccessView = true
+                }
             }
-
-            let transaction = TransactionItem(
-                date: draft.effectiveDate,
-                amount: amount,
-                currencyCode: account.currencyCode
-            )
-            transaction.note = draft.note.isEmpty ? nil : draft.note
-            transaction.account = account
-            transaction.subcategory = subcategory
-            transaction.category = subcategory.category
-            transaction.tags = draft.tags
-            transaction.exchangeRate = abs(exchangeRate)
-            transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
-            transaction.preferredCurrencyCode = preferredCode
-
-            modelContext.insert(transaction)
-
-            // Cache display values BEFORE changing status
-            draft.cachedAccountName = account.name
-            draft.cachedSubcategoryName = subcategory.name
-            draft.cachedCategoryColorHex = subcategory.category.colorHex
-            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
-            draft.cachedCurrencyCode = account.currencyCode
-
-            draft.status = .approved
-            draft.approvedTransaction = transaction
-            draft.updatedAt = Date()
-
-            // Update scheduled payment if this draft came from one
-            ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: modelContext)
-
-            approvedCount += 1
-        }
-
-        saveChanges()
-        appliedChanges.insert(.approve)
-
-        // Show bulk success view
-        if approvedCount > 0 {
-            bulkApprovedCount = approvedCount
-            withAnimation(.easeOut(duration: 0.3)) {
-                showBulkSuccessView = true
-            }
+        } catch {
+            print("InboxBulkActionsSheet: Error approving drafts: \(error)")
         }
     }
 
     private func rejectSelected() {
-        for draft in selectedDrafts {
-            // Cache values for display in archived list
-            if let account = draft.account {
-                draft.cachedAccountName = account.name
-                draft.cachedCurrencyCode = account.currencyCode
-            }
-            if let subcategory = draft.subcategory {
-                draft.cachedSubcategoryName = subcategory.name
-                draft.cachedCategoryColorHex = subcategory.category.colorHex
-                draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
-            }
-            draft.status = .rejected
-            draft.updatedAt = Date()
+        draftService.setContext(modelContext)
+        do {
+            try draftService.bulkReject(selectedDrafts)
+            appliedChanges.insert(.reject)
+            finishEditing()
+        } catch {
+            print("InboxBulkActionsSheet: Error rejecting drafts: \(error)")
         }
-        saveChanges()
-        appliedChanges.insert(.reject)
-        finishEditing()
     }
 
     private func deleteSelected() {
-        for draft in selectedDrafts {
-            modelContext.delete(draft)
+        draftService.setContext(modelContext)
+        do {
+            try draftService.bulkDelete(selectedDrafts)
+            appliedChanges.insert(.delete)
+            finishEditing()
+        } catch {
+            print("InboxBulkActionsSheet: Error deleting drafts: \(error)")
         }
-        saveChanges()
-        appliedChanges.insert(.delete)
-        finishEditing()
     }
 
     private func returnToPendingSelected() {
-        for draft in selectedDrafts {
-            draft.status = .pending
-            draft.updatedAt = Date()
-            updateNeedsUserInput(draft)
-        }
-        saveChanges()
-        appliedChanges.insert(.returnToPending)
-        finishEditing()
-    }
-
-    private func updateNeedsUserInput(_ draft: InboxDraft) {
-        var needs: [String] = []
-        if draft.account == nil { needs.append("account") }
-        if draft.subcategory == nil { needs.append("subcategory") }
-        if draft.amount == nil { needs.append("amount") }
-        draft.needsUserInput = needs
-    }
-
-    private func saveChanges() {
+        draftService.setContext(modelContext)
         do {
-            try modelContext.save()
+            try draftService.bulkReturnToPending(selectedDrafts)
+            appliedChanges.insert(.returnToPending)
+            finishEditing()
         } catch {
-            print("Error saving bulk changes: \(error)")
+            print("InboxBulkActionsSheet: Error returning drafts to pending: \(error)")
         }
     }
 

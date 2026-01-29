@@ -14,6 +14,7 @@ struct InboxDraftEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(CurrencyConverter.self) private var currencyConverter
+    @Environment(DraftService.self) private var draftService
 
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     @Query(sort: \Category.sortOrder, order: .forward) private var categories: [Category]
@@ -827,25 +828,19 @@ struct InboxDraftEditSheet: View {
     }
 
     private func saveDraft() {
+        // Update draft properties from local state
         draft.note = note
         draft.amount = amount.map { isExpense ? -abs($0) : abs($0) }
         draft.date = transactionDate
         draft.account = selectedAccount
         draft.subcategory = selectedSubcategory
         draft.tags = selectedTags
-        draft.updatedAt = Date()
 
-        // Update needsUserInput
-        var needs: [String] = []
-        if selectedAccount == nil { needs.append("account") }
-        if selectedSubcategory == nil { needs.append("subcategory") }
-        if amount == nil { needs.append("amount") }
-        draft.needsUserInput = needs
-
+        draftService.setContext(modelContext)
         do {
-            try modelContext.save()
+            try draftService.saveDraft(draft)
         } catch {
-            print("Error saving draft: \(error)")
+            print("InboxDraftEditSheet: Error saving draft: \(error)")
         }
     }
 
@@ -1021,42 +1016,22 @@ struct InboxDraftEditSheet: View {
         }
         draft.date = transactionDate
 
-        // Update needsUserInput based on saved values
-        var needs: [String] = []
-        if draft.account == nil { needs.append("account") }
-        if draft.subcategory == nil { needs.append("subcategory") }
-        if draft.amount == nil { needs.append("amount") }
-        draft.needsUserInput = needs
-
-        // Cache values for display in archived list
-        if let account = draft.account {
-            draft.cachedAccountName = account.name
-            draft.cachedCurrencyCode = account.currencyCode
-        }
-        if let subcategory = draft.subcategory {
-            draft.cachedSubcategoryName = subcategory.name
-            draft.cachedCategoryColorHex = subcategory.category.colorHex
-            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
-        }
-
-        draft.status = .rejected
-        draft.updatedAt = Date()
-
+        draftService.setContext(modelContext)
         do {
-            try modelContext.save()
+            try draftService.rejectDraft(draft)
             dismiss()
         } catch {
-            print("Error rejecting draft: \(error)")
+            print("InboxDraftEditSheet: Error rejecting draft: \(error)")
         }
     }
 
     private func deleteDraftPermanently() {
-        modelContext.delete(draft)
+        draftService.setContext(modelContext)
         do {
-            try modelContext.save()
+            try draftService.deleteDraft(draft)
             dismiss()
         } catch {
-            print("Error deleting draft: \(error)")
+            print("InboxDraftEditSheet: Error deleting draft: \(error)")
         }
     }
 }
