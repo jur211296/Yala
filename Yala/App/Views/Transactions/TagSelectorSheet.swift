@@ -14,12 +14,10 @@ import SwiftUI
 struct TagSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
+
+    @State private var viewModel = TagSelectorViewModel()
 
     @Binding var selectedTags: [Tag]
-
-    @State private var showNewTagSheet: Bool = false
-    @State private var tagCountBeforeSheet: Int = 0
 
     var body: some View {
         NavigationStack {
@@ -28,7 +26,7 @@ struct TagSelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        if activeTags.isEmpty {
+                        if viewModel.isEmpty {
                             emptyState
                         } else {
                             tagsList
@@ -51,30 +49,31 @@ struct TagSelectorSheet: View {
                     YalaSaveButton(action: { dismiss() })
                 }
             }
-            .sheet(isPresented: $showNewTagSheet, onDismiss: {
+            .sheet(isPresented: $viewModel.showNewTagSheet, onDismiss: {
                 selectNewlyCreatedTag()
+                viewModel.closeNewTagSheet()
             }) {
-                TagFormView(existingTags: tags)
+                TagFormView(existingTags: viewModel.tags)
             }
         }
         .tint(Color.electricIndigo)
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     /// Selecciona automáticamente la etiqueta recién creada
     private func selectNewlyCreatedTag() {
-        let currentCount = activeTags.count
-        if currentCount > tagCountBeforeSheet {
+        viewModel.loadTags()
+        let currentCount = viewModel.activeTags.count
+        if currentCount > viewModel.tagCountBeforeSheet {
             // Hay una nueva etiqueta, seleccionar la última creada (ordenada por nombre)
-            if let newTag = activeTags.last(where: { tag in
+            if let newTag = viewModel.activeTags.last(where: { tag in
                 !selectedTags.contains { $0.persistentModelID == tag.persistentModelID }
             }) {
                 selectedTags.append(newTag)
             }
         }
-    }
-
-    private var activeTags: [Tag] {
-        tags.filter { $0.isActive }
     }
 
     private var emptyState: some View {
@@ -105,7 +104,7 @@ struct TagSelectorSheet: View {
         VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: "") {
                 VStack(spacing: 0) {
-                    ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) {
+                    ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) {
                         index, tag in
                         if index > 0 {
                             SubsectionDivider()
@@ -125,8 +124,7 @@ struct TagSelectorSheet: View {
     private var addTagButton: some View {
         SectionBox(title: "") {
             Button {
-                tagCountBeforeSheet = activeTags.count
-                showNewTagSheet = true
+                viewModel.prepareForNewTag()
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "plus.circle.fill")
