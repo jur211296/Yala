@@ -860,3 +860,199 @@ struct ApplePayTransactionIntent: AppIntent {
     }
 
 }
+
+// MARK: - Automation Entry Intent
+
+/// Data structure for parsing JSON from external automations
+private struct AutomationTransactionData: Codable {
+    let amount: Double
+    let currency: String
+    let merchant: String?
+    let date: String? // ISO format: YYYY-MM-DD
+}
+
+@available(iOS 16.0, *)
+struct AutomationEntryIntent: AppIntent {
+
+    static var title: LocalizedStringResource = "shortcut.automation.title"
+    static var description = IntentDescription("shortcut.automation.description")
+
+    static var openAppWhenRun: Bool = false
+
+    // MARK: - Parameter Summary
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("shortcut.automation.summaryTitle") {
+            \.$transactionJSON
+        }
+    }
+
+    // MARK: - Parameters
+
+    @Parameter(
+        title: "shortcut.automation.param.json",
+        description: "shortcut.automation.param.json.description",
+        inputConnectionBehavior: .connectToPreviousIntentResult
+    )
+    var transactionJSON: String?
+
+    // MARK: - Perform
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        // Validate JSON parameter
+        guard let jsonString = transactionJSON, !jsonString.isEmpty else {
+            return .result(dialog: "shortcut.automation.error.noJSON")
+        }
+
+        // Parse JSON
+        guard let jsonData = jsonString.data(using: .utf8),
+              let transaction = try? JSONDecoder().decode(AutomationTransactionData.self, from: jsonData) else {
+            return .result(dialog: "shortcut.automation.error.invalidJSON")
+        }
+
+        // Validate amount
+        guard transaction.amount > 0 else {
+            return .result(dialog: "shortcut.automation.error.noAmount")
+        }
+
+        // Normalize currency to uppercase
+        let normalizedCurrency = transaction.currency.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !normalizedCurrency.isEmpty else {
+            return .result(dialog: "shortcut.automation.error.noCurrency")
+        }
+
+        // Parse date if provided (ISO format: YYYY-MM-DD)
+        var effectiveDate = Date()
+        if let dateString = transaction.date, !dateString.isEmpty {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withFullDate]
+            if let parsed = formatter.date(from: dateString) {
+                effectiveDate = parsed
+            }
+        }
+
+        // Use merchant as note
+        let finalNote = transaction.merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        // Create ModelContainer
+        let schema = Schema([
+            Category.self,
+            Subcategory.self,
+            Tag.self,
+            Account.self,
+            TransactionItem.self,
+            Budget.self,
+            ExchangeRate.self,
+            FavoritePayment.self,
+            ScheduledPayment.self,
+            InboxDraft.self,
+            MerchantMemory.self,
+        ])
+
+        let configuration = ModelConfiguration("YalaModel")
+
+        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+            return .result(dialog: "shortcut.error.database")
+        }
+
+        let context = container.mainContext
+
+        // Try to find account by currency (only if unique match)
+        var matchedAccount: Account?
+        var needsUserInput: [String] = ["subcategory"]
+
+        matchedAccount = findAccount(byCurrency: normalizedCurrency, context: context)
+
+        if matchedAccount == nil {
+            needsUserInput.insert("account", at: 0)
+        }
+
+        // Try to auto-categorize using MerchantMemory
+        var matchedSubcategory: Subcategory?
+        if !finalNote.isEmpty {
+            let merchantService = MerchantMemoryService(modelContext: context)
+            let suggestion = merchantService.suggest(for: finalNote)
+
+            switch suggestion {
+            case .autoAssign(let sub):
+                // High confidence - auto-assign
+                matchedSubcategory = sub
+                needsUserInput.removeAll { $0 == "subcategory" }
+            case .suggest(let sub):
+                // Medium confidence - suggest but still needs confirmation
+                matchedSubcategory = sub
+                // Keep subcategory in needsUserInput so user confirms
+            case .none:
+                break
+            }
+        }
+
+        // Create InboxDraft (always expense = negative amount)
+        let draft = InboxDraft(
+            note: finalNote,
+            amount: -abs(transaction.amount),
+            date: effectiveDate,
+            account: matchedAccount,
+            subcategory: matchedSubcategory,
+            sourceType: .automation,
+            rawText: jsonString,
+            evidence: finalNote.isEmpty ? nil : finalNote,
+            confidenceAmount: 1.0,
+            confidenceDate: transaction.date != nil ? 1.0 : 0.5,
+            confidenceMerchant: finalNote.isEmpty ? nil : 1.0,
+            confidenceSubcategory: matchedSubcategory != nil ? 0.8 : nil,
+            needsUserInput: needsUserInput
+        )
+
+        context.insert(draft)
+
+        do {
+            try context.save()
+        } catch {
+            return .result(dialog: "shortcut.error.save")
+        }
+
+        // Format success message
+        let formattedAmount = formatCurrency(amount: transaction.amount, currencyCode: normalizedCurrency)
+        let noteDisplay = finalNote.isEmpty ? "Automatización" : finalNote
+        return .result(dialog: "shortcut.automation.success \(formattedAmount) \(noteDisplay)")
+    }
+
+    // MARK: - Helpers
+
+    /// Finds an account matching the currency code.
+    /// Returns nil if no match or multiple matches (ambiguous).
+    private func findAccount(byCurrency currencyCode: String, context: ModelContext) -> Account? {
+        let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate<Account> { account in
+                account.isArchived == false
+            }
+        )
+
+        guard let accounts = try? context.fetch(descriptor) else {
+            return nil
+        }
+
+        // Find accounts with matching currency
+        let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
+
+        // Return only if exactly one match
+        if matches.count == 1 {
+            return matches.first
+        }
+
+        return nil
+    }
+
+    private func formatCurrency(amount: Double, currencyCode: String) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
+    }
+}

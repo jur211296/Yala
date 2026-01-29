@@ -300,6 +300,8 @@ struct InboxDraftRowView: View {
             return .indigo
         case .applePay:
             return .pink
+        case .automation:
+            return .gray
         }
     }
 

@@ -543,6 +543,7 @@ struct InboxDraftEditSheet: View {
         case .scheduledPayment: return L10n.Inbox.sourceScheduledPayment
         case .subscription: return L10n.Inbox.sourceSubscription
         case .applePay: return L10n.Inbox.sourceApplePay
+        case .automation: return L10n.Inbox.sourceAutomation
         }
     }
 

@@ -20,6 +20,7 @@ enum DraftSourceType: String, Codable {
     case scheduledPayment
     case subscription
     case applePay
+    case automation     // External automation (email parsed by AI, etc.)
 }
 
 enum DraftStatus: String, Codable {
@@ -223,6 +224,7 @@ final class InboxDraft: Identifiable {
         case .scheduledPayment: return "arrow.trianglehead.2.clockwise.rotate.90"
         case .subscription: return "creditcard.and.123"
         case .applePay: return "apple.logo"
+        case .automation: return "gearshape.fill"
         }
     }
 

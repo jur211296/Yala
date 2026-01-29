@@ -76,6 +76,22 @@ struct YalaShortcuts: AppShortcutsProvider {
             shortTitle: "shortcut.applePay.shortTitle",
             systemImageName: "apple.logo"
         )
+
+        AppShortcut(
+            intent: AutomationEntryIntent(),
+            phrases: [
+                // Spanish
+                "Registra desde automatización en \(.applicationName)",
+                "Entrada automática en \(.applicationName)",
+                "Automatización en \(.applicationName)",
+                // English
+                "Record from automation in \(.applicationName)",
+                "Automatic entry in \(.applicationName)",
+                "Automation in \(.applicationName)"
+            ],
+            shortTitle: "shortcut.automation.shortTitle",
+            systemImageName: "gearshape.fill"
+        )
     }
 
     static var shortcutTileColor: ShortcutTileColor {

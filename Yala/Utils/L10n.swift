@@ -1759,6 +1759,9 @@ enum L10n {
         static var sourceApplePay: String {
             NSLocalizedString("inbox.sourceApplePay", comment: "")
         }
+        static var sourceAutomation: String {
+            NSLocalizedString("inbox.sourceAutomation", comment: "")
+        }
         static var errorNoAccount: String {
             NSLocalizedString("inbox.errorNoAccount", comment: "")
         }
