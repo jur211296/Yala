@@ -13,7 +13,9 @@ import SwiftUI
 /// Sheet para seleccionar una cuenta
 struct AccountSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var viewModel = AccountSelectorViewModel()
 
     @Binding var selectedAccount: Account?
     let title: String
@@ -33,7 +35,7 @@ struct AccountSelectorSheet: View {
                         SectionBox(title: "") {
                             VStack(spacing: 0) {
                                 ForEach(
-                                    Array(activeAccounts.enumerated()),
+                                    Array(viewModel.activeAccounts.enumerated()),
                                     id: \.element.persistentModelID
                                 ) { index, account in
                                     if index > 0 {
@@ -66,10 +68,9 @@ struct AccountSelectorSheet: View {
             }
         }
         .tint(Color.electricIndigo)
-    }
-
-    private var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived }
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     private func isSelected(_ account: Account) -> Bool {
