@@ -98,7 +98,7 @@
 | SEC-003 | ✅ RESUELTO | - | Print statements envueltos con `#if DEBUG` | (commit 9e00484) |
 | SEC-004 | ✅ RESUELTO | - | Deep links con validación de feature toggles | (commit 9e00484) |
 | SEC-005 | BiometricAuthService.swift | - | Config biométrica en UserDefaults vs Keychain | Modificable externamente |
-| SEC-006 | TransactionsExportService.swift | 447-459 | Archivos temp sin FileProtection | Datos financieros expuestos |
+| SEC-006 | ✅ RESUELTO | - | FileProtection.complete agregado a archivos de exportación | Commit pendiente |
 
 ### 🟡 Medios
 
@@ -135,7 +135,7 @@
 |----|---------|-------|----------|---------|
 | BUG-006 | ✅ NO APLICA | - | Ya tiene `guard !dates.isEmpty` | Array vacío protegido |
 | BUG-007 | ✅ RESUELTO | - | Simplificado weak self capture | (commit 9e00484) |
-| BUG-008 | StoreKitManager.swift | 177 | Task.detached con for-await loop sin cleanup | Memory leak |
+| BUG-008 | ✅ NO APLICA | - | Task almacenado y cancelado en deinit; singleton pattern correcto | N/A |
 | BUG-009 | ✅ NO APLICA | - | Ya tiene `guard rows.count > 0` | Array vacío protegido |
 | BUG-010 | ✅ RESUELTO | - | Task.detached redundante simplificado | (commit 9e00484) |
 | BUG-011 | ✅ NO APLICA | - | Ya tiene `guard !lines.isEmpty` | Array vacío protegido |
@@ -168,7 +168,7 @@
 | ID | Archivo | Problema |
 |----|---------|----------|
 | SWD-005 | ✅ RESUELTO | @MainActor agregado a ScheduledPaymentDraftService (commit 9e00484) |
-| SWD-006 | MerchantMemoryService.swift | ModelContext recibido sin garantía de main thread |
+| SWD-006 | ✅ YA TENÍA | MerchantMemoryService.swift ya tiene @MainActor | N/A |
 | SWD-007 | ✅ RESUELTO | @MainActor agregado a ScreenshotSingleExtractor y ScreenshotListExtractor (commit 9e00484) |
 
 ### 🟡 Medios
@@ -208,7 +208,7 @@ var subcategories: [Subcategory]
 | ID | Archivo | Problema |
 |----|---------|----------|
 | PERF-004 | ✅ PARCIAL | Static formatters agregados en RecentRecordsWidget, TopCategoriesWidget (commit 9e00484) |
-| PERF-005 | TagsSettingsListView.swift | Dictionary creado en cada sort operation |
+| PERF-005 | ✅ RESUELTO | Dictionary extraído como computed property separada | Commit pendiente |
 | PERF-006 | ✅ RESUELTO | Static balanceFormatter agregado en AccountsSettingsListView (commit 9e00484) |
 
 ### 🟡 Medios

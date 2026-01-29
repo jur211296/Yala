@@ -444,6 +444,7 @@ struct TransactionsExportService {
     }
 
     /// Escribe datos en un archivo temporal con la extensión especificada.
+    /// Uses completeFileProtection to secure financial data when device is locked.
     private static func writeToTemporaryFile(data: Data, extension ext: String) throws -> URL {
         let tempDirectory = FileManager.default.temporaryDirectory
 
@@ -454,7 +455,7 @@ struct TransactionsExportService {
         let fileName = "Yala_Transacciones_\(timestamp).\(ext)"
         let fileURL = tempDirectory.appendingPathComponent(fileName)
 
-        try data.write(to: fileURL, options: .atomic)
+        try data.write(to: fileURL, options: [.atomic, .completeFileProtection])
 
         return fileURL
     }
@@ -520,6 +521,7 @@ struct TransactionsExportService {
     }
 
     /// Escribe un archivo XLSX temporal usando XLSXWriter.
+    /// Applies completeFileProtection to secure financial data when device is locked.
     private static func writeXLSXToTemporaryFile(headers: [String], rows: [[String]]) throws -> URL {
         let tempDirectory = FileManager.default.temporaryDirectory
 
@@ -531,6 +533,12 @@ struct TransactionsExportService {
         let fileURL = tempDirectory.appendingPathComponent(fileName)
 
         try XLSXWriter.write(to: fileURL, headers: headers, rows: rows)
+
+        // Apply file protection to the created XLSX file
+        try FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.complete],
+            ofItemAtPath: fileURL.path
+        )
 
         return fileURL
     }

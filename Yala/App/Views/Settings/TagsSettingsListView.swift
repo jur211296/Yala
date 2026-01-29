@@ -24,10 +24,14 @@ struct TagsSettingsListView: View {
         tagsSortOrderNamesRaw.split(separator: "|").map(String.init)
     }
 
+    /// Dictionary mapping tag name to sort index (computed once per raw string value)
+    private var tagSortIndex: [String: Int] {
+        Dictionary(uniqueKeysWithValues: tagsSortOrderNames.enumerated().map { ($1, $0) })
+    }
+
     private var orderedActiveTags: [Tag] {
         let active = tags.filter { $0.isActive }
-        let order = tagsSortOrderNames
-        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        let indexByName = tagSortIndex
 
         return active.sorted { a, b in
             let ia = indexByName[a.name]
