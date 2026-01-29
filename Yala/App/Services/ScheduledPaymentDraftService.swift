@@ -29,7 +29,11 @@ struct ScheduledPaymentDraftService {
 
         let descriptor = FetchDescriptor<ScheduledPayment>(predicate: predicate)
 
-        guard let duePayments = try? context.fetch(descriptor) else {
+        let duePayments: [ScheduledPayment]
+        do {
+            duePayments = try context.fetch(descriptor)
+        } catch {
+            print("ScheduledPaymentDraftService: Error fetching due payments: \(error)")
             return 0
         }
 
@@ -49,7 +53,11 @@ struct ScheduledPaymentDraftService {
 
         // Save changes
         if draftsCreated > 0 {
-            try? context.save()
+            do {
+                try context.save()
+            } catch {
+                print("ScheduledPaymentDraftService: Error saving drafts: \(error)")
+            }
         }
 
         return draftsCreated
@@ -68,7 +76,11 @@ struct ScheduledPaymentDraftService {
 
         let descriptor = FetchDescriptor<InboxDraft>(predicate: predicate)
 
-        guard let existingDrafts = try? context.fetch(descriptor) else {
+        let existingDrafts: [InboxDraft]
+        do {
+            existingDrafts = try context.fetch(descriptor)
+        } catch {
+            print("ScheduledPaymentDraftService: Error checking for existing draft: \(error)")
             return false
         }
 
@@ -181,7 +193,14 @@ struct ScheduledPaymentDraftService {
 
         // Fetch all scheduled payments and find the one matching our ID
         let descriptor = FetchDescriptor<ScheduledPayment>()
-        guard let payments = try? context.fetch(descriptor) else { return }
+
+        let payments: [ScheduledPayment]
+        do {
+            payments = try context.fetch(descriptor)
+        } catch {
+            print("ScheduledPaymentDraftService: Error fetching payments for approval: \(error)")
+            return
+        }
 
         // Find payment by matching UUID
         guard let payment = payments.first(where: {

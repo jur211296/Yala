@@ -222,7 +222,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     func seedDefaultNotificationsIfNeeded(context: ModelContext) {
         // Check if notifications already exist
         let descriptor = FetchDescriptor<NotificationItem>()
-        let existingCount = (try? context.fetchCount(descriptor)) ?? 0
+
+        let existingCount: Int
+        do {
+            existingCount = try context.fetchCount(descriptor)
+        } catch {
+            print("NotificationService: Error checking existing notifications: \(error)")
+            return
+        }
 
         guard existingCount == 0 else { return }
 
@@ -232,7 +239,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             context.insert(item)
         }
 
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("NotificationService: Error saving default notifications: \(error)")
+        }
     }
 
     /// Delete all notifications (used in data wipe)
@@ -241,13 +252,24 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         cancelAllNotifications()
 
         let descriptor = FetchDescriptor<NotificationItem>()
-        guard let items = try? context.fetch(descriptor) else { return }
+
+        let items: [NotificationItem]
+        do {
+            items = try context.fetch(descriptor)
+        } catch {
+            print("NotificationService: Error fetching notifications for deletion: \(error)")
+            return
+        }
 
         for item in items {
             context.delete(item)
         }
 
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("NotificationService: Error saving after deleting notifications: \(error)")
+        }
     }
 }
 

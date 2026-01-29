@@ -768,7 +768,11 @@ struct OnboardingView: View {
             }
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("OnboardingView: Error saving notifications: \(error)")
+        }
     }
 }
 
