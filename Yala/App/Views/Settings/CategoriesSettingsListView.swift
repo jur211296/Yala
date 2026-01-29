@@ -14,45 +14,7 @@ import SwiftUI
 struct CategoriesSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Category.name, order: .forward) private var categories: [Category]
-
-    // Solo categorías padre (en Neto v1 todas las Category son padre)
-    private var orderedCategories: [Category] {
-        categories.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private var activeCategories: [Category] {
-        orderedCategories.filter { $0.isVisible }
-    }
-
-    private var hiddenCategories: [Category] {
-        orderedCategories.filter { !$0.isVisible }
-    }
-
-    @State private var isNavigatingToNewCategory: Bool = false
-    @State private var newCategory: Category?
-    @State private var isEditing: Bool = false
-    @State private var showCannotDeleteAlert: Bool = false
-    @State private var categoryToDeleteName: String = ""
-    @State private var transactionCountForAlert: Int = 0
-
-    private func createAndOpenNewCategory() {
-        let nextSortOrder = (categories.map { $0.sortOrder }.max() ?? 0) + 1
-
-        let category = Category(
-            name: "",
-            colorHex: "#6366F1",
-            isIncome: false,
-            isDefaultSeed: false,
-            isVisible: true,
-            sortOrder: nextSortOrder,
-            subcategories: []
-        )
-        modelContext.insert(category)
-
-        newCategory = category
-        isNavigatingToNewCategory = true
-    }
+    @State private var viewModel = CategoriesSettingsListViewModel()
 
     var body: some View {
         ZStack {
@@ -60,14 +22,14 @@ struct CategoriesSettingsListView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    if categories.isEmpty {
+                    if viewModel.isEmpty {
                         emptyState
                     } else {
-                        if !activeCategories.isEmpty {
+                        if !viewModel.activeCategories.isEmpty {
                             activeCategoriesSection
                         }
 
-                        if !hiddenCategories.isEmpty {
+                        if !viewModel.hiddenCategories.isEmpty {
                             hiddenCategoriesSection
                         }
                     }
@@ -87,12 +49,12 @@ struct CategoriesSettingsListView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 YalaToolbarButton(systemName: "plus") {
-                    createAndOpenNewCategory()
+                    viewModel.createAndOpenNewCategory()
                 }
             }
         }
-        .navigationDestination(isPresented: $isNavigatingToNewCategory) {
-            if let newCategory {
+        .navigationDestination(isPresented: $viewModel.isNavigatingToNewCategory) {
+            if let newCategory = viewModel.newCategory {
                 CategoryDetailView(category: newCategory, isNewCategory: true)
             } else {
                 EmptyView()
@@ -100,50 +62,18 @@ struct CategoriesSettingsListView: View {
         }
         .alert(
             L10n.Category.cannotDeleteTitle,
-            isPresented: $showCannotDeleteAlert
+            isPresented: $viewModel.showCannotDeleteAlert
         ) {
             Button(L10n.Common.understood, role: .cancel) {}
         } message: {
-            Text(L10n.Category.cannotDeleteMessage(transactionCountForAlert))
+            Text(L10n.Category.cannotDeleteMessage(viewModel.transactionCountForAlert))
+        }
+        .onAppear {
+            viewModel.setContext(modelContext)
         }
     }
 
-    // MARK: - Edit Mode Functions
-
-    private func handleCategoryDelete(_ category: Category) {
-        let count = countTransactionsInCategory(category)
-        if count > 0 {
-            categoryToDeleteName = category.name
-            transactionCountForAlert = count
-            showCannotDeleteAlert = true
-            return
-        }
-        // Delete subcategories first to avoid SwiftUI @Query conflicts
-        for subcategory in category.subcategories {
-            modelContext.delete(subcategory)
-        }
-        modelContext.delete(category)
-        do {
-            try modelContext.save()
-            modelContext.processPendingChanges()
-        } catch {
-            print("Categories: Error deleting category: \(error)")
-        }
-    }
-
-    private func countTransactionsInCategory(_ category: Category) -> Int {
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { transaction in
-                guard let subcategory = transaction.subcategory else { return false }
-                return subcategory.category.persistentModelID == category.persistentModelID
-            }.count
-        } catch {
-            print("Categories: Error counting transactions: \(error)")
-            return 0
-        }
-    }
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
@@ -174,9 +104,9 @@ struct CategoriesSettingsListView: View {
                     .foregroundStyle(Color.primary.opacity(0.6))
                 Spacer()
                 Button {
-                    isEditing.toggle()
+                    viewModel.isEditing.toggle()
                 } label: {
-                    Text(isEditing ? L10n.Action.done : L10n.Action.edit)
+                    Text(viewModel.isEditing ? L10n.Action.done : L10n.Action.edit)
                         .font(.subheadline)
                         .foregroundStyle(Color.electricIndigo)
                 }
@@ -184,11 +114,11 @@ struct CategoriesSettingsListView: View {
             .padding(.horizontal, 6)
 
             VStack(spacing: 0) {
-                ForEach(Array(activeCategories.enumerated()), id: \.element.id) { index, category in
+                ForEach(Array(viewModel.activeCategories.enumerated()), id: \.element.id) { index, category in
                     HStack(spacing: 0) {
-                        if isEditing {
+                        if viewModel.isEditing {
                             Button {
-                                handleCategoryDelete(category)
+                                viewModel.handleCategoryDelete(category)
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .font(.title2)
@@ -209,13 +139,13 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, isEditing ? 8 : 16)
+                        .padding(.horizontal, viewModel.isEditing ? 8 : 16)
                         .padding(.vertical, 8)
                     }
 
-                    if index < activeCategories.count - 1 {
+                    if index < viewModel.activeCategories.count - 1 {
                         Divider()
-                            .padding(.leading, isEditing ? 56 : 16)
+                            .padding(.leading, viewModel.isEditing ? 56 : 16)
                     }
                 }
             }
@@ -243,11 +173,11 @@ struct CategoriesSettingsListView: View {
                 .padding(.leading, 6)
 
             VStack(spacing: 0) {
-                ForEach(Array(hiddenCategories.enumerated()), id: \.element.id) { index, category in
+                ForEach(Array(viewModel.hiddenCategories.enumerated()), id: \.element.id) { index, category in
                     HStack(spacing: 0) {
-                        if isEditing {
+                        if viewModel.isEditing {
                             Button {
-                                handleCategoryDelete(category)
+                                viewModel.handleCategoryDelete(category)
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .font(.title2)
@@ -268,13 +198,13 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, isEditing ? 8 : 16)
+                        .padding(.horizontal, viewModel.isEditing ? 8 : 16)
                         .padding(.vertical, 8)
                     }
 
-                    if index < hiddenCategories.count - 1 {
+                    if index < viewModel.hiddenCategories.count - 1 {
                         Divider()
-                            .padding(.leading, isEditing ? 56 : 16)
+                            .padding(.leading, viewModel.isEditing ? 56 : 16)
                     }
                 }
             }
