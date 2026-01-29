@@ -14,10 +14,7 @@ struct BudgetEditorView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(EntityDeletionService.self) private var deletionService
 
-    @Query(sort: \Category.name) private var categories: [Category]
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var viewModel = BudgetEditorViewModel()
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
 
@@ -45,7 +42,6 @@ struct BudgetEditorView: View {
     // Sheet states
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
-    @State private var showSaveError = false
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
@@ -119,6 +115,7 @@ struct BudgetEditorView: View {
                 if isPresenting { dismissKeyboard() }
             }
             .onAppear {
+                viewModel.setContext(modelContext, deletionService: deletionService)
                 loadBudgetData()
                 // Auto-focus name field for new budgets
                 if budget == nil {
@@ -132,7 +129,10 @@ struct BudgetEditorView: View {
             }
             .alert(
                 L10n.Common.error,
-                isPresented: $showSaveError,
+                isPresented: Binding(
+                    get: { viewModel.showSaveError },
+                    set: { _ in viewModel.dismissSaveError() }
+                ),
                 actions: {
                     Button(L10n.Common.understood, role: .cancel) {}
                 },
@@ -284,7 +284,7 @@ struct BudgetEditorView: View {
             icon: "creditcard",
             title: NSLocalizedString("settings.accounts", comment: ""),
             status: selectedAccountsText,
-            items: activeAccounts,
+            items: viewModel.activeAccounts,
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -320,10 +320,10 @@ struct BudgetEditorView: View {
         if selectedAccounts.isEmpty {
             return NSLocalizedString("filters.all", comment: "")
         }
-        if selectedAccounts.count == activeAccounts.count {
+        if selectedAccounts.count == viewModel.activeAccounts.count {
             return NSLocalizedString("filters.all", comment: "")
         }
-        return "\(selectedAccounts.count)/\(activeAccounts.count)"
+        return "\(selectedAccounts.count)/\(viewModel.activeAccounts.count)"
     }
 
     // MARK: - Categories Content
@@ -353,30 +353,7 @@ struct BudgetEditorView: View {
     }
 
     private var selectedCategoriesText: String {
-        let subCount = selectedSubcategories.count
-
-        if subCount == 0 {
-            return NSLocalizedString("filters.all", comment: "")
-        }
-
-        // Get selected subcategories
-        let selectedSubs = allSubcategories.filter {
-            selectedSubcategories.contains($0.persistentModelID)
-        }
-        if selectedSubs.isEmpty {
-            return NSLocalizedString("filters.all", comment: "")
-        }
-
-        if let firstSub = selectedSubs.first {
-            let remainingCount = selectedSubs.count - 1
-            if remainingCount > 0 {
-                return "\(firstSub.name) +\(remainingCount)"
-            } else {
-                return firstSub.name
-            }
-        }
-
-        return NSLocalizedString("filters.all", comment: "")
+        viewModel.selectedCategoriesText(selectedSubcategories: selectedSubcategories)
     }
 
     // MARK: - Tags Content
@@ -386,7 +363,7 @@ struct BudgetEditorView: View {
             icon: "number",
             title: NSLocalizedString("settings.tags", comment: ""),
             status: selectedTagsText,
-            items: activeTags,
+            items: viewModel.activeTags,
             showEmptyPlaceholder: true
         ) { tag in
             tagChip(tag)
@@ -427,10 +404,10 @@ struct BudgetEditorView: View {
         if selectedTags.isEmpty {
             return NSLocalizedString("filters.all", comment: "")
         }
-        if selectedTags.count == activeTags.count {
+        if selectedTags.count == viewModel.activeTags.count {
             return NSLocalizedString("filters.all", comment: "")
         }
-        return "\(selectedTags.count)/\(activeTags.count)"
+        return "\(selectedTags.count)/\(viewModel.activeTags.count)"
     }
 
     // MARK: - Natures Content
@@ -522,20 +499,10 @@ struct BudgetEditorView: View {
 
     private var categoriesSheetView: some View {
         CategorySelectorSheet(
-            categories: categories,
-            subcategories: allSubcategories,
+            categories: viewModel.categories,
+            subcategories: viewModel.allSubcategories,
             selectedSubcategories: $selectedSubcategories
         )
-    }
-
-    // MARK: - Computed Properties
-
-    private var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
-    }
-
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
     }
 
     // MARK: - Validation
@@ -552,7 +519,7 @@ struct BudgetEditorView: View {
     private func updateCurrencyFromAccounts(_ accountIds: Set<PersistentIdentifier>) {
         if accountIds.count == 1,
            let accountId = accountIds.first,
-           let account = activeAccounts.first(where: { $0.persistentModelID == accountId }) {
+           let account = viewModel.activeAccounts.first(where: { $0.persistentModelID == accountId }) {
             currencyCode = account.currencyCode
         } else {
             currencyCode = defaultCurrencyCode
@@ -593,62 +560,33 @@ struct BudgetEditorView: View {
     private func saveBudget() {
         guard let amount = Double(limitAmount) else { return }
 
-        // Convert PersistentIdentifiers back to model objects
-        let accountsArray = activeAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
-        let subcategoriesArray = allSubcategories.filter { selectedSubcategories.contains($0.persistentModelID) }
-        let tagsArray = activeTags.filter { selectedTags.contains($0.persistentModelID) }
-        let naturesString = selectedNatures.isEmpty ? nil : selectedNatures.map { $0.rawValue }.joined(separator: ",")
+        let saved = viewModel.saveBudget(
+            existing: budget,
+            name: name,
+            limitAmount: amount,
+            currencyCode: currencyCode,
+            periodType: selectedPeriodType,
+            startDate: startDate,
+            endDate: endDate,
+            isActive: isActive,
+            selectedAccounts: selectedAccounts,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNatures: selectedNatures
+        )
 
-        if let existingBudget = budget {
-            // Update existing budget
-            existingBudget.name = name
-            existingBudget.limitAmount = amount
-            existingBudget.currencyCode = currencyCode
-            existingBudget.periodType = selectedPeriodType.rawValue
-            existingBudget.isActive = isActive
-            existingBudget.startDate = selectedPeriodType == .unique ? startDate : nil
-            existingBudget.endDate = selectedPeriodType == .unique ? endDate : nil
-            existingBudget.accounts = accountsArray
-            existingBudget.subcategories = subcategoriesArray
-            existingBudget.tags = tagsArray
-            existingBudget.natures = naturesString
-        } else {
-            // Create new budget
-            let newBudget = Budget(
-                currencyCode: currencyCode,
-                limitAmount: amount,
-                name: name,
-                periodType: selectedPeriodType.rawValue,
-                startDate: selectedPeriodType == .unique ? startDate : nil,
-                endDate: selectedPeriodType == .unique ? endDate : nil,
-                accounts: accountsArray,
-                subcategories: subcategoriesArray,
-                tags: tagsArray,
-                natures: naturesString,
-                isActive: isActive
-            )
-
-            modelContext.insert(newBudget)
-        }
-
-        do {
-            try modelContext.save()
+        if saved {
             dismiss()
-        } catch {
-            showSaveError = true
         }
     }
 
     private func deleteBudget() {
         guard let budget = budget else { return }
-        deletionService.setContext(modelContext)
-        do {
-            try deletionService.deleteBudget(budget)
+
+        if viewModel.deleteBudget(budget) {
             // Trigger widget refresh
             sessionState.needsBudgetsWidgetRefresh = true
             dismiss()
-        } catch {
-            showSaveError = true
         }
     }
 }
