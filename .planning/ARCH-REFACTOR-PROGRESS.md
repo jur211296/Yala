@@ -6,8 +6,8 @@
 ## Estado Actual
 
 **Fase:** D - @Query → ViewModels 🔄 EN PROGRESO
-**Progreso:** 11 Views migradas (D.3 + D.4 completados)
-**Status:** Fases A, B, C completadas. D.3 y D.4 completados.
+**Progreso:** 18 Views migradas (D.3-D.6 completados)
+**Status:** Fases A, B, C completadas. D.3, D.4, D.5, D.6 completados.
 
 ## Resumen de Fases
 
@@ -16,7 +16,7 @@
 | A | Singletons → @Environment | 3 | ✅ Completada |
 | B | SessionState consistente | 2 | ✅ Completada |
 | C | Services para ModelContext | 3 | ✅ Completada |
-| D | @Query → ViewModels | 7 | 🔄 D.3 + D.4 completados (11 views) |
+| D | @Query → ViewModels | 18 | 🔄 D.3-D.6 completados (18 views) |
 
 ## Fase A: Servicios Stateless → @Environment
 
@@ -142,7 +142,49 @@ currencyConverter.convert(...)
 - **@Query migrado:** activeBudgets (con predicate isActive)
 - **Beneficios:** Lógica de favoritos (toggle, move, reindex) encapsulada en ViewModel
 
-### D.5-D.7: Resto
+### D.5.1: AccountSelectorSheet
+- **Estado:** ✅ Completado (92e2d12)
+- **Archivos creados:** `Yala/App/ViewModels/AccountSelectorViewModel.swift`
+- **@Query migrado:** accounts
+- **Beneficios:** Lógica de filtrado de cuentas activas encapsulada
+
+### D.5.2: TagSelectorSheet
+- **Estado:** ✅ Completado (7271955)
+- **Archivos creados:** `Yala/App/ViewModels/TagSelectorViewModel.swift`
+- **@Query migrado:** tags
+- **Beneficios:** Lógica de filtrado y UI state para creación de tags encapsulada
+
+### D.5.3: SubcategorySelectorSheet
+- **Estado:** ✅ Completado (b22e6b0)
+- **Archivos creados:** `Yala/App/ViewModels/SubcategorySelectorViewModel.swift`
+- **@Query migrado:** allSubcategories, recentTransactions
+- **Beneficios:** Lógica de agrupación y recientes encapsulada
+
+### D.6.1: AccountFormView
+- **Estado:** ✅ Completado (d1db7cd)
+- **Archivos modificados:** `Yala/App/ViewModels/Accounts/AccountFormViewModel.swift`
+- **@Query migrado:** allTransactions
+- **Beneficios:** ViewModel existente ahora carga transacciones internamente
+
+### D.6.2: SubcategoryTransferSheet
+- **Estado:** ✅ Completado (bc47f51)
+- **Archivos creados:** `Yala/App/ViewModels/SubcategoryTransferViewModel.swift`
+- **@Query migrado:** allSubcategories, allCategories
+- **Beneficios:** Lógica de transferencia y creación de "Sin asignar" encapsulada
+
+### D.6.3: SaveAsFavoriteSheet
+- **Estado:** ✅ Completado (85e4889)
+- **Archivos creados:** `Yala/App/ViewModels/SaveAsFavoriteViewModel.swift`
+- **@Query migrado:** allTags
+- **Beneficios:** Lógica de guardado de favorito encapsulada
+
+### D.6.4: SaveAsRecurringSheet
+- **Estado:** ✅ Completado (e9c0fd8)
+- **Archivos creados:** `Yala/App/ViewModels/SaveAsRecurringViewModel.swift`
+- **@Query migrado:** allTags
+- **Beneficios:** Lógica de tags activos encapsulada
+
+### D.7: Resto
 - **Estado:** ⏳ Pendiente
 
 ## Commits Realizados
@@ -170,6 +212,13 @@ currencyConverter.convert(...)
 - `5c4ff02` - refactor(arch): migrate ScheduledPaymentsSettingsView to ViewModel (D.4.1)
 - `6e7635b` - refactor(arch): migrate NotificationsSettingsView to ViewModel (D.4.2)
 - `929372b` - refactor(arch): migrate BudgetsFavoritesSettingsView to ViewModel (D.4.3)
+- `92e2d12` - refactor(arch): migrate AccountSelectorSheet to ViewModel (D.5.1)
+- `7271955` - refactor(arch): migrate TagSelectorSheet to ViewModel (D.5.2)
+- `b22e6b0` - refactor(arch): migrate SubcategorySelectorSheet to ViewModel (D.5.3)
+- `d1db7cd` - refactor(arch): migrate AccountFormView @Query to ViewModel (D.6.1)
+- `bc47f51` - refactor(arch): migrate SubcategoryTransferSheet to ViewModel (D.6.2)
+- `85e4889` - refactor(arch): migrate SaveAsFavoriteSheet to ViewModel (D.6.3)
+- `e9c0fd8` - refactor(arch): migrate SaveAsRecurringSheet to ViewModel (D.6.4)
 
 ## Notas Técnicas
 
@@ -225,15 +274,31 @@ struct MyView: View {
 
 **D.3 Settings - Entities:** ✅ COMPLETADO
 **D.4 Settings - Other:** ✅ COMPLETADO
+**D.5 Selectors:** ✅ COMPLETADO
+**D.6 Transaction Sheets:** ✅ COMPLETADO
 
 **Plan de priorización:**
-1. ✅ D.3 (Settings - Entities) - COMPLETADO
-2. ✅ D.4 (Settings - Other) - COMPLETADO
-3. 🔄 D.5-D.7 (Transactions, Editors, Selectors) - medio riesgo
-4. ⏳ D.1-D.2 (Panel, Statistics) - alto riesgo (vistas complejas)
+1. ✅ D.3 (Settings - Entities) - COMPLETADO (7 views)
+2. ✅ D.4 (Settings - Other) - COMPLETADO (3 views)
+3. ✅ D.5 (Selectors) - COMPLETADO (3 views)
+4. ✅ D.6 (Transaction Sheets) - COMPLETADO (4 views)
+5. 🔄 D.7 (Remaining views) - medio/alto riesgo
+6. ⏳ D.1-D.2 (Panel, Statistics) - alto riesgo (vistas complejas)
 
-**Próximas views a migrar (D.5 Transactions):**
-- Buscar views con @Query en Transactions, Selectors, etc.
+**Próximas views a migrar (D.7):**
+- FavoriteEditorView (4 @Query)
+- BudgetEditorView (4 @Query)
+- ScheduledPaymentEditorView (2 @Query)
+- ProfileView (3 @Query)
+- ExportFiltersStepView (4 @Query)
+- ImportIntroSheet (1 @Query)
+- TopSubcategoriesWidget (1 @Query)
+
+**Vistas complejas pendientes (D.1-D.2):**
+- PanelView (8 @Query)
+- NewTransactionView (5 @Query)
+- InboxView, InboxDraftEditSheet (complex)
+- Statistics tabs (5 @Query each)
 
 **Archivos clave:**
 - ViewModels creados: `Yala/App/ViewModels/`

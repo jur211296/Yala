@@ -9,6 +9,10 @@ import SwiftData
 import SwiftUI
 
 struct TopSubcategoriesWidget: View {
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var viewModel = TopSubcategoriesWidgetViewModel()
+
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 
@@ -61,9 +65,6 @@ struct TopSubcategoriesWidget: View {
         )
     }
 
-    // Fetch all categories for the dropdown
-    @Query(sort: \Category.name) private var allCategories: [Category]
-
     var body: some View {
         VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
             headerSection
@@ -84,6 +85,9 @@ struct TopSubcategoriesWidget: View {
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
         .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     // MARK: - Header
@@ -174,7 +178,7 @@ struct TopSubcategoriesWidget: View {
     private var categorySelector: some View {
         Group {
             if let globalID = globalCategoryFilterID,
-                let category = allCategories.first(where: { $0.persistentModelID == globalID })
+                let category = viewModel.allCategories.first(where: { $0.persistentModelID == globalID })
             {
                 // Locked State (Global Filter Active)
                 HStack(spacing: 4) {
@@ -220,7 +224,7 @@ struct TopSubcategoriesWidget: View {
                         }
 
                         // Category Chips
-                        ForEach(allCategories) { category in
+                        ForEach(viewModel.allCategories) { category in
                             let isSelected = localCategoryFilterID == category.persistentModelID
                             Button {
                                 localCategoryFilterID = category.persistentModelID
@@ -251,12 +255,7 @@ struct TopSubcategoriesWidget: View {
     }
 
     private var currentFilterName: String {
-        if let localID = localCategoryFilterID,
-            let category = allCategories.first(where: { $0.persistentModelID == localID })
-        {
-            return category.name
-        }
-        return L10n.Common.all
+        viewModel.categoryName(forID: localCategoryFilterID)
     }
 
     // MARK: - Content
