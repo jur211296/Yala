@@ -63,8 +63,6 @@ struct InboxBulkActionsSheet: View {
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
 
-    @Query(sort: \Account.name) private var accounts: [Account]
-
     let selectedDrafts: [InboxDraft]
     let filter: InboxFilter
     let onComplete: () -> Void
