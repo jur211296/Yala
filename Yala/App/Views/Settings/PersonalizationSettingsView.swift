@@ -361,7 +361,7 @@ struct PersonalizationSettingsView: View {
                 onSelect: { decimals in
                     decimalPlaces = decimals
                     // Trigger UI refresh for all views showing formatted amounts
-                    SessionState.shared.formattingVersion += 1
+                    sessionState.formattingVersion += 1
                     showingDecimalsPicker = false
                 }
             )
@@ -373,7 +373,7 @@ struct PersonalizationSettingsView: View {
                 onSelect: { format in
                     currencyDisplayFormat = format
                     // Trigger UI refresh for all views showing formatted amounts
-                    SessionState.shared.formattingVersion += 1
+                    sessionState.formattingVersion += 1
                     showingCurrencyFormatPicker = false
                 }
             )

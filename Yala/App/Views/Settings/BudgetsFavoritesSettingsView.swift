@@ -12,6 +12,7 @@ import SwiftUI
 struct BudgetsFavoritesSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionState.self) private var sessionState
 
     @Query(filter: #Predicate<Budget> { $0.isActive })
     private var activeBudgets: [Budget]
@@ -303,7 +304,7 @@ struct BudgetsFavoritesSettingsView: View {
                 showSaveError = true
             }
             // Trigger widget refresh in PanelView
-            SessionState.shared.needsBudgetsWidgetRefresh = true
+            sessionState.needsBudgetsWidgetRefresh = true
         }
     }
 
@@ -322,7 +323,7 @@ struct BudgetsFavoritesSettingsView: View {
             showSaveError = true
         }
         // Trigger widget refresh in PanelView
-        SessionState.shared.needsBudgetsWidgetRefresh = true
+        sessionState.needsBudgetsWidgetRefresh = true
     }
 
     private func reindexFavorites() {

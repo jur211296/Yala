@@ -13,6 +13,7 @@ struct OnboardingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SessionState.self) private var sessionState
 
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
@@ -736,7 +737,7 @@ struct OnboardingView: View {
         defaults.synchronize()
 
         // Apply period to SessionState immediately (since it was created before onboarding)
-        SessionState.shared.selectedPeriod = selectedPeriod
+        sessionState.selectedPeriod = selectedPeriod
 
         // Seed categories if user chose to
         if loadSeedCategories {

@@ -14,6 +14,7 @@ struct UserDataResetView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(ExchangeRateService.self) private var exchangeRateService
+    @Environment(SessionState.self) private var sessionState
 
     @State private var isShowingConfirmationAlert = false
     @State private var isProcessing = false
@@ -124,7 +125,7 @@ struct UserDataResetView: View {
 
         // 1. Activate wipe overlay BEFORE starting deletion
         //    This prevents @Query observers from crashing by showing a blocking overlay
-        SessionState.shared.isWipingData = true
+        sessionState.isWipingData = true
 
         // 2. Dismiss all sheets first to reduce active observers
         onUserDataWiped?()
@@ -145,7 +146,7 @@ struct UserDataResetView: View {
             try? await Task.sleep(for: .milliseconds(200))
 
             isProcessing = false
-            SessionState.shared.isWipingData = false
+            sessionState.isWipingData = false
 
             // 6. Load exchange rates directly after wipe (more reliable than flag mechanism)
             //    We call the service directly using the same context
@@ -155,10 +156,10 @@ struct UserDataResetView: View {
             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
 
             // 7. Trigger widget refresh so Panel recalculates with new data
-            SessionState.shared.needsExchangeRateWidgetRefresh = true
+            sessionState.needsExchangeRateWidgetRefresh = true
         } catch {
             isProcessing = false
-            SessionState.shared.isWipingData = false
+            sessionState.isWipingData = false
             errorMessage = error.localizedDescription
         }
     }

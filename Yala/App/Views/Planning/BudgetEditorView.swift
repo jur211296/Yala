@@ -11,6 +11,7 @@ import SwiftUI
 struct BudgetEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
 
     @Query(sort: \Category.name) private var categories: [Category]
     @Query(sort: \Account.name) private var allAccounts: [Account]
@@ -643,7 +644,7 @@ struct BudgetEditorView: View {
         do {
             try modelContext.save()
             // Trigger widget refresh
-            SessionState.shared.needsBudgetsWidgetRefresh = true
+            sessionState.needsBudgetsWidgetRefresh = true
             dismiss()
         } catch {
             showSaveError = true
