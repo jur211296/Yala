@@ -6,8 +6,8 @@
 ## Estado Actual
 
 **Fase:** D - @Query → ViewModels 🔄 EN PROGRESO
-**Progreso:** 18 Views migradas (D.3-D.6 completados)
-**Status:** Fases A, B, C completadas. D.3, D.4, D.5, D.6 completados.
+**Progreso:** 20 Views migradas (D.3-D.7 parcialmente completados)
+**Status:** Fases A, B, C completadas. D.3, D.4, D.5, D.6, D.7 (parcial) completados.
 
 ## Resumen de Fases
 
@@ -16,7 +16,7 @@
 | A | Singletons → @Environment | 3 | ✅ Completada |
 | B | SessionState consistente | 2 | ✅ Completada |
 | C | Services para ModelContext | 3 | ✅ Completada |
-| D | @Query → ViewModels | 18 | 🔄 D.3-D.6 completados (18 views) |
+| D | @Query → ViewModels | 20 | 🔄 D.3-D.7 parcial (20 views) |
 
 ## Fase A: Servicios Stateless → @Environment
 
@@ -184,8 +184,21 @@ currencyConverter.convert(...)
 - **@Query migrado:** allTags
 - **Beneficios:** Lógica de tags activos encapsulada
 
-### D.7: Resto
+### D.7.1: TopSubcategoriesWidget
+- **Estado:** ✅ Completado (26df674)
+- **Archivos creados:** `Yala/App/ViewModels/TopSubcategoriesWidgetViewModel.swift`
+- **@Query migrado:** allCategories
+- **Beneficios:** Lógica de selector de categorías encapsulada
+
+### D.7.2: ProfileView
+- **Estado:** ✅ Completado (9cdd696)
+- **Archivos creados:** `Yala/App/ViewModels/ProfileViewModel.swift`
+- **@Query migrado:** allTransactions, accounts, categories
+- **Beneficios:** Datos para import/export y estado de botones encapsulados
+
+### D.8: Vistas Complejas (Pendiente)
 - **Estado:** ⏳ Pendiente
+- **Views:** PanelView, NewTransactionView, InboxView, Statistics tabs, etc.
 
 ## Commits Realizados
 
@@ -219,6 +232,8 @@ currencyConverter.convert(...)
 - `bc47f51` - refactor(arch): migrate SubcategoryTransferSheet to ViewModel (D.6.2)
 - `85e4889` - refactor(arch): migrate SaveAsFavoriteSheet to ViewModel (D.6.3)
 - `e9c0fd8` - refactor(arch): migrate SaveAsRecurringSheet to ViewModel (D.6.4)
+- `26df674` - refactor(arch): migrate TopSubcategoriesWidget to ViewModel (D.7.1)
+- `9cdd696` - refactor(arch): migrate ProfileView to ViewModel (D.7.2)
 
 ## Notas Técnicas
 
@@ -272,33 +287,40 @@ struct MyView: View {
 
 ## Para Continuar
 
-**D.3 Settings - Entities:** ✅ COMPLETADO
-**D.4 Settings - Other:** ✅ COMPLETADO
-**D.5 Selectors:** ✅ COMPLETADO
-**D.6 Transaction Sheets:** ✅ COMPLETADO
+**D.3 Settings - Entities:** ✅ COMPLETADO (7 views)
+**D.4 Settings - Other:** ✅ COMPLETADO (3 views)
+**D.5 Selectors:** ✅ COMPLETADO (3 views)
+**D.6 Transaction Sheets:** ✅ COMPLETADO (4 views)
+**D.7 Other Views:** 🔄 PARCIAL (2 de ~10 views)
 
 **Plan de priorización:**
-1. ✅ D.3 (Settings - Entities) - COMPLETADO (7 views)
-2. ✅ D.4 (Settings - Other) - COMPLETADO (3 views)
-3. ✅ D.5 (Selectors) - COMPLETADO (3 views)
-4. ✅ D.6 (Transaction Sheets) - COMPLETADO (4 views)
-5. 🔄 D.7 (Remaining views) - medio/alto riesgo
-6. ⏳ D.1-D.2 (Panel, Statistics) - alto riesgo (vistas complejas)
+1. ✅ D.3 (Settings - Entities) - COMPLETADO
+2. ✅ D.4 (Settings - Other) - COMPLETADO
+3. ✅ D.5 (Selectors) - COMPLETADO
+4. ✅ D.6 (Transaction Sheets) - COMPLETADO
+5. 🔄 D.7 (Other views) - 2/10 completados
+6. ⏳ D.8 (Panel, Statistics) - alto riesgo (vistas complejas)
 
-**Próximas views a migrar (D.7):**
+**Próximas views a migrar (D.7 continuación):**
 - FavoriteEditorView (4 @Query)
 - BudgetEditorView (4 @Query)
 - ScheduledPaymentEditorView (2 @Query)
-- ProfileView (3 @Query)
 - ExportFiltersStepView (4 @Query)
 - ImportIntroSheet (1 @Query)
-- TopSubcategoriesWidget (1 @Query)
+- RecordsFiltersView (4 @Query)
+- BulkEditSheet (2 @Query)
+- InboxBulkActionsSheet (1 @Query)
 
-**Vistas complejas pendientes (D.1-D.2):**
+**Vistas complejas pendientes (D.8):**
 - PanelView (8 @Query)
 - NewTransactionView (5 @Query)
-- InboxView, InboxDraftEditSheet (complex)
-- Statistics tabs (5 @Query each)
+- InboxView (2 @Query)
+- InboxDraftEditSheet (5 @Query)
+- RecordsTabView (2 @Query)
+- DetailContainerView (5 @Query)
+- TrendsTabView (5 @Query)
+- CategoriesTabView (5 @Query)
+- ScheduledPaymentsView (4 @Query)
 
 **Archivos clave:**
 - ViewModels creados: `Yala/App/ViewModels/`
