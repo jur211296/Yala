@@ -17,12 +17,14 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ███████████░░░ ~75% (Fase 8 completa, Fase 10 en progreso)
+Progress: V1.1 ██████████████░ ~90% (Fase 8 completa, Fase 10 casi completa)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-29] caa04cc feat(intents): add Automation Entry Intent for external JSON data
+- [2026-01-29] 4b2eab4 feat(intents): add Apple Pay Transaction Intent for Wallet automation
 - [2026-01-28] 93dbeeb feat(intents): add Voice Entry and Image Entry shortcuts
 - [2026-01-28] 9f6bd37 feat(intents): add Quick Entry shortcut for Siri/Shortcuts (10.x)
 - [2026-01-28] ecce7fb feat(onboarding): add category seed step with visual grid (10.6)
@@ -31,8 +33,6 @@ Progress: V1.1 ███████████░░░ ~75% (Fase 8 completa,
 - [2026-01-28] 35de0f7 feat(inbox): auto-create drafts from due scheduled payments
 - [2026-01-28] 12f7830 feat(share): integrate Share Extension with main app UI flow (10.4)
 - [2026-01-28] ce2a3b5 fix: calculate amountInPreferredCurrency in Inbox approval flows
-- [2026-01-28] a66e009 fix: use endOfToday in DateInterval to include same-day transactions
-- [2026-01-28] c040298 chore: align version 1.1 and fix Share Extension Dev bundle ID
 
 ## Completed in Current Phase
 
@@ -58,6 +58,8 @@ Progress: V1.1 ███████████░░░ ~75% (Fase 8 completa,
 - **Permisos y correcciones registro inteligente** - Permisos micrófono/fotos al activar toggle, prompts voz sin duplicar tags, FAB imagen en todas las vistas
 - **App Intent "Registro rápido" (10.x)** - Shortcut Siri/Shortcuts con flujo conversacional (tipo → monto → nota → cuenta → subcategoría → etiqueta), subcategorías filtradas por tipo, búsqueda inteligente de etiquetas (insensible a mayúsculas/acentos), 6 idiomas, 10 escenarios QA
 - **App Intents Voz e Imagen (10.x)** - Shortcuts "Registro por voz" y "Registro por imagen", validan toggles activos, deep links yala://voice-entry y yala://image-entry, error si feature desactivada, 6 idiomas, 5 escenarios QA
+- **Automatización Apple Pay (10.x)** - ApplePayTransactionIntent recibe Amount/Merchant/Name de Wallet, parsea monto y divisa del texto, infiere cuenta por divisa única, auto-categoriza con MerchantMemory, crea InboxDraft con sourceType .applePay, 6 idiomas, 11 escenarios QA (Sección 23)
+- **Automatización Externa (10.x)** - AutomationEntryIntent recibe JSON estructurado (amount, currency, merchant, date), ideal para correos de banco procesados por IA, crea InboxDraft con sourceType .automation, auto-asigna cuenta por divisa y categoría via MerchantMemory
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -114,7 +116,8 @@ Progress: V1.1 ███████████░░░ ~75% (Fase 8 completa,
 - [ ] Modo "Solo gastos" — ocultar ingresos y saldos en toda la app
 - [ ] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios
 - [x] Atajos Siri/Shortcuts (Registro rápido, Voz, Imagen) ✅ (9f6bd37, 93dbeeb)
-- [ ] Automatización Apple Pay — campos para automatización al usar Apple Pay
+- [x] Automatización Apple Pay ✅ (4b2eab4) — Intent recibe datos de Wallet, crea draft en inbox
+- [x] Automatización externa ✅ (caa04cc) — Intent recibe JSON para correos de banco procesados por IA
 
 ---
 
@@ -192,15 +195,15 @@ Progress: V1.1 ███████████░░░ ~75% (Fase 8 completa,
 
 ## Session Continuity
 
-Last session: 2026-01-28
-Stopped at: App Intents completos (Registro rápido, Voz, Imagen)
-Next step: Automatización Apple Pay — habilitar campos para automatización al usar Apple Pay
+Last session: 2026-01-29
+Stopped at: Automation Entry Intent completo (JSON para correos de banco)
+Next step: Modo "Solo gastos" o Notificaciones
 Resume file: N/A
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
-- V1.1: Fase 8 done, Fase 10 ~75% completada
-- Completado en Fase 10: Share Sheet, pagos planificados → inbox, onboarding seed, permisos, prompts voz, FAB imagen, 3 App Intents (Registro rápido, Voz, Imagen)
-- Pendiente: Automatización Apple Pay, modo solo gastos, notificaciones
+- V1.1: Fase 8 done, Fase 10 ~90% completada
+- Completado en Fase 10: Share Sheet, pagos planificados → inbox, onboarding seed, permisos, prompts voz, FAB imagen, 5 App Intents (Registro rápido, Voz, Imagen, Apple Pay, Automation)
+- Pendiente: Modo solo gastos, notificaciones
 
 ## V1.1 (Futuro)
 
