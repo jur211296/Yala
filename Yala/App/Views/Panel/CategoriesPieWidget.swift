@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct CategoriesPieWidget: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -238,7 +240,7 @@ struct CategoriesPieWidget: View {
                     .foregroundStyle(.secondary)
             }
             .opacity(isDimmedItem ? 0.4 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
         }
         .buttonStyle(.plain)
     }
@@ -314,7 +316,7 @@ struct CategoriesPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
                         hoveredItem = isPressing ? item : nil
                     }
                 }, perform: {})
@@ -442,7 +444,7 @@ struct CategoriesPieWidget: View {
                             .fill(Color(hex: item.colorHex))
                             .frame(width: availableWidth * CGFloat(item.percentage / 100))
                             .opacity(isDimmed(item) ? 0.3 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
                             .onTapGesture {
                                 handleTap(item)
                             }
@@ -574,7 +576,7 @@ struct CategoriesPieWidget: View {
             .id(dataHash)  // Force complete rebuild when data changes
             .chartLegend(.hidden)
             .chartAngleSelection(value: $selectedAngle)
-            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)  // Smooth dimming
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)  // Smooth dimming
             .animation(nil, value: dataHash)  // Disable animation to prevent interpolation crashes
             .onChange(of: selectedAngle) {
                 if let angle = selectedAngle {

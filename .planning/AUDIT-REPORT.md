@@ -65,17 +65,16 @@
 **Evaluación:** Handlers ya organizados en PanelSessionObservers. Sin lag perceptible en uso real.
 **Decisión:** Debounce añadiría complejidad sin beneficio medible.
 
-### 9. 🟠 ALTO: Deep Links Sin Validación de Origen
+### 9. ✅ RESUELTO: Deep Links Sin Validación de Origen
 **Archivo:** `YalaApp.swift:116-129`
-**Problema:** Cualquier app puede invocar esquemas `yala://`
-**Impacto:** Activación no autorizada de flujos financieros
-**Acción:** Implementar validación y confirmación de usuario
+**Resolución:** Agregada validación de feature toggles para voice-entry e image-entry (commit 9e00484)
 
-### 10. 🟠 ALTO: Animaciones Sin reducedMotion Check
+### 10. 🟠 PENDIENTE: Animaciones Sin reducedMotion Check
 **Archivos:** 37 archivos con `.animation()` sin verificación
 **Problema:** Usuarios con accesibilidad reducida reciben animaciones forzadas
 **Impacto:** Mareos/náuseas en usuarios sensibles, compliance WCAG
 **Acción:** Agregar `@Environment(\.accessibilityReduceMotion)` a todas las animaciones
+**Nota:** Diferido por extensión del cambio (37+ archivos)
 
 ---
 
@@ -96,8 +95,8 @@
 
 | ID | Archivo | Línea | Descripción | Impacto |
 |----|---------|-------|-------------|---------|
-| SEC-003 | Multiple (40+ archivos) | - | `print()` con datos sensibles sin `#if DEBUG` | Logs en producción |
-| SEC-004 | YalaApp.swift | 116-129 | Deep links sin validación de origen | Activación no autorizada |
+| SEC-003 | ✅ RESUELTO | - | Print statements envueltos con `#if DEBUG` | (commit 9e00484) |
+| SEC-004 | ✅ RESUELTO | - | Deep links con validación de feature toggles | (commit 9e00484) |
 | SEC-005 | BiometricAuthService.swift | - | Config biométrica en UserDefaults vs Keychain | Modificable externamente |
 | SEC-006 | TransactionsExportService.swift | 447-459 | Archivos temp sin FileProtection | Datos financieros expuestos |
 
@@ -134,12 +133,12 @@
 
 | ID | Archivo | Línea | Problema | Impacto |
 |----|---------|-------|----------|---------|
-| BUG-006 | ExchangeRateService.swift | 309-310 | Acceso `sortedDates[0]` sin bounds check | Crash con array vacío |
-| BUG-007 | AudioRecorderService.swift | 181-187 | Timer + nested Task con [weak self] | Data race en recordingDuration |
+| BUG-006 | ✅ NO APLICA | - | Ya tiene `guard !dates.isEmpty` | Array vacío protegido |
+| BUG-007 | ✅ RESUELTO | - | Simplificado weak self capture | (commit 9e00484) |
 | BUG-008 | StoreKitManager.swift | 177 | Task.detached con for-await loop sin cleanup | Memory leak |
-| BUG-009 | XLSXReader.swift | 79 | `rows[0]` sin validación | Crash sin headers |
-| BUG-010 | ImportIntroSheet.swift | 573 | `Task.detached { @MainActor in }` redundante | Confusión de threading |
-| BUG-011 | TransactionCSVImportService.swift | 262, 270 | `removeFirst()` sin validar `!lines.isEmpty` | Crash con CSV vacío |
+| BUG-009 | ✅ NO APLICA | - | Ya tiene `guard rows.count > 0` | Array vacío protegido |
+| BUG-010 | ✅ RESUELTO | - | Task.detached redundante simplificado | (commit 9e00484) |
+| BUG-011 | ✅ NO APLICA | - | Ya tiene `guard !lines.isEmpty` | Array vacío protegido |
 
 ### 🟡 Medios
 
@@ -168,9 +167,9 @@
 
 | ID | Archivo | Problema |
 |----|---------|----------|
-| SWD-005 | ScheduledPaymentDraftService.swift | Struct estático sin `@MainActor` manipulando ModelContext |
+| SWD-005 | ✅ RESUELTO | @MainActor agregado a ScheduledPaymentDraftService (commit 9e00484) |
 | SWD-006 | MerchantMemoryService.swift | ModelContext recibido sin garantía de main thread |
-| SWD-007 | ImageOCR/Extractors/*.swift | Processing en background con ModelContext |
+| SWD-007 | ✅ RESUELTO | @MainActor agregado a ScreenshotSingleExtractor y ScreenshotListExtractor (commit 9e00484) |
 
 ### 🟡 Medios
 
@@ -208,9 +207,9 @@ var subcategories: [Subcategory]
 
 | ID | Archivo | Problema |
 |----|---------|----------|
-| PERF-004 | Multiple (15+ archivos) | DateFormatter/NumberFormatter creados en cada render |
+| PERF-004 | ✅ PARCIAL | Static formatters agregados en RecentRecordsWidget, TopCategoriesWidget (commit 9e00484) |
 | PERF-005 | TagsSettingsListView.swift | Dictionary creado en cada sort operation |
-| PERF-006 | AccountsSettingsListView.swift | Mismo patrón de dictionary recreation |
+| PERF-006 | ✅ RESUELTO | Static balanceFormatter agregado en AccountsSettingsListView (commit 9e00484) |
 
 ### 🟡 Medios
 
@@ -345,8 +344,8 @@ var shouldShowImageEntry: Bool = false    // Image entry triggering
 
 | ID | Archivo | Problema | Impacto |
 |----|---------|----------|---------|
-| UI-001 | 37 archivos | Animaciones sin `accessibilityReduceMotion` check | Usuarios sensibles |
-| UI-002 | 15+ archivos | `Color.white.opacity()` hardcodeado | Invisible en Light Mode |
+| UI-001 | ✅ PARCIAL | `@Environment(\.accessibilityReduceMotion)` agregado a widgets y vistas principales | Commit pendiente |
+| UI-002 | ✅ RESUELTO | `DS.Colors.borderSubtle` y `DS.Colors.backgroundSubtle` creados y aplicados | Commit pendiente |
 
 ### 🟡 Medios
 

@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct TagsPieWidget: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let tags: [TagSpendingSummary]
     let currencyCode: String
 
@@ -239,7 +241,7 @@ struct TagsPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
                         hoveredItem = isPressing ? item : nil
                     }
                 }, perform: {})

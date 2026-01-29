@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct SubcategoriesPieWidget: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 
@@ -238,8 +240,8 @@ struct SubcategoriesPieWidget: View {
                     .foregroundStyle(.secondary)
             }
             .opacity(isDimmedItem ? 0.4 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
-            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)
         }
         .buttonStyle(.plain)
     }
@@ -311,7 +313,7 @@ struct SubcategoriesPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
                         hoveredItem = isPressing ? item : nil
                     }
                 }, perform: {})
@@ -436,8 +438,8 @@ struct SubcategoriesPieWidget: View {
                             .fill(Color(hex: item.colorHex))
                             .frame(width: availableWidth * CGFloat(item.percentage / 100))
                             .opacity(isDimmed(item) ? 0.3 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
-                            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)
                             .onTapGesture {
                                 handleTap(item)
                             }
@@ -569,8 +571,8 @@ struct SubcategoriesPieWidget: View {
             .id(dataHash)  // Force complete rebuild when data changes
             .chartLegend(.hidden)
             .chartAngleSelection(value: $selectedAngle)
-            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)  // Smooth dimming
-            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)  // Smooth dimming
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)  // Smooth dimming
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)  // Smooth dimming
             .animation(nil, value: dataHash)  // Disable animation to prevent interpolation crashes
             .onChange(of: selectedAngle) {
                 if let angle = selectedAngle {

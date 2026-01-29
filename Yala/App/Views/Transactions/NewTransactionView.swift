@@ -14,6 +14,7 @@ import SwiftUI
 struct NewTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     @Query(sort: \Category.sortOrder, order: .forward) private var categories: [Category]
@@ -930,7 +931,7 @@ struct NewTransactionView: View {
         .tint(viewModel.canSave ? Color.electricIndigo : Color.gray.opacity(0.4))
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.canSave)
+        .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 
     // MARK: - Actions

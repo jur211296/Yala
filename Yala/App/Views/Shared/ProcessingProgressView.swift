@@ -10,6 +10,7 @@
 import SwiftUI
 
 struct ProcessingProgressView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     enum Mode {
         /// Capsule progress bar showing current/total (e.g., image processing)
@@ -73,7 +74,7 @@ struct ProcessingProgressView: View {
 
             // Glass overlay
             Circle()
-                .fill(.white.opacity(0.1))
+                .fill(DS.Colors.backgroundSubtle)
                 .frame(width: 120, height: 120)
                 .mask(
                     LinearGradient(
@@ -128,7 +129,7 @@ struct ProcessingProgressView: View {
                                 width: max(8, geometry.size.width * CGFloat(current) / CGFloat(total)),
                                 height: 8
                             )
-                            .animation(.easeInOut(duration: 0.3), value: current)
+                            .dsAnimation(.easeInOut(duration: 0.3), value: current, reduceMotion: reduceMotion)
                     }
                 }
                 .frame(height: 8)
@@ -158,7 +159,7 @@ struct ProcessingProgressView: View {
                         Rectangle()
                             .fill(index <= currentStep ? accentColor : Color.secondary.opacity(0.2))
                             .frame(height: 2)
-                            .animation(.easeInOut(duration: 0.3), value: currentStep)
+                            .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
                     }
 
                     // Step circle
@@ -166,7 +167,7 @@ struct ProcessingProgressView: View {
                         Circle()
                             .fill(index <= currentStep ? accentColor : Color.secondary.opacity(0.15))
                             .frame(width: 28, height: 28)
-                            .animation(.easeInOut(duration: 0.3), value: currentStep)
+                            .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
 
                         if index < currentStep {
                             // Completed checkmark
@@ -195,7 +196,7 @@ struct ProcessingProgressView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .contentTransition(.opacity)
-                    .animation(.easeInOut(duration: 0.2), value: currentStep)
+                    .dsAnimation(.easeInOut(duration: 0.2), value: currentStep, reduceMotion: reduceMotion)
             }
         }
     }

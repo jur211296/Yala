@@ -11,6 +11,7 @@ import SwiftUI
 struct VoiceRecordingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @StateObject private var recorder = AudioRecorderService.shared
     @StateObject private var networkMonitor = NetworkMonitor.shared
@@ -97,9 +98,9 @@ struct VoiceRecordingView: View {
                     .transition(.scale.combined(with: .opacity))
             }
             .padding(DS.Spacing.xl)
-            .animation(.easeInOut(duration: 0.3), value: recorder.state)
-            .animation(.easeInOut(duration: 0.3), value: isPreviewMode)
-            .animation(.easeInOut(duration: 0.3), value: isProcessing)
+            .dsAnimation(.easeInOut(duration: 0.3), value: recorder.state, reduceMotion: reduceMotion)
+            .dsAnimation(.easeInOut(duration: 0.3), value: isPreviewMode, reduceMotion: reduceMotion)
+            .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.yalaBackground)
             .navigationTitle(L10n.Voice.title)
@@ -151,7 +152,7 @@ struct VoiceRecordingView: View {
                         )
                         .frame(width: 140 + CGFloat(index) * 30, height: 140 + CGFloat(index) * 30)
                         .scaleEffect(1.0 + sin(recorder.recordingDuration * 3 - Double(index) * 0.5) * 0.08)
-                        .animation(.easeInOut(duration: 0.3), value: recorder.recordingDuration)
+                        .dsAnimation(.easeInOut(duration: 0.3), value: recorder.recordingDuration, reduceMotion: reduceMotion)
                 }
             }
 
@@ -178,7 +179,7 @@ struct VoiceRecordingView: View {
 
             // Glass overlay
             Circle()
-                .fill(.white.opacity(0.1))
+                .fill(DS.Colors.backgroundSubtle)
                 .frame(width: 120, height: 120)
                 .mask(
                     LinearGradient(
@@ -615,7 +616,7 @@ struct VoiceRecordingView: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
             // Enter preview mode with countdown
-            withAnimation(.easeOut(duration: 0.3)) {
+            dsWithAnimation(reduceMotion, .easeOut(duration: 0.3)) {
                 isPreviewMode = true
                 countdownValue = 3
             }
@@ -637,7 +638,7 @@ struct VoiceRecordingView: View {
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
 
             if countdownValue > 1 {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                     countdownValue -= 1
                 }
             } else {
@@ -652,7 +653,7 @@ struct VoiceRecordingView: View {
         countdownTimer?.invalidate()
         countdownTimer = nil
         pendingAudioData = nil
-        withAnimation(.easeOut(duration: 0.3)) {
+        dsWithAnimation(reduceMotion, .easeOut(duration: 0.3)) {
             isPreviewMode = false
             previewDuration = 0
             countdownValue = 3
@@ -665,7 +666,7 @@ struct VoiceRecordingView: View {
 
         guard let audioData = pendingAudioData else { return }
 
-        withAnimation(.easeOut(duration: 0.3)) {
+        dsWithAnimation(reduceMotion, .easeOut(duration: 0.3)) {
             isPreviewMode = false
         }
 

@@ -122,12 +122,12 @@ struct SubscriptionView: View {
 
             // Subtle pattern overlay
             Circle()
-                .fill(Color.white.opacity(0.05))
+                .fill(DS.Colors.backgroundFaint)
                 .frame(width: 300, height: 300)
                 .offset(x: 120, y: -60)
 
             Circle()
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.white.opacity(0.03))  // Even fainter than DS.Opacity.faint
                 .frame(width: 200, height: 200)
                 .offset(x: -100, y: 40)
 

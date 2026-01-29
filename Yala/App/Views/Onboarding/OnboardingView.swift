@@ -12,6 +12,7 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
@@ -56,7 +57,7 @@ struct OnboardingView: View {
                 notificationsStep.tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .animation(.easeInOut(duration: 0.3), value: currentStep)
+            .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
 
             Spacer()
 
@@ -76,7 +77,7 @@ struct OnboardingView: View {
                 Capsule()
                     .fill(step <= currentStep ? Color.electricIndigo : Color.yalaSecondaryText.opacity(0.2))
                     .frame(width: step == currentStep ? 24 : 8, height: 8)
-                    .animation(.spring(response: 0.3), value: currentStep)
+                    .dsAnimation(.spring(response: 0.3), value: currentStep, reduceMotion: reduceMotion)
             }
         }
     }
@@ -119,7 +120,7 @@ struct OnboardingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            .stroke(DS.Colors.borderSubtle, lineWidth: 1)
                     )
             }
             .padding(.horizontal, DS.Spacing.xl)
@@ -313,7 +314,7 @@ struct OnboardingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(loadSeedCategories ? Color.electricIndigo.opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+                            .stroke(loadSeedCategories ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -337,7 +338,7 @@ struct OnboardingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(loadSeedCategories ? Color.white.opacity(0.1) : Color.electricIndigo.opacity(0.3), lineWidth: 1)
+                            .stroke(loadSeedCategories ? DS.Colors.borderSubtle : Color.electricIndigo.opacity(0.3), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -458,7 +459,7 @@ struct OnboardingView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
             )
             .contentShape(Rectangle())
         }
@@ -543,10 +544,10 @@ struct OnboardingView: View {
                 }
                 .opacity(showCategoryIcons ? 1 : 0)
                 .scaleEffect(showCategoryIcons ? 1 : 0.5)
-                .animation(
-                    .spring(response: 0.4, dampingFraction: 0.7)
-                        .delay(Double(index) * 0.05),
-                    value: showCategoryIcons
+                .dsAnimation(
+                    reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.7).delay(Double(index) * 0.05),
+                    value: showCategoryIcons,
+                    reduceMotion: reduceMotion
                 )
             }
         }
@@ -554,8 +555,8 @@ struct OnboardingView: View {
 
     private func triggerCategoryAnimation() {
         showCategoryIcons = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [reduceMotion] in
+            dsWithAnimation(reduceMotion) {
                 showCategoryIcons = true
             }
         }
@@ -600,7 +601,7 @@ struct OnboardingView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -630,7 +631,7 @@ struct OnboardingView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -643,7 +644,7 @@ struct OnboardingView: View {
             // Back button (hidden on first step)
             if currentStep > 0 {
                 Button {
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         currentStep -= 1
                     }
                 } label: {
@@ -663,7 +664,7 @@ struct OnboardingView: View {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                 if currentStep < 5 {
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         currentStep += 1
                     }
                     // Trigger category icons animation when entering step 4

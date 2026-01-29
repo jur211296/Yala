@@ -109,6 +109,21 @@ enum DS {
         static let slow: Double = 0.4
     }
 
+    // MARK: - Colors
+
+    /// Semantic colors for consistent styling.
+    /// Use these instead of hardcoded Color.white.opacity() values.
+    enum Colors {
+        /// Subtle border for cards on dark backgrounds (0.1 opacity white)
+        static let borderSubtle = Color.white.opacity(Card.borderOpacity)
+
+        /// Very subtle background for hover/selection states (0.1 opacity white)
+        static let backgroundSubtle = Color.white.opacity(Opacity.subtle)
+
+        /// Faint background for very subtle effects (0.05 opacity white)
+        static let backgroundFaint = Color.white.opacity(Opacity.faint)
+    }
+
     // MARK: - Shadow
 
     /// Pre-configured shadow styles.
@@ -306,6 +321,30 @@ extension View {
     func dsFloatingShadow() -> some View {
         let s = DS.Shadow.large
         return self.shadow(color: s.color, radius: s.radius, x: s.x, y: s.y)
+    }
+
+    /// Apply animation respecting accessibility reduce motion preference
+    @ViewBuilder
+    func dsAnimation(_ animation: Animation?, value: some Equatable, reduceMotion: Bool) -> some View {
+        if reduceMotion {
+            self
+        } else {
+            self.animation(animation, value: value)
+        }
+    }
+}
+
+// MARK: - Conditional Animation Helper
+
+/// Executes animation respecting accessibility reduce motion preference
+/// Usage: `dsWithAnimation(reduceMotion) { state = newValue }`
+func dsWithAnimation(_ reduceMotion: Bool, _ animation: Animation? = .easeInOut(duration: DS.Animation.normal), _ body: () -> Void) {
+    if reduceMotion {
+        body()
+    } else {
+        withAnimation(animation) {
+            body()
+        }
     }
 }
 

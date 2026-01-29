@@ -33,7 +33,7 @@ struct InboxBulkApproveSuccessView: View {
 
                 // Glass overlay
                 Circle()
-                    .fill(.white.opacity(0.1))
+                    .fill(DS.Colors.backgroundSubtle)
                     .frame(width: 100, height: 100)
                     .mask(
                         LinearGradient(

@@ -14,6 +14,7 @@ struct ImageSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var selectedImages: [UIImage] = []
@@ -61,9 +62,9 @@ struct ImageSelectionView: View {
                 }
             }
             .padding(DS.Spacing.xl)
-            .animation(.easeInOut(duration: 0.3), value: showingResult)
-            .animation(.easeInOut(duration: 0.3), value: isCountingDown)
-            .animation(.easeInOut(duration: 0.3), value: isProcessing)
+            .dsAnimation(.easeInOut(duration: 0.3), value: showingResult, reduceMotion: reduceMotion)
+            .dsAnimation(.easeInOut(duration: 0.3), value: isCountingDown, reduceMotion: reduceMotion)
+            .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.yalaBackground)
             .navigationTitle(L10n.Image.title)
@@ -225,7 +226,7 @@ struct ImageSelectionView: View {
 
                 // Glass overlay
                 Circle()
-                    .fill(.white.opacity(0.1))
+                    .fill(DS.Colors.backgroundSubtle)
                     .frame(width: 120, height: 120)
                     .mask(
                         LinearGradient(
@@ -394,7 +395,7 @@ struct ImageSelectionView: View {
 
                 // Glass overlay
                 Circle()
-                    .fill(.white.opacity(0.1))
+                    .fill(DS.Colors.backgroundSubtle)
                     .frame(width: 100, height: 100)
                     .mask(
                         LinearGradient(
