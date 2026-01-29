@@ -2950,3 +2950,144 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 *Última actualización: 2026-01-28*
 *Total escenarios: ~317*
 *Total verificaciones: ~590+*
+
+---
+
+## Sección 24: Sistema de Notificaciones
+
+**Objetivo:** Verificar el sistema de notificaciones personalizables
+
+### Escenario 24.1: Primer inicio - Seed de notificaciones default
+**Precondición:** App recién instalada o datos borrados
+1. Abrir la app por primera vez
+2. Ir a Perfil > Notificaciones
+3. **Verificar:** Hay 5 notificaciones predefinidas:
+   - Al final del día (20:00, activa)
+   - Hora de almuerzo (12:30, inactiva)
+   - Reporte semanal (09:00, inactiva)
+   - Pagos planificados (09:00, activa)
+   - Novedades de Yala (10:00, inactiva)
+4. **Verificar:** Cada notificación muestra icono, nombre, hora y texto
+
+### Escenario 24.2: Activar notificación - Solicita permiso
+**Precondición:** Permisos de notificación no otorgados
+1. Ir a Perfil > Notificaciones
+2. Activar toggle de una notificación inactiva
+3. **Verificar:** Sistema solicita permiso de notificaciones
+4. Aceptar permiso
+5. **Verificar:** Toggle queda activo
+6. **Verificar:** Notificación programada (verificar en Configuración > Notificaciones)
+
+### Escenario 24.3: Activar notificación - Permiso denegado
+**Precondición:** Permisos de notificación previamente denegados
+1. Ir a Perfil > Notificaciones
+2. Activar toggle de una notificación
+3. **Verificar:** Aparece alerta indicando que debe activar permisos en Configuración
+4. **Verificar:** Toggle vuelve a inactivo automáticamente
+
+### Escenario 24.4: Editar notificación default
+1. Ir a Perfil > Notificaciones
+2. Tocar "Al final del día"
+3. Cambiar nombre a "Cierre del día"
+4. Cambiar texto a "¿Cómo te fue hoy?"
+5. Cambiar hora a 21:00
+6. Guardar
+7. **Verificar:** Card muestra nuevos valores
+8. **Verificar:** Si estaba activa, notificación reprogramada
+
+### Escenario 24.5: Crear notificación personalizada
+1. Ir a Perfil > Notificaciones
+2. Tocar botón "+" en toolbar
+3. Completar:
+   - Nombre: "Recordatorio mañana"
+   - Texto: "Anota tu café matutino"
+   - Hora: 08:00
+4. Guardar
+5. **Verificar:** Nueva notificación aparece en la lista
+6. **Verificar:** Tiene icono cyan (color default de custom)
+7. **Verificar:** Toggle activo por defecto
+
+### Escenario 24.6: Eliminar notificación personalizada
+1. Crear notificación personalizada (escenario 24.5)
+2. Hacer swipe izquierda en la card
+3. **Verificar:** Aparece botón "Eliminar" rojo
+4. Tocar "Eliminar"
+5. **Verificar:** Notificación desaparece de la lista
+6. **Verificar:** Notificación cancelada del sistema
+
+### Escenario 24.7: No se pueden eliminar notificaciones default
+1. Ir a Perfil > Notificaciones
+2. Hacer swipe izquierda en "Al final del día"
+3. **Verificar:** NO aparece botón de eliminar
+4. **Verificar:** Solo se puede editar (tocando la card)
+
+### Escenario 24.8: Límite de caracteres en nombre
+1. Crear/editar notificación
+2. Escribir nombre de más de 30 caracteres
+3. **Verificar:** Se trunca a 30 caracteres
+4. **Verificar:** Contador muestra "0 caracteres restantes"
+5. **Verificar:** Contador cambia a naranja cuando quedan < 10
+
+### Escenario 24.9: Límite de caracteres en texto
+1. Crear/editar notificación
+2. Escribir texto de más de 100 caracteres
+3. **Verificar:** Se trunca a 100 caracteres
+4. **Verificar:** Contador muestra "0 caracteres restantes"
+5. **Verificar:** Contador cambia a naranja cuando quedan < 20
+
+### Escenario 24.10: Configuración de Reporte semanal
+1. Ir a Perfil > Notificaciones
+2. Tocar "Reporte semanal"
+3. **Verificar:** Aparece sección "¿Qué incluir en el reporte?"
+4. **Verificar:** 4 opciones con toggle:
+   - Saldo actual
+   - Total de gastos
+   - Total de ingresos
+   - Categoría con más gasto
+5. Desactivar "Saldo actual" y "Total de ingresos"
+6. Guardar
+7. Volver a abrir
+8. **Verificar:** Configuración persiste
+
+### Escenario 24.11: Desactivar notificación activa
+1. Tener una notificación activa y programada
+2. Ir a Perfil > Notificaciones
+3. Desactivar el toggle
+4. **Verificar:** Toggle queda inactivo
+5. **Verificar:** Notificación cancelada del sistema
+
+### Escenario 24.12: Empty state
+**Precondición:** Eliminar todas las notificaciones personalizadas y desactivar todas las default
+1. Ir a Perfil > Notificaciones
+2. **Verificar:** Muestra lista de notificaciones (default no se eliminan)
+3. Nota: El empty state solo aparece si por algún motivo no hay notificaciones (raro)
+
+### Escenario 24.13: Persistencia tras cierre de app
+1. Configurar varias notificaciones con diferentes horarios
+2. Cerrar la app completamente
+3. Reabrir la app
+4. Ir a Perfil > Notificaciones
+5. **Verificar:** Todas las configuraciones persisten
+6. **Verificar:** Notificaciones activas siguen programadas
+
+### Escenario 24.14: Recibir notificación
+**Precondición:** Notificación "Al final del día" activa a una hora próxima
+1. Activar notificación con hora en 1-2 minutos
+2. Cerrar la app
+3. Esperar a la hora programada
+4. **Verificar:** Recibir notificación push
+5. **Verificar:** Título = "Yala"
+6. **Verificar:** Texto = el configurado
+
+### Escenario 24.15: Vaciar datos - Notificaciones se recrean
+1. Ir a Perfil > Vaciar datos
+2. Confirmar borrado
+3. Ir a Perfil > Notificaciones
+4. **Verificar:** 5 notificaciones default recreadas
+5. **Verificar:** Notificaciones personalizadas eliminadas
+
+---
+
+*Última actualización: 2026-01-29 - Sección 24 (Notificaciones)*
+*Total escenarios: ~332*
+*Total verificaciones: ~650+*
