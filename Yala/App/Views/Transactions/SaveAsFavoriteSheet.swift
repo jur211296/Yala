@@ -12,8 +12,7 @@ struct SaveAsFavoriteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
+    @State private var viewModel = SaveAsFavoriteViewModel()
 
     // Initial values from transaction
     let transactionType: TransactionType
@@ -76,14 +75,6 @@ struct SaveAsFavoriteSheet: View {
         self._includeNote = State(initialValue: !note.isEmpty)
     }
 
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
-    }
-
-    private var selectedTagObjects: [Tag] {
-        activeTags.filter { selectedTags.contains($0.persistentModelID) }
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -140,6 +131,7 @@ struct SaveAsFavoriteSheet: View {
             }
         }
         .onAppear {
+            viewModel.setContext(modelContext)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isNameFocused = true
             }
@@ -355,7 +347,7 @@ struct SaveAsFavoriteSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        if activeTags.isEmpty {
+                        if viewModel.activeTags.isEmpty {
                             YalaEmptyState(
                                 icon: "tag.slash",
                                 title: L10n.Empty.noTags,
@@ -364,7 +356,7 @@ struct SaveAsFavoriteSheet: View {
                         } else {
                             SectionBox(title: "") {
                                 VStack(spacing: 0) {
-                                    ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
+                                    ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
                                         }
@@ -434,29 +426,18 @@ struct SaveAsFavoriteSheet: View {
         let finalName = name.trimmingCharacters(in: .whitespaces)
         guard !finalName.isEmpty else { return }
 
-        // Get next display order
-        let descriptor = FetchDescriptor<FavoritePayment>(
-            sortBy: [SortDescriptor(\.displayOrder, order: .reverse)]
-        )
-        let existingFavorites = (try? modelContext.fetch(descriptor)) ?? []
-        let nextOrder = (existingFavorites.first?.displayOrder ?? -1) + 1
-
-        let favorite = FavoritePayment(
-            name: finalName,
-            transactionType: transactionType.rawValue,
-            amount: includeAmount && amount > 0 ? amount : nil,
-            note: includeNote && !note.isEmpty ? note : nil,
-            account: selectedAccount,
-            subcategory: selectedSubcategory,
-            tags: selectedTagObjects,
-            natureOverride: natureOverride?.rawValue,
-            currencyCode: currencyCode,
-            displayOrder: nextOrder
-        )
-
-        modelContext.insert(favorite)
         do {
-            try modelContext.save()
+            try viewModel.saveFavorite(
+                name: finalName,
+                transactionType: transactionType,
+                amount: includeAmount && amount > 0 ? amount : nil,
+                note: includeNote && !note.isEmpty ? note : nil,
+                account: selectedAccount,
+                subcategory: selectedSubcategory,
+                selectedTagIDs: selectedTags,
+                natureOverride: natureOverride,
+                currencyCode: currencyCode
+            )
             onSaved(L10n.Action.savedAsFavorite)
             dismiss()
         } catch {
