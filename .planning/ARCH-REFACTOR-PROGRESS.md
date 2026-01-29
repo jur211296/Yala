@@ -94,7 +94,13 @@ currencyConverter.convert(...)
 - **@Query migrado:** tags (lista de todas las etiquetas)
 - **Beneficios:** Lógica de ordenamiento y filtrado encapsulada, recarga manual on dismiss para actualizar después de edición
 
-### D.1-D.7: Resto (46 Views)
+### D.3.3: AccountsSettingsListView
+- **Estado:** ✅ Completado
+- **Archivos creados:** `Yala/App/ViewModels/AccountsSettingsListViewModel.swift`
+- **@Query migrado:** accounts, transactions (para balance)
+- **Beneficios:** Lógica de ordenamiento y balance encapsulada en ViewModel
+
+### D.1-D.7: Resto (45 Views)
 - **Estado:** ⏳ Pendiente
 
 ## Commits Realizados
