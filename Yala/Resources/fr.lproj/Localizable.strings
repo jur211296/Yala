@@ -1362,3 +1362,85 @@
 "shortcut.applePay.dialog.merchant" = "Quel est le commerçant ?";
 "shortcut.applePay.error.noAmount" = "Le montant est requis. Assignez le montant de la transaction Wallet.";
 "shortcut.applePay.success %@ %@" = "Brouillon créé : %@ chez %@. Vérifiez dans votre boîte de réception.";
+
+// MARK: - Notifications
+"notifications.title" = "Notifications";
+"notifications.addNew" = "Nouvelle notification";
+"notifications.edit" = "Modifier la notification";
+"notifications.delete" = "Supprimer";
+"notifications.deleteConfirm" = "Voulez-vous vraiment supprimer cette notification ?";
+"notifications.permissionRequired" = "Autorisation requise";
+"notifications.permissionMessage" = "Activez les notifications dans les Réglages pour recevoir des rappels.";
+"notifications.openSettings" = "Ouvrir les Réglages";
+
+// Form fields
+"notifications.name" = "Nom";
+"notifications.namePlaceholder" = "Ex : Rappel quotidien";
+"notifications.text" = "Message";
+"notifications.textPlaceholder" = "Ex : Avez-vous enregistré vos dépenses ?";
+"notifications.time" = "Heure";
+"notifications.active" = "Active";
+
+// Weekly report config
+"notifications.weeklyReportConfig" = "Que inclure dans le rapport ?";
+"notifications.includeBalance" = "Solde actuel";
+"notifications.includeExpenses" = "Total des dépenses";
+"notifications.includeIncome" = "Total des revenus";
+"notifications.includeTopCategory" = "Catégorie la plus dépensière";
+
+// Default notifications
+"notifications.endOfDay.name" = "Fin de journée";
+"notifications.endOfDay.text" = "Comment s'est passée ta journée ? 👋 Partage tes dépenses avec nous";
+"notifications.lunchTime.name" = "Heure du déjeuner";
+"notifications.lunchTime.text" = "Qu'as-tu mangé ? 🍽️ Note-le tant que c'est frais";
+"notifications.weeklyReport.name" = "Rapport hebdomadaire";
+"notifications.weeklyReport.text" = "Voici ton bilan de la semaine 📊";
+"notifications.scheduledPayments.name" = "Paiements planifiés";
+"notifications.scheduledPayments.text" = "Tu as des paiements à venir";
+"notifications.announcements.name" = "Nouveautés Yala";
+"notifications.announcements.text" = "Découvre les dernières fonctionnalités";
+
+// Empty state
+"notifications.empty.title" = "Aucune notification";
+"notifications.empty.message" = "Crée des notifications pour recevoir des rappels";
+
+// Character count
+"notifications.charactersRemaining" = "%d caractères restants";
+"notifications.testNotification" = "Tester le rappel";
+
+// Report data types
+"notifications.data.balance" = "solde";
+"notifications.data.expenses" = "dépenses";
+"notifications.data.income" = "revenus";
+"notifications.data.topCategory" = "catégorie la plus dépensière";
+"notifications.selectData" = "Que veux-tu voir ?";
+
+// Day preferences
+"notifications.day.sunday" = "dimanche";
+"notifications.day.monday" = "lundi";
+"notifications.day.lastOfMonth" = "dernier jour du mois";
+"notifications.day.firstOfMonth" = "premier jour du mois";
+"notifications.selectDay" = "Quand le recevoir ?";
+
+// Reports
+"notifications.dailyReport.name" = "Résumé du jour";
+"notifications.dailyReport.hint" = "Chaque soir tu verras ton %@ du jour";
+"notifications.weeklyReport.hint" = "Chaque %2$@ tu recevras ton %1$@ de la semaine";
+"notifications.monthlyReport.name" = "Résumé mensuel";
+"notifications.monthlyReport.hint" = "Le %2$@ tu verras ton %1$@ du mois";
+
+// System
+"notifications.scheduledPayments.hint" = "On t'informe quand tu as des paiements à venir";
+"notifications.announcements.hint" = "On te partage les nouveautés et améliorations ✨";
+
+// Section headers
+"notifications.section.reminders" = "Rappels";
+"notifications.section.reports" = "Rapports";
+"notifications.section.system" = "Système";
+"notifications.section.custom" = "Personnalisés";
+
+// Test report samples
+"notifications.testReport.balance" = "Ton solde actuel : 1 250,00 €";
+"notifications.testReport.expenses" = "Tu as dépensé 350,00 € cette période";
+"notifications.testReport.income" = "Tu as reçu 2 500,00 € cette période";
+"notifications.testReport.topCategory" = "Ta plus grosse dépense : Alimentation (180,00 €)";

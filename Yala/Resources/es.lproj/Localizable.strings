@@ -1094,6 +1094,9 @@
 "onboarding.categoriesNo" = "Empezar desde cero";
 "onboarding.categoriesRecommended" = "Recomendado";
 "onboarding.categoriesInfo" = "Cada categoría incluye subcategorías más detalladas. Podrás verlas y personalizarlas en Perfil > Categorías.";
+"onboarding.notificationsTitle" = "¿Te avisamos?";
+"onboarding.notificationsSubtitle" = "Activa los recordatorios que te sean útiles. Podrás cambiarlos cuando quieras.";
+"onboarding.notificationsSkip" = "Ahora no, gracias";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Al cambiar de cuenta, se actualizará la divisa de las transacciones seleccionadas.";
@@ -1376,3 +1379,83 @@
 "shortcut.automation.error.noAmount" = "Se requiere un monto mayor a cero.";
 "shortcut.automation.error.noCurrency" = "Se requiere una divisa (ej: USD, PEN, EUR).";
 "shortcut.automation.success %@ %@" = "Borrador creado: %@ en %@. Revísalo en tu bandeja de entrada.";
+
+// MARK: - Notifications
+"notifications.title" = "Notificaciones";
+"notifications.addNew" = "Nueva notificación";
+"notifications.edit" = "Editar";
+"notifications.delete" = "Eliminar";
+"notifications.deleteConfirm" = "¿Seguro que quieres eliminar esta notificación?";
+"notifications.permissionRequired" = "Activa las notificaciones";
+"notifications.permissionMessage" = "Para enviarte recordatorios, necesitamos que actives las notificaciones en Configuración.";
+"notifications.openSettings" = "Ir a Configuración";
+
+// Form fields
+"notifications.name" = "Nombre";
+"notifications.namePlaceholder" = "Ej: Mi recordatorio";
+"notifications.text" = "Mensaje";
+"notifications.textPlaceholder" = "Ej: ¡Hora de revisar tus gastos!";
+"notifications.time" = "Hora";
+"notifications.active" = "Activa";
+
+// Report data types
+"notifications.data.balance" = "saldo";
+"notifications.data.expenses" = "gastos";
+"notifications.data.income" = "ingresos";
+"notifications.data.topCategory" = "categoría con más gasto";
+"notifications.selectData" = "¿Qué quieres ver?";
+
+// Day preferences
+"notifications.day.sunday" = "domingo";
+"notifications.day.monday" = "lunes";
+"notifications.day.lastOfMonth" = "último día del mes";
+"notifications.day.firstOfMonth" = "primer día del mes";
+"notifications.selectDay" = "¿Cuándo recibirlo?";
+"notifications.allDays" = "Todos los días";
+"notifications.selectWeekdays" = "¿Qué días?";
+
+// Reminders (Brand Voice)
+"notifications.endOfDay.name" = "Cierre del día";
+"notifications.endOfDay.text" = "¿Cómo te fue hoy? 👋 Cuéntanos tus gastos";
+"notifications.lunchTime.name" = "Hora de comer";
+"notifications.lunchTime.text" = "¿Qué comiste? 🍽️ Anótalo mientras lo recuerdas";
+
+// Reports
+"notifications.dailyReport.name" = "Resumen del día";
+"notifications.dailyReport.hint" = "A las %@ verás tu %@ del día";
+"notifications.weeklyReport.name" = "Resumen semanal";
+"notifications.weeklyReport.hint" = "Cada %2$@ recibirás tu %1$@ de la semana";
+"notifications.monthlyReport.name" = "Resumen mensual";
+"notifications.monthlyReport.hint" = "El %2$@ verás tu %1$@ del mes";
+
+// System notifications
+"notifications.scheduledPayments.name" = "Pagos planificados";
+"notifications.scheduledPayments.hint" = "Te avisaremos cuando tengas pagos próximos";
+"notifications.announcements.name" = "Novedades de Yala";
+"notifications.announcements.hint" = "Te contaremos las mejoras y novedades ✨";
+
+// Empty state
+"notifications.empty.title" = "Sin notificaciones";
+"notifications.empty.message" = "Configura recordatorios para mantener tus finanzas al día";
+
+// Test
+"notifications.testNotification" = "Probar recordatorio";
+"notifications.testReport.balance.daily" = "Tu saldo hoy: $1,250.00";
+"notifications.testReport.balance.weekly" = "Tu saldo de la última semana: $1,250.00";
+"notifications.testReport.balance.monthly" = "Tu saldo del último mes: $1,250.00";
+"notifications.testReport.expenses.daily" = "Gastaste $85.00 hoy";
+"notifications.testReport.expenses.weekly" = "Gastaste $350.00 la última semana";
+"notifications.testReport.expenses.monthly" = "Gastaste $1,200.00 el último mes";
+"notifications.testReport.income.daily" = "Recibiste $500.00 hoy";
+"notifications.testReport.income.weekly" = "Recibiste $2,500.00 la última semana";
+"notifications.testReport.income.monthly" = "Recibiste $8,500.00 el último mes";
+"notifications.testReport.topCategory.daily" = "Tu mayor gasto hoy: Comida ($45.00)";
+"notifications.testReport.topCategory.weekly" = "Tu mayor gasto de la semana: Comida ($180.00)";
+"notifications.testReport.topCategory.monthly" = "Tu mayor gasto del mes: Comida ($650.00)";
+"notifications.testReport.scheduledPayment" = "Tienes un pago en 3 días: \"Netflix\" por PEN 44.90";
+
+// Section headers
+"notifications.section.reminders" = "Recordatorios";
+"notifications.section.reports" = "Reportes";
+"notifications.section.system" = "Sistema";
+"notifications.section.custom" = "Personalizados";

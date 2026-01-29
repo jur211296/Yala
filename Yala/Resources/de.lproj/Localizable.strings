@@ -1362,3 +1362,85 @@
 "shortcut.applePay.dialog.merchant" = "Wie heißt der Händler?";
 "shortcut.applePay.error.noAmount" = "Betrag erforderlich. Weisen Sie den Transaktionsbetrag aus Wallet zu.";
 "shortcut.applePay.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfen Sie Ihren Posteingang.";
+
+// MARK: - Notifications
+"notifications.title" = "Benachrichtigungen";
+"notifications.addNew" = "Neue Benachrichtigung";
+"notifications.edit" = "Benachrichtigung bearbeiten";
+"notifications.delete" = "Löschen";
+"notifications.deleteConfirm" = "Möchtest du diese Benachrichtigung wirklich löschen?";
+"notifications.permissionRequired" = "Berechtigung erforderlich";
+"notifications.permissionMessage" = "Aktiviere Benachrichtigungen in den Einstellungen, um Erinnerungen zu erhalten.";
+"notifications.openSettings" = "Einstellungen öffnen";
+
+// Form fields
+"notifications.name" = "Name";
+"notifications.namePlaceholder" = "Z.B.: Tägliche Erinnerung";
+"notifications.text" = "Nachricht";
+"notifications.textPlaceholder" = "Z.B.: Hast du deine Ausgaben erfasst?";
+"notifications.time" = "Uhrzeit";
+"notifications.active" = "Aktiv";
+
+// Weekly report config
+"notifications.weeklyReportConfig" = "Was soll im Bericht enthalten sein?";
+"notifications.includeBalance" = "Aktueller Saldo";
+"notifications.includeExpenses" = "Gesamtausgaben";
+"notifications.includeIncome" = "Gesamteinnahmen";
+"notifications.includeTopCategory" = "Top Ausgabenkategorie";
+
+// Default notifications
+"notifications.endOfDay.name" = "Tagesende";
+"notifications.endOfDay.text" = "Wie war dein Tag? 👋 Erzähl uns von deinen Ausgaben";
+"notifications.lunchTime.name" = "Mittagszeit";
+"notifications.lunchTime.text" = "Was hast du gegessen? 🍽️ Notier es, solange du es im Kopf hast";
+"notifications.weeklyReport.name" = "Wochenbericht";
+"notifications.weeklyReport.text" = "Dein Wochenrückblick 📊";
+"notifications.scheduledPayments.name" = "Geplante Zahlungen";
+"notifications.scheduledPayments.text" = "Du hast anstehende Zahlungen";
+"notifications.announcements.name" = "Yala Neuigkeiten";
+"notifications.announcements.text" = "Entdecke die neuesten Funktionen";
+
+// Empty state
+"notifications.empty.title" = "Keine Benachrichtigungen";
+"notifications.empty.message" = "Erstelle Benachrichtigungen für Erinnerungen";
+
+// Character count
+"notifications.charactersRemaining" = "%d Zeichen übrig";
+"notifications.testNotification" = "Erinnerung testen";
+
+// Report data types
+"notifications.data.balance" = "Saldo";
+"notifications.data.expenses" = "Ausgaben";
+"notifications.data.income" = "Einnahmen";
+"notifications.data.topCategory" = "Top-Ausgabenkategorie";
+"notifications.selectData" = "Was möchtest du sehen?";
+
+// Day preferences
+"notifications.day.sunday" = "Sonntag";
+"notifications.day.monday" = "Montag";
+"notifications.day.lastOfMonth" = "letzter Tag des Monats";
+"notifications.day.firstOfMonth" = "erster Tag des Monats";
+"notifications.selectDay" = "Wann erhalten?";
+
+// Reports
+"notifications.dailyReport.name" = "Tageszusammenfassung";
+"notifications.dailyReport.hint" = "Jeden Abend siehst du dein %@ des Tages";
+"notifications.weeklyReport.hint" = "Jeden %2$@ erhältst du dein %1$@ der Woche";
+"notifications.monthlyReport.name" = "Monatszusammenfassung";
+"notifications.monthlyReport.hint" = "Am %2$@ siehst du dein %1$@ des Monats";
+
+// System
+"notifications.scheduledPayments.hint" = "Wir informieren dich über anstehende Zahlungen";
+"notifications.announcements.hint" = "Wir teilen Verbesserungen und neue Funktionen ✨";
+
+// Section headers
+"notifications.section.reminders" = "Erinnerungen";
+"notifications.section.reports" = "Berichte";
+"notifications.section.system" = "System";
+"notifications.section.custom" = "Benutzerdefiniert";
+
+// Test report samples
+"notifications.testReport.balance" = "Dein aktueller Saldo: 1.250,00 €";
+"notifications.testReport.expenses" = "Du hast 350,00 € ausgegeben";
+"notifications.testReport.income" = "Du hast 2.500,00 € erhalten";
+"notifications.testReport.topCategory" = "Dein größter Ausgabeposten: Essen (180,00 €)";

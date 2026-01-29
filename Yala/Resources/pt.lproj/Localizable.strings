@@ -1362,3 +1362,85 @@
 "shortcut.applePay.dialog.merchant" = "Qual é o comerciante?";
 "shortcut.applePay.error.noAmount" = "O valor é obrigatório. Atribua o valor da transação do Wallet.";
 "shortcut.applePay.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
+
+// MARK: - Notifications
+"notifications.title" = "Notificações";
+"notifications.addNew" = "Nova notificação";
+"notifications.edit" = "Editar notificação";
+"notifications.delete" = "Excluir";
+"notifications.deleteConfirm" = "Tem certeza que deseja excluir esta notificação?";
+"notifications.permissionRequired" = "Permissão necessária";
+"notifications.permissionMessage" = "Ative as notificações nas Configurações para receber lembretes.";
+"notifications.openSettings" = "Abrir Configurações";
+
+// Form fields
+"notifications.name" = "Nome";
+"notifications.namePlaceholder" = "Ex: Lembrete diário";
+"notifications.text" = "Mensagem";
+"notifications.textPlaceholder" = "Ex: Você registrou seus gastos?";
+"notifications.time" = "Horário";
+"notifications.active" = "Ativa";
+
+// Weekly report config
+"notifications.weeklyReportConfig" = "O que incluir no relatório?";
+"notifications.includeBalance" = "Saldo atual";
+"notifications.includeExpenses" = "Total de gastos";
+"notifications.includeIncome" = "Total de receitas";
+"notifications.includeTopCategory" = "Categoria com mais gastos";
+
+// Default notifications
+"notifications.endOfDay.name" = "Fim do dia";
+"notifications.endOfDay.text" = "Como foi seu dia? 👋 Conta pra gente seus gastos";
+"notifications.lunchTime.name" = "Hora do almoço";
+"notifications.lunchTime.text" = "O que você comeu? 🍽️ Anota enquanto está fresco";
+"notifications.weeklyReport.name" = "Relatório semanal";
+"notifications.weeklyReport.text" = "Veja como foi sua semana 📊";
+"notifications.scheduledPayments.name" = "Pagamentos agendados";
+"notifications.scheduledPayments.text" = "Você tem pagamentos próximos";
+"notifications.announcements.name" = "Novidades do Yala";
+"notifications.announcements.text" = "Confira as últimas funcionalidades";
+
+// Empty state
+"notifications.empty.title" = "Sem notificações";
+"notifications.empty.message" = "Crie notificações para receber lembretes";
+
+// Character count
+"notifications.charactersRemaining" = "%d caracteres restantes";
+"notifications.testNotification" = "Testar lembrete";
+
+// Report data types
+"notifications.data.balance" = "saldo";
+"notifications.data.expenses" = "gastos";
+"notifications.data.income" = "receitas";
+"notifications.data.topCategory" = "categoria com mais gastos";
+"notifications.selectData" = "O que você quer ver?";
+
+// Day preferences
+"notifications.day.sunday" = "domingo";
+"notifications.day.monday" = "segunda";
+"notifications.day.lastOfMonth" = "último dia do mês";
+"notifications.day.firstOfMonth" = "primeiro dia do mês";
+"notifications.selectDay" = "Quando receber?";
+
+// Reports
+"notifications.dailyReport.name" = "Resumo do dia";
+"notifications.dailyReport.hint" = "Toda noite você verá seu %@ do dia";
+"notifications.weeklyReport.hint" = "Toda %2$@ você receberá seu %1$@ da semana";
+"notifications.monthlyReport.name" = "Resumo mensal";
+"notifications.monthlyReport.hint" = "No %2$@ você verá seu %1$@ do mês";
+
+// System
+"notifications.scheduledPayments.hint" = "Te avisamos quando você tiver pagamentos próximos";
+"notifications.announcements.hint" = "Compartilhamos as novidades e melhorias ✨";
+
+// Section headers
+"notifications.section.reminders" = "Lembretes";
+"notifications.section.reports" = "Relatórios";
+"notifications.section.system" = "Sistema";
+"notifications.section.custom" = "Personalizados";
+
+// Test report samples
+"notifications.testReport.balance" = "Seu saldo atual: R$ 1.250,00";
+"notifications.testReport.expenses" = "Você gastou R$ 350,00 neste período";
+"notifications.testReport.income" = "Você recebeu R$ 2.500,00 neste período";
+"notifications.testReport.topCategory" = "Seu maior gasto: Alimentação (R$ 180,00)";

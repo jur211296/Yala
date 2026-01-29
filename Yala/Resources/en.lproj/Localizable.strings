@@ -1094,6 +1094,9 @@
 "onboarding.categoriesNo" = "Start from scratch";
 "onboarding.categoriesRecommended" = "Recommended";
 "onboarding.categoriesInfo" = "Each category includes more detailed subcategories. You can view and customize them in Profile > Categories.";
+"onboarding.notificationsTitle" = "Stay in the loop?";
+"onboarding.notificationsSubtitle" = "Turn on the reminders that help you. You can change them anytime.";
+"onboarding.notificationsSkip" = "Not now, thanks";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
@@ -1376,3 +1379,83 @@
 "shortcut.automation.error.noAmount" = "An amount greater than zero is required.";
 "shortcut.automation.error.noCurrency" = "A currency is required (e.g., USD, PEN, EUR).";
 "shortcut.automation.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
+
+// MARK: - Notifications
+"notifications.title" = "Notifications";
+"notifications.addNew" = "New notification";
+"notifications.edit" = "Edit";
+"notifications.delete" = "Delete";
+"notifications.deleteConfirm" = "Are you sure you want to delete this notification?";
+"notifications.permissionRequired" = "Enable notifications";
+"notifications.permissionMessage" = "To send you reminders, we need you to enable notifications in Settings.";
+"notifications.openSettings" = "Go to Settings";
+
+// Form fields
+"notifications.name" = "Name";
+"notifications.namePlaceholder" = "E.g.: My reminder";
+"notifications.text" = "Message";
+"notifications.textPlaceholder" = "E.g.: Time to check your expenses!";
+"notifications.time" = "Time";
+"notifications.active" = "Active";
+
+// Report data types
+"notifications.data.balance" = "balance";
+"notifications.data.expenses" = "expenses";
+"notifications.data.income" = "income";
+"notifications.data.topCategory" = "top spending category";
+"notifications.selectData" = "What do you want to see?";
+
+// Day preferences
+"notifications.day.sunday" = "Sunday";
+"notifications.day.monday" = "Monday";
+"notifications.day.lastOfMonth" = "last day of month";
+"notifications.day.firstOfMonth" = "first day of month";
+"notifications.selectDay" = "When to receive it?";
+"notifications.allDays" = "Every day";
+"notifications.selectWeekdays" = "Which days?";
+
+// Reminders (Brand Voice)
+"notifications.endOfDay.name" = "End of day";
+"notifications.endOfDay.text" = "How was your day? 👋 Share your expenses with us";
+"notifications.lunchTime.name" = "Meal time";
+"notifications.lunchTime.text" = "What did you have? 🍽️ Log it while it's fresh";
+
+// Reports
+"notifications.dailyReport.name" = "Daily summary";
+"notifications.dailyReport.hint" = "At %@ you'll see your %@ for the day";
+"notifications.weeklyReport.name" = "Weekly summary";
+"notifications.weeklyReport.hint" = "Every %2$@ you'll get your %1$@ for the week";
+"notifications.monthlyReport.name" = "Monthly summary";
+"notifications.monthlyReport.hint" = "On the %2$@ you'll see your %1$@ for the month";
+
+// System notifications
+"notifications.scheduledPayments.name" = "Scheduled payments";
+"notifications.scheduledPayments.hint" = "We'll let you know when you have upcoming payments";
+"notifications.announcements.name" = "Yala news";
+"notifications.announcements.hint" = "We'll share improvements and new features ✨";
+
+// Empty state
+"notifications.empty.title" = "No notifications";
+"notifications.empty.message" = "Set up reminders to keep your finances on track";
+
+// Test
+"notifications.testNotification" = "Test reminder";
+"notifications.testReport.balance.daily" = "Your balance today: $1,250.00";
+"notifications.testReport.balance.weekly" = "Your balance this week: $1,250.00";
+"notifications.testReport.balance.monthly" = "Your balance this month: $1,250.00";
+"notifications.testReport.expenses.daily" = "You spent $85.00 today";
+"notifications.testReport.expenses.weekly" = "You spent $350.00 this week";
+"notifications.testReport.expenses.monthly" = "You spent $1,200.00 this month";
+"notifications.testReport.income.daily" = "You received $500.00 today";
+"notifications.testReport.income.weekly" = "You received $2,500.00 this week";
+"notifications.testReport.income.monthly" = "You received $8,500.00 this month";
+"notifications.testReport.topCategory.daily" = "Your top expense today: Food ($45.00)";
+"notifications.testReport.topCategory.weekly" = "Your top expense this week: Food ($180.00)";
+"notifications.testReport.topCategory.monthly" = "Your top expense this month: Food ($650.00)";
+"notifications.testReport.scheduledPayment" = "You have a payment in 3 days: \"Netflix\" for USD 14.99";
+
+// Section headers
+"notifications.section.reminders" = "Reminders";
+"notifications.section.reports" = "Reports";
+"notifications.section.system" = "System";
+"notifications.section.custom" = "Custom";

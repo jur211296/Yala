@@ -1636,6 +1636,15 @@ enum L10n {
         static var categoriesInfo: String {
             NSLocalizedString("onboarding.categoriesInfo", comment: "")
         }
+        static var notificationsTitle: String {
+            NSLocalizedString("onboarding.notificationsTitle", comment: "")
+        }
+        static var notificationsSubtitle: String {
+            NSLocalizedString("onboarding.notificationsSubtitle", comment: "")
+        }
+        static var notificationsSkip: String {
+            NSLocalizedString("onboarding.notificationsSkip", comment: "")
+        }
     }
 
     // MARK: - Bulk Edit
@@ -2114,6 +2123,111 @@ enum L10n {
         static var whatIsProA: String { NSLocalizedString("faq.whatIsPro.a", comment: "") }
         static var cancelSubQ: String { NSLocalizedString("faq.cancelSub.q", comment: "") }
         static var cancelSubA: String { NSLocalizedString("faq.cancelSub.a", comment: "") }
+    }
+
+    // MARK: - Notifications
+
+    enum Notifications {
+        static var title: String { NSLocalizedString("notifications.title", comment: "") }
+        static var addNew: String { NSLocalizedString("notifications.addNew", comment: "") }
+        static var edit: String { NSLocalizedString("notifications.edit", comment: "") }
+        static var delete: String { NSLocalizedString("notifications.delete", comment: "") }
+        static var deleteConfirm: String { NSLocalizedString("notifications.deleteConfirm", comment: "") }
+        static var permissionRequired: String { NSLocalizedString("notifications.permissionRequired", comment: "") }
+        static var permissionMessage: String { NSLocalizedString("notifications.permissionMessage", comment: "") }
+        static var openSettings: String { NSLocalizedString("notifications.openSettings", comment: "") }
+
+        // Form fields
+        static var name: String { NSLocalizedString("notifications.name", comment: "") }
+        static var namePlaceholder: String { NSLocalizedString("notifications.namePlaceholder", comment: "") }
+        static var text: String { NSLocalizedString("notifications.text", comment: "") }
+        static var textPlaceholder: String { NSLocalizedString("notifications.textPlaceholder", comment: "") }
+        static var time: String { NSLocalizedString("notifications.time", comment: "") }
+        static var active: String { NSLocalizedString("notifications.active", comment: "") }
+
+        // Report data types
+        static var dataBalance: String { NSLocalizedString("notifications.data.balance", comment: "") }
+        static var dataExpenses: String { NSLocalizedString("notifications.data.expenses", comment: "") }
+        static var dataIncome: String { NSLocalizedString("notifications.data.income", comment: "") }
+        static var dataTopCategory: String { NSLocalizedString("notifications.data.topCategory", comment: "") }
+        static var selectData: String { NSLocalizedString("notifications.selectData", comment: "") }
+
+        // Day preferences
+        static var daySunday: String { NSLocalizedString("notifications.day.sunday", comment: "") }
+        static var dayMonday: String { NSLocalizedString("notifications.day.monday", comment: "") }
+        static var dayLastOfMonth: String { NSLocalizedString("notifications.day.lastOfMonth", comment: "") }
+        static var dayFirstOfMonth: String { NSLocalizedString("notifications.day.firstOfMonth", comment: "") }
+        static var selectDay: String { NSLocalizedString("notifications.selectDay", comment: "") }
+        static var allDays: String { NSLocalizedString("notifications.allDays", comment: "") }
+        static var selectWeekdays: String { NSLocalizedString("notifications.selectWeekdays", comment: "") }
+
+        // Default notification names (Brand Voice friendly)
+        static var endOfDayName: String { NSLocalizedString("notifications.endOfDay.name", comment: "") }
+        static var endOfDayText: String { NSLocalizedString("notifications.endOfDay.text", comment: "") }
+        static var lunchTimeName: String { NSLocalizedString("notifications.lunchTime.name", comment: "") }
+        static var lunchTimeText: String { NSLocalizedString("notifications.lunchTime.text", comment: "") }
+
+        // Reports
+        static var dailyReportName: String { NSLocalizedString("notifications.dailyReport.name", comment: "") }
+        static var weeklyReportName: String { NSLocalizedString("notifications.weeklyReport.name", comment: "") }
+        static var monthlyReportName: String { NSLocalizedString("notifications.monthlyReport.name", comment: "") }
+
+        // Report hints (shown in list)
+        static func dailyReportHint(_ time: String, _ data: String) -> String {
+            String(format: NSLocalizedString("notifications.dailyReport.hint", comment: ""), time, data)
+        }
+        static func weeklyReportHint(_ data: String, _ day: String) -> String {
+            String(format: NSLocalizedString("notifications.weeklyReport.hint", comment: ""), data, day)
+        }
+        static func monthlyReportHint(_ data: String, _ day: String) -> String {
+            String(format: NSLocalizedString("notifications.monthlyReport.hint", comment: ""), data, day)
+        }
+
+        // System notifications
+        static var scheduledPaymentsName: String { NSLocalizedString("notifications.scheduledPayments.name", comment: "") }
+        static var scheduledPaymentsHint: String { NSLocalizedString("notifications.scheduledPayments.hint", comment: "") }
+        static var announcementsName: String { NSLocalizedString("notifications.announcements.name", comment: "") }
+        static var announcementsHint: String { NSLocalizedString("notifications.announcements.hint", comment: "") }
+
+        // Empty state
+        static var emptyTitle: String { NSLocalizedString("notifications.empty.title", comment: "") }
+        static var emptyMessage: String { NSLocalizedString("notifications.empty.message", comment: "") }
+
+        // Test notification
+        static var testNotification: String { NSLocalizedString("notifications.testNotification", comment: "") }
+
+        // Test report samples (by period)
+        static var testBalanceDaily: String { NSLocalizedString("notifications.testReport.balance.daily", comment: "") }
+        static var testBalanceWeekly: String { NSLocalizedString("notifications.testReport.balance.weekly", comment: "") }
+        static var testBalanceMonthly: String { NSLocalizedString("notifications.testReport.balance.monthly", comment: "") }
+        static var testExpensesDaily: String { NSLocalizedString("notifications.testReport.expenses.daily", comment: "") }
+        static var testExpensesWeekly: String { NSLocalizedString("notifications.testReport.expenses.weekly", comment: "") }
+        static var testExpensesMonthly: String { NSLocalizedString("notifications.testReport.expenses.monthly", comment: "") }
+        static var testIncomeDaily: String { NSLocalizedString("notifications.testReport.income.daily", comment: "") }
+        static var testIncomeWeekly: String { NSLocalizedString("notifications.testReport.income.weekly", comment: "") }
+        static var testIncomeMonthly: String { NSLocalizedString("notifications.testReport.income.monthly", comment: "") }
+        static var testTopCategoryDaily: String { NSLocalizedString("notifications.testReport.topCategory.daily", comment: "") }
+        static var testTopCategoryWeekly: String { NSLocalizedString("notifications.testReport.topCategory.weekly", comment: "") }
+        static var testTopCategoryMonthly: String { NSLocalizedString("notifications.testReport.topCategory.monthly", comment: "") }
+        static var testScheduledPayment: String { NSLocalizedString("notifications.testReport.scheduledPayment", comment: "") }
+
+        // Section headers
+        static var sectionReminders: String { NSLocalizedString("notifications.section.reminders", comment: "") }
+        static var sectionReports: String { NSLocalizedString("notifications.section.reports", comment: "") }
+        static var sectionSystem: String { NSLocalizedString("notifications.section.system", comment: "") }
+        static var sectionCustom: String { NSLocalizedString("notifications.section.custom", comment: "") }
+    }
+
+    // MARK: - Weekday
+
+    enum Weekday {
+        static var shortSunday: String { NSLocalizedString("weekday.short.sunday", comment: "") }
+        static var shortMonday: String { NSLocalizedString("weekday.short.monday", comment: "") }
+        static var shortTuesday: String { NSLocalizedString("weekday.short.tuesday", comment: "") }
+        static var shortWednesday: String { NSLocalizedString("weekday.short.wednesday", comment: "") }
+        static var shortThursday: String { NSLocalizedString("weekday.short.thursday", comment: "") }
+        static var shortFriday: String { NSLocalizedString("weekday.short.friday", comment: "") }
+        static var shortSaturday: String { NSLocalizedString("weekday.short.saturday", comment: "") }
     }
 }
 
