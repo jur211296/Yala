@@ -11,6 +11,7 @@ import SwiftUI
 struct CurrencySettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(CurrencyConverter.self) private var currencyConverter
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
@@ -339,7 +340,7 @@ struct CurrencySettingsView: View {
     // MARK: - Helpers
 
     private func getDisplayRate(from: CurrencyCode, to: CurrencyCode) -> Double? {
-        CurrencyConverter.shared.getDisplayRate(
+        currencyConverter.getDisplayRate(
             from: from.rawValue, to: to.rawValue, context: modelContext)
     }
 }

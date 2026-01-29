@@ -39,6 +39,7 @@ enum InboxFilter: String, CaseIterable {
 struct InboxView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(CurrencyConverter.self) private var currencyConverter
     @AppStorage("preferredCurrency") private var preferredCurrency: String = "PEN"
 
     /// Callback for navigating to Records tab (bulk approve success)
@@ -535,7 +536,7 @@ struct InboxView: View {
 
         // Calculate amount in preferred currency for charts/statistics
         let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = CurrencyConverter.shared.convert(
+        let amountInPreferred = currencyConverter.convert(
             Decimal(amount),
             from: account.currencyCode,
             to: preferredCode,

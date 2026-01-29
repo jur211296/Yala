@@ -13,6 +13,7 @@ import SwiftUI
 struct InboxDraftEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(CurrencyConverter.self) private var currencyConverter
 
     @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
     @Query(sort: \Category.sortOrder, order: .forward) private var categories: [Category]
@@ -891,7 +892,7 @@ struct InboxDraftEditSheet: View {
 
         // Calculate amount in preferred currency for charts/statistics
         let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = CurrencyConverter.shared.convert(
+        let amountInPreferred = currencyConverter.convert(
             Decimal(finalAmount),
             from: account.currencyCode,
             to: preferredCode,

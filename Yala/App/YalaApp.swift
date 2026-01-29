@@ -49,6 +49,7 @@ struct YalaApp: App {
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
     private var sessionState = SessionState.shared
+    private var currencyConverter = CurrencyConverter.shared
 
     var body: some Scene {
         WindowGroup {
@@ -83,6 +84,7 @@ struct YalaApp: App {
         // Adjunta el contenedor de modelos a la escena principal.
         .modelContainer(sharedModelContainer)
         .environment(sessionState)
+        .environment(currencyConverter)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 checkForPendingSharedImage()

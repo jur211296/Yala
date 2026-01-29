@@ -60,6 +60,7 @@ enum InboxBulkOption: String, Identifiable {
 struct InboxBulkActionsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(CurrencyConverter.self) private var currencyConverter
 
     @Query(sort: \Account.name) private var accounts: [Account]
 
@@ -321,7 +322,7 @@ struct InboxBulkActionsSheet: View {
                   let subcategory = draft.subcategory else { continue }
 
             // Calculate amount in preferred currency for charts/statistics
-            let amountInPreferred = CurrencyConverter.shared.convert(
+            let amountInPreferred = currencyConverter.convert(
                 Decimal(amount),
                 from: account.currencyCode,
                 to: preferredCode,

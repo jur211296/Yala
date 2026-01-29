@@ -7,16 +7,31 @@
 //
 
 import Foundation
+import Observation
 import SwiftData
+
+// MARK: - Currency Converter Protocol
+
+/// Protocol for currency conversion, enabling dependency injection and testing.
+protocol CurrencyConverterProtocol {
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date, context: ModelContext) -> Decimal
+    func convertWithLatestRate(_ amount: Decimal, from: String, to: String, context: ModelContext) -> Decimal
+    func convertWithFallback(_ amount: Decimal, from: String, to: String) -> Decimal
+    func getDisplayRate(from: String, to: String, date: Date, context: ModelContext) -> Double?
+    func hasExactRate(for date: Date, context: ModelContext) -> Bool
+}
 
 // MARK: - Currency Converter
 
 /// Central currency converter that uses stored exchange rates.
 /// All conversions in the app should go through this class.
-final class CurrencyConverter {
+/// Supports @Environment injection in SwiftUI views.
+@Observable
+final class CurrencyConverter: CurrencyConverterProtocol {
 
-    // MARK: - Singleton
+    // MARK: - Singleton (for backward compatibility)
 
+    /// Shared instance for backward compatibility. Prefer @Environment injection in Views.
     static let shared = CurrencyConverter()
 
     // MARK: - Properties
