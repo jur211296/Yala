@@ -23,6 +23,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-29] f613ffe fix(accessibility): add reduceMotion support and semantic colors (UI-001, UI-002)
 - [2026-01-29] 9e00484 docs(state): update audit progress - all critical issues resolved
 - [2026-01-29] 7011cb2 perf: optimize transactionDateRange from O(n log n) to O(n)
 - [2026-01-29] 3b3def0 fix(swiftdata): add missing @Relationship inverses for data consistency
@@ -198,15 +199,15 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Auditoría - HIGH priority items 8/10 completados
-Next step: UI-001 (accessibilityReduceMotion, 37 archivos) o UI-002 (Color.white.opacity, 15+ archivos) o "Modo solo gastos"
+Stopped at: Auditoría - UI-001 y UI-002 completados
+Next step: "Modo solo gastos" o continuar con MEDIUM priority audit items
 Resume file: .planning/AUDIT-REPORT.md
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 ~95% completada
 - Auditoría CRÍTICOS: TODOS CERRADOS
-- Auditoría ALTOS resueltos: SEC-003/004, BUG-006/007/009/010/011, SWD-005/007, PERF-004/006
-- Auditoría ALTOS pendientes: UI-001 (reducedMotion, 37 archivos), UI-002 (colors, 15+ archivos), SEC-005/006, BUG-008, SWD-006, PERF-005, ARCH-*
+- Auditoría ALTOS resueltos: SEC-003/004, BUG-006/007/009/010/011, SWD-005/007, PERF-004/006, UI-001 (parcial), UI-002 (completo)
+- Auditoría ALTOS pendientes: SEC-005/006, BUG-008, SWD-006, PERF-005, ARCH-*
 - Pendiente de Fase 10: Solo "Modo solo gastos"
 
 ## V1.1 (Futuro)
