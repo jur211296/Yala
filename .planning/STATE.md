@@ -23,16 +23,16 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-29] 7011cb2 perf: optimize transactionDateRange from O(n log n) to O(n)
+- [2026-01-29] 3b3def0 fix(swiftdata): add missing @Relationship inverses for data consistency
+- [2026-01-29] f815624 fix: replace force unwraps with safe guard patterns
+- [2026-01-29] 2f3d7ef fix: replace try? with do-catch for proper error diagnostics
+- [2026-01-29] 053a416 security: remove hardcoded API key fallback from ExchangeRateAPIService
+- [2026-01-29] 8254669 docs(state): update progress with notification system
 - [2026-01-29] f0c9d74 docs(qa): add notification system test scenarios
 - [2026-01-29] 1f398a3 feat(notifications): add onboarding step and app integration
 - [2026-01-29] fbc89f5 feat(notifications): add settings views and editor sheet
 - [2026-01-29] 0eb8561 feat(notifications): add NotificationItem model and NotificationService
-- [2026-01-29] caa04cc feat(intents): add Automation Entry Intent for external JSON data
-- [2026-01-29] 4b2eab4 feat(intents): add Apple Pay Transaction Intent for Wallet automation
-- [2026-01-28] 93dbeeb feat(intents): add Voice Entry and Image Entry shortcuts
-- [2026-01-28] 9f6bd37 feat(intents): add Quick Entry shortcut for Siri/Shortcuts (10.x)
-- [2026-01-28] ecce7fb feat(onboarding): add category seed step with visual grid (10.6)
-- [2026-01-28] 616ec4d feat(tabs): auto-navigate to Panel on share and lock Panel as first tab
 
 ## Completed in Current Phase
 
@@ -61,6 +61,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 - **Automatización Apple Pay (10.x)** - ApplePayTransactionIntent recibe Amount/Merchant/Name de Wallet, parsea monto y divisa del texto, infiere cuenta por divisa única, auto-categoriza con MerchantMemory, crea InboxDraft con sourceType .applePay, 6 idiomas, 11 escenarios QA (Sección 23)
 - **Automatización Externa (10.x)** - AutomationEntryIntent recibe JSON estructurado (amount, currency, merchant, date), ideal para correos de banco procesados por IA, crea InboxDraft con sourceType .automation, auto-asigna cuenta por divisa y categoría via MerchantMemory
 - **Sistema de Notificaciones (10.x)** - NotificationItem con 7 tipos default (endOfDay, lunchTime, dailyReport, weeklyReport, monthlyReport, scheduledPayments, announcements, custom), NotificationService para scheduling con soporte weekdays, ReportConfig configurable, NotificationsSettingsView y NotificationEditorSheet con selector weekdays estilo iOS, paso 6 de onboarding para activación inicial, localización 6 idiomas, 40+ escenarios QA
+- **Auditoría de código (10.x)** - CRÍTICOS CERRADOS: SEC-001/002 (keys seguras), ERR-001-004 (try? → do-catch), BUG-001-005 (force unwraps → guard), SWD-001-004 (inversas SwiftData), PERF-001-003 (transactionDateRange optimizado O(n)), CFG-001/002 (config correcta); CLAUDE.md documentado con patrones obligatorios; AUDIT-REPORT.md con tracking completo
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -197,14 +198,15 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Sistema de notificaciones completo (modelo, servicio, vistas, onboarding, QA)
-Next step: Modo "Solo gastos" (único pendiente de Fase 10)
-Resume file: N/A
+Stopped at: Auditoría - PERF-002 corregido, críticos cerrados
+Next step: Continuar con auditoría (BUG-006+, ALTOS) o "Modo solo gastos"
+Resume file: .planning/AUDIT-REPORT.md
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 ~95% completada
-- Completado en Fase 10: Share Sheet, pagos planificados → inbox, onboarding seed, permisos, prompts voz, FAB imagen, 5 App Intents, Sistema de Notificaciones completo
-- Pendiente: Solo "Modo solo gastos"
+- Auditoría críticos CERRADOS: SEC-001/002, ERR-001-004, BUG-001-005, SWD-001-004, PERF-001-003, CFG-001/002
+- Pendiente: 42+ high, 51+ medium (ver AUDIT-REPORT.md)
+- Pendiente de Fase 10: Solo "Modo solo gastos"
 
 ## V1.1 (Futuro)
 
