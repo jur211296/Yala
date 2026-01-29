@@ -56,8 +56,7 @@ struct BulkEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Account.name) private var accounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
+    @State private var bulkEditViewModel = BulkEditViewModel()
 
     @Bindable var viewModel: RecordsViewModel
     let selectedCount: Int
@@ -164,7 +163,7 @@ struct BulkEditSheet: View {
             .sheet(isPresented: $showTagEditor) {
                 BulkTagEditorSheet(
                     viewModel: viewModel,
-                    allTags: allTags.filter { $0.isActive },
+                    allTags: bulkEditViewModel.activeTags,
                     onApply: { tagsToAdd, tagsToRemove in
                         applyTagChanges(add: tagsToAdd, remove: tagsToRemove)
                     }
@@ -182,6 +181,9 @@ struct BulkEditSheet: View {
             }
         }
         .tint(Color.electricIndigo)
+        .onAppear {
+            bulkEditViewModel.setContext(modelContext)
+        }
     }
 
     // MARK: - Currency Warning
