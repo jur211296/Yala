@@ -5,9 +5,9 @@
 
 ## Estado Actual
 
-**Fase:** A - Servicios Stateless → @Environment
-**Incremento:** A.1 - CurrencyConverter
-**Status:** 🔄 En progreso
+**Fase:** C - Services para ModelContext ✅ COMPLETADA
+**Siguiente:** Fase D - @Query → ViewModels
+**Status:** Fases A, B, C completadas. D pendiente.
 
 ## Resumen de Fases
 
@@ -15,7 +15,7 @@
 |------|-------------|-------------|--------|
 | A | Singletons → @Environment | 3 | ✅ Completada |
 | B | SessionState consistente | 2 | ✅ Completada |
-| C | Services para ModelContext | 3 | ⏳ Pendiente |
+| C | Services para ModelContext | 3 | ✅ Completada |
 | D | @Query → ViewModels | 7 | ⏳ Pendiente |
 
 ## Fase A: Servicios Stateless → @Environment
@@ -82,7 +82,19 @@ currencyConverter.convert(...)
 
 ## Fase D: @Query → ViewModels
 
-### D.1-D.7: 48 Views total
+### D.3.1: TagFormView
+- **Estado:** ✅ Completado
+- **Archivos creados:** `Yala/App/ViewModels/TagFormViewModel.swift`
+- **@Query migrado:** existingTags (para validación de unicidad)
+- **Beneficios:** Lógica de validación y estado encapsulada en ViewModel, View más limpia
+
+### D.3.2: TagsSettingsListView
+- **Estado:** ✅ Completado
+- **Archivos creados:** `Yala/App/ViewModels/TagsSettingsListViewModel.swift`
+- **@Query migrado:** tags (lista de todas las etiquetas)
+- **Beneficios:** Lógica de ordenamiento y filtrado encapsulada, recarga manual on dismiss para actualizar después de edición
+
+### D.1-D.7: Resto (46 Views)
 - **Estado:** ⏳ Pendiente
 
 ## Commits Realizados

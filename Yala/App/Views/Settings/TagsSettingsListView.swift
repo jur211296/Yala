@@ -11,48 +11,11 @@ import SwiftUI
 struct TagsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
 
-    @State private var isPresentingCreateTag = false
-    @State private var tagToEdit: Tag?
-    @State private var isEditMode = false
+    @State private var viewModel = TagsSettingsListViewModel()
 
-    // Persisted order for tags
+    // Persisted order for tags (synced bidirectionally with ViewModel)
     @AppStorage("tagsSortOrderNames") private var tagsSortOrderNamesRaw: String = ""
-
-    private var tagsSortOrderNames: [String] {
-        tagsSortOrderNamesRaw.split(separator: "|").map(String.init)
-    }
-
-    /// Dictionary mapping tag name to sort index (computed once per raw string value)
-    private var tagSortIndex: [String: Int] {
-        Dictionary(uniqueKeysWithValues: tagsSortOrderNames.enumerated().map { ($1, $0) })
-    }
-
-    private var orderedActiveTags: [Tag] {
-        let active = tags.filter { $0.isActive }
-        let indexByName = tagSortIndex
-
-        return active.sorted { a, b in
-            let ia = indexByName[a.name]
-            let ib = indexByName[b.name]
-
-            switch (ia, ib) {
-            case (let x?, let y?):
-                return x < y
-            case (_?, nil):
-                return true
-            case (nil, _?):
-                return false
-            default:
-                return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-            }
-        }
-    }
-
-    private var inactiveTags: [Tag] {
-        tags.filter { !$0.isActive }
-    }
 
     var body: some View {
         ZStack {
@@ -60,14 +23,14 @@ struct TagsSettingsListView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    if tags.isEmpty {
+                    if viewModel.isEmpty {
                         emptyState
                     } else {
-                        if !orderedActiveTags.isEmpty {
+                        if !viewModel.orderedActiveTags.isEmpty {
                             activeTagsSection
                         }
 
-                        if !inactiveTags.isEmpty {
+                        if !viewModel.inactiveTags.isEmpty {
                             inactiveTagsSection
                         }
                     }
@@ -87,24 +50,35 @@ struct TagsSettingsListView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: DS.Spacing.md) {
-                    YalaToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down")
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down")
                     {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isEditMode.toggle()
+                            viewModel.isEditMode.toggle()
                         }
                     }
 
                     YalaToolbarButton(systemName: "plus") {
-                        isPresentingCreateTag = true
+                        viewModel.isPresentingCreateTag = true
                     }
                 }
             }
         }
-        .sheet(isPresented: $isPresentingCreateTag) {
-            TagFormView(existingTags: tags)
+        .sheet(isPresented: $viewModel.isPresentingCreateTag, onDismiss: {
+            viewModel.loadTags()
+        }) {
+            TagFormView(existingTags: viewModel.tags)
         }
-        .sheet(item: $tagToEdit) { tag in
-            TagFormView(tagToEdit: tag, existingTags: tags)
+        .sheet(item: $viewModel.tagToEdit, onDismiss: {
+            viewModel.loadTags()
+        }) { tag in
+            TagFormView(tagToEdit: tag, existingTags: viewModel.tags)
+        }
+        .onAppear {
+            viewModel.setContext(modelContext)
+            viewModel.tagsSortOrderNamesRaw = tagsSortOrderNamesRaw
+        }
+        .onChange(of: tagsSortOrderNamesRaw) { _, newValue in
+            viewModel.tagsSortOrderNamesRaw = newValue
         }
     }
 
@@ -137,10 +111,10 @@ struct TagsSettingsListView: View {
                 .padding(.leading, 6)
 
             List {
-                ForEach(Array(orderedActiveTags.enumerated()), id: \.element.id) { index, tag in
+                ForEach(Array(viewModel.orderedActiveTags.enumerated()), id: \.element.id) { index, tag in
                     Button {
-                        if !isEditMode {
-                            tagToEdit = tag
+                        if !viewModel.isEditMode {
+                            viewModel.tagToEdit = tag
                         }
                     } label: {
                         tagRow(tag)
@@ -149,7 +123,7 @@ struct TagsSettingsListView: View {
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.yalaCard)
                     .listRowSeparator(
-                        index == 0 || index == orderedActiveTags.count - 1 ? .hidden : .visible,
+                        index == 0 || index == viewModel.orderedActiveTags.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
                 }
                 .onMove(perform: moveTag)
@@ -157,7 +131,7 @@ struct TagsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(orderedActiveTags.count) * 52)
+            .frame(height: CGFloat(viewModel.orderedActiveTags.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
@@ -168,7 +142,7 @@ struct TagsSettingsListView: View {
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
-            .environment(\.editMode, .constant(isEditMode ? .active : .inactive))
+            .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }
     }
 
@@ -182,9 +156,9 @@ struct TagsSettingsListView: View {
                 .padding(.leading, 6)
 
             List {
-                ForEach(Array(inactiveTags.enumerated()), id: \.element.id) { index, tag in
+                ForEach(Array(viewModel.inactiveTags.enumerated()), id: \.element.id) { index, tag in
                     Button {
-                        tagToEdit = tag
+                        viewModel.tagToEdit = tag
                     } label: {
                         tagRow(tag)
                     }
@@ -192,14 +166,14 @@ struct TagsSettingsListView: View {
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.yalaCard)
                     .listRowSeparator(
-                        index == 0 || index == inactiveTags.count - 1 ? .hidden : .visible,
+                        index == 0 || index == viewModel.inactiveTags.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
                 }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(inactiveTags.count) * 52)
+            .frame(height: CGFloat(viewModel.inactiveTags.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
@@ -233,7 +207,7 @@ struct TagsSettingsListView: View {
 
             Spacer()
 
-            if !isEditMode {
+            if !viewModel.isEditMode {
                 Image(systemName: "chevron.right")
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
@@ -245,8 +219,7 @@ struct TagsSettingsListView: View {
     // MARK: - Reorder Logic
 
     private func moveTag(from source: IndexSet, to destination: Int) {
-        var currentOrder = orderedActiveTags.map { $0.name }
-        currentOrder.move(fromOffsets: source, toOffset: destination)
-        tagsSortOrderNamesRaw = currentOrder.joined(separator: "|")
+        let newRaw = viewModel.moveTag(from: source, to: destination)
+        tagsSortOrderNamesRaw = newRaw
     }
 }

@@ -19,15 +19,7 @@ struct TagFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(EntityDeletionService.self) private var deletionService
 
-    // Fetch all tags to check for uniqueness
-    @Query private var existingTags: [Tag]
-
-    let tagToEdit: Tag?
-
-    @State private var name: String
-    @State private var selectedColorHex: String
-    @State private var selectedIconName: String
-    @State private var isActive: Bool
+    @State private var viewModel: TagFormViewModel
 
     // Custom color picker
     @State private var customColor: Color
@@ -42,55 +34,10 @@ struct TagFormView: View {
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
 
-    private var isEditing: Bool {
-        tagToEdit != nil
-    }
-
     init(tagToEdit: Tag? = nil, existingTags: [Tag] = []) {
-        self.tagToEdit = tagToEdit
-
-        if let tag = tagToEdit {
-            _name = State(initialValue: tag.name)
-            _selectedColorHex = State(initialValue: tag.colorHex)
-            _selectedIconName = State(initialValue: tag.iconName)
-            _isActive = State(initialValue: tag.isActive)
-            _customColor = State(initialValue: colorForHex(tag.colorHex))
-        } else {
-            // Calcular color único basado en tags existentes
-            let usedColors = existingTags.map { $0.colorHex }
-            let defaultColor = Tag.nextAvailableColor(excluding: usedColors)
-            _name = State(initialValue: "")
-            _selectedColorHex = State(initialValue: defaultColor)
-            _selectedIconName = State(initialValue: "tag.fill")
-            _isActive = State(initialValue: true)
-            _customColor = State(initialValue: colorForHex(defaultColor))
-        }
-    }
-
-    // MARK: - Validation
-
-    private var trimmedName: String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var isNameValid: Bool {
-        !trimmedName.isEmpty && trimmedName.count <= 20
-    }
-
-    private var isNameUnique: Bool {
-        let lowerName = trimmedName.lowercased()
-        return !existingTags.contains { tag in
-            // Check if it's the same tag we are editing
-            if let tagToEdit = tagToEdit, tag.id == tagToEdit.id {
-                return false
-            }
-            return tag.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                == lowerName
-        }
-    }
-
-    private var canSave: Bool {
-        isNameValid && isNameUnique
+        let vm = TagFormViewModel(tagToEdit: tagToEdit, initialExistingTags: existingTags)
+        _viewModel = State(initialValue: vm)
+        _customColor = State(initialValue: colorForHex(vm.selectedColorHex))
     }
 
     var body: some View {
@@ -106,7 +53,7 @@ struct TagFormView: View {
                         colorSection
                         statusSection
 
-                        if isEditing {
+                        if viewModel.isEditing {
                             deleteSection
                         }
                     }
@@ -115,7 +62,7 @@ struct TagFormView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle(isEditing ? L10n.Tag.editTag : L10n.Tag.newTag)
+            .navigationTitle(viewModel.isEditing ? L10n.Tag.editTag : L10n.Tag.newTag)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -124,7 +71,7 @@ struct TagFormView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: { saveTag() }, isDisabled: !canSave)
+                    YalaSaveButton(action: { saveTag() }, isDisabled: !viewModel.canSave)
                 }
             }
             .sheet(isPresented: $isPresentingColorPicker) {
@@ -138,7 +85,7 @@ struct TagFormView: View {
                         .padding()
 
                         Button(L10n.Common.useThisColor) {
-                            selectedColorHex = hexString(from: customColor)
+                            viewModel.selectedColorHex = hexString(from: customColor)
                             isPresentingColorPicker = false
                         }
                         .buttonStyle(.borderedProminent)
@@ -160,8 +107,8 @@ struct TagFormView: View {
             }
             .sheet(isPresented: $isPresentingIconPicker) {
                 IconColorPickerSheet(
-                    selectedIconName: $selectedIconName,
-                    selectedColorHex: $selectedColorHex,
+                    selectedIconName: $viewModel.selectedIconName,
+                    selectedColorHex: $viewModel.selectedColorHex,
                     supportsColorPicking: false
                 )
             }
@@ -172,8 +119,9 @@ struct TagFormView: View {
                 if isPresenting { dismissKeyboard() }
             }
             .onAppear {
+                viewModel.setContext(modelContext)
                 // Auto-focus name field for new tags
-                if !isEditing {
+                if !viewModel.isEditing {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         isNameFieldFocused = true
                     }
@@ -190,11 +138,11 @@ struct TagFormView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "tag")
                         .foregroundStyle(.secondary)
-                    TextField(L10n.Tag.namePlaceholder, text: $name)
+                    TextField(L10n.Tag.namePlaceholder, text: $viewModel.name)
                         .focused($isNameFieldFocused)
-                        .onChange(of: name) { oldValue, newValue in
+                        .onChange(of: viewModel.name) { oldValue, newValue in
                             if newValue.count > 20 {
-                                name = String(newValue.prefix(20))
+                                viewModel.name = String(newValue.prefix(20))
                             }
                         }
                 }
@@ -210,10 +158,10 @@ struct TagFormView: View {
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Circle()
-                        .fill(colorForHex(selectedColorHex))
+                        .fill(colorForHex(viewModel.selectedColorHex))
                         .frame(width: 40, height: 40)
                         .overlay(
-                            Image(systemName: selectedIconName)
+                            Image(systemName: viewModel.selectedIconName)
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundStyle(.white)
                         )
@@ -250,14 +198,14 @@ struct TagFormView: View {
                                     Circle()
                                         .stroke(
                                             Color.white,
-                                            lineWidth: selectedColorHex.uppercased()
+                                            lineWidth: viewModel.selectedColorHex.uppercased()
                                                 == hex.uppercased() ? 3 : 1)
                                 )
                                 .shadow(
-                                    radius: selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
+                                    radius: viewModel.selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
                                 )
                                 .onTapGesture {
-                                    selectedColorHex = hex
+                                    viewModel.selectedColorHex = hex
                                 }
                         }
 
@@ -276,7 +224,7 @@ struct TagFormView: View {
                         .buttonStyle(.plain)
                     }
 
-                    Text(L10n.Tag.colorSelected(selectedColorHex))
+                    Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -287,7 +235,7 @@ struct TagFormView: View {
 
     private var statusSection: some View {
         SectionBox(title: L10n.Common.status) {
-            Toggle(isOn: $isActive) {
+            Toggle(isOn: $viewModel.isActive) {
                 Text(L10n.Common.active)
             }
             .tint(Color.electricIndigo)
@@ -336,35 +284,20 @@ struct TagFormView: View {
             let b = Int(blue * 255)
             return String(format: "#%02X%02X%02X", r, g, b)
         } else {
-            return selectedColorHex
+            return viewModel.selectedColorHex
         }
     }
 
     // MARK: - Actions
 
     private func saveTag() {
-        guard canSave else { return }
-
-        if let tag = tagToEdit {
-            tag.name = trimmedName
-            tag.colorHex = selectedColorHex
-            tag.iconName = selectedIconName
-            tag.isActive = isActive
-        } else {
-            let newTag = Tag(
-                name: trimmedName,
-                colorHex: selectedColorHex,
-                iconName: selectedIconName,
-                isActive: isActive
-            )
-            modelContext.insert(newTag)
+        if viewModel.saveTag() {
+            dismiss()
         }
-
-        dismiss()
     }
 
     private func deleteTag() {
-        guard let tag = tagToEdit else { return }
+        guard let tag = viewModel.tagToEdit else { return }
         deletionService.setContext(modelContext)
         do {
             try deletionService.deleteTag(tag)
