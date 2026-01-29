@@ -1073,9 +1073,9 @@ struct PanelView: View {
 
     /// Date range of all transactions (for custom period picker limits)
     private var transactionDateRange: (start: Date, end: Date) {
-        let sortedDates = transactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
+        let dates = transactions.map(\.date)
+        let start = dates.min() ?? Date()
+        let end = dates.max() ?? Date()
         return (start, end)
     }
 
