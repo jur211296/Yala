@@ -262,13 +262,18 @@ final class BudgetsViewModel {
 
     /// Determine budget status based on isActive property and spending
     func getBudgetStatus(budget: Budget, spending: Double) -> BudgetStatus {
+        calculateBudgetStatus(isActive: budget.isActive, spending: spending, limit: budget.limitAmount)
+    }
+
+    /// Pure logic for budget status calculation (testable without SwiftData)
+    func calculateBudgetStatus(isActive: Bool, spending: Double, limit: Double) -> BudgetStatus {
         // If budget is manually set to inactive, it goes to inactive section regardless of spending
-        guard budget.isActive else {
+        guard isActive else {
             return .inactive
         }
 
         // For active budgets, determine status based on spending
-        let isExceeded = spending >= budget.limitAmount
+        let isExceeded = spending >= limit
 
         if isExceeded {
             return .exceeded
@@ -346,26 +351,48 @@ final class BudgetsViewModel {
 
     /// Determine display icon and color for a budget
     func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
+        // Extract data for pure logic function
+        let subcategoryCount = budget.subcategories.count
+        let firstSubcategory = budget.subcategories.first
+        let firstSubcategoryIcon = firstSubcategory?.iconName ?? firstSubcategory?.category.iconName
+        let firstCategoryColor = firstSubcategory?.colorHex ?? firstSubcategory?.category.colorHex
+        let firstCategoryIcon = firstSubcategory?.category.iconName
+        let uniqueCategoryCount = Set(budget.subcategories.map { $0.category.persistentModelID }).count
+
+        return calculateDisplayProperties(
+            subcategoryCount: subcategoryCount,
+            firstSubcategoryIcon: firstSubcategoryIcon,
+            firstCategoryColor: firstCategoryColor,
+            uniqueCategoryCount: uniqueCategoryCount,
+            firstCategoryIcon: firstCategoryIcon
+        )
+    }
+
+    /// Pure logic for display properties calculation (testable without SwiftData)
+    func calculateDisplayProperties(
+        subcategoryCount: Int,
+        firstSubcategoryIcon: String?,
+        firstCategoryColor: String?,
+        uniqueCategoryCount: Int,
+        firstCategoryIcon: String? = nil
+    ) -> (icon: String, color: String) {
         // No subcategories: use neutral app icon/color
-        guard !budget.subcategories.isEmpty else {
+        guard subcategoryCount > 0 else {
             return ("chart.pie.fill", "#6366F1") // Electric indigo
         }
 
         // Single subcategory: use subcategory icon/color
-        if budget.subcategories.count == 1, let subcategory = budget.subcategories.first {
-            let icon = subcategory.iconName ?? subcategory.category.iconName ?? "tag.fill"
-            let color = subcategory.colorHex ?? subcategory.category.colorHex
+        if subcategoryCount == 1 {
+            let icon = firstSubcategoryIcon ?? "tag.fill"
+            let color = firstCategoryColor ?? "#6366F1"
             return (icon, color)
         }
 
         // Multiple subcategories: check if they're from the same category
-        let uniqueCategories = Set(budget.subcategories.map { $0.category.persistentModelID })
-
-        if uniqueCategories.count == 1, let firstSubcategory = budget.subcategories.first {
+        if uniqueCategoryCount == 1 {
             // All from same category: use category icon/color
-            let category = firstSubcategory.category
-            let icon = category.iconName ?? "tag.fill"
-            let color = category.colorHex
+            let icon = firstCategoryIcon ?? "tag.fill"
+            let color = firstCategoryColor ?? "#6366F1"
             return (icon, color)
         } else {
             // Multiple categories: use app icon + electric indigo
