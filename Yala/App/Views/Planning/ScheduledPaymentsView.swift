@@ -11,19 +11,6 @@ import SwiftUI
 struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
 
-    // Data Queries
-    @Query(sort: \ScheduledPayment.nextDueDate)
-    private var allPayments: [ScheduledPayment]
-
-    @Query(sort: \Account.name)
-    private var accounts: [Account]
-
-    @Query(sort: \Category.sortOrder)
-    private var categories: [Category]
-
-    @Query(filter: #Predicate<Tag> { $0.isActive })
-    private var tags: [Tag]
-
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
 
     // ViewModel
@@ -73,6 +60,7 @@ struct ScheduledPaymentsView: View {
             }
         }
         .onAppear {
+            viewModel.setContext(modelContext)
             refreshData()
         }
         .onChange(of: viewModel.selectedTab) { _, _ in
@@ -128,18 +116,19 @@ struct ScheduledPaymentsView: View {
     private var filteredPaymentsForCurrentTab: [ScheduledPayment] {
         switch viewModel.selectedTab {
         case .all:
-            return allPayments
+            return viewModel.allPayments
         case .recurring:
-            return viewModel.getRecurringPayments(from: allPayments)
+            return viewModel.getRecurringPayments(from: viewModel.allPayments)
         case .subscriptions:
-            return viewModel.getSubscriptions(from: allPayments)
+            return viewModel.getSubscriptions(from: viewModel.allPayments)
         }
     }
 
     // MARK: - Data Management
 
     private func refreshData() {
-        viewModel.calculatePaymentData(payments: allPayments)
+        viewModel.loadPayments()
+        viewModel.calculatePaymentData(payments: viewModel.allPayments)
     }
 }
 

@@ -9,8 +9,17 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+@MainActor
 @Observable
 final class ScheduledPaymentsViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Data
+
+    private(set) var allPayments: [ScheduledPayment] = []
 
     // MARK: - Tab State
 
@@ -85,6 +94,27 @@ final class ScheduledPaymentsViewModel {
     // MARK: - Initialization
 
     init() {}
+
+    // MARK: - Context Setup
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadPayments()
+    }
+
+    func loadPayments() {
+        guard let context = modelContext else { return }
+
+        let descriptor = FetchDescriptor<ScheduledPayment>(
+            sortBy: [SortDescriptor(\.nextDueDate)]
+        )
+
+        do {
+            allPayments = try context.fetch(descriptor)
+        } catch {
+            print("ScheduledPaymentsViewModel: Error loading payments: \(error)")
+        }
+    }
 
     // MARK: - Data Calculation
 
