@@ -16,19 +16,10 @@ struct InboxDraftEditSheet: View {
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Category.sortOrder, order: .forward) private var categories: [Category]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(filter: #Predicate<Subcategory> { $0.isVisible }) private var subcategories: [Subcategory]
-
     @Bindable var draft: InboxDraft
 
-    // Query for pending drafts (to enable "Approve Next")
-    @Query(
-        filter: #Predicate<InboxDraft> { $0.statusRaw == "pending" },
-        sort: \InboxDraft.createdAt,
-        order: .reverse
-    ) private var pendingDrafts: [InboxDraft]
+    // ViewModel for pending drafts (to enable "Approve Next")
+    @State private var viewModel = InboxDraftEditViewModel()
 
     // MARK: - State
 
@@ -121,7 +112,7 @@ struct InboxDraftEditSheet: View {
 
     /// Next pending draft (excluding current one)
     private var nextPendingDraft: InboxDraft? {
-        pendingDrafts.first { $0.persistentModelID != draft.persistentModelID }
+        viewModel.nextPendingDraft(excluding: draft)
     }
 
     // MARK: - Body
@@ -156,6 +147,7 @@ struct InboxDraftEditSheet: View {
         .id(draft.persistentModelID)  // Force new view when draft changes
         .tint(Color.electricIndigo)
         .onAppear {
+            viewModel.setContext(modelContext)
             // Reset success view state when appearing
             showSuccessView = false
             successData = nil
