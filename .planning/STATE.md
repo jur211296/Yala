@@ -179,6 +179,12 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ### Ideas Capturadas
 
+- **2026-01-29 [Testing] [Quality] [Medium]: Unit Tests para ViewModels**
+  Contexto: Después del refactoring D.8, los ViewModels ahora son testeables (lógica desacoplada de Views)
+  Documento: `.planning/TESTING-STRATEGY.md` con estrategia en 3 tiers y ejemplos de código
+  Prioridad alta: NewTransactionViewModel, BudgetsViewModel, InboxViewModel
+  Estado: Estrategia documentada, implementación pendiente
+
 - **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
   Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
   Estado: Por definir, no está claro el alcance ni implementación
@@ -198,8 +204,8 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Refactoring Arquitectural Fase D (D.7 completado)
-Next step: Fase D.8 (vistas complejas) o "Modo solo gastos"
+Stopped at: Refactoring Arquitectural Fase D completado + estrategia de testing documentada
+Next step: "Modo solo gastos" o implementar unit tests (ver TESTING-STRATEGY.md)
 Resume file: .planning/ARCH-REFACTOR-PROGRESS.md
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
@@ -208,13 +214,13 @@ Resume context:
   - **Fase A: ✅ COMPLETADA** - Singletons → @Environment (3 incrementos)
   - **Fase B: ✅ COMPLETADA** - SessionState.shared → @Environment (2 incrementos)
   - **Fase C: ✅ COMPLETADA** - Services para ModelContext (3 incrementos)
-  - **Fase D: 🔄 EN PROGRESO** - @Query → ViewModels (28/48 views migradas)
+  - **Fase D: ✅ COMPLETADA** - @Query → ViewModels (37 views migradas)
     - D.3 Settings - Entities: ✅ COMPLETADO (7 views)
     - D.4 Settings - Other: ✅ COMPLETADO (3 views)
     - D.5 Selectors: ✅ COMPLETADO (3 views)
     - D.6 Transaction Sheets: ✅ COMPLETADO (4 views)
     - D.7 Other Views: ✅ COMPLETADO (10 views)
-    - D.8 Vistas Complejas: ⏳ PENDIENTE (~20 views)
+    - D.8 Vistas Complejas: ✅ COMPLETADO (9 views)
 - **Patrón establecido para Fase D:**
   - ViewModel usa `setContext(ModelContext)` para DI
   - Manual `loadData()` on sheet dismiss para refrescar

@@ -113,6 +113,77 @@ print("Debug info: \(nonSensitiveData)")
 - Verificar cascadas de eliminación (`deleteRule`)
 - Usar `@MainActor` en servicios que manipulan `ModelContext`
 
+### ViewModel Pattern (para eliminar @Query de vistas)
+Patrón estándar para migrar vistas de `@Query` a ViewModel con carga manual de datos:
+
+**Estructura base del ViewModel:**
+```swift
+@MainActor
+@Observable
+final class MiViewModel {
+    private var modelContext: ModelContext?
+    private(set) var items: [MiModelo] = []
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadData()
+    }
+
+    func loadData() {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<MiModelo>(
+            predicate: #Predicate { $0.isActive },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            items = try context.fetch(descriptor)
+        } catch {
+            print("MiViewModel: Error loading: \(error)")
+        }
+    }
+}
+```
+
+**Uso en la Vista:**
+```swift
+struct MiView: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var viewModel = MiViewModel()
+
+    var body: some View {
+        List(viewModel.items) { item in ... }
+            .onAppear { viewModel.setContext(modelContext) }
+    }
+}
+```
+
+**Refresh después de sheets:**
+```swift
+.sheet(item: $itemToEdit) { item in
+    EditItemSheet(item: item)
+}
+.onDismiss {
+    viewModel.loadData()  // Recargar datos al cerrar sheet
+}
+```
+
+**Dos estrategias según complejidad:**
+1. **ViewModel propio**: Para vistas complejas con múltiples @Query o lógica de negocio
+2. **Parámetros del padre**: Para vistas hijas simples que reciben datos ya cargados
+```swift
+// Vista hija recibe datos como parámetros let (no @Query)
+struct ChildView: View {
+    let items: [MiModelo]  // Datos pasados por el padre
+    let categories: [Category]
+}
+```
+
+**Compatibilidad API con computed properties:**
+```swift
+// Mantener la misma API interna mientras se migra
+private var items: [MiModelo] { viewModel.items }
+```
+
 ## Control de Ejecución de Comandos
 
 **CRÍTICO:** Consultar EXECUTION-RULES.md para saber qué comandos requieren instrucción explícita del usuario vs cuáles pueden ejecutarse automáticamente.
