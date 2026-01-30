@@ -292,7 +292,16 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     // Create scheduled payments
     let createdScheduledPayments = createDevScheduledPayments(in: context, preferredCurrency: preferredCurrency)
     print("DevDataSeed: \(createdScheduledPayments.count) pagos planificados creados")
-    // TODO: Implementar generación de transacciones históricas (Incrementos 8a y 8b)
+
+    // Generate historical transactions (8a: from subscriptions and scheduled payments)
+    let transactionsFromScheduled = generateScheduledPaymentTransactions(
+        in: context,
+        subscriptions: createdSubscriptions,
+        scheduledPayments: createdScheduledPayments,
+        accounts: createdAccounts,
+        preferredCurrency: preferredCurrency
+    )
+    print("DevDataSeed: \(transactionsFromScheduled) transacciones generadas desde pagos/suscripciones")
 
     // Save all changes
     do {
@@ -530,6 +539,72 @@ private func createDevScheduledPayments(in context: ModelContext, preferredCurre
     }
 
     return scheduledPayments
+}
+
+// MARK: - Historical Transaction Generation (8a)
+
+/// Genera transacciones históricas basadas en suscripciones y pagos planificados
+/// Período: Nov-Dic 2024 + Todo 2025 + Ene 2026 hasta hoy
+private func generateScheduledPaymentTransactions(
+    in context: ModelContext,
+    subscriptions: [ScheduledPayment],
+    scheduledPayments: [ScheduledPayment],
+    accounts: [Account],
+    preferredCurrency: CurrencyCode
+) -> Int {
+    let calendar = Calendar.current
+    let today = Date()
+
+    // Definir rango de fechas: Nov 1, 2024 hasta hoy
+    let startDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 1))!
+
+    var transactionCount = 0
+    let allScheduled = subscriptions + scheduledPayments
+
+    // Seleccionar cuenta por defecto (primera cuenta de la moneda preferida)
+    guard let defaultAccount = accounts.first(where: { $0.currencyCode == preferredCurrency.rawValue }) ?? accounts.first else {
+        print("DevDataSeed: No hay cuentas disponibles para generar transacciones")
+        return 0
+    }
+
+    // Para cada pago/suscripción, generar transacciones históricas
+    for payment in allScheduled {
+        guard let dayOfMonth = payment.dayOfMonth,
+              let subcategory = payment.subcategory else {
+            continue
+        }
+
+        // Generar transacciones mensuales desde startDate hasta hoy
+        var currentDate = startDate
+        while currentDate <= today {
+            // Crear fecha para el día específico del mes
+            let targetDay = min(dayOfMonth, calendar.range(of: .day, in: .month, for: currentDate)?.count ?? 28)
+            if let transactionDate = calendar.date(bySetting: .day, value: targetDay, of: currentDate),
+               transactionDate <= today {
+
+                let transaction = TransactionItem(
+                    date: transactionDate,
+                    amount: payment.amount,
+                    currencyCode: payment.currencyCode,
+                    note: nil,
+                    category: subcategory.category,
+                    subcategory: subcategory,
+                    account: defaultAccount,
+                    exchangeRate: 1.0,
+                    amountInPreferredCurrency: payment.amount,
+                    preferredCurrencyCode: preferredCurrency.rawValue,
+                    isExchangeRateProvisional: false
+                )
+                context.insert(transaction)
+                transactionCount += 1
+            }
+
+            // Avanzar al siguiente mes
+            currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate) ?? today.addingTimeInterval(86400 * 365)
+        }
+    }
+
+    return transactionCount
 }
 
 #endif
