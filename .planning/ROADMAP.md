@@ -30,7 +30,7 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
-- [ ] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT)
+- [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX, dev seed (21 items UAT) ✅
 
 ### V1.2 (App Store Release)
 - [ ] **Fase 11: Plataforma Avanzada** - Modo solo gastos, Widgets iOS, Smart Insights, Watch, iPad, reportes
