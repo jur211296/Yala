@@ -86,6 +86,9 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             return
         }
 
+        // Get only required currencies (preferred + secondary + account currencies)
+        let requiredCurrencies = Array(getRequiredCurrencies(context: context))
+
         // Load last 12 months in chunks to avoid API limits
         let calendar = Calendar.current
         let today = Date()
@@ -99,7 +102,8 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             }
 
             do {
-                try await fetchAndPersistRates(from: chunkStart, to: chunkEnd, context: context)
+                try await fetchAndPersistRates(
+                    from: chunkStart, to: chunkEnd, symbols: requiredCurrencies, context: context)
                 // Small delay between requests to avoid rate limiting
                 try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             } catch {
@@ -249,12 +253,15 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
 
     // MARK: - Private Helpers
 
-    private func fetchAndPersistRates(from startDate: Date, to endDate: Date, context: ModelContext)
-        async throws
-    {
+    private func fetchAndPersistRates(
+        from startDate: Date, to endDate: Date, symbols: [String]? = nil, context: ModelContext
+    ) async throws {
+        // Use provided symbols or default to all supported currencies
+        let symbolsToFetch = symbols ?? supportedSymbols
+
         let rates = try await provider.fetchTimeseries(
             base: baseCurrency,
-            symbols: supportedSymbols,
+            symbols: symbolsToFetch,
             startDate: startDate,
             endDate: endDate
         )
