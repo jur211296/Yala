@@ -160,14 +160,18 @@ struct PanelView: View {
                         recalculateData()
                     }
                 }
-                .sheet(isPresented: $isPresentingSettings) {
+                .sheet(isPresented: $isPresentingSettings, onDismiss: {
+                    recalculateData()
+                }) {
                     ProfileView()
                 }
                 .sheet(isPresented: $showWidgetPreferences) {
                     WidgetPreferencesView(viewModel: viewModel)
                         .presentationDragIndicator(.visible)
                 }
-                .sheet(isPresented: $showNewTransaction) {
+                .sheet(isPresented: $showNewTransaction, onDismiss: {
+                    recalculateData()
+                }) {
                     // Convert selected subcategory ID back to name for prefill
                     let prefillSubcategoryName: String? = viewModel.selectedSubcategoryIDs.first.flatMap { subcategoryID in
                         allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
@@ -190,6 +194,7 @@ struct PanelView: View {
                             showImageSelection = true
                         }
                     }
+                    recalculateData()
                 }) {
                     VoiceRecordingView(
                         onSavedToInbox: {
@@ -205,6 +210,7 @@ struct PanelView: View {
                         navigateToInboxAfterImage = false
                         showInbox = true
                     }
+                    recalculateData()
                 }) {
                     ImageSelectionView(onSavedToInbox: {
                         navigateToInboxAfterImage = true
@@ -217,12 +223,16 @@ struct PanelView: View {
                         currentRange: sessionState.customDateRange
                     )
                 }
-                .sheet(isPresented: $showBudgetFavoritesSettings) {
+                .sheet(isPresented: $showBudgetFavoritesSettings, onDismiss: {
+                    recalculateData()
+                }) {
                     NavigationStack {
                         BudgetsFavoritesSettingsView()
                     }
                 }
-                .sheet(isPresented: $showInbox) {
+                .sheet(isPresented: $showInbox, onDismiss: {
+                    recalculateData()
+                }) {
                     InboxView(onNavigateToRecords: {
                         navigateToStatistics(.records)
                     })
@@ -812,6 +822,9 @@ struct PanelView: View {
 
     /// Recalculate trend data with smooth animation
     private func recalculateData() {
+        // Reload fresh data from SwiftData first
+        viewModel.loadData()
+
         // Direct synchronous call for instant response
         withAnimation(.easeOut(duration: 0.15)) {
             viewModel.calculateTrendData(

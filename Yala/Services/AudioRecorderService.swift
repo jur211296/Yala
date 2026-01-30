@@ -179,7 +179,7 @@ final class AudioRecorderService: NSObject, ObservableObject {
 
     private func startDurationTimer() {
         durationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.recordingDuration = self.audioRecorder?.currentTime ?? 0
             }
