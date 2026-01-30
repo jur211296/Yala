@@ -30,10 +30,13 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
-- [ ] **Fase 10: Refinamiento & Notificaciones** - Modo solo gastos, notificaciones, permisos, correcciones
+- [ ] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT)
 
-### V1.2
-- [ ] **Fase 11: Plataforma Avanzada** - Widgets, Smart Insights, Watch, iPad, reportes
+### V1.2 (App Store Release)
+- [ ] **Fase 11: Plataforma Avanzada** - Modo solo gastos, Widgets iOS, Smart Insights, Watch, iPad, reportes
+
+### V2.0
+- [ ] **Fase 12: Features Avanzadas** - Split de transacción, y más por definir
 
 ## Phase Details
 
@@ -297,42 +300,75 @@ DoD:
 
 ---
 
-### Fase 10: Refinamiento & Notificaciones
-**Goal**: Modo solo gastos, correcciones de registro inteligente y notificaciones
+### Fase 10: Refinamiento & Polish
+**Goal**: Corregir bugs, mejorar widgets, consistencia visual y UX antes de V1.2
 **Depends on**: Fase 9
-**Research**: Likely (UNNotificationCenter, permisos iOS)
+**Research**: Unlikely
 **Plans**: TBD
 
-Incluye:
-- [ ] Modo "Solo gastos" — ocultar todo rastro de ingresos y saldos en toda la app
-- [ ] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios y ofertas
-- [ ] Integración con atajos y automatización con Apple Pay
-- [x] Pagos planificados crean transacción en bandeja de entrada ✅ (35de0f7)
-- [x] Integración Share Sheet para enviar imágenes directamente ✅ (e5c3dfd, 12f7830, 616ec4d)
-- [x] Revisar prompts voz: tildes crean etiquetas duplicadas en vez de reusar existentes ✅ (669b537)
-- [x] FAB fuera de PanelView no tiene opción de registro de imagen ✅ (669b537)
-- [x] Pedir permiso de micrófono al activar toggle ✅ (12e054f)
-- [x] Pedir permiso de fotos al activar toggle ✅ (12e054f)
-- [x] Mejorar onboarding: preguntar si cargar seed de categorías predeterminadas ✅ (ecce7fb)
-- [x] Vaciar datos: ofrece seed via onboarding (wipe → onboarding) ✅
+**Completados:**
+- [x] Pagos planificados crean transacción en bandeja de entrada ✅
+- [x] Integración Share Sheet ✅
+- [x] Prompts voz sin duplicar tags ✅
+- [x] FAB imagen en todas las vistas ✅
+- [x] Permisos micrófono/fotos al activar toggle ✅
+- [x] Onboarding seed de categorías ✅
+- [x] Notificaciones configurables ✅
+- [x] Atajos Siri/Shortcuts ✅
+- [x] Automatización Apple Pay ✅
+- [x] Automatización externa ✅
+
+**Pendientes (21 items UAT 2026-01-30):**
+
+**10.A: Bugs Críticos (4)**
+- [ ] A.1: PanelView no reacciona inmediatamente (crear cuenta/importar/crear registros)
+- [ ] A.2: Filtro texto SearchBar no se quita/propaga correctamente
+- [ ] A.3: FAB no se cierra al navegar a otra pestaña
+- [ ] A.4: Vista FaceID bloqueado no aparece desde sheet perfil
+
+**10.B: Lógica de Negocio (3)**
+- [ ] B.1: Definir comportamiento transacciones futuras
+- [ ] B.2: Orden registros mismo día por creación/aprobación
+- [ ] B.3: Widget pagos planificados solo gastos (no ingresos)
+
+**10.C: Widgets (4)**
+- [ ] C.1: Hover widget presupuestos no fuerza vista correcta
+- [ ] C.2: Widget Presupuestos usa divisa correcta del presupuesto
+- [ ] C.3: Iconos informativos en pieCategories/pieSubcategories
+- [ ] C.4: Posición icono informativo en Pagos planificados
+
+**10.D: Consistencia Visual (5)**
+- [ ] D.1: Label "hoy" no sobrepasa eje Y en tendencias
+- [ ] D.2: Iconos toolbar no filled (outline)
+- [ ] D.3: Indicador filtros en TrendsTabView/CategoriesTabView
+- [ ] D.4: Icono informativo CashFlow en título único
+- [ ] D.5: Botones capsule (onboarding, FaceID, auditar todos)
+
+**10.E: Settings y Preferencias (4)**
+- [ ] E.1: Alineación derecha selectores Recurrencia
+- [ ] E.2: Tema Sistema fuerza sheet correctamente
+- [ ] E.3: Reordenar Preferencias + renombrar registros
+- [ ] E.4: Listas expansibles para divisas
+
+**10.F: Desarrollo (1)**
+- [ ] F.1: Seed Dev completa para pruebas (solo bundle dev)
 
 DoD:
-- Modo solo gastos oculta ingresos/saldos globalmente
-- Notificaciones configurables por tipo
-- ✅ Pagos planificados generan drafts automáticamente
-- ✅ Share Sheet e imagen accesible desde cualquier FAB
-- ✅ Permisos se solicitan en el momento correcto
-- ✅ Onboarding y data wipe ofrecen carga de categorías seed
+- 0 bugs críticos (sección A completa)
+- Widgets muestran datos correctos
+- UI consistente en toda la app
+- Settings reorganizado y usable
 
 ---
 
-### Fase 11: Plataforma Avanzada
-**Goal**: Widgets, insights, Watch y plataformas extendidas
+### Fase 11: Plataforma Avanzada (V1.2 - App Store)
+**Goal**: Modo solo gastos, widgets iOS, insights, Watch y plataformas extendidas
 **Depends on**: Fase 10
 **Research**: Likely (WidgetKit, WatchKit, App Intents, ML/heurísticas)
 **Plans**: TBD
 
 Incluye:
+- [ ] Modo "Solo gastos" — ocultar ingresos y saldos en toda la app
 - [ ] Acciones rápidas en centro de control y pantalla de bloqueo
 - [ ] Widgets iOS (WidgetKit)
 - [ ] Predicciones de saldo en gráficas de tendencia
@@ -343,10 +379,26 @@ Incluye:
 - [ ] Vista de reporte financiero
 
 DoD:
+- Modo solo gastos oculta ingresos/saldos globalmente
 - Widgets funcionales en pantalla de inicio
 - Insights visibles en contexto relevante
 - App funcional en Watch y iPad
 - Reportes financieros exportables
+
+---
+
+### Fase 12: Features Avanzadas (V2.0)
+**Goal**: Funcionalidades avanzadas post-launch
+**Depends on**: Fase 11
+**Research**: TBD
+**Plans**: TBD
+
+Incluye:
+- [ ] Split de transacción (dividir en múltiples partes)
+- [ ] Más features por definir
+
+DoD:
+- Por definir
 
 ## Progress
 
@@ -368,12 +420,17 @@ DoD:
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
-| 10 | Refinamiento & Notificaciones | In progress (~55%) | - |
+| 10 | Refinamiento & Polish | In progress (21 items UAT) | - |
 
-### V1.2
+### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
 | 11 | Plataforma Avanzada | Not started | - |
+
+### V2.0
+| Fase | Nombre | Status | Completed |
+|------|--------|--------|-----------|
+| 12 | Features Avanzadas | Not started | - |
 
 ---
 

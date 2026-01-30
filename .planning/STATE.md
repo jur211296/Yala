@@ -17,7 +17,7 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ███████████████░ ~95% (Fase 8 completa, Fase 10 casi completa)
+Progress: V1.1 ██████████░░░░░░ ~60% (Fase 8 completa, Fase 10 en progreso - 21 items UAT pendientes)
 
 ---
 
@@ -113,13 +113,45 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 - [x] Pedir permiso de fotos al activar toggle ✅ (12e054f)
 - [x] Mejorar onboarding: seed de categorías predeterminadas ✅ (ecce7fb)
 - [x] Vaciar datos: ofrece seed via onboarding ✅
-
-**Pendientes:**
-- [ ] Modo "Solo gastos" — ocultar ingresos y saldos en toda la app
 - [x] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios ✅ (0eb8561, fbc89f5, 1f398a3, f0c9d74)
 - [x] Atajos Siri/Shortcuts (Registro rápido, Voz, Imagen) ✅ (9f6bd37, 93dbeeb)
 - [x] Automatización Apple Pay ✅ (4b2eab4) — Intent recibe datos de Wallet, crea draft en inbox
 - [x] Automatización externa ✅ (caa04cc) — Intent recibe JSON para correos de banco procesados por IA
+
+**Pendientes (21 items - UAT 2026-01-30):**
+
+**10.A: Bugs Críticos**
+- [ ] A.1: PanelView no reacciona inmediatamente al crear cuenta, importar CSV o crear registros
+- [ ] A.2: IMPORTANTE - Filtro texto SearchBar: no se quita inmediatamente, no se propaga a otras vistas, se queda pegado al navegar sin cerrar búsqueda
+- [ ] A.3: FAB no se cierra al navegar a otra pestaña (PanelView y StatisticsView)
+- [ ] A.4: Vista "Yala está bloqueada" no aparece si estabas en sheet de perfil
+
+**10.B: Lógica de Negocio**
+- [ ] B.1: Transacciones futuras - definir comportamiento (¿se crean? ¿se visualizan hasta ese día?)
+- [ ] B.2: Orden de registros del mismo día - ordenar por fecha de creación/aprobación para facilitar búsqueda
+- [ ] B.3: Widget pagos planificados no debe contar ingresos, solo gastos (también cajas superiores en vista)
+
+**10.C: Widgets**
+- [ ] C.1: Hover widget presupuestos no fuerza vista Presupuestos (te lleva a donde estabas en Planificación)
+- [ ] C.2: Widget Presupuestos muestra siempre divisa preferida, no la del presupuesto específico
+- [ ] C.3: Widgets pieCategories y pieSubcategories sin icono informativo
+- [ ] C.4: Icono informativo en widget Pagos planificados mal posicionado (entre título y subtítulo vs arriba del título)
+
+**10.D: Consistencia Visual**
+- [ ] D.1: Label "hoy" en tendencias se sobrepasa a la zona del eje Y
+- [ ] D.2: Todos los iconos del toolbar deben ser no filled (outline)
+- [ ] D.3: Indicador de filtros solo en RecordsTabView, falta en TrendsTabView y CategoriesTabView
+- [ ] D.4: Icono informativo en CashFlow debe ir en título "Flujo de efectivo", no repetido en cada gráfica
+- [ ] D.5: Botones onboarding y FaceID no son capsule - auditar todos los botones del proyecto
+
+**10.E: Settings y Preferencias**
+- [ ] E.1: Selectores "1" y "Mes" en Recurrencia de pago planificado deben alinearse a la derecha
+- [ ] E.2: Al elegir tema Sistema, no fuerza la sheet (sí lo hace para Claro y Oscuro)
+- [ ] E.3: Reordenar Preferencias: Personalización, Notificaciones, Divisa y Cambio, Ícono de app, Temas, Registro por voz, Registro por imagen
+- [ ] E.4: Listas expansibles para divisas (preferida: 1+expansión, secundarias: 1-2+expansión, tipos cambio: secundarias+expansión)
+
+**10.F: Desarrollo**
+- [ ] F.1: Seed Dev completa para onboarding (solo bundle dev) - cuentas, categorías, subcategorías, etiquetas, presupuestos, pagos planificados, suscripciones, favoritos
 
 ---
 
@@ -188,10 +220,11 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
   - InboxViewModelTests: 10 tests (filtrado, agrupación, conteo)
   Patrón: Lógica pura extraída en métodos `calculate*()` para evitar SwiftData en tests
 
-- **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
-  Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
-  Estado: Por definir, no está claro el alcance ni implementación
-  Dependencias: Por determinar cuando se defina el alcance
+### V2.0 (Futuro)
+
+- **Split de transacción**
+  Contexto: Funcionalidad para dividir una transacción en múltiples partes
+  Estado: Por definir alcance e implementación
 
 ### Notas Técnicas
 
@@ -207,29 +240,20 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Unit Tests completados (56 tests de ViewModels)
-Next step: "Modo solo gastos" (única feature pendiente de Fase 10)
-Resume file: .planning/ARCH-REFACTOR-PROGRESS.md
+Stopped at: UAT identificó 21 items pendientes para V1.1
+Next step: Fase 10 - comenzar con sección A (Bugs Críticos)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
-- V1.1: Fase 8 done, Fase 10 ~95% completada
-- **Refactoring Arquitectural (ARCH-001 a ARCH-006):**
-  - **Fase A: ✅ COMPLETADA** - Singletons → @Environment (3 incrementos)
-  - **Fase B: ✅ COMPLETADA** - SessionState.shared → @Environment (2 incrementos)
-  - **Fase C: ✅ COMPLETADA** - Services para ModelContext (3 incrementos)
-  - **Fase D: ✅ COMPLETADA** - @Query → ViewModels (37 views migradas)
-    - D.3 Settings - Entities: ✅ COMPLETADO (7 views)
-    - D.4 Settings - Other: ✅ COMPLETADO (3 views)
-    - D.5 Selectors: ✅ COMPLETADO (3 views)
-    - D.6 Transaction Sheets: ✅ COMPLETADO (4 views)
-    - D.7 Other Views: ✅ COMPLETADO (10 views)
-    - D.8 Vistas Complejas: ✅ COMPLETADO (9 views)
-- **Patrón establecido para Fase D:**
-  - ViewModel usa `setContext(ModelContext)` para DI
-  - Manual `loadData()` on sheet dismiss para refrescar
-  - AppStorage synced bidireccional View ↔ ViewModel
-  - Todo estado (UI + form) encapsulado en ViewModel
-- **Pendiente de Fase 10:** Solo "Modo solo gastos"
+- V1.1: Fase 8 done, Fase 10 en progreso
+- **21 items UAT organizados en 6 secciones:**
+  - 10.A: Bugs Críticos (4 items) - PRIORIDAD ALTA
+  - 10.B: Lógica de Negocio (3 items)
+  - 10.C: Widgets (4 items)
+  - 10.D: Consistencia Visual (5 items)
+  - 10.E: Settings y Preferencias (4 items)
+  - 10.F: Desarrollo (1 item - Seed Dev)
+- **"Modo Solo gastos" movido a V1.2**
+- **"Split de transacción" movido a V2.0**
 
 ## V1.1 (Futuro)
 
