@@ -409,12 +409,12 @@ struct GlobalSearchView: View {
 // MARK: - Search Content View
 
 struct SearchContentView: View {
+    @Environment(SessionState.self) private var sessionState
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
 
     @State private var selectedFilter: SearchFilter = .all
     @State private var editingTransaction: TransactionItem?
-    @State private var navigateToRecords: Bool = false
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = "PEN"
 
@@ -530,16 +530,6 @@ struct SearchContentView: View {
         .sheet(item: $editingTransaction) { transaction in
             NewTransactionView(transactionToEdit: transaction)
         }
-        .navigationDestination(isPresented: $navigateToRecords) {
-            DetailContainerView(
-                context: RecordsFilterContext(
-                    period: .allTime,
-                    searchText: searchText,
-                    isFromSearch: true
-                ),
-                initialTab: .records
-            )
-        }
     }
 
     // MARK: - Filter Chips Bar
@@ -596,7 +586,12 @@ struct SearchContentView: View {
                         Spacer()
 
                         Button {
-                            navigateToRecords = true
+                            // Navigate to Statistics > Records with search filter applied
+                            sessionState.searchText = searchText
+                            sessionState.selectedPeriod = .allTime
+                            sessionState.navigateToDetail(.records)
+                            // Clear local state - SessionState is now the source of truth
+                            searchText = ""
                         } label: {
                             HStack(spacing: 4) {
                                 Text(L10n.Action.viewAll)
