@@ -68,7 +68,7 @@ struct PlanningView: View {
                             Button {
                                 showFavoritesSettings = true
                             } label: {
-                                Image(systemName: "star.fill")
+                                Image(systemName: "star")
                                     .font(.system(size: 18, weight: .medium))
                                     .foregroundStyle(Color.yellow)
                             }
@@ -78,7 +78,7 @@ struct PlanningView: View {
                         Button {
                             isPresentingSettings = true
                         } label: {
-                            Image(systemName: "person.fill")
+                            Image(systemName: "person")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundStyle(Color.electricIndigo)
                         }

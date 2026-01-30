@@ -274,7 +274,7 @@ struct DetailContainerView: View {
                     Button {
                         recordsViewModel.enterSelectionMode()
                     } label: {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "checkmark.circle")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundStyle(Color.electricIndigo)
                     }
@@ -288,7 +288,7 @@ struct DetailContainerView: View {
                         trendsViewModel.showFiltersSheet = true
                     }
                 } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                    Image(systemName: "line.3.horizontal.decrease.circle")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color.electricIndigo)
                 }
@@ -305,7 +305,7 @@ struct DetailContainerView: View {
                 Button {
                     isPresentingSettings = true
                 } label: {
-                    Image(systemName: "person.fill")
+                    Image(systemName: "person")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color.electricIndigo)
                 }
