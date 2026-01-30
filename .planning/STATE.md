@@ -23,7 +23,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-01-30] 3d132d3 fix(ui): correct disclosure group styling in currency lists
+- [2026-01-30] e380860 fix(ui): correct disclosure groups and secondary currency ordering in settings
 - [2026-01-30] 5986131 fix(ui): correct alignment when no accounts exist
 - [2026-01-30] c1457e8 fix(ui): correct theme switching, expandable lists, and capsule buttons
 - [2026-01-30] 2fe8d26 feat(ui): add expandable currency lists in settings (E.4)
@@ -261,8 +261,8 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Sección E COMPLETA - 4 items de settings completados (2fe8d26)
-Next step: Continuar con F.1 (Seed Dev) - último item UAT
+Stopped at: Sección E COMPLETA + fixes UI (expanders divisas color y reordenamiento) - (e380860)
+Next step: Revisar actualización tipos de cambio al cambiar divisas secundarias (Task #5), luego F.1 (Seed Dev)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
