@@ -23,6 +23,8 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] acaeb92 feat(validation): block future date transactions (B.1)
+- [2026-01-30] a453488 docs(state): update progress after B.2 completion
 - [2026-01-30] c6c4dd9 feat(model): add createdAt timestamp for same-day ordering (B.2)
 - [2026-01-30] 1cb68f2 fix(scheduled): exclude income payments from monthly totals (B.3)
 - [2026-01-30] fd12c70 docs(planning): document B.1, B.2, B.3 implementation details
@@ -31,8 +33,6 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [2026-01-30] bf8e2d6 fix(search): navigate directly to Statistics tab from global search (A.2)
 - [2026-01-30] 95b3ec7 fix(panel): refresh data immediately when sheets dismiss (A.1)
 - [2026-01-29] b032d3f refactor(arch): remove unused @Query from InboxBulkActionsSheet (D.7.10)
-- [2026-01-29] 03b395c refactor(arch): migrate BulkEditSheet to ViewModel (D.7.9)
-- [2026-01-29] 64d2670 refactor(arch): migrate RecordsFiltersView to ViewModel (D.7.8)
 
 ## Completed in Current Phase
 
@@ -127,7 +127,7 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [x] A.4: Vista "Yala está bloqueada" no aparece si estabas en sheet de perfil ✅ (7d0138c)
 
 **10.B: Lógica de Negocio**
-- [ ] B.1: Transacciones futuras - BLOQUEAR con validación
+- [x] B.1: Transacciones futuras - BLOQUEAR con validación ✅ (acaeb92)
   - **Decisión:** Bloquear transacciones con fecha > hoy (previene inconsistencia balance vs registros)
   - **Implementación:**
     1. NewTransactionViewModel.save() - Alert informativo sugiriendo Pagos Planificados
@@ -261,17 +261,19 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: B.2 completado - campo createdAt agregado para ordenar mismo día
-Next step: Implementar B.1 (bloquear fechas futuras - 3 puntos validación)
+Stopped at: Sección B COMPLETA - validación fechas futuras implementada (B.1)
+Next step: Continuar con Sección C (Widgets) o Sección D (Consistencia Visual)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
 - **Sección A COMPLETA:** 4/4 bugs críticos ✅
-- **Sección B en progreso:** 2/3 completados
+- **Sección B COMPLETA:** 3/3 lógica de negocio ✅
+  - ✅ B.1: Bloquear fechas futuras (acaeb92)
   - ✅ B.2: Campo createdAt para orden mismo día (c6c4dd9)
   - ✅ B.3: Widget pagos planificados solo gastos (1cb68f2)
-  - Pendiente B.1: Bloquear fechas futuras (NewTransactionViewModel + DraftService + CSVImport)
-- **15 items UAT restantes** (6 completados de 21)
+- **Sección C pendiente:** 4 items de widgets
+- **Sección D pendiente:** 5 items de consistencia visual
+- **14 items UAT restantes** (7 completados de 21)
 
 ## V1.1 (Futuro)
 
