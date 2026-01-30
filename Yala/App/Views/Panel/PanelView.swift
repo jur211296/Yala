@@ -119,7 +119,7 @@ struct PanelView: View {
                             showInbox = true
                         } label: {
                             ZStack(alignment: .topTrailing) {
-                                Image(systemName: "tray.full")
+                                Image(systemName: "tray.fill")
                                     .font(.system(size: 18, weight: .medium))
                                     .foregroundStyle(Color.electricIndigo)
 
