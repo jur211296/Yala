@@ -5,19 +5,20 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 10 — Refinamiento & Notificaciones (V1.1)
+**Current focus:** Fase 11 — Plataforma Avanzada (V1.2 - App Store Release)
 
 ## Current Position
 
-Version: 1.1
-Phase: 10 — Refinamiento & Notificaciones
+Version: 1.2 (en desarrollo)
+Phase: 11 — Plataforma Avanzada
 Spec: None
 Plan: None
-Status: **V1.1 COMPLETA** — Preparada para siguiente fase
-Last activity: 2026-01-30 — Fase 10 cerrada, V1.1 lista
+Status: **V1.1 COMPLETA ✅ - Auditoría cerrada ✅** — Lista para comenzar V1.2
+Last activity: 2026-01-30 — STATE.md actualizado, preparado para Fase 11
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ████████████████ 100% ✅ (Fase 8 y Fase 10 completadas)
+Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pendiente)
 
 ---
 
@@ -71,7 +72,8 @@ Progress: V1.1 ████████████████ 100% ✅ (Fase 8
 - **Automatización Apple Pay (10.x)** - ApplePayTransactionIntent recibe Amount/Merchant/Name de Wallet, parsea monto y divisa del texto, infiere cuenta por divisa única, auto-categoriza con MerchantMemory, crea InboxDraft con sourceType .applePay, 6 idiomas, 11 escenarios QA (Sección 23)
 - **Automatización Externa (10.x)** - AutomationEntryIntent recibe JSON estructurado (amount, currency, merchant, date), ideal para correos de banco procesados por IA, crea InboxDraft con sourceType .automation, auto-asigna cuenta por divisa y categoría via MerchantMemory
 - **Sistema de Notificaciones (10.x)** - NotificationItem con 7 tipos default (endOfDay, lunchTime, dailyReport, weeklyReport, monthlyReport, scheduledPayments, announcements, custom), NotificationService para scheduling con soporte weekdays, ReportConfig configurable, NotificationsSettingsView y NotificationEditorSheet con selector weekdays estilo iOS, paso 6 de onboarding para activación inicial, localización 6 idiomas, 40+ escenarios QA
-- **Auditoría de código (10.x)** - **CRÍTICOS: TODOS RESUELTOS ✅** SEC-001/002 (keys seguras), ERR-001-004 (try? → do-catch), BUG-001-005 (force unwraps → guard), SWD-001-004 (inversas SwiftData), PERF-001-003 (optimizado O(n)), CFG-001/002 (config correcta); **ALTOS: TODOS RESUELTOS ✅** SEC-003/004/005/006 (security hardening), BUG-006-011 (bounds, threading), SWD-005/006/007 (@MainActor), PERF-004/005/006 (static formatters), UI-001/002 (accessibility); **PENDIENTES:** ARCH-001-006 (refactors arquitecturales - planificación requerida)
+- **Auditoría de código (10.x)** - **CRÍTICOS: TODOS RESUELTOS ✅** SEC-001/002 (keys seguras), ERR-001-004 (try? → do-catch), BUG-001-005 (force unwraps → guard), SWD-001-004 (inversas SwiftData), PERF-001-003 (optimizado O(n)), CFG-001/002 (config correcta); **ALTOS: TODOS RESUELTOS ✅** SEC-003/004/005/006 (security hardening), BUG-006-011 (bounds, threading), SWD-005/006/007 (@MainActor), PERF-004/005/006 (static formatters), UI-001/002 (accessibility), ARCH-001-006 (refactors arquitecturales) ✅ COMPLETADOS
+- **Refactoring Arquitectural (10.x)** - **4 Fases completadas (A, B, C, D)**: Fase A - Singletons → @Environment (CurrencyConverter, ExchangeRateService, Vision/Voice services); Fase B - SessionState.shared → @Environment injection; Fase C - Services para ModelContext (DraftService, EntityDeletionService, TransactionService); Fase D - @Query → ViewModels (37+ views migradas, 70+ @Query eliminados, 35+ ViewModels con lógica real); Ver `.planning/ARCH-REFACTOR-PROGRESS.md` para detalles completos
 - **Fix tipos de cambio históricos (10.x)** - Helper getRequiredCurrencies() centraliza detección de divisas necesarias (f253d52); Settings carga automáticamente 1 año de datos al agregar divisas secundarias con loading state (61b3612); Onboarding carga datos históricos en background después de completar sin bloquear UI (4122f8d); preloadHistoricalIfNeeded optimizado para traer solo divisas necesarias vs todas las 7 soportadas (a5e68b0); 5 escenarios QA nuevos (13.7-13.11) para validación de carga histórica (987da70)
 
 ### Fase 6 (archivado)
@@ -234,11 +236,17 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Fase 10 cerrada ✅ - V1.1 completa (100%)
-Next step: Planificar Fase 11 (Plataforma Avanzada) o priorizar siguiente trabajo
+Stopped at: V1.1 completa ✅ - Auditoría de código cerrada ✅
+Next step: Comenzar Fase 11 — Plataforma Avanzada (V1.2)
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
+- Auditoría de código: CERRADA ✅
+  - 24 issues críticos resueltos
+  - 42+ issues altos resueltos (incluyendo ARCH-001 a ARCH-006)
+  - Refactoring arquitectural completo (Fases A, B, C, D)
+  - 37+ views migradas a ViewModels
+  - Tests de ViewModels: 56 tests (NewTransactionViewModel: 35, BudgetsViewModel: 11, InboxViewModel: 10)
 - Fase 10: 21/21 items UAT completados
   - Sección A: 4/4 bugs críticos ✅
   - Sección B: 3/3 lógica de negocio ✅
@@ -246,13 +254,18 @@ Resume context:
   - Sección D: 5/5 consistencia visual ✅
   - Sección E: 4/4 settings ✅
   - Sección F: 1/1 desarrollo (Seed Dev) ✅
-- Decisiones clave:
+- Decisiones clave Fase 10:
   - Bloqueo de transacciones futuras (previene inconsistencias)
   - Campo createdAt para orden por hora en mismo día
   - Seed Dev solo en scheme "Yala Dev" (flag DEV_BUILD)
 
-## V1.1 (Futuro)
+## V1.2 (Next - App Store Release)
 
-Registro Inteligente y Plataforma diferidos. Ver:
-- .planning/PHASE8-REGISTRO-SPEC.md
-- ROADMAP.md (Fases 8-9)
+Ver ROADMAP.md para Fase 11 — Plataforma Avanzada:
+- Modo "Solo gastos" (ocultar ingresos/saldos globalmente)
+- Widgets iOS (WidgetKit para pantalla de inicio)
+- Acciones rápidas (centro de control/pantalla de bloqueo)
+- Smart Insights (predicciones, vista insights)
+- Integración Apple Watch
+- Refinamiento iPad
+- Vista de reportes financieros
