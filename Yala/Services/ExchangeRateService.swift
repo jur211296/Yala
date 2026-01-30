@@ -359,4 +359,36 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
 
         return ranges
     }
+
+    /// Returns the set of currency codes that need historical exchange rate data.
+    /// Includes: preferred currency, secondary currencies, and currencies of existing accounts.
+    private func getRequiredCurrencies(context: ModelContext) -> Set<String> {
+        var required: Set<String> = []
+
+        // 1. Preferred currency (always needed)
+        let preferredCode = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "PEN"
+        required.insert(preferredCode)
+
+        // 2. Secondary currencies (for ExchangeRateWidget)
+        if let secondaryRaw = UserDefaults.standard.string(forKey: "secondaryCurrencies"),
+           !secondaryRaw.isEmpty
+        {
+            let secondary = secondaryRaw.split(separator: ",").map { String($0) }
+            required.formUnion(secondary)
+        }
+
+        // 3. Currencies of existing accounts (for transaction conversions)
+        let accountsDesc = FetchDescriptor<Account>()
+        do {
+            let accounts = try context.fetch(accountsDesc)
+            let accountCurrencies = Set(accounts.map { $0.currencyCode })
+            required.formUnion(accountCurrencies)
+        } catch {
+            #if DEBUG
+                print("ExchangeRateService: Error fetching accounts for required currencies: \(error)")
+            #endif
+        }
+
+        return required
+    }
 }
