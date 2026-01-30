@@ -303,25 +303,25 @@ struct ProfileView: View {
                     iconColor: .indigo, destination: .personalization)
                 SubsectionDivider()
                 profileRow(
-                    icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
-                    destination: .themes)
-                SubsectionDivider()
-                profileRow(
-                    icon: "app.fill", title: L10n.Settings.appIcon,
-                    iconColor: .blue, destination: .appIcon)
+                    icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
+                    destination: .notifications)
                 SubsectionDivider()
                 profileRow(
                     icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
                     iconColor: .green, destination: .currency
                 )
                 SubsectionDivider()
+                profileRow(
+                    icon: "app.fill", title: L10n.Settings.appIcon,
+                    iconColor: .blue, destination: .appIcon)
+                SubsectionDivider()
+                profileRow(
+                    icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
+                    destination: .themes)
+                SubsectionDivider()
                 voiceInputRow
                 SubsectionDivider()
                 imageInputRow
-                SubsectionDivider()
-                profileRow(
-                    icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
-                    destination: .notifications)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
