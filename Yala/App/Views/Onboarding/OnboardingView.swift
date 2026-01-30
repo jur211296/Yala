@@ -655,7 +655,7 @@ struct OnboardingView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.md)
                         .background(Color.yalaCard)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .clipShape(Capsule())
                 }
             }
 
@@ -682,7 +682,7 @@ struct OnboardingView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
                     .background(Color.electricIndigo)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .clipShape(Capsule())
             }
         }
     }
