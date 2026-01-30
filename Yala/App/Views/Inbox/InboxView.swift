@@ -9,31 +9,6 @@
 import SwiftData
 import SwiftUI
 
-// MARK: - Filter Type
-
-enum InboxFilter: String, CaseIterable {
-    case pending
-    case archived
-
-    var displayName: String {
-        switch self {
-        case .pending:
-            return L10n.Inbox.pending
-        case .archived:
-            return L10n.Inbox.archived
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .pending:
-            return "tray.full"
-        case .archived:
-            return "archivebox"
-        }
-    }
-}
-
 // MARK: - InboxView
 
 struct InboxView: View {
@@ -46,6 +21,7 @@ struct InboxView: View {
     /// Callback for navigating to Records tab (bulk approve success)
     var onNavigateToRecords: (() -> Void)?
 
+    @State private var viewModel = InboxViewModel()
     @State private var selectedFilter: InboxFilter = .pending
     @State private var selectedDraft: InboxDraft?
     @State private var selectedTransaction: TransactionItem?
@@ -63,40 +39,12 @@ struct InboxView: View {
     // Pending next draft (for "Approve Next" flow)
     @State private var pendingNextDraftID: PersistentIdentifier?
 
-    // Query all drafts
-    @Query(sort: \InboxDraft.createdAt, order: .reverse)
-    private var allDrafts: [InboxDraft]
-
-    // Query for pending drafts (needed for "Approve Next")
-    @Query(
-        filter: #Predicate<InboxDraft> { $0.statusRaw == "pending" },
-        sort: \InboxDraft.createdAt,
-        order: .reverse
-    ) private var pendingDrafts: [InboxDraft]
-
-
     private var filteredDrafts: [InboxDraft] {
-        switch selectedFilter {
-        case .pending:
-            return allDrafts.filter { $0.status == .pending }
-        case .archived:
-            // Only show archived drafts that have cached values (to avoid crashes from invalid relationships)
-            return allDrafts.filter {
-                ($0.status == .approved || $0.status == .rejected) &&
-                $0.cachedAccountName != nil
-            }
-        }
+        viewModel.filteredDrafts(for: selectedFilter)
     }
 
-    /// Drafts grouped by transaction date (effectiveDate), sorted newest first
     private var groupedDrafts: [(date: Date, drafts: [InboxDraft])] {
-        let calendar = Calendar.current
-        let grouped = Dictionary(grouping: filteredDrafts) { draft in
-            calendar.startOfDay(for: draft.effectiveDate)
-        }
-        return grouped
-            .map { (date: $0.key, drafts: $0.value.sorted { $0.effectiveDate > $1.effectiveDate }) }
-            .sorted { $0.date > $1.date }
+        viewModel.groupedDrafts(for: selectedFilter)
     }
 
     var body: some View {
@@ -171,7 +119,7 @@ struct InboxView: View {
                 }
             }
             .tint(.primary)
-            .sheet(item: $selectedDraft) { draft in
+            .sheet(item: $selectedDraft, onDismiss: { viewModel.loadData() }) { draft in
                 InboxDraftEditSheet(
                     draft: draft,
                     onApproved: nil,
@@ -192,17 +140,17 @@ struct InboxView: View {
                 if oldValue != nil && newValue == nil, let nextID = pendingNextDraftID {
                     pendingNextDraftID = nil
                     // Find the draft by ID and open it
-                    if let nextDraft = pendingDrafts.first(where: { $0.persistentModelID == nextID }) {
+                    if let nextDraft = viewModel.findPendingDraft(by: nextID) {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             selectedDraft = nextDraft
                         }
                     }
                 }
             }
-            .sheet(item: $selectedTransaction) { transaction in
+            .sheet(item: $selectedTransaction, onDismiss: { viewModel.loadData() }) { transaction in
                 NewTransactionView(transactionToEdit: transaction)
             }
-            .sheet(isPresented: $showBulkActions) {
+            .sheet(isPresented: $showBulkActions, onDismiss: { viewModel.loadData() }) {
                 InboxBulkActionsSheet(
                     selectedDrafts: selectedDrafts,
                     filter: selectedFilter,
@@ -220,7 +168,7 @@ struct InboxView: View {
                 if let data = swipeSuccessData {
                     InboxApproveSuccessView(
                         data: data,
-                        hasNextDraft: !pendingDrafts.isEmpty,
+                        hasNextDraft: viewModel.hasPendingDrafts,
                         onEdit: {
                             showSwipeSuccessView = false
                             if let transaction = swipeApprovedTransaction {
@@ -234,7 +182,7 @@ struct InboxView: View {
                         },
                         onApproveNext: {
                             showSwipeSuccessView = false
-                            if let next = pendingDrafts.first {
+                            if let next = viewModel.firstPendingDraft() {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                     selectedDraft = next
                                 }
@@ -247,6 +195,9 @@ struct InboxView: View {
                 if isSelectionMode {
                     selectionBar
                 }
+            }
+            .onAppear {
+                viewModel.setContext(modelContext)
             }
         }
     }
@@ -363,12 +314,7 @@ struct InboxView: View {
     }
 
     private func countForFilter(_ filter: InboxFilter) -> Int {
-        switch filter {
-        case .pending:
-            return allDrafts.filter { $0.status == .pending }.count
-        case .archived:
-            return allDrafts.filter { $0.status == .approved || $0.status == .rejected }.count
-        }
+        viewModel.countForFilter(filter)
     }
 
     // MARK: - Drafts List
