@@ -280,7 +280,10 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     // Create budgets (requires subcategories from category seed)
     let createdBudgets = createDevBudgets(in: context, preferredCurrency: preferredCurrency)
     print("DevDataSeed: \(createdBudgets.count) presupuestos creados")
-    // TODO: Implementar creación de favoritos (Incremento 5)
+
+    // Create favorite payments
+    let createdFavorites = createDevFavorites(in: context)
+    print("DevDataSeed: \(createdFavorites.count) favoritos creados")
     // TODO: Implementar creación de suscripciones (Incremento 6)
     // TODO: Implementar creación de pagos planificados (Incremento 7)
     // TODO: Implementar generación de transacciones históricas (Incrementos 8a y 8b)
@@ -373,6 +376,40 @@ private func createDevBudgets(in context: ModelContext, preferredCurrency: Curre
     }
 
     return budgets
+}
+
+// MARK: - Favorite Payment Creation
+
+/// Crea los pagos favoritos de desarrollo
+private func createDevFavorites(in context: ModelContext) -> [FavoritePayment] {
+    var favorites: [FavoritePayment] = []
+
+    for definition in devFavoriteDefinitions {
+        // Buscar la subcategoría por nombre
+        let subcategoryName = definition.subcategoryName
+        let subcategoryDescriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.name == subcategoryName }
+        )
+
+        guard let subcategory = try? context.fetch(subcategoryDescriptor).first else {
+            print("DevDataSeed: Warning - Subcategoría '\(subcategoryName)' no encontrada para favorito '\(definition.name)'")
+            continue
+        }
+
+        let favorite = FavoritePayment(
+            name: definition.name,
+            transactionType: definition.transactionType,
+            amount: definition.amount,
+            note: definition.note,
+            account: nil,
+            subcategory: subcategory,
+            displayOrder: favorites.count
+        )
+        context.insert(favorite)
+        favorites.append(favorite)
+    }
+
+    return favorites
 }
 
 #endif
