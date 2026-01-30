@@ -141,6 +141,11 @@ final class DraftService: DraftServiceProtocol {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
+        // Validate: block future dates
+        guard draft.effectiveDate <= Date() else {
+            throw DraftServiceError.futureDateNotAllowed
+        }
+
         guard let account = draft.account else {
             throw DraftServiceError.missingAccount
         }
@@ -210,6 +215,9 @@ final class DraftService: DraftServiceProtocol {
         let preferredCode = CurrencyDefaults.currentPreferred
 
         for draft in drafts where draft.isReadyToApprove {
+            // Skip drafts with future dates
+            guard draft.effectiveDate <= Date() else { continue }
+
             guard let account = draft.account,
                   let amount = draft.amount,
                   let subcategory = draft.subcategory else { continue }
@@ -375,6 +383,7 @@ enum DraftServiceError: LocalizedError {
     case missingAccount
     case missingAmount
     case missingSubcategory
+    case futureDateNotAllowed
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -387,6 +396,8 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.errorNoAmount
         case .missingSubcategory:
             return L10n.Inbox.errorNoSubcategory
+        case .futureDateNotAllowed:
+            return "No se pueden aprobar transacciones con fecha futura"
         case .saveFailed(let error):
             return "DraftService: Save failed - \(error.localizedDescription)"
         }

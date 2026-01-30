@@ -103,6 +103,7 @@ final class NewTransactionViewModel {
     // MARK: - Validation State
 
     var showValidationErrors: Bool = false
+    var showFutureDateAlert: Bool = false
     var isSaving: Bool = false
 
     // MARK: - Computed Properties
@@ -439,6 +440,12 @@ final class NewTransactionViewModel {
     /// - Returns: The created or updated transactions (useful for tracking IDs)
     func save(context: ModelContext) -> [TransactionItem]? {
         showValidationErrors = true
+
+        // Validate: block future dates
+        if transactionDate > Date() {
+            showFutureDateAlert = true
+            return nil
+        }
 
         guard canSave else {
             return nil

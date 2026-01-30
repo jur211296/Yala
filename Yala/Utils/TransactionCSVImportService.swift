@@ -112,6 +112,7 @@ struct RawImportRow {
 struct TransactionImportResult {
     let createdCount: Int
     let drafts: [ParsedTransactionDraft]
+    let ignoredFutureDatesCount: Int
 }
 
 // MARK: - Servicio principal de importación
@@ -533,6 +534,12 @@ enum TransactionCSVImportService {
             drafts.append(draft)
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // NOTE: Removed ensureRates() call here.
         // CurrencyConverter.convert() already has fallback logic that uses:
         // 1. Exact rate for the date (if available)
@@ -542,13 +549,14 @@ enum TransactionCSVImportService {
         // triggered @Query updates and reset @State in ImportIntroSheet.
 
         // 6. Segunda pasada: solo si TODO es válido, creamos las transacciones reales
-        for draft in drafts {
+        for draft in validDrafts {
             try createTransaction(draft, context)
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts
+            createdCount: validDrafts.count,
+            drafts: validDrafts,
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 
@@ -1344,14 +1352,21 @@ enum TransactionCSVImportService {
             drafts.append((draft, account))
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // 7. Crear transacciones
-        for (draft, account) in drafts {
+        for (draft, account) in validDrafts {
             try createTransaction(draft, account, context)
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts.map { $0.0 }
+            createdCount: validDrafts.count,
+            drafts: validDrafts.map { $0.0 },
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 
@@ -1404,8 +1419,14 @@ enum TransactionCSVImportService {
             drafts.append(draft)
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // 3. Crear transacciones
-        for draft in drafts {
+        for draft in validDrafts {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
             let hasExactRate = CurrencyConverter.shared.hasExactRate(
@@ -1464,8 +1485,9 @@ enum TransactionCSVImportService {
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts
+            createdCount: validDrafts.count,
+            drafts: validDrafts,
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 
@@ -1539,8 +1561,14 @@ enum TransactionCSVImportService {
             drafts.append((draft, account))
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // 3. Crear transacciones
-        for (draft, account) in drafts {
+        for (draft, account) in validDrafts {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
             let hasExactRate = CurrencyConverter.shared.hasExactRate(
@@ -1601,8 +1629,9 @@ enum TransactionCSVImportService {
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts.map { $0.0 }
+            createdCount: validDrafts.count,
+            drafts: validDrafts.map { $0.0 },
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 }

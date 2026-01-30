@@ -260,6 +260,14 @@ struct NewTransactionView: View {
             } message: {
                 Text(L10n.Alert.deleteWarning)
             }
+            .alert(
+                "Fecha futura no permitida",
+                isPresented: $viewModel.showFutureDateAlert
+            ) {
+                Button("Entendido", role: .cancel) {}
+            } message: {
+                Text("No puedes registrar transacciones con fecha futura. Usa Pagos Planificados para gastos recurrentes.")
+            }
             .sheet(isPresented: $viewModel.showSaveAsFavoriteSheet) {
                 favoriteSheetContent
             }
