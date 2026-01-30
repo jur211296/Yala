@@ -179,11 +179,14 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ### Ideas Capturadas
 
-- **2026-01-29 [Testing] [Quality] [Medium]: Unit Tests para ViewModels**
-  Contexto: Después del refactoring D.8, los ViewModels ahora son testeables (lógica desacoplada de Views)
-  Documento: `.planning/TESTING-STRATEGY.md` con estrategia en 3 tiers y ejemplos de código
-  Prioridad alta: NewTransactionViewModel, BudgetsViewModel, InboxViewModel
-  Estado: **PARCIAL** - NewTransactionViewModelTests implementado (35 tests), BudgetsViewModelTests pendiente por issues de Swift Testing + SwiftData
+- **2026-01-29 [Testing] [Quality] [Medium]: Unit Tests para ViewModels** ✅ COMPLETADO (2026-01-30)
+  Contexto: ViewModels testeables después del refactoring D.8
+  Documento: `.planning/TESTING-STRATEGY.md`
+  Estado: **COMPLETADO** - 56 tests de ViewModels:
+  - NewTransactionViewModelTests: 35 tests (teclado, validación, tipos cambio)
+  - BudgetsViewModelTests: 11 tests (status, display properties)
+  - InboxViewModelTests: 10 tests (filtrado, agrupación, conteo)
+  Patrón: Lógica pura extraída en métodos `calculate*()` para evitar SwiftData en tests
 
 - **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
   Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
@@ -203,9 +206,9 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Session Continuity
 
-Last session: 2026-01-29
-Stopped at: Refactoring Arquitectural Fase D completado + estrategia de testing documentada
-Next step: "Modo solo gastos" o implementar unit tests (ver TESTING-STRATEGY.md)
+Last session: 2026-01-30
+Stopped at: Unit Tests completados (56 tests de ViewModels)
+Next step: "Modo solo gastos" (única feature pendiente de Fase 10)
 Resume file: .planning/ARCH-REFACTOR-PROGRESS.md
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
