@@ -15,18 +15,18 @@
 | SwiftData/Persistencia | ~~4~~ 0 ✅ | ~~3~~ 0 ✅ | 7 | 3 |
 | Rendimiento | ~~3~~ 0 ✅ | ~~3~~ 0 ✅ | 4 | 2 |
 | Calidad de Código | 2 | 4 | 3 | 0 |
-| Arquitectura | ~~2~~ 0 ✅ | ~~4~~ 1 | 4 | 2 |
+| Arquitectura | ~~2~~ 0 ✅ | ~~4~~ 0 ✅ | 4 | 2 |
 | UI/UX Técnico | 0 | ~~2~~ 0 ✅ | 3 | 2 |
 | Manejo de Errores | ~~4~~ 0 ✅ | 15+ | 20+ | 10+ |
 | Configuración | ~~2~~ 0 ✅ | 1 | 2 | 4 |
-| **TOTAL** | ~~24~~ **0** ✅ | ~~42+~~ **21+** | **51+** | **29+** |
+| **TOTAL** | ~~24~~ **0** ✅ | ~~42+~~ **20+** | **51+** | **29+** |
 
 ### Deuda Técnica General: **BAJA** (Críticos y Altos arquitecturales resueltos)
 
 ### Estado de Auditoría (2026-01-29, actualizado)
 - **CRÍTICOS:** 24/24 resueltos ✅
 - **ALTOS de Seguridad/Bugs/SwiftData/Rendimiento/UI:** TODOS RESUELTOS ✅
-- **ALTOS de Arquitectura:** 5/6 RESUELTOS ✅ (Refactoring Fases A-D completado)
+- **ALTOS de Arquitectura:** 6/6 RESUELTOS ✅ (Refactoring Fases A-D + AppBootstrapper)
   - Ver `.planning/ARCH-REFACTOR-PROGRESS.md` para detalles
 
 ---
@@ -301,7 +301,7 @@ if !newValue { }
 |----|----------|--------|------------|
 | ARCH-003 | ViewModels como proxies sin lógica | ✅ RESUELTO | 35 ViewModels con lógica real - Fase D |
 | ARCH-004 | Services con singletons no-mockables | ✅ PARCIAL | CurrencyConverter, ExchangeRateService, Vision/Voice migrados a @Environment - Fase A |
-| ARCH-005 | Inicialización dispersa en YalaApp | 🟡 PENDIENTE | Crear ServiceBootstrapper centralizado |
+| ARCH-005 | Inicialización dispersa en YalaApp | ✅ RESUELTO | AppBootstrapper creado (commit d4de589) |
 | ARCH-006 | 48 Views usando @Query directamente | ✅ RESUELTO | 37+ views migradas a ViewModels - Fase D (D.3-D.8) |
 
 ### Singletons Sin Dependency Injection
