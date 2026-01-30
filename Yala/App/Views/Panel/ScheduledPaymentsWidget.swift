@@ -90,21 +90,23 @@ struct ScheduledPaymentsWidget: View {
     private var headerSection: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.WidgetType.scheduledPayments)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                HStack(spacing: DS.Spacing.xxs) {
+                    Text(L10n.WidgetType.scheduledPayments)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    InfoHintButton(
+                        title: L10n.WidgetType.scheduledPayments,
+                        message: L10n.Widget.Hint.scheduledPayments
+                    )
+                }
 
                 // Period label
                 Text(periodLabel)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            InfoHintButton(
-                title: L10n.WidgetType.scheduledPayments,
-                message: L10n.Widget.Hint.scheduledPayments
-            )
 
             Spacer()
 
