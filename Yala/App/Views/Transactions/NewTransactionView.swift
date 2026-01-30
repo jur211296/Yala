@@ -16,13 +16,6 @@ struct NewTransactionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Category.sortOrder, order: .forward) private var categories: [Category]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(filter: #Predicate<Subcategory> { $0.isVisible }) private var subcategories:
-        [Subcategory]
-    @Query(sort: \TransactionItem.date, order: .reverse) private var transactions: [TransactionItem]
-
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -70,7 +63,9 @@ struct NewTransactionView: View {
                 },
                 onCreateAnother: {
                     // Reset form for new transaction
-                    viewModel = NewTransactionViewModel()
+                    let newViewModel = NewTransactionViewModel()
+                    newViewModel.setContext(modelContext)
+                    viewModel = newViewModel
                     isCreatingAnother = true
                     withAnimation(.easeInOut(duration: 0.25)) {
                         showSuccessScreen = false
@@ -286,6 +281,7 @@ struct NewTransactionView: View {
         }
         .tint(Color.electricIndigo)
         .onAppear {
+            viewModel.setContext(modelContext)
             prefillFromContext()
             // Auto-focus amount field only for new transactions (not editing)
             if transactionToEdit == nil {
@@ -314,7 +310,7 @@ struct NewTransactionView: View {
             onTypeChange: { type in
                 viewModel.selectedSubcategory = nil
                 if type == .transfer {
-                    viewModel.prepareForTransfer(allAccounts: accounts)
+                    viewModel.prepareForTransfer(allAccounts: viewModel.accounts)
                     Task {
                         await viewModel.loadExchangeRate(context: modelContext)
                     }
@@ -795,21 +791,21 @@ struct NewTransactionView: View {
         case .tag:
             return AutocompleteHelper.getTagSuggestions(
                 query: mentionState.query,
-                allTags: tags,
-                recentTransactions: transactions
+                allTags: viewModel.tags,
+                recentTransactions: viewModel.transactions
             )
         case .subcategory:
             return AutocompleteHelper.getSubcategorySuggestions(
                 query: mentionState.query,
-                allSubcategories: subcategories,
-                recentTransactions: transactions,
+                allSubcategories: viewModel.subcategories,
+                recentTransactions: viewModel.transactions,
                 transactionType: viewModel.transactionType
             )
         case .account:
             return AutocompleteHelper.getAccountSuggestions(
                 query: mentionState.query,
-                allAccounts: accounts,
-                recentTransactions: transactions
+                allAccounts: viewModel.accounts,
+                recentTransactions: viewModel.transactions
             )
         }
     }
@@ -988,11 +984,13 @@ struct NewTransactionView: View {
             return
         }
 
-        let allSubcategories = categories.flatMap { $0.subcategories }
+        let allSubcategories = viewModel.categories.flatMap { $0.subcategories }
 
         // Reset viewModel if opening for new transaction (prevents stale data from previous edit)
         if transactionToEdit == nil && viewModel.editingTransaction != nil {
-            viewModel = NewTransactionViewModel()
+            let newViewModel = NewTransactionViewModel()
+            newViewModel.setContext(modelContext)
+            viewModel = newViewModel
         }
 
         // If we're editing an existing transaction, load all its data
@@ -1034,7 +1032,7 @@ struct NewTransactionView: View {
             accountID: prefillAccountID,
             categoryID: prefillCategoryID,
             subcategoryName: prefillSubcategoryName,
-            accounts: accounts,
+            accounts: viewModel.accounts,
             subcategories: allSubcategories
         )
     }

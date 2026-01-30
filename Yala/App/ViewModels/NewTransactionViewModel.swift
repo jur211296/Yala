@@ -12,8 +12,21 @@ import SwiftUI
 // MARK: - New Transaction ViewModel
 
 /// ViewModel para el formulario de nuevo registro de transacción
+@MainActor
 @Observable
 final class NewTransactionViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Loaded Data
+
+    private(set) var accounts: [Account] = []
+    private(set) var categories: [Category] = []
+    private(set) var tags: [Tag] = []
+    private(set) var subcategories: [Subcategory] = []
+    private(set) var transactions: [TransactionItem] = []
 
     // MARK: - Form State
 
@@ -140,6 +153,68 @@ final class NewTransactionViewModel {
             return account.currencyCode
         }
         return currencyCode
+    }
+
+    // MARK: - Context Setup
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadData()
+    }
+
+    func loadData() {
+        guard let context = modelContext else { return }
+
+        // Load accounts
+        let accountsDescriptor = FetchDescriptor<Account>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            accounts = try context.fetch(accountsDescriptor)
+        } catch {
+            print("NewTransactionViewModel: Error loading accounts: \(error)")
+        }
+
+        // Load categories
+        let categoriesDescriptor = FetchDescriptor<Category>(
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
+        do {
+            categories = try context.fetch(categoriesDescriptor)
+        } catch {
+            print("NewTransactionViewModel: Error loading categories: \(error)")
+        }
+
+        // Load tags
+        let tagsDescriptor = FetchDescriptor<Tag>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            tags = try context.fetch(tagsDescriptor)
+        } catch {
+            print("NewTransactionViewModel: Error loading tags: \(error)")
+        }
+
+        // Load visible subcategories
+        let subcategoriesDescriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate<Subcategory> { $0.isVisible },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            subcategories = try context.fetch(subcategoriesDescriptor)
+        } catch {
+            print("NewTransactionViewModel: Error loading subcategories: \(error)")
+        }
+
+        // Load transactions (for recent suggestions)
+        let transactionsDescriptor = FetchDescriptor<TransactionItem>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        do {
+            transactions = try context.fetch(transactionsDescriptor)
+        } catch {
+            print("NewTransactionViewModel: Error loading transactions: \(error)")
+        }
     }
 
     // MARK: - Validation
