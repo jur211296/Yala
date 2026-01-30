@@ -128,6 +128,10 @@ struct DetailContainerView: View {
                 calculateTrendsData()
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
+                // Close FAB menu when navigating away from Statistics
+                if showFABMenu {
+                    showFABMenu = false
+                }
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
                     syncFromSessionState()

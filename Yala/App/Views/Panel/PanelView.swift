@@ -259,6 +259,12 @@ struct PanelView: View {
             // Initial Trend Calculation (async to avoid blocking UI)
             recalculateData()
         }
+        .onChange(of: sessionState.selectedMainTab) { _, _ in
+            // Close FAB menu when navigating away from Panel
+            if showFABMenu {
+                showFABMenu = false
+            }
+        }
         .onChange(of: accounts) {
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
                 accounts: accounts,
