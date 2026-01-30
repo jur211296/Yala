@@ -17,22 +17,22 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██████████░░░░░░ ~60% (Fase 8 completa, Fase 10 en progreso - 21 items UAT pendientes)
+Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 completa, Fase 10 en progreso - 17 items UAT pendientes)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] 7d0138c fix(auth): show lock screen over sheets using fullScreenCover (A.4)
+- [2026-01-30] 381c041 fix(fab): close FAB menu when navigating to another tab (A.3)
+- [2026-01-30] bf8e2d6 fix(search): navigate directly to Statistics tab from global search (A.2)
+- [2026-01-30] 95b3ec7 fix(panel): refresh data immediately when sheets dismiss (A.1)
 - [2026-01-29] b032d3f refactor(arch): remove unused @Query from InboxBulkActionsSheet (D.7.10)
 - [2026-01-29] 03b395c refactor(arch): migrate BulkEditSheet to ViewModel (D.7.9)
 - [2026-01-29] 64d2670 refactor(arch): migrate RecordsFiltersView to ViewModel (D.7.8)
 - [2026-01-29] 50e444a refactor(arch): migrate ImportIntroSheet to ViewModel (D.7.7)
 - [2026-01-29] f5ee072 refactor(arch): migrate ExportFiltersStepView to ViewModel (D.7.6)
 - [2026-01-29] 6c1286c refactor(arch): migrate ScheduledPaymentEditorView to ViewModel (D.7.5)
-- [2026-01-29] 0e74b65 refactor(arch): migrate BudgetEditorView to ViewModel (D.7.4)
-- [2026-01-29] 5be22d1 refactor(arch): migrate FavoriteEditorView to ViewModel (D.7.3)
-- [2026-01-29] 9cdd696 refactor(arch): migrate ProfileView to ViewModel (D.7.2)
-- [2026-01-29] 26df674 refactor(arch): migrate TopSubcategoriesWidget to ViewModel (D.7.1)
 
 ## Completed in Current Phase
 
@@ -118,13 +118,13 @@ Progress: V1.1 ██████████░░░░░░ ~60% (Fase 8 com
 - [x] Automatización Apple Pay ✅ (4b2eab4) — Intent recibe datos de Wallet, crea draft en inbox
 - [x] Automatización externa ✅ (caa04cc) — Intent recibe JSON para correos de banco procesados por IA
 
-**Pendientes (21 items - UAT 2026-01-30):**
+**Pendientes (17 items restantes - UAT 2026-01-30):**
 
 **10.A: Bugs Críticos**
-- [ ] A.1: PanelView no reacciona inmediatamente al crear cuenta, importar CSV o crear registros
-- [ ] A.2: IMPORTANTE - Filtro texto SearchBar: no se quita inmediatamente, no se propaga a otras vistas, se queda pegado al navegar sin cerrar búsqueda
-- [ ] A.3: FAB no se cierra al navegar a otra pestaña (PanelView y StatisticsView)
-- [ ] A.4: Vista "Yala está bloqueada" no aparece si estabas en sheet de perfil
+- [x] A.1: PanelView no reacciona inmediatamente al crear cuenta, importar CSV o crear registros ✅ (95b3ec7)
+- [x] A.2: Filtro texto SearchBar sincronización con navegación directa a Statistics ✅ (bf8e2d6)
+- [x] A.3: FAB no se cierra al navegar a otra pestaña (PanelView y StatisticsView) ✅ (381c041)
+- [x] A.4: Vista "Yala está bloqueada" no aparece si estabas en sheet de perfil ✅ (7d0138c)
 
 **10.B: Lógica de Negocio**
 - [ ] B.1: Transacciones futuras - definir comportamiento (¿se crean? ¿se visualizan hasta ese día?)
@@ -240,20 +240,17 @@ Progress: V1.1 ██████████░░░░░░ ~60% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: UAT identificó 21 items pendientes para V1.1
-Next step: Fase 10 - comenzar con sección A (Bugs Críticos)
+Stopped at: Sección A completa (4/4 bugs críticos)
+Next step: Continuar con Sección B (Lógica de Negocio)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
-- **21 items UAT organizados en 6 secciones:**
-  - 10.A: Bugs Críticos (4 items) - PRIORIDAD ALTA
-  - 10.B: Lógica de Negocio (3 items)
-  - 10.C: Widgets (4 items)
-  - 10.D: Consistencia Visual (5 items)
-  - 10.E: Settings y Preferencias (4 items)
-  - 10.F: Desarrollo (1 item - Seed Dev)
-- **"Modo Solo gastos" movido a V1.2**
-- **"Split de transacción" movido a V2.0**
+- **Sección A COMPLETA:**
+  - ✅ A.1: PanelView refresh (95b3ec7)
+  - ✅ A.2: SearchBar sync (bf8e2d6)
+  - ✅ A.3: FAB cierra al navegar (381c041)
+  - ✅ A.4: Lock screen en sheets (7d0138c)
+- **17 items UAT restantes** (4 completados de 21)
 
 ## V1.1 (Futuro)
 
