@@ -55,8 +55,8 @@ struct FilterChipsSection<Item: Identifiable, ChipContent: View>: View {
                 .padding(.leading, 52)
                 .padding(.trailing, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.md)
-            } else if showEmptyPlaceholder {
-                // Minimal spacer to maintain layout consistency
+            } else {
+                // Minimal spacer to maintain layout consistency when empty
                 Color.clear.frame(height: 12)
             }
         }

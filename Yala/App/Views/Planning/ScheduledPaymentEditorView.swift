@@ -327,14 +327,17 @@ struct ScheduledPaymentEditorView: View {
                         .foregroundStyle(Color.hotPink.opacity(0.8))
                 }
 
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                if !viewModel.activeAccounts.isEmpty {
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
             }
             .padding()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(viewModel.activeAccounts.isEmpty)
     }
 
     private var subcategoryRow: some View {
