@@ -706,6 +706,7 @@
 "settings.exchangeRate" = "Wechselkurs";
 "settings.secondaryCurrencies" = "Sekundäre Währungen";
 "settings.secondaryCurrenciesHint" = "Wähle bis zu 2 Währungen aus, um sie mit deiner bevorzugten Währung im Wechselkurs-Widget zu vergleichen.";
+"settings.showMoreCurrencies" = "Mehr Währungen anzeigen";
 "common.lastUpdate" = "Letzte Aktualisierung:";
 
 

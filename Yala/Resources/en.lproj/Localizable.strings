@@ -705,6 +705,7 @@
 "settings.exchangeRate" = "Exchange Rate";
 "settings.secondaryCurrencies" = "Secondary Currencies";
 "settings.secondaryCurrenciesHint" = "Select up to 2 currencies to compare with your preferred currency in the exchange rate widget.";
+"settings.showMoreCurrencies" = "Show more currencies";
 "common.lastUpdate" = "Last update:";
 
 

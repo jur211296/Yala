@@ -706,6 +706,7 @@
 "settings.exchangeRate" = "Tasso di cambio";
 "settings.secondaryCurrencies" = "Valute secondarie";
 "settings.secondaryCurrenciesHint" = "Seleziona fino a 2 valute da confrontare con la tua valuta preferita nel widget dei tassi di cambio.";
+"settings.showMoreCurrencies" = "Mostra altre valute";
 "common.lastUpdate" = "Ultimo aggiornamento:";
 
 

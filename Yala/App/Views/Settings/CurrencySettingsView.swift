@@ -110,13 +110,26 @@ struct CurrencySettingsView: View {
     private var preferredCurrencySection: some View {
         SectionBox(title: L10n.Settings.preferredCurrency) {
             VStack(spacing: 0) {
-                ForEach(Array(CurrencyCode.allCases.enumerated()), id: \.element) {
-                    index, currency in
-                    if index > 0 {
+                // Show only first currency + expansion
+                preferredCurrencyRow(currency: CurrencyCode.allCases[0])
+
+                DisclosureGroup {
+                    ForEach(Array(CurrencyCode.allCases.dropFirst().enumerated()), id: \.element) {
+                        index, currency in
                         SubsectionDivider()
+                        preferredCurrencyRow(currency: currency)
                     }
-                    preferredCurrencyRow(currency: currency)
+                } label: {
+                    HStack {
+                        Text(L10n.Settings.showMoreCurrencies)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.Spacing.sm)
                 }
+                .accentColor(Color.electricIndigo)
             }
         }
     }
@@ -162,12 +175,34 @@ struct CurrencySettingsView: View {
         VStack(spacing: DS.Spacing.sm) {
             SectionBox(title: L10n.Settings.secondaryCurrencies) {
                 VStack(spacing: 0) {
-                    ForEach(Array(displayedCurrencies.enumerated()), id: \.element) {
+                    // Show first 2 currencies + expansion
+                    let firstTwo = Array(displayedCurrencies.prefix(2))
+                    ForEach(Array(firstTwo.enumerated()), id: \.element) {
                         index, currency in
                         if index > 0 {
                             SubsectionDivider()
                         }
                         secondaryCurrencyRow(currency: currency)
+                    }
+
+                    if displayedCurrencies.count > 2 {
+                        DisclosureGroup {
+                            ForEach(Array(displayedCurrencies.dropFirst(2).enumerated()), id: \.element) {
+                                index, currency in
+                                SubsectionDivider()
+                                secondaryCurrencyRow(currency: currency)
+                            }
+                        } label: {
+                            HStack {
+                                Text(L10n.Settings.showMoreCurrencies)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.Spacing.sm)
+                        }
+                        .accentColor(Color.electricIndigo)
                     }
                 }
             }
@@ -263,12 +298,35 @@ struct CurrencySettingsView: View {
         VStack(spacing: DS.Spacing.sm) {
             SectionBox(title: L10n.Settings.exchangeRate) {
                 VStack(spacing: 0) {
-                    ForEach(Array(displayedCurrencies.enumerated()), id: \.element) {
+                    // Show only secondary currencies + expansion
+                    let secondaryList = Array(secondaryCurrencies)
+                    ForEach(Array(secondaryList.enumerated()), id: \.element) {
                         index, currency in
                         if index > 0 {
                             SubsectionDivider()
                         }
                         exchangeRateRow(currency: currency)
+                    }
+
+                    if !secondaryList.isEmpty && displayedCurrencies.count > secondaryList.count {
+                        DisclosureGroup {
+                            let otherCurrencies = displayedCurrencies.filter { !secondaryCurrencies.contains($0) }
+                            ForEach(Array(otherCurrencies.enumerated()), id: \.element) {
+                                index, currency in
+                                SubsectionDivider()
+                                exchangeRateRow(currency: currency)
+                            }
+                        } label: {
+                            HStack {
+                                Text(L10n.Settings.showMoreCurrencies)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.Spacing.sm)
+                        }
+                        .accentColor(Color.electricIndigo)
                     }
                 }
             }

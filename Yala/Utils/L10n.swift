@@ -1070,6 +1070,9 @@ enum L10n {
         static var secondaryCurrenciesHint: String {
             NSLocalizedString("settings.secondaryCurrenciesHint", comment: "")
         }
+        static var showMoreCurrencies: String {
+            NSLocalizedString("settings.showMoreCurrencies", comment: "")
+        }
 
         static var versionInfo: String { NSLocalizedString("settings.versionInfo", comment: "") }
 

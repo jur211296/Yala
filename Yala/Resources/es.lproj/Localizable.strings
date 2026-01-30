@@ -705,6 +705,7 @@
 "settings.exchangeRate" = "Tipo de cambio";
 "settings.secondaryCurrencies" = "Divisas secundarias";
 "settings.secondaryCurrenciesHint" = "Selecciona hasta 2 divisas para comparar con tu divisa principal en el widget de tipos de cambio.";
+"settings.showMoreCurrencies" = "Ver más divisas";
 "common.lastUpdate" = "Última actualización:";
 
 
