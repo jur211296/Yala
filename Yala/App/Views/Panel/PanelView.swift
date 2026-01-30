@@ -1041,7 +1041,7 @@ struct PanelView: View {
                 onSelectBudget: { budget in
                     sessionState.applyBudgetFilters(budget)
                 },
-                onShowMore: { sessionState.selectedMainTab = .planning },
+                onShowMore: { sessionState.navigateToBudgets() },
                 onEditFavorites: { showBudgetFavoritesSettings = true },
                 size: mapBudgetsWidgetSize(config.size)
             )
