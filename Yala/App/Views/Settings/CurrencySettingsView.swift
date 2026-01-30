@@ -256,13 +256,44 @@ struct CurrencySettingsView: View {
 
     private func toggleSecondaryCurrency(_ currency: CurrencyCode) {
         var current = secondaryCurrencies
+
         if current.contains(currency) {
             current.remove(currency)
+            // Save back to storage
+            secondaryCurrenciesRaw = current.map { $0.rawValue }.joined(separator: ",")
         } else if current.count < 2 {
             current.insert(currency)
+            // Save back to storage
+            secondaryCurrenciesRaw = current.map { $0.rawValue }.joined(separator: ",")
+
+            // Load historical data for newly added currency
+            loadHistoricalRatesForCurrency(currency)
         }
-        // Save back to storage
-        secondaryCurrenciesRaw = current.map { $0.rawValue }.joined(separator: ",")
+    }
+
+    private func loadHistoricalRatesForCurrency(_ currency: CurrencyCode) {
+        isUpdating = true
+        updateProgress = 0.0
+
+        Task {
+            // Calculate 1 year date range
+            let calendar = Calendar.current
+            let today = Date()
+            guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else {
+                isUpdating = false
+                return
+            }
+
+            let dateInterval = DateInterval(start: oneYearAgo, end: today)
+
+            // Fetch historical rates for the new currency
+            await exchangeRateService.ensureRates(for: dateInterval, context: modelContext)
+
+            // Signal widget to refresh
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
+
+            isUpdating = false
+        }
     }
 
     private func updatePreferredCurrency(to newCurrency: CurrencyCode) {
