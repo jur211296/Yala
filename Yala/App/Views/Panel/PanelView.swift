@@ -28,26 +28,18 @@ struct PanelView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
-    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var transactions: [TransactionItem]
-
-    // Budgets for widget
-    @Query(filter: #Predicate<Budget> { $0.isActive }, sort: \Budget.createdAt, order: .reverse)
-    private var budgets: [Budget]
-
-    // Scheduled payments for widget
-    @Query(sort: \ScheduledPayment.nextDueDate)
-    private var scheduledPayments: [ScheduledPayment]
-
-    // Inbox drafts for badge count
-    @Query(filter: #Predicate<InboxDraft> { $0.statusRaw == "pending" })
-    private var pendingDrafts: [InboxDraft]
 
     @State private var viewModel = PanelViewModel()
+
+    // Convenience accessors for data from ViewModel
+    private var accounts: [Account] { viewModel.accounts }
+    private var tags: [Tag] { viewModel.tags }
+    private var categories: [Category] { viewModel.categories }
+    private var allSubcategories: [Subcategory] { viewModel.allSubcategories }
+    private var transactions: [TransactionItem] { viewModel.transactions }
+    private var budgets: [Budget] { viewModel.budgets }
+    private var scheduledPayments: [ScheduledPayment] { viewModel.scheduledPayments }
+    private var pendingDrafts: [InboxDraft] { viewModel.pendingDrafts }
 
     @State private var isPresentingSettings = false
 
@@ -237,6 +229,8 @@ struct PanelView: View {
                 }
         }
         .onAppear {
+            viewModel.setContext(modelContext)
+
             // Note: seedCategoriesIfNeeded removed - now handled by OnboardingView step 5
             TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext)
 

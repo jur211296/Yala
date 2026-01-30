@@ -2,8 +2,24 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+@MainActor
 @Observable
 final class PanelViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Loaded Data
+
+    private(set) var accounts: [Account] = []
+    private(set) var tags: [Tag] = []
+    private(set) var categories: [Category] = []
+    private(set) var allSubcategories: [Subcategory] = []
+    private(set) var transactions: [TransactionItem] = []
+    private(set) var budgets: [Budget] = []
+    private(set) var scheduledPayments: [ScheduledPayment] = []
+    private(set) var pendingDrafts: [InboxDraft] = []
 
     // MARK: - State
 
@@ -51,6 +67,90 @@ final class PanelViewModel {
     private let movingAverageWindowSize = 14
 
     // Note: Widget config persistence now handled by WidgetConfigManager
+
+    // MARK: - Context Setup
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadData()
+    }
+
+    func loadData() {
+        guard let context = modelContext else { return }
+
+        // Load accounts
+        let accountsDesc = FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)])
+        do {
+            accounts = try context.fetch(accountsDesc)
+        } catch {
+            print("PanelViewModel: Error loading accounts: \(error)")
+        }
+
+        // Load tags
+        let tagsDesc = FetchDescriptor<Tag>(sortBy: [SortDescriptor(\.name)])
+        do {
+            tags = try context.fetch(tagsDesc)
+        } catch {
+            print("PanelViewModel: Error loading tags: \(error)")
+        }
+
+        // Load categories
+        let categoriesDesc = FetchDescriptor<Category>(sortBy: [SortDescriptor(\.sortOrder)])
+        do {
+            categories = try context.fetch(categoriesDesc)
+        } catch {
+            print("PanelViewModel: Error loading categories: \(error)")
+        }
+
+        // Load subcategories
+        let subcategoriesDesc = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
+        do {
+            allSubcategories = try context.fetch(subcategoriesDesc)
+        } catch {
+            print("PanelViewModel: Error loading subcategories: \(error)")
+        }
+
+        // Load transactions
+        let transactionsDesc = FetchDescriptor<TransactionItem>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        do {
+            transactions = try context.fetch(transactionsDesc)
+        } catch {
+            print("PanelViewModel: Error loading transactions: \(error)")
+        }
+
+        // Load active budgets
+        let budgetsDesc = FetchDescriptor<Budget>(
+            predicate: #Predicate<Budget> { $0.isActive },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        do {
+            budgets = try context.fetch(budgetsDesc)
+        } catch {
+            print("PanelViewModel: Error loading budgets: \(error)")
+        }
+
+        // Load scheduled payments
+        let paymentsDesc = FetchDescriptor<ScheduledPayment>(
+            sortBy: [SortDescriptor(\.nextDueDate)]
+        )
+        do {
+            scheduledPayments = try context.fetch(paymentsDesc)
+        } catch {
+            print("PanelViewModel: Error loading scheduled payments: \(error)")
+        }
+
+        // Load pending inbox drafts
+        let draftsDesc = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" }
+        )
+        do {
+            pendingDrafts = try context.fetch(draftsDesc)
+        } catch {
+            print("PanelViewModel: Error loading pending drafts: \(error)")
+        }
+    }
 
     var topSpendingCategories: [CategorySpendingSummary] = []
     var chartTransactions: [ChartTransaction] = []
