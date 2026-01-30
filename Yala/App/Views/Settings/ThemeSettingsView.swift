@@ -71,6 +71,10 @@ struct ThemeSettingsView: View {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {
                 userThemeRaw = theme.rawValue
             }
+            // Dismiss sheet after selection
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                dismiss()
+            }
         } label: {
             HStack {
                 Text(theme.label)
