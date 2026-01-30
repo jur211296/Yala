@@ -113,7 +113,7 @@ struct TrendChartView: View {
             RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 .foregroundStyle(Color.yalaSecondaryText.opacity(0.5))
-                .annotation(position: .top, alignment: .center) {
+                .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
                     Text(L10n.Widget.today)
                         .font(.caption2.bold())
                         .foregroundStyle(Color.yalaPrimaryText)
