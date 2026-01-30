@@ -212,7 +212,10 @@ struct ScheduledPaymentsWidget: View {
 
         var total: Double = 0
 
-        for payment in filteredPayments {
+        // Only count expenses (exclude income payments)
+        let expensePayments = filteredPayments.filter { $0.transactionType != "income" }
+
+        for payment in expensePayments {
             let occurrences = getPaymentDatesInMonth(payment: payment, month: displayMonth)
             total += payment.amount * Double(occurrences.count)
         }

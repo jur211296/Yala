@@ -334,7 +334,10 @@ final class ScheduledPaymentsViewModel {
     func calculateMonthlyTotal(subscriptions: [ScheduledPayment], for month: Date) -> Double {
         var total: Double = 0
 
-        for subscription in subscriptions where subscription.isActive {
+        // Only count expenses (exclude income payments)
+        let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
+
+        for subscription in expensePayments {
             // Calculate how many times this subscription occurs in the month
             let occurrences = getPaymentDatesInMonth(payment: subscription, month: month)
             total += subscription.amount * Double(occurrences.count)
