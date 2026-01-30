@@ -193,6 +193,11 @@ struct DetailContainerView: View {
             )
         case .categories:
             CategoriesTabView(
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                allSubcategories: dataViewModel.allSubcategories,
+                tags: dataViewModel.tags,
+                allTransactions: dataViewModel.allTransactions,
                 viewModel: trendsViewModel,
                 defaultCurrencyCode: defaultCurrencyCode,
                 onNavigateToRecords: { selectedTab = .records }

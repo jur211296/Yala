@@ -19,14 +19,13 @@ struct CategoriesTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    // MARK: - Data Queries
+    // MARK: - Data (passed from parent)
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Category.name, order: .forward) private var categories: [Category]
-    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(sort: \TransactionItem.date, order: .reverse) private var allTransactions:
-        [TransactionItem]
+    let accounts: [Account]
+    let categories: [Category]
+    let allSubcategories: [Subcategory]
+    let tags: [Tag]
+    let allTransactions: [TransactionItem]
 
     // MARK: - External Dependencies
 
