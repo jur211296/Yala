@@ -17,12 +17,13 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 completa, Fase 10 en progreso - 2 items UAT pendientes)
+Progress: V1.1 ███████████████░ ~95% (Fase 8 completa, Fase 10 casi completa - 1 item UAT pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] 2fe8d26 feat(ui): add expandable currency lists in settings (E.4)
 - [2026-01-30] a1fe45b refactor(ui): reorder Preferences section items (E.3)
 - [2026-01-30] b40079b fix(ui): force sheet dismiss when selecting System theme (E.2)
 - [2026-01-30] 07f9293 fix(ui): align recurrence selectors to the right (E.1)
@@ -32,7 +33,6 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [2026-01-30] 2bee962 feat(ui): add filter indicator to TrendsTabView and CategoriesTabView (D.3)
 - [2026-01-30] f8fc6da fix(ui): change toolbar icons from filled to outline style (D.2)
 - [2026-01-30] b802c9e fix(ui): move CashFlow InfoHintButton to main title (D.4)
-- [2026-01-30] e87687b fix(ui): add spacing to "hoy" label annotation in trend chart (D.1)
 
 ## Completed in Current Phase
 
@@ -165,11 +165,11 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [x] D.4: Icono informativo en CashFlow debe ir en título "Flujo de efectivo", no repetido en cada gráfica ✅ (b802c9e)
 - [x] D.5: Botones onboarding y FaceID no son capsule - auditar todos los botones del proyecto ✅ (c3a625e)
 
-**10.E: Settings y Preferencias**
+**10.E: Settings y Preferencias** ✅ COMPLETA
 - [x] E.1: Selectores "1" y "Mes" en Recurrencia de pago planificado deben alinearse a la derecha ✅ (07f9293)
 - [x] E.2: Al elegir tema Sistema, no fuerza la sheet (sí lo hace para Claro y Oscuro) ✅ (b40079b)
 - [x] E.3: Reordenar Preferencias: Personalización, Notificaciones, Divisa y Cambio, Ícono de app, Temas, Registro por voz, Registro por imagen ✅ (a1fe45b)
-- [ ] E.4: Listas expansibles para divisas (preferida: 1+expansión, secundarias: 1-2+expansión, tipos cambio: secundarias+expansión)
+- [x] E.4: Listas expansibles para divisas (preferida: 1+expansión, secundarias: 1-2+expansión, tipos cambio: secundarias+expansión) ✅ (2fe8d26)
 
 **10.F: Desarrollo**
 - [ ] F.1: Seed Dev completa para onboarding (solo bundle dev) - cuentas, categorías, subcategorías, etiquetas, presupuestos, pagos planificados, suscripciones, favoritos
@@ -261,8 +261,8 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: E.3 COMPLETO - Reordenar Preferencias (a1fe45b)
-Next step: Continuar con E.4 (Listas expansibles divisas) o F.1 (Seed Dev)
+Stopped at: Sección E COMPLETA - 4 items de settings completados (2fe8d26)
+Next step: Continuar con F.1 (Seed Dev) - último item UAT
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
@@ -282,8 +282,13 @@ Resume context:
   - ✅ D.3: Filter indicators (2bee962)
   - ✅ D.4: CashFlow InfoHintButton consolidado (b802c9e)
   - ✅ D.5: Onboarding capsule buttons (c3a625e)
-- **Sección E en progreso:** 3/4 completado (E.1 ✅, E.2 ✅, E.3 ✅)
-- **2 items UAT restantes** (19 completados de 21)
+- **Sección E COMPLETA:** 4/4 settings ✅
+  - ✅ E.1: Selectores recurrencia (07f9293)
+  - ✅ E.2: Tema Sistema sheet (b40079b)
+  - ✅ E.3: Reordenar Preferencias (a1fe45b)
+  - ✅ E.4: Listas expansibles divisas (2fe8d26)
+- **1 item UAT restante:** F.1 (Seed Dev)
+- **20 completados de 21** (95% progreso Fase 10)
 
 ## V1.1 (Futuro)
 
