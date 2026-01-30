@@ -56,13 +56,13 @@ struct ContentView: View {
                         }
                     }
             }
-
-            // Biometric lock overlay (above everything except splash)
-            if authService.isLocked && !showSplash {
-                BiometricLockOverlay()
-                    .transition(.opacity)
-                    .zIndex(10)
-            }
+        }
+        // Biometric lock as fullScreenCover (covers everything including sheets)
+        .fullScreenCover(isPresented: Binding(
+            get: { authService.isLocked && !showSplash },
+            set: { _ in }  // Dismiss handled by BiometricLockOverlay.authenticate()
+        )) {
+            BiometricLockOverlay()
         }
         .onAppear {
             // Lock on initial launch if biometric is enabled
