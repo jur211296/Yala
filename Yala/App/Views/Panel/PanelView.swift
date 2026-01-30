@@ -1033,9 +1033,14 @@ struct PanelView: View {
                 onShowDetail: nil  // REMOVED CHEVRON
             )
         } else if config.type == .budgets {
+            let selectedBudget = sessionState.selectedBudgetID.flatMap { selectedID in
+                viewModel.topBudgetSummaries.first { $0.budget.persistentModelID == selectedID }?.budget
+            }
+            let displayCurrency = selectedBudget?.currencyCode ?? preferredCurrency.rawValue
+
             BudgetsWidget(
                 budgets: viewModel.topBudgetSummaries,
-                currencyCode: preferredCurrency.rawValue,
+                currencyCode: displayCurrency,
                 hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
                 selectedBudgetID: sessionState.selectedBudgetID,
                 onSelectBudget: { budget in

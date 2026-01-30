@@ -1585,10 +1585,10 @@ final class PanelViewModel {
         // Only count expenses (not income)
         filtered = filtered.filter { $0.category?.isIncome == false }
 
-        // Sum amounts
+        // Sum amounts in budget's currency
         let spent = filtered.reduce(0.0) { sum, transaction in
             let amount: Double
-            if transaction.preferredCurrencyCode == defaultCurrencyCode {
+            if transaction.preferredCurrencyCode == budget.currencyCode {
                 amount = transaction.amountInPreferredCurrency
             } else {
                 amount = transaction.amount
