@@ -17,12 +17,13 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 completa, Fase 10 en progreso - 3 items UAT pendientes)
+Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 completa, Fase 10 en progreso - 2 items UAT pendientes)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] a1fe45b refactor(ui): reorder Preferences section items (E.3)
 - [2026-01-30] b40079b fix(ui): force sheet dismiss when selecting System theme (E.2)
 - [2026-01-30] 07f9293 fix(ui): align recurrence selectors to the right (E.1)
 - [2026-01-30] e64b18f fix(ui): change inbox icon to tray.fill for toolbar consistency
@@ -32,7 +33,6 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [2026-01-30] f8fc6da fix(ui): change toolbar icons from filled to outline style (D.2)
 - [2026-01-30] b802c9e fix(ui): move CashFlow InfoHintButton to main title (D.4)
 - [2026-01-30] e87687b fix(ui): add spacing to "hoy" label annotation in trend chart (D.1)
-- [2026-01-30] f0d6f97 fix(widgets): align InfoHintButton with title in ScheduledPaymentsWidget (C.4)
 
 ## Completed in Current Phase
 
@@ -168,7 +168,7 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 **10.E: Settings y Preferencias**
 - [x] E.1: Selectores "1" y "Mes" en Recurrencia de pago planificado deben alinearse a la derecha ✅ (07f9293)
 - [x] E.2: Al elegir tema Sistema, no fuerza la sheet (sí lo hace para Claro y Oscuro) ✅ (b40079b)
-- [ ] E.3: Reordenar Preferencias: Personalización, Notificaciones, Divisa y Cambio, Ícono de app, Temas, Registro por voz, Registro por imagen
+- [x] E.3: Reordenar Preferencias: Personalización, Notificaciones, Divisa y Cambio, Ícono de app, Temas, Registro por voz, Registro por imagen ✅ (a1fe45b)
 - [ ] E.4: Listas expansibles para divisas (preferida: 1+expansión, secundarias: 1-2+expansión, tipos cambio: secundarias+expansión)
 
 **10.F: Desarrollo**
@@ -261,8 +261,8 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: E.2 COMPLETO - Tema Sistema fuerza sheet (b40079b)
-Next step: Continuar con E.3 (Reordenar Preferencias) o E.4 (Listas expansibles divisas)
+Stopped at: E.3 COMPLETO - Reordenar Preferencias (a1fe45b)
+Next step: Continuar con E.4 (Listas expansibles divisas) o F.1 (Seed Dev)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
@@ -282,8 +282,8 @@ Resume context:
   - ✅ D.3: Filter indicators (2bee962)
   - ✅ D.4: CashFlow InfoHintButton consolidado (b802c9e)
   - ✅ D.5: Onboarding capsule buttons (c3a625e)
-- **Sección E en progreso:** 2/4 completado (E.1 ✅, E.2 ✅)
-- **3 items UAT restantes** (18 completados de 21)
+- **Sección E en progreso:** 3/4 completado (E.1 ✅, E.2 ✅, E.3 ✅)
+- **2 items UAT restantes** (19 completados de 21)
 
 ## V1.1 (Futuro)
 
