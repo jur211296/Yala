@@ -269,7 +269,10 @@ private let devScheduledPaymentDefinitions: [ScheduledPaymentSeedDefinition] = [
 func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyCode) {
     print("DevDataSeed: Iniciando semilla de datos de desarrollo...")
 
-    // TODO: Implementar creación de cuentas (Incremento 2)
+    // Create accounts
+    let createdAccounts = createDevAccounts(in: context)
+    print("DevDataSeed: \(createdAccounts.count) cuentas creadas")
+
     // TODO: Implementar creación de tags (Incremento 3)
     // TODO: Implementar creación de presupuestos (Incremento 4)
     // TODO: Implementar creación de favoritos (Incremento 5)
@@ -277,7 +280,38 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     // TODO: Implementar creación de pagos planificados (Incremento 7)
     // TODO: Implementar generación de transacciones históricas (Incrementos 8a y 8b)
 
-    print("DevDataSeed: Semilla de datos completada.")
+    // Save all changes
+    do {
+        try context.save()
+        print("DevDataSeed: Semilla de datos completada exitosamente.")
+    } catch {
+        print("DevDataSeed: Error al guardar: \(error)")
+    }
+}
+
+// MARK: - Account Creation
+
+/// Crea las cuentas de desarrollo
+private func createDevAccounts(in context: ModelContext) -> [Account] {
+    var accounts: [Account] = []
+
+    for definition in devAccountDefinitions {
+        let account = Account(
+            name: definition.name,
+            currencyCode: definition.currencyCode,
+            colorHex: definition.colorHex,
+            iconName: definition.iconName,
+            type: definition.type,
+            accountNumber: nil,
+            adjustmentMode: "Ajustar por registro",
+            excludeFromStatistics: false,
+            isArchived: false
+        )
+        context.insert(account)
+        accounts.append(account)
+    }
+
+    return accounts
 }
 
 #endif
