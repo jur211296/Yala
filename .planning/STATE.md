@@ -127,9 +127,30 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [x] A.4: Vista "Yala está bloqueada" no aparece si estabas en sheet de perfil ✅ (7d0138c)
 
 **10.B: Lógica de Negocio**
-- [ ] B.1: Transacciones futuras - definir comportamiento (¿se crean? ¿se visualizan hasta ese día?)
-- [ ] B.2: Orden de registros del mismo día - ordenar por fecha de creación/aprobación para facilitar búsqueda
-- [ ] B.3: Widget pagos planificados no debe contar ingresos, solo gastos (también cajas superiores en vista)
+- [ ] B.1: Transacciones futuras - BLOQUEAR con validación
+  - **Decisión:** Bloquear transacciones con fecha > hoy (previene inconsistencia balance vs registros)
+  - **Implementación:**
+    1. NewTransactionViewModel.save() - Alert informativo sugiriendo Pagos Planificados
+    2. DraftService.approveDraft() + bulkApprove() - throw DraftServiceError.futureDateNotAllowed
+    3. TransactionCSVImportService.importCSV() - Filtrar + contar ignoradas + notificar usuario
+  - **Cobertura:** Creación manual, duplicar, inbox (voz/imagen/ApplePay/automation/pagos), importación CSV/XLSX
+
+- [ ] B.2: Orden de registros del mismo día - agregar campo createdAt
+  - **Implementación:**
+    1. Agregar `var createdAt: Date = Date()` a modelo TransactionItem (timestamp completo con hora)
+    2. Actualizar FetchDescriptors: `sortBy: [.date DESC, .createdAt DESC]`
+    3. Migración SwiftData: para registros existentes `createdAt = date`
+  - **Comportamiento:**
+    - Creación manual: createdAt = Date() al momento de guardar
+    - Aprobación drafts: createdAt = Date() al momento de aprobar (no draft.createdAt)
+    - Importación CSV: createdAt = Date() al momento de importar
+  - **Resultado UX:** Registros del mismo día aparecen en orden de creación/aprobación (más reciente primero)
+
+- [ ] B.3: Widget pagos planificados solo gastos
+  - **Archivos:**
+    1. ScheduledPaymentsWidget.swift:207 calculateMonthlyTotal() - filtrar `payment.transactionType != "income"`
+    2. Vista principal pagos planificados (cajas superiores) - aplicar mismo filtro
+  - **Test:** Crear pago planificado tipo ingreso, verificar que NO cuenta en totales
 
 **10.C: Widgets**
 - [ ] C.1: Hover widget presupuestos no fuerza vista Presupuestos (te lleva a donde estabas en Planificación)
