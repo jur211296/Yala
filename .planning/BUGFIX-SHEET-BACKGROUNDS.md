@@ -86,15 +86,20 @@ List {
 
 ## Total de Archivos a Corregir
 
-**6 archivos** requieren corrección:
+**7 archivos** corregidos:
 1. AccountTypeSelectorView.swift ✅
 2. AdjustmentModeSelectorView.swift ✅
-3. PeriodSelectorComponents.swift
-4. ExportFiltersStepView.swift
-5. RecordsFiltersView.swift
-6. InboxView.swift (verificar)
+3. PeriodSelectorComponents.swift ✅
+4. ExportFiltersStepView.swift ✅
+5. RecordsFiltersView.swift (accountsSheetView + tagsSheetView) ✅
+6. FilterComponents.swift (MultiSelectionList) ✅
 
 ---
 
-**Estado:** Incremento 2 - Auditoría completada
-**Siguiente:** Incremento 3 - Aplicar correcciones
+**Estado:** ✅ COMPLETADO
+- Incremento 1: Bug tema en sheets ✅
+- Incremento 2: Auditoría completada ✅
+- Incremento 3: Correcciones aplicadas ✅
+
+**Build:** ✅ SUCCESS
+**Tests:** N/A (cambios solo visuales)

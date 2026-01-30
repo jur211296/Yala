@@ -392,6 +392,8 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
                 .foregroundStyle(.primary)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.yalaCard)
         .navigationTitle(title)
     }
 }

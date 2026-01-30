@@ -490,6 +490,8 @@ struct RecordsFiltersView: View {
                     .foregroundStyle(.primary)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.yalaCard)
             .navigationTitle(L10n.Filters.selectAccounts)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -551,6 +553,8 @@ struct RecordsFiltersView: View {
                     .foregroundStyle(.primary)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.yalaCard)
             .navigationTitle(L10n.Filters.selectTags)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

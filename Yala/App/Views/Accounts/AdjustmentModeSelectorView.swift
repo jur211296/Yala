@@ -36,6 +36,8 @@ struct AdjustmentModeSelectorView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.yalaCard)
         .navigationTitle(L10n.Account.adjustment)
     }
 }

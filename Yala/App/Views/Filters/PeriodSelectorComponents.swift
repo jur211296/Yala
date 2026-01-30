@@ -161,7 +161,7 @@ struct CustomPeriodPickerSheet: View {
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color.yalaBackground)
+            .background(Color.yalaCard)
             .navigationTitle(L10n.Period.custom)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
