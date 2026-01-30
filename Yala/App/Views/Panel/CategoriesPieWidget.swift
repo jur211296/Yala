@@ -475,11 +475,18 @@ struct CategoriesPieWidget: View {
                 // Original header without comparison
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(L10n.Widget.distributionByCategory)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .padding(.bottom, 2)
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Text(L10n.Widget.distributionByCategory)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            InfoHintButton(
+                                title: L10n.WidgetType.categoriesPie,
+                                message: L10n.Widget.Hint.categoriesPie
+                            )
+                        }
+                        .padding(.bottom, 2)
 
                         Text(formattedCurrency(filteredTotalExpense))
                             .font(.callout.weight(.bold))

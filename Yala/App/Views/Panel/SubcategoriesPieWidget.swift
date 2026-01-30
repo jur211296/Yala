@@ -470,11 +470,18 @@ struct SubcategoriesPieWidget: View {
                 // Original header without comparison
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(L10n.Widget.distributionBySubcategory)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .padding(.bottom, 2)
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Text(L10n.Widget.distributionBySubcategory)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            InfoHintButton(
+                                title: L10n.WidgetType.subcategoriesPie,
+                                message: L10n.Widget.Hint.subcategoriesPie
+                            )
+                        }
+                        .padding(.bottom, 2)
 
                         Text(formattedCurrency(filteredTotalExpense))
                             .font(.callout.weight(.bold))
