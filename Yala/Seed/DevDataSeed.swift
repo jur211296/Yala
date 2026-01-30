@@ -303,6 +303,15 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     )
     print("DevDataSeed: \(transactionsFromScheduled) transacciones generadas desde pagos/suscripciones")
 
+    // Generate varied daily transactions (8b: groceries, cafes, transport, etc.)
+    let variedTransactions = generateVariedDailyTransactions(
+        in: context,
+        accounts: createdAccounts,
+        tags: createdTags,
+        preferredCurrency: preferredCurrency
+    )
+    print("DevDataSeed: \(variedTransactions) transacciones variadas generadas")
+
     // Save all changes
     do {
         try context.save()
@@ -602,6 +611,117 @@ private func generateScheduledPaymentTransactions(
             // Avanzar al siguiente mes
             currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate) ?? today.addingTimeInterval(86400 * 365)
         }
+    }
+
+    return transactionCount
+}
+
+// MARK: - Varied Daily Transactions (8b)
+
+/// Genera transacciones variadas del día a día
+/// Objetivo: 30-50 transacciones por mes
+private func generateVariedDailyTransactions(
+    in context: ModelContext,
+    accounts: [Account],
+    tags: [Tag],
+    preferredCurrency: CurrencyCode
+) -> Int {
+    let calendar = Calendar.current
+    let today = Date()
+
+    // Definir rango de fechas: Nov 1, 2024 hasta hoy
+    let startDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 1))!
+
+    var transactionCount = 0
+
+    // Definir tipos de transacciones variadas con sus subcategorías
+    let variedTransactionTemplates: [(subcategoryName: String, amountRange: ClosedRange<Double>, frequency: Int)] = [
+        // Alimentación (más frecuentes)
+        ("Supermercados y bodegas", 50...200, 8),  // ~8 por mes
+        ("Restaurantes", 15...60, 12),              // ~12 por mes
+        ("Delivery", 25...80, 6),                   // ~6 por mes
+
+        // Transporte (frecuentes)
+        ("Taxis y apps", 10...35, 10),              // ~10 por mes
+        ("Transporte público", 3...8, 15),          // ~15 por mes
+
+        // Compras (moderado)
+        ("Farmacia y botiquín", 20...100, 3),       // ~3 por mes
+        ("Ropa y calzado", 80...300, 2),            // ~2 por mes
+        ("Tecnología y accesorios", 100...500, 1),  // ~1 por mes
+
+        // Entretenimiento (moderado)
+        ("Bares y salidas sociales", 40...120, 4),  // ~4 por mes
+        ("Deportes y recreación", 30...100, 2),     // ~2 por mes
+
+        // Personal (menos frecuente)
+        ("Cuidado personal y belleza", 30...80, 2), // ~2 por mes
+        ("Hobbies y gaming", 50...200, 1),          // ~1 por mes
+    ]
+
+    // Fetch todas las subcategorías necesarias
+    var subcategoryMap: [String: Subcategory] = [:]
+    for template in variedTransactionTemplates {
+        let subcategoryName = template.subcategoryName
+        let descriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.name == subcategoryName }
+        )
+        if let subcategory = try? context.fetch(descriptor).first {
+            subcategoryMap[subcategoryName] = subcategory
+        }
+    }
+
+    // Seleccionar cuenta por defecto
+    guard let defaultAccount = accounts.first(where: { $0.currencyCode == preferredCurrency.rawValue }) ?? accounts.first else {
+        return 0
+    }
+
+    // Generar transacciones mes por mes
+    var currentMonth = startDate
+    while currentMonth <= today {
+        let monthEnd = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: calendar.date(byAdding: .month, value: 1, to: currentMonth)!) ?? today
+
+        // Para cada tipo de transacción, generar según frecuencia
+        for template in variedTransactionTemplates {
+            guard let subcategory = subcategoryMap[template.subcategoryName] else { continue }
+
+            // Generar N transacciones en el mes
+            for _ in 0..<template.frequency {
+                // Fecha aleatoria en el mes
+                let dayOffset = Int.random(in: 0...min(27, calendar.component(.day, from: monthEnd) - 1))
+                guard let transactionDate = calendar.date(byAdding: .day, value: dayOffset, to: currentMonth),
+                      transactionDate <= today else {
+                    continue
+                }
+
+                // Monto aleatorio en el rango
+                let amount = Double.random(in: template.amountRange)
+                let roundedAmount = round(amount * 100) / 100
+
+                // Tag aleatorio (30% de probabilidad)
+                let randomTags = Bool.random() && Double.random(in: 0...1) < 0.3 && !tags.isEmpty ? [tags.randomElement()!] : []
+
+                let transaction = TransactionItem(
+                    date: transactionDate,
+                    amount: roundedAmount,
+                    currencyCode: preferredCurrency.rawValue,
+                    note: nil,
+                    category: subcategory.category,
+                    subcategory: subcategory,
+                    account: defaultAccount,
+                    tags: randomTags,
+                    exchangeRate: 1.0,
+                    amountInPreferredCurrency: roundedAmount,
+                    preferredCurrencyCode: preferredCurrency.rawValue,
+                    isExchangeRateProvisional: false
+                )
+                context.insert(transaction)
+                transactionCount += 1
+            }
+        }
+
+        // Avanzar al siguiente mes
+        currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? today.addingTimeInterval(86400 * 365)
     }
 
     return transactionCount
