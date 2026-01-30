@@ -23,6 +23,13 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] e64b18f fix(ui): change inbox icon to tray.fill for toolbar consistency
+- [2026-01-30] 169e059 Revert "fix(ui): change toolbar icons from filled to outline style (D.2)"
+- [2026-01-30] c3a625e fix(ui): change onboarding buttons to capsule style (D.5)
+- [2026-01-30] 2bee962 feat(ui): add filter indicator to TrendsTabView and CategoriesTabView (D.3)
+- [2026-01-30] f8fc6da fix(ui): change toolbar icons from filled to outline style (D.2)
+- [2026-01-30] b802c9e fix(ui): move CashFlow InfoHintButton to main title (D.4)
+- [2026-01-30] e87687b fix(ui): add spacing to "hoy" label annotation in trend chart (D.1)
 - [2026-01-30] f0d6f97 fix(widgets): align InfoHintButton with title in ScheduledPaymentsWidget (C.4)
 - [2026-01-30] 110baf3 feat(widgets): add InfoHintButton to pie charts header (C.3)
 - [2026-01-30] 3354706 feat(budgets): show budget currency instead of preferred currency (C.2)
@@ -31,8 +38,6 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [2026-01-30] a453488 docs(state): update progress after B.2 completion
 - [2026-01-30] c6c4dd9 feat(model): add createdAt timestamp for same-day ordering (B.2)
 - [2026-01-30] 1cb68f2 fix(scheduled): exclude income payments from monthly totals (B.3)
-- [2026-01-30] fd12c70 docs(planning): document B.1, B.2, B.3 implementation details
-- [2026-01-30] 7d0138c fix(auth): show lock screen over sheets using fullScreenCover (A.4)
 
 ## Completed in Current Phase
 
@@ -158,12 +163,12 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [x] C.3: Widgets pieCategories y pieSubcategories sin icono informativo ✅ (110baf3)
 - [x] C.4: Icono informativo en widget Pagos planificados mal posicionado (entre título y subtítulo vs arriba del título) ✅ (f0d6f97)
 
-**10.D: Consistencia Visual**
-- [ ] D.1: Label "hoy" en tendencias se sobrepasa a la zona del eje Y
-- [ ] D.2: Todos los iconos del toolbar deben ser no filled (outline)
-- [ ] D.3: Indicador de filtros solo en RecordsTabView, falta en TrendsTabView y CategoriesTabView
-- [ ] D.4: Icono informativo en CashFlow debe ir en título "Flujo de efectivo", no repetido en cada gráfica
-- [ ] D.5: Botones onboarding y FaceID no son capsule - auditar todos los botones del proyecto
+**10.D: Consistencia Visual** ✅ COMPLETA
+- [x] D.1: Label "hoy" en tendencias se sobrepasa a la zona del eje Y ✅ (e87687b)
+- [x] D.2: Todos los iconos del toolbar deben ser no filled (outline) ✅ (f8fc6da)
+- [x] D.3: Indicador de filtros solo en RecordsTabView, falta en TrendsTabView y CategoriesTabView ✅ (2bee962)
+- [x] D.4: Icono informativo en CashFlow debe ir en título "Flujo de efectivo", no repetido en cada gráfica ✅ (b802c9e)
+- [x] D.5: Botones onboarding y FaceID no son capsule - auditar todos los botones del proyecto ✅ (c3a625e)
 
 **10.E: Settings y Preferencias**
 - [ ] E.1: Selectores "1" y "Mes" en Recurrencia de pago planificado deben alinearse a la derecha
@@ -261,8 +266,8 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Sección C COMPLETA - 4 widgets corregidos
-Next step: Continuar con Sección D (Consistencia Visual - 5 items) o Sección E (Settings - 4 items)
+Stopped at: Sección D COMPLETA - 5 items de consistencia visual completados
+Next step: Continuar con Sección E (Settings - 4 items) o Sección F (Desarrollo - 1 item)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
@@ -276,9 +281,14 @@ Resume context:
   - ✅ C.2: Divisa del presupuesto (3354706)
   - ✅ C.3: InfoHintButton en pie charts (110baf3)
   - ✅ C.4: InfoHintButton alineado en pagos (f0d6f97)
-- **Sección D pendiente:** 5 items de consistencia visual
+- **Sección D COMPLETA:** 5/5 consistencia visual ✅
+  - ✅ D.1: Label "hoy" spacing fix (e87687b)
+  - ✅ D.2: Toolbar icons outline (f8fc6da)
+  - ✅ D.3: Filter indicators (2bee962)
+  - ✅ D.4: CashFlow InfoHintButton consolidado (b802c9e)
+  - ✅ D.5: Onboarding capsule buttons (c3a625e)
 - **Sección E pendiente:** 4 items de settings
-- **10 items UAT restantes** (11 completados de 21)
+- **5 items UAT restantes** (16 completados de 21)
 
 ## V1.1 (Futuro)
 

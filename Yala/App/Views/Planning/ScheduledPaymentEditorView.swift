@@ -505,6 +505,8 @@ struct ScheduledPaymentEditorView: View {
             Text(NSLocalizedString("scheduled.every", comment: ""))
                 .foregroundStyle(.primary)
 
+            Spacer()
+
             Picker("", selection: $recurrenceInterval) {
                 ForEach(1...30, id: \.self) { num in
                     Text("\(num)").tag(num)
@@ -520,8 +522,6 @@ struct ScheduledPaymentEditorView: View {
                 }
             }
             .pickerStyle(.menu)
-
-            Spacer()
         }
         .padding()
     }
