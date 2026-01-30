@@ -68,7 +68,7 @@ struct ThemeSettingsView: View {
     private func themeRow(for theme: AppTheme) -> some View {
         Button {
             userThemeRaw = theme.rawValue
-            dismiss()
+            // Don't dismiss - ProfileView will handle navigation cleanup on theme change
         } label: {
             HStack {
                 Text(theme.label)

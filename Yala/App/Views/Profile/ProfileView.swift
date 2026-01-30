@@ -29,6 +29,7 @@ struct ProfileView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("userTheme") private var userTheme: Int = AppTheme.system.rawValue
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -198,14 +199,16 @@ struct ProfileView: View {
                     })
                 }
             }
+            .onChange(of: userTheme) { _, _ in
+                // When theme changes, close all navigation and sheets for immediate theme application
+                navigationPath = NavigationPath()
+                activeSheet = nil
+            }
             .onAppear {
                 viewModel.setContext(modelContext)
             }
         }
     }
-
-    // User Theme for dynamic updates
-    @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
     // Default Period Preference
     @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
