@@ -276,7 +276,10 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     // Create tags
     let createdTags = createDevTags(in: context)
     print("DevDataSeed: \(createdTags.count) etiquetas creadas")
-    // TODO: Implementar creación de presupuestos (Incremento 4)
+
+    // Create budgets (requires subcategories from category seed)
+    let createdBudgets = createDevBudgets(in: context, preferredCurrency: preferredCurrency)
+    print("DevDataSeed: \(createdBudgets.count) presupuestos creados")
     // TODO: Implementar creación de favoritos (Incremento 5)
     // TODO: Implementar creación de suscripciones (Incremento 6)
     // TODO: Implementar creación de pagos planificados (Incremento 7)
@@ -335,6 +338,41 @@ private func createDevTags(in context: ModelContext) -> [Tag] {
     }
 
     return tags
+}
+
+// MARK: - Budget Creation
+
+/// Crea los presupuestos de desarrollo
+/// Requiere que las categorías seed ya existan
+private func createDevBudgets(in context: ModelContext, preferredCurrency: CurrencyCode) -> [Budget] {
+    var budgets: [Budget] = []
+
+    for definition in devBudgetDefinitions {
+        // Buscar la subcategoría por nombre
+        let subcategoryName = definition.subcategoryName
+        let subcategoryDescriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.name == subcategoryName }
+        )
+
+        guard let subcategory = try? context.fetch(subcategoryDescriptor).first else {
+            print("DevDataSeed: Warning - Subcategoría '\(subcategoryName)' no encontrada para presupuesto '\(definition.name)'")
+            continue
+        }
+
+        let budget = Budget(
+            currencyCode: preferredCurrency.rawValue,
+            limitAmount: definition.limitAmount,
+            name: definition.name,
+            periodType: definition.periodType,
+            subcategories: [subcategory],
+            isActive: true,
+            createdAt: Date()
+        )
+        context.insert(budget)
+        budgets.append(budget)
+    }
+
+    return budgets
 }
 
 #endif
