@@ -183,7 +183,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
   Contexto: Después del refactoring D.8, los ViewModels ahora son testeables (lógica desacoplada de Views)
   Documento: `.planning/TESTING-STRATEGY.md` con estrategia en 3 tiers y ejemplos de código
   Prioridad alta: NewTransactionViewModel, BudgetsViewModel, InboxViewModel
-  Estado: Estrategia documentada, implementación pendiente
+  Estado: **PARCIAL** - NewTransactionViewModelTests implementado (35 tests), BudgetsViewModelTests pendiente por issues de Swift Testing + SwiftData
 
 - **2026-01-21 [Feature] [Business Logic] [Low]: Split de transacción (1.1)**
   Contexto: Funcionalidad aparte para dividir una transacción en múltiples partes
