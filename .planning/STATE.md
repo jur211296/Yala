@@ -17,12 +17,13 @@ Status: **V1.0 COMPLETA** — Iniciando V1.1
 Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 completa, Fase 10 en progreso - 17 items UAT pendientes)
+Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 completa, Fase 10 en progreso - 4 items UAT pendientes)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] 07f9293 fix(ui): align recurrence selectors to the right (E.1)
 - [2026-01-30] e64b18f fix(ui): change inbox icon to tray.fill for toolbar consistency
 - [2026-01-30] 169e059 Revert "fix(ui): change toolbar icons from filled to outline style (D.2)"
 - [2026-01-30] c3a625e fix(ui): change onboarding buttons to capsule style (D.5)
@@ -32,12 +33,6 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [2026-01-30] e87687b fix(ui): add spacing to "hoy" label annotation in trend chart (D.1)
 - [2026-01-30] f0d6f97 fix(widgets): align InfoHintButton with title in ScheduledPaymentsWidget (C.4)
 - [2026-01-30] 110baf3 feat(widgets): add InfoHintButton to pie charts header (C.3)
-- [2026-01-30] 3354706 feat(budgets): show budget currency instead of preferred currency (C.2)
-- [2026-01-30] 3008b95 feat(navigation): force Budgets view when BudgetsWidget chevron tapped (C.1)
-- [2026-01-30] acaeb92 feat(validation): block future date transactions (B.1)
-- [2026-01-30] a453488 docs(state): update progress after B.2 completion
-- [2026-01-30] c6c4dd9 feat(model): add createdAt timestamp for same-day ordering (B.2)
-- [2026-01-30] 1cb68f2 fix(scheduled): exclude income payments from monthly totals (B.3)
 
 ## Completed in Current Phase
 
@@ -171,7 +166,7 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [x] D.5: Botones onboarding y FaceID no son capsule - auditar todos los botones del proyecto ✅ (c3a625e)
 
 **10.E: Settings y Preferencias**
-- [ ] E.1: Selectores "1" y "Mes" en Recurrencia de pago planificado deben alinearse a la derecha
+- [x] E.1: Selectores "1" y "Mes" en Recurrencia de pago planificado deben alinearse a la derecha ✅ (07f9293)
 - [ ] E.2: Al elegir tema Sistema, no fuerza la sheet (sí lo hace para Claro y Oscuro)
 - [ ] E.3: Reordenar Preferencias: Personalización, Notificaciones, Divisa y Cambio, Ícono de app, Temas, Registro por voz, Registro por imagen
 - [ ] E.4: Listas expansibles para divisas (preferida: 1+expansión, secundarias: 1-2+expansión, tipos cambio: secundarias+expansión)
@@ -266,8 +261,8 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Sección D COMPLETA - 5 items de consistencia visual completados
-Next step: Continuar con Sección E (Settings - 4 items) o Sección F (Desarrollo - 1 item)
+Stopped at: E.1 COMPLETO - Alineación selectores recurrencia (07f9293)
+Next step: Continuar con E.2 (Tema Sistema sheet) o E.3 (Reordenar Preferencias)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
@@ -287,8 +282,8 @@ Resume context:
   - ✅ D.3: Filter indicators (2bee962)
   - ✅ D.4: CashFlow InfoHintButton consolidado (b802c9e)
   - ✅ D.5: Onboarding capsule buttons (c3a625e)
-- **Sección E pendiente:** 4 items de settings
-- **5 items UAT restantes** (16 completados de 21)
+- **Sección E en progreso:** 1/4 completado (E.1 ✅)
+- **4 items UAT restantes** (17 completados de 21)
 
 ## V1.1 (Futuro)
 
