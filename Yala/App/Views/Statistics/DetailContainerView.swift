@@ -18,18 +18,9 @@ struct DetailContainerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
 
-    // MARK: - Data Queries
-
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var allTransactions: [TransactionItem]
-
-    @Query(sort: \Account.name) private var accounts: [Account]
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
-    @Query(sort: \Subcategory.name) private var allSubcategories: [Subcategory]
-    @Query(sort: \Tag.name) private var tags: [Tag]
-
     // MARK: - ViewModels
 
+    @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel: RecordsViewModel
     @State private var trendsViewModel: StatisticsViewModel
 
@@ -61,9 +52,7 @@ struct DetailContainerView: View {
 
     /// Check if voice input can be used (requires accounts and subcategories)
     private var canUseVoiceInput: Bool {
-        let hasActiveAccounts = accounts.contains { !$0.isArchived }
-        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
-        return hasActiveAccounts && hasVisibleSubcategories
+        dataViewModel.canUseVoiceInput
     }
 
     // MARK: - Initialization
@@ -133,6 +122,7 @@ struct DetailContainerView: View {
                 syncToSessionState()
             }
             .onAppear {
+                dataViewModel.setContext(modelContext)
                 if !isFromSearch { syncFromSessionState() }
                 refreshRecordsData()
                 calculateTrendsData()
@@ -145,7 +135,7 @@ struct DetailContainerView: View {
                     refreshRecordsData()
                 }
             }
-            .onChange(of: allTransactions) {
+            .onChange(of: dataViewModel.allTransactions) {
                 // Recalculate when transactions change (e.g., initial balance modified)
                 calculateTrendsData()
                 refreshRecordsData()
@@ -155,8 +145,8 @@ struct DetailContainerView: View {
                     sessionState: sessionState,
                     trendsViewModel: trendsViewModel,
                     recordsViewModel: recordsViewModel,
-                    categories: categories,
-                    subcategories: allSubcategories,
+                    categories: dataViewModel.categories,
+                    subcategories: dataViewModel.allSubcategories,
                     syncFromSessionState: syncFromSessionState,
                     handleSessionStateFilterChange: handleSessionStateFilterChange,
                     syncToSessionState: syncToSessionState,
@@ -205,11 +195,11 @@ struct DetailContainerView: View {
         case .records:
             RecordsTabView(
                 viewModel: recordsViewModel,
-                accounts: accounts,
-                categories: categories,
-                tags: tags,
-                subcategories: allSubcategories,
-                transactionDateRange: computeTransactionDateRange(),
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags,
+                subcategories: dataViewModel.allSubcategories,
+                transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: defaultCurrencyCode,
                 onFilterChange: { refreshRecordsData() }
             )
@@ -521,27 +511,19 @@ struct DetailContainerView: View {
     private func refreshRecordsData() {
         DispatchQueue.main.async {
             recordsViewModel.applyFilters(
-                transactions: allTransactions,
-                accounts: accounts,
-                categories: categories,
-                tags: tags
+                transactions: dataViewModel.allTransactions,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags
             )
         }
-    }
-
-    /// Compute date range of all transactions (for custom period picker limits)
-    private func computeTransactionDateRange() -> (start: Date, end: Date) {
-        let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
-        return (start, end)
     }
 
     private func calculateTrendsData() {
         DispatchQueue.main.async {
             trendsViewModel.calculateTrendData(
-                accounts: accounts,
-                transactions: allTransactions,
+                accounts: dataViewModel.accounts,
+                transactions: dataViewModel.allTransactions,
                 defaultCurrencyCode: defaultCurrencyCode,
                 context: modelContext
             )
