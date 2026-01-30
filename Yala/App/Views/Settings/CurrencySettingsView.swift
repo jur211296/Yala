@@ -32,8 +32,12 @@ struct CurrencySettingsView: View {
     }
 
     /// All currencies to show in exchange rate section (all except the preferred one)
+    /// Secondary currencies appear first, then the rest
     private var displayedCurrencies: [CurrencyCode] {
-        CurrencyCode.allCases.filter { $0 != preferredCurrency }
+        let allExceptPreferred = CurrencyCode.allCases.filter { $0 != preferredCurrency }
+        let selected = allExceptPreferred.filter { secondaryCurrencies.contains($0) }
+        let notSelected = allExceptPreferred.filter { !secondaryCurrencies.contains($0) }
+        return selected + notSelected
     }
 
     @State private var isUpdating: Bool = false
@@ -122,16 +126,13 @@ struct CurrencySettingsView: View {
                         preferredCurrencyRow(currency: currency)
                     }
                 } label: {
-                    HStack {
-                        Text(L10n.Settings.showMoreCurrencies)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.Spacing.sm)
+                    Text(L10n.Settings.showMoreCurrencies)
+                        .font(.caption)
+                        .foregroundColor(.primary)
                 }
-                .accentColor(Color.electricIndigo)
+                .tint(.primary)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.Spacing.sm)
             }
         }
     }
@@ -197,16 +198,13 @@ struct CurrencySettingsView: View {
                                 secondaryCurrencyRow(currency: currency)
                             }
                         } label: {
-                            HStack {
-                                Text(L10n.Settings.showMoreCurrencies)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.Spacing.sm)
+                            Text(L10n.Settings.showMoreCurrencies)
+                                .font(.caption)
+                                .foregroundColor(.primary)
                         }
-                        .accentColor(Color.electricIndigo)
+                        .tint(.primary)
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.Spacing.sm)
                     }
                 }
             }
@@ -327,16 +325,13 @@ struct CurrencySettingsView: View {
                                 exchangeRateRow(currency: currency)
                             }
                         } label: {
-                            HStack {
-                                Text(L10n.Settings.showMoreCurrencies)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.Spacing.sm)
+                            Text(L10n.Settings.showMoreCurrencies)
+                                .font(.caption)
+                                .foregroundColor(.primary)
                         }
-                        .accentColor(Color.electricIndigo)
+                        .tint(.primary)
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.Spacing.sm)
                     }
                 }
             }

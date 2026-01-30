@@ -23,6 +23,7 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] 3d132d3 fix(ui): correct disclosure group styling in currency lists
 - [2026-01-30] 5986131 fix(ui): correct alignment when no accounts exist
 - [2026-01-30] c1457e8 fix(ui): correct theme switching, expandable lists, and capsule buttons
 - [2026-01-30] 2fe8d26 feat(ui): add expandable currency lists in settings (E.4)
@@ -32,7 +33,6 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 - [2026-01-30] e64b18f fix(ui): change inbox icon to tray.fill for toolbar consistency
 - [2026-01-30] 169e059 Revert "fix(ui): change toolbar icons from filled to outline style (D.2)"
 - [2026-01-30] c3a625e fix(ui): change onboarding buttons to capsule style (D.5)
-- [2026-01-30] 2bee962 feat(ui): add filter indicator to TrendsTabView and CategoriesTabView (D.3)
 
 ## Completed in Current Phase
 
