@@ -14,7 +14,7 @@
 //  -------------------------------------------------------------------------
 //
 
-#if DEBUG
+#if DEV_BUILD
 
 import Foundation
 import SwiftData

@@ -22,8 +22,8 @@ struct OnboardingView: View {
     @State private var selectedPeriod: DetailPeriod = .thisMonth
     @State private var loadSeedCategories: Bool = true
 
-    #if DEBUG
-    // Dev data seed preference (only visible in DEBUG builds)
+    #if DEV_BUILD
+    // Dev data seed preference (only visible in DEV builds)
     @State private var loadDevData: Bool = false
     #endif
 
@@ -60,7 +60,7 @@ struct OnboardingView: View {
                 secondaryCurrenciesStep.tag(2)
                 periodStep.tag(3)
                 categoriesStep.tag(4)
-                #if DEBUG
+                #if DEV_BUILD
                 devDataStep.tag(5)
                 notificationsStep.tag(6)
                 #else
@@ -83,7 +83,7 @@ struct OnboardingView: View {
     // MARK: - Progress Indicator
 
     private var progressIndicator: some View {
-        #if DEBUG
+        #if DEV_BUILD
         let totalSteps = 7
         #else
         let totalSteps = 6
@@ -365,8 +365,8 @@ struct OnboardingView: View {
         }
     }
 
-    #if DEBUG
-    // MARK: - Step 5 (DEBUG): Dev Data Seed
+    #if DEV_BUILD
+    // MARK: - Step 5 (DEV_BUILD): Dev Data Seed
 
     private var devDataStep: some View {
         VStack(spacing: DS.Spacing.lg) {
@@ -763,7 +763,7 @@ struct OnboardingView: View {
                 // Dismiss keyboard (especially important on step 1)
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-                #if DEBUG
+                #if DEV_BUILD
                 let lastStep = 6
                 #else
                 let lastStep = 5
@@ -781,7 +781,7 @@ struct OnboardingView: View {
                     completeOnboarding()
                 }
             } label: {
-                #if DEBUG
+                #if DEV_BUILD
                 let isLastStep = currentStep >= 6
                 #else
                 let isLastStep = currentStep >= 5
@@ -855,8 +855,8 @@ struct OnboardingView: View {
             seedCategoriesIfNeeded(in: modelContext)
         }
 
-        #if DEBUG
-        // Seed dev data if user chose to (DEBUG only)
+        #if DEV_BUILD
+        // Seed dev data if user chose to (DEV_BUILD only)
         if loadDevData {
             seedDevDataIfEnabled(in: modelContext, preferredCurrency: selectedCurrency)
         }
