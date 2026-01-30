@@ -293,7 +293,11 @@ struct DetailContainerView: View {
                         .foregroundStyle(Color.electricIndigo)
                 }
                 .overlay(alignment: .topTrailing) {
-                    if selectedTab == .records && recordsViewModel.activeFilterCount > 0 {
+                    let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
+                                       (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
+                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0)
+
+                    if showIndicator {
                         Circle()
                             .fill(Color.hotPink)
                             .frame(width: 8, height: 8)
