@@ -30,7 +30,7 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
-- [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX, dev seed (21 items UAT) ✅
+- [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX, dev seed (21 items UAT) ✅ COMPLETADA
 
 ### V1.2 (App Store Release)
 - [ ] **Fase 11: Plataforma Avanzada** - Modo solo gastos, Widgets iOS, Smart Insights, Watch, iPad, reportes
@@ -318,40 +318,40 @@ DoD:
 - [x] Automatización Apple Pay ✅
 - [x] Automatización externa ✅
 
-**Pendientes (21 items UAT 2026-01-30):**
+**Completados (21/21 items UAT 2026-01-30):** ✅
 
-**10.A: Bugs Críticos (4)**
-- [ ] A.1: PanelView no reacciona inmediatamente (crear cuenta/importar/crear registros)
-- [ ] A.2: Filtro texto SearchBar no se quita/propaga correctamente
-- [ ] A.3: FAB no se cierra al navegar a otra pestaña
-- [ ] A.4: Vista FaceID bloqueado no aparece desde sheet perfil
+**10.A: Bugs Críticos (4)** ✅
+- [x] A.1: PanelView no reacciona inmediatamente (crear cuenta/importar/crear registros)
+- [x] A.2: Filtro texto SearchBar no se quita/propaga correctamente
+- [x] A.3: FAB no se cierra al navegar a otra pestaña
+- [x] A.4: Vista FaceID bloqueado no aparece desde sheet perfil
 
-**10.B: Lógica de Negocio (3)**
-- [ ] B.1: Definir comportamiento transacciones futuras
-- [ ] B.2: Orden registros mismo día por creación/aprobación
-- [ ] B.3: Widget pagos planificados solo gastos (no ingresos)
+**10.B: Lógica de Negocio (3)** ✅
+- [x] B.1: Definir comportamiento transacciones futuras
+- [x] B.2: Orden registros mismo día por creación/aprobación
+- [x] B.3: Widget pagos planificados solo gastos (no ingresos)
 
-**10.C: Widgets (4)**
-- [ ] C.1: Hover widget presupuestos no fuerza vista correcta
-- [ ] C.2: Widget Presupuestos usa divisa correcta del presupuesto
-- [ ] C.3: Iconos informativos en pieCategories/pieSubcategories
-- [ ] C.4: Posición icono informativo en Pagos planificados
+**10.C: Widgets (4)** ✅
+- [x] C.1: Hover widget presupuestos no fuerza vista correcta
+- [x] C.2: Widget Presupuestos usa divisa correcta del presupuesto
+- [x] C.3: Iconos informativos en pieCategories/pieSubcategories
+- [x] C.4: Posición icono informativo en Pagos planificados
 
-**10.D: Consistencia Visual (5)**
-- [ ] D.1: Label "hoy" no sobrepasa eje Y en tendencias
-- [ ] D.2: Iconos toolbar no filled (outline)
-- [ ] D.3: Indicador filtros en TrendsTabView/CategoriesTabView
-- [ ] D.4: Icono informativo CashFlow en título único
-- [ ] D.5: Botones capsule (onboarding, FaceID, auditar todos)
+**10.D: Consistencia Visual (5)** ✅
+- [x] D.1: Label "hoy" no sobrepasa eje Y en tendencias
+- [x] D.2: Iconos toolbar no filled (outline)
+- [x] D.3: Indicador filtros en TrendsTabView/CategoriesTabView
+- [x] D.4: Icono informativo CashFlow en título único
+- [x] D.5: Botones capsule (onboarding, FaceID, auditar todos)
 
-**10.E: Settings y Preferencias (4)**
-- [ ] E.1: Alineación derecha selectores Recurrencia
-- [ ] E.2: Tema Sistema fuerza sheet correctamente
-- [ ] E.3: Reordenar Preferencias + renombrar registros
-- [ ] E.4: Listas expansibles para divisas
+**10.E: Settings y Preferencias (4)** ✅
+- [x] E.1: Alineación derecha selectores Recurrencia
+- [x] E.2: Tema Sistema fuerza sheet correctamente
+- [x] E.3: Reordenar Preferencias + renombrar registros
+- [x] E.4: Listas expansibles para divisas
 
-**10.F: Desarrollo (1)**
-- [ ] F.1: Seed Dev completa para pruebas (solo bundle dev)
+**10.F: Desarrollo (1)** ✅
+- [x] F.1: Seed Dev completa para pruebas (solo bundle dev)
 
 DoD:
 - 0 bugs críticos (sección A completa)
@@ -420,7 +420,7 @@ DoD:
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
-| 10 | Refinamiento & Polish | In progress (21 items UAT) | - |
+| 10 | Refinamiento & Polish | ✅ Done | 2026-01-30 |
 
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |

@@ -12,12 +12,12 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 Version: 1.1
 Phase: 10 — Refinamiento & Notificaciones
 Spec: None
-Plan: TBD
-Status: **V1.0 COMPLETA** — Iniciando V1.1
-Last activity: 2026-01-27 — Fase 9 cerrada, V1.0 lista para release
+Plan: None
+Status: **V1.1 COMPLETA** — Preparada para siguiente fase
+Last activity: 2026-01-30 — Fase 10 cerrada, V1.1 lista
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ███████████████░ ~95% (Fase 8 completa, Fase 10 casi completa - 1 item UAT pendiente)
+Progress: V1.1 ████████████████ 100% ✅ (Fase 8 y Fase 10 completadas)
 
 ---
 
@@ -113,92 +113,39 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Next Steps
 
-### Fase 10: Refinamiento & Notificaciones (V1.1)
+### Fase 10: Refinamiento & Notificaciones (V1.1) ✅ COMPLETADA
 
-**Completados:**
-- [x] Pagos planificados crean transacción en bandeja de entrada ✅ (35de0f7)
-- [x] Integración Share Sheet para enviar imágenes directamente ✅ (e5c3dfd, 12f7830, 616ec4d)
-- [x] Revisar prompts voz: tildes crean etiquetas duplicadas ✅ (669b537)
-- [x] FAB fuera de PanelView no tiene opción de registro de imagen ✅ (669b537)
-- [x] Pedir permiso de micrófono al activar toggle ✅ (12e054f)
-- [x] Pedir permiso de fotos al activar toggle ✅ (12e054f)
-- [x] Mejorar onboarding: seed de categorías predeterminadas ✅ (ecce7fb)
-- [x] Vaciar datos: ofrece seed via onboarding ✅
-- [x] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios ✅ (0eb8561, fbc89f5, 1f398a3, f0c9d74)
-- [x] Atajos Siri/Shortcuts (Registro rápido, Voz, Imagen) ✅ (9f6bd37, 93dbeeb)
-- [x] Automatización Apple Pay ✅ (4b2eab4) — Intent recibe datos de Wallet, crea draft en inbox
-- [x] Automatización externa ✅ (caa04cc) — Intent recibe JSON para correos de banco procesados por IA
+**Resumen:** 21/21 items UAT completados (2026-01-30)
 
-**Pendientes (17 items restantes - UAT 2026-01-30):**
+- [x] Pagos planificados → transacción en bandeja de entrada ✅
+- [x] Integración Share Sheet ✅
+- [x] Permisos micrófono/fotos al activar toggles ✅
+- [x] Onboarding seed de categorías ✅
+- [x] Sistema de notificaciones configurables ✅
+- [x] Atajos Siri/Shortcuts (Registro rápido, Voz, Imagen) ✅
+- [x] Automatización Apple Pay ✅
+- [x] Automatización externa (JSON) ✅
+- [x] 10.A: Bugs críticos (4/4 items) ✅
+- [x] 10.B: Lógica de negocio (3/3 items) ✅
+- [x] 10.C: Widgets (4/4 items) ✅
+- [x] 10.D: Consistencia visual (5/5 items) ✅
+- [x] 10.E: Settings y preferencias (4/4 items) ✅
+- [x] 10.F: Desarrollo - Seed Dev (1/1 items) ✅
 
-**10.A: Bugs Críticos**
-- [x] A.1: PanelView no reacciona inmediatamente al crear cuenta, importar CSV o crear registros ✅ (95b3ec7)
-- [x] A.2: Filtro texto SearchBar sincronización con navegación directa a Statistics ✅ (bf8e2d6)
-- [x] A.3: FAB no se cierra al navegar a otra pestaña (PanelView y StatisticsView) ✅ (381c041)
-- [x] A.4: Vista "Yala está bloqueada" no aparece si estabas en sheet de perfil ✅ (7d0138c)
+**Decisiones importantes de la fase:**
+- B.1: Bloquear transacciones con fecha futura (previene inconsistencias balance/registros)
+- B.2: Campo `createdAt` para ordenar registros del mismo día por hora de creación
+- F.1: Seed Dev solo visible en scheme "Yala Dev" con flag DEV_BUILD (no en TestFlight)
 
-**10.B: Lógica de Negocio**
-- [x] B.1: Transacciones futuras - BLOQUEAR con validación ✅ (acaeb92)
-  - **Decisión:** Bloquear transacciones con fecha > hoy (previene inconsistencia balance vs registros)
-  - **Implementación:**
-    1. NewTransactionViewModel.save() - Alert informativo sugiriendo Pagos Planificados
-    2. DraftService.approveDraft() + bulkApprove() - throw DraftServiceError.futureDateNotAllowed
-    3. TransactionCSVImportService.importCSV() - Filtrar + contar ignoradas + notificar usuario
-  - **Cobertura:** Creación manual, duplicar, inbox (voz/imagen/ApplePay/automation/pagos), importación CSV/XLSX
+### Próxima fase: Fase 11 — Plataforma Avanzada (V1.2)
 
-- [x] B.2: Orden de registros del mismo día - agregar campo createdAt ✅ (c6c4dd9)
-  - **Implementación:**
-    1. Agregar `var createdAt: Date = Date()` a modelo TransactionItem (timestamp completo con hora)
-    2. Actualizar FetchDescriptors: `sortBy: [.date DESC, .createdAt DESC]`
-    3. Migración SwiftData: para registros existentes `createdAt = date`
-  - **Comportamiento:**
-    - Creación manual: createdAt = Date() al momento de guardar
-    - Aprobación drafts: createdAt = Date() al momento de aprobar (no draft.createdAt)
-    - Importación CSV: createdAt = Date() al momento de importar
-  - **Resultado UX:** Registros del mismo día aparecen en orden de creación/aprobación (más reciente primero)
-
-- [x] B.3: Widget pagos planificados solo gastos ✅ (1cb68f2)
-  - **Archivos:**
-    1. ScheduledPaymentsWidget.swift:207 calculateMonthlyTotal() - filtrar `payment.transactionType != "income"`
-    2. Vista principal pagos planificados (cajas superiores) - aplicar mismo filtro
-  - **Test:** Crear pago planificado tipo ingreso, verificar que NO cuenta en totales
-
-**10.C: Widgets** ✅ COMPLETA
-- [x] C.1: Hover widget presupuestos no fuerza vista Presupuestos (te lleva a donde estabas en Planificación) ✅ (3008b95)
-- [x] C.2: Widget Presupuestos muestra siempre divisa preferida, no la del presupuesto específico ✅ (3354706)
-- [x] C.3: Widgets pieCategories y pieSubcategories sin icono informativo ✅ (110baf3)
-- [x] C.4: Icono informativo en widget Pagos planificados mal posicionado (entre título y subtítulo vs arriba del título) ✅ (f0d6f97)
-
-**10.D: Consistencia Visual** ✅ COMPLETA
-- [x] D.1: Label "hoy" en tendencias se sobrepasa a la zona del eje Y ✅ (e87687b)
-- [x] D.2: Todos los iconos del toolbar deben ser no filled (outline) ✅ (f8fc6da)
-- [x] D.3: Indicador de filtros solo en RecordsTabView, falta en TrendsTabView y CategoriesTabView ✅ (2bee962)
-- [x] D.4: Icono informativo en CashFlow debe ir en título "Flujo de efectivo", no repetido en cada gráfica ✅ (b802c9e)
-- [x] D.5: Botones onboarding y FaceID no son capsule - auditar todos los botones del proyecto ✅ (c3a625e)
-
-**10.E: Settings y Preferencias** ✅ COMPLETA
-- [x] E.1: Selectores "1" y "Mes" en Recurrencia de pago planificado deben alinearse a la derecha ✅ (07f9293)
-- [x] E.2: Al elegir tema Sistema, no fuerza la sheet (sí lo hace para Claro y Oscuro) ✅ (b40079b)
-- [x] E.3: Reordenar Preferencias: Personalización, Notificaciones, Divisa y Cambio, Ícono de app, Temas, Registro por voz, Registro por imagen ✅ (a1fe45b)
-- [x] E.4: Listas expansibles para divisas (preferida: 1+expansión, secundarias: 1-2+expansión, tipos cambio: secundarias+expansión) ✅ (2fe8d26)
-
-**10.F: Desarrollo** ✅ COMPLETA
-- [x] F.1: Seed Dev completa para onboarding (solo bundle dev) ✅ (d07aaac + cfd0447)
-  - **IMPORTANTE:** Usa flag `DEV_BUILD` (solo scheme "Yala Dev"), NO aparece en "Yala" (TestFlight)
-  - Implementación completa en 9 incrementos:
-    1. DevDataSeed.swift base structure (8159f09)
-    2. Seed de 3 cuentas (2e0cd45)
-    3. Seed de 5 tags (1cad135)
-    4. Seed de 7 presupuestos (1b4ab3e)
-    5. Seed de 4 favoritos (9e0d8ac)
-    6. Seed de 5 suscripciones (49bf92c)
-    7. Seed de 5 pagos planificados (fda19c3)
-    8a. Generador transacciones desde pagos/suscripciones (39ff387)
-    8b. Generador transacciones variadas día a día (a1c2c7e)
-    9. Integración con OnboardingView paso DEBUG (d07aaac)
-  - Período: Nov-Dic 2024 + Todo 2025 + Ene 2026 hasta hoy
-  - ~30-50 transacciones mensuales variadas
-  - Solo visible en builds DEBUG
+Ver ROADMAP.md para detalles de Fase 11:
+- Modo "Solo gastos"
+- Widgets iOS (WidgetKit)
+- Integración Apple Watch
+- Smart Insights
+- Refinamiento iPad
+- Vista de reportes
 
 ---
 
@@ -287,38 +234,22 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: F.1 - Seed Dev COMPLETADO ✅ (10 commits totales) - Fix DEV_BUILD flag (cfd0447)
-Next step: Fase 10 COMPLETA (21/21 items) - Preparar cierre de fase y actualizar ROADMAP
+Stopped at: Fase 10 cerrada ✅ - V1.1 completa (100%)
+Next step: Planificar Fase 11 (Plataforma Avanzada) o priorizar siguiente trabajo
 Resume context:
-- Flag DEV_BUILD agregado a configuración "Debug-Dev" en project.pbxproj
-- Paso onboarding solo visible en scheme "Yala Dev" (com.jurgenschmidt.yala.dev)
-- NO aparece en scheme "Yala" regular (com.jurgenschmidt.yala) usado en TestFlight
-Resume context:
-- V1.0 completa (Fases 1-9 todas done)
-- V1.1: Fase 8 done, Fase 10 en progreso
-- **Sección A COMPLETA:** 4/4 bugs críticos ✅
-- **Sección B COMPLETA:** 3/3 lógica de negocio ✅
-  - ✅ B.1: Bloquear fechas futuras (acaeb92)
-  - ✅ B.2: Campo createdAt para orden mismo día (c6c4dd9)
-  - ✅ B.3: Widget pagos planificados solo gastos (1cb68f2)
-- **Sección C COMPLETA:** 4/4 widgets ✅
-  - ✅ C.1: Navegación a vista Presupuestos (3008b95)
-  - ✅ C.2: Divisa del presupuesto (3354706)
-  - ✅ C.3: InfoHintButton en pie charts (110baf3)
-  - ✅ C.4: InfoHintButton alineado en pagos (f0d6f97)
-- **Sección D COMPLETA:** 5/5 consistencia visual ✅
-  - ✅ D.1: Label "hoy" spacing fix (e87687b)
-  - ✅ D.2: Toolbar icons outline (f8fc6da)
-  - ✅ D.3: Filter indicators (2bee962)
-  - ✅ D.4: CashFlow InfoHintButton consolidado (b802c9e)
-  - ✅ D.5: Onboarding capsule buttons (c3a625e)
-- **Sección E COMPLETA:** 4/4 settings ✅
-  - ✅ E.1: Selectores recurrencia (07f9293)
-  - ✅ E.2: Tema Sistema sheet (b40079b)
-  - ✅ E.3: Reordenar Preferencias (a1fe45b)
-  - ✅ E.4: Listas expansibles divisas (2fe8d26)
-- **1 item UAT restante:** F.1 (Seed Dev)
-- **20 completados de 21** (95% progreso Fase 10)
+- V1.0 completa ✅ (Fases 1-9)
+- V1.1 completa ✅ (Fase 8 y Fase 10)
+- Fase 10: 21/21 items UAT completados
+  - Sección A: 4/4 bugs críticos ✅
+  - Sección B: 3/3 lógica de negocio ✅
+  - Sección C: 4/4 widgets ✅
+  - Sección D: 5/5 consistencia visual ✅
+  - Sección E: 4/4 settings ✅
+  - Sección F: 1/1 desarrollo (Seed Dev) ✅
+- Decisiones clave:
+  - Bloqueo de transacciones futuras (previene inconsistencias)
+  - Campo createdAt para orden por hora en mismo día
+  - Seed Dev solo en scheme "Yala Dev" (flag DEV_BUILD)
 
 ## V1.1 (Futuro)
 
