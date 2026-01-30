@@ -23,6 +23,7 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] 110baf3 feat(widgets): add InfoHintButton to pie charts header (C.3)
 - [2026-01-30] 3354706 feat(budgets): show budget currency instead of preferred currency (C.2)
 - [2026-01-30] 3008b95 feat(navigation): force Budgets view when BudgetsWidget chevron tapped (C.1)
 - [2026-01-30] acaeb92 feat(validation): block future date transactions (B.1)
@@ -32,7 +33,6 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [2026-01-30] fd12c70 docs(planning): document B.1, B.2, B.3 implementation details
 - [2026-01-30] 7d0138c fix(auth): show lock screen over sheets using fullScreenCover (A.4)
 - [2026-01-30] 381c041 fix(fab): close FAB menu when navigating to another tab (A.3)
-- [2026-01-30] bf8e2d6 fix(search): navigate directly to Statistics tab from global search (A.2)
 
 ## Completed in Current Phase
 
@@ -155,7 +155,7 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 **10.C: Widgets**
 - [x] C.1: Hover widget presupuestos no fuerza vista Presupuestos (te lleva a donde estabas en Planificación) ✅ (3008b95)
 - [x] C.2: Widget Presupuestos muestra siempre divisa preferida, no la del presupuesto específico ✅ (3354706)
-- [ ] C.3: Widgets pieCategories y pieSubcategories sin icono informativo
+- [x] C.3: Widgets pieCategories y pieSubcategories sin icono informativo ✅ (110baf3)
 - [ ] C.4: Icono informativo en widget Pagos planificados mal posicionado (entre título y subtítulo vs arriba del título)
 
 **10.D: Consistencia Visual**
@@ -261,8 +261,8 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Sección C en progreso - C.1 y C.2 completados
-Next step: Continuar con C.3 (InfoHintButton pie widgets), C.4 (reposicionar InfoHintButton pagos)
+Stopped at: Sección C en progreso - C.1, C.2 y C.3 completados
+Next step: Continuar con C.4 (reposicionar InfoHintButton pagos) y luego Sección D (Consistencia Visual)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
@@ -271,12 +271,13 @@ Resume context:
   - ✅ B.1: Bloquear fechas futuras (acaeb92)
   - ✅ B.2: Campo createdAt para orden mismo día (c6c4dd9)
   - ✅ B.3: Widget pagos planificados solo gastos (1cb68f2)
-- **Sección C en progreso:** 2/4 completado
+- **Sección C en progreso:** 3/4 completado
   - ✅ C.1: Navegación a vista Presupuestos (3008b95)
   - ✅ C.2: Divisa del presupuesto (3354706)
-  - Pendiente: C.3, C.4
+  - ✅ C.3: InfoHintButton en pie charts (110baf3)
+  - Pendiente: C.4
 - **Sección D pendiente:** 5 items de consistencia visual
-- **12 items UAT restantes** (9 completados de 21)
+- **11 items UAT restantes** (10 completados de 21)
 
 ## V1.1 (Futuro)
 
