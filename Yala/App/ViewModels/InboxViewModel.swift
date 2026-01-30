@@ -138,4 +138,58 @@ final class InboxViewModel {
     var hasPendingDrafts: Bool {
         !pendingDrafts.isEmpty
     }
+
+    // MARK: - Pure Logic Functions (for testing)
+
+    /// Filter drafts by status (testable without SwiftData)
+    func filterDrafts(
+        statuses: [DraftStatus],
+        cachedAccountNames: [String?],
+        for filter: InboxFilter
+    ) -> [Int] {
+        var result: [Int] = []
+        for i in 0..<statuses.count {
+            let status = statuses[i]
+            let cachedName = cachedAccountNames[i]
+
+            switch filter {
+            case .pending:
+                if status == .pending {
+                    result.append(i)
+                }
+            case .archived:
+                if (status == .approved || status == .rejected) && cachedName != nil {
+                    result.append(i)
+                }
+            }
+        }
+        return result
+    }
+
+    /// Count drafts by filter (testable without SwiftData)
+    func countDrafts(statuses: [DraftStatus], for filter: InboxFilter) -> Int {
+        switch filter {
+        case .pending:
+            return statuses.filter { $0 == .pending }.count
+        case .archived:
+            return statuses.filter { $0 == .approved || $0 == .rejected }.count
+        }
+    }
+
+    /// Group drafts by date (testable without SwiftData)
+    func groupDraftsByDate(dates: [Date], indices: [Int]) -> [(date: Date, indices: [Int])] {
+        guard !dates.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        var grouped: [Date: [Int]] = [:]
+
+        for i in 0..<dates.count {
+            let dayStart = calendar.startOfDay(for: dates[i])
+            grouped[dayStart, default: []].append(indices[i])
+        }
+
+        return grouped
+            .map { (date: $0.key, indices: $0.value) }
+            .sorted { $0.date > $1.date }
+    }
 }
