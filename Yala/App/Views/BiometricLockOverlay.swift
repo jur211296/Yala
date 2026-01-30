@@ -51,7 +51,7 @@ struct BiometricLockOverlay: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
                     .background(Color.brandPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .clipShape(Capsule())
                 }
                 .disabled(isAuthenticating)
                 .padding(.horizontal, DS.Spacing.xxxl)

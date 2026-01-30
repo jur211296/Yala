@@ -62,19 +62,13 @@ struct ThemeSettingsView: View {
                 }
             }
         }
-        .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
     }
 
     @ViewBuilder
     private func themeRow(for theme: AppTheme) -> some View {
         Button {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {
-                userThemeRaw = theme.rawValue
-            }
-            // Dismiss sheet after selection
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                dismiss()
-            }
+            userThemeRaw = theme.rawValue
+            dismiss()
         } label: {
             HStack {
                 Text(theme.label)

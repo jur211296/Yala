@@ -113,6 +113,8 @@ struct CurrencySettingsView: View {
                 // Show only first currency + expansion
                 preferredCurrencyRow(currency: CurrencyCode.allCases[0])
 
+                SubsectionDivider()
+
                 DisclosureGroup {
                     ForEach(Array(CurrencyCode.allCases.dropFirst().enumerated()), id: \.element) {
                         index, currency in
@@ -186,6 +188,8 @@ struct CurrencySettingsView: View {
                     }
 
                     if displayedCurrencies.count > 2 {
+                        SubsectionDivider()
+
                         DisclosureGroup {
                             ForEach(Array(displayedCurrencies.dropFirst(2).enumerated()), id: \.element) {
                                 index, currency in
@@ -298,9 +302,13 @@ struct CurrencySettingsView: View {
         VStack(spacing: DS.Spacing.sm) {
             SectionBox(title: L10n.Settings.exchangeRate) {
                 VStack(spacing: 0) {
-                    // Show only secondary currencies + expansion
-                    let secondaryList = Array(secondaryCurrencies)
-                    ForEach(Array(secondaryList.enumerated()), id: \.element) {
+                    // Show secondary currencies first, then expand for the rest
+                    let secondaryList = displayedCurrencies.filter { secondaryCurrencies.contains($0) }
+                    let otherList = displayedCurrencies.filter { !secondaryCurrencies.contains($0) }
+
+                    // Show secondary currencies (or all if no secondaries selected)
+                    let initialList = secondaryList.isEmpty ? displayedCurrencies : secondaryList
+                    ForEach(Array(initialList.enumerated()), id: \.element) {
                         index, currency in
                         if index > 0 {
                             SubsectionDivider()
@@ -308,10 +316,12 @@ struct CurrencySettingsView: View {
                         exchangeRateRow(currency: currency)
                     }
 
-                    if !secondaryList.isEmpty && displayedCurrencies.count > secondaryList.count {
+                    // Show expansion only if there are secondary currencies selected and other currencies to show
+                    if !secondaryList.isEmpty && !otherList.isEmpty {
+                        SubsectionDivider()
+
                         DisclosureGroup {
-                            let otherCurrencies = displayedCurrencies.filter { !secondaryCurrencies.contains($0) }
-                            ForEach(Array(otherCurrencies.enumerated()), id: \.element) {
+                            ForEach(Array(otherList.enumerated()), id: \.element) {
                                 index, currency in
                                 SubsectionDivider()
                                 exchangeRateRow(currency: currency)
