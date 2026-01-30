@@ -182,6 +182,11 @@ struct DetailContainerView: View {
         switch selectedTab {
         case .trends:
             TrendsTabView(
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                allSubcategories: dataViewModel.allSubcategories,
+                tags: dataViewModel.tags,
+                allTransactions: dataViewModel.allTransactions,
                 trendsViewModel: trendsViewModel,
                 defaultCurrencyCode: defaultCurrencyCode,
                 onNavigateToRecords: { selectedTab = .records }

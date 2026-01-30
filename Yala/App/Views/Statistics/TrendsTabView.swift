@@ -19,14 +19,13 @@ struct TrendsTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
 
-    // MARK: - Data Queries
+    // MARK: - Data (passed from parent)
 
-    @Query private var accounts: [Account]
-    @Query(sort: \Category.name, order: .forward) private var categories: [Category]
-    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(sort: \TransactionItem.date, order: .reverse) private var allTransactions:
-        [TransactionItem]
+    let accounts: [Account]
+    let categories: [Category]
+    let allSubcategories: [Subcategory]
+    let tags: [Tag]
+    let allTransactions: [TransactionItem]
 
     // MARK: - Persistent Sort Order (matches Profile/Accounts view)
 
