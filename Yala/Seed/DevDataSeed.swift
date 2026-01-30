@@ -288,7 +288,10 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     // Create subscriptions
     let createdSubscriptions = createDevSubscriptions(in: context, preferredCurrency: preferredCurrency)
     print("DevDataSeed: \(createdSubscriptions.count) suscripciones creadas")
-    // TODO: Implementar creación de pagos planificados (Incremento 7)
+
+    // Create scheduled payments
+    let createdScheduledPayments = createDevScheduledPayments(in: context, preferredCurrency: preferredCurrency)
+    print("DevDataSeed: \(createdScheduledPayments.count) pagos planificados creados")
     // TODO: Implementar generación de transacciones históricas (Incrementos 8a y 8b)
 
     // Save all changes
@@ -470,6 +473,63 @@ private func createDevSubscriptions(in context: ModelContext, preferredCurrency:
     }
 
     return subscriptions
+}
+
+// MARK: - Scheduled Payment Creation
+
+/// Crea los pagos planificados de desarrollo (paymentCategory = "recurring")
+private func createDevScheduledPayments(in context: ModelContext, preferredCurrency: CurrencyCode) -> [ScheduledPayment] {
+    var scheduledPayments: [ScheduledPayment] = []
+
+    let calendar = Calendar.current
+    let today = Date()
+
+    for definition in devScheduledPaymentDefinitions {
+        // Buscar la subcategoría por nombre
+        let subcategoryName = definition.subcategoryName
+        let subcategoryDescriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.name == subcategoryName }
+        )
+
+        guard let subcategory = try? context.fetch(subcategoryDescriptor).first else {
+            print("DevDataSeed: Warning - Subcategoría '\(subcategoryName)' no encontrada para pago planificado '\(definition.name)'")
+            continue
+        }
+
+        // Calcular nextDueDate: próximo día del mes especificado
+        let currentDay = calendar.component(.day, from: today)
+        var nextDueDate: Date
+        if currentDay < definition.dayOfMonth {
+            // Este mes
+            nextDueDate = calendar.date(bySetting: .day, value: definition.dayOfMonth, of: today) ?? today
+        } else {
+            // Próximo mes
+            let nextMonth = calendar.date(byAdding: .month, value: 1, to: today) ?? today
+            nextDueDate = calendar.date(bySetting: .day, value: definition.dayOfMonth, of: nextMonth) ?? today
+        }
+
+        let scheduledPayment = ScheduledPayment(
+            name: definition.name,
+            note: definition.note,
+            amount: definition.amount,
+            currencyCode: preferredCurrency.rawValue,
+            transactionType: "expense",
+            account: nil,
+            subcategory: subcategory,
+            isRecurring: true,
+            recurrenceType: "monthly",
+            recurrenceInterval: 1,
+            nextDueDate: nextDueDate,
+            dayOfMonth: definition.dayOfMonth,
+            paymentCategory: "recurring",
+            notifyOnDueDate: true,
+            notifyDaysBefore: 3
+        )
+        context.insert(scheduledPayment)
+        scheduledPayments.append(scheduledPayment)
+    }
+
+    return scheduledPayments
 }
 
 #endif
