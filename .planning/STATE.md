@@ -23,16 +23,16 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] a5e68b0 perf: optimize preloadHistoricalIfNeeded to fetch only required currencies
+- [2026-01-30] 4122f8d fix: load historical exchange rates after onboarding completion
+- [2026-01-30] 61b3612 fix: load historical exchange rates when adding secondary currencies
+- [2026-01-30] f253d52 refactor: add getRequiredCurrencies helper to ExchangeRateService
 - [2026-01-30] e380860 fix(ui): correct disclosure groups and secondary currency ordering in settings
 - [2026-01-30] 5986131 fix(ui): correct alignment when no accounts exist
 - [2026-01-30] c1457e8 fix(ui): correct theme switching, expandable lists, and capsule buttons
 - [2026-01-30] 2fe8d26 feat(ui): add expandable currency lists in settings (E.4)
 - [2026-01-30] a1fe45b refactor(ui): reorder Preferences section items (E.3)
 - [2026-01-30] b40079b fix(ui): force sheet dismiss when selecting System theme (E.2)
-- [2026-01-30] 07f9293 fix(ui): align recurrence selectors to the right (E.1)
-- [2026-01-30] e64b18f fix(ui): change inbox icon to tray.fill for toolbar consistency
-- [2026-01-30] 169e059 Revert "fix(ui): change toolbar icons from filled to outline style (D.2)"
-- [2026-01-30] c3a625e fix(ui): change onboarding buttons to capsule style (D.5)
 
 ## Completed in Current Phase
 
@@ -261,8 +261,8 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Sección E COMPLETA + fixes UI (expanders divisas color y reordenamiento) - (e380860)
-Next step: Revisar actualización tipos de cambio al cambiar divisas secundarias (Task #5), luego F.1 (Seed Dev)
+Stopped at: Optimización completada - carga histórica trae solo divisas necesarias (a5e68b0)
+Next step: Actualizar QA-SCENARIOS.md con escenarios de tipos de cambio (Task #5), luego F.1 (Seed Dev)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso

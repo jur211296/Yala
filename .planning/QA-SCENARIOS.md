@@ -2013,6 +2013,77 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Vuelve a onboarding (5 pasos)
 - [ ] En paso 5 del onboarding puede elegir cargar categorías o no
 
+#### Escenario 13.7: Agregar divisa secundaria carga tipos de cambio históricos
+**Precondiciones:**
+- Moneda preferida: PEN
+- Sin divisas secundarias configuradas
+**Pasos:**
+1. Profile → Divisa y cambio
+2. Agregar USD como divisa secundaria
+3. Observar indicador de carga (isUpdating)
+4. Esperar a que termine la carga (~10-30 segundos)
+5. Ir a Panel → Widget Tipo de Cambio
+**Resultado esperado:**
+- [ ] Indicador de progreso visible durante carga
+- [ ] Widget muestra gráfica de 1 año de USD→PEN
+- [ ] Gráfica tiene datos completos (no vacía ni plana)
+- [ ] Tipos de cambio actuales visibles en Settings
+
+#### Escenario 13.8: Cambiar divisa secundaria por otra
+**Precondiciones:**
+- Divisas secundarias: USD, EUR
+- Widget muestra gráficas de ambas
+**Pasos:**
+1. Profile → Divisa y cambio
+2. Quitar EUR
+3. Agregar GBP
+4. Esperar carga de datos históricos
+5. Volver a Panel → Widget Tipo de Cambio
+**Resultado esperado:**
+- [ ] Widget ahora muestra USD y GBP (no EUR)
+- [ ] Gráfica de GBP tiene datos históricos de 1 año
+- [ ] Selector de divisas en widget refleja cambio
+
+#### Escenario 13.9: Onboarding con divisas secundarias carga datos históricos
+**Precondiciones:** App sin datos (data wipe)
+**Pasos:**
+1. Completar onboarding hasta paso de divisas secundarias
+2. Seleccionar PEN como preferida
+3. Seleccionar USD y EUR como secundarias
+4. Completar onboarding (elegir periodo, categorías, notificaciones)
+5. Esperar 5-10 segundos después de dismiss (carga en background)
+6. Ir a Panel → Widget Tipo de Cambio
+**Resultado esperado:**
+- [ ] Widget muestra gráfica de 1 año para USD y EUR
+- [ ] Datos históricos completos (no solo punto actual)
+- [ ] Usuario no experimentó retraso en onboarding (carga fue en background)
+
+#### Escenario 13.10: Widget sin divisas secundarias muestra todas disponibles
+**Precondiciones:**
+- Moneda preferida: PEN
+- Sin divisas secundarias
+**Pasos:**
+1. Ir a Panel → Widget Tipo de Cambio
+2. Abrir selector de divisas (botón círculo con flechas)
+**Resultado esperado:**
+- [ ] Selector muestra todas las 6 divisas (USD, EUR, MXN, COP, BRL, GBP)
+- [ ] Puede seleccionar hasta 2 para comparar
+- [ ] Gráfica muestra las divisas seleccionadas
+
+#### Escenario 13.11: Tipos de cambio se actualizan diariamente
+**Precondiciones:**
+- App con datos
+- Último update de tipos de cambio fue hace 24+ horas
+**Pasos:**
+1. Abrir app después de 24 horas de inactividad
+2. Esperar 2-3 segundos (carga automática en background)
+3. Ir a Settings → Divisa y cambio
+4. Verificar "Última actualización" al final de la sección
+**Resultado esperado:**
+- [ ] Fecha de actualización es "hoy"
+- [ ] Tipos de cambio reflejan valores actuales
+- [ ] Widget en Panel muestra datos actualizados
+
 ---
 
 ## Sección 14: Casos Edge Globales
