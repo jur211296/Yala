@@ -23,6 +23,17 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] cfd0447 fix(dev): restrict dev data seed to DEV_BUILD only (not regular DEBUG)
+- [2026-01-30] d07aaac feat(dev): integrate dev data seed step in onboarding (DEBUG only)
+- [2026-01-30] a1c2c7e feat(dev): implement varied daily transaction generation in DevDataSeed
+- [2026-01-30] 39ff387 feat(dev): implement scheduled payment transaction generation in DevDataSeed
+- [2026-01-30] fda19c3 feat(dev): implement scheduled payment seed creation in DevDataSeed
+- [2026-01-30] 49bf92c feat(dev): implement subscription seed creation in DevDataSeed
+- [2026-01-30] 9e0d8ac feat(dev): implement favorite payment seed creation in DevDataSeed
+- [2026-01-30] 1b4ab3e feat(dev): implement budget seed creation in DevDataSeed
+- [2026-01-30] 1cad135 feat(dev): implement tag seed creation in DevDataSeed
+- [2026-01-30] 2e0cd45 feat(dev): implement account seed creation in DevDataSeed
+- [2026-01-30] 8159f09 feat(dev): add DevDataSeed.swift base structure for dev onboarding
 - [2026-01-30] a5e68b0 perf: optimize preloadHistoricalIfNeeded to fetch only required currencies
 - [2026-01-30] 4122f8d fix: load historical exchange rates after onboarding completion
 - [2026-01-30] 61b3612 fix: load historical exchange rates when adding secondary currencies
@@ -32,7 +43,6 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 - [2026-01-30] c1457e8 fix(ui): correct theme switching, expandable lists, and capsule buttons
 - [2026-01-30] 2fe8d26 feat(ui): add expandable currency lists in settings (E.4)
 - [2026-01-30] a1fe45b refactor(ui): reorder Preferences section items (E.3)
-- [2026-01-30] b40079b fix(ui): force sheet dismiss when selecting System theme (E.2)
 
 ## Completed in Current Phase
 
@@ -172,8 +182,23 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 - [x] E.3: Reordenar Preferencias: Personalización, Notificaciones, Divisa y Cambio, Ícono de app, Temas, Registro por voz, Registro por imagen ✅ (a1fe45b)
 - [x] E.4: Listas expansibles para divisas (preferida: 1+expansión, secundarias: 1-2+expansión, tipos cambio: secundarias+expansión) ✅ (2fe8d26)
 
-**10.F: Desarrollo**
-- [ ] F.1: Seed Dev completa para onboarding (solo bundle dev) - cuentas, categorías, subcategorías, etiquetas, presupuestos, pagos planificados, suscripciones, favoritos
+**10.F: Desarrollo** ✅ COMPLETA
+- [x] F.1: Seed Dev completa para onboarding (solo bundle dev) ✅ (d07aaac + cfd0447)
+  - **IMPORTANTE:** Usa flag `DEV_BUILD` (solo scheme "Yala Dev"), NO aparece en "Yala" (TestFlight)
+  - Implementación completa en 9 incrementos:
+    1. DevDataSeed.swift base structure (8159f09)
+    2. Seed de 3 cuentas (2e0cd45)
+    3. Seed de 5 tags (1cad135)
+    4. Seed de 7 presupuestos (1b4ab3e)
+    5. Seed de 4 favoritos (9e0d8ac)
+    6. Seed de 5 suscripciones (49bf92c)
+    7. Seed de 5 pagos planificados (fda19c3)
+    8a. Generador transacciones desde pagos/suscripciones (39ff387)
+    8b. Generador transacciones variadas día a día (a1c2c7e)
+    9. Integración con OnboardingView paso DEBUG (d07aaac)
+  - Período: Nov-Dic 2024 + Todo 2025 + Ene 2026 hasta hoy
+  - ~30-50 transacciones mensuales variadas
+  - Solo visible en builds DEBUG
 
 ---
 
@@ -262,8 +287,12 @@ Progress: V1.1 ███████████████░ ~95% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Fix tipos de cambio históricos COMPLETADO - 5 commits (helper, Settings, Onboarding, optimización, QA docs) - (987da70)
-Next step: F.1 - Seed Dev completa para onboarding (solo bundle dev)
+Stopped at: F.1 - Seed Dev COMPLETADO ✅ (10 commits totales) - Fix DEV_BUILD flag (cfd0447)
+Next step: Fase 10 COMPLETA (21/21 items) - Preparar cierre de fase y actualizar ROADMAP
+Resume context:
+- Flag DEV_BUILD agregado a configuración "Debug-Dev" en project.pbxproj
+- Paso onboarding solo visible en scheme "Yala Dev" (com.jurgenschmidt.yala.dev)
+- NO aparece en scheme "Yala" regular (com.jurgenschmidt.yala) usado en TestFlight
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
