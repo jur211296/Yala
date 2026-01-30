@@ -129,7 +129,10 @@ final class SubcategorySelectorViewModel {
     private func loadRecentTransactions() {
         guard let context = modelContext else { return }
         let descriptor = FetchDescriptor<TransactionItem>(
-            sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
+            sortBy: [
+                SortDescriptor(\TransactionItem.date, order: .reverse),
+                SortDescriptor(\TransactionItem.createdAt, order: .reverse)
+            ]
         )
         do {
             recentTransactions = try context.fetch(descriptor)

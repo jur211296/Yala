@@ -112,7 +112,10 @@ final class PanelViewModel {
 
         // Load transactions
         let transactionsDesc = FetchDescriptor<TransactionItem>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
+            sortBy: [
+                SortDescriptor(\.date, order: .reverse),
+                SortDescriptor(\.createdAt, order: .reverse)
+            ]
         )
         do {
             transactions = try context.fetch(transactionsDesc)

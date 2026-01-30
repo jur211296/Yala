@@ -46,6 +46,10 @@ final class TransactionItem {
     /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | nil (normal)
     var balanceAdjustmentType: String?
 
+    // MARK: - Metadata
+    /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
+    var createdAt: Date = Date()
+
     /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
     var effectiveNature: SubcategoryNature {
         if let override = natureOverride {

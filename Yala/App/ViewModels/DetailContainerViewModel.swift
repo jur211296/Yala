@@ -37,7 +37,10 @@ final class DetailContainerViewModel {
 
         // Load transactions
         let transactionsDescriptor = FetchDescriptor<TransactionItem>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
+            sortBy: [
+                SortDescriptor(\.date, order: .reverse),
+                SortDescriptor(\.createdAt, order: .reverse)
+            ]
         )
         do {
             allTransactions = try context.fetch(transactionsDescriptor)
