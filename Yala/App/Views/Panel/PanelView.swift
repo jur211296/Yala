@@ -143,7 +143,7 @@ struct PanelView: View {
                         Button {
                             isPresentingSettings = true
                         } label: {
-                            Image(systemName: "person")
+                            Image(systemName: "person.fill")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundStyle(Color.electricIndigo)
                         }
