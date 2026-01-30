@@ -25,6 +25,9 @@ struct CashFlowWidget: View {
     // Filter state for dimming non-selected bars
     let selectedTransactionNatures: Set<TransactionNature>
 
+    // Control whether to show InfoHintButton (false when shown in parent header)
+    let showInfoHint: Bool
+
     init(
         summary: CashFlowSummary,
         size: WidgetSize,
@@ -36,7 +39,8 @@ struct CashFlowWidget: View {
         displayMode: TrendType? = nil,
         previousAmount: Double? = nil,
         comparisonPeriodText: String? = nil,
-        selectedTransactionNatures: Set<TransactionNature> = []
+        selectedTransactionNatures: Set<TransactionNature> = [],
+        showInfoHint: Bool = true
     ) {
         self.summary = summary
         self.size = size
@@ -49,6 +53,7 @@ struct CashFlowWidget: View {
         self.previousAmount = previousAmount
         self.comparisonPeriodText = comparisonPeriodText
         self.selectedTransactionNatures = selectedTransactionNatures
+        self.showInfoHint = showInfoHint
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -234,10 +239,12 @@ struct CashFlowWidget: View {
                     }
                 }
 
-                InfoHintButton(
-                    title: L10n.WidgetType.cashFlow,
-                    message: L10n.Widget.Hint.cashFlow
-                )
+                if showInfoHint {
+                    InfoHintButton(
+                        title: L10n.WidgetType.cashFlow,
+                        message: L10n.Widget.Hint.cashFlow
+                    )
+                }
 
                 Spacer()
 

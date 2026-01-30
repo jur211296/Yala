@@ -805,6 +805,11 @@ struct TrendsTabView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
 
+                InfoHintButton(
+                    title: L10n.WidgetType.cashFlow,
+                    message: L10n.Widget.Hint.cashFlow
+                )
+
                 Spacer()
 
                 cashFlowViewSelector
@@ -1076,7 +1081,8 @@ struct TrendsTabView: View {
             customTitle: title,
             displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric),
             previousAmount: previousTotal,
-            comparisonPeriodText: trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil
+            comparisonPeriodText: trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
+            showInfoHint: false
         )
     }
 
