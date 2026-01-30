@@ -23,6 +23,9 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-30] c6c4dd9 feat(model): add createdAt timestamp for same-day ordering (B.2)
+- [2026-01-30] 1cb68f2 fix(scheduled): exclude income payments from monthly totals (B.3)
+- [2026-01-30] fd12c70 docs(planning): document B.1, B.2, B.3 implementation details
 - [2026-01-30] 7d0138c fix(auth): show lock screen over sheets using fullScreenCover (A.4)
 - [2026-01-30] 381c041 fix(fab): close FAB menu when navigating to another tab (A.3)
 - [2026-01-30] bf8e2d6 fix(search): navigate directly to Statistics tab from global search (A.2)
@@ -30,9 +33,6 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 - [2026-01-29] b032d3f refactor(arch): remove unused @Query from InboxBulkActionsSheet (D.7.10)
 - [2026-01-29] 03b395c refactor(arch): migrate BulkEditSheet to ViewModel (D.7.9)
 - [2026-01-29] 64d2670 refactor(arch): migrate RecordsFiltersView to ViewModel (D.7.8)
-- [2026-01-29] 50e444a refactor(arch): migrate ImportIntroSheet to ViewModel (D.7.7)
-- [2026-01-29] f5ee072 refactor(arch): migrate ExportFiltersStepView to ViewModel (D.7.6)
-- [2026-01-29] 6c1286c refactor(arch): migrate ScheduledPaymentEditorView to ViewModel (D.7.5)
 
 ## Completed in Current Phase
 
@@ -135,7 +135,7 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
     3. TransactionCSVImportService.importCSV() - Filtrar + contar ignoradas + notificar usuario
   - **Cobertura:** Creación manual, duplicar, inbox (voz/imagen/ApplePay/automation/pagos), importación CSV/XLSX
 
-- [ ] B.2: Orden de registros del mismo día - agregar campo createdAt
+- [x] B.2: Orden de registros del mismo día - agregar campo createdAt ✅ (c6c4dd9)
   - **Implementación:**
     1. Agregar `var createdAt: Date = Date()` a modelo TransactionItem (timestamp completo con hora)
     2. Actualizar FetchDescriptors: `sortBy: [.date DESC, .createdAt DESC]`
@@ -146,7 +146,7 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
     - Importación CSV: createdAt = Date() al momento de importar
   - **Resultado UX:** Registros del mismo día aparecen en orden de creación/aprobación (más reciente primero)
 
-- [ ] B.3: Widget pagos planificados solo gastos
+- [x] B.3: Widget pagos planificados solo gastos ✅ (1cb68f2)
   - **Archivos:**
     1. ScheduledPaymentsWidget.swift:207 calculateMonthlyTotal() - filtrar `payment.transactionType != "income"`
     2. Vista principal pagos planificados (cajas superiores) - aplicar mismo filtro
@@ -261,17 +261,17 @@ Progress: V1.1 ██████████░░░░░░ ~65% (Fase 8 com
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Sección A completa (4/4 bugs críticos)
-Next step: Continuar con Sección B (Lógica de Negocio)
+Stopped at: B.2 completado - campo createdAt agregado para ordenar mismo día
+Next step: Implementar B.1 (bloquear fechas futuras - 3 puntos validación)
 Resume context:
 - V1.0 completa (Fases 1-9 todas done)
 - V1.1: Fase 8 done, Fase 10 en progreso
-- **Sección A COMPLETA:**
-  - ✅ A.1: PanelView refresh (95b3ec7)
-  - ✅ A.2: SearchBar sync (bf8e2d6)
-  - ✅ A.3: FAB cierra al navegar (381c041)
-  - ✅ A.4: Lock screen en sheets (7d0138c)
-- **17 items UAT restantes** (4 completados de 21)
+- **Sección A COMPLETA:** 4/4 bugs críticos ✅
+- **Sección B en progreso:** 2/3 completados
+  - ✅ B.2: Campo createdAt para orden mismo día (c6c4dd9)
+  - ✅ B.3: Widget pagos planificados solo gastos (1cb68f2)
+  - Pendiente B.1: Bloquear fechas futuras (NewTransactionViewModel + DraftService + CSVImport)
+- **15 items UAT restantes** (6 completados de 21)
 
 ## V1.1 (Futuro)
 
