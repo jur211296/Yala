@@ -273,7 +273,9 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     let createdAccounts = createDevAccounts(in: context)
     print("DevDataSeed: \(createdAccounts.count) cuentas creadas")
 
-    // TODO: Implementar creación de tags (Incremento 3)
+    // Create tags
+    let createdTags = createDevTags(in: context)
+    print("DevDataSeed: \(createdTags.count) etiquetas creadas")
     // TODO: Implementar creación de presupuestos (Incremento 4)
     // TODO: Implementar creación de favoritos (Incremento 5)
     // TODO: Implementar creación de suscripciones (Incremento 6)
@@ -312,6 +314,27 @@ private func createDevAccounts(in context: ModelContext) -> [Account] {
     }
 
     return accounts
+}
+
+// MARK: - Tag Creation
+
+/// Crea los tags de desarrollo
+private func createDevTags(in context: ModelContext) -> [Tag] {
+    var tags: [Tag] = []
+
+    for definition in devTagDefinitions {
+        let tag = Tag(
+            name: definition.name,
+            colorHex: definition.colorHex,
+            iconName: definition.iconName,
+            isActive: true,
+            createdAt: Date()
+        )
+        context.insert(tag)
+        tags.append(tag)
+    }
+
+    return tags
 }
 
 #endif
