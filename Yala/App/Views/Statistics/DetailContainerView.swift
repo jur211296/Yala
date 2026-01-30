@@ -208,6 +208,8 @@ struct DetailContainerView: View {
                 accounts: accounts,
                 categories: categories,
                 tags: tags,
+                subcategories: allSubcategories,
+                transactionDateRange: computeTransactionDateRange(),
                 defaultCurrencyCode: defaultCurrencyCode,
                 onFilterChange: { refreshRecordsData() }
             )
@@ -525,6 +527,14 @@ struct DetailContainerView: View {
                 tags: tags
             )
         }
+    }
+
+    /// Compute date range of all transactions (for custom period picker limits)
+    private func computeTransactionDateRange() -> (start: Date, end: Date) {
+        let sortedDates = allTransactions.map(\.date).sorted()
+        let start = sortedDates.first ?? Date()
+        let end = sortedDates.last ?? Date()
+        return (start, end)
     }
 
     private func calculateTrendsData() {

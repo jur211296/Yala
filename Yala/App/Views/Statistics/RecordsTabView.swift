@@ -16,18 +16,12 @@ import SwiftUI
 struct RecordsTabView: View {
     @Environment(SessionState.self) private var sessionState
 
-    /// All transactions (unfiltered) for date range limits
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var allTransactions: [TransactionItem]
-
-    /// All subcategories for chip display (independent of spending data)
-    @Query(sort: \Subcategory.name, order: .forward)
-    private var allSubcategories: [Subcategory]
-
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
     let categories: [Category]
     let tags: [Tag]
+    let subcategories: [Subcategory]
+    let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
 
@@ -64,13 +58,6 @@ struct RecordsTabView: View {
         }
     }
 
-    /// Date range of all transactions (unfiltered, for custom period picker limits)
-    private var transactionDateRange: (start: Date, end: Date) {
-        let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
-        return (start, end)
-    }
 
     // MARK: - Control Bar
 
@@ -96,7 +83,7 @@ struct RecordsTabView: View {
                         // Category chip (aggregated - one chip max)
                         if let catChip = aggregatedCategoryChip(
                             selectedSubcategories: viewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
+                            allSubcategories: subcategories
                         ) {
                             FilterChipView(
                                 categoryName: catChip.name,
@@ -129,7 +116,7 @@ struct RecordsTabView: View {
                         // Subcategory chip (aggregated - one chip max)
                         if let subChip = aggregatedSubcategoryChip(
                             selectedSubcategories: viewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
+                            allSubcategories: subcategories
                         ) {
                             FilterChipView(
                                 subcategoryName: subChip.name,
@@ -461,8 +448,8 @@ struct RecordsTabView: View {
     private var subcategoryChips: [SubcategoryChip] {
         var chips: [SubcategoryChip] = []
         for subcategoryID in viewModel.selectedSubcategories {
-            // Use allSubcategories Query for chip display
-            if let subcategory = allSubcategories.first(where: {
+            // Use subcategories Query for chip display
+            if let subcategory = subcategories.first(where: {
                 $0.persistentModelID == subcategoryID
             }) {
                 let categoryColor = subcategory.category.colorHex
