@@ -5,9 +5,9 @@
 
 ## Estado Actual
 
-**Fase:** D - @Query → ViewModels 🔄 EN PROGRESO
-**Progreso:** 28 Views migradas (D.3-D.7 completados)
-**Status:** Fases A, B, C completadas. D.3, D.4, D.5, D.6, D.7 completados. D.8 pendiente.
+**Fase:** D - @Query → ViewModels ✅ COMPLETADA
+**Progreso:** 37+ Views migradas (D.3-D.8 completados)
+**Status:** Fases A, B, C, D completadas. Refactoring arquitectural finalizado.
 
 ## Resumen de Fases
 
@@ -290,6 +290,15 @@ currencyConverter.convert(...)
 - `64d2670` - refactor(arch): migrate RecordsFiltersView to ViewModel (D.7.8)
 - `03b395c` - refactor(arch): migrate BulkEditSheet to ViewModel (D.7.9)
 - `b032d3f` - refactor(arch): remove unused @Query from InboxBulkActionsSheet (D.7.10)
+- `e43d13c` - refactor(arch): migrate InboxView to ViewModel (D.8.1)
+- `3d83663` - refactor(arch): migrate InboxDraftEditSheet to ViewModel (D.8.2)
+- `f33bdac` - refactor(arch): remove @Query from RecordsTabView (D.8.3)
+- `7a0955e` - refactor(arch): migrate ScheduledPaymentsView to ViewModel (D.8.4)
+- `e34f2b0` - refactor(arch): migrate NewTransactionView to ViewModel (D.8.5)
+- `19acdb7` - refactor(arch): migrate DetailContainerView to ViewModel (D.8.6)
+- `8220015` - refactor(arch): remove @Query from TrendsTabView (D.8.7)
+- `d231d3c` - refactor(arch): remove @Query from CategoriesTabView (D.8.8)
+- `72969f3` - refactor(arch): migrate PanelView to ViewModel (D.8.9)
 
 ## Notas Técnicas
 
@@ -348,6 +357,7 @@ struct MyView: View {
 **D.5 Selectors:** ✅ COMPLETADO (3 views)
 **D.6 Transaction Sheets:** ✅ COMPLETADO (4 views)
 **D.7 Other Views:** ✅ COMPLETADO (10 views)
+**D.8 Vistas Complejas:** ✅ COMPLETADO (9 views)
 
 **Plan de priorización:**
 1. ✅ D.3 (Settings - Entities) - COMPLETADO
@@ -355,18 +365,25 @@ struct MyView: View {
 3. ✅ D.5 (Selectors) - COMPLETADO
 4. ✅ D.6 (Transaction Sheets) - COMPLETADO
 5. ✅ D.7 (Other views) - COMPLETADO
-6. ⏳ D.8 (Panel, Statistics) - alto riesgo (vistas complejas)
+6. ✅ D.8 (Panel, Statistics) - COMPLETADO
 
-**Vistas complejas pendientes (D.8):**
-- PanelView (8 @Query)
-- NewTransactionView (5 @Query)
-- InboxView (2 @Query)
-- InboxDraftEditSheet (5 @Query)
-- RecordsTabView (2 @Query)
-- DetailContainerView (5 @Query)
-- TrendsTabView (5 @Query)
-- CategoriesTabView (5 @Query)
-- ScheduledPaymentsView (4 @Query)
+**Vistas complejas migradas (D.8):**
+- ✅ InboxView (2 @Query → InboxViewModel)
+- ✅ InboxDraftEditSheet (5 @Query → InboxDraftEditViewModel + 4 eliminados)
+- ✅ RecordsTabView (2 @Query → parámetros desde padre)
+- ✅ ScheduledPaymentsView (4 @Query → ScheduledPaymentsViewModel)
+- ✅ NewTransactionView (5 @Query → NewTransactionViewModel)
+- ✅ DetailContainerView (5 @Query → DetailContainerViewModel)
+- ✅ TrendsTabView (5 @Query → parámetros desde padre)
+- ✅ CategoriesTabView (5 @Query → parámetros desde padre)
+- ✅ PanelView (8 @Query → PanelViewModel)
+
+## Resumen Final
+
+**Fase D @Query → ViewModels: ✅ COMPLETADA**
+
+Total de views migradas: 37+
+Total de @Query eliminados/migrados: ~70+
 
 **Archivos clave:**
 - ViewModels creados: `Yala/App/ViewModels/`
