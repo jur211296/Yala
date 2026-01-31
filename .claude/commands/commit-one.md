@@ -77,6 +77,7 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
 5. PROPUESTA DE COMMIT:
    - Determinar prefijo correcto: feat:, fix:, refactor:, chore:, docs:
    - Proponer mensaje descriptivo
+   - ❌ NUNCA incluir línea "Co-Authored-By: Claude..." en el mensaje
    - Listar archivos específicos para `git add`
    - Preguntar: "¿Procedo con este commit?"
 

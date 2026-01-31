@@ -55,6 +55,19 @@ Usar el comando apropiado según el tipo de cambio:
 - No introducir dependencias nuevas sin justificación
 - Mantener separación clara entre UI, lógica y capa SwiftData
 
+## Reglas de Corrección de Errores
+
+**CRÍTICO: Búsqueda exhaustiva de patrones**
+- Cuando corrijas un error, SIEMPRE busca TODAS las instancias del mismo patrón en el archivo/proyecto
+- Usar `grep` o búsqueda sistemática ANTES de declarar el fix completo
+- NO confiar ciegamente en "BUILD SUCCEEDED" - verificar que todos los casos fueron corregidos
+- Ejemplo: Si corriges `#Predicate { $0.name == definition.prop }`, buscar TODOS los `#Predicate` similares
+
+**Desconfianza sana del build cache:**
+- El build de CLI puede usar cache mientras Xcode recompila desde cero
+- Si el usuario reporta errores después de "BUILD SUCCEEDED", el problema es real
+- Limpiar build si hay discrepancia: `xcodebuild clean`
+
 ## Patrones de Código Obligatorios
 
 ### Manejo de Errores (NUNCA silenciar errores)

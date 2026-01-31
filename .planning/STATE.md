@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-31] 340ef29 chore(seed): remove DevDataSeed completely
+- [2026-01-30] 73c7e9f refactor(widget): simplify exchange rate widget to use only secondaryCurrencies
 - [2026-01-30] cfd0447 fix(dev): restrict dev data seed to DEV_BUILD only (not regular DEBUG)
 - [2026-01-30] d07aaac feat(dev): integrate dev data seed step in onboarding (DEBUG only)
 - [2026-01-30] a1c2c7e feat(dev): implement varied daily transaction generation in DevDataSeed
@@ -42,8 +44,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-01-30] e380860 fix(ui): correct disclosure groups and secondary currency ordering in settings
 - [2026-01-30] 5986131 fix(ui): correct alignment when no accounts exist
 - [2026-01-30] c1457e8 fix(ui): correct theme switching, expandable lists, and capsule buttons
-- [2026-01-30] 2fe8d26 feat(ui): add expandable currency lists in settings (E.4)
-- [2026-01-30] a1fe45b refactor(ui): reorder Preferences section items (E.3)
 
 ## Completed in Current Phase
 
@@ -75,6 +75,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Auditoría de código (10.x)** - **CRÍTICOS: TODOS RESUELTOS ✅** SEC-001/002 (keys seguras), ERR-001-004 (try? → do-catch), BUG-001-005 (force unwraps → guard), SWD-001-004 (inversas SwiftData), PERF-001-003 (optimizado O(n)), CFG-001/002 (config correcta); **ALTOS: TODOS RESUELTOS ✅** SEC-003/004/005/006 (security hardening), BUG-006-011 (bounds, threading), SWD-005/006/007 (@MainActor), PERF-004/005/006 (static formatters), UI-001/002 (accessibility), ARCH-001-006 (refactors arquitecturales) ✅ COMPLETADOS
 - **Refactoring Arquitectural (10.x)** - **4 Fases completadas (A, B, C, D)**: Fase A - Singletons → @Environment (CurrencyConverter, ExchangeRateService, Vision/Voice services); Fase B - SessionState.shared → @Environment injection; Fase C - Services para ModelContext (DraftService, EntityDeletionService, TransactionService); Fase D - @Query → ViewModels (37+ views migradas, 70+ @Query eliminados, 35+ ViewModels con lógica real); Ver `.planning/ARCH-REFACTOR-PROGRESS.md` para detalles completos
 - **Fix tipos de cambio históricos (10.x)** - Helper getRequiredCurrencies() centraliza detección de divisas necesarias (f253d52); Settings carga automáticamente 1 año de datos al agregar divisas secundarias con loading state (61b3612); Onboarding carga datos históricos en background después de completar sin bloquear UI (4122f8d); preloadHistoricalIfNeeded optimizado para traer solo divisas necesarias vs todas las 7 soportadas (a5e68b0); 5 escenarios QA nuevos (13.7-13.11) para validación de carga histórica (987da70)
+- **Seed Dev (10.x)** - ~~Implementado~~ **ELIMINADO** (340ef29): Causaba errores de compilación con #Predicate macros. Removido completamente del proyecto.
+- **Widget tipo de cambio simplificado (10.x)** - Refactorización para usar SOLO secondaryCurrencies como fuente de verdad (73c7e9f): eliminado selector de divisas innecesario y sheet asociado, sin defaults ni fallbacks, sin caché local, estado vacío cuando no hay divisas secundarias seleccionadas, widget automáticamente muestra las 1-2 divisas elegidas en Settings/onboarding, reacción inmediata a cambios en Settings via SessionState flag
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -132,12 +134,12 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [x] 10.C: Widgets (4/4 items) ✅
 - [x] 10.D: Consistencia visual (5/5 items) ✅
 - [x] 10.E: Settings y preferencias (4/4 items) ✅
-- [x] 10.F: Desarrollo - Seed Dev (1/1 items) ✅
+- [x] 10.F: Desarrollo - Seed Dev (ELIMINADO - causaba errores)
 
 **Decisiones importantes de la fase:**
 - B.1: Bloquear transacciones con fecha futura (previene inconsistencias balance/registros)
 - B.2: Campo `createdAt` para ordenar registros del mismo día por hora de creación
-- F.1: Seed Dev solo visible en scheme "Yala Dev" con flag DEV_BUILD (no en TestFlight)
+- F.1: ~~Seed Dev solo visible en scheme "Yala Dev"~~ **ELIMINADO** (340ef29)
 
 ### Próxima fase: Fase 11 — Plataforma Avanzada (V1.2)
 
@@ -235,8 +237,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ## Session Continuity
 
-Last session: 2026-01-30
-Stopped at: V1.1 completa ✅ - Auditoría de código cerrada ✅
+Last session: 2026-01-31
+Stopped at: DevDataSeed eliminado (causaba errores de compilación)
 Next step: Comenzar Fase 11 — Plataforma Avanzada (V1.2)
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
@@ -253,11 +255,10 @@ Resume context:
   - Sección C: 4/4 widgets ✅
   - Sección D: 5/5 consistencia visual ✅
   - Sección E: 4/4 settings ✅
-  - Sección F: 1/1 desarrollo (Seed Dev) ✅
+  - Sección F: Seed Dev **ELIMINADO** (causaba errores)
 - Decisiones clave Fase 10:
   - Bloqueo de transacciones futuras (previene inconsistencias)
   - Campo createdAt para orden por hora en mismo día
-  - Seed Dev solo en scheme "Yala Dev" (flag DEV_BUILD)
 
 ## V1.2 (Next - App Store Release)
 
