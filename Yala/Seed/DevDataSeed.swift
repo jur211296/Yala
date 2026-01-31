@@ -110,6 +110,25 @@ enum IncomeVariationType {
     case random(range: ClosedRange<Double>)  // Rango aleatorio
 }
 
+// MARK: - Account Lookup Helper
+
+/// Busca una cuenta según su tipo lógico.
+/// - Parameter type: "USD" para cuenta en dólares, "BCP" para cuenta principal, "Efectivo" para efectivo
+/// - Parameter accounts: Lista de cuentas disponibles
+/// - Returns: La cuenta encontrada o nil
+private func findAccount(byType type: String, in accounts: [Account]) -> Account? {
+    switch type {
+    case "USD":
+        return accounts.first { $0.currencyCode == "USD" }
+    case "BCP":
+        return accounts.first { $0.name.contains("BCP") }
+    case "Efectivo":
+        return accounts.first { $0.name.contains("Efectivo") }
+    default:
+        return accounts.first
+    }
+}
+
 // MARK: - Seed Data Definitions
 
 private let devAccountDefinitions: [AccountSeedDefinition] = [
@@ -144,17 +163,32 @@ private let devTagDefinitions: [TagSeedDefinition] = [
     TagSeedDefinition(name: "Vacaciones", colorHex: "#BF5AF2", iconName: "airplane"),
 ]
 
+// NOTA SOBRE PRESUPUESTOS:
+// Algunos presupuestos están INTENCIONALMENTE configurados con límites bajos
+// para que sean excedidos por las transacciones generadas. Esto permite probar:
+// - Alertas de presupuesto excedido
+// - Indicadores visuales de exceso (rojo vs verde)
+// - Mensajes de advertencia en el dashboard
+//
+// Estado esperado de presupuestos:
+// | Presupuesto            | Límite  | Gasto estimado | Estado esperado |
+// |------------------------|---------|----------------|-----------------|
+// | Alimentación mensual   | S/1200  | ~S/1500-1800   | ⚠️ Excedido     |
+// | Entretenimiento        | S/300   | ~S/400-600     | ⚠️ Excedido     |
+// | Transporte mensual     | S/250   | ~S/200-300     | ✅ Cerca límite |
+// | Hogar mensual          | S/800   | ~S/400-500     | ✅ Bajo control |
+
 private let devBudgetDefinitions: [BudgetSeedDefinition] = [
     BudgetSeedDefinition(
         name: "Alimentación mensual",
         periodType: "monthly",
-        limitAmount: 1200.0,
+        limitAmount: 1200.0,  // Intencionalmente bajo para probar alertas
         subcategoryName: "Supermercados y bodegas"
     ),
     BudgetSeedDefinition(
         name: "Entretenimiento mensual",
         periodType: "monthly",
-        limitAmount: 300.0,
+        limitAmount: 300.0,  // Intencionalmente bajo para probar alertas
         subcategoryName: "Streaming y plataformas"
     ),
     BudgetSeedDefinition(
@@ -341,6 +375,26 @@ private let devScheduledPaymentDefinitions: [ScheduledPaymentSeedDefinition] = [
         dayOfMonth: 15,
         subcategoryName: "Préstamos y créditos",
         note: "Cuota mensual",
+        accountType: "BCP",
+        variationPercent: nil
+    ),
+    ScheduledPaymentSeedDefinition(
+        name: "Leasing auto",
+        amount: 1000.00,
+        currencyCode: "PEN",
+        dayOfMonth: 20,
+        subcategoryName: "Leasing",
+        note: "Cuota mensual leasing",
+        accountType: "BCP",
+        variationPercent: nil
+    ),
+    ScheduledPaymentSeedDefinition(
+        name: "Préstamo vehicular",
+        amount: 750.00,
+        currencyCode: "PEN",
+        dayOfMonth: 25,
+        subcategoryName: "Préstamo vehicular",
+        note: "Cuota crédito auto",
         accountType: "BCP",
         variationPercent: nil
     ),
@@ -545,14 +599,8 @@ private func createAllTransactionTemplates() -> [TransactionTemplate] {
             currencyByAccount: ["BCP": "PEN"],
             possibleNotes: ["Comisión transferencia", "Cargo mantenimiento", "Comisión banco", "Cargo tarjeta"]
         ),
-        TransactionTemplate(
-            subcategoryName: "Impuestos",
-            amountRange: 150...600,
-            frequency: 0, // Lo manejaremos manualmente para ciertos meses
-            accountDistribution: ["BCP": 1.0],
-            currencyByAccount: ["BCP": "PEN"],
-            possibleNotes: ["Predial", "Impuesto renta", "Arbitrios", "Declaración anual"]
-        ),
+        // Impuestos: Manejado en generateSpecialTransactions() - solo en Marzo
+        // (frequency: 0 para evitar generación automática)
         TransactionTemplate(
             subcategoryName: "Seguros",
             amountRange: 80...200,
@@ -629,14 +677,8 @@ private func createAllTransactionTemplates() -> [TransactionTemplate] {
             currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
             possibleNotes: ["Cena romántica", "Cine pareja", "Paseo Larcomar", "Café especial", "Día especial"]
         ),
-        TransactionTemplate(
-            subcategoryName: "Viajes y vacaciones",
-            amountRange: 300...2000,
-            frequency: 0, // Lo manejaremos manualmente 2-3 veces al año
-            accountDistribution: ["BCP": 0.8, "USD": 0.2],
-            currencyByAccount: ["BCP": "PEN", "USD": "USD"],
-            possibleNotes: ["Pasajes Cusco", "Hotel playa", "Tour Arequipa", "Fin semana norte", "Airbnb"]
-        ),
+        // Viajes y vacaciones: Manejado en generateSpecialTransactions() - Agosto y Diciembre
+        // (frequency: 0 para evitar generación automática)
 
         // PERSONAL (8)
         TransactionTemplate(
@@ -731,14 +773,7 @@ private func createAllTransactionTemplates() -> [TransactionTemplate] {
             currencyByAccount: ["Efectivo": "PEN", "BCP": "PEN"],
             possibleNotes: ["Parking centro", "Estacionamiento mall", "Parqueo calle", "Valet"]
         ),
-        TransactionTemplate(
-            subcategoryName: "Leasing",
-            amountRange: 800...1200,
-            frequency: 0, // Lo manejaremos como scheduled si aplica
-            accountDistribution: ["BCP": 1.0],
-            currencyByAccount: ["BCP": "PEN"],
-            possibleNotes: ["Cuota leasing auto", "Cuota mensual vehículo"]
-        ),
+        // Leasing: Ahora manejado por devScheduledPaymentDefinitions
         TransactionTemplate(
             subcategoryName: "Mantenimiento del vehículo",
             amountRange: 150...600,
@@ -747,14 +782,7 @@ private func createAllTransactionTemplates() -> [TransactionTemplate] {
             currencyByAccount: ["BCP": "PEN"],
             possibleNotes: ["Cambio aceite", "Revisión técnica", "Alineación balanceo", "Cambio llantas", "Frenos"]
         ),
-        TransactionTemplate(
-            subcategoryName: "Préstamo vehicular",
-            amountRange: 500...1000,
-            frequency: 0, // Lo manejaremos como scheduled si aplica
-            accountDistribution: ["BCP": 1.0],
-            currencyByAccount: ["BCP": "PEN"],
-            possibleNotes: ["Cuota préstamo auto", "Cuota crédito vehicular"]
-        ),
+        // Préstamo vehicular: Ahora manejado por devScheduledPaymentDefinitions
         TransactionTemplate(
             subcategoryName: "Seguro vehicular",
             amountRange: 180...250,
@@ -768,38 +796,83 @@ private func createAllTransactionTemplates() -> [TransactionTemplate] {
 
 // MARK: - Exchange Rate Helper
 
-/// Genera tipos de cambio realistas PEN/USD con variación temporal
-private func getExchangeRate(for date: Date) -> Double {
+/// Monthly exchange rate data for realistic PEN/USD rates
+private let monthlyExchangeRates: [(year: Int, month: Int, rate: Double)] = [
+    // 2024
+    (2024, 11, 3.75),  // Nov
+    (2024, 12, 3.77),  // Dic
+    // 2025
+    (2025, 1, 3.76),
+    (2025, 2, 3.78),
+    (2025, 3, 3.77),
+    (2025, 4, 3.79),
+    (2025, 5, 3.78),
+    (2025, 6, 3.76),
+    (2025, 7, 3.75),
+    (2025, 8, 3.77),
+    (2025, 9, 3.78),
+    (2025, 10, 3.79),
+    (2025, 11, 3.77),
+    (2025, 12, 3.76),
+    // 2026
+    (2026, 1, 3.78),
+    (2026, 2, 3.77),
+    (2026, 3, 3.79),
+]
+
+/// Seeds ExchangeRate entities for each month from Nov 2024 to today.
+/// Uses the same format as ExchangeRateService (base USD, rates as JSON).
+private func seedExchangeRates(in context: ModelContext) -> Int {
     let calendar = Calendar.current
-    let month = calendar.component(.month, from: date)
+    var count = 0
+
+    for entry in monthlyExchangeRates {
+        // Create date key in format "yyyy-MM-dd" for the first day of each month
+        guard let monthDate = calendar.date(from: DateComponents(
+            year: entry.year,
+            month: entry.month,
+            day: 1
+        )) else { continue }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateKey = dateFormatter.string(from: monthDate)
+
+        // Create rates dictionary with PEN rate (base is USD)
+        // If base is USD, rate for PEN means 1 USD = X PEN
+        let ratesDictionary: [String: Double] = ["PEN": entry.rate]
+
+        do {
+            let exchangeRate = try ExchangeRate(
+                dateKey: dateKey,
+                base: "USD",
+                ratesDictionary: ratesDictionary,
+                timestamp: monthDate
+            )
+            context.insert(exchangeRate)
+            count += 1
+        } catch {
+            print("DevDataSeed: Error creating ExchangeRate for \(dateKey): \(error)")
+        }
+    }
+
+    return count
+}
+
+/// Gets exchange rate for a date from seeded data (fallback to hardcoded if not found).
+/// Returns the PEN/USD rate for the given date's month.
+private func getExchangeRate(for date: Date, from context: ModelContext? = nil) -> Double {
+    let calendar = Calendar.current
     let year = calendar.component(.year, from: date)
+    let month = calendar.component(.month, from: date)
 
-    // Base histórica: ~3.70-3.80 PEN/USD
-    let baseRates: [Int: Double] = [
-        // 2024
-        11: 3.75,  // Nov
-        12: 3.77,  // Dic
-        // 2025
-        1: 3.76,
-        2: 3.78,
-        3: 3.77,
-        4: 3.79,
-        5: 3.78,
-        6: 3.76,
-        7: 3.75,
-        8: 3.77,
-        9: 3.78,
-        10: 3.79,
-        11: 3.77,
-        12: 3.76,
-        // 2026
-        13: 3.78,  // Ene 2026 (usamos 13 para distinguir)
-    ]
+    // Try to find in seeded data first
+    if let entry = monthlyExchangeRates.first(where: { $0.year == year && $0.month == month }) {
+        return entry.rate
+    }
 
-    // Calcular clave de mes
-    let monthKey = year == 2024 ? month : (year == 2025 ? month : 13)
-
-    return baseRates[monthKey] ?? 3.77
+    // Fallback for dates outside seeded range
+    return 3.77
 }
 
 // MARK: - Main Seed Function
@@ -807,6 +880,10 @@ private func getExchangeRate(for date: Date) -> Double {
 /// Ejecuta la semilla de datos de desarrollo solo si está habilitado.
 func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyCode) {
     print("DevDataSeed: Iniciando semilla de datos de desarrollo...")
+
+    // Seed exchange rates first (used by transaction generation)
+    let exchangeRatesCount = seedExchangeRates(in: context)
+    print("DevDataSeed: \(exchangeRatesCount) tipos de cambio creados")
 
     // Create accounts
     let createdAccounts = createDevAccounts(in: context)
@@ -879,9 +956,27 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     do {
         try context.save()
         let totalTransactions = incomeCount + scheduledCount + variedCount + specialCount + transferCount
-        print("DevDataSeed: Semilla completada exitosamente. Total: \(totalTransactions) transacciones.")
+        print("DevDataSeed: ✅ Semilla completada exitosamente")
+        print("DevDataSeed: === Resumen de entidades creadas ===")
+        print("DevDataSeed:   - Tipos de cambio: \(exchangeRatesCount)")
+        print("DevDataSeed:   - Cuentas: \(createdAccounts.count)")
+        print("DevDataSeed:   - Etiquetas: \(createdTags.count)")
+        print("DevDataSeed:   - Presupuestos: \(createdBudgets.count)")
+        print("DevDataSeed:   - Favoritos: \(createdFavorites.count)")
+        print("DevDataSeed:   - Suscripciones: \(createdSubscriptions.count)")
+        print("DevDataSeed:   - Pagos planificados: \(createdScheduledPayments.count)")
+        print("DevDataSeed: === Resumen de transacciones ===")
+        print("DevDataSeed:   - Ingresos: \(incomeCount)")
+        print("DevDataSeed:   - Pagos recurrentes: \(scheduledCount)")
+        print("DevDataSeed:   - Gastos variados: \(variedCount)")
+        print("DevDataSeed:   - Especiales (impuestos/viajes): \(specialCount)")
+        print("DevDataSeed:   - Transferencias: \(transferCount)")
+        print("DevDataSeed:   - TOTAL TRANSACCIONES: \(totalTransactions)")
     } catch {
-        print("DevDataSeed: Error al guardar: \(error)")
+        print("DevDataSeed: ❌ Error crítico al guardar la semilla: \(error)")
+        print("DevDataSeed: Las entidades creadas en memoria no se persistieron.")
+        // Note: SwiftData no soporta rollback explícito, pero al no guardar,
+        // las entidades no persistirán si la app se cierra
     }
 }
 
@@ -1010,10 +1105,7 @@ private func createDevSubscriptions(in context: ModelContext, accounts: [Account
         }
 
         // Buscar cuenta según tipo
-        guard let account = accounts.first(where: {
-            definition.accountType == "USD" ? $0.currencyCode == "USD" :
-            (definition.accountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
-        }) else {
+        guard let account = findAccount(byType: definition.accountType, in: accounts) else {
             print("DevDataSeed: Warning - Cuenta '\(definition.accountType)' no encontrada")
             continue
         }
@@ -1071,10 +1163,7 @@ private func createDevScheduledPayments(in context: ModelContext, accounts: [Acc
         }
 
         // Buscar cuenta según tipo
-        guard let account = accounts.first(where: {
-            definition.accountType == "USD" ? $0.currencyCode == "USD" :
-            (definition.accountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
-        }) else {
+        guard let account = findAccount(byType: definition.accountType, in: accounts) else {
             print("DevDataSeed: Warning - Cuenta '\(definition.accountType)' no encontrada")
             continue
         }
@@ -1149,10 +1238,7 @@ private func generateIncomeTransactions(
             guard let subcategory = try? context.fetch(subcategoryDescriptor).first else { continue }
 
             // Buscar cuenta
-            guard let account = accounts.first(where: {
-                incomeDef.accountType == "USD" ? $0.currencyCode == "USD" :
-                (incomeDef.accountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
-            }) else { continue }
+            guard let account = findAccount(byType: incomeDef.accountType, in: accounts) else { continue }
 
             // Determinar monto según tipo de variación
             let amount: Double
@@ -1353,10 +1439,7 @@ private func generateVariedTransactions(
                 }
 
                 // Buscar cuenta física
-                guard let account = accounts.first(where: {
-                    selectedAccountType == "USD" ? $0.currencyCode == "USD" :
-                    (selectedAccountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
-                }) else { continue }
+                guard let account = findAccount(byType: selectedAccountType, in: accounts) else { continue }
 
                 // Determinar moneda según cuenta
                 let currency = template.currencyByAccount[selectedAccountType] ?? preferredCurrency.rawValue
@@ -1373,8 +1456,13 @@ private func generateVariedTransactions(
                 }
                 let amount = round(baseAmount * 100) / 100
 
-                // Tag aleatorio (30% probabilidad)
-                let randomTags = Bool.random() && Double.random(in: 0...1) < 0.3 && !tags.isEmpty ? [tags.randomElement()!] : []
+                // Tag aleatorio (30% probabilidad real)
+                let randomTags: [Tag]
+                if !tags.isEmpty && Double.random(in: 0...1) < 0.30 {
+                    randomTags = [tags.randomElement()!]
+                } else {
+                    randomTags = []
+                }
 
                 // Nota aleatoria (30% probabilidad)
                 let note = Double.random(in: 0...1) < 0.3 ? template.possibleNotes.randomElement() : nil
@@ -1442,7 +1530,7 @@ private func generateSpecialTransactions(
 
     guard let impuestosSubcat = try? context.fetch(impuestosDescriptor).first,
           let viajesSubcat = try? context.fetch(viajesDescriptor).first,
-          let bcpAccount = accounts.first(where: { $0.name.contains("BCP") }) else {
+          let bcpAccount = findAccount(byType: "BCP", in: accounts) else {
         return 0
     }
 
@@ -1545,17 +1633,33 @@ private func generateTransfers(
 
     var transactionCount = 0
 
-    guard let bcpAccount = accounts.first(where: { $0.name.contains("BCP") }),
-          let efectivoAccount = accounts.first(where: { $0.name.contains("Efectivo") }),
-          let usdAccount = accounts.first(where: { $0.currencyCode == "USD" }) else {
+    guard let bcpAccount = findAccount(byType: "BCP", in: accounts),
+          let efectivoAccount = findAccount(byType: "Efectivo", in: accounts),
+          let usdAccount = findAccount(byType: "USD", in: accounts) else {
         return 0
     }
 
-    // Buscar subcategoría de transferencias
-    let transferDescriptor = FetchDescriptor<Subcategory>(
-        predicate: #Predicate { $0.name == "Transferencia entre cuentas" }
+    // Buscar subcategoría de transferencias para GASTOS (Otros/Transferencia entre cuentas)
+    let expenseTransferDescriptor = FetchDescriptor<Subcategory>(
+        predicate: #Predicate<Subcategory> {
+            $0.name == "Transferencia entre cuentas" &&
+            $0.category?.isIncome == false
+        }
     )
-    guard let transferSubcat = try? context.fetch(transferDescriptor).first else {
+    guard let expenseTransferSubcat = try? context.fetch(expenseTransferDescriptor).first else {
+        print("DevDataSeed: No se encontró subcategoría de transferencia en Otros")
+        return 0
+    }
+
+    // Buscar subcategoría de transferencias para INGRESOS (Ingresos/Transferencia entre cuentas)
+    let incomeTransferDescriptor = FetchDescriptor<Subcategory>(
+        predicate: #Predicate<Subcategory> {
+            $0.name == "Transferencia entre cuentas" &&
+            $0.category?.isIncome == true
+        }
+    )
+    guard let incomeTransferSubcat = try? context.fetch(incomeTransferDescriptor).first else {
+        print("DevDataSeed: No se encontró subcategoría de transferencia en Ingresos")
         return 0
     }
 
@@ -1573,14 +1677,14 @@ private func generateTransfers(
             let amount = Double.random(in: 300...600)
             let roundedAmount = round(amount * 100) / 100
 
-            // Transacción de salida en BCP
+            // Transacción de salida en BCP (GASTO - usa Otros/Transferencia)
             let outTransaction = TransactionItem(
                 date: transferDate,
                 amount: roundedAmount,
                 currencyCode: preferredCurrency.rawValue,
                 note: "Retiro efectivo cajero",
-                category: transferSubcat.category,
-                subcategory: transferSubcat,
+                category: expenseTransferSubcat.category,
+                subcategory: expenseTransferSubcat,
                 account: bcpAccount,
                 tags: [],
                 exchangeRate: 1.0,
@@ -1591,14 +1695,14 @@ private func generateTransfers(
             context.insert(outTransaction)
             transactionCount += 1
 
-            // Transacción de entrada en Efectivo (mismo monto, mismo día)
+            // Transacción de entrada en Efectivo (INGRESO - usa Ingresos/Transferencia)
             let inTransaction = TransactionItem(
                 date: transferDate,
                 amount: roundedAmount,
                 currencyCode: preferredCurrency.rawValue,
                 note: "Retiro efectivo cajero",
-                category: transferSubcat.category,
-                subcategory: transferSubcat,
+                category: incomeTransferSubcat.category,
+                subcategory: incomeTransferSubcat,
                 account: efectivoAccount,
                 tags: [],
                 exchangeRate: 1.0,
@@ -1621,14 +1725,14 @@ private func generateTransfers(
             let amount = Double.random(in: 200...500)
             let roundedAmount = round(amount * 100) / 100
 
-            // Transacción de salida en Efectivo
+            // Transacción de salida en Efectivo (GASTO - usa Otros/Transferencia)
             let outTransaction = TransactionItem(
                 date: depositDate,
                 amount: roundedAmount,
                 currencyCode: preferredCurrency.rawValue,
                 note: "Depósito efectivo banco",
-                category: transferSubcat.category,
-                subcategory: transferSubcat,
+                category: expenseTransferSubcat.category,
+                subcategory: expenseTransferSubcat,
                 account: efectivoAccount,
                 tags: [],
                 exchangeRate: 1.0,
@@ -1639,14 +1743,14 @@ private func generateTransfers(
             context.insert(outTransaction)
             transactionCount += 1
 
-            // Transacción de entrada en BCP
+            // Transacción de entrada en BCP (INGRESO - usa Ingresos/Transferencia)
             let inTransaction = TransactionItem(
                 date: depositDate,
                 amount: roundedAmount,
                 currencyCode: preferredCurrency.rawValue,
                 note: "Depósito efectivo banco",
-                category: transferSubcat.category,
-                subcategory: transferSubcat,
+                category: incomeTransferSubcat.category,
+                subcategory: incomeTransferSubcat,
                 account: bcpAccount,
                 tags: [],
                 exchangeRate: 1.0,
@@ -1672,14 +1776,14 @@ private func generateTransfers(
             let exchangeRate = getExchangeRate(for: savingsDate)
             let amountUSD = round((roundedAmountPEN / exchangeRate) * 100) / 100
 
-            // Transacción de salida en BCP (PEN)
+            // Transacción de salida en BCP (PEN) - GASTO - usa Otros/Transferencia
             let outTransaction = TransactionItem(
                 date: savingsDate,
                 amount: roundedAmountPEN,
                 currencyCode: preferredCurrency.rawValue,
                 note: "Ahorro mensual USD",
-                category: transferSubcat.category,
-                subcategory: transferSubcat,
+                category: expenseTransferSubcat.category,
+                subcategory: expenseTransferSubcat,
                 account: bcpAccount,
                 tags: [],
                 exchangeRate: 1.0,
@@ -1690,14 +1794,14 @@ private func generateTransfers(
             context.insert(outTransaction)
             transactionCount += 1
 
-            // Transacción de entrada en BBVA USD (USD)
+            // Transacción de entrada en BBVA USD (USD) - INGRESO - usa Ingresos/Transferencia
             let inTransaction = TransactionItem(
                 date: savingsDate,
                 amount: amountUSD,
                 currencyCode: "USD",
                 note: "Ahorro mensual USD",
-                category: transferSubcat.category,
-                subcategory: transferSubcat,
+                category: incomeTransferSubcat.category,
+                subcategory: incomeTransferSubcat,
                 account: usdAccount,
                 tags: [],
                 exchangeRate: exchangeRate,
