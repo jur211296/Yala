@@ -8,8 +8,14 @@
 //  -------------------------------------------------------------------------
 //  IMPORTANTE:
 //  - Este archivo solo se compila y ejecuta en DEBUG builds
-//  - Proporciona datos de prueba completos: cuentas, tags, presupuestos,
-//    favoritos, suscripciones, pagos planificados y transacciones históricas
+//  - Proporciona datos de prueba 100% realistas
+//  - Cubre TODAS las subcategorías de gastos (53)
+//  - Incluye 4 tipos de ingresos
+//  - Distribuye transacciones entre 3 cuentas
+//  - Usa monedas según cuenta (PEN, USD)
+//  - Exchange rates realistas con variación temporal
+//  - Notas realistas en 30% de transacciones
+//  - Meses buenos/malos con variación en montos
 //  - Ejecutado opcionalmente desde el onboarding
 //  -------------------------------------------------------------------------
 //
@@ -27,7 +33,7 @@ private struct AccountSeedDefinition {
     let currencyCode: String
     let colorHex: String
     let iconName: String
-    let type: String  // "General", "Efectivo", "Cuenta corriente", "Cuenta de ahorros"
+    let type: String
 }
 
 /// Definición de un tag para el seed
@@ -40,15 +46,15 @@ private struct TagSeedDefinition {
 /// Definición de un presupuesto para el seed
 private struct BudgetSeedDefinition {
     let name: String
-    let periodType: String  // "daily", "monthly", "yearly"
+    let periodType: String
     let limitAmount: Double
-    let subcategoryName: String  // Nombre de la subcategoría a la que se asigna
+    let subcategoryName: String
 }
 
 /// Definición de un favorito para el seed
 private struct FavoriteSeedDefinition {
     let name: String
-    let transactionType: String  // "expense" or "income"
+    let transactionType: String
     let amount: Double?
     let subcategoryName: String
     let note: String?
@@ -58,17 +64,50 @@ private struct FavoriteSeedDefinition {
 private struct SubscriptionSeedDefinition {
     let name: String
     let amount: Double
+    let currencyCode: String
     let dayOfMonth: Int
     let subcategoryName: String
+    let accountType: String  // "BCP", "USD", "Efectivo"
 }
 
 /// Definición de un pago planificado para el seed
 private struct ScheduledPaymentSeedDefinition {
     let name: String
     let amount: Double
+    let currencyCode: String
     let dayOfMonth: Int
     let subcategoryName: String
     let note: String?
+    let accountType: String
+    let variationPercent: Double?  // ±% para servicios variables
+}
+
+/// Template de transacción variable
+private struct TransactionTemplate {
+    let subcategoryName: String
+    let amountRange: ClosedRange<Double>
+    let frequency: Int  // Transacciones por mes
+    let accountDistribution: [String: Double]  // "BCP": 0.5, "Efectivo": 0.3, "USD": 0.2
+    let currencyByAccount: [String: String]  // "BCP": "PEN", "USD": "USD"
+    let possibleNotes: [String]
+}
+
+/// Definición de ingreso
+private struct IncomeDefinition {
+    let subcategoryName: String
+    let baseAmount: Double
+    let frequency: Double  // 1.0 = mensual, 0.5 = cada 2 meses, etc.
+    let dayOfMonth: Int?  // nil = aleatorio
+    let accountType: String
+    let currencyCode: String
+    let possibleNotes: [String]
+    let variationType: IncomeVariationType
+}
+
+enum IncomeVariationType {
+    case fixed  // Monto fijo
+    case bonusMonths([Int])  // Meses con bonus (ej: [7, 12] = Jul, Dic)
+    case random(range: ClosedRange<Double>)  // Rango aleatorio
 }
 
 // MARK: - Seed Data Definitions
@@ -106,7 +145,6 @@ private let devTagDefinitions: [TagSeedDefinition] = [
 ]
 
 private let devBudgetDefinitions: [BudgetSeedDefinition] = [
-    // Mensuales (4)
     BudgetSeedDefinition(
         name: "Alimentación mensual",
         periodType: "monthly",
@@ -131,14 +169,12 @@ private let devBudgetDefinitions: [BudgetSeedDefinition] = [
         limitAmount: 800.0,
         subcategoryName: "Servicios del hogar"
     ),
-    // Diario (1)
     BudgetSeedDefinition(
         name: "Café diario",
         periodType: "daily",
         limitAmount: 15.0,
         subcategoryName: "Restaurantes"
     ),
-    // Anuales (2)
     BudgetSeedDefinition(
         name: "Vacaciones anuales",
         periodType: "yearly",
@@ -185,37 +221,45 @@ private let devFavoriteDefinitions: [FavoriteSeedDefinition] = [
 ]
 
 private let devSubscriptionDefinitions: [SubscriptionSeedDefinition] = [
-    // Día 1 (2 comparten)
     SubscriptionSeedDefinition(
         name: "Netflix",
-        amount: 44.90,
+        amount: 12.99,
+        currencyCode: "USD",
         dayOfMonth: 1,
-        subcategoryName: "Streaming y plataformas"
+        subcategoryName: "Streaming y plataformas",
+        accountType: "USD"
     ),
     SubscriptionSeedDefinition(
         name: "Spotify",
-        amount: 19.90,
+        amount: 9.99,
+        currencyCode: "USD",
         dayOfMonth: 1,
-        subcategoryName: "Streaming y plataformas"
+        subcategoryName: "Streaming y plataformas",
+        accountType: "USD"
     ),
-    // Otros días
     SubscriptionSeedDefinition(
         name: "Amazon Prime",
         amount: 35.00,
+        currencyCode: "PEN",
         dayOfMonth: 10,
-        subcategoryName: "Streaming y plataformas"
+        subcategoryName: "Streaming y plataformas",
+        accountType: "BCP"
     ),
     SubscriptionSeedDefinition(
         name: "Gym",
         amount: 150.00,
+        currencyCode: "PEN",
         dayOfMonth: 15,
-        subcategoryName: "Fitness y actividad física"
+        subcategoryName: "Fitness y actividad física",
+        accountType: "BCP"
     ),
     SubscriptionSeedDefinition(
         name: "iCloud Storage",
-        amount: 10.90,
+        amount: 2.99,
+        currencyCode: "USD",
         dayOfMonth: 25,
-        subcategoryName: "Suscripciones de utilidad"
+        subcategoryName: "Suscripciones de utilidad",
+        accountType: "USD"
     ),
 ]
 
@@ -223,49 +267,544 @@ private let devScheduledPaymentDefinitions: [ScheduledPaymentSeedDefinition] = [
     ScheduledPaymentSeedDefinition(
         name: "Alquiler",
         amount: 1500.00,
+        currencyCode: "PEN",
         dayOfMonth: 5,
         subcategoryName: "Alquiler o hipoteca",
-        note: "Pago mensual de alquiler"
+        note: "Pago mensual de alquiler",
+        accountType: "BCP",
+        variationPercent: nil
     ),
     ScheduledPaymentSeedDefinition(
-        name: "Internet",
+        name: "Internet Movistar",
         amount: 99.00,
+        currencyCode: "PEN",
         dayOfMonth: 8,
         subcategoryName: "Servicios del hogar",
-        note: "Movistar 300 Mbps"
+        note: "300 Mbps",
+        accountType: "BCP",
+        variationPercent: nil
     ),
     ScheduledPaymentSeedDefinition(
-        name: "Luz y agua",
-        amount: 180.00,
+        name: "Luz Enel",
+        amount: 120.00,
+        currencyCode: "PEN",
         dayOfMonth: 12,
         subcategoryName: "Servicios del hogar",
-        note: nil
+        note: nil,
+        accountType: "BCP",
+        variationPercent: 0.20  // ±20%
     ),
     ScheduledPaymentSeedDefinition(
-        name: "Teléfono",
+        name: "Agua Sedapal",
+        amount: 60.00,
+        currencyCode: "PEN",
+        dayOfMonth: 12,
+        subcategoryName: "Servicios del hogar",
+        note: nil,
+        accountType: "BCP",
+        variationPercent: 0.20  // ±20%
+    ),
+    ScheduledPaymentSeedDefinition(
+        name: "Teléfono Claro",
         amount: 55.00,
+        currencyCode: "PEN",
         dayOfMonth: 20,
         subcategoryName: "Telefonía y comunicaciones",
-        note: "Plan móvil Claro"
+        note: "Plan móvil",
+        accountType: "BCP",
+        variationPercent: nil
     ),
     ScheduledPaymentSeedDefinition(
         name: "Seguro del hogar",
         amount: 120.00,
+        currencyCode: "PEN",
         dayOfMonth: 28,
         subcategoryName: "Seguro del hogar",
-        note: "Póliza mensual"
+        note: "Póliza mensual",
+        accountType: "BCP",
+        variationPercent: nil
+    ),
+    ScheduledPaymentSeedDefinition(
+        name: "AFP",
+        amount: 650.00,
+        currencyCode: "PEN",
+        dayOfMonth: 30,
+        subcategoryName: "Pensiones y aportes",
+        note: "Aporte mensual",
+        accountType: "BCP",
+        variationPercent: nil
+    ),
+    ScheduledPaymentSeedDefinition(
+        name: "Préstamo personal",
+        amount: 450.00,
+        currencyCode: "PEN",
+        dayOfMonth: 15,
+        subcategoryName: "Préstamos y créditos",
+        note: "Cuota mensual",
+        accountType: "BCP",
+        variationPercent: nil
     ),
 ]
+
+// MARK: - Income Definitions (4+ tipos)
+
+private let devIncomeDefinitions: [IncomeDefinition] = [
+    // 1. Salario (mensual fijo con aguinaldos en Jul y Dic)
+    IncomeDefinition(
+        subcategoryName: "Salario",
+        baseAmount: 6500.00,
+        frequency: 1.0,
+        dayOfMonth: 30,
+        accountType: "BCP",
+        currencyCode: "PEN",
+        possibleNotes: ["Salario mensual", "Pago mensual"],
+        variationType: .bonusMonths([7, 12])  // Aguinaldo en Julio y Diciembre
+    ),
+
+    // 2. Facturación y freelance (ocasional, monto variable)
+    IncomeDefinition(
+        subcategoryName: "Facturación y freelance",
+        baseAmount: 0,  // No usado con random
+        frequency: 0.4,  // 40% de meses
+        dayOfMonth: nil,
+        accountType: "BCP",
+        currencyCode: "PEN",
+        possibleNotes: [
+            "Proyecto web cliente",
+            "Consultoría IT",
+            "Desarrollo app móvil",
+            "Diseño logo empresa",
+            "Mantenimiento sistema"
+        ],
+        variationType: .random(range: 800...2500)
+    ),
+
+    // 3. Reembolsos (esporádico, monto variable)
+    IncomeDefinition(
+        subcategoryName: "Reembolsos",
+        baseAmount: 0,
+        frequency: 0.3,  // 30% de meses
+        dayOfMonth: nil,
+        accountType: "BCP",
+        currencyCode: "PEN",
+        possibleNotes: [
+            "Reembolso gastos médicos",
+            "Devolución compra defectuosa",
+            "Reembolso trabajo",
+            "Ajuste facturación"
+        ],
+        variationType: .random(range: 50...400)
+    ),
+
+    // 4. Regalos y otros ingresos (ocasional)
+    IncomeDefinition(
+        subcategoryName: "Regalos y otros ingresos",
+        baseAmount: 0,
+        frequency: 0.2,  // 20% de meses
+        dayOfMonth: nil,
+        accountType: "Efectivo",  // Los regalos suelen ser en efectivo
+        currencyCode: "PEN",
+        possibleNotes: [
+            "Regalo cumpleaños",
+            "Propina extraordinaria",
+            "Venta artículo usado",
+            "Premio sorteo"
+        ],
+        variationType: .random(range: 100...800)
+    ),
+]
+
+// MARK: - Transaction Templates (TODAS las subcategorías de gastos)
+
+private func createAllTransactionTemplates() -> [TransactionTemplate] {
+    return [
+        // ALIMENTACIÓN (4)
+        TransactionTemplate(
+            subcategoryName: "Delivery",
+            amountRange: 25...80,
+            frequency: 6,
+            accountDistribution: ["BCP": 0.7, "Efectivo": 0.3],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Rappi almuerzo", "PedidosYa cena", "Uber Eats", "Delivery sushi", "Pizza familiar"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Restaurantes",
+            amountRange: 30...120,
+            frequency: 10,
+            accountDistribution: ["BCP": 0.8, "Efectivo": 0.2],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Almuerzo trabajo", "Cena fin de semana", "Brunch dominical", "Comida china", "Menú ejecutivo"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Suplementos alimenticios",
+            amountRange: 40...150,
+            frequency: 1,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Proteína whey", "Vitaminas", "Omega 3", "Multivitamínico"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Supermercados y bodegas",
+            amountRange: 20...250,
+            frequency: 12,
+            accountDistribution: ["Efectivo": 0.6, "BCP": 0.4],
+            currencyByAccount: ["Efectivo": "PEN", "BCP": "PEN"],
+            possibleNotes: ["Compra semanal", "Metro", "Bodega esquina", "Plaza Vea", "Compra mensual grande"]
+        ),
+
+        // COMPRAS (7)
+        TransactionTemplate(
+            subcategoryName: "Cuidado personal y belleza",
+            amountRange: 30...120,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.9, "Efectivo": 0.1],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Shampoo y productos", "Cremas faciales", "Perfume", "Artículos aseo"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Farmacia y botiquín",
+            amountRange: 20...150,
+            frequency: 3,
+            accountDistribution: ["BCP": 0.7, "Efectivo": 0.3],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Medicamentos", "Inkafarma", "Mifarma", "Botiquín casa", "Analgésicos"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Hogar y decoración",
+            amountRange: 80...400,
+            frequency: 1,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Cortinas nuevas", "Cuadros decorativos", "Plantas", "Organizadores", "Almohadas"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Otros",
+            amountRange: 30...200,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.8, "Efectivo": 0.2],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Varios", "Compra emergencia", "Artículos varios"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Regalos y detalles",
+            amountRange: 50...300,
+            frequency: 2,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Regalo cumpleaños", "Detalles familia", "Regalo amigo secreto", "Flores", "Chocolates"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Ropa y calzado",
+            amountRange: 80...500,
+            frequency: 2,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Zapatos nuevos", "Polos trabajo", "Jeans", "Ropa sport", "Zapatillas"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Tecnología y accesorios",
+            amountRange: 100...800,
+            frequency: 1,
+            accountDistribution: ["BCP": 0.8, "USD": 0.2],
+            currencyByAccount: ["BCP": "PEN", "USD": "USD"],
+            possibleNotes: ["Auriculares Bluetooth", "Mouse gaming", "Cable USB-C", "Funda laptop", "Teclado mecánico"]
+        ),
+
+        // TRANSPORTE (3)
+        TransactionTemplate(
+            subcategoryName: "Movilidad ocasional",
+            amountRange: 15...50,
+            frequency: 4,
+            accountDistribution: ["Efectivo": 0.8, "BCP": 0.2],
+            currencyByAccount: ["Efectivo": "PEN", "BCP": "PEN"],
+            possibleNotes: ["Scooter eléctrico", "Bicicleta compartida", "Moto taxi", "Movilidad especial"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Taxis y apps",
+            amountRange: 10...45,
+            frequency: 12,
+            accountDistribution: ["BCP": 0.7, "Efectivo": 0.3],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Uber trabajo", "Taxi nocturno", "Beat", "InDriver", "Cabify"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Transporte público",
+            amountRange: 2.5...8,
+            frequency: 18,
+            accountDistribution: ["Efectivo": 0.95, "BCP": 0.05],
+            currencyByAccount: ["Efectivo": "PEN", "BCP": "PEN"],
+            possibleNotes: ["Metropolitano", "Bus", "Combi", "Corredor", "Pasaje diario"]
+        ),
+
+        // FINANZAS (5)
+        TransactionTemplate(
+            subcategoryName: "Comisiones y cargos",
+            amountRange: 5...35,
+            frequency: 2,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Comisión transferencia", "Cargo mantenimiento", "Comisión banco", "Cargo tarjeta"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Impuestos",
+            amountRange: 150...600,
+            frequency: 0, // Lo manejaremos manualmente para ciertos meses
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Predial", "Impuesto renta", "Arbitrios", "Declaración anual"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Seguros",
+            amountRange: 80...200,
+            frequency: 1,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Seguro vida", "Seguro salud", "Seguro SOAT", "Póliza personal"]
+        ),
+
+        // HOGAR (6) - Algunos ya en scheduled payments
+        TransactionTemplate(
+            subcategoryName: "Mantenimiento y reparaciones",
+            amountRange: 80...400,
+            frequency: 2, // 1.5 redondeado
+            accountDistribution: ["BCP": 0.8, "Efectivo": 0.2],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Gasfitero", "Pintura pared", "Reparación puerta", "Electricista", "Arreglo mueble"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Personal de apoyo",
+            amountRange: 100...300,
+            frequency: 2,
+            accountDistribution: ["Efectivo": 0.7, "BCP": 0.3],
+            currencyByAccount: ["Efectivo": "PEN", "BCP": "PEN"],
+            possibleNotes: ["Limpieza casa", "Jardinero", "Ayuda doméstica", "Plomero"]
+        ),
+
+        // ENTRETENIMIENTO (8)
+        TransactionTemplate(
+            subcategoryName: "Bares y salidas sociales",
+            amountRange: 40...180,
+            frequency: 5,
+            accountDistribution: ["BCP": 0.6, "Efectivo": 0.4],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Cerveza fin de semana", "After office", "Bar Barranco", "Drinks amigos", "Terraza"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Deportes y recreación",
+            amountRange: 30...150,
+            frequency: 3,
+            accountDistribution: ["BCP": 0.9, "Efectivo": 0.1],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Partido fútbol", "Alquiler cancha", "Clase tenis", "Entrada parque"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Espectáculos y eventos",
+            amountRange: 50...300,
+            frequency: 2, // 1.5 redondeado
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Concierto", "Teatro", "Stand up comedy", "Cine premium", "Festival"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Fiestas y vida nocturna",
+            amountRange: 80...250,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.7, "Efectivo": 0.3],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Discoteca", "Club nocturno", "Fiesta privada", "Cover club", "Salida nocturna"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Hobbies y gaming",
+            amountRange: 50...300,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.8, "USD": 0.2],
+            currencyByAccount: ["BCP": "PEN", "USD": "USD"],
+            possibleNotes: ["Juego PS5", "Steam", "Nintendo eShop", "Suscripción Xbox", "DLC juego"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Salidas en pareja",
+            amountRange: 80...250,
+            frequency: 3,
+            accountDistribution: ["BCP": 0.9, "Efectivo": 0.1],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Cena romántica", "Cine pareja", "Paseo Larcomar", "Café especial", "Día especial"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Viajes y vacaciones",
+            amountRange: 300...2000,
+            frequency: 0, // Lo manejaremos manualmente 2-3 veces al año
+            accountDistribution: ["BCP": 0.8, "USD": 0.2],
+            currencyByAccount: ["BCP": "PEN", "USD": "USD"],
+            possibleNotes: ["Pasajes Cusco", "Hotel playa", "Tour Arequipa", "Fin semana norte", "Airbnb"]
+        ),
+
+        // PERSONAL (8)
+        TransactionTemplate(
+            subcategoryName: "Asesorías y trámites",
+            amountRange: 80...300,
+            frequency: 1, // 0.5 redondeado
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Contador", "Abogado consulta", "Trámite notarial", "Gestoría", "Asesoría legal"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Belleza y estética",
+            amountRange: 40...150,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.8, "Efectivo": 0.2],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Corte cabello", "Barbería", "Manicure", "Spa facial", "Tratamiento estético"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Educación y desarrollo",
+            amountRange: 100...600,
+            frequency: 2, // 1.5 redondeado
+            accountDistribution: ["BCP": 0.9, "USD": 0.1],
+            currencyByAccount: ["BCP": "PEN", "USD": "USD"],
+            possibleNotes: ["Curso online Udemy", "Clase inglés", "Certificación", "Libro técnico", "Taller"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Salud y atención médica",
+            amountRange: 50...400,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.9, "Efectivo": 0.1],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Consulta médica", "Dentista", "Exámenes laboratorio", "Oftalmólogo", "Terapia"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Suscripciones de ocio",
+            amountRange: 20...80,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.7, "USD": 0.3],
+            currencyByAccount: ["BCP": "PEN", "USD": "USD"],
+            possibleNotes: ["Revista digital", "App premium", "Audible", "Kindle Unlimited", "Patreon"]
+        ),
+
+        // MASCOTAS (4)
+        TransactionTemplate(
+            subcategoryName: "Accesorios y juguetes",
+            amountRange: 30...120,
+            frequency: 1, // 0.5 redondeado
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Juguete perro", "Collar nuevo", "Cama mascota", "Plato comedero"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Alimentación de mascotas",
+            amountRange: 80...200,
+            frequency: 2,
+            accountDistribution: ["BCP": 0.8, "Efectivo": 0.2],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Alimento balanceado", "Croquetas perro", "Comida gato", "Snacks mascota"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Salud veterinaria",
+            amountRange: 100...400,
+            frequency: 1,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Veterinario revisión", "Vacunas", "Desparasitación", "Consulta urgencia", "Medicamento"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Servicios y cuidados",
+            amountRange: 40...150,
+            frequency: 2, // 1.5 redondeado
+            accountDistribution: ["BCP": 0.7, "Efectivo": 0.3],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Peluquería canina", "Baño mascota", "Guardería perro", "Paseador", "Grooming"]
+        ),
+
+        // VEHÍCULO (6)
+        TransactionTemplate(
+            subcategoryName: "Combustible",
+            amountRange: 80...200,
+            frequency: 4,
+            accountDistribution: ["BCP": 0.9, "Efectivo": 0.1],
+            currencyByAccount: ["BCP": "PEN", "Efectivo": "PEN"],
+            possibleNotes: ["Gasolina 90", "Gasolina 95", "Primax", "Repsol", "Tanque lleno"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Estacionamientos",
+            amountRange: 5...30,
+            frequency: 8,
+            accountDistribution: ["Efectivo": 0.6, "BCP": 0.4],
+            currencyByAccount: ["Efectivo": "PEN", "BCP": "PEN"],
+            possibleNotes: ["Parking centro", "Estacionamiento mall", "Parqueo calle", "Valet"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Leasing",
+            amountRange: 800...1200,
+            frequency: 0, // Lo manejaremos como scheduled si aplica
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Cuota leasing auto", "Cuota mensual vehículo"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Mantenimiento del vehículo",
+            amountRange: 150...600,
+            frequency: 1, // 0.5 redondeado
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Cambio aceite", "Revisión técnica", "Alineación balanceo", "Cambio llantas", "Frenos"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Préstamo vehicular",
+            amountRange: 500...1000,
+            frequency: 0, // Lo manejaremos como scheduled si aplica
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["Cuota préstamo auto", "Cuota crédito vehicular"]
+        ),
+        TransactionTemplate(
+            subcategoryName: "Seguro vehicular",
+            amountRange: 180...250,
+            frequency: 1,
+            accountDistribution: ["BCP": 1.0],
+            currencyByAccount: ["BCP": "PEN"],
+            possibleNotes: ["SOAT", "Seguro todo riesgo", "Póliza vehicular mensual"]
+        ),
+    ]
+}
+
+// MARK: - Exchange Rate Helper
+
+/// Genera tipos de cambio realistas PEN/USD con variación temporal
+private func getExchangeRate(for date: Date) -> Double {
+    let calendar = Calendar.current
+    let month = calendar.component(.month, from: date)
+    let year = calendar.component(.year, from: date)
+
+    // Base histórica: ~3.70-3.80 PEN/USD
+    let baseRates: [Int: Double] = [
+        // 2024
+        11: 3.75,  // Nov
+        12: 3.77,  // Dic
+        // 2025
+        1: 3.76,
+        2: 3.78,
+        3: 3.77,
+        4: 3.79,
+        5: 3.78,
+        6: 3.76,
+        7: 3.75,
+        8: 3.77,
+        9: 3.78,
+        10: 3.79,
+        11: 3.77,
+        12: 3.76,
+        // 2026
+        13: 3.78,  // Ene 2026 (usamos 13 para distinguir)
+    ]
+
+    // Calcular clave de mes
+    let monthKey = year == 2024 ? month : (year == 2025 ? month : 13)
+
+    return baseRates[monthKey] ?? 3.77
+}
 
 // MARK: - Main Seed Function
 
 /// Ejecuta la semilla de datos de desarrollo solo si está habilitado.
-/// Esta función crea cuentas, tags, presupuestos, favoritos, suscripciones,
-/// pagos planificados y transacciones históricas para facilitar el testing.
-///
-/// - Parameters:
-///   - context: ModelContext de SwiftData
-///   - preferredCurrency: Moneda preferida del usuario (para conversiones)
 func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyCode) {
     print("DevDataSeed: Iniciando semilla de datos de desarrollo...")
 
@@ -277,7 +816,7 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     let createdTags = createDevTags(in: context)
     print("DevDataSeed: \(createdTags.count) etiquetas creadas")
 
-    // Create budgets (requires subcategories from category seed)
+    // Create budgets
     let createdBudgets = createDevBudgets(in: context, preferredCurrency: preferredCurrency)
     print("DevDataSeed: \(createdBudgets.count) presupuestos creados")
 
@@ -286,36 +825,61 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
     print("DevDataSeed: \(createdFavorites.count) favoritos creados")
 
     // Create subscriptions
-    let createdSubscriptions = createDevSubscriptions(in: context, preferredCurrency: preferredCurrency)
+    let createdSubscriptions = createDevSubscriptions(in: context, accounts: createdAccounts)
     print("DevDataSeed: \(createdSubscriptions.count) suscripciones creadas")
 
     // Create scheduled payments
-    let createdScheduledPayments = createDevScheduledPayments(in: context, preferredCurrency: preferredCurrency)
+    let createdScheduledPayments = createDevScheduledPayments(in: context, accounts: createdAccounts)
     print("DevDataSeed: \(createdScheduledPayments.count) pagos planificados creados")
 
-    // Generate historical transactions (8a: from subscriptions and scheduled payments)
-    let transactionsFromScheduled = generateScheduledPaymentTransactions(
+    // Generate income transactions (4 types)
+    let incomeCount = generateIncomeTransactions(
+        in: context,
+        accounts: createdAccounts,
+        preferredCurrency: preferredCurrency
+    )
+    print("DevDataSeed: \(incomeCount) transacciones de ingresos generadas")
+
+    // Generate scheduled payment transactions (from suscriptions and scheduled payments)
+    let scheduledCount = generateScheduledPaymentTransactions(
         in: context,
         subscriptions: createdSubscriptions,
         scheduledPayments: createdScheduledPayments,
         accounts: createdAccounts,
         preferredCurrency: preferredCurrency
     )
-    print("DevDataSeed: \(transactionsFromScheduled) transacciones generadas desde pagos/suscripciones")
+    print("DevDataSeed: \(scheduledCount) transacciones de pagos recurrentes generadas")
 
-    // Generate varied daily transactions (8b: groceries, cafes, transport, etc.)
-    let variedTransactions = generateVariedDailyTransactions(
+    // Generate varied transactions (ALL subcategories)
+    let variedCount = generateVariedTransactions(
         in: context,
         accounts: createdAccounts,
         tags: createdTags,
         preferredCurrency: preferredCurrency
     )
-    print("DevDataSeed: \(variedTransactions) transacciones variadas generadas")
+    print("DevDataSeed: \(variedCount) transacciones variadas generadas")
+
+    // Generate special transactions (impuestos, viajes)
+    let specialCount = generateSpecialTransactions(
+        in: context,
+        accounts: createdAccounts,
+        preferredCurrency: preferredCurrency
+    )
+    print("DevDataSeed: \(specialCount) transacciones especiales generadas")
+
+    // Generate transfers between accounts
+    let transferCount = generateTransfers(
+        in: context,
+        accounts: createdAccounts,
+        preferredCurrency: preferredCurrency
+    )
+    print("DevDataSeed: \(transferCount) transferencias entre cuentas generadas")
 
     // Save all changes
     do {
         try context.save()
-        print("DevDataSeed: Semilla de datos completada exitosamente.")
+        let totalTransactions = incomeCount + scheduledCount + variedCount + specialCount + transferCount
+        print("DevDataSeed: Semilla completada exitosamente. Total: \(totalTransactions) transacciones.")
     } catch {
         print("DevDataSeed: Error al guardar: \(error)")
     }
@@ -323,7 +887,6 @@ func seedDevDataIfEnabled(in context: ModelContext, preferredCurrency: CurrencyC
 
 // MARK: - Account Creation
 
-/// Crea las cuentas de desarrollo
 private func createDevAccounts(in context: ModelContext) -> [Account] {
     var accounts: [Account] = []
 
@@ -348,7 +911,6 @@ private func createDevAccounts(in context: ModelContext) -> [Account] {
 
 // MARK: - Tag Creation
 
-/// Crea los tags de desarrollo
 private func createDevTags(in context: ModelContext) -> [Tag] {
     var tags: [Tag] = []
 
@@ -369,20 +931,16 @@ private func createDevTags(in context: ModelContext) -> [Tag] {
 
 // MARK: - Budget Creation
 
-/// Crea los presupuestos de desarrollo
-/// Requiere que las categorías seed ya existan
 private func createDevBudgets(in context: ModelContext, preferredCurrency: CurrencyCode) -> [Budget] {
     var budgets: [Budget] = []
 
     for definition in devBudgetDefinitions {
-        // Buscar la subcategoría por nombre
-        let subcategoryName = definition.subcategoryName
         let subcategoryDescriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName }
+            predicate: #Predicate { $0.name == definition.subcategoryName }
         )
 
         guard let subcategory = try? context.fetch(subcategoryDescriptor).first else {
-            print("DevDataSeed: Warning - Subcategoría '\(subcategoryName)' no encontrada para presupuesto '\(definition.name)'")
+            print("DevDataSeed: Warning - Subcategoría '\(definition.subcategoryName)' no encontrada")
             continue
         }
 
@@ -404,19 +962,16 @@ private func createDevBudgets(in context: ModelContext, preferredCurrency: Curre
 
 // MARK: - Favorite Payment Creation
 
-/// Crea los pagos favoritos de desarrollo
 private func createDevFavorites(in context: ModelContext) -> [FavoritePayment] {
     var favorites: [FavoritePayment] = []
 
     for definition in devFavoriteDefinitions {
-        // Buscar la subcategoría por nombre
-        let subcategoryName = definition.subcategoryName
         let subcategoryDescriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName }
+            predicate: #Predicate { $0.name == definition.subcategoryName }
         )
 
         guard let subcategory = try? context.fetch(subcategoryDescriptor).first else {
-            print("DevDataSeed: Warning - Subcategoría '\(subcategoryName)' no encontrada para favorito '\(definition.name)'")
+            print("DevDataSeed: Warning - Subcategoría '\(definition.subcategoryName)' no encontrada")
             continue
         }
 
@@ -438,33 +993,37 @@ private func createDevFavorites(in context: ModelContext) -> [FavoritePayment] {
 
 // MARK: - Subscription Creation
 
-/// Crea las suscripciones de desarrollo (paymentCategory = "subscription")
-private func createDevSubscriptions(in context: ModelContext, preferredCurrency: CurrencyCode) -> [ScheduledPayment] {
+private func createDevSubscriptions(in context: ModelContext, accounts: [Account]) -> [ScheduledPayment] {
     var subscriptions: [ScheduledPayment] = []
 
     let calendar = Calendar.current
     let today = Date()
 
     for definition in devSubscriptionDefinitions {
-        // Buscar la subcategoría por nombre
-        let subcategoryName = definition.subcategoryName
         let subcategoryDescriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName }
+            predicate: #Predicate { $0.name == definition.subcategoryName }
         )
 
         guard let subcategory = try? context.fetch(subcategoryDescriptor).first else {
-            print("DevDataSeed: Warning - Subcategoría '\(subcategoryName)' no encontrada para suscripción '\(definition.name)'")
+            print("DevDataSeed: Warning - Subcategoría '\(definition.subcategoryName)' no encontrada")
             continue
         }
 
-        // Calcular nextDueDate: próximo día del mes especificado
+        // Buscar cuenta según tipo
+        guard let account = accounts.first(where: {
+            definition.accountType == "USD" ? $0.currencyCode == "USD" :
+            (definition.accountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
+        }) else {
+            print("DevDataSeed: Warning - Cuenta '\(definition.accountType)' no encontrada")
+            continue
+        }
+
+        // Calcular nextDueDate
         let currentDay = calendar.component(.day, from: today)
         var nextDueDate: Date
         if currentDay < definition.dayOfMonth {
-            // Este mes
             nextDueDate = calendar.date(bySetting: .day, value: definition.dayOfMonth, of: today) ?? today
         } else {
-            // Próximo mes
             let nextMonth = calendar.date(byAdding: .month, value: 1, to: today) ?? today
             nextDueDate = calendar.date(bySetting: .day, value: definition.dayOfMonth, of: nextMonth) ?? today
         }
@@ -473,9 +1032,9 @@ private func createDevSubscriptions(in context: ModelContext, preferredCurrency:
             name: definition.name,
             note: nil,
             amount: definition.amount,
-            currencyCode: preferredCurrency.rawValue,
+            currencyCode: definition.currencyCode,
             transactionType: "expense",
-            account: nil,
+            account: account,
             subcategory: subcategory,
             isRecurring: true,
             recurrenceType: "monthly",
@@ -495,33 +1054,37 @@ private func createDevSubscriptions(in context: ModelContext, preferredCurrency:
 
 // MARK: - Scheduled Payment Creation
 
-/// Crea los pagos planificados de desarrollo (paymentCategory = "recurring")
-private func createDevScheduledPayments(in context: ModelContext, preferredCurrency: CurrencyCode) -> [ScheduledPayment] {
+private func createDevScheduledPayments(in context: ModelContext, accounts: [Account]) -> [ScheduledPayment] {
     var scheduledPayments: [ScheduledPayment] = []
 
     let calendar = Calendar.current
     let today = Date()
 
     for definition in devScheduledPaymentDefinitions {
-        // Buscar la subcategoría por nombre
-        let subcategoryName = definition.subcategoryName
         let subcategoryDescriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName }
+            predicate: #Predicate { $0.name == definition.subcategoryName }
         )
 
         guard let subcategory = try? context.fetch(subcategoryDescriptor).first else {
-            print("DevDataSeed: Warning - Subcategoría '\(subcategoryName)' no encontrada para pago planificado '\(definition.name)'")
+            print("DevDataSeed: Warning - Subcategoría '\(definition.subcategoryName)' no encontrada")
             continue
         }
 
-        // Calcular nextDueDate: próximo día del mes especificado
+        // Buscar cuenta según tipo
+        guard let account = accounts.first(where: {
+            definition.accountType == "USD" ? $0.currencyCode == "USD" :
+            (definition.accountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
+        }) else {
+            print("DevDataSeed: Warning - Cuenta '\(definition.accountType)' no encontrada")
+            continue
+        }
+
+        // Calcular nextDueDate
         let currentDay = calendar.component(.day, from: today)
         var nextDueDate: Date
         if currentDay < definition.dayOfMonth {
-            // Este mes
             nextDueDate = calendar.date(bySetting: .day, value: definition.dayOfMonth, of: today) ?? today
         } else {
-            // Próximo mes
             let nextMonth = calendar.date(byAdding: .month, value: 1, to: today) ?? today
             nextDueDate = calendar.date(bySetting: .day, value: definition.dayOfMonth, of: nextMonth) ?? today
         }
@@ -530,9 +1093,9 @@ private func createDevScheduledPayments(in context: ModelContext, preferredCurre
             name: definition.name,
             note: definition.note,
             amount: definition.amount,
-            currencyCode: preferredCurrency.rawValue,
+            currencyCode: definition.currencyCode,
             transactionType: "expense",
-            account: nil,
+            account: account,
             subcategory: subcategory,
             isRecurring: true,
             recurrenceType: "monthly",
@@ -550,10 +1113,117 @@ private func createDevScheduledPayments(in context: ModelContext, preferredCurre
     return scheduledPayments
 }
 
-// MARK: - Historical Transaction Generation (8a)
+// MARK: - Income Transaction Generation
 
-/// Genera transacciones históricas basadas en suscripciones y pagos planificados
-/// Período: Nov-Dic 2024 + Todo 2025 + Ene 2026 hasta hoy
+private func generateIncomeTransactions(
+    in context: ModelContext,
+    accounts: [Account],
+    preferredCurrency: CurrencyCode
+) -> Int {
+    let calendar = Calendar.current
+    let today = Date()
+    let startDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 1))!
+
+    var transactionCount = 0
+
+    // Iterar mes por mes
+    var currentMonth = startDate
+    while currentMonth <= today {
+        let monthEnd = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: calendar.date(byAdding: .month, value: 1, to: currentMonth)!) ?? today
+
+        for incomeDef in devIncomeDefinitions {
+            // Determinar si este mes tiene ingreso según frecuencia
+            let shouldGenerate: Bool
+            if incomeDef.frequency >= 1.0 {
+                shouldGenerate = true  // Mensual
+            } else {
+                shouldGenerate = Double.random(in: 0...1) < incomeDef.frequency
+            }
+
+            guard shouldGenerate else { continue }
+
+            // Buscar subcategoría
+            let subcategoryDescriptor = FetchDescriptor<Subcategory>(
+                predicate: #Predicate { $0.name == incomeDef.subcategoryName }
+            )
+            guard let subcategory = try? context.fetch(subcategoryDescriptor).first else { continue }
+
+            // Buscar cuenta
+            guard let account = accounts.first(where: {
+                incomeDef.accountType == "USD" ? $0.currencyCode == "USD" :
+                (incomeDef.accountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
+            }) else { continue }
+
+            // Determinar monto según tipo de variación
+            let amount: Double
+            let currentMonthNum = calendar.component(.month, from: currentMonth)
+
+            switch incomeDef.variationType {
+            case .fixed:
+                amount = incomeDef.baseAmount
+            case .bonusMonths(let months):
+                if months.contains(currentMonthNum) {
+                    amount = incomeDef.baseAmount + 3000.0  // Aguinaldo
+                } else {
+                    amount = incomeDef.baseAmount
+                }
+            case .random(let range):
+                amount = Double.random(in: range)
+            }
+
+            // Determinar fecha
+            let transactionDate: Date
+            if let day = incomeDef.dayOfMonth {
+                let targetDay = min(day, calendar.range(of: .day, in: .month, for: currentMonth)?.count ?? 28)
+                transactionDate = calendar.date(bySetting: .day, value: targetDay, of: currentMonth) ?? currentMonth
+            } else {
+                let randomDay = Int.random(in: 15...25)
+                transactionDate = calendar.date(bySetting: .day, value: randomDay, of: currentMonth) ?? currentMonth
+            }
+
+            guard transactionDate <= today else { continue }
+
+            // Determinar nota
+            let note = incomeDef.possibleNotes.randomElement()
+
+            // Calcular exchange rate y monto en moneda preferida
+            let exchangeRate: Double
+            let amountInPreferred: Double
+            if incomeDef.currencyCode == preferredCurrency.rawValue {
+                exchangeRate = 1.0
+                amountInPreferred = amount
+            } else {
+                exchangeRate = getExchangeRate(for: transactionDate)
+                amountInPreferred = amount * exchangeRate
+            }
+
+            let transaction = TransactionItem(
+                date: transactionDate,
+                amount: amount,
+                currencyCode: incomeDef.currencyCode,
+                note: note,
+                category: subcategory.category,
+                subcategory: subcategory,
+                account: account,
+                tags: [],
+                exchangeRate: exchangeRate,
+                amountInPreferredCurrency: amountInPreferred,
+                preferredCurrencyCode: preferredCurrency.rawValue,
+                isExchangeRateProvisional: false
+            )
+            context.insert(transaction)
+            transactionCount += 1
+        }
+
+        // Avanzar al siguiente mes
+        currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? today.addingTimeInterval(86400 * 365)
+    }
+
+    return transactionCount
+}
+
+// MARK: - Scheduled Payment Transaction Generation
+
 private func generateScheduledPaymentTransactions(
     in context: ModelContext,
     subscriptions: [ScheduledPayment],
@@ -563,44 +1233,55 @@ private func generateScheduledPaymentTransactions(
 ) -> Int {
     let calendar = Calendar.current
     let today = Date()
-
-    // Definir rango de fechas: Nov 1, 2024 hasta hoy
     let startDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 1))!
 
     var transactionCount = 0
     let allScheduled = subscriptions + scheduledPayments
 
-    // Seleccionar cuenta por defecto (primera cuenta de la moneda preferida)
-    guard let defaultAccount = accounts.first(where: { $0.currencyCode == preferredCurrency.rawValue }) ?? accounts.first else {
-        print("DevDataSeed: No hay cuentas disponibles para generar transacciones")
-        return 0
-    }
-
-    // Para cada pago/suscripción, generar transacciones históricas
     for payment in allScheduled {
         guard let dayOfMonth = payment.dayOfMonth,
-              let subcategory = payment.subcategory else {
+              let subcategory = payment.subcategory,
+              let account = payment.account else {
             continue
         }
 
         // Generar transacciones mensuales desde startDate hasta hoy
         var currentDate = startDate
         while currentDate <= today {
-            // Crear fecha para el día específico del mes
             let targetDay = min(dayOfMonth, calendar.range(of: .day, in: .month, for: currentDate)?.count ?? 28)
             if let transactionDate = calendar.date(bySetting: .day, value: targetDay, of: currentDate),
                transactionDate <= today {
 
+                // Aplicar variación si existe
+                var amount = payment.amount
+                if let scheduledDef = devScheduledPaymentDefinitions.first(where: { $0.name == payment.name }),
+                   let variation = scheduledDef.variationPercent {
+                    let variationFactor = Double.random(in: (1.0 - variation)...(1.0 + variation))
+                    amount = round(payment.amount * variationFactor * 100) / 100
+                }
+
+                // Calcular exchange rate y monto en moneda preferida
+                let exchangeRate: Double
+                let amountInPreferred: Double
+                if payment.currencyCode == preferredCurrency.rawValue {
+                    exchangeRate = 1.0
+                    amountInPreferred = amount
+                } else {
+                    exchangeRate = getExchangeRate(for: transactionDate)
+                    amountInPreferred = amount * exchangeRate
+                }
+
                 let transaction = TransactionItem(
                     date: transactionDate,
-                    amount: payment.amount,
+                    amount: amount,
                     currencyCode: payment.currencyCode,
-                    note: nil,
+                    note: payment.note,
                     category: subcategory.category,
                     subcategory: subcategory,
-                    account: defaultAccount,
-                    exchangeRate: 1.0,
-                    amountInPreferredCurrency: payment.amount,
+                    account: account,
+                    tags: [],
+                    exchangeRate: exchangeRate,
+                    amountInPreferredCurrency: amountInPreferred,
                     preferredCurrencyCode: preferredCurrency.rawValue,
                     isExchangeRateProvisional: false
                 )
@@ -608,7 +1289,6 @@ private func generateScheduledPaymentTransactions(
                 transactionCount += 1
             }
 
-            // Avanzar al siguiente mes
             currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate) ?? today.addingTimeInterval(86400 * 365)
         }
     }
@@ -616,11 +1296,9 @@ private func generateScheduledPaymentTransactions(
     return transactionCount
 }
 
-// MARK: - Varied Daily Transactions (8b)
+// MARK: - Varied Transaction Generation
 
-/// Genera transacciones variadas del día a día
-/// Objetivo: 30-50 transacciones por mes
-private func generateVariedDailyTransactions(
+private func generateVariedTransactions(
     in context: ModelContext,
     accounts: [Account],
     tags: [Tag],
@@ -628,52 +1306,20 @@ private func generateVariedDailyTransactions(
 ) -> Int {
     let calendar = Calendar.current
     let today = Date()
-
-    // Definir rango de fechas: Nov 1, 2024 hasta hoy
     let startDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 1))!
 
     var transactionCount = 0
+    let templates = createAllTransactionTemplates()
 
-    // Definir tipos de transacciones variadas con sus subcategorías
-    let variedTransactionTemplates: [(subcategoryName: String, amountRange: ClosedRange<Double>, frequency: Int)] = [
-        // Alimentación (más frecuentes)
-        ("Supermercados y bodegas", 50...200, 8),  // ~8 por mes
-        ("Restaurantes", 15...60, 12),              // ~12 por mes
-        ("Delivery", 25...80, 6),                   // ~6 por mes
-
-        // Transporte (frecuentes)
-        ("Taxis y apps", 10...35, 10),              // ~10 por mes
-        ("Transporte público", 3...8, 15),          // ~15 por mes
-
-        // Compras (moderado)
-        ("Farmacia y botiquín", 20...100, 3),       // ~3 por mes
-        ("Ropa y calzado", 80...300, 2),            // ~2 por mes
-        ("Tecnología y accesorios", 100...500, 1),  // ~1 por mes
-
-        // Entretenimiento (moderado)
-        ("Bares y salidas sociales", 40...120, 4),  // ~4 por mes
-        ("Deportes y recreación", 30...100, 2),     // ~2 por mes
-
-        // Personal (menos frecuente)
-        ("Cuidado personal y belleza", 30...80, 2), // ~2 por mes
-        ("Hobbies y gaming", 50...200, 1),          // ~1 por mes
-    ]
-
-    // Fetch todas las subcategorías necesarias
+    // Obtener todas las subcategorías necesarias
     var subcategoryMap: [String: Subcategory] = [:]
-    for template in variedTransactionTemplates {
-        let subcategoryName = template.subcategoryName
+    for template in templates {
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName }
+            predicate: #Predicate { $0.name == template.subcategoryName }
         )
         if let subcategory = try? context.fetch(descriptor).first {
-            subcategoryMap[subcategoryName] = subcategory
+            subcategoryMap[template.subcategoryName] = subcategory
         }
-    }
-
-    // Seleccionar cuenta por defecto
-    guard let defaultAccount = accounts.first(where: { $0.currencyCode == preferredCurrency.rawValue }) ?? accounts.first else {
-        return 0
     }
 
     // Generar transacciones mes por mes
@@ -681,35 +1327,170 @@ private func generateVariedDailyTransactions(
     while currentMonth <= today {
         let monthEnd = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: calendar.date(byAdding: .month, value: 1, to: currentMonth)!) ?? today
 
-        // Para cada tipo de transacción, generar según frecuencia
-        for template in variedTransactionTemplates {
+        for template in templates {
+            guard template.frequency > 0 else { continue }
             guard let subcategory = subcategoryMap[template.subcategoryName] else { continue }
 
             // Generar N transacciones en el mes
             for _ in 0..<template.frequency {
-                // Fecha aleatoria en el mes
                 let dayOffset = Int.random(in: 0...min(27, calendar.component(.day, from: monthEnd) - 1))
                 guard let transactionDate = calendar.date(byAdding: .day, value: dayOffset, to: currentMonth),
                       transactionDate <= today else {
                     continue
                 }
 
-                // Monto aleatorio en el rango
-                let amount = Double.random(in: template.amountRange)
-                let roundedAmount = round(amount * 100) / 100
+                // Seleccionar cuenta según distribución
+                let randomValue = Double.random(in: 0...1)
+                var cumulativeProbability = 0.0
+                var selectedAccountType: String = "BCP"
 
-                // Tag aleatorio (30% de probabilidad)
+                for (accountType, probability) in template.accountDistribution {
+                    cumulativeProbability += probability
+                    if randomValue <= cumulativeProbability {
+                        selectedAccountType = accountType
+                        break
+                    }
+                }
+
+                // Buscar cuenta física
+                guard let account = accounts.first(where: {
+                    selectedAccountType == "USD" ? $0.currencyCode == "USD" :
+                    (selectedAccountType == "BCP" ? $0.name.contains("BCP") : $0.name.contains("Efectivo"))
+                }) else { continue }
+
+                // Determinar moneda según cuenta
+                let currency = template.currencyByAccount[selectedAccountType] ?? preferredCurrency.rawValue
+
+                // Generar monto aleatorio
+                let baseAmount: Double
+                if currency == "USD" {
+                    // Convertir rango a USD aproximadamente
+                    let usdLower = template.amountRange.lowerBound / 3.75
+                    let usdUpper = template.amountRange.upperBound / 3.75
+                    baseAmount = Double.random(in: usdLower...usdUpper)
+                } else {
+                    baseAmount = Double.random(in: template.amountRange)
+                }
+                let amount = round(baseAmount * 100) / 100
+
+                // Tag aleatorio (30% probabilidad)
                 let randomTags = Bool.random() && Double.random(in: 0...1) < 0.3 && !tags.isEmpty ? [tags.randomElement()!] : []
+
+                // Nota aleatoria (30% probabilidad)
+                let note = Double.random(in: 0...1) < 0.3 ? template.possibleNotes.randomElement() : nil
+
+                // Calcular exchange rate y monto en moneda preferida
+                let exchangeRate: Double
+                let amountInPreferred: Double
+                if currency == preferredCurrency.rawValue {
+                    exchangeRate = 1.0
+                    amountInPreferred = amount
+                } else {
+                    exchangeRate = getExchangeRate(for: transactionDate)
+                    if currency == "USD" {
+                        amountInPreferred = amount * exchangeRate
+                    } else {
+                        amountInPreferred = amount / exchangeRate
+                    }
+                }
 
                 let transaction = TransactionItem(
                     date: transactionDate,
-                    amount: roundedAmount,
-                    currencyCode: preferredCurrency.rawValue,
-                    note: nil,
+                    amount: amount,
+                    currencyCode: currency,
+                    note: note,
                     category: subcategory.category,
                     subcategory: subcategory,
-                    account: defaultAccount,
+                    account: account,
                     tags: randomTags,
+                    exchangeRate: exchangeRate,
+                    amountInPreferredCurrency: amountInPreferred,
+                    preferredCurrencyCode: preferredCurrency.rawValue,
+                    isExchangeRateProvisional: false
+                )
+                context.insert(transaction)
+                transactionCount += 1
+            }
+        }
+
+        currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? today.addingTimeInterval(86400 * 365)
+    }
+
+    return transactionCount
+}
+
+// MARK: - Special Transaction Generation
+
+private func generateSpecialTransactions(
+    in context: ModelContext,
+    accounts: [Account],
+    preferredCurrency: CurrencyCode
+) -> Int {
+    let calendar = Calendar.current
+    let today = Date()
+    let startDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 1))!
+
+    var transactionCount = 0
+
+    // Buscar subcategorías necesarias
+    let impuestosDescriptor = FetchDescriptor<Subcategory>(
+        predicate: #Predicate { $0.name == "Impuestos" }
+    )
+    let viajesDescriptor = FetchDescriptor<Subcategory>(
+        predicate: #Predicate { $0.name == "Viajes y vacaciones" }
+    )
+
+    guard let impuestosSubcat = try? context.fetch(impuestosDescriptor).first,
+          let viajesSubcat = try? context.fetch(viajesDescriptor).first,
+          let bcpAccount = accounts.first(where: { $0.name.contains("BCP") }) else {
+        return 0
+    }
+
+    // Generar impuestos en Marzo de cada año
+    var currentMonth = startDate
+    while currentMonth <= today {
+        let month = calendar.component(.month, from: currentMonth)
+        let year = calendar.component(.year, from: currentMonth)
+
+        // Impuestos en Marzo
+        if month == 3 {
+            if let impuestosDate = calendar.date(from: DateComponents(year: year, month: 3, day: 28)),
+               impuestosDate <= today {
+                let amount = 450.0
+                let transaction = TransactionItem(
+                    date: impuestosDate,
+                    amount: amount,
+                    currencyCode: preferredCurrency.rawValue,
+                    note: "Declaración anual impuestos",
+                    category: impuestosSubcat.category,
+                    subcategory: impuestosSubcat,
+                    account: bcpAccount,
+                    tags: [],
+                    exchangeRate: 1.0,
+                    amountInPreferredCurrency: amount,
+                    preferredCurrencyCode: preferredCurrency.rawValue,
+                    isExchangeRateProvisional: false
+                )
+                context.insert(transaction)
+                transactionCount += 1
+            }
+        }
+
+        // Viajes en Agosto (verano/vacaciones)
+        if month == 8 {
+            if let viajeDate = calendar.date(from: DateComponents(year: year, month: 8, day: Int.random(in: 10...20))),
+               viajeDate <= today {
+                let amount = Double.random(in: 800...1500)
+                let roundedAmount = round(amount * 100) / 100
+                let transaction = TransactionItem(
+                    date: viajeDate,
+                    amount: roundedAmount,
+                    currencyCode: preferredCurrency.rawValue,
+                    note: "Viaje vacaciones verano",
+                    category: viajesSubcat.category,
+                    subcategory: viajesSubcat,
+                    account: bcpAccount,
+                    tags: [],
                     exchangeRate: 1.0,
                     amountInPreferredCurrency: roundedAmount,
                     preferredCurrencyCode: preferredCurrency.rawValue,
@@ -720,7 +1501,214 @@ private func generateVariedDailyTransactions(
             }
         }
 
-        // Avanzar al siguiente mes
+        // Viaje adicional en Diciembre
+        if month == 12 {
+            if let viajeDate = calendar.date(from: DateComponents(year: year, month: 12, day: Int.random(in: 20...28))),
+               viajeDate <= today {
+                let amount = Double.random(in: 600...1200)
+                let roundedAmount = round(amount * 100) / 100
+                let transaction = TransactionItem(
+                    date: viajeDate,
+                    amount: roundedAmount,
+                    currencyCode: preferredCurrency.rawValue,
+                    note: "Viaje fin de año",
+                    category: viajesSubcat.category,
+                    subcategory: viajesSubcat,
+                    account: bcpAccount,
+                    tags: [],
+                    exchangeRate: 1.0,
+                    amountInPreferredCurrency: roundedAmount,
+                    preferredCurrencyCode: preferredCurrency.rawValue,
+                    isExchangeRateProvisional: false
+                )
+                context.insert(transaction)
+                transactionCount += 1
+            }
+        }
+
+        currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? today.addingTimeInterval(86400 * 365)
+    }
+
+    return transactionCount
+}
+
+// MARK: - Transfer Generation
+
+private func generateTransfers(
+    in context: ModelContext,
+    accounts: [Account],
+    preferredCurrency: CurrencyCode
+) -> Int {
+    let calendar = Calendar.current
+    let today = Date()
+    let startDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 1))!
+
+    var transactionCount = 0
+
+    guard let bcpAccount = accounts.first(where: { $0.name.contains("BCP") }),
+          let efectivoAccount = accounts.first(where: { $0.name.contains("Efectivo") }),
+          let usdAccount = accounts.first(where: { $0.currencyCode == "USD" }) else {
+        return 0
+    }
+
+    // Buscar subcategoría de transferencias
+    let transferDescriptor = FetchDescriptor<Subcategory>(
+        predicate: #Predicate { $0.name == "Transferencia entre cuentas" }
+    )
+    guard let transferSubcat = try? context.fetch(transferDescriptor).first else {
+        return 0
+    }
+
+    // Generar transferencias mes por mes
+    var currentMonth = startDate
+    while currentMonth <= today {
+        // 1. Retiro de efectivo (BCP → Efectivo) - 2 veces al mes
+        for _ in 0..<2 {
+            let dayOffset = Int.random(in: 5...25)
+            guard let transferDate = calendar.date(byAdding: .day, value: dayOffset, to: currentMonth),
+                  transferDate <= today else {
+                continue
+            }
+
+            let amount = Double.random(in: 300...600)
+            let roundedAmount = round(amount * 100) / 100
+
+            // Transacción de salida en BCP
+            let outTransaction = TransactionItem(
+                date: transferDate,
+                amount: roundedAmount,
+                currencyCode: preferredCurrency.rawValue,
+                note: "Retiro efectivo cajero",
+                category: transferSubcat.category,
+                subcategory: transferSubcat,
+                account: bcpAccount,
+                tags: [],
+                exchangeRate: 1.0,
+                amountInPreferredCurrency: roundedAmount,
+                preferredCurrencyCode: preferredCurrency.rawValue,
+                isExchangeRateProvisional: false
+            )
+            context.insert(outTransaction)
+            transactionCount += 1
+
+            // Transacción de entrada en Efectivo (mismo monto, mismo día)
+            let inTransaction = TransactionItem(
+                date: transferDate,
+                amount: roundedAmount,
+                currencyCode: preferredCurrency.rawValue,
+                note: "Retiro efectivo cajero",
+                category: transferSubcat.category,
+                subcategory: transferSubcat,
+                account: efectivoAccount,
+                tags: [],
+                exchangeRate: 1.0,
+                amountInPreferredCurrency: roundedAmount,
+                preferredCurrencyCode: preferredCurrency.rawValue,
+                isExchangeRateProvisional: false
+            )
+            context.insert(inTransaction)
+            transactionCount += 1
+        }
+
+        // 2. Depósito de efectivo (Efectivo → BCP) - ocasional
+        if Double.random(in: 0...1) < 0.5 {
+            let dayOffset = Int.random(in: 10...20)
+            guard let depositDate = calendar.date(byAdding: .day, value: dayOffset, to: currentMonth),
+                  depositDate <= today else {
+                continue
+            }
+
+            let amount = Double.random(in: 200...500)
+            let roundedAmount = round(amount * 100) / 100
+
+            // Transacción de salida en Efectivo
+            let outTransaction = TransactionItem(
+                date: depositDate,
+                amount: roundedAmount,
+                currencyCode: preferredCurrency.rawValue,
+                note: "Depósito efectivo banco",
+                category: transferSubcat.category,
+                subcategory: transferSubcat,
+                account: efectivoAccount,
+                tags: [],
+                exchangeRate: 1.0,
+                amountInPreferredCurrency: roundedAmount,
+                preferredCurrencyCode: preferredCurrency.rawValue,
+                isExchangeRateProvisional: false
+            )
+            context.insert(outTransaction)
+            transactionCount += 1
+
+            // Transacción de entrada en BCP
+            let inTransaction = TransactionItem(
+                date: depositDate,
+                amount: roundedAmount,
+                currencyCode: preferredCurrency.rawValue,
+                note: "Depósito efectivo banco",
+                category: transferSubcat.category,
+                subcategory: transferSubcat,
+                account: bcpAccount,
+                tags: [],
+                exchangeRate: 1.0,
+                amountInPreferredCurrency: roundedAmount,
+                preferredCurrencyCode: preferredCurrency.rawValue,
+                isExchangeRateProvisional: false
+            )
+            context.insert(inTransaction)
+            transactionCount += 1
+        }
+
+        // 3. Ahorro en USD (BCP PEN → BBVA USD) - ocasional
+        if Double.random(in: 0...1) < 0.5 {
+            let dayOffset = Int.random(in: 25...28)
+            guard let savingsDate = calendar.date(byAdding: .day, value: dayOffset, to: currentMonth),
+                  savingsDate <= today else {
+                continue
+            }
+
+            let amountPEN = Double.random(in: 500...1500)
+            let roundedAmountPEN = round(amountPEN * 100) / 100
+
+            let exchangeRate = getExchangeRate(for: savingsDate)
+            let amountUSD = round((roundedAmountPEN / exchangeRate) * 100) / 100
+
+            // Transacción de salida en BCP (PEN)
+            let outTransaction = TransactionItem(
+                date: savingsDate,
+                amount: roundedAmountPEN,
+                currencyCode: preferredCurrency.rawValue,
+                note: "Ahorro mensual USD",
+                category: transferSubcat.category,
+                subcategory: transferSubcat,
+                account: bcpAccount,
+                tags: [],
+                exchangeRate: 1.0,
+                amountInPreferredCurrency: roundedAmountPEN,
+                preferredCurrencyCode: preferredCurrency.rawValue,
+                isExchangeRateProvisional: false
+            )
+            context.insert(outTransaction)
+            transactionCount += 1
+
+            // Transacción de entrada en BBVA USD (USD)
+            let inTransaction = TransactionItem(
+                date: savingsDate,
+                amount: amountUSD,
+                currencyCode: "USD",
+                note: "Ahorro mensual USD",
+                category: transferSubcat.category,
+                subcategory: transferSubcat,
+                account: usdAccount,
+                tags: [],
+                exchangeRate: exchangeRate,
+                amountInPreferredCurrency: roundedAmountPEN,
+                preferredCurrencyCode: preferredCurrency.rawValue,
+                isExchangeRateProvisional: false
+            )
+            context.insert(inTransaction)
+            transactionCount += 1
+        }
+
         currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? today.addingTimeInterval(86400 * 365)
     }
 
