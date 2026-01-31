@@ -31,7 +31,6 @@ struct ExchangeRateWidget: View {
     }
 
     @Environment(\.colorScheme) var colorScheme
-    @State private var showCurrencySelector = false
     @State private var selectedDate: Date?
 
     // Colors for currency lines
@@ -56,15 +55,6 @@ struct ExchangeRateWidget: View {
             RoundedRectangle(cornerRadius: DS.Radius.xl)
                 .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
-        .sheet(isPresented: $showCurrencySelector) {
-            CurrencySelectorSheet(
-                preferredCurrency: preferredCurrency,
-                selectedCurrencies: $selectedCurrencies,
-                onDismiss: { showCurrencySelector = false }
-            )
-            .presentationDetents([.height(280)])
-            .presentationDragIndicator(.visible)
-        }
     }
 
     // MARK: - Header
@@ -100,16 +90,6 @@ struct ExchangeRateWidget: View {
             )
 
             Spacer()
-
-            // Currency selector button
-            Button {
-                showCurrencySelector = true
-            } label: {
-                Image(systemName: "arrow.left.arrow.right.circle")
-                    .font(.title3)
-                    .foregroundStyle(Color.electricIndigo)
-            }
-            .buttonStyle(.plain)
 
             // Optional Detail Chevron
             if onShowDetail != nil {
@@ -155,7 +135,10 @@ struct ExchangeRateWidget: View {
 
     @ViewBuilder
     private var contentView: some View {
-        if let data = data {
+        // Check if there are no secondary currencies selected
+        if selectedCurrencies.filter({ $0.rawValue != preferredCurrency }).isEmpty {
+            noSecondaryCurrenciesView
+        } else if let data = data {
             if data.hasError {
                 errorView(message: data.errorMessage ?? L10n.Common.unknownError)
             } else if data.chartPoints.isEmpty {
@@ -437,6 +420,25 @@ struct ExchangeRateWidget: View {
         .padding(.bottom, DS.Spacing.lg)
     }
 
+    private var noSecondaryCurrenciesView: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "arrow.left.arrow.right.circle")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("Puedes seleccionar divisas secundarias en")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Text("Perfil > Divisa y cambio")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.electricIndigo)
+        }
+        .frame(height: 120)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.lg)
+    }
+
     private func errorView(message: String) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle")
@@ -524,111 +526,3 @@ struct ExchangeRateWidget: View {
     }
 }
 
-// MARK: - Currency Selector Sheet
-
-struct CurrencySelectorSheet: View {
-    let preferredCurrency: String
-    @Binding var selectedCurrencies: [CurrencyCode]
-    let onDismiss: () -> Void
-
-    // Read user's secondary currencies from onboarding
-    @AppStorage("secondaryCurrencies") private var secondaryCurrenciesRaw: String = ""
-
-    /// Currencies available for comparison (user's secondary currencies, excluding preferred)
-    private var availableCurrencies: [CurrencyCode] {
-        // Parse secondary currencies from stored string
-        let secondaryCodes = secondaryCurrenciesRaw
-            .split(separator: ",")
-            .compactMap { CurrencyCode(rawValue: String($0)) }
-
-        // If user has secondary currencies, use those; otherwise show all except preferred
-        let currencies = secondaryCodes.isEmpty ? CurrencyCode.allCases : secondaryCodes
-        return currencies.filter { $0.rawValue != preferredCurrency }
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: DS.Spacing.lg) {
-                Text(L10n.Widget.selectCurrencies(preferredCurrency))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(availableCurrencies) { currency in
-                        currencyRow(currency: currency)
-                    }
-                }
-                .padding(.horizontal)
-
-                Spacer()
-            }
-            .padding(.top)
-            .navigationTitle(L10n.Widget.currenciesToCompare)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) {
-                        onDismiss()
-                    }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.electricIndigo)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func currencyRow(currency: CurrencyCode) -> some View {
-        let isSelected = selectedCurrencies.contains(currency)
-        let info = currencyInfo(for: currency)
-        let canSelect = isSelected || selectedCurrencies.count < 2
-
-        Button {
-            toggleCurrency(currency)
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Text(info.flag)
-                    .font(.title)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(info.code)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Text(info.name.capitalized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .fill(isSelected ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(
-                        isSelected ? Color.electricIndigo.opacity(0.3) : Color.clear, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .opacity(canSelect ? 1.0 : 0.5)
-        .disabled(!canSelect)
-    }
-
-    private func toggleCurrency(_ currency: CurrencyCode) {
-        if let index = selectedCurrencies.firstIndex(of: currency) {
-            selectedCurrencies.remove(at: index)
-        } else if selectedCurrencies.count < 2 {
-            selectedCurrencies.append(currency)
-        }
-    }
-}

@@ -226,16 +226,11 @@ final class PanelViewModel {
     // MARK: - Exchange Rate Widget State
     var exchangeRateWidgetData: ExchangeRateWidgetData?
     var exchangeRateGrouping: TrendGrouping = .day
-    private let exchangeRateCurrencySelectionKey = "panel_exchange_rate_currencies_v1"
     /// Tracks the last period for which exchange rate was calculated (to avoid redundant recalculations)
     private var lastExchangeRatePeriod: DetailPeriod?
 
     /// Selected currencies to compare against the preferred currency (max 2).
-    var selectedComparisonCurrencies: [CurrencyCode] = [] {
-        didSet {
-            saveExchangeRateCurrencySelection()
-        }
-    }
+    var selectedComparisonCurrencies: [CurrencyCode] = []
 
     // MARK: - Processed Chart Data
     typealias BarPoint = Yala.BarPoint
@@ -639,6 +634,8 @@ final class PanelViewModel {
             lastExchangeRatePeriod = selectedPeriod
             if needsRefresh {
                 SessionState.shared.needsExchangeRateWidgetRefresh = false
+                // Reload currencies from secondaryCurrencies when settings change
+                reloadCurrenciesFromSettings()
             }
             calculateExchangeRateData(
                 preferredCurrencyCode: defaultCurrencyCode,
@@ -1360,55 +1357,26 @@ final class PanelViewModel {
 
     // MARK: - Exchange Rate Widget Logic
 
-    /// Loads persisted currency selection or sets defaults based on preferred currency.
+    /// Loads currency selection from secondaryCurrencies (onboarding/settings).
+    /// This is the single source of truth for which currencies to display.
     private func loadExchangeRateCurrencySelection() {
-        if let data = UserDefaults.standard.data(forKey: exchangeRateCurrencySelectionKey),
-            let decoded = try? JSONDecoder().decode([String].self, from: data)
-        {
-            // Convert string codes back to CurrencyCode enum (case-insensitive)
-            var currencies = decoded.compactMap { code -> CurrencyCode? in
-                CurrencyCode(rawValue: code.uppercased())
-            }
+        if let secondaryCurrenciesRaw = UserDefaults.standard.string(forKey: "secondaryCurrencies"),
+           !secondaryCurrenciesRaw.isEmpty {
+            let currencies = secondaryCurrenciesRaw
+                .split(separator: ",")
+                .compactMap { CurrencyCode(rawValue: String($0)) }
 
-            // Remove duplicates while preserving order
-            var seen = Set<CurrencyCode>()
-            currencies = currencies.filter { seen.insert($0).inserted }
-
-            // Limit to max 2
             selectedComparisonCurrencies = Array(currencies.prefix(2))
-        }
-        // Note: Defaults are set when calculating data if selection is empty
-    }
-
-    /// Saves the current currency selection.
-    private func saveExchangeRateCurrencySelection() {
-        let codes = selectedComparisonCurrencies.map { $0.rawValue }
-        if let encoded = try? JSONEncoder().encode(codes) {
-            UserDefaults.standard.set(encoded, forKey: exchangeRateCurrencySelectionKey)
+        } else {
+            selectedComparisonCurrencies = []
         }
     }
 
-    /// Sets default comparison currencies based on preferred currency.
-    func setDefaultComparisonCurrencies(preferredCurrency: CurrencyCode) {
-        guard selectedComparisonCurrencies.isEmpty else { return }
-
-        switch preferredCurrency {
-        case .pen:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .usd:
-            selectedComparisonCurrencies = [.pen, .eur]
-        case .eur:
-            selectedComparisonCurrencies = [.usd, .pen]
-        case .mxn:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .cop:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .brl:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .gbp:
-            selectedComparisonCurrencies = [.usd, .eur]
-        }
+    /// Reloads currencies from secondaryCurrencies when settings change
+    private func reloadCurrenciesFromSettings() {
+        loadExchangeRateCurrencySelection()
     }
+
 
     /// Calculates exchange rate data for the widget.
     func calculateExchangeRateData(
@@ -1416,9 +1384,6 @@ final class PanelViewModel {
         context: ModelContext
     ) {
         let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
-
-        // Ensure defaults are set
-        setDefaultComparisonCurrencies(preferredCurrency: preferredCurrency)
 
         // Calculate rates for ALL possible comparison currencies (so selection changes are instant)
         let allCurrencies: [CurrencyCode] = [.pen, .usd, .eur]
