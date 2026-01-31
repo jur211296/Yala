@@ -666,11 +666,7 @@ struct OnboardingView: View {
                 // Dismiss keyboard (especially important on step 1)
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-                #if DEV_BUILD
-                let lastStep = 6
-                #else
                 let lastStep = 5
-                #endif
 
                 if currentStep < lastStep {
                     dsWithAnimation(reduceMotion) {
