@@ -261,6 +261,8 @@ struct CurrencySettingsView: View {
             current.remove(currency)
             // Save back to storage
             secondaryCurrenciesRaw = current.map { $0.rawValue }.joined(separator: ",")
+            // Signal widget to refresh when currency is removed
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
         } else if current.count < 2 {
             current.insert(currency)
             // Save back to storage
