@@ -22,11 +22,6 @@ struct OnboardingView: View {
     @State private var selectedPeriod: DetailPeriod = .thisMonth
     @State private var loadSeedCategories: Bool = true
 
-    #if DEV_BUILD
-    // Dev data seed preference (only visible in DEV builds)
-    @State private var loadDevData: Bool = false
-    #endif
-
     // Current step in the onboarding flow
     @State private var currentStep: Int = 0
 
@@ -60,12 +55,7 @@ struct OnboardingView: View {
                 secondaryCurrenciesStep.tag(2)
                 periodStep.tag(3)
                 categoriesStep.tag(4)
-                #if DEV_BUILD
-                devDataStep.tag(5)
-                notificationsStep.tag(6)
-                #else
                 notificationsStep.tag(5)
-                #endif
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
@@ -83,11 +73,7 @@ struct OnboardingView: View {
     // MARK: - Progress Indicator
 
     private var progressIndicator: some View {
-        #if DEV_BUILD
-        let totalSteps = 7
-        #else
         let totalSteps = 6
-        #endif
 
         return HStack(spacing: DS.Spacing.sm) {
             ForEach(0..<totalSteps, id: \.self) { step in
@@ -365,90 +351,7 @@ struct OnboardingView: View {
         }
     }
 
-    #if DEV_BUILD
-    // MARK: - Step 5 (DEV_BUILD): Dev Data Seed
-
-    private var devDataStep: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "cpu.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(Color.electricIndigo)
-
-                Text("Datos de prueba")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-
-                Text("Solo para desarrollo: carga datos de ejemplo (cuentas, transacciones, presupuestos) para probar la app rápidamente")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.xl)
-            }
-            .padding(.top, DS.Spacing.md)
-
-            Spacer()
-
-            // Selection buttons
-            VStack(spacing: DS.Spacing.sm) {
-                Button {
-                    loadDevData = true
-                } label: {
-                    HStack {
-                        Image(systemName: loadDevData ? "checkmark.circle.fill" : "circle")
-                            .font(.title3)
-                            .foregroundStyle(loadDevData ? Color.electricIndigo : .secondary)
-
-                        Text("Sí, cargar datos de prueba")
-                            .font(.body)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-                    }
-                    .padding(DS.Spacing.md)
-                    .background(loadDevData ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(loadDevData ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    loadDevData = false
-                } label: {
-                    HStack {
-                        Image(systemName: loadDevData ? "circle" : "checkmark.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(loadDevData ? .secondary : Color.electricIndigo)
-
-                        Text("No, empezar sin datos")
-                            .font(.body)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-                    }
-                    .padding(DS.Spacing.md)
-                    .background(loadDevData ? Color.yalaCard : Color.electricIndigo.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(loadDevData ? DS.Colors.borderSubtle : Color.electricIndigo.opacity(0.3), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.md)
-
-            Spacer()
-        }
-    }
-    #endif
-
-    // MARK: - Step 6 (or 7 in DEBUG): Notifications
+    // MARK: - Step 5: Notifications
 
     private var notificationsStep: some View {
         VStack(spacing: DS.Spacing.lg) {
@@ -781,11 +684,7 @@ struct OnboardingView: View {
                     completeOnboarding()
                 }
             } label: {
-                #if DEV_BUILD
-                let isLastStep = currentStep >= 6
-                #else
                 let isLastStep = currentStep >= 5
-                #endif
 
                 Text(isLastStep ? L10n.Onboarding.finish : L10n.Action.next)
                     .font(.body.weight(.semibold))
@@ -854,13 +753,6 @@ struct OnboardingView: View {
         if loadSeedCategories {
             seedCategoriesIfNeeded(in: modelContext)
         }
-
-        #if DEV_BUILD
-        // Seed dev data if user chose to (DEV_BUILD only)
-        if loadDevData {
-            seedDevDataIfEnabled(in: modelContext, preferredCurrency: selectedCurrency)
-        }
-        #endif
 
         // Create notifications based on user selection
         createSelectedNotifications()
