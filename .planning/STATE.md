@@ -242,6 +242,13 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ### Ideas Capturadas
 
+- **2026-02-01 [Quality] [Low]: Limpiar try? en QuickExpenseIntent.swift**
+  Contexto: 14 instancias de `try?` que silencian errores en App Intents (Shortcuts/Siri)
+  Archivo: `Yala/App/Intents/QuickExpenseIntent.swift`
+  Líneas: 274, 281, 287, 365, 418, 481, 739, 1009 (fetches) + 6 ModelContainer creations
+  También: 1 force unwrap en línea 201 (simplificable)
+  Estado: Pendiente - código preexistente, no crítico pero mejora diagnóstico
+
 - **2026-01-29 [Testing] [Quality] [Medium]: Unit Tests para ViewModels** ✅ COMPLETADO (2026-01-30)
   Contexto: ViewModels testeables después del refactoring D.8
   Documento: `.planning/TESTING-STRATEGY.md`
@@ -271,8 +278,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Fase 10.5.A completada (4 commits), nuevos bugs de aislamiento identificados (E.1-E.4)
-Next step: Análisis y resolución de aislamiento Yala vs Yala Dev (E.1-E.4) o 10.5.B/C/D
+Stopped at: Fase 10.5.E completada (aislamiento Yala vs Yala Dev)
+Next step: 10.5.B (UI Pagos Planificados), 10.5.C (UX), 10.5.D (Notificaciones presupuestos), o 10.5.F (Modal automatizaciones)
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
