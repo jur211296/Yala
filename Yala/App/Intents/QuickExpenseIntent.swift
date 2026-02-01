@@ -906,9 +906,33 @@ struct AutomationEntryIntent: AppIntent {
         }
 
         // Parse JSON
-        guard let jsonData = jsonString.data(using: .utf8),
-              let transaction = try? JSONDecoder().decode(AutomationTransactionData.self, from: jsonData) else {
-            return .result(dialog: "shortcut.automation.error.invalidJSON")
+        guard let jsonData = jsonString.data(using: .utf8) else {
+            return .result(dialog: IntentDialog(stringLiteral:
+                String(localized: "shortcut.automation.error.invalidJSON") + " (encoding error)"))
+        }
+
+        let transaction: AutomationTransactionData
+        do {
+            transaction = try JSONDecoder().decode(AutomationTransactionData.self, from: jsonData)
+        } catch let decodingError as DecodingError {
+            let errorDetail: String
+            switch decodingError {
+            case .keyNotFound(let key, _):
+                errorDetail = "Missing: \(key.stringValue)"
+            case .typeMismatch(_, let context):
+                errorDetail = "Type error: \(context.codingPath.last?.stringValue ?? "?")"
+            case .valueNotFound(_, let context):
+                errorDetail = "Null: \(context.codingPath.last?.stringValue ?? "?")"
+            case .dataCorrupted(let context):
+                errorDetail = context.debugDescription
+            @unknown default:
+                errorDetail = decodingError.localizedDescription
+            }
+            return .result(dialog: IntentDialog(stringLiteral:
+                String(localized: "shortcut.automation.error.invalidJSON") + " (\(errorDetail))"))
+        } catch {
+            return .result(dialog: IntentDialog(stringLiteral:
+                String(localized: "shortcut.automation.error.invalidJSON") + " (\(error.localizedDescription))"))
         }
 
         // Validate amount
