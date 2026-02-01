@@ -50,6 +50,24 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
     case uah = "UAH"
     case `try` = "TRY"
 
+    // Asia
+    case jpy = "JPY"
+    case cny = "CNY"
+    case krw = "KRW"
+    case inr = "INR"
+    case idr = "IDR"
+    case php = "PHP"
+    case thb = "THB"
+    case myr = "MYR"
+    case sgd = "SGD"
+    case hkd = "HKD"
+    case twd = "TWD"
+    case vnd = "VND"
+
+    // Oceanía
+    case aud = "AUD"
+    case nzd = "NZD"
+
     var id: String { rawValue }
 
     // MARK: - Display Properties
@@ -88,6 +106,22 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         case .rub: return "🇷🇺"
         case .uah: return "🇺🇦"
         case .try: return "🇹🇷"
+        // Asia
+        case .jpy: return "🇯🇵"
+        case .cny: return "🇨🇳"
+        case .krw: return "🇰🇷"
+        case .inr: return "🇮🇳"
+        case .idr: return "🇮🇩"
+        case .php: return "🇵🇭"
+        case .thb: return "🇹🇭"
+        case .myr: return "🇲🇾"
+        case .sgd: return "🇸🇬"
+        case .hkd: return "🇭🇰"
+        case .twd: return "🇹🇼"
+        case .vnd: return "🇻🇳"
+        // Oceanía
+        case .aud: return "🇦🇺"
+        case .nzd: return "🇳🇿"
         }
     }
 
@@ -125,6 +159,22 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         case .rub: return "₽"
         case .uah: return "₴"
         case .try: return "₺"
+        // Asia
+        case .jpy: return "¥"
+        case .cny: return "¥"
+        case .krw: return "₩"
+        case .inr: return "₹"
+        case .idr: return "Rp"
+        case .php: return "₱"
+        case .thb: return "฿"
+        case .myr: return "RM"
+        case .sgd: return "S$"
+        case .hkd: return "HK$"
+        case .twd: return "NT$"
+        case .vnd: return "₫"
+        // Oceanía
+        case .aud: return "A$"
+        case .nzd: return "NZ$"
         }
     }
 
@@ -162,6 +212,22 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         case .rub: return L10n.Currency.rub
         case .uah: return L10n.Currency.uah
         case .try: return L10n.Currency.try
+        // Asia
+        case .jpy: return L10n.Currency.jpy
+        case .cny: return L10n.Currency.cny
+        case .krw: return L10n.Currency.krw
+        case .inr: return L10n.Currency.inr
+        case .idr: return L10n.Currency.idr
+        case .php: return L10n.Currency.php
+        case .thb: return L10n.Currency.thb
+        case .myr: return L10n.Currency.myr
+        case .sgd: return L10n.Currency.sgd
+        case .hkd: return L10n.Currency.hkd
+        case .twd: return L10n.Currency.twd
+        case .vnd: return L10n.Currency.vnd
+        // Oceanía
+        case .aud: return L10n.Currency.aud
+        case .nzd: return L10n.Currency.nzd
         }
     }
 
@@ -231,6 +297,36 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
             return ["UAH", "₴", "HRYVNIA", "HRYVNIAS", "GRIVNA"]
         case .try:
             return ["TRY", "₺", "LIRA", "LIRAS", "LIRA TURCA"]
+        // Asia
+        case .jpy:
+            return ["JPY", "¥", "YEN", "YENES"]
+        case .cny:
+            return ["CNY", "¥", "YUAN", "RENMINBI", "RMB"]
+        case .krw:
+            return ["KRW", "₩", "WON", "WONES"]
+        case .inr:
+            return ["INR", "₹", "RUPEE", "RUPEES", "RUPIA", "RUPIAS"]
+        case .idr:
+            return ["IDR", "RP", "RUPIAH", "RUPIA INDONESIA"]
+        case .php:
+            return ["PHP", "₱", "PESO FILIPINO", "PESOS FILIPINOS"]
+        case .thb:
+            return ["THB", "฿", "BAHT", "BAHTS"]
+        case .myr:
+            return ["MYR", "RM", "RINGGIT", "RINGGITS"]
+        case .sgd:
+            return ["SGD", "S$", "DOLAR SINGAPUR"]
+        case .hkd:
+            return ["HKD", "HK$", "DOLAR HONG KONG"]
+        case .twd:
+            return ["TWD", "NT$", "NUEVO DOLAR TAIWANES"]
+        case .vnd:
+            return ["VND", "₫", "DONG", "DONGS"]
+        // Oceanía
+        case .aud:
+            return ["AUD", "A$", "DOLAR AUSTRALIANO"]
+        case .nzd:
+            return ["NZD", "NZ$", "DOLAR NEOZELANDES"]
         }
     }
 
@@ -272,6 +368,22 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         case .rub: return 95.0      // 1 USD = 95 RUB
         case .uah: return 41.0      // 1 USD = 41 UAH
         case .try: return 32.0      // 1 USD = 32 TRY
+        // Asia
+        case .jpy: return 150.0     // 1 USD = 150 JPY
+        case .cny: return 7.25      // 1 USD = 7.25 CNY
+        case .krw: return 1380.0    // 1 USD = 1380 KRW
+        case .inr: return 83.0      // 1 USD = 83 INR
+        case .idr: return 15800.0   // 1 USD = 15800 IDR
+        case .php: return 56.0      // 1 USD = 56 PHP
+        case .thb: return 35.0      // 1 USD = 35 THB
+        case .myr: return 4.7       // 1 USD = 4.7 MYR
+        case .sgd: return 1.35      // 1 USD = 1.35 SGD
+        case .hkd: return 7.8       // 1 USD = 7.8 HKD
+        case .twd: return 32.0      // 1 USD = 32 TWD
+        case .vnd: return 24500.0   // 1 USD = 24500 VND
+        // Oceanía
+        case .aud: return 1.55      // 1 USD = 1.55 AUD
+        case .nzd: return 1.68      // 1 USD = 1.68 NZD
         }
     }
 
@@ -322,6 +434,22 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         case .rub: return ["RU"]
         case .uah: return ["UA"]
         case .try: return ["TR"]
+        // Asia
+        case .jpy: return ["JP"]
+        case .cny: return ["CN"]
+        case .krw: return ["KR"]
+        case .inr: return ["IN"]
+        case .idr: return ["ID"]
+        case .php: return ["PH"]
+        case .thb: return ["TH"]
+        case .myr: return ["MY"]
+        case .sgd: return ["SG"]
+        case .hkd: return ["HK"]
+        case .twd: return ["TW"]
+        case .vnd: return ["VN"]
+        // Oceanía
+        case .aud: return ["AU"]
+        case .nzd: return ["NZ"]
         }
     }
 

@@ -401,6 +401,22 @@ enum L10n {
         static var rub: String { NSLocalizedString("currency.rub", comment: "") }
         static var uah: String { NSLocalizedString("currency.uah", comment: "") }
         static var `try`: String { NSLocalizedString("currency.try", comment: "") }
+        // Asia
+        static var jpy: String { NSLocalizedString("currency.jpy", comment: "") }
+        static var cny: String { NSLocalizedString("currency.cny", comment: "") }
+        static var krw: String { NSLocalizedString("currency.krw", comment: "") }
+        static var inr: String { NSLocalizedString("currency.inr", comment: "") }
+        static var idr: String { NSLocalizedString("currency.idr", comment: "") }
+        static var php: String { NSLocalizedString("currency.php", comment: "") }
+        static var thb: String { NSLocalizedString("currency.thb", comment: "") }
+        static var myr: String { NSLocalizedString("currency.myr", comment: "") }
+        static var sgd: String { NSLocalizedString("currency.sgd", comment: "") }
+        static var hkd: String { NSLocalizedString("currency.hkd", comment: "") }
+        static var twd: String { NSLocalizedString("currency.twd", comment: "") }
+        static var vnd: String { NSLocalizedString("currency.vnd", comment: "") }
+        // Oceanía
+        static var aud: String { NSLocalizedString("currency.aud", comment: "") }
+        static var nzd: String { NSLocalizedString("currency.nzd", comment: "") }
     }
 
     // MARK: - Empty States

@@ -802,6 +802,22 @@
 "currency.rub" = "rublo russo";
 "currency.uah" = "hryvnia ucraniana";
 "currency.try" = "lira turca";
+// Ásia
+"currency.jpy" = "iene japonês";
+"currency.cny" = "yuan chinês";
+"currency.krw" = "won sul-coreano";
+"currency.inr" = "rupia indiana";
+"currency.idr" = "rupia indonésia";
+"currency.php" = "peso filipino";
+"currency.thb" = "baht tailandês";
+"currency.myr" = "ringgit malaio";
+"currency.sgd" = "dólar de Singapura";
+"currency.hkd" = "dólar de Hong Kong";
+"currency.twd" = "novo dólar taiwanês";
+"currency.vnd" = "dong vietnamita";
+// Oceania
+"currency.aud" = "dólar australiano";
+"currency.nzd" = "dólar neozelandês";
 
 "common.selectColor" = "Selecione uma cor";
 "common.useThisColor" = "Usar esta cor";
