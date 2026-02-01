@@ -5,25 +5,30 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 11 — Plataforma Avanzada (V1.2 - App Store Release)
+**Current focus:** Fase 10.5 — Mejoras Pre-Release (V1.1)
 
 ## Current Position
 
-Version: 1.2 (en desarrollo)
-Phase: 11 — Plataforma Avanzada
+Version: 1.1 (en desarrollo)
+Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **V1.1 COMPLETA ✅ - Auditoría cerrada ✅** — Lista para comenzar V1.2
-Last activity: 2026-01-30 — STATE.md actualizado, preparado para Fase 11
+Status: **Fase 10.5 iniciada** — Mejoras adicionales antes de V1.2
+Last activity: 2026-02-01 — Creada Fase 10.5 en ROADMAP
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ████████████████ 100% ✅ (Fase 8 y Fase 10 completadas)
+Progress: V1.1 ██████████████░░ 90% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso)
 Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-01] 1be90fd fix(share): dynamic App Group and URL Scheme for Yala vs Yala Dev
+- [2026-02-01] e5dad6a fix(notifications): show ScheduledPaymentAlertModal over sheets
+- [2026-02-01] bd7cdb6 fix(profile): dismiss ProfileView on theme change for immediate apply
+- [2026-02-01] 2b28104 fix(intents): add detailed DecodingError messages in automation JSON parsing
+- [2026-01-31] 3230de0 feat(widget): add interactive legend to exchange rate widget
 - [2026-01-31] 96ae1c1 feat(currency): redesign currency selection with continent-grouped sheets
 - [2026-01-31] 73cde58 feat(currency): add Middle East, Africa, and North America currencies
 - [2026-01-31] 7e5a714 feat(currency): add Asian and Oceanian currencies support
@@ -108,6 +113,45 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Next Steps
 
+### Fase 10.5: Mejoras Pre-Release (V1.1) — EN PROGRESO
+
+**10.5.A: Bugs Críticos (4)** ✅ COMPLETADO
+- [x] A.1: Share Sheet envía imagen a app incorrecta → App Group y URL Scheme dinámicos
+- [x] A.2: Atajo de automatización no lee JSON de texto → DecodingError detallado
+- [x] A.3: Notificación in-app no aparece si hay sheet abierta → fullScreenCover
+- [x] A.4: Cambio de tema no se aplica inmediatamente → themeRefreshKey con UUID
+
+**10.5.E: Aislamiento Yala vs Yala Dev (NUEVO - requiere análisis)**
+- [ ] E.1: Onboarding no se salta en Yala Dev después del cambio de entitlements
+  - Causa probable: UserDefaults `hasCompletedOnboarding` compartido entre builds
+- [ ] E.2: Inbox compartido entre Yala y Yala Dev
+  - Las transacciones creadas en una app aparecen en la otra
+  - ModelContainer/SwiftData usa el mismo storage
+- [ ] E.3: Permisos de voz/micrófono compartidos
+  - Si se da permiso en una, automáticamente está en la otra
+- [ ] E.4: Análisis profundo de aislamiento completo
+  - UserDefaults: App Suite vs estándar
+  - SwiftData: ModelContainer separados por App Group
+  - Keychain: Groups compartidos o separados
+  - Cualquier otro storage compartido
+
+**10.5.F: Notificaciones In-App (NUEVO)**
+- [ ] F.1: Modal para automatizaciones/Apple Pay
+  - Cuando se añaden transacciones a bandeja por atajos de automatización o Apple Pay
+  - Mostrar modal similar a pagos planificados: "Se han agregado X registros a tu bandeja"
+  - Solo mostrar al volver a la app (no interrumpir flujo en background)
+
+**10.5.B: Consistencia Visual (1)**
+- [ ] B.1: UI de Pagos Planificados (alinear con Presupuestos)
+
+**10.5.C: UX y Personalización (3)**
+- [ ] C.1: Ejemplo voz "pesos" hardcodeado → moneda preferida
+- [ ] C.2: Filtro monedas solo con transacciones existentes
+- [ ] C.3: Onboarding divisas: recomendada + A-Z + continentes
+
+**10.5.D: Features (1)**
+- [ ] D.1: Notificaciones de presupuestos (porcentaje + límite)
+
 ### Fase 10: Refinamiento & Notificaciones (V1.1) ✅ COMPLETADA
 
 **Resumen:** 21/21 items UAT completados (2026-01-30)
@@ -132,7 +176,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - B.2: Campo `createdAt` para ordenar registros del mismo día por hora de creación
 - F.1: ~~Seed Dev solo visible en scheme "Yala Dev"~~ **ELIMINADO** (340ef29)
 
-### Próxima fase: Fase 11 — Plataforma Avanzada (V1.2)
+### Después de 10.5: Fase 11 — Plataforma Avanzada (V1.2)
 
 Ver ROADMAP.md para detalles de Fase 11:
 - Modo "Solo gastos"
@@ -228,9 +272,9 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ## Session Continuity
 
-Last session: 2026-01-31
-Stopped at: Rediseño selección de divisas con sheets por continente (96ae1c1)
-Next step: Probar nueva UX de divisas en simulador, luego comenzar Fase 11
+Last session: 2026-02-01
+Stopped at: Fase 10.5.A completada (4 commits), nuevos bugs de aislamiento identificados (E.1-E.4)
+Next step: Análisis y resolución de aislamiento Yala vs Yala Dev (E.1-E.4) o 10.5.B/C/D
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)

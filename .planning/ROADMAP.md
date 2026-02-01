@@ -31,6 +31,7 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
 - [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX, dev seed (21 items UAT) ✅ COMPLETADA
+- [ ] **Fase 10.5: Mejoras Pre-Release** - Mejoras adicionales antes de V1.2
 
 ### V1.2 (App Store Release)
 - [ ] **Fase 11: Plataforma Avanzada** - Modo solo gastos, Widgets iOS, Smart Insights, Watch, iPad, reportes
@@ -361,6 +362,37 @@ DoD:
 
 ---
 
+### Fase 10.5: Mejoras Pre-Release
+**Goal**: Mejoras adicionales y polish antes de pasar a V1.2
+**Depends on**: Fase 10
+**Research**: Unlikely
+**Plans**: TBD
+
+**10.5.A: Bugs Críticos**
+- [ ] A.1: Share Sheet envía imagen a app incorrecta (Yala Dev en lugar de Yala cuando ambas instaladas)
+- [ ] A.2: Atajo de automatización no lee JSON de texto ni crea transacción en bandeja
+- [ ] A.3: Notificación in-app de nuevos items en bandeja no aparece si hay sheet abierta
+- [ ] A.4: Cambio de tema no se aplica inmediatamente a todas las vistas y sheets
+
+**10.5.B: Consistencia Visual**
+- [ ] B.1: UI de Pagos Planificados inconsistente (alinear con estilo de Presupuestos: colores, montos, sin gradientes)
+
+**10.5.C: UX y Personalización**
+- [ ] C.1: Ejemplo de registro por voz dice "pesos" hardcodeado — usar moneda preferida del usuario
+- [ ] C.2: Filtro de monedas en DetailContainerView muestra todas — solo mostrar monedas con transacciones
+- [ ] C.3: Onboarding divisas: primero recomendada por región, luego A-Z agrupado por continentes
+
+**10.5.D: Features**
+- [ ] D.1: Notificaciones de presupuestos: alertas al alcanzar porcentaje configurable y al llegar al límite
+
+DoD:
+- 0 bugs críticos (sección A completa)
+- UI de Pagos Planificados consistente con resto de app
+- Personalización correcta en voz y onboarding
+- Notificaciones de presupuestos funcionales
+
+---
+
 ### Fase 11: Plataforma Avanzada (V1.2 - App Store)
 **Goal**: Modo solo gastos, widgets iOS, insights, Watch y plataformas extendidas
 **Depends on**: Fase 10
@@ -421,6 +453,7 @@ DoD:
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
 | 10 | Refinamiento & Polish | ✅ Done | 2026-01-30 |
+| 10.5 | Mejoras Pre-Release | In progress | - |
 
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
