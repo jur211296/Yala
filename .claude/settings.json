@@ -22,5 +22,28 @@
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "hooks": {
+    "PostEdit": [
+      {
+        "type": "command",
+        "command": "echo \"[$(date +%H:%M:%S)] Editado: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log",
+        "description": "Log de archivos editados"
+      }
+    ],
+    "PreCommit": [
+      {
+        "type": "command",
+        "command": "if git diff --cached --name-only | grep -qE '\\.(env|pem|key)$'; then echo 'BLOCKED: Archivo sensible detectado' && exit 1; fi",
+        "description": "Bloquear commits con archivos sensibles"
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "echo \"[$(date -Iseconds)] Sesión terminada\" >> .claude/sessions/activity.log",
+        "description": "Log de fin de sesión"
+      }
+    ]
   }
 }
