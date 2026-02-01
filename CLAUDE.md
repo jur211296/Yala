@@ -23,15 +23,28 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 El ModelContainer se configura en YalaApp.swift con estas entidades:
 Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
 
-## Flujo de trabajo obligatorio (para ahorrar tokens y reducir retrabajo)
-1) Plan corto antes de editar (qué cambias y por qué)
-2) Implementar mínimo que compila
-3) Ejecutar /verify-ios
-4) Si aplica, ejecutar tests (ver estrategia abajo)
-5) Commit pequeño con /commit-one
-6) **Actualizar QA-SCENARIOS.md** con escenarios de prueba para la funcionalidad nueva
+## Flujo de trabajo optimizado
+**Referencia completa:** `.planning/WORKFLOW.md`
 
-**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener sus escenarios de prueba documentados en `.planning/QA-SCENARIOS.md` ANTES del commit. Esto asegura que las validaciones manuales estén siempre listas.
+### Flujo estándar
+```
+/next → [Shift+Tab] → /review-plan → /session-start
+     → Implementar → /verify-ios → /test-smart → /commit-one
+     → /pre-deploy-check → /session-end → /compact → /clear
+```
+
+### Comandos clave por fase
+| Fase | Comandos |
+|------|----------|
+| Orientación | `/next` |
+| Planificación | `Shift+Tab` (Plan Mode), `/review-plan` |
+| Análisis | `/analyze-impact`, `/parallel-search` |
+| Verificación | `/verify-ios`, `/test-smart`, `/pre-deploy-check` |
+| Commits | `/commit-one` |
+| Contexto | `/context-snapshot`, `/compact`, `/clear` |
+| Captura | `/idea` |
+
+**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener sus escenarios de prueba documentados en `.planning/QA-SCENARIOS.md` ANTES del commit.
 
 ## Estrategia de Testing
 Usar el comando apropiado según el tipo de cambio:
