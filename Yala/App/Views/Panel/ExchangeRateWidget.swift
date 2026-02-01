@@ -32,6 +32,7 @@ struct ExchangeRateWidget: View {
 
     @Environment(\.colorScheme) var colorScheme
     @State private var selectedDate: Date?
+    @State private var filteredCurrency: CurrencyCode?
 
     // Colors for currency lines
     private let currencyAColor = Color.electricIndigo
@@ -77,11 +78,6 @@ struct ExchangeRateWidget: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                // Current rates display
-                if let data = data, !data.hasError {
-                    currentRatesView(data: data)
-                }
             }
 
             InfoHintButton(
@@ -104,31 +100,6 @@ struct ExchangeRateWidget: View {
                 .buttonStyle(.plain)
             }
         }
-    }
-
-    // MARK: - Current Rates View
-
-    @ViewBuilder
-    private func currentRatesView(data: ExchangeRateWidgetData) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            ForEach(Array(selectedCurrencies.enumerated()), id: \.element.rawValue) {
-                index, currency in
-                if currency.rawValue != preferredCurrency,
-                    let rate = data.currentRates[currency.rawValue]
-                {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Circle()
-                            .fill(index == 0 ? currencyAColor : currencyBColor)
-                            .frame(width: 6, height: 6)
-
-                        Text("1 \(currency.rawValue) = \(formatRate(rate)) \(preferredCurrency)")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(index == 0 ? currencyAColor : currencyBColor)
-                    }
-                }
-            }
-        }
-        .padding(.top, DS.Spacing.xs)
     }
 
     // MARK: - Content View
@@ -174,125 +145,186 @@ struct ExchangeRateWidget: View {
     @ViewBuilder
     private func chartView(data: ExchangeRateWidgetData) -> some View {
         let activeCurrencies = selectedCurrencies.filter { $0.rawValue != preferredCurrency }
-        let yDomain = calculateYDomain(data: data, currencies: activeCurrencies)
+        // Filter currencies based on legend selection
+        let visibleCurrencies: [CurrencyCode] = {
+            if let filtered = filteredCurrency {
+                return activeCurrencies.filter { $0 == filtered }
+            }
+            return activeCurrencies
+        }()
+        let yDomain = calculateYDomain(data: data, currencies: visibleCurrencies)
         let smartDates = calculateSmartAxisDates(for: data.chartPoints)
         let xDomain = calculateXDomain(for: data.chartPoints)
 
-        Chart {
-            ForEach(data.chartPoints) { point in
-                ForEach(Array(activeCurrencies.enumerated()), id: \.element.rawValue) {
-                    index, currency in
-                    if let rate = point.rate(for: currency.rawValue) {
-                        LineMark(
-                            x: .value("Date", point.date),
-                            y: .value("Rate", rate),
-                            series: .value("Currency", currency.rawValue)
-                        )
-                        .foregroundStyle(index == 0 ? currencyAColor : currencyBColor)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .interpolationMethod(.monotone)
+        VStack(spacing: DS.Spacing.md) {
+            Chart {
+                ForEach(data.chartPoints) { point in
+                    ForEach(Array(visibleCurrencies.enumerated()), id: \.element.rawValue) {
+                        index, currency in
+                        // Get original index for consistent colors
+                        let originalIndex = activeCurrencies.firstIndex(of: currency) ?? index
+                        if let rate = point.rate(for: currency.rawValue) {
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("Rate", rate),
+                                series: .value("Currency", currency.rawValue)
+                            )
+                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .interpolationMethod(.monotone)
 
-                        PointMark(
-                            x: .value("Date", point.date),
-                            y: .value("Rate", rate)
-                        )
-                        .foregroundStyle(index == 0 ? currencyAColor : currencyBColor)
-                        .symbolSize(20)
-                        .annotation(position: index == 0 ? .top : .bottom, spacing: 2) {
-                            // Only show labels on first, last, and middle points to avoid clutter
-                            if shouldShowLabel(for: point, in: data.chartPoints) {
-                                Text(formatRateCompact(rate))
-                                    .font(.system(size: 9, weight: .medium))
-                                    .foregroundStyle(index == 0 ? currencyAColor : currencyBColor)
+                            PointMark(
+                                x: .value("Date", point.date),
+                                y: .value("Rate", rate)
+                            )
+                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .symbolSize(20)
+                            .annotation(position: originalIndex == 0 ? .top : .bottom, spacing: 2) {
+                                // Only show labels on first, last, and middle points to avoid clutter
+                                if shouldShowLabel(for: point, in: data.chartPoints) {
+                                    Text(formatRateCompact(rate))
+                                        .font(.system(size: 9, weight: .medium))
+                                        .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-        .chartYScale(domain: yDomain)
-        .chartXScale(domain: xDomain)
-        .chartXAxis {
-            // Smart dynamic X-axis labels (same approach as TrendChartView)
-            AxisMarks(values: smartDates) { value in
-                AxisGridLine().foregroundStyle(.clear)
-                AxisTick().foregroundStyle(.clear)
+            .chartYScale(domain: yDomain)
+            .chartXScale(domain: xDomain)
+            .chartXAxis {
+                // Smart dynamic X-axis labels (same approach as TrendChartView)
+                AxisMarks(values: smartDates) { value in
+                    AxisGridLine().foregroundStyle(.clear)
+                    AxisTick().foregroundStyle(.clear)
 
-                if let date = value.as(Date.self) {
-                    let isLast = date == smartDates.last
-                    let isFirst = date == smartDates.first
-                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+                    if let date = value.as(Date.self) {
+                        let isLast = date == smartDates.last
+                        let isFirst = date == smartDates.first
+                        let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
 
-                    AxisValueLabel(anchor: anchor) {
-                        Text(smartAxisLabel(for: date, in: data.chartPoints))
-                            .font(.caption2)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                        AxisValueLabel(anchor: anchor) {
+                            Text(smartAxisLabel(for: date, in: data.chartPoints))
+                                .font(.caption2)
+                                .foregroundStyle(Color.yalaSecondaryText)
+                        }
                     }
                 }
             }
-        }
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
-                AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.2))
-                AxisValueLabel {
-                    if let doubleValue = value.as(Double.self) {
-                        Text(formatRate(doubleValue))
-                            .font(.caption2)
-                            .foregroundStyle(Color.yalaSecondaryText)
+            .chartYAxis {
+                AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
+                    AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
+                        .foregroundStyle(Color.yalaSecondaryText.opacity(0.2))
+                    AxisValueLabel {
+                        if let doubleValue = value.as(Double.self) {
+                            Text(formatRate(doubleValue))
+                                .font(.caption2)
+                                .foregroundStyle(Color.yalaSecondaryText)
+                        }
                     }
                 }
             }
-        }
-        .chartOverlay { proxy in
-            GeometryReader { geo in
-                let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
 
-                ZStack(alignment: .topLeading) {
-                    // Gesture Handler
-                    Rectangle().fill(.clear).contentShape(Rectangle())
-                        .gesture(
-                            DragGesture()
-                                .onChanged { value in
-                                    let x = value.location.x - plotFrame.origin.x
-                                    if let date: Date = proxy.value(atX: x) {
-                                        let granularity: Calendar.Component = calendarComponent(
-                                            for: grouping)
-                                        if let match = data.chartPoints.first(where: {
-                                            Calendar.current.isDate(
-                                                $0.date, equalTo: date, toGranularity: granularity)
-                                        }) {
-                                            self.selectedDate = match.date
+                    ZStack(alignment: .topLeading) {
+                        // Gesture Handler
+                        Rectangle().fill(.clear).contentShape(Rectangle())
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        let x = value.location.x - plotFrame.origin.x
+                                        if let date: Date = proxy.value(atX: x) {
+                                            let granularity: Calendar.Component = calendarComponent(
+                                                for: grouping)
+                                            if let match = data.chartPoints.first(where: {
+                                                Calendar.current.isDate(
+                                                    $0.date, equalTo: date, toGranularity: granularity)
+                                            }) {
+                                                self.selectedDate = match.date
+                                            }
                                         }
                                     }
-                                }
-                                .onEnded { _ in
-                                    self.selectedDate = nil
-                                }
-                        )
+                                    .onEnded { _ in
+                                        self.selectedDate = nil
+                                    }
+                            )
 
-                    // Tooltip
-                    if let selectedDate = selectedDate,
-                        let selectedPoint = data.chartPoints.first(where: {
-                            Calendar.current.isDate(
-                                $0.date, equalTo: selectedDate,
-                                toGranularity: calendarComponent(for: grouping))
-                        }),
-                        let xPos = proxy.position(forX: selectedPoint.date)
-                    {
-                        tooltipView(point: selectedPoint, activeCurrencies: activeCurrencies)
+                        // Tooltip
+                        if let selectedDate = selectedDate,
+                            let selectedPoint = data.chartPoints.first(where: {
+                                Calendar.current.isDate(
+                                    $0.date, equalTo: selectedDate,
+                                    toGranularity: calendarComponent(for: grouping))
+                            }),
+                            let xPos = proxy.position(forX: selectedPoint.date)
+                        {
+                            tooltipView(
+                                point: selectedPoint,
+                                visibleCurrencies: visibleCurrencies,
+                                allActiveCurrencies: activeCurrencies
+                            )
                             .position(
                                 x: max(70, min(xPos + plotFrame.origin.x, geo.size.width - 70)),
                                 y: plotFrame.minY + 20
                             )
                             .offset(y: -40)
+                        }
+                    }
+                }
+            }
+
+            // Interactive Legend below chart
+            exchangeRateLegendView(data: data, activeCurrencies: activeCurrencies)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.lg)
+    }
+
+    // MARK: - Legend View
+
+    @ViewBuilder
+    private func exchangeRateLegendView(data: ExchangeRateWidgetData, activeCurrencies: [CurrencyCode]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(Array(activeCurrencies.enumerated()), id: \.element.rawValue) { index, currency in
+                    if let rate = data.currentRates[currency.rawValue] {
+                        let color = index == 0 ? currencyAColor : currencyBColor
+                        let isSelected = filteredCurrency == nil || filteredCurrency == currency
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                if filteredCurrency == currency {
+                                    // Deselect: show all
+                                    filteredCurrency = nil
+                                } else {
+                                    // Select: show only this one
+                                    filteredCurrency = currency
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: DS.Spacing.xs) {
+                                Circle()
+                                    .fill(color)
+                                    .frame(width: 6, height: 6)
+
+                                Text("1 \(currency.rawValue) = \(formatRate(rate)) \(preferredCurrency)")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(color)
+                            }
+                            .padding(.horizontal, DS.Spacing.sm)
+                            .padding(.vertical, DS.Spacing.xs)
+                            .background(isSelected ? color.opacity(0.1) : Color.clear)
+                            .cornerRadius(DS.Radius.md)
+                            .opacity(isSelected ? 1.0 : 0.4)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
         }
-
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.lg)
     }
 
     // MARK: - Y Domain Calculation
@@ -354,27 +386,30 @@ struct ExchangeRateWidget: View {
     // MARK: - Tooltip
 
     @ViewBuilder
-    private func tooltipView(point: ExchangeRateChartPoint, activeCurrencies: [CurrencyCode])
-        -> some View
-    {
+    private func tooltipView(
+        point: ExchangeRateChartPoint,
+        visibleCurrencies: [CurrencyCode],
+        allActiveCurrencies: [CurrencyCode]
+    ) -> some View {
         VStack(spacing: DS.Spacing.xs) {
             Text(formatTooltipDate(point.date))
                 .font(.caption2)
                 .foregroundStyle(Color.yalaSecondaryText)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                ForEach(Array(activeCurrencies.enumerated()), id: \.element.rawValue) {
-                    index, currency in
+                ForEach(visibleCurrencies, id: \.rawValue) { currency in
+                    // Use original index from allActiveCurrencies for consistent colors
+                    let originalIndex = allActiveCurrencies.firstIndex(of: currency) ?? 0
                     if let rate = point.rate(for: currency.rawValue) {
                         HStack(spacing: DS.Spacing.xs) {
                             Circle()
-                                .fill(index == 0 ? currencyAColor : currencyBColor)
+                                .fill(originalIndex == 0 ? currencyAColor : currencyBColor)
                                 .frame(width: 5, height: 5)
                             Text(
                                 "1 \(currency.rawValue) = \(formatRate(rate)) \(preferredCurrency)"
                             )
                             .font(.caption2.weight(.medium))
-                            .foregroundStyle(index == 0 ? currencyAColor : currencyBColor)
+                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
                         }
                     }
                 }
