@@ -16,6 +16,9 @@ struct NewTransactionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = CurrencyCode.pen.rawValue
+    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
+
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -383,6 +386,15 @@ struct NewTransactionView: View {
                 amountDisplay
             }
 
+            // Exchange rate chip (shown when currency differs from preferred, not for transfers)
+            // Use viewModel.currencyCode (transaction's currency), NOT effectiveCurrencyCode (account's currency)
+            // This handles cases where transaction is in USD but account is in PEN
+            if !viewModel.isTransfer,
+               viewModel.currencyCode != preferredCurrencyCode,
+               viewModel.exchangeRate != 1.0 {
+                exchangeRateChip
+            }
+
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
@@ -519,9 +531,50 @@ struct NewTransactionView: View {
         return result
     }
 
-    /// Currency code for display (PEN, USD, EUR, etc.) - only when account is selected
+    /// Currency display for amount field - respects user preference (code vs symbol)
     private var currencySymbol: String? {
-        viewModel.effectiveAccount != nil ? viewModel.effectiveCurrencyCode : nil
+        guard viewModel.effectiveAccount != nil else { return nil }
+        let code = viewModel.effectiveCurrencyCode
+        if let currency = CurrencyCode(rawValue: code) {
+            return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
+        }
+        return code
+    }
+
+    /// Exchange rate chip showing the converted amount and rate
+    /// Format: "≈ S/ 38.99 (TC: 3.8900)" or "≈ PEN 38.99 (TC: 3.8900)" based on user preference
+    private var exchangeRateChip: some View {
+        let rate = viewModel.exchangeRate
+        let amount = Double(viewModel.amountString) ?? 0
+        let convertedAmount = amount * rate
+
+        // Get preferred currency display based on user setting
+        let currencyDisplay: String
+        if let currency = CurrencyCode(rawValue: preferredCurrencyCode) {
+            currencyDisplay = currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
+        } else {
+            currencyDisplay = preferredCurrencyCode
+        }
+
+        // Format converted amount (no decimals if whole number, otherwise 2 decimals)
+        let formattedAmount: String
+        if convertedAmount.truncatingRemainder(dividingBy: 1) == 0 {
+            formattedAmount = String(format: "%.0f", convertedAmount)
+        } else {
+            formattedAmount = String(format: "%.2f", convertedAmount)
+        }
+
+        let formattedRate = String(format: "%.4f", rate)
+
+        return Text("≈ \(currencyDisplay) \(formattedAmount) (TC: \(formattedRate))")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(Color.yalaSecondaryText)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(
+                Capsule().fill(Color.yalaSecondaryText.opacity(0.1))
+            )
+            .padding(.top, DS.Spacing.sm)
     }
 
     // MARK: - Quick Actions Bar
@@ -1031,6 +1084,35 @@ struct NewTransactionView: View {
 
             // Load note
             viewModel.note = tx.note ?? ""
+
+            // Load exchange rate (for display chip when currency differs from preferred)
+            // For non-transfers: shows rate from transaction currency to preferred currency
+            if tx.currencyCode != preferredCurrencyCode {
+                if tx.exchangeRate != 1.0 {
+                    // Use stored rate
+                    viewModel.exchangeRate = tx.exchangeRate
+                } else {
+                    // Stored rate is 1.0 but currencies differ - load from CurrencyConverter
+                    if let rate = CurrencyConverter.shared.getDisplayRate(
+                        from: tx.currencyCode,
+                        to: preferredCurrencyCode,
+                        date: tx.date,
+                        context: modelContext
+                    ) {
+                        viewModel.exchangeRate = rate
+                    } else {
+                        // Fallback: use static rates from CurrencyCode enum
+                        if let fromCurrency = CurrencyCode(rawValue: tx.currencyCode),
+                           let toCurrency = CurrencyCode(rawValue: preferredCurrencyCode) {
+                            let fromRate = fromCurrency.fallbackRateToUSD
+                            let toRate = toCurrency.fallbackRateToUSD
+                            if fromRate > 0 {
+                                viewModel.exchangeRate = toRate / fromRate
+                            }
+                        }
+                    }
+                }
+            }
 
             return
         }

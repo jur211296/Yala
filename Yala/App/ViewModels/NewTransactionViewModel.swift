@@ -392,13 +392,15 @@ final class NewTransactionViewModel {
     }
 
     /// Carga el tipo de cambio del servicio
-    /// Carga el tipo de cambio del servicio
+    /// Carga el tipo de cambio del servicio (solo para transfers entre cuentas de diferente divisa)
     func loadExchangeRate(context: ModelContext) async {
+        // Only load exchange rate for transfers between accounts with different currencies
+        // For regular transactions, the rate is set during prefill and should not be reset here
         guard needsExchangeRate,
             let source = sourceAccount,
             let dest = destinationAccount
         else {
-            exchangeRate = 1.0
+            // Don't reset exchangeRate here - it may have been set during prefill for display purposes
             return
         }
 
