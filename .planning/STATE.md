@@ -24,22 +24,16 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-01] 1c32cc2 feat(voice): use dynamic currency names in voice input examples
+- [2026-02-01] 126bdf1 feat(onboarding): group currencies by continent with recommended section
+- [2026-02-01] 1ef344f feat(filters): show only currencies with transactions in filters
+- [2026-02-01] 47f995b refactor(ui): simplify scheduled payments visual design for consistency
 - [2026-02-01] 91abfa9 fix(swiftdata): isolate database between Yala and Yala Dev builds
 - [2026-02-01] 1be90fd fix(share): dynamic App Group and URL Scheme for Yala vs Yala Dev
 - [2026-02-01] e5dad6a fix(notifications): show ScheduledPaymentAlertModal over sheets
 - [2026-02-01] bd7cdb6 fix(profile): dismiss ProfileView on theme change for immediate apply
 - [2026-02-01] 2b28104 fix(intents): add detailed DecodingError messages in automation JSON parsing
 - [2026-01-31] 3230de0 feat(widget): add interactive legend to exchange rate widget
-- [2026-01-31] 96ae1c1 feat(currency): redesign currency selection with continent-grouped sheets
-- [2026-01-31] 73cde58 feat(currency): add Middle East, Africa, and North America currencies
-- [2026-01-31] 7e5a714 feat(currency): add Asian and Oceanian currencies support
-- [2026-01-31] 12c6b58 feat(currency): add European currencies support
-- [2026-01-31] c39153f feat(currency): add Latin American currencies support
-- [2026-01-31] 1a0625d feat(transaction): show converted amount and exchange rate chip
-- [2026-01-31] 47e435c fix(currency): support all currencies in exchange rate widget and flows
-- [2026-01-31] b6ad52c refactor(currency): centralize currency definitions in CurrencyCode enum
-- [2026-01-31] 4f132cf fix(onboarding): remove residual DEV_BUILD lastStep logic
-- [2026-01-31] 340ef29 chore(seed): remove DevDataSeed completely
 
 ## Completed in Current Phase
 
@@ -75,6 +69,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Widget tipo de cambio simplificado (10.x)** - Refactorización para usar SOLO secondaryCurrencies como fuente de verdad (73c7e9f): eliminado selector de divisas innecesario y sheet asociado, sin defaults ni fallbacks, sin caché local, estado vacío cuando no hay divisas secundarias seleccionadas, widget automáticamente muestra las 1-2 divisas elegidas en Settings/onboarding, reacción inmediata a cambios en Settings via SessionState flag
 - **Sistema de divisas completo (1.1)** - 48 divisas soportadas organizadas por 7 continentes (Latinoamérica, Norteamérica, Europa, Asia, Oceanía, Medio Oriente, África); enum CurrencyCode como SSOT con flag, symbol, aliases, fallbackRateToUSD, regionCodes; rediseño UX de selección de divisas con 3 sheets (CurrencyPickerSheet, SecondaryCurrencyPickerSheet, ExchangeRatesSheet); agrupación por continente en todos los selectores; chip de tipo de cambio en transacciones multimoneda
 - **Aislamiento Yala vs Yala Dev (10.5.E)** - SwiftDataConfiguration helper centralizado que usa APP_GROUP_IDENTIFIER de Info.plist para determinar nombre de base de datos (YalaModel vs YalaModel-Dev); 7 ubicaciones migradas (YalaApp + 6 App Intents); UserDefaults ya aislado por bundle ID; permisos iOS ya aislados por app
+- **Consistencia Visual Pagos Planificados (10.5.B)** - Summary card sin gradientes (color primario, borde/sombra neutros); section headers simplificados (solo vencidos con indicador rojo); due status en cards simplificado (hotPink solo vencidos, resto secundario); botones calendario sin fondo coloreado; ingresos mantienen teal
+- **UX Divisas (10.5.C completo)** - C.1: Ejemplos voz dinámicos con shortPluralName (ej: "50 soles", "50 dólares") sin país; C.2: Filtro monedas solo muestra las usadas en transacciones, sección oculta si no hay transacciones; C.3: Onboarding agrupa monedas por continente con sección "Recomendada" destacada, sin duplicación
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -139,13 +135,13 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
   - Mostrar modal similar a pagos planificados: "Se han agregado X registros a tu bandeja"
   - Solo mostrar al volver a la app (no interrumpir flujo en background)
 
-**10.5.B: Consistencia Visual (1)**
-- [ ] B.1: UI de Pagos Planificados (alinear con Presupuestos)
+**10.5.B: Consistencia Visual (1)** ✅ COMPLETADO
+- [x] B.1: UI de Pagos Planificados (alinear con Presupuestos)
 
-**10.5.C: UX y Personalización (3)**
-- [ ] C.1: Ejemplo voz "pesos" hardcodeado → moneda preferida
-- [ ] C.2: Filtro monedas solo con transacciones existentes
-- [ ] C.3: Onboarding divisas: recomendada + A-Z + continentes
+**10.5.C: UX y Personalización (3)** ✅ COMPLETADO
+- [x] C.1: Ejemplo voz "pesos" hardcodeado → moneda preferida (shortPluralName)
+- [x] C.2: Filtro monedas solo con transacciones existentes
+- [x] C.3: Onboarding divisas: recomendada + continentes
 
 **10.5.D: Features (1)**
 - [ ] D.1: Notificaciones de presupuestos (porcentaje + límite)
@@ -278,8 +274,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Fase 10.5.E completada (aislamiento Yala vs Yala Dev)
-Next step: 10.5.B (UI Pagos Planificados), 10.5.C (UX), 10.5.D (Notificaciones presupuestos), o 10.5.F (Modal automatizaciones)
+Stopped at: Fase 10.5.B y 10.5.C completadas (consistencia visual + UX divisas)
+Next step: 10.5.D (Notificaciones presupuestos) o 10.5.F (Modal automatizaciones)
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
