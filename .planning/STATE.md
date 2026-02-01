@@ -24,16 +24,16 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-31] 96ae1c1 feat(currency): redesign currency selection with continent-grouped sheets
+- [2026-01-31] 73cde58 feat(currency): add Middle East, Africa, and North America currencies
+- [2026-01-31] 7e5a714 feat(currency): add Asian and Oceanian currencies support
+- [2026-01-31] 12c6b58 feat(currency): add European currencies support
+- [2026-01-31] c39153f feat(currency): add Latin American currencies support
 - [2026-01-31] 1a0625d feat(transaction): show converted amount and exchange rate chip
 - [2026-01-31] 47e435c fix(currency): support all currencies in exchange rate widget and flows
 - [2026-01-31] b6ad52c refactor(currency): centralize currency definitions in CurrencyCode enum
 - [2026-01-31] 4f132cf fix(onboarding): remove residual DEV_BUILD lastStep logic
 - [2026-01-31] 340ef29 chore(seed): remove DevDataSeed completely
-- [2026-01-30] 73c7e9f refactor(widget): simplify exchange rate widget to use only secondaryCurrencies
-- [2026-01-30] cfd0447 fix(dev): restrict dev data seed to DEV_BUILD only (not regular DEBUG)
-- [2026-01-30] d07aaac feat(dev): integrate dev data seed step in onboarding (DEBUG only)
-- [2026-01-30] a1c2c7e feat(dev): implement varied daily transaction generation in DevDataSeed
-- [2026-01-30] 39ff387 feat(dev): implement scheduled payment transaction generation in DevDataSeed
 
 ## Completed in Current Phase
 
@@ -67,6 +67,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Fix tipos de cambio históricos (10.x)** - Helper getRequiredCurrencies() centraliza detección de divisas necesarias (f253d52); Settings carga automáticamente 1 año de datos al agregar divisas secundarias con loading state (61b3612); Onboarding carga datos históricos en background después de completar sin bloquear UI (4122f8d); preloadHistoricalIfNeeded optimizado para traer solo divisas necesarias vs todas las 7 soportadas (a5e68b0); 5 escenarios QA nuevos (13.7-13.11) para validación de carga histórica (987da70)
 - **Seed Dev (10.x)** - ~~Implementado~~ **ELIMINADO** (340ef29): Causaba errores de compilación con #Predicate macros. Removido completamente del proyecto.
 - **Widget tipo de cambio simplificado (10.x)** - Refactorización para usar SOLO secondaryCurrencies como fuente de verdad (73c7e9f): eliminado selector de divisas innecesario y sheet asociado, sin defaults ni fallbacks, sin caché local, estado vacío cuando no hay divisas secundarias seleccionadas, widget automáticamente muestra las 1-2 divisas elegidas en Settings/onboarding, reacción inmediata a cambios en Settings via SessionState flag
+- **Sistema de divisas completo (1.1)** - 48 divisas soportadas organizadas por 7 continentes (Latinoamérica, Norteamérica, Europa, Asia, Oceanía, Medio Oriente, África); enum CurrencyCode como SSOT con flag, symbol, aliases, fallbackRateToUSD, regionCodes; rediseño UX de selección de divisas con 3 sheets (CurrencyPickerSheet, SecondaryCurrencyPickerSheet, ExchangeRatesSheet); agrupación por continente en todos los selectores; chip de tipo de cambio en transacciones multimoneda
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -160,7 +161,7 @@ Ver ROADMAP.md para detalles de Fase 11:
 **Subfase 7.3: Localizaciones y Monedas** ✅
 - [x] Auditoría de strings hardcodeados (3 títulos corregidos)
 - [x] Nuevas keys en 6 idiomas (filters.title, iconPicker.title)
-- [x] Añadir monedas: MXN, COP, BRL, GBP (7 monedas total)
+- [x] 48 divisas soportadas en 7 continentes (expandido desde 7 originales)
 
 **Subfase 7.4: Testing & QA** ✅
 - [x] Documento QA-SCENARIOS.md exhaustivo (reescritura completa)
@@ -228,8 +229,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Sistema de tipo de cambio mejorado - chip TC en transacciones, single source of truth
-Next step: Continuar con refinamientos de divisas o comenzar Fase 11
+Stopped at: Rediseño selección de divisas con sheets por continente (96ae1c1)
+Next step: Probar nueva UX de divisas en simulador, luego comenzar Fase 11
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
