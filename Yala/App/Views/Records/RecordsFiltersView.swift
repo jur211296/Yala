@@ -378,29 +378,33 @@ struct RecordsFiltersView: View {
         return "\(recordsViewModel.selectedNatures.count)"
     }
 
+    @ViewBuilder
     private var currencyContent: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Header
-            FilterSectionHeader(
-                icon: "arrow.triangle.2.circlepath",
-                title: "Moneda",
-                status: selectedCurrenciesText
-            )
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.top, DS.Spacing.md)
+        // Hide section if no transactions with currencies
+        if !filtersViewModel.currenciesWithTransactions.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Header
+                FilterSectionHeader(
+                    icon: "arrow.triangle.2.circlepath",
+                    title: "Moneda",
+                    status: selectedCurrenciesText
+                )
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
 
-            // Chips - aligned after icon
-            FlowLayout(spacing: DS.Spacing.sm) {
-                ForEach(CurrencyCode.allCases) { currency in
-                    currencyChip(currency)
+                // Chips - only currencies with transactions
+                FlowLayout(spacing: DS.Spacing.sm) {
+                    ForEach(filtersViewModel.currenciesWithTransactions) { currency in
+                        currencyChip(currency)
+                    }
                 }
+                .padding(.leading, 52)
+                .padding(.trailing, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.md)
             }
-            .padding(.leading, 52)
-            .padding(.trailing, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.md)
-        }
-        .onAppear {
-            syncCurrenciesSelection()
+            .onAppear {
+                syncCurrenciesSelection()
+            }
         }
     }
 
@@ -434,13 +438,14 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedCurrenciesText: String {
-        if recordsViewModel.selectedCurrencies.isEmpty {
-            return "Todas"
+        // If no currencies with transactions, don't show anything
+        guard !filtersViewModel.currenciesWithTransactions.isEmpty else { return "" }
+
+        if recordsViewModel.selectedCurrencies.isEmpty ||
+           recordsViewModel.selectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
+            return L10n.Filters.all
         }
-        if recordsViewModel.selectedCurrencies.count == CurrencyCode.allCases.count {
-            return "Todas"
-        }
-        return "\(recordsViewModel.selectedCurrencies.count)/\(CurrencyCode.allCases.count)"
+        return "\(recordsViewModel.selectedCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
     }
 
     private var amountContent: some View {
@@ -572,7 +577,7 @@ struct RecordsFiltersView: View {
         NavigationStack {
             MultiSelectionList(
                 title: L10n.Filters.selectCurrencies,
-                items: CurrencyCode.allCases,
+                items: filtersViewModel.currenciesWithTransactions,
                 selection: $recordsViewModel.selectedCurrencies,
                 label: { $0.rawValue }
             )

@@ -23,6 +23,7 @@ final class RecordsFiltersViewModel {
     private(set) var allCategories: [Category] = []
     private(set) var allTags: [Tag] = []
     private(set) var allSubcategories: [Subcategory] = []
+    private(set) var currenciesWithTransactions: [CurrencyCode] = []
 
     // MARK: - Computed Properties
 
@@ -80,6 +81,26 @@ final class RecordsFiltersViewModel {
         } catch {
             print("RecordsFiltersViewModel: Error loading subcategories: \(error)")
             allSubcategories = []
+        }
+
+        // Load currencies with transactions
+        loadCurrenciesWithTransactions()
+    }
+
+    private func loadCurrenciesWithTransactions() {
+        guard let context = modelContext else { return }
+
+        let descriptor = FetchDescriptor<TransactionItem>()
+        do {
+            let transactions = try context.fetch(descriptor)
+            let uniqueCodes = Set(transactions.map { $0.currencyCode })
+            // Maintain consistent order with CurrencyCode.allCases
+            currenciesWithTransactions = CurrencyCode.allCases.filter {
+                uniqueCodes.contains($0.rawValue)
+            }
+        } catch {
+            print("RecordsFiltersViewModel: Error loading currencies: \(error)")
+            currenciesWithTransactions = []
         }
     }
 
