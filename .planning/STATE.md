@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-01] 0e91b17 feat(inbox): unified alert modal for new drafts
+- [2026-02-01] c2a24cf fix: improve error handling and remove force unwraps
 - [2026-02-01] 1c32cc2 feat(voice): use dynamic currency names in voice input examples
 - [2026-02-01] 126bdf1 feat(onboarding): group currencies by continent with recommended section
 - [2026-02-01] 1ef344f feat(filters): show only currencies with transactions in filters
@@ -129,11 +131,14 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
   - App Group: Ya dinámico (APP_GROUP_IDENTIFIER)
   - Keychain: Sin access group = aislado por app
 
-**10.5.F: Notificaciones In-App (NUEVO)**
-- [ ] F.1: Modal para automatizaciones/Apple Pay
-  - Cuando se añaden transacciones a bandeja por atajos de automatización o Apple Pay
-  - Mostrar modal similar a pagos planificados: "Se han agregado X registros a tu bandeja"
-  - Solo mostrar al volver a la app (no interrumpir flujo en background)
+**10.5.F: Modal Unificado para Nuevos Items en Bandeja** ✅ COMPLETADO
+- [x] F.1: Modal unificado para pagos planificados, suscripciones y automatizaciones
+  - PendingInboxNotification struct con conteo por tipo
+  - checkForPendingInboxDrafts detecta drafts nuevos desde lastCheck (UserDefaults)
+  - InboxAlertModal muestra mensaje adaptado según tipo (scheduled/subscription/automation/mixed)
+  - Desglose en mensaje mixto: "2 pagos y 3 registros automáticos"
+  - Notifica al abrir app y al volver de background
+  - Excluye voz/imagen (usuario los ejecuta en la app)
 
 **10.5.B: Consistencia Visual (1)** ✅ COMPLETADO
 - [x] B.1: UI de Pagos Planificados (alinear con Presupuestos)
@@ -274,8 +279,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Fase 10.5.B y 10.5.C completadas (consistencia visual + UX divisas)
-Next step: 10.5.D (Notificaciones presupuestos) o 10.5.F (Modal automatizaciones)
+Stopped at: Fase 10.5.F completada (Modal unificado para nuevos items en bandeja)
+Next step: 10.5.D (Notificaciones presupuestos)
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
