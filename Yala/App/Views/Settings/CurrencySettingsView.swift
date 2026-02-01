@@ -111,16 +111,23 @@ struct CurrencySettingsView: View {
 
     // MARK: - Preferred Currency Section
 
+    /// Currencies ordered with the current preferred first, then the rest
+    private var orderedCurrenciesForPreferred: [CurrencyCode] {
+        let current = preferredCurrency
+        let others = CurrencyCode.allCases.filter { $0 != current }
+        return [current] + others
+    }
+
     private var preferredCurrencySection: some View {
         SectionBox(title: L10n.Settings.preferredCurrency) {
             VStack(spacing: 0) {
-                // Show only first currency + expansion
-                preferredCurrencyRow(currency: CurrencyCode.allCases[0])
+                // Show current preferred currency first
+                preferredCurrencyRow(currency: orderedCurrenciesForPreferred[0])
 
                 SubsectionDivider()
 
                 DisclosureGroup {
-                    ForEach(Array(CurrencyCode.allCases.dropFirst().enumerated()), id: \.element) {
+                    ForEach(Array(orderedCurrenciesForPreferred.dropFirst().enumerated()), id: \.element) {
                         index, currency in
                         SubsectionDivider()
                         preferredCurrencyRow(currency: currency)
@@ -278,7 +285,11 @@ struct CurrencySettingsView: View {
         updateProgress = 0.0
 
         Task {
-            // Calculate 1 year date range
+            // 1. First, force update TODAY's rate with ALL currencies
+            // This ensures the widget and chart have current data for the new secondary currency
+            await exchangeRateService.forceUpdateToday(context: modelContext)
+
+            // 2. Calculate 1 year date range for historical data
             let calendar = Calendar.current
             let today = Date()
             guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else {
@@ -288,8 +299,9 @@ struct CurrencySettingsView: View {
 
             let dateInterval = DateInterval(start: oneYearAgo, end: today)
 
-            // Fetch historical rates for the new currency
-            await exchangeRateService.ensureRates(for: dateInterval, context: modelContext)
+            // 3. FORCE refresh historical rates (not just missing dates)
+            // This ensures existing rates are updated to include ALL currencies
+            await exchangeRateService.forceRefreshRates(for: dateInterval, context: modelContext)
 
             // Signal widget to refresh
             SessionState.shared.needsExchangeRateWidgetRefresh = true
@@ -306,21 +318,35 @@ struct CurrencySettingsView: View {
 
         Task {
             do {
-                // Run the batch update
+                // Run the batch update for transactions
                 try await CurrencyChangeService.shared.updateAllTransactions(
                     to: newCurrency.rawValue,
                     context: modelContext,
                     onProgress: { progress in
-                        updateProgress = progress
+                        updateProgress = progress * 0.5  // First half of progress
                     }
                 )
 
                 // Only update the AppStorage setting AFTER successful migration
                 defaultCurrencyCode = newCurrency.rawValue
 
+                // Force refresh exchange rates - the chart needs rates relative to the NEW preferred currency
+                // 1. Force update today's rate
+                await exchangeRateService.forceUpdateToday(context: modelContext)
+
+                // 2. Force refresh historical rates (1 year)
+                let calendar = Calendar.current
+                let today = Date()
+                if let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) {
+                    let dateInterval = DateInterval(start: oneYearAgo, end: today)
+                    await exchangeRateService.forceRefreshRates(for: dateInterval, context: modelContext)
+                }
+
+                // Signal widget to refresh with new preferred currency
+                SessionState.shared.needsExchangeRateWidgetRefresh = true
+
             } catch {
                 print("Error updating transactions: \(error)")
-                // Optionally show an alert here?
             }
 
             isUpdating = false

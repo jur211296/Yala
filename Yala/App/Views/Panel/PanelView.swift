@@ -28,6 +28,8 @@ struct PanelView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(ExchangeRateService.self) private var exchangeRateService
+    @Environment(CurrencyConverter.self) private var currencyConverter
 
     @State private var viewModel = PanelViewModel()
 
@@ -239,7 +241,11 @@ struct PanelView: View {
                 }
         }
         .onAppear {
-            viewModel.setContext(modelContext)
+            viewModel.setContext(
+                modelContext,
+                exchangeRateService: exchangeRateService,
+                currencyConverter: currencyConverter
+            )
 
             // Note: seedCategoriesIfNeeded removed - now handled by OnboardingView step 5
             TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext)

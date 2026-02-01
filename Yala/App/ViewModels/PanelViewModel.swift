@@ -10,6 +10,12 @@ final class PanelViewModel {
 
     private var modelContext: ModelContext?
 
+    /// Exchange rate service - injected or falls back to shared singleton
+    private var exchangeRateService: ExchangeRateService = .shared
+
+    /// Currency converter - injected or falls back to shared singleton
+    private var currencyConverter: CurrencyConverter = .shared
+
     // MARK: - Loaded Data
 
     private(set) var accounts: [Account] = []
@@ -70,8 +76,23 @@ final class PanelViewModel {
 
     // MARK: - Context Setup
 
-    func setContext(_ context: ModelContext) {
+    /// Sets the model context and optionally injects services.
+    /// - Parameters:
+    ///   - context: The SwiftData ModelContext
+    ///   - exchangeRateService: Optional service injection (defaults to .shared)
+    ///   - currencyConverter: Optional service injection (defaults to .shared)
+    func setContext(
+        _ context: ModelContext,
+        exchangeRateService: ExchangeRateService? = nil,
+        currencyConverter: CurrencyConverter? = nil
+    ) {
         self.modelContext = context
+        if let service = exchangeRateService {
+            self.exchangeRateService = service
+        }
+        if let converter = currencyConverter {
+            self.currencyConverter = converter
+        }
         loadData()
     }
 
@@ -490,7 +511,7 @@ final class PanelViewModel {
         }
 
         // Use CurrencyConverter with API rates for consistency with chart calculations
-        return CurrencyConverter.shared.convertWithLatestRate(
+        return currencyConverter.convertWithLatestRate(
             amount,
             from: source.rawValue,
             to: target.rawValue,
@@ -1386,7 +1407,8 @@ final class PanelViewModel {
         let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
 
         // Calculate rates for ALL possible comparison currencies (so selection changes are instant)
-        let allCurrencies: [CurrencyCode] = [.pen, .usd, .eur]
+        // Use all supported currencies so COP, BRL, MXN, GBP work correctly
+        let allCurrencies = CurrencyCode.allCases
         let allComparisonCurrencies = allCurrencies.filter { $0 != preferredCurrency }
 
         // Determine grouping based on period
@@ -1403,7 +1425,7 @@ final class PanelViewModel {
         // This prevents iterating through years of dates with no data
         let interval: DateInterval
         if selectedPeriod == .allTime {
-            if let storedRange = ExchangeRateService.shared.getStoredDateRange(context: context) {
+            if let storedRange = exchangeRateService.getStoredDateRange(context: context) {
                 interval = storedRange
             } else {
                 interval = panelDateInterval
@@ -1413,7 +1435,7 @@ final class PanelViewModel {
         }
 
         // Get the latest rate for current display
-        let latestRate = ExchangeRateService.shared.getLatestRate(context: context)
+        let latestRate = exchangeRateService.getLatestRate(context: context)
 
         guard let latestRate = latestRate else {
             // No data available

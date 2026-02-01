@@ -761,31 +761,35 @@ struct OnboardingView: View {
     }
 
     private func loadHistoricalRatesForSecondaryCurrencies() {
-        // Skip if no secondary currencies selected
-        guard !selectedSecondaryCurrencies.isEmpty else { return }
-
         // Load exchange rates in background (after onboarding dismisses)
         Task {
-            // Calculate 1 year date range
-            let calendar = Calendar.current
-            let today = Date()
-            guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else {
-                return
+            // 1. First, force update TODAY's rate with ALL 7 currencies
+            // This ensures the Settings "Tipo de cambio" section shows all currencies
+            await ExchangeRateService.shared.forceUpdateToday(context: modelContext)
+
+            // 2. Then load historical rates if secondary currencies were selected
+            if !selectedSecondaryCurrencies.isEmpty {
+                let calendar = Calendar.current
+                let today = Date()
+                guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else {
+                    return
+                }
+
+                let dateInterval = DateInterval(start: oneYearAgo, end: today)
+
+                // FORCE refresh historical rates to ensure ALL currencies are included
+                // This handles cases where rates were fetched before all currencies were selected
+                await ExchangeRateService.shared.forceRefreshRates(for: dateInterval, context: modelContext)
+
+                #if DEBUG
+                print(
+                    "OnboardingView: Force refreshed historical rates for secondary currencies: \(selectedSecondaryCurrencies.map { $0.rawValue })"
+                )
+                #endif
             }
-
-            let dateInterval = DateInterval(start: oneYearAgo, end: today)
-
-            // Load historical rates for each secondary currency
-            await ExchangeRateService.shared.ensureRates(for: dateInterval, context: modelContext)
 
             // Signal widget to refresh when user opens Panel
             SessionState.shared.needsExchangeRateWidgetRefresh = true
-
-            #if DEBUG
-                print(
-                    "OnboardingView: Loaded historical rates for secondary currencies: \(selectedSecondaryCurrencies.map { $0.rawValue })"
-                )
-            #endif
         }
     }
 
