@@ -24,25 +24,42 @@
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "hooks": {
-    "PostEdit": [
+    "PostToolUse": [
       {
-        "type": "command",
-        "command": "echo \"[$(date +%H:%M:%S)] Editado: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log",
-        "description": "Log de archivos editados"
+        "matcher": {
+          "tools": ["Edit", "Write"]
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%H:%M:%S)] Editado: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
+          }
+        ]
       }
     ],
-    "PreCommit": [
+    "PreToolUse": [
       {
-        "type": "command",
-        "command": "if git diff --cached --name-only | grep -qE '\\.(env|pem|key)$'; then echo 'BLOCKED: Archivo sensible detectado' && exit 1; fi",
-        "description": "Bloquear commits con archivos sensibles"
+        "matcher": {
+          "tools": ["Bash"],
+          "command_pattern": "git commit"
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if git diff --cached --name-only | grep -qE '\\.(env|pem|key)$'; then echo 'BLOCKED: Archivo sensible detectado' && exit 1; fi"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "type": "command",
-        "command": "echo \"[$(date -Iseconds)] Sesión terminada\" >> .claude/sessions/activity.log",
-        "description": "Log de fin de sesión"
+        "matcher": {},
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date -Iseconds)] Sesión terminada\" >> .claude/sessions/activity.log"
+          }
+        ]
       }
     ]
   }
