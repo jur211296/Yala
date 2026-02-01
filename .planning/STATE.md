@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-01] dd339c6 docs(qa): add validation scenarios for inbox alert modal (10.5.F)
+- [2026-02-01] 51cf81c docs: update STATE.md for Phase 10.5.F completion
 - [2026-02-01] 0e91b17 feat(inbox): unified alert modal for new drafts
 - [2026-02-01] c2a24cf fix: improve error handling and remove force unwraps
 - [2026-02-01] 1c32cc2 feat(voice): use dynamic currency names in voice input examples
@@ -73,6 +75,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Aislamiento Yala vs Yala Dev (10.5.E)** - SwiftDataConfiguration helper centralizado que usa APP_GROUP_IDENTIFIER de Info.plist para determinar nombre de base de datos (YalaModel vs YalaModel-Dev); 7 ubicaciones migradas (YalaApp + 6 App Intents); UserDefaults ya aislado por bundle ID; permisos iOS ya aislados por app
 - **Consistencia Visual Pagos Planificados (10.5.B)** - Summary card sin gradientes (color primario, borde/sombra neutros); section headers simplificados (solo vencidos con indicador rojo); due status en cards simplificado (hotPink solo vencidos, resto secundario); botones calendario sin fondo coloreado; ingresos mantienen teal
 - **UX Divisas (10.5.C completo)** - C.1: Ejemplos voz dinámicos con shortPluralName (ej: "50 soles", "50 dólares") sin país; C.2: Filtro monedas solo muestra las usadas en transacciones, sección oculta si no hay transacciones; C.3: Onboarding agrupa monedas por continente con sección "Recomendada" destacada, sin duplicación
+- **Modal Unificado Inbox (10.5.F completo)** - Modal al volver a la app cuando hay drafts nuevos no vistos; mensaje adaptado según tipo (pagos planificados, suscripciones, automatizaciones, mixto con desglose); excluye voz/imagen; detección por lastCheckDate en UserDefaults; 14 escenarios QA
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
