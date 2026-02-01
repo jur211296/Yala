@@ -250,7 +250,7 @@ struct ScheduledPaymentsListView: View {
         let month = viewModel.calendarDisplayedMonth
         let daysInMonth = calendar.range(of: .day, in: .month, for: month)?.count ?? 30
 
-        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month))!
+        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
 

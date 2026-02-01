@@ -919,7 +919,14 @@ struct VoiceRecordingView: View {
                 draft.statusRaw == "pending"
             }
         )
-        return (try? modelContext.fetch(descriptor)) ?? []
+        do {
+            return try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("VoiceRecordingView: Error fetching pending drafts: \(error)")
+            #endif
+            return []
+        }
     }
 
     // MARK: - Subcategory Helpers
@@ -932,7 +939,13 @@ struct VoiceRecordingView: View {
             }
         )
 
-        guard let subcategories = try? modelContext.fetch(descriptor) else {
+        let subcategories: [Subcategory]
+        do {
+            subcategories = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("VoiceRecordingView: Error fetching subcategory names: \(error)")
+            #endif
             return ([], [])
         }
 
@@ -967,7 +980,13 @@ struct VoiceRecordingView: View {
             }
         )
 
-        guard let subcategories = try? modelContext.fetch(descriptor) else {
+        let subcategories: [Subcategory]
+        do {
+            subcategories = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("VoiceRecordingView: Error fetching subcategories for matching: \(error)")
+            #endif
             return nil
         }
 
@@ -1015,7 +1034,13 @@ struct VoiceRecordingView: View {
             }
         )
 
-        guard let allTags = try? modelContext.fetch(descriptor) else {
+        let allTags: [Tag]
+        do {
+            allTags = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("VoiceRecordingView: Error fetching tags: \(error)")
+            #endif
             return ([], [])
         }
 
@@ -1067,7 +1092,13 @@ struct VoiceRecordingView: View {
             }
         )
 
-        guard let accounts = try? modelContext.fetch(descriptor) else {
+        let accounts: [Account]
+        do {
+            accounts = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("VoiceRecordingView: Error fetching accounts: \(error)")
+            #endif
             return nil
         }
 

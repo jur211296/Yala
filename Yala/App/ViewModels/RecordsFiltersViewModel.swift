@@ -52,7 +52,9 @@ final class RecordsFiltersViewModel {
         do {
             allAccounts = try context.fetch(accountDescriptor)
         } catch {
+            #if DEBUG
             print("RecordsFiltersViewModel: Error loading accounts: \(error)")
+            #endif
             allAccounts = []
         }
 
@@ -61,7 +63,9 @@ final class RecordsFiltersViewModel {
         do {
             allCategories = try context.fetch(categoryDescriptor)
         } catch {
+            #if DEBUG
             print("RecordsFiltersViewModel: Error loading categories: \(error)")
+            #endif
             allCategories = []
         }
 
@@ -70,7 +74,9 @@ final class RecordsFiltersViewModel {
         do {
             allTags = try context.fetch(tagDescriptor)
         } catch {
+            #if DEBUG
             print("RecordsFiltersViewModel: Error loading tags: \(error)")
+            #endif
             allTags = []
         }
 
@@ -79,7 +85,9 @@ final class RecordsFiltersViewModel {
         do {
             allSubcategories = try context.fetch(subcategoryDescriptor)
         } catch {
+            #if DEBUG
             print("RecordsFiltersViewModel: Error loading subcategories: \(error)")
+            #endif
             allSubcategories = []
         }
 
@@ -99,7 +107,9 @@ final class RecordsFiltersViewModel {
                 uniqueCodes.contains($0.rawValue)
             }
         } catch {
+            #if DEBUG
             print("RecordsFiltersViewModel: Error loading currencies: \(error)")
+            #endif
             currenciesWithTransactions = []
         }
     }
