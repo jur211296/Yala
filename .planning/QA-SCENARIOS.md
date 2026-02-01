@@ -1958,27 +1958,70 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Panel muestra "Hola, Juan"
 - [ ] Cambio persiste
 
-#### Escenario 13.2: Cambiar moneda preferida
+#### Escenario 13.2: Cambiar moneda preferida via CurrencyPickerSheet
 **Precondiciones:** Moneda actual PEN
 **Pasos:**
-1. Profile → Moneda
-2. Seleccionar USD
-3. Confirmar
+1. Profile → Divisa y cambio
+2. Tap en fila de "Divisa preferida" (muestra PEN actual)
+3. Se abre CurrencyPickerSheet con divisas agrupadas por continente
+4. Verificar que divisas están ordenadas A-Z dentro de cada sección
+5. Seleccionar USD (en sección "Norteamérica")
+6. Sheet se cierra automáticamente
+7. Observar indicador de progreso (recalculando conversiones)
 **Resultado esperado:**
-- [ ] Totales muestran símbolo $
-- [ ] Conversiones automáticas
+- [ ] Sheet muestra divisas agrupadas por continente (Latinoamérica, Norteamérica, Europa, Asia, Oceanía, Medio Oriente, África)
+- [ ] Divisa actual (PEN) tiene checkmark visible
+- [ ] Al seleccionar otra divisa, sheet se cierra automáticamente
+- [ ] Indicador de progreso aparece mientras se actualizan transacciones
+- [ ] Totales ahora muestran símbolo $ (USD)
 - [ ] Nuevas transacciones default USD
 
-#### Escenario 13.3: Configurar divisas secundarias
-**Precondiciones:** Ninguna
+#### Escenario 13.3: Configurar divisas secundarias via SecondaryCurrencyPickerSheet
+**Precondiciones:** Sin divisas secundarias configuradas
 **Pasos:**
-1. Profile → Divisas secundarias
-2. Activar EUR
-3. Activar GBP
+1. Profile → Divisa y cambio
+2. Tap en fila de "Divisas secundarias" (muestra "Ninguna")
+3. Se abre SecondaryCurrencyPickerSheet
+4. Tap en EUR (sección Europa) - aparece estrella llena
+5. Tap en GBP (sección Europa) - aparece estrella llena
+6. Intentar tap en CHF - debe estar deshabilitado (límite de 2)
+7. Cerrar sheet con X
 **Resultado esperado:**
-- [ ] Tipo de cambio visible en Panel
-- [ ] Disponibles en transferencias
-- [ ] Máximo 2
+- [ ] Sheet muestra divisas agrupadas por continente (sin incluir la preferida)
+- [ ] Al seleccionar, aparece sección "Seleccionados" al tope con las divisas marcadas
+- [ ] Icono de estrella llena para seleccionadas, vacía para no seleccionadas
+- [ ] Después de 2 selecciones, las demás aparecen con opacity 0.5 y deshabilitadas
+- [ ] Sheet NO se cierra al seleccionar (permite múltiples toggle)
+- [ ] Fila de divisas secundarias ahora muestra "🇪🇺 EUR 🇬🇧 GBP"
+- [ ] Widget de tipo de cambio refleja las nuevas divisas
+
+#### Escenario 13.3.1: Ver todas las tasas de cambio via ExchangeRatesSheet
+**Precondiciones:** Divisas secundarias configuradas (EUR, GBP)
+**Pasos:**
+1. Profile → Divisa y cambio
+2. En sección "Tipo de cambio", verificar que muestra EUR y GBP inline
+3. Tap en "Ver todas"
+4. Se abre ExchangeRatesSheet
+5. Scroll para ver todas las divisas
+**Resultado esperado:**
+- [ ] Sheet muestra todas las divisas excepto la preferida
+- [ ] Divisas agrupadas por continente
+- [ ] Cada fila muestra: Bandera + "1 [código]" + nombre + tasa actual
+- [ ] Footer muestra última actualización
+- [ ] Filas son de solo lectura (no hay interacción)
+
+#### Escenario 13.3.2: Quitar divisa secundaria
+**Precondiciones:** Divisas secundarias: EUR, GBP
+**Pasos:**
+1. Profile → Divisa y cambio
+2. Tap en fila de divisas secundarias
+3. En sección "Seleccionados", tap en EUR para quitarla
+4. Estrella de EUR cambia a vacía
+5. Cerrar sheet
+**Resultado esperado:**
+- [ ] EUR ya no aparece en sección "Seleccionados"
+- [ ] Fila de divisas secundarias ahora muestra solo "🇬🇧 GBP"
+- [ ] Otras divisas vuelven a estar habilitadas (ya no hay límite de 2)
 
 #### Escenario 13.4: Cambiar tema
 **Precondiciones:** Tema actual "Sistema"

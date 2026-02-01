@@ -8,6 +8,46 @@
 
 import Foundation
 
+// MARK: - Continent Enum
+
+/// Enum de continentes para agrupar divisas en la UI.
+enum Continent: String, CaseIterable, Identifiable {
+    case latinAmerica
+    case europe
+    case asia
+    case oceania
+    case middleEast
+    case africa
+    case northAmerica
+
+    var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .latinAmerica: return L10n.Continent.latinAmerica
+        case .europe: return L10n.Continent.europe
+        case .asia: return L10n.Continent.asia
+        case .oceania: return L10n.Continent.oceania
+        case .middleEast: return L10n.Continent.middleEast
+        case .africa: return L10n.Continent.africa
+        case .northAmerica: return L10n.Continent.northAmerica
+        }
+    }
+
+    /// Orden de visualización en la UI
+    var displayOrder: Int {
+        switch self {
+        case .latinAmerica: return 0
+        case .northAmerica: return 1
+        case .europe: return 2
+        case .asia: return 3
+        case .oceania: return 4
+        case .middleEast: return 5
+        case .africa: return 6
+        }
+    }
+}
+
 // MARK: - Currency Code Enum (Single Source of Truth)
 
 /// Enum centralizado de divisas soportadas.
@@ -565,6 +605,35 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         }
     }
 
+    // MARK: - Continent Mapping
+
+    /// Continente al que pertenece esta divisa
+    var continent: Continent {
+        switch self {
+        // Latinoamérica
+        case .pen, .mxn, .cop, .brl, .ars, .clp, .uyu, .bob, .pyg, .crc, .gtq, .hnl, .nio, .pab, .dop:
+            return .latinAmerica
+        // Norteamérica (USD y CAD)
+        case .usd, .cad:
+            return .northAmerica
+        // Europa
+        case .eur, .gbp, .chf, .sek, .nok, .dkk, .pln, .czk, .huf, .ron, .rub, .uah, .try:
+            return .europe
+        // Asia
+        case .jpy, .cny, .krw, .inr, .idr, .php, .thb, .myr, .sgd, .hkd, .twd, .vnd:
+            return .asia
+        // Oceanía
+        case .aud, .nzd:
+            return .oceania
+        // Medio Oriente
+        case .aed, .sar, .ils, .qar, .kwd:
+            return .middleEast
+        // África
+        case .zar, .egp, .ngn, .kes, .mad:
+            return .africa
+        }
+    }
+
     // MARK: - Static Helpers
 
     /// Todos los códigos de moneda como strings (para API calls).
@@ -586,6 +655,18 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
     static func fromAlias(_ alias: String) -> CurrencyCode? {
         let upper = alias.uppercased()
         return allCases.first { $0.aliases.contains(upper) }
+    }
+
+    /// Agrupa todas las divisas por continente, ordenadas alfabéticamente dentro de cada grupo.
+    static var groupedByContinent: [(continent: Continent, currencies: [CurrencyCode])] {
+        let grouped = Dictionary(grouping: allCases) { $0.continent }
+        return Continent.allCases
+            .sorted { $0.displayOrder < $1.displayOrder }
+            .compactMap { continent in
+                guard let currencies = grouped[continent], !currencies.isEmpty else { return nil }
+                let sorted = currencies.sorted { $0.localizedName < $1.localizedName }
+                return (continent: continent, currencies: sorted)
+            }
     }
 }
 

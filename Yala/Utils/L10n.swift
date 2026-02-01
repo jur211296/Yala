@@ -433,6 +433,18 @@ enum L10n {
         static var cad: String { NSLocalizedString("currency.cad", comment: "") }
     }
 
+    // MARK: - Continents
+
+    enum Continent {
+        static var latinAmerica: String { NSLocalizedString("continent.latinAmerica", comment: "") }
+        static var europe: String { NSLocalizedString("continent.europe", comment: "") }
+        static var asia: String { NSLocalizedString("continent.asia", comment: "") }
+        static var oceania: String { NSLocalizedString("continent.oceania", comment: "") }
+        static var middleEast: String { NSLocalizedString("continent.middleEast", comment: "") }
+        static var africa: String { NSLocalizedString("continent.africa", comment: "") }
+        static var northAmerica: String { NSLocalizedString("continent.northAmerica", comment: "") }
+    }
+
     // MARK: - Empty States
 
     enum Empty {
@@ -1339,6 +1351,8 @@ enum L10n {
         static var selected: String { NSLocalizedString("common.selected", comment: "") }
         static var details: String { NSLocalizedString("common.details", comment: "") }
         static var select: String { NSLocalizedString("common.select", comment: "") }
+        static var seeAll: String { NSLocalizedString("common.seeAll", comment: "") }
+        static var none: String { NSLocalizedString("common.none", comment: "") }
     }
 
     // MARK: - Widgets

@@ -832,6 +832,18 @@
 // Norteamérica
 "currency.cad" = "dólar canadiense";
 
+// MARK: - Continents
+"continent.latinAmerica" = "Latinoamérica";
+"continent.europe" = "Europa";
+"continent.asia" = "Asia";
+"continent.oceania" = "Oceanía";
+"continent.middleEast" = "Medio Oriente";
+"continent.africa" = "África";
+"continent.northAmerica" = "Norteamérica";
+
+"common.seeAll" = "Ver todas";
+"common.none" = "Ninguna";
+
 "common.selectColor" = "Selecciona un color";
 "common.useThisColor" = "Usar este color";
 "common.newColor" = "Nuevo color";
