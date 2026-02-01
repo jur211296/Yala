@@ -3,7 +3,17 @@ import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
 
-    private let appGroupIdentifier = "group.com.jurgenschmidt.yala"
+    /// App Group identifier read from Info.plist (set via Build Settings)
+    private var appGroupIdentifier: String {
+        Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String
+            ?? "group.com.jurgenschmidt.yala"
+    }
+
+    /// URL Scheme read from Info.plist (set via Build Settings)
+    private var urlScheme: String {
+        Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String
+            ?? "yala"
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -93,8 +103,8 @@ class ShareViewController: UIViewController {
     }
 
     private func completeSuccessfully() {
-        // Open the main app
-        if let url = URL(string: "yala://shared-image") {
+        // Open the main app using dynamic URL scheme
+        if let url = URL(string: "\(urlScheme)://shared-image") {
             var responder: UIResponder? = self
             while responder != nil {
                 if let application = responder as? UIApplication {

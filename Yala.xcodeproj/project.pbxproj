@@ -399,6 +399,7 @@
 		96CFFFB82EC3CF09002AC31C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala";
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -434,12 +435,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
 			};
 			name = Debug;
 		};
 		96CFFFB92EC3CF09002AC31C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala";
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -475,6 +478,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
 			};
 			name = Release;
 		};
@@ -692,6 +696,7 @@
 		96CFFFD82EC3CF09002AC31C /* Debug-Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala.dev";
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -728,12 +733,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
 			};
 			name = "Debug-Dev";
 		};
 		96CFFFD92EC3CF09002AC31C /* Release-Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala.dev";
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -770,6 +777,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
 			};
 			name = "Release-Dev";
 		};
@@ -987,6 +995,7 @@
 		CFADC3C42F2A42810040D198 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala";
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1011,12 +1020,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
 			};
 			name = Debug;
 		};
 		CFADC3C52F2A42810040D198 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala";
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1041,12 +1052,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
 			};
 			name = Release;
 		};
 		CFADC3C62F2A42810040D198 /* Debug-Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala.dev";
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1071,12 +1084,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
 			};
 			name = "Debug-Dev";
 		};
 		CFADC3C72F2A42810040D198 /* Release-Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = "group.com.jurgenschmidt.yala.dev";
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1101,6 +1116,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
 			};
 			name = "Release-Dev";
 		};

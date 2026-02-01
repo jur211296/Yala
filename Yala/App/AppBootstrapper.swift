@@ -85,9 +85,14 @@ final class AppBootstrapper {
 
     // MARK: - Deep Link Handling
 
+    /// URL Scheme read from Info.plist (set via Build Settings)
+    private var urlScheme: String {
+        Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
+    }
+
     /// Procesa URLs entrantes (deep links)
     func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "yala" else { return }
+        guard url.scheme == urlScheme else { return }
 
         #if DEBUG
         print("AppBootstrapper: Received deep link: \(url.absoluteString)")

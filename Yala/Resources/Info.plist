@@ -9,10 +9,14 @@
 			<string>com.jurgenschmidt.yala</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>yala</string>
+				<string>$(URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>
+	<key>APP_GROUP_IDENTIFIER</key>
+	<string>$(APP_GROUP_IDENTIFIER)</string>
+	<key>URL_SCHEME</key>
+	<string>$(URL_SCHEME)</string>
 	<key>OPENAI_API_KEY</key>
 	<string>$(OPENAI_API_KEY)</string>
 	<key>EXCHANGE_RATE_API_KEY</key>

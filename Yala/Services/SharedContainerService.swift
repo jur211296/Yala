@@ -4,7 +4,12 @@ import Foundation
 /// Used for communication between the main app and Share Extension
 enum SharedContainerService {
 
-    static let appGroupIdentifier = "group.com.jurgenschmidt.yala"
+    /// App Group identifier read from Info.plist (set via Build Settings)
+    /// Falls back to production value for migration safety
+    static var appGroupIdentifier: String {
+        Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String
+            ?? "group.com.jurgenschmidt.yala"
+    }
 
     /// URL to the shared container directory
     static var containerURL: URL? {
