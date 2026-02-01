@@ -696,27 +696,11 @@ struct OnboardingView: View {
     // MARK: - Helpers
 
     private func currencyFlag(_ currency: CurrencyCode) -> String {
-        switch currency {
-        case .pen: return "🇵🇪"
-        case .usd: return "🇺🇸"
-        case .eur: return "🇪🇺"
-        case .mxn: return "🇲🇽"
-        case .cop: return "🇨🇴"
-        case .brl: return "🇧🇷"
-        case .gbp: return "🇬🇧"
-        }
+        currency.flag
     }
 
     private func currencyName(_ currency: CurrencyCode) -> String {
-        switch currency {
-        case .pen: return L10n.Currency.pen
-        case .usd: return L10n.Currency.usd
-        case .eur: return L10n.Currency.eur
-        case .mxn: return L10n.Currency.mxn
-        case .cop: return L10n.Currency.cop
-        case .brl: return L10n.Currency.brl
-        case .gbp: return L10n.Currency.gbp
-        }
+        currency.localizedName
     }
 
     private func completeOnboarding() {

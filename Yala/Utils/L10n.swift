@@ -370,12 +370,25 @@ enum L10n {
     // MARK: - Currency Names
 
     enum Currency {
+        // Latinoamérica
         static var pen: String { NSLocalizedString("currency.pen", comment: "") }
         static var usd: String { NSLocalizedString("currency.usd", comment: "") }
-        static var eur: String { NSLocalizedString("currency.eur", comment: "") }
         static var mxn: String { NSLocalizedString("currency.mxn", comment: "") }
         static var cop: String { NSLocalizedString("currency.cop", comment: "") }
         static var brl: String { NSLocalizedString("currency.brl", comment: "") }
+        static var ars: String { NSLocalizedString("currency.ars", comment: "") }
+        static var clp: String { NSLocalizedString("currency.clp", comment: "") }
+        static var uyu: String { NSLocalizedString("currency.uyu", comment: "") }
+        static var bob: String { NSLocalizedString("currency.bob", comment: "") }
+        static var pyg: String { NSLocalizedString("currency.pyg", comment: "") }
+        static var crc: String { NSLocalizedString("currency.crc", comment: "") }
+        static var gtq: String { NSLocalizedString("currency.gtq", comment: "") }
+        static var hnl: String { NSLocalizedString("currency.hnl", comment: "") }
+        static var nio: String { NSLocalizedString("currency.nio", comment: "") }
+        static var pab: String { NSLocalizedString("currency.pab", comment: "") }
+        static var dop: String { NSLocalizedString("currency.dop", comment: "") }
+        // Europa
+        static var eur: String { NSLocalizedString("currency.eur", comment: "") }
         static var gbp: String { NSLocalizedString("currency.gbp", comment: "") }
     }
 

@@ -770,12 +770,25 @@
 "tag.colorSelected" = "Selected: %@";
 
 // MARK: - Currency Names
+// Latin America
 "currency.pen" = "Peruvian sol";
 "currency.usd" = "US dollar";
-"currency.eur" = "Euro";
 "currency.mxn" = "Mexican peso";
 "currency.cop" = "Colombian peso";
 "currency.brl" = "Brazilian real";
+"currency.ars" = "Argentine peso";
+"currency.clp" = "Chilean peso";
+"currency.uyu" = "Uruguayan peso";
+"currency.bob" = "Bolivian boliviano";
+"currency.pyg" = "Paraguayan guaraní";
+"currency.crc" = "Costa Rican colón";
+"currency.gtq" = "Guatemalan quetzal";
+"currency.hnl" = "Honduran lempira";
+"currency.nio" = "Nicaraguan córdoba";
+"currency.pab" = "Panamanian balboa";
+"currency.dop" = "Dominican peso";
+// Europe
+"currency.eur" = "Euro";
 "currency.gbp" = "British pound";
 
 "common.selectColor" = "Select a Color";
