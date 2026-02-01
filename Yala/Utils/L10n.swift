@@ -390,6 +390,17 @@ enum L10n {
         // Europa
         static var eur: String { NSLocalizedString("currency.eur", comment: "") }
         static var gbp: String { NSLocalizedString("currency.gbp", comment: "") }
+        static var chf: String { NSLocalizedString("currency.chf", comment: "") }
+        static var sek: String { NSLocalizedString("currency.sek", comment: "") }
+        static var nok: String { NSLocalizedString("currency.nok", comment: "") }
+        static var dkk: String { NSLocalizedString("currency.dkk", comment: "") }
+        static var pln: String { NSLocalizedString("currency.pln", comment: "") }
+        static var czk: String { NSLocalizedString("currency.czk", comment: "") }
+        static var huf: String { NSLocalizedString("currency.huf", comment: "") }
+        static var ron: String { NSLocalizedString("currency.ron", comment: "") }
+        static var rub: String { NSLocalizedString("currency.rub", comment: "") }
+        static var uah: String { NSLocalizedString("currency.uah", comment: "") }
+        static var `try`: String { NSLocalizedString("currency.try", comment: "") }
     }
 
     // MARK: - Empty States

@@ -790,6 +790,17 @@
 // Europa
 "currency.eur" = "euro";
 "currency.gbp" = "libra esterlina";
+"currency.chf" = "franco suizo";
+"currency.sek" = "corona sueca";
+"currency.nok" = "corona noruega";
+"currency.dkk" = "corona danesa";
+"currency.pln" = "zloty polaco";
+"currency.czk" = "corona checa";
+"currency.huf" = "florín húngaro";
+"currency.ron" = "leu rumano";
+"currency.rub" = "rublo ruso";
+"currency.uah" = "grivna ucraniana";
+"currency.try" = "lira turca";
 
 "common.selectColor" = "Selecciona un color";
 "common.useThisColor" = "Usar este color";

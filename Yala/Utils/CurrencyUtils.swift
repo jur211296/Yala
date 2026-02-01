@@ -38,6 +38,17 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
     // Europa
     case eur = "EUR"
     case gbp = "GBP"
+    case chf = "CHF"
+    case sek = "SEK"
+    case nok = "NOK"
+    case dkk = "DKK"
+    case pln = "PLN"
+    case czk = "CZK"
+    case huf = "HUF"
+    case ron = "RON"
+    case rub = "RUB"
+    case uah = "UAH"
+    case `try` = "TRY"
 
     var id: String { rawValue }
 
@@ -66,6 +77,17 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Europa
         case .eur: return "🇪🇺"
         case .gbp: return "🇬🇧"
+        case .chf: return "🇨🇭"
+        case .sek: return "🇸🇪"
+        case .nok: return "🇳🇴"
+        case .dkk: return "🇩🇰"
+        case .pln: return "🇵🇱"
+        case .czk: return "🇨🇿"
+        case .huf: return "🇭🇺"
+        case .ron: return "🇷🇴"
+        case .rub: return "🇷🇺"
+        case .uah: return "🇺🇦"
+        case .try: return "🇹🇷"
         }
     }
 
@@ -92,6 +114,17 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Europa
         case .eur: return "€"
         case .gbp: return "£"
+        case .chf: return "Fr."
+        case .sek: return "kr"
+        case .nok: return "kr"
+        case .dkk: return "kr"
+        case .pln: return "zł"
+        case .czk: return "Kč"
+        case .huf: return "Ft"
+        case .ron: return "lei"
+        case .rub: return "₽"
+        case .uah: return "₴"
+        case .try: return "₺"
         }
     }
 
@@ -118,6 +151,17 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Europa
         case .eur: return L10n.Currency.eur
         case .gbp: return L10n.Currency.gbp
+        case .chf: return L10n.Currency.chf
+        case .sek: return L10n.Currency.sek
+        case .nok: return L10n.Currency.nok
+        case .dkk: return L10n.Currency.dkk
+        case .pln: return L10n.Currency.pln
+        case .czk: return L10n.Currency.czk
+        case .huf: return L10n.Currency.huf
+        case .ron: return L10n.Currency.ron
+        case .rub: return L10n.Currency.rub
+        case .uah: return L10n.Currency.uah
+        case .try: return L10n.Currency.try
         }
     }
 
@@ -165,6 +209,28 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
             return ["EUR", "€", "EURO", "EUROS"]
         case .gbp:
             return ["GBP", "£", "POUND", "POUNDS", "LIBRA", "LIBRAS"]
+        case .chf:
+            return ["CHF", "FR.", "FRANC", "FRANCS", "FRANCO SUIZO"]
+        case .sek:
+            return ["SEK", "KR", "KRONA", "KRONOR", "CORONA SUECA"]
+        case .nok:
+            return ["NOK", "KRONE", "KRONER", "CORONA NORUEGA"]
+        case .dkk:
+            return ["DKK", "KRONE", "KRONER", "CORONA DANESA"]
+        case .pln:
+            return ["PLN", "ZŁ", "ZLOTY", "ZLOTYS", "ZLOTY POLACO"]
+        case .czk:
+            return ["CZK", "KČ", "KORUNA", "KORUNY", "CORONA CHECA"]
+        case .huf:
+            return ["HUF", "FT", "FORINT", "FORINTS", "FLORIN HUNGARO"]
+        case .ron:
+            return ["RON", "LEI", "LEU", "LEU RUMANO"]
+        case .rub:
+            return ["RUB", "₽", "RUBLE", "RUBLES", "RUBLO", "RUBLOS"]
+        case .uah:
+            return ["UAH", "₴", "HRYVNIA", "HRYVNIAS", "GRIVNA"]
+        case .try:
+            return ["TRY", "₺", "LIRA", "LIRAS", "LIRA TURCA"]
         }
     }
 
@@ -195,6 +261,17 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Europa
         case .eur: return 0.92      // 1 USD = 0.92 EUR
         case .gbp: return 0.79      // 1 USD = 0.79 GBP
+        case .chf: return 0.88      // 1 USD = 0.88 CHF
+        case .sek: return 10.5      // 1 USD = 10.5 SEK
+        case .nok: return 10.8      // 1 USD = 10.8 NOK
+        case .dkk: return 6.9       // 1 USD = 6.9 DKK
+        case .pln: return 4.0       // 1 USD = 4.0 PLN
+        case .czk: return 23.5      // 1 USD = 23.5 CZK
+        case .huf: return 380.0     // 1 USD = 380 HUF
+        case .ron: return 4.6       // 1 USD = 4.6 RON
+        case .rub: return 95.0      // 1 USD = 95 RUB
+        case .uah: return 41.0      // 1 USD = 41 UAH
+        case .try: return 32.0      // 1 USD = 32 TRY
         }
     }
 
@@ -234,6 +311,17 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         case .eur: return ["ES", "DE", "FR", "IT", "PT", "NL", "BE", "AT", "IE", "FI", "GR",
                           "SK", "SI", "EE", "LV", "LT", "CY", "MT", "LU"]
         case .gbp: return ["GB"]
+        case .chf: return ["CH", "LI"]  // Suiza y Liechtenstein
+        case .sek: return ["SE"]
+        case .nok: return ["NO"]
+        case .dkk: return ["DK"]
+        case .pln: return ["PL"]
+        case .czk: return ["CZ"]
+        case .huf: return ["HU"]
+        case .ron: return ["RO"]
+        case .rub: return ["RU"]
+        case .uah: return ["UA"]
+        case .try: return ["TR"]
         }
     }
 
