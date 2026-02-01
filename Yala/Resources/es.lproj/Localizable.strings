@@ -294,6 +294,20 @@
 "scheduled.draftCreatedMessage" = "Se añadieron %d pagos planificados a tu bandeja. Revísalos cuando quieras.";
 "scheduled.viewInbox" = "Ver bandeja";
 
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "¡Tienes pagos pendientes!";
+"inbox.alert.title.subscriptions" = "¡Suscripciones por revisar!";
+"inbox.alert.title.automations" = "¡Nuevos registros automáticos!";
+"inbox.alert.title.mixed" = "¡Nuevos registros en tu bandeja!";
+"inbox.alert.message.scheduled" = "Se añadieron %d pagos planificados a tu bandeja.";
+"inbox.alert.message.subscriptions" = "Se añadieron %d suscripciones a tu bandeja.";
+"inbox.alert.message.automations" = "Se añadieron %d registros automáticos a tu bandeja.";
+"inbox.alert.message.mixed.scheduled" = "%d pagos";
+"inbox.alert.message.mixed.subscriptions" = "%d suscripciones";
+"inbox.alert.message.mixed.automations" = "%d registros automáticos";
+"inbox.alert.message.mixed.connector" = " y ";
+
 // MARK: - Settings
 
 "settings.title" = "Configuración";

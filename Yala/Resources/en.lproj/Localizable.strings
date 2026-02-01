@@ -294,6 +294,20 @@
 "scheduled.draftCreatedMessage" = "%d scheduled payments were added to your inbox. Check them when you're ready.";
 "scheduled.viewInbox" = "View inbox";
 
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "You have pending payments!";
+"inbox.alert.title.subscriptions" = "Subscriptions to review!";
+"inbox.alert.title.automations" = "New automatic records!";
+"inbox.alert.title.mixed" = "New records in your inbox!";
+"inbox.alert.message.scheduled" = "%d scheduled payments were added to your inbox.";
+"inbox.alert.message.subscriptions" = "%d subscriptions were added to your inbox.";
+"inbox.alert.message.automations" = "%d automatic records were added to your inbox.";
+"inbox.alert.message.mixed.scheduled" = "%d payments";
+"inbox.alert.message.mixed.subscriptions" = "%d subscriptions";
+"inbox.alert.message.mixed.automations" = "%d automatic records";
+"inbox.alert.message.mixed.connector" = " and ";
+
 // MARK: - Settings
 
 "settings.title" = "Settings";

@@ -60,10 +60,13 @@ final class AppBootstrapper {
         // 4. Process due scheduled payments (create inbox drafts)
         processDueScheduledPayments(context: context)
 
-        // 5. Seed default notifications for existing users
+        // 5. Check for pending inbox drafts and notify user
+        checkForPendingInboxDrafts(context: context)
+
+        // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
 
-        // 6. Check for pending shared images
+        // 7. Check for pending shared images
         checkForPendingSharedImage()
 
         isInitialized = true
@@ -72,8 +75,9 @@ final class AppBootstrapper {
     // MARK: - Scene Phase Handlers
 
     /// Llamar cuando la app se activa (scenePhase == .active)
-    func handleBecameActive() {
+    func handleBecameActive(context: ModelContext) {
         checkForPendingSharedImage()
+        checkForPendingInboxDrafts(context: context)
     }
 
     /// Llamar cuando cambia needsExchangeRateReload
@@ -148,12 +152,60 @@ final class AppBootstrapper {
     }
 
     private func processDueScheduledPayments(context: ModelContext) {
-        let draftsCreated = ScheduledPaymentDraftService.processDuePayments(context: context)
-        if draftsCreated > 0 {
+        // Only create drafts, notification is handled by checkForPendingInboxDrafts
+        _ = ScheduledPaymentDraftService.processDuePayments(context: context)
+    }
+
+    private func checkForPendingInboxDrafts(context: ModelContext) {
+        let lastCheck = UserDefaults.standard.object(forKey: "lastInboxDraftCheckDate") as? Date
+                        ?? Date.distantPast
+
+        var notification = PendingInboxNotification()
+
+        // Query 1: Scheduled payments
+        let scheduledDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { draft in
+                draft.sourceTypeRaw == "scheduledPayment" &&
+                draft.statusRaw == "pending" &&
+                draft.createdAt > lastCheck
+            }
+        )
+
+        // Query 2: Subscriptions
+        let subscriptionDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { draft in
+                draft.sourceTypeRaw == "subscription" &&
+                draft.statusRaw == "pending" &&
+                draft.createdAt > lastCheck
+            }
+        )
+
+        // Query 3: Automations (applePay + automation)
+        let automationDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { draft in
+                (draft.sourceTypeRaw == "applePay" || draft.sourceTypeRaw == "automation") &&
+                draft.statusRaw == "pending" &&
+                draft.createdAt > lastCheck
+            }
+        )
+
+        do {
+            notification.scheduledPayments = try context.fetchCount(scheduledDescriptor)
+            notification.subscriptions = try context.fetchCount(subscriptionDescriptor)
+            notification.automations = try context.fetchCount(automationDescriptor)
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: Error checking inbox drafts: \(error)")
+            #endif
+        }
+
+        if !notification.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-                self?.sessionState.pendingScheduledDraftsCount = draftsCreated
+                self?.sessionState.pendingInboxNotification = notification
             }
         }
+
+        UserDefaults.standard.set(Date(), forKey: "lastInboxDraftCheckDate")
     }
 
     private func seedDefaultNotifications(context: ModelContext) {

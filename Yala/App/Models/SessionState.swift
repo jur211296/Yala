@@ -8,6 +8,53 @@
 import SwiftData
 import SwiftUI
 
+// MARK: - Inbox Notification Types
+
+/// Types of drafts pending notification
+struct PendingInboxNotification {
+    var scheduledPayments: Int = 0
+    var subscriptions: Int = 0
+    var automations: Int = 0  // applePay + automation
+
+    var total: Int { scheduledPayments + subscriptions + automations }
+    var isEmpty: Bool { total == 0 }
+
+    /// Builds breakdown message for mixed type
+    /// Example: "2 pagos planificados y 3 registros automáticos"
+    var mixedMessageBreakdown: String {
+        var parts: [String] = []
+        if scheduledPayments > 0 {
+            parts.append(L10n.Inbox.Alert.Message.Mixed.scheduled(scheduledPayments))
+        }
+        if subscriptions > 0 {
+            parts.append(L10n.Inbox.Alert.Message.Mixed.subscriptions(subscriptions))
+        }
+        if automations > 0 {
+            parts.append(L10n.Inbox.Alert.Message.Mixed.automations(automations))
+        }
+        return parts.joined(separator: L10n.Inbox.Alert.Message.Mixed.connector)
+    }
+
+    /// Predominant type for message selection
+    var notificationType: InboxNotificationType {
+        let types = [
+            (scheduledPayments > 0, InboxNotificationType.scheduledPayments),
+            (subscriptions > 0, InboxNotificationType.subscriptions),
+            (automations > 0, InboxNotificationType.automations)
+        ].filter { $0.0 }
+
+        if types.count > 1 { return .mixed }
+        return types.first?.1 ?? .mixed
+    }
+}
+
+enum InboxNotificationType {
+    case scheduledPayments
+    case subscriptions
+    case automations
+    case mixed
+}
+
 /// Global session state to manage synchronization between views
 @Observable
 class SessionState {
@@ -253,9 +300,9 @@ class SessionState {
     /// Set by SharedImageProcessor after creating drafts
     var shouldShowInbox: Bool = false
 
-    /// Count of scheduled payment drafts created on app launch
-    /// When > 0, shows an alert to notify the user
-    var pendingScheduledDraftsCount: Int = 0
+    /// Pending inbox drafts notification info
+    /// When not empty, shows an alert modal to notify the user
+    var pendingInboxNotification: PendingInboxNotification = .init()
 
     /// Flag to trigger voice entry from App Shortcut
     /// When true, PanelView will open VoiceRecordingSheet

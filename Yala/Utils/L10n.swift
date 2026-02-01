@@ -1979,6 +1979,52 @@ enum L10n {
         static var backToInbox: String {
             NSLocalizedString("inbox.backToInbox", comment: "")
         }
+
+        // MARK: Alert Modal
+
+        enum Alert {
+            enum Title {
+                static var scheduled: String {
+                    NSLocalizedString("inbox.alert.title.scheduled", comment: "")
+                }
+                static var subscriptions: String {
+                    NSLocalizedString("inbox.alert.title.subscriptions", comment: "")
+                }
+                static var automations: String {
+                    NSLocalizedString("inbox.alert.title.automations", comment: "")
+                }
+                static var mixed: String {
+                    NSLocalizedString("inbox.alert.title.mixed", comment: "")
+                }
+            }
+
+            enum Message {
+                static func scheduled(_ count: Int) -> String {
+                    String(format: NSLocalizedString("inbox.alert.message.scheduled", comment: ""), count)
+                }
+                static func subscriptions(_ count: Int) -> String {
+                    String(format: NSLocalizedString("inbox.alert.message.subscriptions", comment: ""), count)
+                }
+                static func automations(_ count: Int) -> String {
+                    String(format: NSLocalizedString("inbox.alert.message.automations", comment: ""), count)
+                }
+
+                enum Mixed {
+                    static func scheduled(_ count: Int) -> String {
+                        String(format: NSLocalizedString("inbox.alert.message.mixed.scheduled", comment: ""), count)
+                    }
+                    static func subscriptions(_ count: Int) -> String {
+                        String(format: NSLocalizedString("inbox.alert.message.mixed.subscriptions", comment: ""), count)
+                    }
+                    static func automations(_ count: Int) -> String {
+                        String(format: NSLocalizedString("inbox.alert.message.mixed.automations", comment: ""), count)
+                    }
+                    static var connector: String {
+                        NSLocalizedString("inbox.alert.message.mixed.connector", comment: "")
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Voice Input

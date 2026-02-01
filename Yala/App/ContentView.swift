@@ -64,18 +64,18 @@ struct ContentView: View {
         )) {
             BiometricLockOverlay()
         }
-        // Scheduled payment alert as fullScreenCover (appears over any sheet)
+        // Inbox alert as fullScreenCover (appears over any sheet)
         .fullScreenCover(isPresented: Binding(
-            get: { SessionState.shared.pendingScheduledDraftsCount > 0 },
+            get: { !SessionState.shared.pendingInboxNotification.isEmpty },
             set: { _ in }
         )) {
-            ScheduledPaymentAlertModal(
-                count: SessionState.shared.pendingScheduledDraftsCount,
+            InboxAlertModal(
+                notification: SessionState.shared.pendingInboxNotification,
                 onViewInbox: {
                     SessionState.shared.shouldShowInbox = true
                 },
                 onDismiss: {
-                    SessionState.shared.pendingScheduledDraftsCount = 0
+                    SessionState.shared.pendingInboxNotification = .init()
                 }
             )
             .background(ClearBackgroundView())

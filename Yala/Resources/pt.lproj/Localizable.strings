@@ -292,6 +292,20 @@
 "scheduled.draftCreatedMessage" = "%d pagamentos agendados foram adicionados à sua caixa. Confira quando quiser.";
 "scheduled.viewInbox" = "Ver caixa";
 
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "Você tem pagamentos pendentes!";
+"inbox.alert.title.subscriptions" = "Assinaturas para verificar!";
+"inbox.alert.title.automations" = "Novos registros automáticos!";
+"inbox.alert.title.mixed" = "Novos registros na sua caixa!";
+"inbox.alert.message.scheduled" = "%d pagamentos agendados foram adicionados à sua caixa.";
+"inbox.alert.message.subscriptions" = "%d assinaturas foram adicionadas à sua caixa.";
+"inbox.alert.message.automations" = "%d registros automáticos foram adicionados à sua caixa.";
+"inbox.alert.message.mixed.scheduled" = "%d pagamentos";
+"inbox.alert.message.mixed.subscriptions" = "%d assinaturas";
+"inbox.alert.message.mixed.automations" = "%d registros automáticos";
+"inbox.alert.message.mixed.connector" = " e ";
+
 // MARK: - Settings
 
 "settings.title" = "Configuracoes";

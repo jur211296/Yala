@@ -292,6 +292,20 @@
 "scheduled.draftCreatedMessage" = "%d pagamenti pianificati sono stati aggiunti alla tua casella. Controllali quando vuoi.";
 "scheduled.viewInbox" = "Vedi casella";
 
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "Hai pagamenti in sospeso!";
+"inbox.alert.title.subscriptions" = "Abbonamenti da verificare!";
+"inbox.alert.title.automations" = "Nuove registrazioni automatiche!";
+"inbox.alert.title.mixed" = "Nuove registrazioni nella tua casella!";
+"inbox.alert.message.scheduled" = "%d pagamenti pianificati sono stati aggiunti alla tua casella.";
+"inbox.alert.message.subscriptions" = "%d abbonamenti sono stati aggiunti alla tua casella.";
+"inbox.alert.message.automations" = "%d registrazioni automatiche sono state aggiunte alla tua casella.";
+"inbox.alert.message.mixed.scheduled" = "%d pagamenti";
+"inbox.alert.message.mixed.subscriptions" = "%d abbonamenti";
+"inbox.alert.message.mixed.automations" = "%d registrazioni automatiche";
+"inbox.alert.message.mixed.connector" = " e ";
+
 // MARK: - Settings
 
 "settings.title" = "Impostazioni";

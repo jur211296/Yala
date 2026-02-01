@@ -1,19 +1,51 @@
 //
-//  ScheduledPaymentAlertModal.swift
+//  InboxAlertModal.swift
 //  Yala
 //
-//  Modal centrado para notificar pagos planificados añadidos al inbox.
+//  Modal centrado para notificar nuevos items añadidos al inbox.
+//  Soporta pagos planificados, suscripciones y registros automáticos.
 //
 
 import SwiftUI
 
-struct ScheduledPaymentAlertModal: View {
-    let count: Int
+struct InboxAlertModal: View {
+    let notification: PendingInboxNotification
     let onViewInbox: () -> Void
     let onDismiss: () -> Void
 
     @State private var isVisible = false
     @Environment(\.colorScheme) private var colorScheme
+
+    private var title: String {
+        switch notification.notificationType {
+        case .scheduledPayments: return L10n.Inbox.Alert.Title.scheduled
+        case .subscriptions: return L10n.Inbox.Alert.Title.subscriptions
+        case .automations: return L10n.Inbox.Alert.Title.automations
+        case .mixed: return L10n.Inbox.Alert.Title.mixed
+        }
+    }
+
+    private var message: String {
+        switch notification.notificationType {
+        case .scheduledPayments:
+            return L10n.Inbox.Alert.Message.scheduled(notification.scheduledPayments)
+        case .subscriptions:
+            return L10n.Inbox.Alert.Message.subscriptions(notification.subscriptions)
+        case .automations:
+            return L10n.Inbox.Alert.Message.automations(notification.automations)
+        case .mixed:
+            return notification.mixedMessageBreakdown
+        }
+    }
+
+    private var icon: String {
+        switch notification.notificationType {
+        case .scheduledPayments: return "bell.badge.fill"
+        case .subscriptions: return "creditcard.and.123"
+        case .automations: return "gearshape.badge.checkmark"
+        case .mixed: return "tray.full.fill"
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -33,7 +65,7 @@ struct ScheduledPaymentAlertModal: View {
                         .fill(Color.electricIndigo.opacity(0.15))
                         .frame(width: 72, height: 72)
 
-                    Image(systemName: "bell.badge.fill")
+                    Image(systemName: icon)
                         .font(.system(size: 32, weight: .medium))
                         .foregroundStyle(Color.electricIndigo)
                 }
@@ -41,12 +73,12 @@ struct ScheduledPaymentAlertModal: View {
 
                 // Título y mensaje
                 VStack(spacing: DS.Spacing.sm) {
-                    Text(L10n.Scheduled.draftCreatedTitle)
+                    Text(title)
                         .font(DS.Typography.title2)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
 
-                    Text(L10n.Scheduled.draftCreatedMessage(count))
+                    Text(message)
                         .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -135,8 +167,8 @@ struct ClearBackgroundView: UIViewRepresentable {
         Color(.systemBackground)
             .ignoresSafeArea()
 
-        ScheduledPaymentAlertModal(
-            count: 2,
+        InboxAlertModal(
+            notification: PendingInboxNotification(scheduledPayments: 2, subscriptions: 0, automations: 0),
             onViewInbox: { print("View inbox") },
             onDismiss: { print("Dismiss") }
         )

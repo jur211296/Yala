@@ -61,7 +61,7 @@ struct YalaApp: App {
         .environment(bootstrapper.transactionService)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                bootstrapper.handleBecameActive()
+                bootstrapper.handleBecameActive(context: sharedModelContainer.mainContext)
             }
         }
     }
