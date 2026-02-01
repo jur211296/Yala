@@ -16,27 +16,10 @@ struct YalaApp: App {
 
     /// ModelContainer compartido para toda la app.
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Category.self,
-            Subcategory.self,
-            Tag.self,
-            Account.self,
-            TransactionItem.self,
-            Budget.self,
-            ExchangeRate.self,
-            FavoritePayment.self,
-            ScheduledPayment.self,
-            InboxDraft.self,
-            MerchantMemory.self,
-            NotificationItem.self,
-        ])
-
-        let configuration = ModelConfiguration("YalaModel")
-
         do {
             return try ModelContainer(
-                for: schema,
-                configurations: configuration
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
             )
         } catch {
             fatalError("Error al inicializar ModelContainer de Yala: \(error)")

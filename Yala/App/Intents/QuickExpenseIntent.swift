@@ -121,23 +121,10 @@ struct QuickExpenseIntent: AppIntent {
         let finalTagName = try await getTagName()
 
         // Create ModelContainer
-        let schema = Schema([
-            Category.self,
-            Subcategory.self,
-            Tag.self,
-            Account.self,
-            TransactionItem.self,
-            Budget.self,
-            ExchangeRate.self,
-            FavoritePayment.self,
-            ScheduledPayment.self,
-            InboxDraft.self,
-            MerchantMemory.self,
-        ])
-
-        let configuration = ModelConfiguration("YalaModel")
-
-        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+        guard let container = try? ModelContainer(
+            for: SwiftDataConfiguration.schema,
+            configurations: SwiftDataConfiguration.configuration
+        ) else {
             return .result(dialog: "shortcut.error.database")
         }
 
@@ -362,14 +349,10 @@ struct AccountQuery: EntityQuery {
 
     @MainActor
     func suggestedEntities() async throws -> [AccountAppEntity] {
-        let schema = Schema([
-            Category.self, Subcategory.self, Tag.self, Account.self,
-            TransactionItem.self, Budget.self, ExchangeRate.self,
-            FavoritePayment.self, ScheduledPayment.self, InboxDraft.self, MerchantMemory.self
-        ])
-        let configuration = ModelConfiguration("YalaModel")
-
-        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+        guard let container = try? ModelContainer(
+            for: SwiftDataConfiguration.schema,
+            configurations: SwiftDataConfiguration.configuration
+        ) else {
             return []
         }
 
@@ -419,14 +402,10 @@ struct ExpenseSubcategoryQuery: EntityQuery {
 
     @MainActor
     func suggestedEntities() async throws -> [ExpenseSubcategoryAppEntity] {
-        let schema = Schema([
-            Category.self, Subcategory.self, Tag.self, Account.self,
-            TransactionItem.self, Budget.self, ExchangeRate.self,
-            FavoritePayment.self, ScheduledPayment.self, InboxDraft.self, MerchantMemory.self
-        ])
-        let configuration = ModelConfiguration("YalaModel")
-
-        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+        guard let container = try? ModelContainer(
+            for: SwiftDataConfiguration.schema,
+            configurations: SwiftDataConfiguration.configuration
+        ) else {
             return []
         }
 
@@ -486,14 +465,10 @@ struct IncomeSubcategoryQuery: EntityQuery {
 
     @MainActor
     func suggestedEntities() async throws -> [IncomeSubcategoryAppEntity] {
-        let schema = Schema([
-            Category.self, Subcategory.self, Tag.self, Account.self,
-            TransactionItem.self, Budget.self, ExchangeRate.self,
-            FavoritePayment.self, ScheduledPayment.self, InboxDraft.self, MerchantMemory.self
-        ])
-        let configuration = ModelConfiguration("YalaModel")
-
-        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+        guard let container = try? ModelContainer(
+            for: SwiftDataConfiguration.schema,
+            configurations: SwiftDataConfiguration.configuration
+        ) else {
             return []
         }
 
@@ -676,23 +651,10 @@ struct ApplePayTransactionIntent: AppIntent {
         let effectiveDate = Date()
 
         // Create ModelContainer
-        let schema = Schema([
-            Category.self,
-            Subcategory.self,
-            Tag.self,
-            Account.self,
-            TransactionItem.self,
-            Budget.self,
-            ExchangeRate.self,
-            FavoritePayment.self,
-            ScheduledPayment.self,
-            InboxDraft.self,
-            MerchantMemory.self,
-        ])
-
-        let configuration = ModelConfiguration("YalaModel")
-
-        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+        guard let container = try? ModelContainer(
+            for: SwiftDataConfiguration.schema,
+            configurations: SwiftDataConfiguration.configuration
+        ) else {
             return .result(dialog: "shortcut.error.database")
         }
 
@@ -961,23 +923,10 @@ struct AutomationEntryIntent: AppIntent {
         let finalNote = transaction.merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         // Create ModelContainer
-        let schema = Schema([
-            Category.self,
-            Subcategory.self,
-            Tag.self,
-            Account.self,
-            TransactionItem.self,
-            Budget.self,
-            ExchangeRate.self,
-            FavoritePayment.self,
-            ScheduledPayment.self,
-            InboxDraft.self,
-            MerchantMemory.self,
-        ])
-
-        let configuration = ModelConfiguration("YalaModel")
-
-        guard let container = try? ModelContainer(for: schema, configurations: configuration) else {
+        guard let container = try? ModelContainer(
+            for: SwiftDataConfiguration.schema,
+            configurations: SwiftDataConfiguration.configuration
+        ) else {
             return .result(dialog: "shortcut.error.database")
         }
 
