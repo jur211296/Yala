@@ -64,6 +64,22 @@ struct ContentView: View {
         )) {
             BiometricLockOverlay()
         }
+        // Scheduled payment alert as fullScreenCover (appears over any sheet)
+        .fullScreenCover(isPresented: Binding(
+            get: { SessionState.shared.pendingScheduledDraftsCount > 0 },
+            set: { _ in }
+        )) {
+            ScheduledPaymentAlertModal(
+                count: SessionState.shared.pendingScheduledDraftsCount,
+                onViewInbox: {
+                    SessionState.shared.shouldShowInbox = true
+                },
+                onDismiss: {
+                    SessionState.shared.pendingScheduledDraftsCount = 0
+                }
+            )
+            .background(ClearBackgroundView())
+        }
         .onAppear {
             // Lock on initial launch if biometric is enabled
             authService.lockOnLaunchIfNeeded()
@@ -141,19 +157,6 @@ struct MainTabView: View {
             }
             .tint(Color.electricIndigo)
             .transaction { $0.animation = nil }
-            .overlay {
-                if sessionState.pendingScheduledDraftsCount > 0 {
-                    ScheduledPaymentAlertModal(
-                        count: sessionState.pendingScheduledDraftsCount,
-                        onViewInbox: {
-                            sessionState.shouldShowInbox = true
-                        },
-                        onDismiss: {
-                            sessionState.pendingScheduledDraftsCount = 0
-                        }
-                    )
-                }
-            }
             .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
                 // Navigate to Panel when shared image is pending (from Share Extension)
                 if hasPending && sessionState.selectedMainTab != .panel {

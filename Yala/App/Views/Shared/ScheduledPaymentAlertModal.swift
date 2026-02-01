@@ -115,6 +115,21 @@ struct ScheduledPaymentAlertModal: View {
     }
 }
 
+// MARK: - Clear Background Helper
+
+/// Helper to make fullScreenCover background transparent
+struct ClearBackgroundView: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        DispatchQueue.main.async {
+            view.superview?.superview?.backgroundColor = .clear
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
 #Preview {
     ZStack {
         Color(.systemBackground)
