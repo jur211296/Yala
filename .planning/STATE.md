@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-31] 1a0625d feat(transaction): show converted amount and exchange rate chip
+- [2026-01-31] 47e435c fix(currency): support all currencies in exchange rate widget and flows
+- [2026-01-31] b6ad52c refactor(currency): centralize currency definitions in CurrencyCode enum
 - [2026-01-31] 4f132cf fix(onboarding): remove residual DEV_BUILD lastStep logic
 - [2026-01-31] 340ef29 chore(seed): remove DevDataSeed completely
 - [2026-01-30] 73c7e9f refactor(widget): simplify exchange rate widget to use only secondaryCurrencies
@@ -31,20 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-01-30] d07aaac feat(dev): integrate dev data seed step in onboarding (DEBUG only)
 - [2026-01-30] a1c2c7e feat(dev): implement varied daily transaction generation in DevDataSeed
 - [2026-01-30] 39ff387 feat(dev): implement scheduled payment transaction generation in DevDataSeed
-- [2026-01-30] fda19c3 feat(dev): implement scheduled payment seed creation in DevDataSeed
-- [2026-01-30] 49bf92c feat(dev): implement subscription seed creation in DevDataSeed
-- [2026-01-30] 9e0d8ac feat(dev): implement favorite payment seed creation in DevDataSeed
-- [2026-01-30] 1b4ab3e feat(dev): implement budget seed creation in DevDataSeed
-- [2026-01-30] 1cad135 feat(dev): implement tag seed creation in DevDataSeed
-- [2026-01-30] 2e0cd45 feat(dev): implement account seed creation in DevDataSeed
-- [2026-01-30] 8159f09 feat(dev): add DevDataSeed.swift base structure for dev onboarding
-- [2026-01-30] a5e68b0 perf: optimize preloadHistoricalIfNeeded to fetch only required currencies
-- [2026-01-30] 4122f8d fix: load historical exchange rates after onboarding completion
-- [2026-01-30] 61b3612 fix: load historical exchange rates when adding secondary currencies
-- [2026-01-30] f253d52 refactor: add getRequiredCurrencies helper to ExchangeRateService
-- [2026-01-30] e380860 fix(ui): correct disclosure groups and secondary currency ordering in settings
-- [2026-01-30] 5986131 fix(ui): correct alignment when no accounts exist
-- [2026-01-30] c1457e8 fix(ui): correct theme switching, expandable lists, and capsule buttons
 
 ## Completed in Current Phase
 
@@ -239,8 +228,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Fix bug onboarding que regresaba al paso 1 (residuo de DevDataSeed)
-Next step: Continuar refinamiento V1.1 o comenzar Fase 11
+Stopped at: Sistema de tipo de cambio mejorado - chip TC en transacciones, single source of truth
+Next step: Continuar con refinamientos de divisas o comenzar Fase 11
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
