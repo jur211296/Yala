@@ -3371,6 +3371,160 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 
 ---
 
-*Última actualización: 2026-02-01 - Sección 25 (Fase 10.5.B y 10.5.C)*
-*Total escenarios: ~350*
-*Total verificaciones: ~690+*
+## Sección 26: Modal Unificado para Nuevos Items en Bandeja (10.5.F)
+
+Esta sección cubre la validación del modal que notifica al usuario cuando hay nuevos items en su bandeja de entrada que no ha visto.
+
+### 26.1 Modal para Pagos Planificados
+
+#### Escenario 26.1.1: Modal aparece para pagos planificados vencidos
+**Precondición:** App cerrada, pago planificado con fecha de hoy o pasada
+
+1. Crear un pago planificado con fecha = ayer
+2. Cerrar la app completamente
+3. Abrir la app
+4. **Verificar:** Aparece modal con título "¡Tienes pagos pendientes!"
+5. **Verificar:** El mensaje dice "Se añadieron X pagos planificados a tu bandeja."
+6. **Verificar:** El icono es una campana (bell.badge.fill)
+
+#### Escenario 26.1.2: Acción "Ver bandeja" navega correctamente
+1. Desde el modal de pagos planificados, tocar "Ver bandeja"
+2. **Verificar:** El modal se cierra con animación
+3. **Verificar:** Se navega a la vista de Inbox
+4. **Verificar:** Los drafts de pagos planificados son visibles
+
+#### Escenario 26.1.3: Acción "Más tarde" cierra sin perder datos
+1. Desde el modal de pagos planificados, tocar "Más tarde"
+2. **Verificar:** El modal se cierra
+3. **Verificar:** La app permanece en la vista principal
+4. Navegar manualmente a Inbox
+5. **Verificar:** Los drafts siguen ahí (no se perdieron)
+
+---
+
+### 26.2 Modal para Suscripciones
+
+#### Escenario 26.2.1: Modal para suscripciones vencidas
+**Precondición:** Suscripción configurada con fecha de renovación vencida
+
+1. Crear una suscripción con fecha de renovación = ayer
+2. Cerrar y abrir la app
+3. **Verificar:** Modal con título "¡Suscripciones por revisar!"
+4. **Verificar:** Mensaje "Se añadieron X suscripciones a tu bandeja."
+5. **Verificar:** Icono de tarjeta (creditcard.and.123)
+
+---
+
+### 26.3 Modal para Automatizaciones
+
+#### Escenario 26.3.1: Modal para registros de Apple Pay
+**Precondición:** Shortcut de Apple Pay configurado
+
+1. Ejecutar shortcut de Apple Pay (genera un draft automático)
+2. Cerrar la app (o enviar a background y volver)
+3. **Verificar:** Modal con título "¡Nuevos registros automáticos!"
+4. **Verificar:** Mensaje "Se añadieron X registros automáticos a tu bandeja."
+5. **Verificar:** Icono de engranaje (gearshape.badge.checkmark)
+
+#### Escenario 26.3.2: Modal para automatizaciones externas
+**Precondición:** Shortcut de automatización externa configurado
+
+1. Ejecutar shortcut de automatización
+2. Cerrar y abrir la app
+3. **Verificar:** Mismo comportamiento que Apple Pay (tipo automations)
+
+---
+
+### 26.4 Modal Mixto
+
+#### Escenario 26.4.1: Modal con múltiples tipos
+**Precondición:** Pagos planificados Y suscripciones vencidas
+
+1. Crear pago planificado con fecha vencida
+2. Crear suscripción con fecha vencida
+3. Cerrar y abrir la app
+4. **Verificar:** Modal con título "¡Nuevos registros en tu bandeja!"
+5. **Verificar:** Mensaje con desglose: "X pagos y Y suscripciones"
+6. **Verificar:** Icono de bandeja llena (tray.full.fill)
+
+#### Escenario 26.4.2: Desglose incluye todos los tipos
+**Precondición:** Los 3 tipos de fuentes activos
+
+1. Crear pago planificado vencido
+2. Crear suscripción vencida
+3. Ejecutar shortcut de Apple Pay
+4. Cerrar y abrir la app
+5. **Verificar:** Mensaje muestra los 3 tipos: "X pagos, Y suscripciones y Z registros automáticos"
+
+---
+
+### 26.5 Comportamiento "Solo Nuevos"
+
+#### Escenario 26.5.1: No reaparece para drafts ya vistos
+1. Abrir app, ver modal, tocar "Más tarde"
+2. Cerrar y abrir la app inmediatamente
+3. **Verificar:** El modal NO reaparece (ya se mostró para esos drafts)
+
+#### Escenario 26.5.2: Reaparece solo para drafts nuevos
+1. Abrir app, ver modal para 2 pagos, tocar "Más tarde"
+2. Crear NUEVO pago planificado vencido
+3. Cerrar y abrir la app
+4. **Verificar:** Modal aparece solo para el nuevo pago (count = 1)
+
+---
+
+### 26.6 Exclusiones (No Deben Mostrar Modal)
+
+#### Escenario 26.6.1: Voz no dispara modal
+1. Abrir FAB > Voz
+2. Grabar gasto por voz, generar draft
+3. Cerrar y abrir la app
+4. **Verificar:** NO aparece modal (voz está excluida)
+
+#### Escenario 26.6.2: Foto de recibo no dispara modal
+1. Abrir FAB > Foto
+2. Capturar recibo, generar draft
+3. Cerrar y abrir la app
+4. **Verificar:** NO aparece modal (foto está excluida)
+
+#### Escenario 26.6.3: Screenshot no dispara modal
+1. Compartir screenshot desde galería a Yala
+2. Generar draft
+3. Cerrar y abrir la app
+4. **Verificar:** NO aparece modal (screenshot está excluida)
+
+---
+
+### 26.7 Verificación Multi-Idioma
+
+#### Escenario 26.7.1: Mensajes correctos en cada idioma
+Para cada idioma (es, en, de, fr, it, pt):
+1. Cambiar idioma del dispositivo
+2. Generar un pago planificado vencido
+3. Abrir la app
+4. **Verificar:** Título, mensaje y botones en el idioma correcto
+
+---
+
+### Checklist de Validación Rápida 26.x
+
+- [ ] 26.1.1 Modal pagos planificados aparece
+- [ ] 26.1.2 "Ver bandeja" navega correctamente
+- [ ] 26.1.3 "Más tarde" cierra sin perder datos
+- [ ] 26.2.1 Modal suscripciones aparece
+- [ ] 26.3.1 Modal Apple Pay aparece
+- [ ] 26.3.2 Modal automatización aparece
+- [ ] 26.4.1 Modal mixto con desglose
+- [ ] 26.4.2 Desglose incluye 3 tipos
+- [ ] 26.5.1 No reaparece para vistos
+- [ ] 26.5.2 Reaparece solo para nuevos
+- [ ] 26.6.1 Voz excluida
+- [ ] 26.6.2 Foto excluida
+- [ ] 26.6.3 Screenshot excluido
+- [ ] 26.7.1 Verificar 6 idiomas
+
+---
+
+*Última actualización: 2026-02-01 - Sección 26 (Fase 10.5.F)*
+*Total escenarios: ~365*
+*Total verificaciones: ~720+*
