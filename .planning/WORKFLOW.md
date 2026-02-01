@@ -205,6 +205,51 @@
 /next → Shift+Tab (solo explorar) → /context-snapshot → /clear
 ```
 
+### Flujo YOLO (autónomo, cuando no puedes validar)
+```
+/next → Shift+Tab → /review-plan → /yolo
+     → [Claude ejecuta TODO sin pausas]
+     → [Regresas y validas el reporte final]
+```
+
+### Flujo paralelo (múltiples tareas no relacionadas)
+```
+/worktree-setup feature-a bugfix-b
+→ Abrir terminales adicionales
+→ En cada una: cd ../Yala-[nombre] && claude
+→ Trabajar independientemente
+→ Antes de merge: /audit-branches
+```
+
+---
+
+## Custom Agents disponibles
+
+| Agente | Invocación | Propósito |
+|--------|------------|-----------|
+| `branch-auditor` | `/audit-branches` | Detecta conflictos entre branches paralelos |
+| `swift-reviewer` | `/review-code` | Revisa código según convenciones de Yala |
+| `test-generator` | `/generate-tests` | Genera tests unitarios |
+
+### Cómo invocar agentes manualmente
+```
+"Usa el agente swift-reviewer para revisar [archivo]"
+"Lanza el agente test-generator en background para [clase]"
+```
+
+---
+
+## Background Tasks
+
+Ejecutar tareas en segundo plano mientras sigues trabajando:
+
+```
+"En background, analiza todos los ViewModels y guarda en /tmp/analysis.md"
+"Lanza en background el agente swift-reviewer para todo Yala/Services/"
+```
+
+Ver guía completa: `/background`
+
 ---
 
 ## Tips de eficiencia
