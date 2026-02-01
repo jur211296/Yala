@@ -818,6 +818,20 @@
 // Oceania
 "currency.aud" = "dólar australiano";
 "currency.nzd" = "dólar neozelandês";
+// Oriente Médio
+"currency.aed" = "dirrã dos Emirados";
+"currency.sar" = "rial saudita";
+"currency.ils" = "novo shekel israelense";
+"currency.qar" = "rial catariano";
+"currency.kwd" = "dinar kuwaitiano";
+// África
+"currency.zar" = "rand sul-africano";
+"currency.egp" = "libra egípcia";
+"currency.ngn" = "naira nigeriana";
+"currency.kes" = "xelim queniano";
+"currency.mad" = "dirrã marroquino";
+// América do Norte
+"currency.cad" = "dólar canadense";
 
 "common.selectColor" = "Selecione uma cor";
 "common.useThisColor" = "Usar esta cor";

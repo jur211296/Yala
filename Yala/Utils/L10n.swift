@@ -417,6 +417,20 @@ enum L10n {
         // Oceanía
         static var aud: String { NSLocalizedString("currency.aud", comment: "") }
         static var nzd: String { NSLocalizedString("currency.nzd", comment: "") }
+        // Medio Oriente
+        static var aed: String { NSLocalizedString("currency.aed", comment: "") }
+        static var sar: String { NSLocalizedString("currency.sar", comment: "") }
+        static var ils: String { NSLocalizedString("currency.ils", comment: "") }
+        static var qar: String { NSLocalizedString("currency.qar", comment: "") }
+        static var kwd: String { NSLocalizedString("currency.kwd", comment: "") }
+        // África
+        static var zar: String { NSLocalizedString("currency.zar", comment: "") }
+        static var egp: String { NSLocalizedString("currency.egp", comment: "") }
+        static var ngn: String { NSLocalizedString("currency.ngn", comment: "") }
+        static var kes: String { NSLocalizedString("currency.kes", comment: "") }
+        static var mad: String { NSLocalizedString("currency.mad", comment: "") }
+        // Norteamérica
+        static var cad: String { NSLocalizedString("currency.cad", comment: "") }
     }
 
     // MARK: - Empty States

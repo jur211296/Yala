@@ -818,6 +818,20 @@
 // Ozeanien
 "currency.aud" = "Australischer Dollar";
 "currency.nzd" = "Neuseeland-Dollar";
+// Naher Osten
+"currency.aed" = "VAE-Dirham";
+"currency.sar" = "Saudi-Riyal";
+"currency.ils" = "Israelischer Schekel";
+"currency.qar" = "Katar-Riyal";
+"currency.kwd" = "Kuwait-Dinar";
+// Afrika
+"currency.zar" = "Südafrikanischer Rand";
+"currency.egp" = "Ägyptisches Pfund";
+"currency.ngn" = "Nigerianische Naira";
+"currency.kes" = "Kenia-Schilling";
+"currency.mad" = "Marokkanischer Dirham";
+// Nordamerika
+"currency.cad" = "Kanadischer Dollar";
 
 "common.selectColor" = "Farbe auswählen";
 "common.useThisColor" = "Diese Farbe verwenden";

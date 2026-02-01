@@ -68,6 +68,23 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
     case aud = "AUD"
     case nzd = "NZD"
 
+    // Medio Oriente
+    case aed = "AED"
+    case sar = "SAR"
+    case ils = "ILS"
+    case qar = "QAR"
+    case kwd = "KWD"
+
+    // África
+    case zar = "ZAR"
+    case egp = "EGP"
+    case ngn = "NGN"
+    case kes = "KES"
+    case mad = "MAD"
+
+    // Norteamérica
+    case cad = "CAD"
+
     var id: String { rawValue }
 
     // MARK: - Display Properties
@@ -122,6 +139,20 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Oceanía
         case .aud: return "🇦🇺"
         case .nzd: return "🇳🇿"
+        // Medio Oriente
+        case .aed: return "🇦🇪"
+        case .sar: return "🇸🇦"
+        case .ils: return "🇮🇱"
+        case .qar: return "🇶🇦"
+        case .kwd: return "🇰🇼"
+        // África
+        case .zar: return "🇿🇦"
+        case .egp: return "🇪🇬"
+        case .ngn: return "🇳🇬"
+        case .kes: return "🇰🇪"
+        case .mad: return "🇲🇦"
+        // Norteamérica
+        case .cad: return "🇨🇦"
         }
     }
 
@@ -175,6 +206,20 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Oceanía
         case .aud: return "A$"
         case .nzd: return "NZ$"
+        // Medio Oriente
+        case .aed: return "د.إ"
+        case .sar: return "﷼"
+        case .ils: return "₪"
+        case .qar: return "﷼"
+        case .kwd: return "د.ك"
+        // África
+        case .zar: return "R"
+        case .egp: return "E£"
+        case .ngn: return "₦"
+        case .kes: return "KSh"
+        case .mad: return "د.م."
+        // Norteamérica
+        case .cad: return "C$"
         }
     }
 
@@ -228,6 +273,20 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Oceanía
         case .aud: return L10n.Currency.aud
         case .nzd: return L10n.Currency.nzd
+        // Medio Oriente
+        case .aed: return L10n.Currency.aed
+        case .sar: return L10n.Currency.sar
+        case .ils: return L10n.Currency.ils
+        case .qar: return L10n.Currency.qar
+        case .kwd: return L10n.Currency.kwd
+        // África
+        case .zar: return L10n.Currency.zar
+        case .egp: return L10n.Currency.egp
+        case .ngn: return L10n.Currency.ngn
+        case .kes: return L10n.Currency.kes
+        case .mad: return L10n.Currency.mad
+        // Norteamérica
+        case .cad: return L10n.Currency.cad
         }
     }
 
@@ -327,6 +386,31 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
             return ["AUD", "A$", "DOLAR AUSTRALIANO"]
         case .nzd:
             return ["NZD", "NZ$", "DOLAR NEOZELANDES"]
+        // Medio Oriente
+        case .aed:
+            return ["AED", "د.إ", "DIRHAM", "DIRHAMS", "DIRHAM EMIRATOS"]
+        case .sar:
+            return ["SAR", "﷼", "RIYAL", "RIYALS", "RIYAL SAUDI"]
+        case .ils:
+            return ["ILS", "₪", "SHEKEL", "SHEKELS", "SHEQUEL"]
+        case .qar:
+            return ["QAR", "RIYAL QATARI"]
+        case .kwd:
+            return ["KWD", "د.ك", "DINAR", "DINARS", "DINAR KUWAITI"]
+        // África
+        case .zar:
+            return ["ZAR", "R", "RAND", "RANDS"]
+        case .egp:
+            return ["EGP", "E£", "LIBRA EGIPCIA", "LIBRAS EGIPCIAS"]
+        case .ngn:
+            return ["NGN", "₦", "NAIRA", "NAIRAS"]
+        case .kes:
+            return ["KES", "KSH", "SHILLING", "SHILLINGS", "CHELIN KENIANO"]
+        case .mad:
+            return ["MAD", "د.م.", "DIRHAM MARROQUI", "DIRHAMS MARROQUIES"]
+        // Norteamérica
+        case .cad:
+            return ["CAD", "C$", "DOLAR CANADIENSE", "DOLARES CANADIENSES"]
         }
     }
 
@@ -384,6 +468,20 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Oceanía
         case .aud: return 1.55      // 1 USD = 1.55 AUD
         case .nzd: return 1.68      // 1 USD = 1.68 NZD
+        // Medio Oriente
+        case .aed: return 3.67      // 1 USD = 3.67 AED (fixed peg)
+        case .sar: return 3.75      // 1 USD = 3.75 SAR (fixed peg)
+        case .ils: return 3.65      // 1 USD = 3.65 ILS
+        case .qar: return 3.64      // 1 USD = 3.64 QAR (fixed peg)
+        case .kwd: return 0.31      // 1 USD = 0.31 KWD
+        // África
+        case .zar: return 18.5      // 1 USD = 18.5 ZAR
+        case .egp: return 50.0      // 1 USD = 50 EGP
+        case .ngn: return 1550.0    // 1 USD = 1550 NGN
+        case .kes: return 155.0     // 1 USD = 155 KES
+        case .mad: return 10.0      // 1 USD = 10 MAD
+        // Norteamérica
+        case .cad: return 1.36      // 1 USD = 1.36 CAD
         }
     }
 
@@ -450,6 +548,20 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         // Oceanía
         case .aud: return ["AU"]
         case .nzd: return ["NZ"]
+        // Medio Oriente
+        case .aed: return ["AE"]
+        case .sar: return ["SA"]
+        case .ils: return ["IL"]
+        case .qar: return ["QA"]
+        case .kwd: return ["KW"]
+        // África
+        case .zar: return ["ZA"]
+        case .egp: return ["EG"]
+        case .ngn: return ["NG"]
+        case .kes: return ["KE"]
+        case .mad: return ["MA"]
+        // Norteamérica
+        case .cad: return ["CA"]
         }
     }
 
