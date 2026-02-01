@@ -832,6 +832,69 @@
 // North America
 "currency.cad" = "Canadian dollar";
 
+// MARK: - Currency Plural Names (short, no country)
+// Latin America
+"currency.plural.pen" = "soles";
+"currency.plural.usd" = "dollars";
+"currency.plural.mxn" = "pesos";
+"currency.plural.cop" = "pesos";
+"currency.plural.brl" = "reais";
+"currency.plural.ars" = "pesos";
+"currency.plural.clp" = "pesos";
+"currency.plural.uyu" = "pesos";
+"currency.plural.bob" = "bolivianos";
+"currency.plural.pyg" = "guaraníes";
+"currency.plural.crc" = "colones";
+"currency.plural.gtq" = "quetzales";
+"currency.plural.hnl" = "lempiras";
+"currency.plural.nio" = "córdobas";
+"currency.plural.pab" = "balboas";
+"currency.plural.dop" = "pesos";
+// Europe
+"currency.plural.eur" = "euros";
+"currency.plural.gbp" = "pounds";
+"currency.plural.chf" = "francs";
+"currency.plural.sek" = "kronor";
+"currency.plural.nok" = "kroner";
+"currency.plural.dkk" = "kroner";
+"currency.plural.pln" = "zlotys";
+"currency.plural.czk" = "korunas";
+"currency.plural.huf" = "forints";
+"currency.plural.ron" = "lei";
+"currency.plural.rub" = "rubles";
+"currency.plural.uah" = "hryvnias";
+"currency.plural.try" = "liras";
+// Asia
+"currency.plural.jpy" = "yen";
+"currency.plural.cny" = "yuan";
+"currency.plural.krw" = "won";
+"currency.plural.inr" = "rupees";
+"currency.plural.idr" = "rupiahs";
+"currency.plural.php" = "pesos";
+"currency.plural.thb" = "baht";
+"currency.plural.myr" = "ringgits";
+"currency.plural.sgd" = "dollars";
+"currency.plural.hkd" = "dollars";
+"currency.plural.twd" = "dollars";
+"currency.plural.vnd" = "dong";
+// Oceania
+"currency.plural.aud" = "dollars";
+"currency.plural.nzd" = "dollars";
+// Middle East
+"currency.plural.aed" = "dirhams";
+"currency.plural.sar" = "riyals";
+"currency.plural.ils" = "shekels";
+"currency.plural.qar" = "riyals";
+"currency.plural.kwd" = "dinars";
+// Africa
+"currency.plural.zar" = "rand";
+"currency.plural.egp" = "pounds";
+"currency.plural.ngn" = "naira";
+"currency.plural.kes" = "shillings";
+"currency.plural.mad" = "dirhams";
+// North America
+"currency.plural.cad" = "dollars";
+
 // MARK: - Continents
 "continent.latinAmerica" = "Latin America";
 "continent.europe" = "Europe";
@@ -1164,6 +1227,7 @@
 "onboarding.notificationsTitle" = "Stay in the loop?";
 "onboarding.notificationsSubtitle" = "Turn on the reminders that help you. You can change them anytime.";
 "onboarding.notificationsSkip" = "Not now, thanks";
+"onboarding.recommended" = "Recommended";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
@@ -1186,15 +1250,15 @@
 "voice.tapToRecord" = "Tap to record";
 "voice.youCanSay" = "You can say:";
 "voice.hintTypeExample" = "Expense/Income/Transfer";
-"voice.hintAmountExample" = "50 dollars";
+"voice.hintAmountExample" = "50 %@";
 "voice.hintSubcategoryExample" = "Restaurants";
 "voice.hintMerchantExample" = "Starbucks";
 "voice.hintTagExample" = "Work";
 "voice.hintDateExample" = "Today/Yesterday";
 "voice.exampleLabel" = "Examples";
-"voice.example1" = "Spent 50 dollars at Starbucks for coffee";
-"voice.example2" = "Income of 1000 dollars from freelance work";
-"voice.example3" = "Transfer of 200 dollars to savings account";
+"voice.example1" = "Spent 50 %@ at Starbucks for coffee";
+"voice.example2" = "Income of 1000 %@ from freelance work";
+"voice.example3" = "Transfer of 200 %@ to savings account";
 "voice.processingAudio" = "Processing audio...";
 "voice.analyzing" = "Analyzing...";
 "voice.parsing" = "Extracting data...";

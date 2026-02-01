@@ -330,6 +330,74 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         }
     }
 
+    /// Nombre corto en plural (sin país) para ejemplos de voz
+    /// Ej: "soles", "dólares", "euros", "pesos"
+    var shortPluralName: String {
+        switch self {
+        // Latinoamérica
+        case .pen: return L10n.Currency.Plural.pen
+        case .usd: return L10n.Currency.Plural.usd
+        case .mxn: return L10n.Currency.Plural.mxn
+        case .cop: return L10n.Currency.Plural.cop
+        case .brl: return L10n.Currency.Plural.brl
+        case .ars: return L10n.Currency.Plural.ars
+        case .clp: return L10n.Currency.Plural.clp
+        case .uyu: return L10n.Currency.Plural.uyu
+        case .bob: return L10n.Currency.Plural.bob
+        case .pyg: return L10n.Currency.Plural.pyg
+        case .crc: return L10n.Currency.Plural.crc
+        case .gtq: return L10n.Currency.Plural.gtq
+        case .hnl: return L10n.Currency.Plural.hnl
+        case .nio: return L10n.Currency.Plural.nio
+        case .pab: return L10n.Currency.Plural.pab
+        case .dop: return L10n.Currency.Plural.dop
+        // Europa
+        case .eur: return L10n.Currency.Plural.eur
+        case .gbp: return L10n.Currency.Plural.gbp
+        case .chf: return L10n.Currency.Plural.chf
+        case .sek: return L10n.Currency.Plural.sek
+        case .nok: return L10n.Currency.Plural.nok
+        case .dkk: return L10n.Currency.Plural.dkk
+        case .pln: return L10n.Currency.Plural.pln
+        case .czk: return L10n.Currency.Plural.czk
+        case .huf: return L10n.Currency.Plural.huf
+        case .ron: return L10n.Currency.Plural.ron
+        case .rub: return L10n.Currency.Plural.rub
+        case .uah: return L10n.Currency.Plural.uah
+        case .try: return L10n.Currency.Plural.try
+        // Asia
+        case .jpy: return L10n.Currency.Plural.jpy
+        case .cny: return L10n.Currency.Plural.cny
+        case .krw: return L10n.Currency.Plural.krw
+        case .inr: return L10n.Currency.Plural.inr
+        case .idr: return L10n.Currency.Plural.idr
+        case .php: return L10n.Currency.Plural.php
+        case .thb: return L10n.Currency.Plural.thb
+        case .myr: return L10n.Currency.Plural.myr
+        case .sgd: return L10n.Currency.Plural.sgd
+        case .hkd: return L10n.Currency.Plural.hkd
+        case .twd: return L10n.Currency.Plural.twd
+        case .vnd: return L10n.Currency.Plural.vnd
+        // Oceanía
+        case .aud: return L10n.Currency.Plural.aud
+        case .nzd: return L10n.Currency.Plural.nzd
+        // Medio Oriente
+        case .aed: return L10n.Currency.Plural.aed
+        case .sar: return L10n.Currency.Plural.sar
+        case .ils: return L10n.Currency.Plural.ils
+        case .qar: return L10n.Currency.Plural.qar
+        case .kwd: return L10n.Currency.Plural.kwd
+        // África
+        case .zar: return L10n.Currency.Plural.zar
+        case .egp: return L10n.Currency.Plural.egp
+        case .ngn: return L10n.Currency.Plural.ngn
+        case .kes: return L10n.Currency.Plural.kes
+        case .mad: return L10n.Currency.Plural.mad
+        // Norteamérica
+        case .cad: return L10n.Currency.Plural.cad
+        }
+    }
+
     // MARK: - Normalization Aliases
 
     /// Aliases que se normalizan a este código de moneda.

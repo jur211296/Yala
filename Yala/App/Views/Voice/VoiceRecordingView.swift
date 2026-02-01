@@ -19,6 +19,7 @@ struct VoiceRecordingView: View {
     @StateObject private var networkMonitor = NetworkMonitor.shared
 
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
+    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.usd.rawValue
 
     @State private var errorMessage: String?
     @State private var errorType: VoiceErrorType?
@@ -55,6 +56,13 @@ struct VoiceRecordingView: View {
 
     private var voiceLanguage: VoiceLanguage {
         VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
+    }
+
+    private var preferredCurrencyName: String {
+        if let code = CurrencyCode(rawValue: defaultCurrencyCode) {
+            return code.shortPluralName
+        }
+        return CurrencyCode.usd.shortPluralName
     }
 
     var body: some View {
@@ -298,7 +306,7 @@ struct VoiceRecordingView: View {
                 GridItem(.flexible())
             ], spacing: DS.Spacing.sm) {
                 hintChip(icon: "arrow.left.arrow.right", text: L10n.Voice.hintTypeExample)
-                hintChip(icon: "dollarsign.circle", text: L10n.Voice.hintAmountExample)
+                hintChip(icon: "dollarsign.circle", text: String(format: L10n.Voice.hintAmountExample, preferredCurrencyName))
                 hintChip(icon: "folder", text: L10n.Voice.hintSubcategoryExample)
                 hintChip(icon: "mappin", text: L10n.Voice.hintMerchantExample)
                 hintChip(icon: "tag", text: L10n.Voice.hintTagExample)
@@ -336,9 +344,9 @@ struct VoiceRecordingView: View {
                 .textCase(.uppercase)
 
             VStack(spacing: DS.Spacing.xs) {
-                exampleRow(text: L10n.Voice.example1)
-                exampleRow(text: L10n.Voice.example2)
-                exampleRow(text: L10n.Voice.example3)
+                exampleRow(text: String(format: L10n.Voice.example1, preferredCurrencyName))
+                exampleRow(text: String(format: L10n.Voice.example2, preferredCurrencyName))
+                exampleRow(text: String(format: L10n.Voice.example3, preferredCurrencyName))
             }
         }
         .padding(DS.Spacing.md)

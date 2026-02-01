@@ -833,6 +833,69 @@
 // Nordamerika
 "currency.cad" = "Kanadischer Dollar";
 
+// MARK: - Currency Plural Names (short, no country)
+// Lateinamerika
+"currency.plural.pen" = "Soles";
+"currency.plural.usd" = "Dollar";
+"currency.plural.mxn" = "Pesos";
+"currency.plural.cop" = "Pesos";
+"currency.plural.brl" = "Reais";
+"currency.plural.ars" = "Pesos";
+"currency.plural.clp" = "Pesos";
+"currency.plural.uyu" = "Pesos";
+"currency.plural.bob" = "Bolivianos";
+"currency.plural.pyg" = "Guaraníes";
+"currency.plural.crc" = "Colones";
+"currency.plural.gtq" = "Quetzales";
+"currency.plural.hnl" = "Lempiras";
+"currency.plural.nio" = "Córdobas";
+"currency.plural.pab" = "Balboas";
+"currency.plural.dop" = "Pesos";
+// Europa
+"currency.plural.eur" = "Euro";
+"currency.plural.gbp" = "Pfund";
+"currency.plural.chf" = "Franken";
+"currency.plural.sek" = "Kronen";
+"currency.plural.nok" = "Kronen";
+"currency.plural.dkk" = "Kronen";
+"currency.plural.pln" = "Zloty";
+"currency.plural.czk" = "Kronen";
+"currency.plural.huf" = "Forint";
+"currency.plural.ron" = "Lei";
+"currency.plural.rub" = "Rubel";
+"currency.plural.uah" = "Hrywnja";
+"currency.plural.try" = "Lira";
+// Asien
+"currency.plural.jpy" = "Yen";
+"currency.plural.cny" = "Yuan";
+"currency.plural.krw" = "Won";
+"currency.plural.inr" = "Rupien";
+"currency.plural.idr" = "Rupiah";
+"currency.plural.php" = "Pesos";
+"currency.plural.thb" = "Baht";
+"currency.plural.myr" = "Ringgit";
+"currency.plural.sgd" = "Dollar";
+"currency.plural.hkd" = "Dollar";
+"currency.plural.twd" = "Dollar";
+"currency.plural.vnd" = "Dong";
+// Ozeanien
+"currency.plural.aud" = "Dollar";
+"currency.plural.nzd" = "Dollar";
+// Naher Osten
+"currency.plural.aed" = "Dirham";
+"currency.plural.sar" = "Riyal";
+"currency.plural.ils" = "Schekel";
+"currency.plural.qar" = "Riyal";
+"currency.plural.kwd" = "Dinar";
+// Afrika
+"currency.plural.zar" = "Rand";
+"currency.plural.egp" = "Pfund";
+"currency.plural.ngn" = "Naira";
+"currency.plural.kes" = "Schilling";
+"currency.plural.mad" = "Dirham";
+// Nordamerika
+"currency.plural.cad" = "Dollar";
+
 "common.selectColor" = "Farbe auswählen";
 "common.useThisColor" = "Diese Farbe verwenden";
 "common.newColor" = "Neue Farbe";
@@ -1149,6 +1212,10 @@
 "onboarding.categoriesNo" = "Von vorne anfangen";
 "onboarding.categoriesRecommended" = "Empfohlen";
 "onboarding.categoriesInfo" = "Jede Kategorie enthält detailliertere Unterkategorien. Sie können diese unter Profil > Kategorien ansehen und anpassen.";
+"onboarding.notificationsTitle" = "Sollen wir Sie benachrichtigen?";
+"onboarding.notificationsSubtitle" = "Aktivieren Sie die Erinnerungen, die Ihnen helfen. Sie können sie jederzeit ändern.";
+"onboarding.notificationsSkip" = "Jetzt nicht, danke";
+"onboarding.recommended" = "Empfohlen";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";
@@ -1171,15 +1238,15 @@
 "voice.tapToRecord" = "Tippen zum Aufnehmen";
 "voice.youCanSay" = "Sie können sagen:";
 "voice.hintTypeExample" = "Ausgabe/Einnahme/Überweisung";
-"voice.hintAmountExample" = "50 Euro";
+"voice.hintAmountExample" = "50 %@";
 "voice.hintSubcategoryExample" = "Restaurants";
 "voice.hintMerchantExample" = "Starbucks";
 "voice.hintTagExample" = "Arbeit";
 "voice.hintDateExample" = "Heute/Gestern";
 "voice.exampleLabel" = "Beispiele";
-"voice.example1" = "50 Euro bei Starbucks für Kaffee ausgegeben";
-"voice.example2" = "Einnahme von 1000 Euro aus freiberuflicher Tätigkeit";
-"voice.example3" = "Überweisung von 200 Euro auf Sparkonto";
+"voice.example1" = "Ausgabe von 50 %@ bei Starbucks für Kaffee";
+"voice.example2" = "Einkommen von 1000 %@ aus freiberuflicher Arbeit";
+"voice.example3" = "Überweisung von 200 %@ auf Sparkonto";
 "voice.processingAudio" = "Audio wird verarbeitet...";
 "voice.analyzing" = "Analysieren...";
 "voice.parsing" = "Daten extrahieren...";

@@ -431,6 +431,71 @@ enum L10n {
         static var mad: String { NSLocalizedString("currency.mad", comment: "") }
         // Norteamérica
         static var cad: String { NSLocalizedString("currency.cad", comment: "") }
+
+        /// Nombres cortos en plural (sin país) para ejemplos de voz
+        enum Plural {
+            // Latinoamérica
+            static var pen: String { NSLocalizedString("currency.plural.pen", comment: "") }
+            static var usd: String { NSLocalizedString("currency.plural.usd", comment: "") }
+            static var mxn: String { NSLocalizedString("currency.plural.mxn", comment: "") }
+            static var cop: String { NSLocalizedString("currency.plural.cop", comment: "") }
+            static var brl: String { NSLocalizedString("currency.plural.brl", comment: "") }
+            static var ars: String { NSLocalizedString("currency.plural.ars", comment: "") }
+            static var clp: String { NSLocalizedString("currency.plural.clp", comment: "") }
+            static var uyu: String { NSLocalizedString("currency.plural.uyu", comment: "") }
+            static var bob: String { NSLocalizedString("currency.plural.bob", comment: "") }
+            static var pyg: String { NSLocalizedString("currency.plural.pyg", comment: "") }
+            static var crc: String { NSLocalizedString("currency.plural.crc", comment: "") }
+            static var gtq: String { NSLocalizedString("currency.plural.gtq", comment: "") }
+            static var hnl: String { NSLocalizedString("currency.plural.hnl", comment: "") }
+            static var nio: String { NSLocalizedString("currency.plural.nio", comment: "") }
+            static var pab: String { NSLocalizedString("currency.plural.pab", comment: "") }
+            static var dop: String { NSLocalizedString("currency.plural.dop", comment: "") }
+            // Europa
+            static var eur: String { NSLocalizedString("currency.plural.eur", comment: "") }
+            static var gbp: String { NSLocalizedString("currency.plural.gbp", comment: "") }
+            static var chf: String { NSLocalizedString("currency.plural.chf", comment: "") }
+            static var sek: String { NSLocalizedString("currency.plural.sek", comment: "") }
+            static var nok: String { NSLocalizedString("currency.plural.nok", comment: "") }
+            static var dkk: String { NSLocalizedString("currency.plural.dkk", comment: "") }
+            static var pln: String { NSLocalizedString("currency.plural.pln", comment: "") }
+            static var czk: String { NSLocalizedString("currency.plural.czk", comment: "") }
+            static var huf: String { NSLocalizedString("currency.plural.huf", comment: "") }
+            static var ron: String { NSLocalizedString("currency.plural.ron", comment: "") }
+            static var rub: String { NSLocalizedString("currency.plural.rub", comment: "") }
+            static var uah: String { NSLocalizedString("currency.plural.uah", comment: "") }
+            static var `try`: String { NSLocalizedString("currency.plural.try", comment: "") }
+            // Asia
+            static var jpy: String { NSLocalizedString("currency.plural.jpy", comment: "") }
+            static var cny: String { NSLocalizedString("currency.plural.cny", comment: "") }
+            static var krw: String { NSLocalizedString("currency.plural.krw", comment: "") }
+            static var inr: String { NSLocalizedString("currency.plural.inr", comment: "") }
+            static var idr: String { NSLocalizedString("currency.plural.idr", comment: "") }
+            static var php: String { NSLocalizedString("currency.plural.php", comment: "") }
+            static var thb: String { NSLocalizedString("currency.plural.thb", comment: "") }
+            static var myr: String { NSLocalizedString("currency.plural.myr", comment: "") }
+            static var sgd: String { NSLocalizedString("currency.plural.sgd", comment: "") }
+            static var hkd: String { NSLocalizedString("currency.plural.hkd", comment: "") }
+            static var twd: String { NSLocalizedString("currency.plural.twd", comment: "") }
+            static var vnd: String { NSLocalizedString("currency.plural.vnd", comment: "") }
+            // Oceanía
+            static var aud: String { NSLocalizedString("currency.plural.aud", comment: "") }
+            static var nzd: String { NSLocalizedString("currency.plural.nzd", comment: "") }
+            // Medio Oriente
+            static var aed: String { NSLocalizedString("currency.plural.aed", comment: "") }
+            static var sar: String { NSLocalizedString("currency.plural.sar", comment: "") }
+            static var ils: String { NSLocalizedString("currency.plural.ils", comment: "") }
+            static var qar: String { NSLocalizedString("currency.plural.qar", comment: "") }
+            static var kwd: String { NSLocalizedString("currency.plural.kwd", comment: "") }
+            // África
+            static var zar: String { NSLocalizedString("currency.plural.zar", comment: "") }
+            static var egp: String { NSLocalizedString("currency.plural.egp", comment: "") }
+            static var ngn: String { NSLocalizedString("currency.plural.ngn", comment: "") }
+            static var kes: String { NSLocalizedString("currency.plural.kes", comment: "") }
+            static var mad: String { NSLocalizedString("currency.plural.mad", comment: "") }
+            // Norteamérica
+            static var cad: String { NSLocalizedString("currency.plural.cad", comment: "") }
+        }
     }
 
     // MARK: - Continents
@@ -1715,6 +1780,9 @@ enum L10n {
         }
         static var notificationsSkip: String {
             NSLocalizedString("onboarding.notificationsSkip", comment: "")
+        }
+        static var recommended: String {
+            NSLocalizedString("onboarding.recommended", comment: "")
         }
     }
 

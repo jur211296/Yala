@@ -832,6 +832,69 @@
 // Norteamérica
 "currency.cad" = "dólar canadiense";
 
+// MARK: - Currency Plural Names (short, no country)
+// Latinoamérica
+"currency.plural.pen" = "soles";
+"currency.plural.usd" = "dólares";
+"currency.plural.mxn" = "pesos";
+"currency.plural.cop" = "pesos";
+"currency.plural.brl" = "reales";
+"currency.plural.ars" = "pesos";
+"currency.plural.clp" = "pesos";
+"currency.plural.uyu" = "pesos";
+"currency.plural.bob" = "bolivianos";
+"currency.plural.pyg" = "guaraníes";
+"currency.plural.crc" = "colones";
+"currency.plural.gtq" = "quetzales";
+"currency.plural.hnl" = "lempiras";
+"currency.plural.nio" = "córdobas";
+"currency.plural.pab" = "balboas";
+"currency.plural.dop" = "pesos";
+// Europa
+"currency.plural.eur" = "euros";
+"currency.plural.gbp" = "libras";
+"currency.plural.chf" = "francos";
+"currency.plural.sek" = "coronas";
+"currency.plural.nok" = "coronas";
+"currency.plural.dkk" = "coronas";
+"currency.plural.pln" = "zlotys";
+"currency.plural.czk" = "coronas";
+"currency.plural.huf" = "florines";
+"currency.plural.ron" = "leus";
+"currency.plural.rub" = "rublos";
+"currency.plural.uah" = "grivnas";
+"currency.plural.try" = "liras";
+// Asia
+"currency.plural.jpy" = "yenes";
+"currency.plural.cny" = "yuanes";
+"currency.plural.krw" = "wones";
+"currency.plural.inr" = "rupias";
+"currency.plural.idr" = "rupias";
+"currency.plural.php" = "pesos";
+"currency.plural.thb" = "bahts";
+"currency.plural.myr" = "ringgits";
+"currency.plural.sgd" = "dólares";
+"currency.plural.hkd" = "dólares";
+"currency.plural.twd" = "dólares";
+"currency.plural.vnd" = "dongs";
+// Oceanía
+"currency.plural.aud" = "dólares";
+"currency.plural.nzd" = "dólares";
+// Medio Oriente
+"currency.plural.aed" = "dírhams";
+"currency.plural.sar" = "riyales";
+"currency.plural.ils" = "séqueles";
+"currency.plural.qar" = "riyales";
+"currency.plural.kwd" = "dinares";
+// África
+"currency.plural.zar" = "rands";
+"currency.plural.egp" = "libras";
+"currency.plural.ngn" = "nairas";
+"currency.plural.kes" = "chelines";
+"currency.plural.mad" = "dírhams";
+// Norteamérica
+"currency.plural.cad" = "dólares";
+
 // MARK: - Continents
 "continent.latinAmerica" = "Latinoamérica";
 "continent.europe" = "Europa";
@@ -1164,6 +1227,7 @@
 "onboarding.notificationsTitle" = "¿Te avisamos?";
 "onboarding.notificationsSubtitle" = "Activa los recordatorios que te sean útiles. Podrás cambiarlos cuando quieras.";
 "onboarding.notificationsSkip" = "Ahora no, gracias";
+"onboarding.recommended" = "Recomendada";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Al cambiar de cuenta, se actualizará la divisa de las transacciones seleccionadas.";
@@ -1186,15 +1250,15 @@
 "voice.tapToRecord" = "Toca para grabar";
 "voice.youCanSay" = "Puedes decir:";
 "voice.hintTypeExample" = "Gasto/Ingreso/Transferencia";
-"voice.hintAmountExample" = "50 pesos";
+"voice.hintAmountExample" = "50 %@";
 "voice.hintSubcategoryExample" = "Restaurantes";
 "voice.hintMerchantExample" = "Starbucks";
 "voice.hintTagExample" = "Trabajo";
 "voice.hintDateExample" = "Hoy/Ayer";
 "voice.exampleLabel" = "Ejemplos";
-"voice.example1" = "Gasto de 50 pesos en Starbucks para café";
-"voice.example2" = "Ingreso de 1000 pesos por trabajo freelance";
-"voice.example3" = "Transferencia de 200 pesos a cuenta de ahorros";
+"voice.example1" = "Gasto de 50 %@ en Starbucks para café";
+"voice.example2" = "Ingreso de 1000 %@ por trabajo freelance";
+"voice.example3" = "Transferencia de 200 %@ a cuenta de ahorros";
 "voice.processingAudio" = "Procesando audio...";
 "voice.analyzing" = "Analizando...";
 "voice.parsing" = "Extrayendo datos...";

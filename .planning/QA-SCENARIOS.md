@@ -3202,6 +3202,175 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 
 ---
 
-*Última actualización: 2026-01-29 - Sección 24 (Notificaciones)*
-*Total escenarios: ~332*
-*Total verificaciones: ~650+*
+## Sección 25: Fase 10.5.B y 10.5.C - Pendiente de Validación Manual
+
+> **Estado:** PENDIENTE DE VALIDACIÓN
+> **Fecha implementación:** 2026-02-01
+> **Build:** Compilación exitosa
+
+### 25.1 Consistencia Visual Pagos Planificados (10.5.B)
+
+#### Escenario 25.1.1: Summary Card sin gradientes
+**Precondición:** Tener al menos 1 pago planificado activo
+
+1. Ir a Planning > Pagos Planificados
+2. **Verificar:** El monto total en el summary card usa color primario (texto normal), NO gradiente electricIndigo→hotPink
+3. **Verificar:** El borde del card es gris sutil (secondary.opacity(0.15)), NO gradiente
+4. **Verificar:** La sombra es neutra (negra sutil), NO coloreada en índigo
+
+#### Escenario 25.1.2: Section headers simplificados
+**Precondición:** Tener pagos en diferentes estados (vencidos, hoy, próximos)
+
+1. Ir a Planning > Pagos Planificados (vista lista)
+2. **Verificar:** Solo la sección "Vencidos" tiene círculo rojo (hotPink) junto al título
+3. **Verificar:** Secciones "Hoy" y "Próximos" NO tienen círculo de color
+4. **Verificar:** NO hay contador "(N)" después del título de sección
+
+#### Escenario 25.1.3: Due status en cards simplificado
+**Precondición:** Tener pagos vencidos y próximos
+
+1. Observar las cards de pagos individuales
+2. **Verificar:** Pagos vencidos muestran texto en hotPink con círculo rojo
+3. **Verificar:** Pagos "Hoy" y "Próximos" muestran texto en color secundario (gris), SIN círculo
+4. **Verificar:** Ingresos planificados siguen mostrando monto en teal (esto NO cambió)
+
+#### Escenario 25.1.4: Botones navegación calendario
+**Precondición:** Estar en vista calendario de pagos
+
+1. Ir a Planning > Pagos Planificados > Vista calendario
+2. **Verificar:** Botones chevron izquierda/derecha son solo iconos grises
+3. **Verificar:** NO tienen fondo coloreado (antes tenían fondo índigo claro)
+
+#### Escenario 25.1.5: Comparación con Presupuestos
+1. Ir a Planning > Presupuestos y observar el diseño
+2. Ir a Planning > Pagos Planificados
+3. **Verificar:** Ambas vistas tienen estilo visual consistente (sobrio, sin gradientes llamativos)
+
+---
+
+### 25.2 Onboarding Divisas con Continentes (10.5.C.3)
+
+#### Escenario 25.2.1: Sección Recomendada
+**Precondición:** Datos vacíos (data wipe) para ver onboarding
+
+1. Ir a Perfil > Vaciar datos > Confirmar
+2. Reiniciar la app para ver onboarding
+3. Avanzar hasta el paso "Tu moneda principal"
+4. **Verificar:** Hay una sección "RECOMENDADA" al inicio
+5. **Verificar:** La moneda recomendada está destacada (fondo índigo claro)
+6. **Verificar:** La moneda mostrada coincide con la región del dispositivo (ej: PEN para Perú)
+
+#### Escenario 25.2.2: Agrupación por continentes
+1. En el paso de moneda del onboarding
+2. Hacer scroll hacia abajo
+3. **Verificar:** Las monedas están agrupadas por continente (Latinoamérica, Europa, Asia, etc.)
+4. **Verificar:** Cada continente tiene su header en mayúsculas
+5. **Verificar:** Las monedas dentro de cada continente están ordenadas alfabéticamente
+
+#### Escenario 25.2.3: No duplicación de moneda recomendada
+**Precondición:** Región del dispositivo = Perú (o cualquier otra)
+
+1. En el paso de moneda del onboarding
+2. Verificar que PEN aparece en sección "RECOMENDADA"
+3. Hacer scroll a la sección "LATINOAMÉRICA"
+4. **Verificar:** PEN NO aparece duplicado en Latinoamérica
+5. **Verificar:** El resto de monedas latinoamericanas SÍ aparecen
+
+---
+
+### 25.3 Filtro Monedas Solo con Transacciones (10.5.C.2)
+
+#### Escenario 25.3.1: Filtro muestra solo monedas usadas
+**Precondición:** Tener transacciones solo en PEN y USD
+
+1. Ir a Statistics > Filtros
+2. Buscar la sección "Moneda"
+3. **Verificar:** Solo aparecen PEN y USD como opciones
+4. **Verificar:** NO aparecen las 48 monedas soportadas
+
+#### Escenario 25.3.2: Nueva moneda aparece al usarla
+**Precondición:** Tener transacciones solo en PEN
+
+1. Verificar que en Filtros > Moneda solo aparece PEN
+2. Crear una cuenta en EUR
+3. Crear una transacción en esa cuenta EUR
+4. Ir a Statistics > Filtros > Moneda
+5. **Verificar:** Ahora aparecen PEN y EUR
+
+#### Escenario 25.3.3: Sección oculta sin transacciones
+**Precondición:** Datos vacíos (sin transacciones)
+
+1. Ir a Perfil > Vaciar datos > Confirmar (o usar app recién instalada)
+2. Completar onboarding
+3. Ir a Statistics > Filtros
+4. **Verificar:** La sección "Moneda" NO aparece (está oculta)
+5. Crear una transacción
+6. Volver a Statistics > Filtros
+7. **Verificar:** Ahora SÍ aparece la sección "Moneda"
+
+---
+
+### 25.4 Ejemplos Voz con Moneda Dinámica (10.5.C.1)
+
+#### Escenario 25.4.1: Ejemplos con moneda preferida
+**Precondición:** Moneda preferida = Sol peruano (PEN)
+
+1. Ir a Settings > Moneda preferida, verificar que es PEN
+2. Abrir FAB > Voz
+3. Observar la sección de hints y ejemplos
+4. **Verificar:** El hint de monto dice "50 soles" (plural, sin país)
+5. **Verificar:** Ejemplo 1: "Gasto de 50 soles en Starbucks para café"
+6. **Verificar:** Ejemplo 2: "Ingreso de 1000 soles por trabajo freelance"
+7. **Verificar:** Ejemplo 3: "Transferencia de 200 soles a cuenta de ahorros"
+
+#### Escenario 25.4.2: Ejemplos cambian con otra moneda
+1. Ir a Settings > Moneda preferida > Cambiar a Euro (EUR)
+2. Abrir FAB > Voz
+3. **Verificar:** El hint de monto dice "50 euros"
+4. **Verificar:** Los ejemplos dicen "euros" en lugar de "soles"
+
+#### Escenario 25.4.3: Ejemplos con dólar
+1. Ir a Settings > Moneda preferida > Cambiar a Dólar estadounidense (USD)
+2. Abrir FAB > Voz
+3. **Verificar:** El hint dice "50 dólares" (sin "estadounidenses")
+4. **Verificar:** Los ejemplos dicen "dólares"
+
+#### Escenario 25.4.4: Ejemplos con pesos (múltiples países)
+1. Ir a Settings > Moneda preferida > Cambiar a Peso mexicano (MXN)
+2. Abrir FAB > Voz
+3. **Verificar:** El hint dice "50 pesos" (sin "mexicanos")
+4. Cambiar a Peso colombiano (COP)
+5. **Verificar:** También dice "50 pesos" (igual que mexicano)
+
+#### Escenario 25.4.5: Validar en otros idiomas
+1. Cambiar idioma del dispositivo a English
+2. Abrir FAB > Voz
+3. **Verificar:** Ejemplos en inglés con la moneda correcta (ej: "50 dollars")
+4. Repetir con alemán, francés, italiano, portugués
+
+---
+
+### Checklist de Validación Rápida
+
+- [ ] 25.1.1 Summary card sin gradientes
+- [ ] 25.1.2 Section headers solo vencidos con círculo
+- [ ] 25.1.3 Due status simplificado
+- [ ] 25.1.4 Botones calendario sin fondo
+- [ ] 25.1.5 Consistencia con Presupuestos
+- [ ] 25.2.1 Sección Recomendada en onboarding
+- [ ] 25.2.2 Agrupación por continentes
+- [ ] 25.2.3 No duplicación de moneda recomendada
+- [ ] 25.3.1 Filtro solo monedas usadas
+- [ ] 25.3.2 Nueva moneda aparece al usarla
+- [ ] 25.3.3 Sección oculta sin transacciones
+- [ ] 25.4.1 Ejemplos voz con moneda preferida
+- [ ] 25.4.2 Ejemplos cambian con otra moneda
+- [ ] 25.4.3 Dólar sin país
+- [ ] 25.4.4 Pesos sin país
+- [ ] 25.4.5 Validar otros idiomas
+
+---
+
+*Última actualización: 2026-02-01 - Sección 25 (Fase 10.5.B y 10.5.C)*
+*Total escenarios: ~350*
+*Total verificaciones: ~690+*
