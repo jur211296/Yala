@@ -136,8 +136,21 @@ struct OnboardingView: View {
 
     // MARK: - Step 2: Preferred Currency
 
+    private var recommendedCurrency: CurrencyCode {
+        CurrencyDefaults.detectCurrencyFromRegion()
+    }
+
+    private var filteredContinentGroups: [(continent: Continent, currencies: [CurrencyCode])] {
+        CurrencyCode.groupedByContinent.compactMap { group in
+            let filtered = group.currencies.filter { $0 != recommendedCurrency }
+            guard !filtered.isEmpty else { return nil }
+            return (continent: group.continent, currencies: filtered)
+        }
+    }
+
     private var currencyStep: some View {
         VStack(spacing: DS.Spacing.xl) {
+            // Header
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "dollarsign.circle.fill")
                     .font(.system(size: 48))
@@ -157,17 +170,55 @@ struct OnboardingView: View {
             .padding(.top, DS.Spacing.xl)
 
             ScrollView {
-                LazyVStack(spacing: DS.Spacing.sm) {
-                    ForEach(CurrencyCode.allCases) { currency in
-                        currencyRow(currency, isSelected: selectedCurrency == currency) {
-                            selectedCurrency = currency
-                            // Remove from secondary if selected as primary
-                            selectedSecondaryCurrencies.remove(currency)
-                        }
+                LazyVStack(spacing: DS.Spacing.lg) {
+                    // Recommended currency section
+                    recommendedCurrencySection
+
+                    // Currencies by continent (excluding recommended)
+                    ForEach(filteredContinentGroups, id: \.continent) { group in
+                        continentCurrencySection(group)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xl)
             }
+        }
+    }
+
+    private var recommendedCurrencySection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Onboarding.recommended)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, DS.Spacing.xs)
+
+            currencyRow(recommendedCurrency, isSelected: selectedCurrency == recommendedCurrency) {
+                selectedCurrency = recommendedCurrency
+                selectedSecondaryCurrencies.remove(recommendedCurrency)
+            }
+            .background(Color.electricIndigo.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        }
+    }
+
+    private func continentCurrencySection(_ group: (continent: Continent, currencies: [CurrencyCode])) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(group.continent.localizedName)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, DS.Spacing.xs)
+
+            VStack(spacing: 0) {
+                ForEach(group.currencies) { currency in
+                    currencyRow(currency, isSelected: selectedCurrency == currency) {
+                        selectedCurrency = currency
+                        selectedSecondaryCurrencies.remove(currency)
+                    }
+                }
+            }
+            .background(Color.yalaCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
     }
 
