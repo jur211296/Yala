@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-01-31] 4f132cf fix(onboarding): remove residual DEV_BUILD lastStep logic
 - [2026-01-31] 340ef29 chore(seed): remove DevDataSeed completely
 - [2026-01-30] 73c7e9f refactor(widget): simplify exchange rate widget to use only secondaryCurrencies
 - [2026-01-30] cfd0447 fix(dev): restrict dev data seed to DEV_BUILD only (not regular DEBUG)
@@ -238,8 +239,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: DevDataSeed eliminado (causaba errores de compilación)
-Next step: Comenzar Fase 11 — Plataforma Avanzada (V1.2)
+Stopped at: Fix bug onboarding que regresaba al paso 1 (residuo de DevDataSeed)
+Next step: Continuar refinamiento V1.1 o comenzar Fase 11
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)

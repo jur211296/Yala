@@ -48,16 +48,11 @@ final class CurrencyConverter: CurrencyConverterProtocol {
     // MARK: - Fallback Rates (used when no stored rate available)
 
     /// Static fallback rates for when API data is unavailable.
-    /// These are approximate rates and should only be used as last resort.
-    private let fallbackRates: [String: Double] = [
-        "USD": 1.0,
-        "PEN": 3.72,
-        "EUR": 0.95,
-        "MXN": 17.0,
-        "COP": 4100.0,
-        "BRL": 4.95,
-        "GBP": 0.79,
-    ]
+    /// IMPORTANT: These are APPROXIMATE rates and should only be used
+    /// as a last resort when: no API data, no internet, and no cached rates.
+    /// All rates are relative to USD (base currency).
+    /// Derived from CurrencyCode enum (single source of truth).
+    private var fallbackRates: [String: Double] { CurrencyCode.fallbackRates }
 
     // MARK: - Public API
 

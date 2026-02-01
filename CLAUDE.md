@@ -23,6 +23,53 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 El ModelContainer se configura en YalaApp.swift con estas entidades:
 Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
 
+## Divisas (Single Source of Truth)
+**Archivo:** `Yala/Utils/CurrencyUtils.swift` → enum `CurrencyCode`
+
+Para agregar una nueva divisa (ej: ARS - Peso Argentino), solo edita el enum `CurrencyCode`:
+
+```swift
+enum CurrencyCode: String, CaseIterable {
+    case ars = "ARS"  // 1. Añadir case
+
+    var flag: String {
+        case .ars: return "🇦🇷"  // 2. Añadir bandera
+    }
+
+    var symbol: String {
+        case .ars: return "$"  // 3. Añadir símbolo
+    }
+
+    var localizedName: String {
+        case .ars: return L10n.Currency.ars  // 4. Usar key de localización
+    }
+
+    var aliases: [String] {
+        case .ars: return ["ARS", "PESO ARGENTINO", "AR$"]  // 5. Aliases para normalización
+    }
+
+    var fallbackRateToUSD: Double {
+        case .ars: return 875.0  // 6. Tasa fallback (solo cuando no hay API)
+    }
+
+    var regionCodes: [String] {
+        case .ars: return ["AR"]  // 7. Códigos ISO de región
+    }
+}
+```
+
+**Luego añadir la key de localización** en `Localizable.strings`:
+```
+"currency.ars" = "Peso argentino";
+```
+
+**Todo lo demás es automático:**
+- `ExchangeRateService.supportedSymbols` → deriva de `CurrencyCode.allRawValues`
+- `CurrencyConverter.fallbackRates` → deriva de `CurrencyCode.fallbackRates`
+- `normalizeCurrencyCode()` → usa `CurrencyCode.aliases`
+- `detectCurrencyFromRegion()` → usa `CurrencyCode.regionCodes`
+- `currencyInfo()` → usa propiedades del enum
+
 ## Flujo de trabajo obligatorio (para ahorrar tokens y reducir retrabajo)
 1) Plan corto antes de editar (qué cambias y por qué)
 2) Implementar mínimo que compila

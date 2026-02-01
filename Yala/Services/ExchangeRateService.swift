@@ -16,7 +16,10 @@ import SwiftData
 protocol ExchangeRateServiceProtocol {
     func preloadHistoricalIfNeeded(context: ModelContext) async
     func updateTodayIfNeeded(context: ModelContext) async
+    func forceUpdateToday(context: ModelContext) async
     func ensureRates(for dateRange: DateInterval, context: ModelContext) async
+    func forceRefreshRates(for dateRange: DateInterval, context: ModelContext) async
+    func ensureRatesForExistingTransactions(context: ModelContext) async
     func getRate(for date: Date, context: ModelContext) -> ExchangeRate?
     func getMostRecentRate(onOrBefore date: Date, context: ModelContext) -> ExchangeRate?
     func getLatestRate(context: ModelContext) -> ExchangeRate?
@@ -42,8 +45,8 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
 
     private let provider: ExchangeRateProviderProtocol
     private let baseCurrency = "USD"
-    // All supported currencies (matches CurrencyCode enum)
-    private let supportedSymbols = ["USD", "PEN", "EUR", "MXN", "COP", "BRL", "GBP"]
+    // All supported currencies - derived from CurrencyCode enum (single source of truth)
+    private var supportedSymbols: [String] { CurrencyCode.allRawValues }
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -144,6 +147,79 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         }
     }
 
+    /// Forces update of today's exchange rate even if it already exists.
+    /// Used after onboarding to ensure we have ALL 7 currencies, not just the ones
+    /// that might have been fetched earlier with a partial set.
+    func forceUpdateToday(context: ModelContext) async {
+        let todayKey = dateFormatter.string(from: Date())
+
+        do {
+            let result = try await provider.fetchLatest(
+                base: baseCurrency, symbols: supportedSymbols)
+            try persistRate(
+                dateKey: todayKey, rates: result.rates, timestamp: result.timestamp,
+                context: context)
+            UserDefaults.standard.set(Date(), forKey: lastTodayUpdateKey)
+            #if DEBUG
+            print("ExchangeRateService: Force updated today's rate with all \(supportedSymbols.count) currencies")
+            #endif
+        } catch {
+            #if DEBUG
+            print("ExchangeRateService: Error force updating today's rate: \(error.localizedDescription)")
+            #endif
+        }
+    }
+
+    /// Forces a refresh of exchange rates for a date range.
+    /// Only refetches dates that are missing OR don't have all currencies.
+    /// Optimized to skip dates that already have complete data.
+    func forceRefreshRates(for dateRange: DateInterval, context: ModelContext) async {
+        let calendar = Calendar.current
+
+        // Find dates that need refresh (missing or incomplete)
+        var datesToRefresh: [Date] = []
+        var currentDate = dateRange.start
+        while currentDate <= dateRange.end {
+            let dateKey = dateFormatter.string(from: currentDate)
+            // Only add dates that don't have ALL currencies
+            if !rateHasAllCurrencies(for: dateKey, context: context) {
+                datesToRefresh.append(currentDate)
+            }
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate.addingTimeInterval(86400)
+        }
+
+        guard !datesToRefresh.isEmpty else {
+            #if DEBUG
+            print("ExchangeRateService: All rates already have all currencies, skipping refresh")
+            #endif
+            return
+        }
+
+        #if DEBUG
+        let totalDays = Int(dateRange.duration / 86400)
+        print("ExchangeRateService: Refreshing \(datesToRefresh.count) of \(totalDays) days (skipped \(totalDays - datesToRefresh.count) complete)")
+        #endif
+
+        // Group into contiguous ranges for efficient fetching
+        let ranges = groupIntoRanges(dates: datesToRefresh)
+
+        for range in ranges {
+            do {
+                try await fetchAndPersistRates(from: range.start, to: range.end, context: context)
+                // Small delay between requests
+                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+            } catch {
+                #if DEBUG
+                print("ExchangeRateService: Error refreshing range \(range): \(error.localizedDescription)")
+                #endif
+            }
+        }
+
+        #if DEBUG
+        print("ExchangeRateService: Force refresh complete")
+        #endif
+    }
+
     /// Ensures exchange rates exist for a given date range.
     /// Used after CSV import to fetch historical rates for imported transactions.
     func ensureRates(for dateRange: DateInterval, context: ModelContext) async {
@@ -167,6 +243,39 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
                 )
                 #endif
             }
+        }
+    }
+
+    /// Ensures exchange rates exist for all dates that have transactions.
+    /// Should be called after onboarding or when secondary currencies change,
+    /// to guarantee historical data for existing transactions.
+    func ensureRatesForExistingTransactions(context: ModelContext) async {
+        // Fetch all transactions to get date range
+        let descriptor = FetchDescriptor<TransactionItem>(
+            sortBy: [SortDescriptor(\TransactionItem.date, order: .forward)]
+        )
+
+        do {
+            let transactions = try context.fetch(descriptor)
+            guard !transactions.isEmpty,
+                  let firstDate = transactions.first?.date,
+                  let lastDate = transactions.last?.date else {
+                #if DEBUG
+                print("ExchangeRateService: No transactions found, skipping historical rates")
+                #endif
+                return
+            }
+
+            let dateInterval = DateInterval(start: firstDate, end: lastDate)
+            #if DEBUG
+            print("ExchangeRateService: Ensuring rates for transaction range: \(firstDate) to \(lastDate)")
+            #endif
+
+            await ensureRates(for: dateInterval, context: context)
+        } catch {
+            #if DEBUG
+            print("ExchangeRateService: Error fetching transactions for rate sync: \(error)")
+            #endif
         }
     }
 
@@ -309,6 +418,17 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
 
     private func rateExists(for dateKey: String, context: ModelContext) -> Bool {
         return fetchExchangeRate(for: dateKey, context: context) != nil
+    }
+
+    /// Checks if a stored rate has ALL supported currencies.
+    /// Returns false if any currency from CurrencyCode.allRawValues is missing.
+    private func rateHasAllCurrencies(for dateKey: String, context: ModelContext) -> Bool {
+        guard let rate = fetchExchangeRate(for: dateKey, context: context) else {
+            return false
+        }
+        let storedCurrencies = Set(rate.decodedRates().keys)
+        let requiredCurrencies = Set(CurrencyCode.allRawValues)
+        return requiredCurrencies.isSubset(of: storedCurrencies)
     }
 
     private func countExistingRates(context: ModelContext) -> Int {
