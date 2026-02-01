@@ -91,14 +91,16 @@ struct ScheduledPaymentRowView: View {
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.green)
             } else {
-                // Due status indicator
-                Circle()
-                    .fill(dueStatusColor)
-                    .frame(width: 6, height: 6)
+                // Due status indicator (only for past due)
+                if summary.dueStatus == .past {
+                    Circle()
+                        .fill(Color.hotPink)
+                        .frame(width: 6, height: 6)
+                }
 
                 Text(dueText)
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(dueStatusColor)
+                    .foregroundStyle(summary.dueStatus == .past ? Color.hotPink : .secondary)
             }
 
             if let accountName = summary.payment.account?.name {
@@ -149,16 +151,6 @@ struct ScheduledPaymentRowView: View {
         }
     }
 
-    private var dueStatusColor: Color {
-        switch summary.dueStatus {
-        case .past:
-            return Color.hotPink
-        case .today:
-            return Color.orange
-        case .upcoming:
-            return Color.electricIndigo
-        }
-    }
 
     private var amountColor: Color {
         if summary.payment.transactionType == "income" {

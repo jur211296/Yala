@@ -67,13 +67,7 @@ struct ScheduledPaymentsListView: View {
             // Amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
                 .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.electricIndigo, Color.hotPink],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .foregroundStyle(.primary)
 
             // Payment count
             Text(paymentCountLabel)
@@ -88,17 +82,10 @@ struct ScheduledPaymentsListView: View {
                 .fill(Color.yalaCard)
                 .overlay(
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.electricIndigo.opacity(0.3), Color.hotPink.opacity(0.3)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
+                        .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
                 )
         )
-        .shadow(color: Color.electricIndigo.opacity(0.15), radius: 20, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         .padding(.horizontal, DS.Spacing.lg)
     }
 
@@ -177,17 +164,15 @@ struct ScheduledPaymentsListView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {
                         // Section header
                         HStack(spacing: DS.Spacing.sm) {
-                            Circle()
-                                .fill(sectionColor(for: section.status))
-                                .frame(width: 8, height: 8)
+                            if section.status == .past {
+                                Circle()
+                                    .fill(Color.hotPink)
+                                    .frame(width: 8, height: 8)
+                            }
 
                             Text(section.status.localizedName)
                                 .font(.headline.weight(.semibold))
                                 .foregroundStyle(.primary)
-
-                            Text("(\(section.payments.count))")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
                         }
 
                         // Payment cards
@@ -204,16 +189,6 @@ struct ScheduledPaymentsListView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    private func sectionColor(for status: DueStatus) -> Color {
-        switch status {
-        case .past:
-            return Color.hotPink
-        case .today:
-            return Color.orange
-        case .upcoming:
-            return Color.electricIndigo
-        }
-    }
 
     // MARK: - Calendar Content
 
@@ -241,10 +216,8 @@ struct ScheduledPaymentsListView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .background(Color.electricIndigo.opacity(0.1))
-                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
 
@@ -264,10 +237,8 @@ struct ScheduledPaymentsListView: View {
             } label: {
                 Image(systemName: "chevron.right")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .background(Color.electricIndigo.opacity(0.1))
-                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
         }
