@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-01] 91abfa9 fix(swiftdata): isolate database between Yala and Yala Dev builds
 - [2026-02-01] 1be90fd fix(share): dynamic App Group and URL Scheme for Yala vs Yala Dev
 - [2026-02-01] e5dad6a fix(notifications): show ScheduledPaymentAlertModal over sheets
 - [2026-02-01] bd7cdb6 fix(profile): dismiss ProfileView on theme change for immediate apply
@@ -73,6 +74,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Seed Dev (10.x)** - ~~Implementado~~ **ELIMINADO** (340ef29): Causaba errores de compilación con #Predicate macros. Removido completamente del proyecto.
 - **Widget tipo de cambio simplificado (10.x)** - Refactorización para usar SOLO secondaryCurrencies como fuente de verdad (73c7e9f): eliminado selector de divisas innecesario y sheet asociado, sin defaults ni fallbacks, sin caché local, estado vacío cuando no hay divisas secundarias seleccionadas, widget automáticamente muestra las 1-2 divisas elegidas en Settings/onboarding, reacción inmediata a cambios en Settings via SessionState flag
 - **Sistema de divisas completo (1.1)** - 48 divisas soportadas organizadas por 7 continentes (Latinoamérica, Norteamérica, Europa, Asia, Oceanía, Medio Oriente, África); enum CurrencyCode como SSOT con flag, symbol, aliases, fallbackRateToUSD, regionCodes; rediseño UX de selección de divisas con 3 sheets (CurrencyPickerSheet, SecondaryCurrencyPickerSheet, ExchangeRatesSheet); agrupación por continente en todos los selectores; chip de tipo de cambio en transacciones multimoneda
+- **Aislamiento Yala vs Yala Dev (10.5.E)** - SwiftDataConfiguration helper centralizado que usa APP_GROUP_IDENTIFIER de Info.plist para determinar nombre de base de datos (YalaModel vs YalaModel-Dev); 7 ubicaciones migradas (YalaApp + 6 App Intents); UserDefaults ya aislado por bundle ID; permisos iOS ya aislados por app
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -121,19 +123,15 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [x] A.3: Notificación in-app no aparece si hay sheet abierta → fullScreenCover
 - [x] A.4: Cambio de tema no se aplica inmediatamente → themeRefreshKey con UUID
 
-**10.5.E: Aislamiento Yala vs Yala Dev (NUEVO - requiere análisis)**
-- [ ] E.1: Onboarding no se salta en Yala Dev después del cambio de entitlements
-  - Causa probable: UserDefaults `hasCompletedOnboarding` compartido entre builds
-- [ ] E.2: Inbox compartido entre Yala y Yala Dev
-  - Las transacciones creadas en una app aparecen en la otra
-  - ModelContainer/SwiftData usa el mismo storage
-- [ ] E.3: Permisos de voz/micrófono compartidos
-  - Si se da permiso en una, automáticamente está en la otra
-- [ ] E.4: Análisis profundo de aislamiento completo
-  - UserDefaults: App Suite vs estándar
-  - SwiftData: ModelContainer separados por App Group
-  - Keychain: Groups compartidos o separados
-  - Cualquier otro storage compartido
+**10.5.E: Aislamiento Yala vs Yala Dev** ✅ COMPLETADO
+- [x] E.1: Onboarding aislado → SwiftDataConfiguration usa DB name dinámico
+- [x] E.2: Inbox/transacciones aislados → YalaModel vs YalaModel-Dev
+- [x] E.3: Permisos separados → son por bundle ID automáticamente
+- [x] E.4: Análisis completo:
+  - SwiftData: CORREGIDO (SwiftDataConfiguration.swift)
+  - UserDefaults: Ya aislado por bundle ID
+  - App Group: Ya dinámico (APP_GROUP_IDENTIFIER)
+  - Keychain: Sin access group = aislado por app
 
 **10.5.F: Notificaciones In-App (NUEVO)**
 - [ ] F.1: Modal para automatizaciones/Apple Pay
