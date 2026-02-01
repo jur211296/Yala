@@ -200,9 +200,8 @@ struct ProfileView: View {
                 }
             }
             .onChange(of: userTheme) { _, _ in
-                // When theme changes, close all navigation and sheets for immediate theme application
-                navigationPath = NavigationPath()
-                activeSheet = nil
+                // When theme changes, dismiss ProfileView so it reopens with correct theme
+                dismiss()
             }
             .onAppear {
                 viewModel.setContext(modelContext)
