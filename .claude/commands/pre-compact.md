@@ -1,13 +1,13 @@
 ---
-description: Prepara resumen antes de compactar manualmente (Shift+C)
+description: Prepara resumen antes de compactar manualmente (/compact)
 ---
 
 Analiza y presenta qué se preservará/descartará antes de compactar.
-**La compactación real se hace con Shift+C después de este comando.**
+**La compactación real se hace con /compact después de este comando.**
 
 ## PROPÓSITO
 
-Te permite controlar QUÉ se preserva antes de ejecutar Shift+C.
+Te permite controlar QUÉ se preserva antes de ejecutar /compact.
 
 ## CUÁNDO USAR
 
@@ -68,7 +68,7 @@ Antes de compactar, verificar:
 
 ```
 ═══════════════════════════════════════════════════════════════
-         PRESIONA Shift+C PARA COMPACTAR AHORA
+          EJECUTA /compact PARA COMPACTAR AHORA
 ═══════════════════════════════════════════════════════════════
 El resumen arriba es lo que se preservará.
 ```

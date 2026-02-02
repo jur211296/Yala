@@ -1,14 +1,14 @@
 ---
-description: Extrae plan y prepara para compactar (termina con Shift+C)
+description: Extrae plan y prepara para compactar (termina con /compact)
 ---
 
 Extrae el plan de la sesión de planificación y lo presenta de forma compacta.
-**Al final, el usuario debe presionar Shift+C para compactar.**
+**Al final, el usuario debe ejecutar /compact para compactar.**
 
 ## CUÁNDO USAR
 
 ```
-Shift+Tab → [planificación] → [Esc] → /review-plan → /plan-ready → Shift+C → /session-start
+Shift+Tab → [planificación] → [Esc] → /review-plan → /plan-ready → /compact → /session-start
 ```
 
 ## EJECUCIÓN
@@ -46,7 +46,7 @@ DECISIONES:
 • [decisión 2]
 
 ═══════════════════════════════════════════════════════════════
-              PRESIONA Shift+C PARA COMPACTAR
+              EJECUTA /compact PARA COMPACTAR
 ═══════════════════════════════════════════════════════════════
 Después: /session-start o /yolo
 ```
@@ -61,5 +61,5 @@ Después: /session-start o /yolo
 ## RESULTADO
 
 1. Usuario ve el plan extraído
-2. Usuario presiona Shift+C (compacta preservando el plan visible)
+2. Usuario ejecuta `/compact` (compacta preservando el plan visible)
 3. Usuario ejecuta `/session-start` o `/yolo`
