@@ -28,6 +28,7 @@ final class AppBootstrapper {
     let draftService = DraftService.shared
     let entityDeletionService = EntityDeletionService.shared
     let transactionService = TransactionService.shared
+    let budgetAlertService = BudgetAlertService.shared
 
     // MARK: - State
 
@@ -68,6 +69,9 @@ final class AppBootstrapper {
 
         // 7. Check for pending shared images
         checkForPendingSharedImage()
+
+        // 8. Initialize budget alert service
+        budgetAlertService.setContext(context)
 
         isInitialized = true
     }

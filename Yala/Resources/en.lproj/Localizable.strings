@@ -388,6 +388,13 @@
 "budgets.widget.noFavorites.title" = "No favorite budgets";
 "budgets.widget.noFavorites.message" = "Mark budgets as favorites in Settings > Budgets to see them here.";
 "budgets.widget.selectFavorites" = "Select favorites";
+"budgets.alerts.title" = "Alerts";
+"budgets.alerts.enable" = "Notify when reaching limit";
+"budgets.alerts.thresholds" = "Notify at:";
+"budgets.alerts.message.50" = "Budget \"%@\" at 50%%";
+"budgets.alerts.message.75" = "Budget \"%@\" at 75%%";
+"budgets.alerts.message.90" = "Warning: \"%@\" almost depleted";
+"budgets.alerts.message.100" = "Budget \"%@\" depleted";
 "budgets.new" = "New Budget";
 "budgets.edit" = "Edit Budget";
 "budgets.delete" = "Delete Budget";

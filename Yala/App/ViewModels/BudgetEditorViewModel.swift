@@ -131,7 +131,9 @@ final class BudgetEditorViewModel {
         selectedAccounts: Set<PersistentIdentifier>,
         selectedSubcategories: Set<PersistentIdentifier>,
         selectedTags: Set<PersistentIdentifier>,
-        selectedNatures: Set<SubcategoryNature>
+        selectedNatures: Set<SubcategoryNature>,
+        alertEnabled: Bool,
+        alertThresholds: Set<Int>
     ) -> Bool {
         guard let context = modelContext else { return false }
 
@@ -140,6 +142,7 @@ final class BudgetEditorViewModel {
         let subcategoriesArray = allSubcategories.filter { selectedSubcategories.contains($0.persistentModelID) }
         let tagsArray = activeTags.filter { selectedTags.contains($0.persistentModelID) }
         let naturesString = selectedNatures.isEmpty ? nil : selectedNatures.map { $0.rawValue }.joined(separator: ",")
+        let thresholdsString = alertThresholds.isEmpty ? nil : alertThresholds.sorted().map { String($0) }.joined(separator: ",")
 
         if let existingBudget = existing {
             // Update existing budget
@@ -154,6 +157,8 @@ final class BudgetEditorViewModel {
             existingBudget.subcategories = subcategoriesArray
             existingBudget.tags = tagsArray
             existingBudget.natures = naturesString
+            existingBudget.alertEnabled = alertEnabled
+            existingBudget.alertThresholds = thresholdsString
         } else {
             // Create new budget
             let newBudget = Budget(
@@ -167,7 +172,9 @@ final class BudgetEditorViewModel {
                 subcategories: subcategoriesArray,
                 tags: tagsArray,
                 natures: naturesString,
-                isActive: isActive
+                isActive: isActive,
+                alertEnabled: alertEnabled,
+                alertThresholds: thresholdsString
             )
             context.insert(newBudget)
         }

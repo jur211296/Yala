@@ -388,6 +388,13 @@
 "budgets.widget.noFavorites.title" = "Sin presupuestos favoritos";
 "budgets.widget.noFavorites.message" = "Marca presupuestos como favoritos en Ajustes > Presupuestos para verlos aquí.";
 "budgets.widget.selectFavorites" = "Seleccionar favoritos";
+"budgets.alerts.title" = "Alertas";
+"budgets.alerts.enable" = "Notificar al alcanzar límite";
+"budgets.alerts.thresholds" = "Notificar al alcanzar:";
+"budgets.alerts.message.50" = "Presupuesto \"%@\" al 50%%";
+"budgets.alerts.message.75" = "Presupuesto \"%@\" al 75%%";
+"budgets.alerts.message.90" = "Cuidado: \"%@\" casi agotado";
+"budgets.alerts.message.100" = "Presupuesto \"%@\" agotado";
 "budgets.new" = "Nuevo presupuesto";
 "budgets.edit" = "Editar presupuesto";
 "budgets.delete" = "Eliminar presupuesto";

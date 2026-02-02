@@ -203,6 +203,11 @@ final class DraftService: DraftServiceProtocol {
 
         try context.save()
 
+        // Check budget alerts
+        Task {
+            await BudgetAlertService.shared.checkBudgetsAndNotify()
+        }
+
         return transaction
     }
 
@@ -269,6 +274,12 @@ final class DraftService: DraftServiceProtocol {
         }
 
         try context.save()
+
+        // Check budget alerts
+        Task {
+            await BudgetAlertService.shared.checkBudgetsAndNotify()
+        }
+
         return transactions
     }
 

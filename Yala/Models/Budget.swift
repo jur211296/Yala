@@ -12,6 +12,9 @@ import SwiftData
 
 @Model
 final class Budget {
+    // Stable identifier for tracking (e.g., alert notifications)
+    var id: UUID = UUID()
+
     // Legacy properties (kept for backwards compatibility)
     var month: Int
     var year: Int
@@ -41,7 +44,12 @@ final class Budget {
     var isFavorite: Bool = false
     var favoriteOrder: Int = 0
 
+    // Alert notifications
+    var alertEnabled: Bool = false
+    var alertThresholds: String? = nil  // CSV: "50,75,100"
+
     init(
+        id: UUID = UUID(),
         month: Int = 0,
         year: Int = 0,
         currencyCode: String,
@@ -59,8 +67,11 @@ final class Budget {
         isActive: Bool = true,
         createdAt: Date = Date(),
         isFavorite: Bool = false,
-        favoriteOrder: Int = 0
+        favoriteOrder: Int = 0,
+        alertEnabled: Bool = false,
+        alertThresholds: String? = nil
     ) {
+        self.id = id
         self.month = month
         self.year = year
         self.currencyCode = currencyCode
@@ -79,5 +90,7 @@ final class Budget {
         self.createdAt = createdAt
         self.isFavorite = isFavorite
         self.favoriteOrder = favoriteOrder
+        self.alertEnabled = alertEnabled
+        self.alertThresholds = alertThresholds
     }
 }

@@ -386,6 +386,13 @@
 "budgets.widget.noFavorites.title" = "Keine Favoriten";
 "budgets.widget.noFavorites.message" = "Markiere Budgets in Einstellungen > Budgets als Favoriten, um sie hier anzuzeigen.";
 "budgets.widget.selectFavorites" = "Favoriten auswählen";
+"budgets.alerts.title" = "Benachrichtigungen";
+"budgets.alerts.enable" = "Bei Erreichen des Limits benachrichtigen";
+"budgets.alerts.thresholds" = "Benachrichtigen bei:";
+"budgets.alerts.message.50" = "Budget \"%@\" bei 50%%";
+"budgets.alerts.message.75" = "Budget \"%@\" bei 75%%";
+"budgets.alerts.message.90" = "Achtung: \"%@\" fast aufgebraucht";
+"budgets.alerts.message.100" = "Budget \"%@\" aufgebraucht";
 "budgets.new" = "Neues Budget";
 "budgets.edit" = "Budget bearbeiten";
 "budgets.delete" = "Budget löschen";

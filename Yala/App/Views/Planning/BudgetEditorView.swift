@@ -33,6 +33,10 @@ struct BudgetEditorView: View {
     // Active status
     @State private var isActive: Bool = true
 
+    // Alert notifications
+    @State private var alertEnabled: Bool = false
+    @State private var selectedThresholds: Set<Int> = []
+
     // Filters - Using PersistentIdentifier for consistency with RecordsFiltersView
     @State private var selectedAccounts: Set<PersistentIdentifier> = []
     @State private var selectedSubcategories: Set<PersistentIdentifier> = []
@@ -63,6 +67,9 @@ struct BudgetEditorView: View {
 
                     // Active Toggle
                     activeToggle
+
+                    // Alert Notifications Section
+                    alertsSection
 
                     // Filters Section
                     filtersSection
@@ -259,6 +266,69 @@ struct BudgetEditorView: View {
                 .font(.body)
         }
         .tint(Color.brandPrimary)
+    }
+
+    // MARK: - Alerts Section
+
+    private var alertsSection: some View {
+        SectionBox(title: L10n.Budgets.alertsTitle) {
+            VStack(spacing: 0) {
+                // Toggle
+                Toggle(isOn: $alertEnabled) {
+                    HStack {
+                        Image(systemName: "bell.fill")
+                            .foregroundStyle(.secondary)
+                        Text(L10n.Budgets.alertsEnable)
+                    }
+                }
+                .tint(Color.brandPrimary)
+                .padding()
+
+                if alertEnabled {
+                    SubsectionDivider()
+
+                    // Threshold chips
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Text(L10n.Budgets.alertsThresholds)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.top, DS.Spacing.sm)
+
+                        FlowLayout(spacing: DS.Spacing.sm) {
+                            ForEach([50, 75, 90, 100], id: \.self) { threshold in
+                                thresholdChip(threshold)
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.md)
+                    }
+                }
+            }
+        }
+    }
+
+    private func thresholdChip(_ threshold: Int) -> some View {
+        let isSelected = selectedThresholds.contains(threshold)
+
+        return Button {
+            if isSelected {
+                selectedThresholds.remove(threshold)
+            } else {
+                selectedThresholds.insert(threshold)
+            }
+        } label: {
+            Text("\(threshold)%")
+                .font(.subheadline)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Filters Section
@@ -555,6 +625,14 @@ struct BudgetEditorView: View {
             let natureStrings = naturesString.components(separatedBy: ",")
             selectedNatures = Set(natureStrings.compactMap { SubcategoryNature(rawValue: $0) })
         }
+
+        // Load alert settings
+        alertEnabled = budget.alertEnabled
+        if let thresholdsString = budget.alertThresholds {
+            selectedThresholds = Set(
+                thresholdsString.split(separator: ",").compactMap { Int($0) }
+            )
+        }
     }
 
     private func saveBudget() {
@@ -572,7 +650,9 @@ struct BudgetEditorView: View {
             selectedAccounts: selectedAccounts,
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
-            selectedNatures: selectedNatures
+            selectedNatures: selectedNatures,
+            alertEnabled: alertEnabled,
+            alertThresholds: selectedThresholds
         )
 
         if saved {

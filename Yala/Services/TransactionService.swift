@@ -52,6 +52,11 @@ final class TransactionService {
         let context = try requireContext()
         context.insert(transaction)
         try context.save()
+
+        // Check budget alerts
+        Task {
+            await BudgetAlertService.shared.checkBudgetsAndNotify()
+        }
     }
 
     /// Inserts multiple transactions and saves
@@ -62,6 +67,11 @@ final class TransactionService {
             context.insert(transaction)
         }
         try context.save()
+
+        // Check budget alerts
+        Task {
+            await BudgetAlertService.shared.checkBudgetsAndNotify()
+        }
     }
 
     // MARK: - Update Operations

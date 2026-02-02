@@ -386,6 +386,13 @@
 "budgets.widget.noFavorites.title" = "Sem favoritos";
 "budgets.widget.noFavorites.message" = "Marque orcamentos como favoritos em Configuracoes > Orcamentos para ve-los aqui.";
 "budgets.widget.selectFavorites" = "Selecionar favoritos";
+"budgets.alerts.title" = "Alertas";
+"budgets.alerts.enable" = "Notificar ao atingir limite";
+"budgets.alerts.thresholds" = "Notificar ao atingir:";
+"budgets.alerts.message.50" = "Orcamento \"%@\" em 50%%";
+"budgets.alerts.message.75" = "Orcamento \"%@\" em 75%%";
+"budgets.alerts.message.90" = "Atencao: \"%@\" quase esgotado";
+"budgets.alerts.message.100" = "Orcamento \"%@\" esgotado";
 "budgets.new" = "Novo orcamento";
 "budgets.edit" = "Editar orcamento";
 "budgets.delete" = "Eliminar orcamento";

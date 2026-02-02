@@ -1586,6 +1586,29 @@ enum L10n {
                 NSLocalizedString("budgets.widget.selectFavorites", comment: "")
             }
         }
+
+        // Alert notifications
+        static var alertsTitle: String {
+            NSLocalizedString("budgets.alerts.title", comment: "")
+        }
+        static var alertsEnable: String {
+            NSLocalizedString("budgets.alerts.enable", comment: "")
+        }
+        static var alertsThresholds: String {
+            NSLocalizedString("budgets.alerts.thresholds", comment: "")
+        }
+        static func alertMessage50(_ name: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.50", comment: ""), name)
+        }
+        static func alertMessage75(_ name: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.75", comment: ""), name)
+        }
+        static func alertMessage90(_ name: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.90", comment: ""), name)
+        }
+        static func alertMessage100(_ name: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.100", comment: ""), name)
+        }
     }
 
     // MARK: - Planning

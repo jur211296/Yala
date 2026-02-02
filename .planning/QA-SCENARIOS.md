@@ -3525,6 +3525,155 @@ Para cada idioma (es, en, de, fr, it, pt):
 
 ---
 
-*Última actualización: 2026-02-01 - Sección 26 (Fase 10.5.F)*
-*Total escenarios: ~365*
-*Total verificaciones: ~720+*
+## Sección 27: Alertas de Presupuestos (10.5.D.1)
+
+Esta sección cubre la validación de notificaciones push cuando los presupuestos alcanzan umbrales configurados.
+
+### 27.1 Configuración de Alertas
+
+#### Escenario 27.1.1: Activar alertas en presupuesto nuevo
+**Precondición:** Crear nuevo presupuesto
+
+1. Ir a Presupuestos > Crear nuevo
+2. Completar nombre, límite ($100), período (mensual)
+3. **Verificar:** Sección "Alertas" visible después de "Activo"
+4. Activar toggle "Notificar al alcanzar límite"
+5. **Verificar:** Aparecen chips de umbrales: 50%, 75%, 90%, 100%
+6. Seleccionar 50% y 90%
+7. Guardar presupuesto
+8. Editar el mismo presupuesto
+9. **Verificar:** Toggle activado y chips 50%, 90% seleccionados
+
+#### Escenario 27.1.2: Desactivar alertas
+1. Editar presupuesto con alertas activas
+2. Desactivar toggle "Notificar al alcanzar límite"
+3. **Verificar:** Los chips de umbrales desaparecen
+4. Guardar
+5. Crear gasto que cruce el 50%
+6. **Verificar:** NO llega notificación push
+
+---
+
+### 27.2 Notificaciones por Umbral
+
+#### Escenario 27.2.1: Umbral 50%
+**Precondición:** Presupuesto $100, alertas [50%]
+
+1. Crear gasto de $50 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Presupuesto \"[nombre]\" al 50%"
+
+#### Escenario 27.2.2: Umbral 75%
+**Precondición:** Presupuesto $100, alertas [75%]
+
+1. Crear gasto de $75 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Presupuesto \"[nombre]\" al 75%"
+
+#### Escenario 27.2.3: Umbral 90%
+**Precondición:** Presupuesto $100, alertas [90%]
+
+1. Crear gasto de $90 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Cuidado: \"[nombre]\" casi agotado"
+
+#### Escenario 27.2.4: Umbral 100%
+**Precondición:** Presupuesto $100, alertas [100%]
+
+1. Crear gasto de $100 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Presupuesto \"[nombre]\" agotado"
+
+---
+
+### 27.3 Múltiples Umbrales
+
+#### Escenario 27.3.1: Cruzar múltiples umbrales con un gasto
+**Precondición:** Presupuesto $100, alertas [50%, 75%]
+
+1. Crear gasto de $80 (cruza 50% y 75% a la vez)
+2. **Verificar:** Llegan 2 notificaciones (50% y 75%)
+
+#### Escenario 27.3.2: No duplicar notificaciones ya enviadas
+**Precondición:** Ya se notificó 50%
+
+1. Crear otro gasto pequeño ($5)
+2. **Verificar:** NO llega nueva notificación de 50%
+3. Crear gasto que cruce 75%
+4. **Verificar:** Solo llega notificación de 75%
+
+---
+
+### 27.4 Diferentes Fuentes de Transacciones
+
+#### Escenario 27.4.1: Via Registro Manual
+1. Crear presupuesto con alertas [50%]
+2. Ir a FAB > Registro manual
+3. Crear gasto que cruce 50%
+4. **Verificar:** Notificación push aparece
+
+#### Escenario 27.4.2: Via Shortcuts (Siri)
+**Precondición:** Shortcut configurado para agregar gasto
+
+1. Crear presupuesto $100, alertas [50%]
+2. Usar Siri: "Agregar gasto $50 en [categoría]"
+3. **Verificar:** Notificación push aparece (sin abrir la app)
+
+#### Escenario 27.4.3: Via Inbox (aprobar draft)
+1. Crear presupuesto con alertas [50%]
+2. Crear draft pendiente en Inbox
+3. Aprobar draft con monto que cruce 50%
+4. **Verificar:** Notificación push aparece
+
+#### Escenario 27.4.4: Via Bulk Approve
+1. Crear presupuesto con alertas [50%, 75%]
+2. Crear múltiples drafts pendientes
+3. Seleccionar todos > Aprobar
+4. **Verificar:** Notificaciones para umbrales cruzados
+
+---
+
+### 27.5 Casos Edge
+
+#### Escenario 27.5.1: Presupuesto inactivo no notifica
+1. Crear presupuesto con alertas activas
+2. Desactivar el presupuesto (toggle Activo = off)
+3. Crear gasto que cruce umbral
+4. **Verificar:** NO llega notificación
+
+#### Escenario 27.5.2: Reset de período mensual
+**Precondición:** Presupuesto mensual, ya notificado 50% en enero
+
+1. Cambiar fecha del dispositivo a 1 de febrero
+2. Crear gasto que cruce 50%
+3. **Verificar:** Notificación SÍ llega (nuevo período)
+
+#### Escenario 27.5.3: Editar umbrales después de notificado
+1. Presupuesto con [50%] ya notificado
+2. Editar presupuesto, agregar umbral 75%
+3. Presupuesto ya está al 60%
+4. **Verificar:** NO notifica 75% automáticamente
+5. Crear gasto que cruce 75%
+6. **Verificar:** Notificación de 75% llega
+
+---
+
+### Checklist de Validación Rápida 27.x
+
+- [ ] 27.1.1 Config alertas se guarda y persiste
+- [ ] 27.1.2 Desactivar alertas previene notificaciones
+- [ ] 27.2.1 Umbral 50% notifica
+- [ ] 27.2.2 Umbral 75% notifica
+- [ ] 27.2.3 Umbral 90% notifica
+- [ ] 27.2.4 Umbral 100% notifica
+- [ ] 27.3.1 Múltiples umbrales en un gasto
+- [ ] 27.3.2 No duplica notificaciones
+- [ ] 27.4.1 Via registro manual
+- [ ] 27.4.2 Via Shortcuts/Siri
+- [ ] 27.4.3 Via aprobar draft
+- [ ] 27.4.4 Via bulk approve
+- [ ] 27.5.1 Presupuesto inactivo no notifica
+- [ ] 27.5.2 Reset de período funciona
+- [ ] 27.5.3 Nuevos umbrales funcionan
+
+---
+
+*Última actualización: 2026-02-02 - Sección 27 (Fase 10.5.D.1)*
+*Total escenarios: ~380*
+*Total verificaciones: ~750+*
