@@ -1600,17 +1600,24 @@ enum L10n {
         static var alertsThresholds: String {
             NSLocalizedString("budgets.alerts.thresholds", comment: "")
         }
-        static func alertMessage50(_ name: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.50", comment: ""), name)
+        /// "Presupuesto \"%@\" al 50%% — %@ de %@ gastados" (name, spent, limit)
+        static func alertMessage50(_ name: String, _ spent: String, _ limit: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.50", comment: ""), name, spent, limit)
         }
-        static func alertMessage75(_ name: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.75", comment: ""), name)
+
+        /// "Presupuesto \"%@\" al 75%% — %@ de %@ gastados" (name, spent, limit)
+        static func alertMessage75(_ name: String, _ spent: String, _ limit: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.75", comment: ""), name, spent, limit)
         }
-        static func alertMessage90(_ name: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.90", comment: ""), name)
+
+        /// "Cuidado: \"%@\" casi agotado — %@ de %@" (name, spent, limit)
+        static func alertMessage90(_ name: String, _ spent: String, _ limit: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.90", comment: ""), name, spent, limit)
         }
-        static func alertMessage100(_ name: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.100", comment: ""), name)
+
+        /// "Presupuesto \"%@\" agotado — Gastaste %@ de %@" (name, spent, limit)
+        static func alertMessage100(_ name: String, _ spent: String, _ limit: String) -> String {
+            String(format: NSLocalizedString("budgets.alerts.message.100", comment: ""), name, spent, limit)
         }
     }
 
@@ -2431,6 +2438,62 @@ enum L10n {
         // Budget alerts
         static var budgetAlertsTitle: String { NSLocalizedString("notifications.budgetAlerts.title", comment: "") }
         static var budgetAlertsHint: String { NSLocalizedString("notifications.budgetAlerts.hint", comment: "") }
+
+        // MARK: - Scheduled Payment Notifications (personalized)
+
+        enum ScheduledPayment {
+            /// "Hoy vence: %@ por %@" (name, amount)
+            static func dueToday(_ name: String, _ amount: String) -> String {
+                String(format: NSLocalizedString("notifications.scheduledPayment.dueToday", comment: ""), name, amount)
+            }
+
+            /// "En %d día(s) vence: %@ por %@" (days, name, amount)
+            static func dueSoon(_ days: Int, _ name: String, _ amount: String) -> String {
+                String(format: NSLocalizedString("notifications.scheduledPayment.dueSoon", comment: ""), days, name, amount)
+            }
+
+            /// "Pago vencido: %@ por %@" (name, amount)
+            static func overdue(_ name: String, _ amount: String) -> String {
+                String(format: NSLocalizedString("notifications.scheduledPayment.overdue", comment: ""), name, amount)
+            }
+
+            /// "Hoy recibes: %@ de %@" (amount, name)
+            static func dueTodayIncome(_ amount: String, _ name: String) -> String {
+                String(format: NSLocalizedString("notifications.scheduledPayment.dueToday.income", comment: ""), amount, name)
+            }
+
+            /// "En %d día(s) recibes: %@ de %@" (days, amount, name)
+            static func dueSoonIncome(_ days: Int, _ amount: String, _ name: String) -> String {
+                String(format: NSLocalizedString("notifications.scheduledPayment.dueSoon.income", comment: ""), days, amount, name)
+            }
+
+            /// "Ingreso pendiente: %@ de %@" (amount, name)
+            static func overdueIncome(_ amount: String, _ name: String) -> String {
+                String(format: NSLocalizedString("notifications.scheduledPayment.overdue.income", comment: ""), amount, name)
+            }
+        }
+
+        // MARK: - Report Notifications (with real data)
+
+        /// "Tu balance actual: %@" (amount)
+        static func reportBalance(_ amount: String) -> String {
+            String(format: NSLocalizedString("notifications.report.balance", comment: ""), amount)
+        }
+
+        /// "Gastaste: %@" (amount)
+        static func reportExpenses(_ amount: String) -> String {
+            String(format: NSLocalizedString("notifications.report.expenses", comment: ""), amount)
+        }
+
+        /// "Recibiste: %@" (amount)
+        static func reportIncome(_ amount: String) -> String {
+            String(format: NSLocalizedString("notifications.report.income", comment: ""), amount)
+        }
+
+        /// "Tu mayor gasto: %@" (category)
+        static func reportTopCategory(_ category: String) -> String {
+            String(format: NSLocalizedString("notifications.report.topCategory", comment: ""), category)
+        }
     }
 
     // MARK: - Weekday

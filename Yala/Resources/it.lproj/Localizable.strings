@@ -389,10 +389,10 @@
 "budgets.alerts.title" = "Avvisi";
 "budgets.alerts.enable" = "Notifica al raggiungimento del limite";
 "budgets.alerts.thresholds" = "Notifica al:";
-"budgets.alerts.message.50" = "Budget \"%@\" al 50%%";
-"budgets.alerts.message.75" = "Budget \"%@\" al 75%%";
-"budgets.alerts.message.90" = "Attenzione: \"%@\" quasi esaurito";
-"budgets.alerts.message.100" = "Budget \"%@\" esaurito";
+"budgets.alerts.message.50" = "Budget \"%@\" al 50%% — %@ di %@ spesi";
+"budgets.alerts.message.75" = "Budget \"%@\" al 75%% — %@ di %@ spesi";
+"budgets.alerts.message.90" = "Attenzione: \"%@\" quasi esaurito — %@ di %@";
+"budgets.alerts.message.100" = "Budget \"%@\" esaurito — Hai speso %@ di %@";
 "budgets.new" = "Nuovo budget";
 "budgets.edit" = "Modifica budget";
 "budgets.delete" = "Elimina budget";
@@ -1604,6 +1604,20 @@
 "notifications.section.custom" = "Personalizzati";
 "notifications.budgetAlerts.title" = "Avvisi di budget";
 "notifications.budgetAlerts.hint" = "Ricevi avvisi quando ti avvicini ai limiti";
+
+// Scheduled Payment Notifications (personalized)
+"notifications.scheduledPayment.dueToday" = "Oggi scade: %@ per %@";
+"notifications.scheduledPayment.dueSoon" = "Tra %d giorno(i) scade: %@ per %@";
+"notifications.scheduledPayment.overdue" = "Pagamento scaduto: %@ per %@";
+"notifications.scheduledPayment.dueToday.income" = "Oggi ricevi: %@ da %@";
+"notifications.scheduledPayment.dueSoon.income" = "Tra %d giorno(i) ricevi: %@ da %@";
+"notifications.scheduledPayment.overdue.income" = "Entrata in sospeso: %@ da %@";
+
+// Report Notifications (with real data)
+"notifications.report.balance" = "Il tuo saldo attuale: %@";
+"notifications.report.expenses" = "Hai speso: %@";
+"notifications.report.income" = "Hai ricevuto: %@";
+"notifications.report.topCategory" = "La tua spesa maggiore: %@";
 
 // Test report samples
 "notifications.testReport.balance" = "Il tuo saldo attuale: € 1.250,00";

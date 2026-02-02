@@ -95,9 +95,20 @@ final class BudgetAlertService {
             configuredThresholds: configuredThresholds
         )
 
+        // Get currency for notification
+        let currencyCode = budget.accounts.first?.currencyCode
+            ?? UserDefaults.standard.string(forKey: "preferredCurrency")
+            ?? "USD"
+
         // Send notifications for new thresholds
         for threshold in newThresholds {
-            await sendNotification(budgetName: budget.name, threshold: threshold)
+            await sendNotification(
+                budgetName: budget.name,
+                threshold: threshold,
+                spent: spending,
+                limit: budget.limitAmount,
+                currencyCode: currencyCode
+            )
             tracker.markNotified(budgetID: budget.id, periodKey: periodKey, threshold: threshold)
         }
     }
@@ -191,13 +202,23 @@ final class BudgetAlertService {
 
     // MARK: - Notifications
 
-    private func sendNotification(budgetName: String, threshold: Int) async {
+    private func sendNotification(
+        budgetName: String,
+        threshold: Int,
+        spent: Double,
+        limit: Double,
+        currencyCode: String
+    ) async {
+        let symbol = CurrencyUtils.symbol(for: currencyCode)
+        let spentStr = "\(symbol)\(spent.formatted(.number.precision(.fractionLength(0...2))))"
+        let limitStr = "\(symbol)\(limit.formatted(.number.precision(.fractionLength(0...2))))"
+
         let message: String
         switch threshold {
-        case 50: message = L10n.Budgets.alertMessage50(budgetName)
-        case 75: message = L10n.Budgets.alertMessage75(budgetName)
-        case 90: message = L10n.Budgets.alertMessage90(budgetName)
-        case 100: message = L10n.Budgets.alertMessage100(budgetName)
+        case 50: message = L10n.Budgets.alertMessage50(budgetName, spentStr, limitStr)
+        case 75: message = L10n.Budgets.alertMessage75(budgetName, spentStr, limitStr)
+        case 90: message = L10n.Budgets.alertMessage90(budgetName, spentStr, limitStr)
+        case 100: message = L10n.Budgets.alertMessage100(budgetName, spentStr, limitStr)
         default: message = "\(budgetName): \(threshold)%"
         }
 

@@ -29,7 +29,8 @@
 	<string>Yala uses Face ID to protect your financial information.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.jurgenschmidt.yala.daily</string>
+		<string>com.jurgenschmidt.yala.widget-refresh</string>
+		<string>com.jurgenschmidt.yala.report-notification</string>
 	</array>
 	<key>CFBundleIcons</key>
 	<dict>

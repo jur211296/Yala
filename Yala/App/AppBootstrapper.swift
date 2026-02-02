@@ -8,6 +8,7 @@
 
 import SwiftData
 import SwiftUI
+import UserNotifications
 import WidgetKit
 
 /// Centraliza la inicialización de la app y gestión del ciclo de vida.
@@ -68,6 +69,9 @@ final class AppBootstrapper {
         // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
 
+        // 6.5. Ensure notifications are scheduled (handles reinstall/update case)
+        await ensureNotificationsScheduled(context: context)
+
         // 7. Check for pending shared images
         checkForPendingSharedImage()
 
@@ -89,6 +93,11 @@ final class AppBootstrapper {
     func handleBecameActive(context: ModelContext) {
         checkForPendingSharedImage()
         checkForPendingInboxDrafts(context: context)
+
+        // Verify and reschedule notifications if needed
+        Task {
+            await ensureNotificationsScheduled(context: context)
+        }
     }
 
     /// Llamar cuando cambia needsExchangeRateReload
@@ -252,5 +261,50 @@ final class AppBootstrapper {
 
         sessionState.pendingSharedImageURL = firstImageURL
         sessionState.hasPendingSharedImage = true
+    }
+
+    // MARK: - Notification Management
+
+    /// Verifies permissions and reschedules notifications if needed.
+    /// Handles: reinstall, iOS update, and permission re-enabling.
+    private func ensureNotificationsScheduled(context: ModelContext) async {
+        let status = await NotificationService.shared.checkPermissionStatus()
+        guard status == .authorized || status == .provisional else { return }
+
+        // Check pending requests in the system
+        let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
+
+        // Get active notifications from database
+        let activeItems = fetchActiveNotifications(context: context)
+
+        // If there are active items but fewer pending (reinstall/update case), reschedule
+        if !activeItems.isEmpty && pending.count < activeItems.count {
+            await NotificationService.shared.rescheduleAllNotifications(items: activeItems)
+        }
+
+        // Check scheduled payment notifications
+        ScheduledPaymentNotificationService.shared.setContext(context)
+        await ScheduledPaymentNotificationService.shared.checkAndNotifyOverduePayments()
+        await ScheduledPaymentNotificationService.shared.checkAndNotifyDuePayments()
+        await ScheduledPaymentNotificationService.shared.checkAndNotifyUpcomingPayments()
+
+        // Cleanup old tracker entries
+        ScheduledPaymentNotificationTracker.shared.cleanupOldEntries()
+    }
+
+    /// Fetches active NotificationItems from database
+    private func fetchActiveNotifications(context: ModelContext) -> [NotificationItem] {
+        let descriptor = FetchDescriptor<NotificationItem>(
+            predicate: #Predicate { $0.isActive }
+        )
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: Error fetching active notifications: \(error)")
+            #endif
+            return []
+        }
     }
 }

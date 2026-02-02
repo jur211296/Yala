@@ -391,10 +391,10 @@
 "budgets.alerts.title" = "Alerts";
 "budgets.alerts.enable" = "Notify when reaching limit";
 "budgets.alerts.thresholds" = "Notify at:";
-"budgets.alerts.message.50" = "Budget \"%@\" at 50%%";
-"budgets.alerts.message.75" = "Budget \"%@\" at 75%%";
-"budgets.alerts.message.90" = "Warning: \"%@\" almost depleted";
-"budgets.alerts.message.100" = "Budget \"%@\" depleted";
+"budgets.alerts.message.50" = "Budget \"%@\" at 50%% — %@ of %@ spent";
+"budgets.alerts.message.75" = "Budget \"%@\" at 75%% — %@ of %@ spent";
+"budgets.alerts.message.90" = "Warning: \"%@\" almost depleted — %@ of %@";
+"budgets.alerts.message.100" = "Budget \"%@\" depleted — You spent %@ of %@";
 "budgets.new" = "New Budget";
 "budgets.edit" = "Edit Budget";
 "budgets.delete" = "Delete Budget";
@@ -1634,6 +1634,20 @@
 "notifications.section.custom" = "Custom";
 "notifications.budgetAlerts.title" = "Budget alerts";
 "notifications.budgetAlerts.hint" = "Get notified when approaching your budget limits";
+
+// Scheduled Payment Notifications (personalized)
+"notifications.scheduledPayment.dueToday" = "Due today: %@ for %@";
+"notifications.scheduledPayment.dueSoon" = "Due in %d day(s): %@ for %@";
+"notifications.scheduledPayment.overdue" = "Overdue payment: %@ for %@";
+"notifications.scheduledPayment.dueToday.income" = "Expected today: %@ from %@";
+"notifications.scheduledPayment.dueSoon.income" = "Expected in %d day(s): %@ from %@";
+"notifications.scheduledPayment.overdue.income" = "Pending income: %@ from %@";
+
+// Report Notifications (with real data)
+"notifications.report.balance" = "Your current balance: %@";
+"notifications.report.expenses" = "You spent: %@";
+"notifications.report.income" = "You received: %@";
+"notifications.report.topCategory" = "Your top expense: %@";
 
 // MARK: - iCloud Sync
 

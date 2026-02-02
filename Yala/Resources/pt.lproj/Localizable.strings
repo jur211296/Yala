@@ -389,10 +389,10 @@
 "budgets.alerts.title" = "Alertas";
 "budgets.alerts.enable" = "Notificar ao atingir limite";
 "budgets.alerts.thresholds" = "Notificar ao atingir:";
-"budgets.alerts.message.50" = "Orcamento \"%@\" em 50%%";
-"budgets.alerts.message.75" = "Orcamento \"%@\" em 75%%";
-"budgets.alerts.message.90" = "Atencao: \"%@\" quase esgotado";
-"budgets.alerts.message.100" = "Orcamento \"%@\" esgotado";
+"budgets.alerts.message.50" = "Orcamento \"%@\" em 50%% — %@ de %@ gastos";
+"budgets.alerts.message.75" = "Orcamento \"%@\" em 75%% — %@ de %@ gastos";
+"budgets.alerts.message.90" = "Atencao: \"%@\" quase esgotado — %@ de %@";
+"budgets.alerts.message.100" = "Orcamento \"%@\" esgotado — Voce gastou %@ de %@";
 "budgets.new" = "Novo orcamento";
 "budgets.edit" = "Editar orcamento";
 "budgets.delete" = "Eliminar orcamento";
@@ -1604,6 +1604,20 @@
 "notifications.section.custom" = "Personalizados";
 "notifications.budgetAlerts.title" = "Alertas de orcamento";
 "notifications.budgetAlerts.hint" = "Receba avisos ao se aproximar dos limites";
+
+// Scheduled Payment Notifications (personalized)
+"notifications.scheduledPayment.dueToday" = "Hoje vence: %@ por %@";
+"notifications.scheduledPayment.dueSoon" = "Em %d dia(s) vence: %@ por %@";
+"notifications.scheduledPayment.overdue" = "Pagamento vencido: %@ por %@";
+"notifications.scheduledPayment.dueToday.income" = "Hoje voce recebe: %@ de %@";
+"notifications.scheduledPayment.dueSoon.income" = "Em %d dia(s) voce recebe: %@ de %@";
+"notifications.scheduledPayment.overdue.income" = "Receita pendente: %@ de %@";
+
+// Report Notifications (with real data)
+"notifications.report.balance" = "Seu saldo atual: %@";
+"notifications.report.expenses" = "Voce gastou: %@";
+"notifications.report.income" = "Voce recebeu: %@";
+"notifications.report.topCategory" = "Seu maior gasto: %@";
 
 // Test report samples
 "notifications.testReport.balance" = "Seu saldo atual: R$ 1.250,00";

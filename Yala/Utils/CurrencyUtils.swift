@@ -725,6 +725,12 @@ enum CurrencyCode: String, CaseIterable, Identifiable, Hashable, Equatable {
         return allCases.first { $0.aliases.contains(upper) }
     }
 
+    /// Returns the symbol for a currency code string (e.g., "USD" → "$").
+    /// Falls back to "$" if code is not recognized.
+    static func symbol(for code: String) -> String {
+        CurrencyCode(rawValue: code.uppercased())?.symbol ?? "$"
+    }
+
     /// Agrupa todas las divisas por continente, ordenadas alfabéticamente dentro de cada grupo.
     static var groupedByContinent: [(continent: Continent, currencies: [CurrencyCode])] {
         let grouped = Dictionary(grouping: allCases) { $0.continent }
@@ -844,4 +850,16 @@ enum CurrencyDefaults {
 /// Now derives from CurrencyCode properties.
 func currencyInfo(for currency: CurrencyCode) -> (name: String, code: String, flag: String) {
     return (currency.localizedName, currency.rawValue, currency.flag)
+}
+
+// MARK: - CurrencyUtils Namespace
+
+/// Convenience namespace for currency utilities.
+/// Delegates to CurrencyCode for implementation.
+enum CurrencyUtils {
+    /// Returns the symbol for a currency code string (e.g., "USD" → "$").
+    /// Falls back to "$" if code is not recognized.
+    static func symbol(for code: String) -> String {
+        CurrencyCode.symbol(for: code)
+    }
 }
