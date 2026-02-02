@@ -146,6 +146,12 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - Falta añadirla al paso de onboarding de divisas secundarias
 - Referencia: `SecondaryCurrencyPickerSheet.swift` (commit cb01b06)
 
+**REVIEW-1: iCloud Sync - verificar funcionamiento**
+- El sync no parece funcionar al 100%
+- Investigar y entender el flujo actual de CloudKit
+- Verificar si los datos se sincronizan entre dispositivos
+- Archivos: `SwiftDataConfiguration.swift`, `SyncSettingsView.swift`
+
 ---
 
 **10.5.A: Bugs Críticos (4)** ✅ COMPLETADO
