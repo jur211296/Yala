@@ -1623,6 +1623,7 @@
 "icloud.statusSyncing" = "Syncing...";
 "icloud.statusDisabled" = "Disabled";
 "icloud.statusNoAccount" = "No iCloud Account";
+"icloud.statusError" = "Sync Error";
 "icloud.lastSync" = "Last sync: %@";
 "icloud.noAccountWarning" = "Sign in to iCloud in Settings to enable sync.";
 "icloud.restartRequired" = "Restart Required";

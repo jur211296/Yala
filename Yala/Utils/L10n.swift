@@ -2450,6 +2450,7 @@ enum L10n {
         static var statusSyncing: String { NSLocalizedString("icloud.statusSyncing", comment: "") }
         static var statusDisabled: String { NSLocalizedString("icloud.statusDisabled", comment: "") }
         static var statusNoAccount: String { NSLocalizedString("icloud.statusNoAccount", comment: "") }
+        static var statusError: String { NSLocalizedString("icloud.statusError", comment: "") }
         static func lastSync(_ time: String) -> String {
             String(format: NSLocalizedString("icloud.lastSync", comment: ""), time)
         }

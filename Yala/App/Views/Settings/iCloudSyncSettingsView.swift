@@ -28,15 +28,15 @@ struct iCloudSyncSettingsView: View {
                                 HStack(spacing: DS.Spacing.md) {
                                     Image(systemName: "icloud.fill")
                                         .font(.body)
-                                        .foregroundStyle(.blue)
-                                        .frame(width: 24)
+                                        .foregroundStyle(Color.electricIndigo)
+                                        .frame(width: DS.Spacing.xl)
 
                                     Text(L10n.iCloud.enableSync)
                                         .font(.body)
                                 }
                             }
                             .tint(Color.electricIndigo)
-                            .padding()
+                            .padding(DS.Spacing.lg)
                             .disabled(!syncService.isAccountAvailable)
                         }
                     }
@@ -74,7 +74,8 @@ struct iCloudSyncSettingsView: View {
         .alert(L10n.iCloud.restartRequired, isPresented: $showRestartAlert) {
             Button(L10n.iCloud.restartNow, role: .destructive) {
                 syncService.isEnabled = pendingToggleValue
-                // Force app restart
+                // Force app restart - required because ModelContainer is immutable
+                // and CloudKit configuration can only be set at launch time
                 exit(0)
             }
             Button(L10n.Action.cancel, role: .cancel) {}
@@ -91,7 +92,7 @@ struct iCloudSyncSettingsView: View {
             ZStack {
                 Circle()
                     .fill(statusColor.opacity(0.15))
-                    .frame(width: 48, height: 48)
+                    .frame(width: DS.Spacing.xxxxl, height: DS.Spacing.xxxxl)
 
                 Image(systemName: statusIcon)
                     .font(.title2)
@@ -112,7 +113,7 @@ struct iCloudSyncSettingsView: View {
 
             Spacer()
         }
-        .padding()
+        .padding(DS.Spacing.lg)
         .background(Color.yalaCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .padding(.horizontal, DS.Spacing.lg)
@@ -144,7 +145,7 @@ struct iCloudSyncSettingsView: View {
         switch syncService.syncStatus {
         case .idle: return L10n.iCloud.statusSynced
         case .syncing: return L10n.iCloud.statusSyncing
-        case .error: return "Error"
+        case .error(let message): return message.isEmpty ? L10n.iCloud.statusError : message
         case .disabled: return L10n.iCloud.statusDisabled
         case .noAccount: return L10n.iCloud.statusNoAccount
         }
