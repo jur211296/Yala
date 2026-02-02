@@ -31,6 +31,7 @@ struct OnboardingView: View {
     // Notification preferences
     @State private var selectedNotifications: Set<NotificationType> = []
     @State private var hasRequestedPermission: Bool = false
+    @State private var budgetAlertsEnabled: Bool = false
 
     // Callback when onboarding completes
     var onComplete: () -> Void
@@ -441,6 +442,7 @@ struct OnboardingView: View {
                     notificationGroupHeader(L10n.Notifications.sectionSystem)
                     notificationToggleRow(.scheduledPayments)
                     notificationToggleRow(.announcements)
+                    budgetAlertsToggleRow
                 }
                 .padding(.horizontal, DS.Spacing.xl)
             }
@@ -537,6 +539,64 @@ struct OnboardingView: View {
         } else {
             selectedNotifications.insert(type)
         }
+    }
+
+    private var budgetAlertsToggleRow: some View {
+        Button {
+            Task {
+                // Request permission on first activation
+                if !hasRequestedPermission && !budgetAlertsEnabled {
+                    let granted = await NotificationService.shared.requestPermission()
+                    hasRequestedPermission = true
+
+                    if !granted {
+                        return
+                    }
+                }
+                budgetAlertsEnabled.toggle()
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(Color.hotPink.opacity(0.2))
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.hotPink)
+                }
+
+                // Name and description
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Notifications.budgetAlertsTitle)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+
+                    Text(L10n.Notifications.budgetAlertsHint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                // Toggle indicator
+                Image(systemName: budgetAlertsEnabled ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(budgetAlertsEnabled ? Color.electricIndigo : .secondary)
+            }
+            .padding(DS.Spacing.md)
+            .background(budgetAlertsEnabled ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.md)
+                    .stroke(budgetAlertsEnabled ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func notificationName(for type: NotificationType) -> String {
@@ -774,6 +834,9 @@ struct OnboardingView: View {
 
         // Mark onboarding as complete
         defaults.set(true, forKey: "hasCompletedOnboarding")
+
+        // Budget alerts preference
+        defaults.set(budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
 
         defaults.synchronize()
 

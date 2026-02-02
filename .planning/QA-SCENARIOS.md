@@ -3687,12 +3687,22 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 
 ### 27.6 Toggle Global de Alertas (10.5.D.2)
 
-#### Escenario 27.6.1: Toggle global visible y OFF por defecto
-1. Ir a Settings > Notificaciones (sin haber completado onboarding de notificaciones)
-2. **Verificar:** Sección "Alertas de presupuesto" visible AL INICIO
-3. **Verificar:** Toggle está OFF por defecto
-4. **Verificar:** Icono rosa (hotPink) con chart.bar.fill
-5. **Verificar:** Hint: "Recibe avisos cuando..."
+#### Escenario 27.6.1: Toggle en onboarding
+1. Iniciar onboarding (data wipe o primera instalación)
+2. Avanzar hasta paso 6 (Notificaciones)
+3. **Verificar:** En sección "Sistema", hay opción "Alertas de presupuesto" con icono rosa
+4. Activar toggle de alertas de presupuesto
+5. Completar onboarding
+6. Ir a Settings > Notificaciones
+7. **Verificar:** Toggle está ON (guardó preferencia del onboarding)
+
+#### Escenario 27.6.1b: Toggle global visible y OFF por defecto
+1. Completar onboarding SIN activar alertas de presupuesto
+2. Ir a Settings > Notificaciones
+3. **Verificar:** Sección "Alertas de presupuesto" visible AL INICIO
+4. **Verificar:** Toggle está OFF (respeta preferencia del onboarding)
+5. **Verificar:** Icono rosa (hotPink) con chart.bar.fill
+6. **Verificar:** Hint: "Recibe avisos cuando..."
 
 #### Escenario 27.6.2: Toggle global OFF bloquea alertas
 **Precondición:** Presupuesto con alertas activas y umbral próximo a cruzar
@@ -3749,7 +3759,8 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 - [ ] 27.5.1 Presupuesto inactivo no notifica
 - [ ] 27.5.2 Reset de período funciona
 - [ ] 27.5.3 Nuevos umbrales funcionan
-- [ ] 27.6.1 Toggle global visible y OFF por defecto
+- [ ] 27.6.1 Toggle en onboarding (sección Sistema)
+- [ ] 27.6.1b Toggle global visible y OFF por defecto
 - [ ] 27.6.2 Toggle OFF bloquea alertas
 - [ ] 27.6.3 Toggle ON permite alertas
 - [ ] 27.6.4 Persistencia del toggle
