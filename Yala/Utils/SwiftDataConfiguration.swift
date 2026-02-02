@@ -13,7 +13,14 @@ import SwiftData
 enum SwiftDataConfiguration {
     // MARK: - CloudKit
 
-    static let cloudKitContainerIdentifier = "iCloud.com.jurgenschmidt.yala"
+    /// CloudKit container diferenciado por build (igual que databaseName).
+    static var cloudKitContainerIdentifier: String {
+        if let appGroup = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String,
+           appGroup.hasSuffix(".dev") {
+            return "iCloud.com.jurgenschmidt.yala.dev"
+        }
+        return "iCloud.com.jurgenschmidt.yala"
+    }
 
     /// User preference for iCloud sync (default: OFF)
     static var iCloudSyncEnabled: Bool {

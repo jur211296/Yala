@@ -13,6 +13,7 @@
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.com.jurgenschmidt.yala</string>
+		<string>iCloud.com.jurgenschmidt.yala.dev</string>
 	</array>
 </dict>
 </plist>
