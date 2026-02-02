@@ -14,6 +14,7 @@ struct NotificationsSettingsView: View {
     @Environment(\.openURL) private var openURL
 
     @State private var viewModel = NotificationsSettingsViewModel()
+    @AppStorage("budgetAlertsEnabled") private var budgetAlertsEnabled: Bool = false
 
     var body: some View {
         ZStack {
@@ -21,6 +22,10 @@ struct NotificationsSettingsView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
+                    // Budget alerts toggle (SIEMPRE visible, al inicio)
+                    budgetAlertsSection
+
+                    // Notificaciones configurables
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -181,6 +186,50 @@ struct NotificationsSettingsView: View {
             await NotificationService.shared.cancelNotification(for: notification)
         }
         viewModel.deleteNotification(notification)
+    }
+
+    // MARK: - Budget Alerts Section
+
+    private var budgetAlertsSection: some View {
+        HStack(spacing: DS.Spacing.md) {
+            // Icon (estilo NotificationCard)
+            ZStack {
+                Circle()
+                    .fill(Color.hotPink)
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+
+            // Content
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Notifications.budgetAlertsTitle)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                Text(L10n.Notifications.budgetAlertsHint)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            // Toggle
+            Toggle("", isOn: $budgetAlertsEnabled)
+                .labelsHidden()
+                .tint(Color.electricIndigo)
+        }
+        .padding(DS.Spacing.lg)
+        .background(Color.yalaCard)
+        .cornerRadius(DS.Radius.xl)
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
+                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 }
 

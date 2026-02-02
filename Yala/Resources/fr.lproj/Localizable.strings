@@ -1602,6 +1602,8 @@
 "notifications.section.reports" = "Rapports";
 "notifications.section.system" = "Système";
 "notifications.section.custom" = "Personnalisés";
+"notifications.budgetAlerts.title" = "Alertes de budget";
+"notifications.budgetAlerts.hint" = "Recevez des alertes a l'approche de vos limites";
 
 // Test report samples
 "notifications.testReport.balance" = "Ton solde actuel : 1 250,00 €";

@@ -1602,6 +1602,8 @@
 "notifications.section.reports" = "Berichte";
 "notifications.section.system" = "System";
 "notifications.section.custom" = "Benutzerdefiniert";
+"notifications.budgetAlerts.title" = "Budget-Warnungen";
+"notifications.budgetAlerts.hint" = "Erhalte Benachrichtigungen bei Budgetgrenzen";
 
 // Test report samples
 "notifications.testReport.balance" = "Dein aktueller Saldo: 1.250,00 €";

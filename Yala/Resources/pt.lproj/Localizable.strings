@@ -1602,6 +1602,8 @@
 "notifications.section.reports" = "Relatórios";
 "notifications.section.system" = "Sistema";
 "notifications.section.custom" = "Personalizados";
+"notifications.budgetAlerts.title" = "Alertas de orcamento";
+"notifications.budgetAlerts.hint" = "Receba avisos ao se aproximar dos limites";
 
 // Test report samples
 "notifications.testReport.balance" = "Seu saldo atual: R$ 1.250,00";

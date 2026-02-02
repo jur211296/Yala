@@ -3685,6 +3685,51 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 5. Crear gasto que cruce 75%
 6. **Verificar:** Notificación de 75% llega
 
+### 27.6 Toggle Global de Alertas (10.5.D.2)
+
+#### Escenario 27.6.1: Toggle global visible y OFF por defecto
+1. Ir a Settings > Notificaciones (sin haber completado onboarding de notificaciones)
+2. **Verificar:** Sección "Alertas de presupuesto" visible AL INICIO
+3. **Verificar:** Toggle está OFF por defecto
+4. **Verificar:** Icono rosa (hotPink) con chart.bar.fill
+5. **Verificar:** Hint: "Recibe avisos cuando..."
+
+#### Escenario 27.6.2: Toggle global OFF bloquea alertas
+**Precondición:** Presupuesto con alertas activas y umbral próximo a cruzar
+
+1. Ir a Settings > Notificaciones > Desactivar toggle de alertas
+2. Crear transacción que cruce umbral del presupuesto
+3. **Verificar:** NO se recibe notificación push
+4. Ir a editar el presupuesto
+5. **Verificar:** alertEnabled del presupuesto sigue siendo true (no se modificó)
+
+#### Escenario 27.6.3: Toggle global ON permite alertas
+**Precondición:** Toggle global ON, presupuesto con alertas activas
+
+1. Crear transacción que cruce umbral del presupuesto
+2. **Verificar:** Se recibe notificación push
+
+#### Escenario 27.6.4: Persistencia del toggle
+1. Desactivar toggle global
+2. Forzar cierre de app (kill desde multitarea)
+3. Reabrir app > Settings > Notificaciones
+4. **Verificar:** Toggle sigue OFF
+
+#### Escenario 27.6.5: Independencia de configuración individual
+1. Toggle global ON
+2. Editar presupuesto A > Desactivar alertas de ESE presupuesto
+3. **Verificar:** Toggle global permanece ON
+4. Crear transacción que cruce umbral de presupuesto A
+5. **Verificar:** NO se recibe notificación (respeta config individual)
+6. Crear transacción que cruce umbral de presupuesto B (con alertas ON)
+7. **Verificar:** SÍ se recibe notificación
+
+#### Escenario 27.6.6: Sección visible sin notificaciones
+1. Sin notificaciones configuradas (lista vacía)
+2. Ir a Settings > Notificaciones
+3. **Verificar:** Sección "Alertas de presupuesto" VISIBLE arriba del empty state
+4. **Verificar:** Toggle funcional
+
 ---
 
 ### Checklist de Validación Rápida 27.x
@@ -3704,6 +3749,12 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 - [ ] 27.5.1 Presupuesto inactivo no notifica
 - [ ] 27.5.2 Reset de período funciona
 - [ ] 27.5.3 Nuevos umbrales funcionan
+- [ ] 27.6.1 Toggle global visible y OFF por defecto
+- [ ] 27.6.2 Toggle OFF bloquea alertas
+- [ ] 27.6.3 Toggle ON permite alertas
+- [ ] 27.6.4 Persistencia del toggle
+- [ ] 27.6.5 Independencia config individual
+- [ ] 27.6.6 Sección visible sin notificaciones
 
 ---
 

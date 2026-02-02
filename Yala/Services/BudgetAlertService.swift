@@ -28,6 +28,10 @@ final class BudgetAlertService {
 
     /// Check all budgets with alerts enabled and notify if thresholds crossed
     func checkBudgetsAndNotify() async {
+        // Check global toggle first (default false, enabled via onboarding)
+        let globalEnabled = UserDefaults.standard.bool(forKey: "budgetAlertsEnabled")
+        guard globalEnabled else { return }
+
         guard !isChecking else { return }
         isChecking = true
         defer { isChecking = false }

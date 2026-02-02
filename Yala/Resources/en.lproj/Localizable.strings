@@ -1632,6 +1632,8 @@
 "notifications.section.reports" = "Reports";
 "notifications.section.system" = "System";
 "notifications.section.custom" = "Custom";
+"notifications.budgetAlerts.title" = "Budget alerts";
+"notifications.budgetAlerts.hint" = "Get notified when approaching your budget limits";
 
 // MARK: - iCloud Sync
 

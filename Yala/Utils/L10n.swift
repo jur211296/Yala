@@ -2427,6 +2427,10 @@ enum L10n {
         static var sectionReports: String { NSLocalizedString("notifications.section.reports", comment: "") }
         static var sectionSystem: String { NSLocalizedString("notifications.section.system", comment: "") }
         static var sectionCustom: String { NSLocalizedString("notifications.section.custom", comment: "") }
+
+        // Budget alerts
+        static var budgetAlertsTitle: String { NSLocalizedString("notifications.budgetAlerts.title", comment: "") }
+        static var budgetAlertsHint: String { NSLocalizedString("notifications.budgetAlerts.hint", comment: "") }
     }
 
     // MARK: - Weekday
