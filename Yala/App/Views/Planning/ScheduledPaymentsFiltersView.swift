@@ -249,7 +249,7 @@ struct ScheduledPaymentsFiltersView: View {
     private var categoriesSheetView: some View {
         CategorySelectorSheet(
             categories: categories,
-            subcategories: categories.flatMap { $0.subcategories },
+            subcategories: categories.flatMap { $0.subcategories ?? [] },
             selectedSubcategories: $viewModel.selectedSubcategories
         )
     }

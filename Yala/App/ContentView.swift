@@ -464,7 +464,7 @@ struct SearchContentView: View {
                     transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
                 let accountMatch =
                     transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = transaction.tags.contains {
+                let tagMatch = (transaction.tags ?? []).contains {
                     $0.name.lowercased().contains(lowercasedSearch)
                 }
                 return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
@@ -481,7 +481,7 @@ struct SearchContentView: View {
                 return transaction.subcategory?.nature.displayName.lowercased()
                     .contains(lowercasedSearch) ?? false
             case .tag:
-                return transaction.tags.contains { $0.name.lowercased().contains(lowercasedSearch) }
+                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
             }
         }
         .prefix(20)
@@ -504,7 +504,7 @@ struct SearchContentView: View {
                     transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
                 let accountMatch =
                     transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = transaction.tags.contains {
+                let tagMatch = (transaction.tags ?? []).contains {
                     $0.name.lowercased().contains(lowercasedSearch)
                 }
                 return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
@@ -521,7 +521,7 @@ struct SearchContentView: View {
                 return transaction.subcategory?.nature.displayName.lowercased().contains(
                     lowercasedSearch) ?? false
             case .tag:
-                return transaction.tags.contains { $0.name.lowercased().contains(lowercasedSearch) }
+                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
             }
         }.count
     }

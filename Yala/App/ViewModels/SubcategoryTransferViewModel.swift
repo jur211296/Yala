@@ -181,7 +181,7 @@ final class SubcategoryTransferViewModel {
 
         if unassignedSubcategory == nil {
             // Create "Unassigned" subcategory
-            let maxSortOrder = category.subcategories.map { $0.sortOrder }.max() ?? -1
+            let maxSortOrder = (category.subcategories ?? []).map { $0.sortOrder }.max() ?? -1
             let newSubcategory = Subcategory(
                 name: unassignedName,
                 colorHex: category.colorHex,

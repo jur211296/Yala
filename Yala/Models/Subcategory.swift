@@ -30,23 +30,23 @@ final class Subcategory {
     /// Relación inversa con la categoría padre (optional for CloudKit compatibility)
     var category: Category?
 
-    /// Relación inversa con budgets (muchos-a-muchos)
-    var budgets: [Budget] = []
+    /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
+    var budgets: [Budget]?
 
-    /// Inverse relationship: transactions linked to this subcategory
-    var transactions: [TransactionItem] = []
+    /// Inverse relationship: transactions linked to this subcategory - CloudKit: must be optional
+    var transactions: [TransactionItem]?
 
-    /// Inverse relationship: favorite payments linked to this subcategory
-    var favoritePayments: [FavoritePayment] = []
+    /// Inverse relationship: favorite payments linked to this subcategory - CloudKit: must be optional
+    var favoritePayments: [FavoritePayment]?
 
-    /// Inverse relationship: scheduled payments linked to this subcategory
-    var scheduledPayments: [ScheduledPayment] = []
+    /// Inverse relationship: scheduled payments linked to this subcategory - CloudKit: must be optional
+    var scheduledPayments: [ScheduledPayment]?
 
-    /// Inverse relationship: inbox drafts linked to this subcategory (CloudKit requirement)
-    var inboxDrafts: [InboxDraft]? = []
+    /// Inverse relationship: inbox drafts linked to this subcategory - CloudKit: must be optional
+    var inboxDrafts: [InboxDraft]?
 
-    /// Inverse relationship: merchant memories linked to this subcategory (CloudKit requirement)
-    var merchantMemories: [MerchantMemory]? = []
+    /// Inverse relationship: merchant memories linked to this subcategory - CloudKit: must be optional
+    var merchantMemories: [MerchantMemory]?
 
     init(
         name: String,

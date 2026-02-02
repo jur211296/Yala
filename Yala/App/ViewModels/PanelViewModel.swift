@@ -740,7 +740,7 @@ final class PanelViewModel {
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -783,7 +783,7 @@ final class PanelViewModel {
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -849,7 +849,7 @@ final class PanelViewModel {
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -938,7 +938,7 @@ final class PanelViewModel {
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -1529,8 +1529,8 @@ final class PanelViewModel {
         // Apply budget filters
 
         // Account filter
-        if !budget.accounts.isEmpty {
-            let accountIDs = Set(budget.accounts.map { $0.persistentModelID })
+        if let accounts = budget.accounts, !accounts.isEmpty {
+            let accountIDs = Set(accounts.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let accountID = transaction.account?.persistentModelID {
                     return accountIDs.contains(accountID)
@@ -1540,8 +1540,8 @@ final class PanelViewModel {
         }
 
         // Subcategory filter
-        if !budget.subcategories.isEmpty {
-            let subIDs = Set(budget.subcategories.map { $0.persistentModelID })
+        if let subcategories = budget.subcategories, !subcategories.isEmpty {
+            let subIDs = Set(subcategories.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let subID = transaction.subcategory?.persistentModelID {
                     return subIDs.contains(subID)
@@ -1551,10 +1551,10 @@ final class PanelViewModel {
         }
 
         // Tag filter
-        if !budget.tags.isEmpty {
-            let tagIDs = Set(budget.tags.map { $0.persistentModelID })
+        if let budgetTags = budget.tags, !budgetTags.isEmpty {
+            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 return !transactionTagIDs.isDisjoint(with: tagIDs)
             }
         }
@@ -1659,19 +1659,20 @@ final class PanelViewModel {
 
     /// Get display properties for budget
     private func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
-        guard !budget.subcategories.isEmpty else {
+        let subcategories = budget.subcategories ?? []
+        guard !subcategories.isEmpty else {
             return ("chart.pie.fill", "#6366F1")
         }
 
-        if budget.subcategories.count == 1, let subcategory = budget.subcategories.first {
+        if subcategories.count == 1, let subcategory = subcategories.first {
             let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "tag.fill"
             let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
             return (icon, color)
         }
 
-        let uniqueCategories = Set(budget.subcategories.map { $0.safeCategory.persistentModelID })
+        let uniqueCategories = Set(subcategories.map { $0.safeCategory.persistentModelID })
 
-        if uniqueCategories.count == 1, let firstSubcategory = budget.subcategories.first {
+        if uniqueCategories.count == 1, let firstSubcategory = subcategories.first {
             let category = firstSubcategory.safeCategory
             let icon = category.iconName ?? "tag.fill"
             let color = category.colorHex

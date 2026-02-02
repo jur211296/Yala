@@ -35,7 +35,7 @@ struct FavoriteRowView: View {
                     secondaryLine
 
                     // Line 3: Tags (if any)
-                    if !favorite.tags.isEmpty {
+                    if !(favorite.tags ?? []).isEmpty {
                         tagsRow
                     }
                 }
@@ -115,7 +115,7 @@ struct FavoriteRowView: View {
 
     private var tagsRow: some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array(favorite.tags.prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array((favorite.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
@@ -127,8 +127,8 @@ struct FavoriteRowView: View {
                     )
             }
 
-            if favorite.tags.count > 3 {
-                Text("+\(favorite.tags.count - 3)")
+            if (favorite.tags ?? []).count > 3 {
+                Text("+\((favorite.tags ?? []).count - 3)")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.secondary)
             }

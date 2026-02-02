@@ -115,7 +115,7 @@ struct ScheduledPaymentDraftService {
             date: payment.nextDueDate,
             account: payment.account,
             subcategory: payment.subcategory,
-            tags: payment.tags,
+            tags: payment.tags ?? [],
             sourceType: sourceType,
             rawText: nil,
             evidence: payment.note,

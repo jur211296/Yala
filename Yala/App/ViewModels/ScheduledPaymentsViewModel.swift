@@ -161,7 +161,7 @@ final class ScheduledPaymentsViewModel {
         // Apply tag filter
         if !selectedTags.isEmpty {
             filtered = filtered.filter { payment in
-                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
                 return !paymentTagIDs.isDisjoint(with: selectedTags)
             }
         }
@@ -286,7 +286,7 @@ final class ScheduledPaymentsViewModel {
         }
         if !selectedTags.isEmpty {
             filtered = filtered.filter { payment in
-                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
                 return !paymentTagIDs.isDisjoint(with: selectedTags)
             }
         }
@@ -322,7 +322,7 @@ final class ScheduledPaymentsViewModel {
         }
         if !selectedTags.isEmpty {
             filtered = filtered.filter { payment in
-                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
                 return !paymentTagIDs.isDisjoint(with: selectedTags)
             }
         }

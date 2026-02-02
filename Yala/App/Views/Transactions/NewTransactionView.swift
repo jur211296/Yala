@@ -1045,7 +1045,7 @@ struct NewTransactionView: View {
             return
         }
 
-        let allSubcategories = viewModel.categories.flatMap { $0.subcategories }
+        let allSubcategories = viewModel.categories.flatMap { $0.subcategories ?? [] }
 
         // Reset viewModel if opening for new transaction (prevents stale data from previous edit)
         if transactionToEdit == nil && viewModel.editingTransaction != nil {
@@ -1080,7 +1080,7 @@ struct NewTransactionView: View {
             viewModel.transactionDate = tx.date
 
             // Load tags
-            viewModel.selectedTags = tx.tags
+            viewModel.selectedTags = tx.tags ?? []
 
             // Load note
             viewModel.note = tx.note ?? ""
@@ -1208,7 +1208,7 @@ struct NewTransactionView: View {
         }
 
         // Set tags
-        viewModel.selectedTags = favorite.tags
+        viewModel.selectedTags = favorite.tags ?? []
 
         // Set note if available
         if let note = favorite.note, !note.isEmpty {

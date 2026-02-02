@@ -280,10 +280,10 @@ enum WidgetDataCache {
             if tx.category?.isIncome == true { continue }
 
             // Check if transaction matches budget filters
-            let matchesSubcategory = budget.subcategories.isEmpty ||
-                budget.subcategories.contains(where: { $0.name == tx.subcategory?.name })
-            let matchesAccount = budget.accounts.isEmpty ||
-                budget.accounts.contains(where: { $0.name == tx.account?.name })
+            let matchesSubcategory = (budget.subcategories ?? []).isEmpty ||
+                (budget.subcategories ?? []).contains(where: { $0.name == tx.subcategory?.name })
+            let matchesAccount = (budget.accounts ?? []).isEmpty ||
+                (budget.accounts ?? []).contains(where: { $0.name == tx.account?.name })
 
             if matchesSubcategory && matchesAccount {
                 spent += tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount

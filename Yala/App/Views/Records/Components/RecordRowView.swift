@@ -73,7 +73,7 @@ struct RecordRowView: View {
                     }
 
                     // Line 4: Tags (if any)
-                    if !record.tags.isEmpty {
+                    if !(record.tags ?? []).isEmpty {
                         tagsRow
                     }
                 }
@@ -162,7 +162,7 @@ struct RecordRowView: View {
 
     private var tagsRow: some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array(record.tags.prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array((record.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
@@ -174,8 +174,8 @@ struct RecordRowView: View {
                     )
             }
 
-            if record.tags.count > 3 {
-                Text("+\(record.tags.count - 3)")
+            if (record.tags ?? []).count > 3 {
+                Text("+\((record.tags ?? []).count - 3)")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.secondary)
             }

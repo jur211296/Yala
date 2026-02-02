@@ -314,8 +314,8 @@ struct TransactionsExportService {
 
             // 7) Filtro por etiquetas (nombres).
             if !tagFilterSet.isEmpty {
-                // En tu modelo tags es [Tag] no opcional.
-                let transactionTagNames = transaction.tags.map { $0.name.lowercased() }
+                // En tu modelo tags es [Tag]? opcional para CloudKit.
+                let transactionTagNames = (transaction.tags ?? []).map { $0.name.lowercased() }
                 let transactionTagSet = Set(transactionTagNames)
 
                 // Para que pase, la transacción debe contener al menos una de las etiquetas seleccionadas.
@@ -390,7 +390,7 @@ struct TransactionsExportService {
 
                 case .tags:
                     // Etiquetas separadas por ';'.
-                    let names = transaction.tags.map { $0.name }
+                    let names = (transaction.tags ?? []).map { $0.name }
                     value = names.joined(separator: ";")
 
                 case .note:
@@ -505,7 +505,7 @@ struct TransactionsExportService {
                 case .subcategory:
                     value = transaction.subcategory?.name ?? ""
                 case .tags:
-                    let names = transaction.tags.map { $0.name }
+                    let names = (transaction.tags ?? []).map { $0.name }
                     value = names.joined(separator: ";")
                 case .note:
                     value = transaction.note ?? ""

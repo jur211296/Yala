@@ -379,7 +379,7 @@ struct FavoriteEditorView: View {
         note = favorite.note ?? ""
         selectedAccount = favorite.account
         selectedSubcategory = favorite.subcategory
-        selectedTags = favorite.tags
+        selectedTags = favorite.tags ?? []
         if let natureRaw = favorite.natureOverride {
             selectedNature = SubcategoryNature(rawValue: natureRaw)
         }

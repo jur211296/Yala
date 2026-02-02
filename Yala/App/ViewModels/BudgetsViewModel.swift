@@ -200,8 +200,8 @@ final class BudgetsViewModel {
         // Apply budget filters
 
         // Account filter
-        if !budget.accounts.isEmpty {
-            let accountIDs = Set(budget.accounts.map { $0.persistentModelID })
+        if let accounts = budget.accounts, !accounts.isEmpty {
+            let accountIDs = Set(accounts.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let accountID = transaction.account?.persistentModelID {
                     return accountIDs.contains(accountID)
@@ -211,8 +211,8 @@ final class BudgetsViewModel {
         }
 
         // Subcategory filter
-        if !budget.subcategories.isEmpty {
-            let subIDs = Set(budget.subcategories.map { $0.persistentModelID })
+        if let subcategories = budget.subcategories, !subcategories.isEmpty {
+            let subIDs = Set(subcategories.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let subID = transaction.subcategory?.persistentModelID {
                     return subIDs.contains(subID)
@@ -222,10 +222,10 @@ final class BudgetsViewModel {
         }
 
         // Tag filter
-        if !budget.tags.isEmpty {
-            let tagIDs = Set(budget.tags.map { $0.persistentModelID })
+        if let budgetTags = budget.tags, !budgetTags.isEmpty {
+            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 return !transactionTagIDs.isDisjoint(with: tagIDs)
             }
         }
@@ -248,7 +248,7 @@ final class BudgetsViewModel {
         // Sum amounts based on budget account configuration:
         // - If exactly 1 account: use transaction.amount (same currency as budget)
         // - If 0 or multiple accounts: use amountInPreferredCurrency (normalized)
-        let useBudgetCurrency = budget.accounts.count == 1
+        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
 
         let total = filtered.reduce(0.0) { sum, transaction in
             let amount = useBudgetCurrency ? transaction.amount : transaction.amountInPreferredCurrency
@@ -352,12 +352,13 @@ final class BudgetsViewModel {
     /// Determine display icon and color for a budget
     func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
         // Extract data for pure logic function
-        let subcategoryCount = budget.subcategories.count
-        let firstSubcategory = budget.subcategories.first
+        let subcategories = budget.subcategories ?? []
+        let subcategoryCount = subcategories.count
+        let firstSubcategory = subcategories.first
         let firstSubcategoryIcon = firstSubcategory?.iconName ?? firstSubcategory?.safeCategory.iconName
         let firstCategoryColor = firstSubcategory?.colorHex ?? firstSubcategory?.safeCategory.colorHex
         let firstCategoryIcon = firstSubcategory?.safeCategory.iconName
-        let uniqueCategoryCount = Set(budget.subcategories.map { $0.safeCategory.persistentModelID }).count
+        let uniqueCategoryCount = Set(subcategories.map { $0.safeCategory.persistentModelID }).count
 
         return calculateDisplayProperties(
             subcategoryCount: subcategoryCount,

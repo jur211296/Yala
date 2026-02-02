@@ -380,18 +380,18 @@ class SessionState {
         selectedBudgetID = budgetID
 
         // Apply account filters
-        if !budget.accounts.isEmpty {
-            selectedAccountIDs = Set(budget.accounts.map { $0.persistentModelID })
+        if let accounts = budget.accounts, !accounts.isEmpty {
+            selectedAccountIDs = Set(accounts.map { $0.persistentModelID })
         }
 
         // Apply subcategory filters (use IDs to handle duplicate names across categories)
-        if !budget.subcategories.isEmpty {
-            selectedSubcategoryIDs = Set(budget.subcategories.map { $0.persistentModelID })
+        if let subcategories = budget.subcategories, !subcategories.isEmpty {
+            selectedSubcategoryIDs = Set(subcategories.map { $0.persistentModelID })
         }
 
         // Apply tag filters
-        if !budget.tags.isEmpty {
-            selectedTags = Set(budget.tags.map { $0.persistentModelID })
+        if let tags = budget.tags, !tags.isEmpty {
+            selectedTags = Set(tags.map { $0.persistentModelID })
         }
 
         // Apply nature filters (parse comma-separated string)

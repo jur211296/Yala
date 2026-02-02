@@ -768,7 +768,7 @@ struct InboxDraftEditSheet: View {
         transactionDate = draft.effectiveDate
         selectedAccount = draft.account
         selectedSubcategory = draft.subcategory
-        selectedTags = draft.tags
+        selectedTags = draft.tags ?? []
 
         if let amt = draft.amount {
             amountString = String(format: "%.2f", abs(amt))

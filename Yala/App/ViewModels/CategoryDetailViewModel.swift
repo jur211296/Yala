@@ -145,7 +145,7 @@ final class CategoryDetailViewModel {
         category.colorHex = colorHex
 
         // Enforce color inheritance for all subcategories
-        for subcategory in category.subcategories {
+        for subcategory in category.subcategories ?? [] {
             subcategory.colorHex = colorHex
         }
 

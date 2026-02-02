@@ -96,7 +96,7 @@ struct InboxDraftRowView: View {
         }
 
         // Line 3: Tags (if any) - only for pending drafts (archived may have invalid tag references)
-        if draft.status == .pending && !draft.tags.isEmpty {
+        if draft.status == .pending && !(draft.tags ?? []).isEmpty {
             tagsRow
         }
     }
@@ -158,7 +158,7 @@ struct InboxDraftRowView: View {
 
     private var tagsRow: some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array(draft.tags.prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array((draft.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
@@ -170,8 +170,8 @@ struct InboxDraftRowView: View {
                     )
             }
 
-            if draft.tags.count > 3 {
-                Text("+\(draft.tags.count - 3)")
+            if (draft.tags ?? []).count > 3 {
+                Text("+\((draft.tags ?? []).count - 3)")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.secondary)
             }

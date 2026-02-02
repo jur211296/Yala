@@ -160,7 +160,7 @@ struct AutocompleteHelper {
         // Sort by recent usage
         var tagUsage: [PersistentIdentifier: Date] = [:]
         for transaction in recentTransactions.prefix(100) {
-            for tag in transaction.tags {
+            for tag in transaction.tags ?? [] {
                 if tagUsage[tag.persistentModelID] == nil {
                     tagUsage[tag.persistentModelID] = transaction.date
                 }

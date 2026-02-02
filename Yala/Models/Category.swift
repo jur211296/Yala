@@ -27,16 +27,16 @@ final class Category {
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
 
-    /// Relación 1 -> N con subcategorías
+    /// Relación 1 -> N con subcategorías - CloudKit: must be optional
     /// NOTE: Using nullify instead of cascade - manual deletion handles subcategories to avoid SwiftUI @Query conflicts
     @Relationship(deleteRule: .nullify, inverse: \Subcategory.category)
-    var subcategories: [Subcategory]
+    var subcategories: [Subcategory]?
 
-    /// Inverse relationship: transactions linked to this category
-    var transactions: [TransactionItem] = []
+    /// Inverse relationship: transactions linked to this category - CloudKit: must be optional
+    var transactions: [TransactionItem]?
 
-    /// Inverse relationship: budgets linked to this category (CloudKit requirement)
-    var budgets: [Budget]? = []
+    /// Inverse relationship: budgets linked to this category - CloudKit: must be optional
+    var budgets: [Budget]?
 
     init(
         name: String,

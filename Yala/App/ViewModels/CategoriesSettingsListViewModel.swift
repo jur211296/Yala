@@ -105,7 +105,7 @@ final class CategoriesSettingsListViewModel {
         }
 
         // Delete subcategories first to avoid SwiftUI @Query conflicts
-        for subcategory in category.subcategories {
+        for subcategory in category.subcategories ?? [] {
             context.delete(subcategory)
         }
         context.delete(category)

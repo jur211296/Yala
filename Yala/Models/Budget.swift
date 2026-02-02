@@ -30,15 +30,15 @@ final class Budget {
     var endDate: Date?      // For unique budgets
     var currentPeriodStart: Date?  // For tracking which week/month/year
 
-    // Many-to-many relationships (explicit inverse for proper SwiftData handling)
+    // Many-to-many relationships - CloudKit: must be optional
     @Relationship(inverse: \Account.budgets)
-    var accounts: [Account]
+    var accounts: [Account]?
 
     @Relationship(inverse: \Subcategory.budgets)
-    var subcategories: [Subcategory]
+    var subcategories: [Subcategory]?
 
     @Relationship(inverse: \Tag.budgets)
-    var tags: [Tag]
+    var tags: [Tag]?
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
     var isActive: Bool = true
     var createdAt: Date = Date()

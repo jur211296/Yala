@@ -27,7 +27,8 @@ final class TransactionItem {
     @Relationship(inverse: \Account.transactions)
     var account: Account?
 
-    var tags: [Tag] = []
+    /// CloudKit: must be optional
+    var tags: [Tag]?
 
     /// Inverse relationship: draft that created this transaction (CloudKit requirement)
     var approvedDraft: InboxDraft?

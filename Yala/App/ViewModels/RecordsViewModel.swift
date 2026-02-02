@@ -402,11 +402,13 @@ final class RecordsViewModel: Filterable {
     func bulkAddTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
+            var currentTags = transaction.tags ?? []
             for tag in tags {
-                if !transaction.tags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                    transaction.tags.append(tag)
+                if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
+                    currentTags.append(tag)
                 }
             }
+            transaction.tags = currentTags
         }
         do {
             try context.save()
@@ -420,7 +422,9 @@ final class RecordsViewModel: Filterable {
         let transactions = getSelectedTransactions(context: context)
         let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
         for transaction in transactions {
-            transaction.tags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+            var currentTags = transaction.tags ?? []
+            currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+            transaction.tags = currentTags
         }
         do {
             try context.save()

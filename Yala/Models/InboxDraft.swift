@@ -53,9 +53,9 @@ final class InboxDraft: Identifiable {
     @Relationship(deleteRule: .nullify, inverse: \Subcategory.inboxDrafts)
     var subcategory: Subcategory?
 
-    /// Etiquetas asociadas (relación N:N) - CloudKit: default required
+    /// Etiquetas asociadas (relación N:N) - CloudKit: must be optional
     @Relationship(deleteRule: .nullify)
-    var tags: [Tag] = []
+    var tags: [Tag]?
 
     /// Transacción creada al aprobar (para sincronización)
     /// Se establece deleteRule: .nullify para que si se elimina la transacción,

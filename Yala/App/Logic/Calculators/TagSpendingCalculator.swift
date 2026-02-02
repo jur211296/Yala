@@ -37,7 +37,7 @@ struct TagSpendingCalculator {
             guard transaction.balanceAdjustmentType == nil else { return false }
             let nature: TransactionNature = category.isIncome ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }
-            guard !transaction.tags.isEmpty else { return false }
+            guard !(transaction.tags ?? []).isEmpty else { return false }
             return interval.contains(transaction.date)
         }
 
@@ -48,7 +48,7 @@ struct TagSpendingCalculator {
 
         for transaction in filteredTransactions {
             let absAmount = abs(transaction.amountInPreferredCurrency)
-            for tag in transaction.tags {
+            for tag in transaction.tags ?? [] {
                 let tagID = tag.persistentModelID
                 tagTotals[tagID, default: 0] += absAmount
                 tagMap[tagID] = tag

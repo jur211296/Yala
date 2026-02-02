@@ -616,9 +616,9 @@ struct BudgetEditorView: View {
         }
 
         // Convert arrays to sets of PersistentIdentifiers
-        selectedAccounts = Set(budget.accounts.map { $0.persistentModelID })
-        selectedSubcategories = Set(budget.subcategories.map { $0.persistentModelID })
-        selectedTags = Set(budget.tags.map { $0.persistentModelID })
+        selectedAccounts = Set((budget.accounts ?? []).map { $0.persistentModelID })
+        selectedSubcategories = Set((budget.subcategories ?? []).map { $0.persistentModelID })
+        selectedTags = Set((budget.tags ?? []).map { $0.persistentModelID })
 
         // Parse natures string
         if let naturesString = budget.natures {

@@ -33,9 +33,9 @@ final class FavoritePayment {
     @Relationship(inverse: \Subcategory.favoritePayments)
     var subcategory: Subcategory?
 
-    /// Optional linked tags (many-to-many) - CloudKit: default required
+    /// Optional linked tags (many-to-many) - CloudKit: must be optional
     @Relationship(inverse: \Tag.favoritePayments)
-    var tags: [Tag] = []
+    var tags: [Tag]?
 
     /// Optional nature override (nil = use subcategory's nature)
     var natureOverride: String?

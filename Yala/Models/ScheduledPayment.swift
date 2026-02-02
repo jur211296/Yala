@@ -47,9 +47,9 @@ final class ScheduledPayment {
     @Relationship(inverse: \Subcategory.scheduledPayments)
     var subcategory: Subcategory?
 
-    /// Linked tags (many-to-many) - CloudKit: default required
+    /// Linked tags (many-to-many) - CloudKit: must be optional
     @Relationship(inverse: \Tag.scheduledPayments)
-    var tags: [Tag] = []
+    var tags: [Tag]?
 
     /// Optional nature override (nil = use subcategory's nature)
     var natureOverride: String?

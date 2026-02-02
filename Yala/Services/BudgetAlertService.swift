@@ -96,7 +96,7 @@ final class BudgetAlertService {
         )
 
         // Get currency for notification
-        let currencyCode = budget.accounts.first?.currencyCode
+        let currencyCode = budget.accounts?.first?.currencyCode
             ?? UserDefaults.standard.string(forKey: "preferredCurrency")
             ?? "USD"
 
@@ -159,26 +159,26 @@ final class BudgetAlertService {
         var filtered = transactions.filter { interval.contains($0.date) }
 
         // Account filter
-        if !budget.accounts.isEmpty {
-            let accountIDs = Set(budget.accounts.map { $0.persistentModelID })
+        if let accounts = budget.accounts, !accounts.isEmpty {
+            let accountIDs = Set(accounts.map { $0.persistentModelID })
             filtered = filtered.filter { tx in
                 tx.account.map { accountIDs.contains($0.persistentModelID) } ?? false
             }
         }
 
         // Subcategory filter
-        if !budget.subcategories.isEmpty {
-            let subIDs = Set(budget.subcategories.map { $0.persistentModelID })
+        if let subcategories = budget.subcategories, !subcategories.isEmpty {
+            let subIDs = Set(subcategories.map { $0.persistentModelID })
             filtered = filtered.filter { tx in
                 tx.subcategory.map { subIDs.contains($0.persistentModelID) } ?? false
             }
         }
 
         // Tag filter
-        if !budget.tags.isEmpty {
-            let tagIDs = Set(budget.tags.map { $0.persistentModelID })
+        if let budgetTags = budget.tags, !budgetTags.isEmpty {
+            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
             filtered = filtered.filter { tx in
-                !Set(tx.tags.map { $0.persistentModelID }).isDisjoint(with: tagIDs)
+                !Set((tx.tags ?? []).map { $0.persistentModelID }).isDisjoint(with: tagIDs)
             }
         }
 
@@ -193,7 +193,7 @@ final class BudgetAlertService {
         filtered = filtered.filter { $0.category?.isIncome == false }
 
         // Sum amounts
-        let useBudgetCurrency = budget.accounts.count == 1
+        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
         return filtered.reduce(0.0) { sum, tx in
             let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
             return sum + abs(amount)

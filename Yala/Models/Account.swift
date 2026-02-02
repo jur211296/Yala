@@ -24,20 +24,20 @@ final class Account {
     var excludeFromStatistics: Bool = false
     var isArchived: Bool = false
 
-    /// Relación inversa con budgets (muchos-a-muchos)
-    var budgets: [Budget] = []
+    /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
+    var budgets: [Budget]?
 
-    /// Inverse relationship: transactions linked to this account
-    var transactions: [TransactionItem] = []
+    /// Inverse relationship: transactions linked to this account - CloudKit: must be optional
+    var transactions: [TransactionItem]?
 
-    /// Inverse relationship: favorite payments linked to this account
-    var favoritePayments: [FavoritePayment] = []
+    /// Inverse relationship: favorite payments linked to this account - CloudKit: must be optional
+    var favoritePayments: [FavoritePayment]?
 
-    /// Inverse relationship: scheduled payments linked to this account
-    var scheduledPayments: [ScheduledPayment] = []
+    /// Inverse relationship: scheduled payments linked to this account - CloudKit: must be optional
+    var scheduledPayments: [ScheduledPayment]?
 
-    /// Inverse relationship: inbox drafts linked to this account (CloudKit requirement)
-    var inboxDrafts: [InboxDraft]? = []
+    /// Inverse relationship: inbox drafts linked to this account - CloudKit: must be optional
+    var inboxDrafts: [InboxDraft]?
 
     init(
         name: String,

@@ -156,11 +156,13 @@ final class TransactionService {
     func bulkAddTags(_ transactions: [TransactionItem], tags: [Tag]) throws {
         let context = try requireContext()
         for transaction in transactions {
+            var currentTags = transaction.tags ?? []
             for tag in tags {
-                if !transaction.tags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                    transaction.tags.append(tag)
+                if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
+                    currentTags.append(tag)
                 }
             }
+            transaction.tags = currentTags
         }
         try context.save()
     }
@@ -173,7 +175,9 @@ final class TransactionService {
         let context = try requireContext()
         let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
         for transaction in transactions {
-            transaction.tags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+            var currentTags = transaction.tags ?? []
+            currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+            transaction.tags = currentTags
         }
         try context.save()
     }

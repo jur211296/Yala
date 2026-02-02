@@ -19,21 +19,22 @@ final class Tag {
     var isActive: Bool = true
     var createdAt: Date = Date()
 
+    /// CloudKit: all relationships must be optional
     @Relationship(deleteRule: .nullify, inverse: \TransactionItem.tags)
-    var transactions: [TransactionItem] = []
+    var transactions: [TransactionItem]?
 
-    /// Relación inversa con budgets (muchos-a-muchos)
-    var budgets: [Budget] = []
+    /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
+    var budgets: [Budget]?
 
-    /// Relación inversa con pagos favoritos (muchos-a-muchos)
-    var favoritePayments: [FavoritePayment] = []
+    /// Relación inversa con pagos favoritos (muchos-a-muchos) - CloudKit: must be optional
+    var favoritePayments: [FavoritePayment]?
 
-    /// Relación inversa con pagos planificados (muchos-a-muchos)
-    var scheduledPayments: [ScheduledPayment] = []
+    /// Relación inversa con pagos planificados (muchos-a-muchos) - CloudKit: must be optional
+    var scheduledPayments: [ScheduledPayment]?
 
-    /// Relación inversa con borradores de bandeja (muchos-a-muchos)
+    /// Relación inversa con borradores de bandeja (muchos-a-muchos) - CloudKit: must be optional
     @Relationship(inverse: \InboxDraft.tags)
-    var inboxDrafts: [InboxDraft] = []
+    var inboxDrafts: [InboxDraft]?
 
     /// Paleta de 15 colores visibles en light y dark mode (evita negros/blancos)
     static let defaultColors: [String] = [

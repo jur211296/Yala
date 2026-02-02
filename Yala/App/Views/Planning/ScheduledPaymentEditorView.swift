@@ -818,7 +818,7 @@ struct ScheduledPaymentEditorView: View {
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
         selectedAccount = payment.account
         selectedSubcategory = payment.subcategory
-        selectedTags = Set(payment.tags.map { $0.persistentModelID })
+        selectedTags = Set((payment.tags ?? []).map { $0.persistentModelID })
 
         // Recurrence
         isRecurring = payment.isRecurring
