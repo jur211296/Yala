@@ -389,7 +389,7 @@ final class RecordsViewModel: Filterable {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
             transaction.subcategory = subcategory
-            transaction.category = subcategory.category
+            transaction.category = subcategory.safeCategory
         }
         do {
             try context.save()

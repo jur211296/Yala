@@ -3,12 +3,38 @@
 //  Yala
 //
 //  Configuración centralizada de SwiftData para aislamiento entre builds.
+//  Incluye soporte opcional para CloudKit sync.
 //
 
+import CloudKit
 import Foundation
 import SwiftData
 
 enum SwiftDataConfiguration {
+    // MARK: - CloudKit
+
+    /// CloudKit container diferenciado por build (igual que databaseName).
+    static var cloudKitContainerIdentifier: String {
+        if let appGroup = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String,
+           appGroup.hasSuffix(".dev") {
+            return "iCloud.com.jurgenschmidt.yala.dev"
+        }
+        return "iCloud.com.jurgenschmidt.yala"
+    }
+
+    /// User preference for iCloud sync (default: OFF)
+    static var iCloudSyncEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "iCloudSyncEnabled") }
+        set { UserDefaults.standard.set(newValue, forKey: "iCloudSyncEnabled") }
+    }
+
+    /// Check if iCloud account is available
+    static func isICloudAvailable() -> Bool {
+        FileManager.default.ubiquityIdentityToken != nil
+    }
+
+    // MARK: - Database
+
     /// Database name diferenciado por build.
     /// Usa APP_GROUP_IDENTIFIER de Info.plist (consistente con SharedContainerService).
     static var databaseName: String {
@@ -37,8 +63,15 @@ enum SwiftDataConfiguration {
         ])
     }
 
-    /// ModelConfiguration lista para usar.
+    /// ModelConfiguration - with or without CloudKit based on user preference
     static var configuration: ModelConfiguration {
-        ModelConfiguration(databaseName)
+        if iCloudSyncEnabled && isICloudAvailable() {
+            return ModelConfiguration(
+                databaseName,
+                cloudKitDatabase: .private(cloudKitContainerIdentifier)
+            )
+        } else {
+            return ModelConfiguration(databaseName)
+        }
     }
 }

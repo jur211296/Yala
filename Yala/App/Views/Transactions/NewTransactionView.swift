@@ -399,7 +399,7 @@ struct NewTransactionView: View {
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
                     // Category chip (read-only, styled like NatureEditChip)
-                    let category = subcategory.category
+                    let category = subcategory.safeCategory
                     let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
@@ -832,7 +832,7 @@ struct NewTransactionView: View {
             return nil
         }
         // Use subcategory color if it has one, otherwise use category color
-        let colorHex = subcategory.colorHex ?? subcategory.category.colorHex
+        let colorHex = subcategory.colorHex ?? subcategory.safeCategory.colorHex
         return Color(hex: colorHex)
     }
 
@@ -1018,8 +1018,8 @@ struct NewTransactionView: View {
                 currencyCode: viewModel.effectiveCurrencyCode,
                 subcategoryName: viewModel.selectedSubcategory?.name,
                 subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
-                categoryName: viewModel.selectedSubcategory?.category.name,
-                categoryColorHex: viewModel.selectedSubcategory?.category.colorHex,
+                categoryName: viewModel.selectedSubcategory?.safeCategory.name,
+                categoryColorHex: viewModel.selectedSubcategory?.safeCategory.colorHex,
                 tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
                 nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature,
                 isTransfer: viewModel.isTransfer,
@@ -1070,7 +1070,7 @@ struct NewTransactionView: View {
             viewModel.selectedSubcategory = tx.subcategory
 
             // Determine transaction type from amount sign and category
-            if tx.subcategory?.category.isIncome == true || tx.amount > 0 {
+            if tx.subcategory?.safeCategory.isIncome == true || tx.amount > 0 {
                 viewModel.transactionType = .income
             } else {
                 viewModel.transactionType = .expense

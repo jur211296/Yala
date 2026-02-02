@@ -950,11 +950,11 @@ struct VoiceRecordingView: View {
         }
 
         let expenseNames = subcategories
-            .filter { !$0.category.isIncome }
+            .filter { !$0.safeCategory.isIncome }
             .map { $0.name }
 
         let incomeNames = subcategories
-            .filter { $0.category.isIncome }
+            .filter { $0.safeCategory.isIncome }
             .map { $0.name }
 
         return (expenseNames, incomeNames)
@@ -992,7 +992,7 @@ struct VoiceRecordingView: View {
 
         // Filter by expense type (subcategories in expense categories for expenses, income for income)
         let filtered = subcategories.filter { sub in
-            let category = sub.category
+            let category = sub.safeCategory
             return isExpense ? !category.isIncome : category.isIncome
         }
 

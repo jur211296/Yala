@@ -327,10 +327,10 @@ struct ScheduledPaymentsWidget: View {
                 }
 
                 let icon = payment.subcategory?.iconName
-                    ?? payment.subcategory?.category.iconName
+                    ?? payment.subcategory?.category?.iconName
                     ?? "creditcard.fill"
                 let color = payment.subcategory?.colorHex
-                    ?? payment.subcategory?.category.colorHex
+                    ?? payment.subcategory?.category?.colorHex
                     ?? "#6366F1"
 
                 let dueDateLabel = formatDueDate(days: days, date: payment.nextDueDate)

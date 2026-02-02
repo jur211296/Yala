@@ -371,7 +371,7 @@ struct ScheduledPaymentsListView: View {
     }
 
     private func paymentPill(_ payment: ScheduledPayment, isSelected: Bool = false) -> some View {
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
+        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
 
         return HStack(spacing: 2) {
             Circle()
@@ -476,8 +476,8 @@ struct ScheduledPaymentsListView: View {
     }
 
     private func calendarPaymentRow(payment: ScheduledPayment, dates: [Date]) -> some View {
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
-        let icon = payment.subcategory?.iconName ?? payment.subcategory?.category.iconName ?? "calendar.badge.clock"
+        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
+        let icon = payment.subcategory?.iconName ?? payment.subcategory?.category?.iconName ?? "calendar.badge.clock"
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "d MMM"

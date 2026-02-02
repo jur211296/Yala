@@ -3710,3 +3710,68 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 *Última actualización: 2026-02-02 - Sección 27 (Fase 10.5.D.1)*
 *Total escenarios: ~380*
 *Total verificaciones: ~750+*
+
+## 30. iCloud Sync (10.5.G.1)
+
+### 30.1 Primera activación
+1. Ir a Perfil > Sincronización iCloud
+2. Verificar estado "Desactivado"
+3. Activar toggle
+4. Verificar alert de reinicio
+5. Confirmar → app se cierra
+6. Reabrir → verificar estado "Sincronizado" o "Sincronizando"
+
+### 30.2 Sin cuenta iCloud
+1. Cerrar sesión de iCloud en Ajustes del sistema
+2. Abrir Yala > Perfil > Sincronización iCloud
+3. Verificar toggle deshabilitado
+4. Verificar mensaje de advertencia
+5. Verificar estado "Sin cuenta iCloud"
+
+### 30.3 Sync entre dispositivos
+1. Device A: Activar iCloud sync
+2. Device B: Instalar Yala con misma cuenta iCloud, activar sync
+3. Device A: Crear transacción
+4. Device B: Verificar transacción aparece (puede tomar 1-2 min)
+5. Verificar categorías y cuentas sincronizadas
+
+### 30.4 Desactivar sync
+1. Con iCloud activo y datos sincronizados
+2. Desactivar toggle
+3. Confirmar reinicio
+4. Verificar datos locales preservados
+5. Crear nueva transacción
+6. Verificar NO sincroniza a otro device
+
+### 30.5 Conflicto (last-write-wins)
+1. Device A: Editar descripción de transacción a "AAA"
+2. Inmediatamente Device B: Editar misma transacción a "BBB"
+3. Esperar sync
+4. Ambos devices: Verificar que tienen el mismo valor (el último en sincronizar gana)
+
+### 30.6 ExchangeRate sin duplicados
+1. Verificar que tipos de cambio funcionan normalmente
+2. Forzar recarga de tipos de cambio
+3. Verificar no hay duplicados en la base de datos
+
+---
+
+### Checklist de Validación Rápida 30.x
+
+- [ ] 30.1.1 Estado inicial "Desactivado"
+- [ ] 30.1.2 Toggle muestra alert de reinicio
+- [ ] 30.1.3 App reinicia correctamente
+- [ ] 30.2.1 Sin cuenta: toggle deshabilitado
+- [ ] 30.2.2 Sin cuenta: mensaje de advertencia visible
+- [ ] 30.3.1 Transacciones sincronizan entre devices
+- [ ] 30.3.2 Categorías/cuentas sincronizan
+- [ ] 30.4.1 Desactivar preserva datos locales
+- [ ] 30.4.2 Nuevos datos no sincronizan después de desactivar
+- [ ] 30.5.1 Conflictos se resuelven (last-write-wins)
+- [ ] 30.6.1 ExchangeRate no tiene duplicados
+
+---
+
+*Última actualización: 2026-02-02 - Sección 30 (Fase 10.5.G.1)*
+*Total escenarios: ~391*
+*Total verificaciones: ~761+*

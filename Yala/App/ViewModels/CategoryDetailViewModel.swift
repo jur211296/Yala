@@ -121,7 +121,7 @@ final class CategoryDetailViewModel {
             let allTransactions = try context.fetch(descriptor)
             return allTransactions.filter { transaction in
                 guard let subcategory = transaction.subcategory else { return false }
-                return subcategory.category == category
+                return subcategory.safeCategory == category
             }.count
         } catch {
             print("CategoryDetailViewModel: Error counting transactions: \(error)")

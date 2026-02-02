@@ -414,7 +414,7 @@ struct InboxDraftEditSheet: View {
             if let subcategory = selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
                     // Category chip (read-only)
-                    let category = subcategory.category
+                    let category = subcategory.safeCategory
                     let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
@@ -641,7 +641,7 @@ struct InboxDraftEditSheet: View {
 
     private var subcategoryChipColor: Color? {
         guard let subcategory = selectedSubcategory else { return nil }
-        return Color(hex: subcategory.category.colorHex)
+        return Color(hex: subcategory.safeCategory.colorHex)
     }
 
     // MARK: - Action Buttons
@@ -901,7 +901,7 @@ struct InboxDraftEditSheet: View {
         transaction.note = note.isEmpty ? nil : note
         transaction.account = account
         transaction.subcategory = subcategory
-        transaction.category = subcategory.category
+        transaction.category = subcategory.safeCategory
         transaction.tags = selectedTags
         transaction.exchangeRate = abs(exchangeRate)
         transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
@@ -928,8 +928,8 @@ struct InboxDraftEditSheet: View {
         // Cache display values for when related objects might be deleted later
         draft.cachedAccountName = account.name
         draft.cachedSubcategoryName = subcategory.name
-        draft.cachedCategoryColorHex = subcategory.category.colorHex
-        draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+        draft.cachedCategoryColorHex = subcategory.safeCategory.colorHex
+        draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.safeCategory.iconName
         draft.cachedCurrencyCode = account.currencyCode
 
         // Update Merchant Memory
@@ -960,8 +960,8 @@ struct InboxDraftEditSheet: View {
                 amount: finalAmount,
                 currencyCode: account.currencyCode,
                 subcategoryName: subcategory.name,
-                categoryName: subcategory.category.name,
-                categoryColorHex: subcategory.category.colorHex,
+                categoryName: subcategory.safeCategory.name,
+                categoryColorHex: subcategory.safeCategory.colorHex,
                 isExpense: isExpense
             )
 

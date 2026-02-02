@@ -39,7 +39,7 @@ final class SubcategorySelectorViewModel {
             guard subcategory.isVisible else { continue }
 
             // Check if matches current transaction type
-            let category = subcategory.category
+            let category = subcategory.safeCategory
             let matchesType: Bool
             switch transactionType {
             case .expense:
@@ -69,7 +69,7 @@ final class SubcategorySelectorViewModel {
         let filtered = allSubcategories.filter { subcategory in
             guard subcategory.isVisible else { return false }
 
-            let category = subcategory.category
+            let category = subcategory.safeCategory
             guard category.isVisible else { return false }
 
             switch transactionType {
@@ -83,7 +83,7 @@ final class SubcategorySelectorViewModel {
         }
 
         // Group by category
-        let grouped = Dictionary(grouping: filtered) { $0.category }
+        let grouped = Dictionary(grouping: filtered) { $0.safeCategory }
 
         // Sort by category sortOrder, subcategories alphabetically A-Z
         return

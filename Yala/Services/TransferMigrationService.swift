@@ -88,7 +88,7 @@ struct TransferMigrationService {
         guard let allSubcategories = try? context.fetch(descriptor) else { return nil }
 
         for subcategory in allSubcategories {
-            if subcategory.category.name == categoryName,
+            if subcategory.safeCategory.name == categoryName,
                subcategoryNames.contains(subcategory.name) {
                 return subcategory
             }

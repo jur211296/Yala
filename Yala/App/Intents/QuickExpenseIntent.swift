@@ -178,7 +178,7 @@ struct QuickExpenseIntent: AppIntent {
             amount: finalAmount,
             currencyCode: transactionCurrency,
             note: finalNote,
-            category: resolvedSubcategory.category,
+            category: resolvedSubcategory.safeCategory,
             subcategory: resolvedSubcategory,
             account: resolvedAccount,
             tags: resolvedTag.map { [$0] } ?? [],
@@ -279,7 +279,7 @@ struct QuickExpenseIntent: AppIntent {
             predicate: #Predicate { $0.name == name }
         )
         guard let subcategories = try? context.fetch(descriptor) else { return nil }
-        return subcategories.first { $0.category.name == categoryName }
+        return subcategories.first { $0.safeCategory.name == categoryName }
     }
 
     private func fetchTag(name: String, context: ModelContext) -> Tag? {
@@ -420,18 +420,18 @@ struct ExpenseSubcategoryQuery: EntityQuery {
         // Filter ONLY expense subcategories (isIncome = false)
         // Sort by category A-Z, then subcategory A-Z
         return subcategories
-            .filter { $0.category.isIncome == false }
+            .filter { $0.safeCategory.isIncome == false }
             .sorted { first, second in
-                if first.category.name != second.category.name {
-                    return first.category.name < second.category.name
+                if first.safeCategory.name != second.safeCategory.name {
+                    return first.safeCategory.name < second.safeCategory.name
                 }
                 return first.name < second.name
             }
             .map { subcategory in
                 ExpenseSubcategoryAppEntity(
-                    id: "\(subcategory.category.name):\(subcategory.name)",
+                    id: "\(subcategory.safeCategory.name):\(subcategory.name)",
                     name: subcategory.name,
-                    categoryName: subcategory.category.name
+                    categoryName: subcategory.safeCategory.name
                 )
             }
     }
@@ -483,18 +483,18 @@ struct IncomeSubcategoryQuery: EntityQuery {
         // Filter ONLY income subcategories (isIncome = true)
         // Sort by category A-Z, then subcategory A-Z
         return subcategories
-            .filter { $0.category.isIncome == true }
+            .filter { $0.safeCategory.isIncome == true }
             .sorted { first, second in
-                if first.category.name != second.category.name {
-                    return first.category.name < second.category.name
+                if first.safeCategory.name != second.safeCategory.name {
+                    return first.safeCategory.name < second.safeCategory.name
                 }
                 return first.name < second.name
             }
             .map { subcategory in
                 IncomeSubcategoryAppEntity(
-                    id: "\(subcategory.category.name):\(subcategory.name)",
+                    id: "\(subcategory.safeCategory.name):\(subcategory.name)",
                     name: subcategory.name,
-                    categoryName: subcategory.category.name
+                    categoryName: subcategory.safeCategory.name
                 )
             }
     }

@@ -12,7 +12,7 @@ import SwiftData
 
 @Model
 final class ExchangeRate {
-    @Attribute(.unique) var dateKey: String
+    var dateKey: String
     var base: String
     var rates: Data
     /// Unix timestamp from the API response (when the rate was recorded)

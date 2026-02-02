@@ -328,7 +328,7 @@ final class NewTransactionViewModel {
         {
             selectedSubcategory = subcategory
             // Ajustar tipo según la categoría
-            if subcategory.category.isIncome {
+            if subcategory.safeCategory.isIncome {
                 transactionType = .income
             } else {
                 transactionType = .expense
@@ -508,7 +508,7 @@ final class NewTransactionViewModel {
             transaction.amount = finalAmount
             transaction.currencyCode = account.currencyCode
             transaction.note = note.isEmpty ? nil : note
-            transaction.category = subcategory.category
+            transaction.category = subcategory.safeCategory
             transaction.subcategory = subcategory
             transaction.account = account
             transaction.tags = selectedTags
@@ -590,7 +590,7 @@ final class NewTransactionViewModel {
             outTransaction.amount = outAmount
             outTransaction.currencyCode = source.currencyCode
             outTransaction.note = note.isEmpty ? L10n.Transfer.transferTo(dest.name) : note
-            outTransaction.category = outflowSubcategory.category
+            outTransaction.category = outflowSubcategory.safeCategory
             outTransaction.subcategory = outflowSubcategory
             outTransaction.account = source
             outTransaction.tags = selectedTags
@@ -605,7 +605,7 @@ final class NewTransactionViewModel {
             inTransaction.amount = inAmount
             inTransaction.currencyCode = dest.currencyCode
             inTransaction.note = note.isEmpty ? L10n.Transfer.transferFrom(source.name) : note
-            inTransaction.category = inflowSubcategory.category
+            inTransaction.category = inflowSubcategory.safeCategory
             inTransaction.subcategory = inflowSubcategory
             inTransaction.account = dest
             inTransaction.tags = selectedTags
@@ -662,7 +662,7 @@ final class NewTransactionViewModel {
 
         // Check if subcategory exists within "Otros"
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
         )
 
         if let existing = try? context.fetch(descriptor).first {
@@ -715,7 +715,7 @@ final class NewTransactionViewModel {
 
         // Check if subcategory exists within "Ingresos"
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
         )
 
         if let existing = try? context.fetch(descriptor).first {

@@ -176,7 +176,7 @@ struct SaveAsFavoriteSheet: View {
                     icon: "tag",
                     label: L10n.Transaction.subcategory,
                     value: selectedSubcategory?.name,
-                    color: selectedSubcategory.map { Color(hex: $0.colorHex ?? $0.category.colorHex) },
+                    color: selectedSubcategory.map { Color(hex: $0.colorHex ?? $0.safeCategory.colorHex) },
                     onTap: { showSubcategorySelector = true },
                     onClear: { selectedSubcategory = nil }
                 )

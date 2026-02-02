@@ -1612,3 +1612,21 @@
 "notifications.section.reports" = "Reports";
 "notifications.section.system" = "System";
 "notifications.section.custom" = "Custom";
+
+// MARK: - iCloud Sync
+
+"icloud.title" = "iCloud Sync";
+"icloud.syncSection" = "Synchronization";
+"icloud.enableSync" = "Sync with iCloud";
+"icloud.description" = "Your data will automatically sync with iCloud and be available on all your Apple devices signed in with the same account.";
+"icloud.privacyNote" = "Your data is stored privately in your personal iCloud account. Yala does not have access to it.";
+"icloud.statusSynced" = "Synced";
+"icloud.statusSyncing" = "Syncing...";
+"icloud.statusDisabled" = "Disabled";
+"icloud.statusNoAccount" = "No iCloud Account";
+"icloud.statusError" = "Sync Error";
+"icloud.lastSync" = "Last sync: %@";
+"icloud.noAccountWarning" = "Sign in to iCloud in Settings to enable sync.";
+"icloud.restartRequired" = "Restart Required";
+"icloud.restartMessage" = "To apply the change, the app needs to restart.";
+"icloud.restartNow" = "Restart Now";

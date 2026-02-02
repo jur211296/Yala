@@ -452,7 +452,7 @@ struct RecordsTabView: View {
             if let subcategory = subcategories.first(where: {
                 $0.persistentModelID == subcategoryID
             }) {
-                let categoryColor = subcategory.category.colorHex
+                let categoryColor = subcategory.safeCategory.colorHex
                 chips.append(
                     SubcategoryChip(
                         name: subcategory.name,

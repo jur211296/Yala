@@ -72,6 +72,7 @@ struct ProfileView: View {
         case tips
         case faq
         case placeholder(String)
+        case iCloudSync
     }
 
     var body: some View {
@@ -197,6 +198,8 @@ struct ProfileView: View {
                     UserDataResetView(onUserDataWiped: {
                         dismiss()
                     })
+                case .iCloudSync:
+                    iCloudSyncSettingsView()
                 }
             }
             .onChange(of: userTheme) { _, _ in
@@ -460,6 +463,15 @@ struct ProfileView: View {
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
             VStack(spacing: 0) {
+                profileRow(
+                    icon: "icloud.fill",
+                    title: L10n.iCloud.title,
+                    iconColor: .blue,
+                    destination: .iCloudSync
+                )
+
+                SubsectionDivider()
+
                 Button {
                     activeSheet = .importIntro
                 } label: {

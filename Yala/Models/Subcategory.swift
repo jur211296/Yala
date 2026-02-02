@@ -26,8 +26,8 @@ final class Subcategory {
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
 
-    /// Relación inversa con la categoría padre
-    var category: Category
+    /// Relación inversa con la categoría padre (optional for CloudKit compatibility)
+    var category: Category?
 
     /// Relación inversa con budgets (muchos-a-muchos)
     var budgets: [Budget] = []
@@ -49,7 +49,7 @@ final class Subcategory {
         sortOrder: Int = 0,
         natureRawValue: String? = nil,
         iconName: String? = nil,
-        category: Category
+        category: Category?
     ) {
         self.name = name
         self.colorHex = colorHex
@@ -82,5 +82,22 @@ extension Subcategory {
     /// Whether this subcategory is a system subcategory that cannot be deleted
     var isSystemSubcategory: Bool {
         Self.systemSubcategoryNames.contains(name)
+    }
+}
+
+// MARK: - CloudKit Compatibility
+
+extension Subcategory {
+    /// Safe access to category. CloudKit requires optional relationships,
+    /// but semantically a Subcategory always has a Category.
+    /// Use this for UI/logic where category is guaranteed to exist.
+    var safeCategory: Category {
+        guard let cat = category else {
+            // This should never happen in normal operation
+            assertionFailure("Subcategory '\(name)' has no category")
+            // Return a placeholder to avoid crash in production
+            return Category(name: "Unknown", colorHex: "#6366F1", isIncome: false)
+        }
+        return cat
     }
 }

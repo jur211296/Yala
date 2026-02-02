@@ -127,7 +127,7 @@ final class CategoriesSettingsListViewModel {
             let allTransactions = try context.fetch(descriptor)
             return allTransactions.filter { transaction in
                 guard let subcategory = transaction.subcategory else { return false }
-                return subcategory.category.persistentModelID == category.persistentModelID
+                return subcategory.safeCategory.persistentModelID == category.persistentModelID
             }.count
         } catch {
             print("CategoriesSettingsListViewModel: Error counting transactions: \(error)")

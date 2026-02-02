@@ -341,7 +341,7 @@ struct FavoriteEditorView: View {
 
     private var subcategoryChipColor: Color? {
         guard let subcategory = selectedSubcategory else { return nil }
-        let colorHex = subcategory.colorHex ?? subcategory.category.colorHex
+        let colorHex = subcategory.colorHex ?? subcategory.safeCategory.colorHex
         return Color(hex: colorHex)
     }
 

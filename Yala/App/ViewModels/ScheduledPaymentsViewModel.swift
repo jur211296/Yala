@@ -153,7 +153,7 @@ final class ScheduledPaymentsViewModel {
         // Apply category filter (if subcategory not set, check category)
         if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
             filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
                 return selectedCategories.contains(catID)
             }
         }
@@ -218,8 +218,8 @@ final class ScheduledPaymentsViewModel {
     func getPaymentDisplayProperties(payment: ScheduledPayment) -> (icon: String, color: String) {
         // If has subcategory, use its icon/color
         if let subcategory = payment.subcategory {
-            let icon = subcategory.iconName ?? subcategory.category.iconName ?? "creditcard.fill"
-            let color = subcategory.colorHex ?? subcategory.category.colorHex
+            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "creditcard.fill"
+            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
             return (icon, color)
         }
 
@@ -280,7 +280,7 @@ final class ScheduledPaymentsViewModel {
         }
         if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
             filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
                 return selectedCategories.contains(catID)
             }
         }
@@ -316,7 +316,7 @@ final class ScheduledPaymentsViewModel {
         }
         if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
             filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
                 return selectedCategories.contains(catID)
             }
         }

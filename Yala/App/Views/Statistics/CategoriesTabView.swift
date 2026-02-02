@@ -1290,7 +1290,7 @@ struct CategoriesTabView: View {
                     viewModel.selectedSubcategories.insert(subcategory.persistentModelID)
                 }
                 // Also ensure parent category is selected
-                let parentCategory = subcategory.category
+                let parentCategory = subcategory.safeCategory
                 if !viewModel.selectedCategories.contains(parentCategory.persistentModelID) {
                     viewModel.selectedCategories.insert(parentCategory.persistentModelID)
                 }
@@ -1495,7 +1495,7 @@ struct CategoriesTabView: View {
             if let subcategory = allSubcategories.first(where: {
                 $0.persistentModelID == subcategoryID
             }) {
-                let categoryColor = subcategory.category.colorHex
+                let categoryColor = subcategory.safeCategory.colorHex
                 chips.append(
                     SubcategoryChip(
                         id: subcategory.name,

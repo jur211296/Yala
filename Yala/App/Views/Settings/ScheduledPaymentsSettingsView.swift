@@ -131,8 +131,8 @@ struct ScheduledPaymentsSettingsView: View {
 
     private func paymentRow(_ payment: ScheduledPayment) -> some View {
         // Get icon and color from subcategory
-        let iconName = payment.subcategory?.iconName ?? payment.subcategory?.category.iconName ?? "creditcard.fill"
-        let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
+        let iconName = payment.subcategory?.iconName ?? payment.subcategory?.category?.iconName ?? "creditcard.fill"
+        let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
 
         return Button {
             viewModel.openEditor(for: payment)

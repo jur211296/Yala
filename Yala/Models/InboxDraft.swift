@@ -189,7 +189,7 @@ final class InboxDraft: Identifiable {
         case .approved, .rejected:
             return cachedCategoryColorHex ?? "#6366F1"
         case .pending:
-            return subcategory?.category.colorHex ?? "#6366F1"
+            return subcategory?.category?.colorHex ?? "#6366F1"
         }
     }
 
@@ -199,7 +199,7 @@ final class InboxDraft: Identifiable {
         case .approved, .rejected:
             return cachedSubcategoryIcon ?? "tag.fill"
         case .pending:
-            return subcategory?.iconName ?? subcategory?.category.iconName ?? "tag.fill"
+            return subcategory?.iconName ?? subcategory?.category?.iconName ?? "tag.fill"
         }
     }
 

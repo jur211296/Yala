@@ -73,7 +73,7 @@ func aggregatedSubcategoryChip(
     // Use subcategory color if available, otherwise fall back to parent category color
     let color =
         (first.colorHex?.isEmpty == false ? first.colorHex : nil)
-        ?? first.category.colorHex
+        ?? first.safeCategory.colorHex
 
     return AggregatedChipData(
         name: first.name,
