@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-02] f4ed518 feat(widgets): add iOS WidgetKit widgets for balance, records, payments and budgets
 - [2026-02-02] 27524db feat(budgets): add push notifications when budget thresholds are reached
 - [2026-02-01] dd339c6 docs(qa): add validation scenarios for inbox alert modal (10.5.F)
 - [2026-02-01] 51cf81c docs: update STATE.md for Phase 10.5.F completion
@@ -33,8 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-01] 126bdf1 feat(onboarding): group currencies by continent with recommended section
 - [2026-02-01] 1ef344f feat(filters): show only currencies with transactions in filters
 - [2026-02-01] 47f995b refactor(ui): simplify scheduled payments visual design for consistency
-- [2026-02-01] 91abfa9 fix(swiftdata): isolate database between Yala and Yala Dev builds
-- [2026-02-01] 1be90fd fix(share): dynamic App Group and URL Scheme for Yala vs Yala Dev
 
 ## Completed in Current Phase
 
@@ -74,6 +73,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **UX Divisas (10.5.C completo)** - C.1: Ejemplos voz dinámicos con shortPluralName (ej: "50 soles", "50 dólares") sin país; C.2: Filtro monedas solo muestra las usadas en transacciones, sección oculta si no hay transacciones; C.3: Onboarding agrupa monedas por continente con sección "Recomendada" destacada, sin duplicación
 - **Modal Unificado Inbox (10.5.F completo)** - Modal al volver a la app cuando hay drafts nuevos no vistos; mensaje adaptado según tipo (pagos planificados, suscripciones, automatizaciones, mixto con desglose); excluye voz/imagen; detección por lastCheckDate en UserDefaults; 14 escenarios QA
 - **Alertas de Presupuestos (10.5.D.1 completo)** - Notificaciones push cuando presupuestos alcanzan umbrales configurados (50%, 75%, 90%, 100%); configuración por presupuesto con toggle y chips de umbrales; BudgetAlertService evalúa al crear/aprobar transacciones; BudgetAlertTracker previene duplicados por período (UserDefaults); funciona desde registro manual, Shortcuts/Siri, Inbox; 15 escenarios QA
+- **Widgets iOS WidgetKit (10.5.G.2 completo)** - 4 tipos de widgets: Balance (small/medium con mini gráfico), Últimos Registros (5 transacciones recientes), Pagos Planificados (próximos con filtro), Presupuestos (barras de progreso con colores); WidgetDataCache para sincronización via App Groups; deep links desde widgets (yala://panel, statistics/records, planning, budgets); Background App Refresh cada 4h; 30 escenarios QA (Sección 28)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -151,6 +151,18 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 **10.5.D: Features (1)** ⏳ PENDIENTE VALIDACIÓN
 - [x] D.1: Notificaciones de presupuestos (porcentaje + límite) — código completo, QA pendiente (Sección 27)
+
+**10.5.G: Widgets iOS (WidgetKit)** ✅ COMPLETADO
+- [x] G.2.1: Widget Extension target creado en Xcode
+- [x] G.2.2: WidgetDataCache + WidgetDataService para datos compartidos
+- [x] G.2.3: BalanceWidget (small: KPI, medium: KPI + mini gráfico)
+- [x] G.2.4: LatestRecordsWidget (5 últimas transacciones)
+- [x] G.2.5: ScheduledPaymentsWidget (próximos pagos con filtro)
+- [x] G.2.6: BudgetsWidget (barras de progreso con colores)
+- [x] G.2.7: Refresh desde app (TransactionService, DraftService)
+- [x] G.2.8: Background App Refresh (BackgroundTaskManager, 4h)
+- [x] G.2.9: Deep links handling (panel, statistics/records, planning, budgets)
+- [x] G.2.10: QA-SCENARIOS sección 28 (30 escenarios)
 
 ### Fase 10: Refinamiento & Notificaciones (V1.1) ✅ COMPLETADA
 
@@ -280,13 +292,15 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Fase 10.5.D.1 código completo (Alertas de presupuestos)
-Next step: Validación manual de QA-SCENARIOS secciones 25, 26, 27
+Stopped at: Commit f4ed518 - Widgets iOS completos (10.5.G.2)
+Next step: Validación manual de QA-SCENARIOS secciones 25, 26, 27, 28
 Resume context:
+- **Widgets implementados:** Balance (S/M), Últimos Registros, Pagos Planificados, Presupuestos
 - **QA Pendiente:**
   - Sección 25: Fase 10.5.B y 10.5.C
   - Sección 26: Modal Unificado Inbox (10.5.F)
   - Sección 27: Alertas de Presupuestos (10.5.D.1)
+  - Sección 28: Widgets iOS (10.5.G.2)
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
 - Auditoría de código: CERRADA ✅

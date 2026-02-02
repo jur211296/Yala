@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftData
+import WidgetKit
 
 // MARK: - DraftService Protocol
 
@@ -203,6 +204,9 @@ final class DraftService: DraftServiceProtocol {
 
         try context.save()
 
+        // Update widgets
+        WidgetDataCache.updateCache(context: context)
+
         // Check budget alerts
         Task {
             await BudgetAlertService.shared.checkBudgetsAndNotify()
@@ -274,6 +278,9 @@ final class DraftService: DraftServiceProtocol {
         }
 
         try context.save()
+
+        // Update widgets
+        WidgetDataCache.updateCache(context: context)
 
         // Check budget alerts
         Task {

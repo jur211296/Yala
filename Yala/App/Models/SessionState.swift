@@ -55,6 +55,15 @@ enum InboxNotificationType {
     case mixed
 }
 
+/// Deep link destinations from widgets
+enum DeepLinkDestination {
+    case panel
+    case statistics
+    case records
+    case planning
+    case budgets
+}
+
 /// Global session state to manage synchronization between views
 @Observable
 class SessionState {
@@ -311,6 +320,10 @@ class SessionState {
     /// Flag to trigger image entry from App Shortcut
     /// When true, PanelView will open ImageSelectionView
     var shouldShowImageEntry: Bool = false
+
+    /// Deep link destination from widgets
+    /// When set, app navigates to specified destination and clears this
+    var deepLinkDestination: DeepLinkDestination?
 
     // MARK: - Navigation State
 

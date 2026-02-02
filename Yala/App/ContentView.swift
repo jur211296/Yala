@@ -163,6 +163,28 @@ struct MainTabView: View {
                     sessionState.selectedMainTab = .panel
                 }
             }
+            .onChange(of: sessionState.deepLinkDestination) { _, destination in
+                // Handle deep links from widgets
+                guard let destination = destination else { return }
+
+                switch destination {
+                case .panel:
+                    sessionState.selectedMainTab = .panel
+                case .statistics:
+                    sessionState.selectedMainTab = .statistics
+                case .records:
+                    sessionState.selectedDetailTab = .records
+                    sessionState.selectedMainTab = .statistics
+                case .planning:
+                    sessionState.selectedMainTab = .planning
+                case .budgets:
+                    sessionState.selectedPlanningTab = .budgets
+                    sessionState.selectedMainTab = .planning
+                }
+
+                // Clear after handling
+                sessionState.deepLinkDestination = nil
+            }
         }
     }
 
