@@ -392,9 +392,9 @@ DoD:
 - [x] C.3: Onboarding divisas por continente con recomendada
 - [x] C.4: Settings divisas secundarias con continentes + recomendadas (USD, EUR, GBP)
 
-**10.5.D: Features** ⏳
+**10.5.D: Features** ✅
 - [x] D.1: Notificaciones de presupuestos (umbrales configurables)
-- [ ] D.2: Toggle global en Notificaciones para alertas de presupuestos
+- [x] D.2: Toggle global en Notificaciones para alertas de presupuestos
 
 **10.5.E: Aislamiento Yala/Dev** ✅
 - [x] E.1: SwiftData aislado (YalaModel vs YalaModel-Dev)

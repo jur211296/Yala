@@ -24,15 +24,14 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-02] b1ae949 feat(onboarding): add budget alerts toggle to notifications step
+- [2026-02-02] 7f0cde5 feat(notifications): add global toggle for budget alerts in settings
+- [2026-02-02] 620eec8 chore: rename /compact to /pre-compact, clarify manual Shift+C requirement
 - [2026-02-02] 7e440fe Merge feature/10.5.G.3-control-center into 1.1
 - [2026-02-02] 9ff53cb Merge feature/10.5.G.2-widgets-ios into 1.1
 - [2026-02-02] 1563970 Merge feature/10.5.G.1-icloud-sync into 1.1
 - [2026-02-02] f4ed518 feat(widgets): add iOS WidgetKit widgets for balance, records, payments and budgets
 - [2026-02-02] 27524db feat(budgets): add push notifications when budget thresholds are reached
-- [2026-02-01] dd339c6 docs(qa): add validation scenarios for inbox alert modal (10.5.F)
-- [2026-02-01] 51cf81c docs: update STATE.md for Phase 10.5.F completion
-- [2026-02-01] 0e91b17 feat(inbox): unified alert modal for new drafts
-- [2026-02-01] c2a24cf fix: improve error handling and remove force unwraps
 - [2026-02-01] 1c32cc2 feat(voice): use dynamic currency names in voice input examples
 - [2026-02-01] 126bdf1 feat(onboarding): group currencies by continent with recommended section
 - [2026-02-01] 1ef344f feat(filters): show only currencies with transactions in filters
@@ -75,7 +74,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Consistencia Visual Pagos Planificados (10.5.B)** - Summary card sin gradientes (color primario, borde/sombra neutros); section headers simplificados (solo vencidos con indicador rojo); due status en cards simplificado (hotPink solo vencidos, resto secundario); botones calendario sin fondo coloreado; ingresos mantienen teal
 - **UX Divisas (10.5.C completo)** - C.1: Ejemplos voz dinámicos con shortPluralName (ej: "50 soles", "50 dólares") sin país; C.2: Filtro monedas solo muestra las usadas en transacciones, sección oculta si no hay transacciones; C.3: Onboarding agrupa monedas por continente con sección "Recomendada" destacada, sin duplicación
 - **Modal Unificado Inbox (10.5.F completo)** - Modal al volver a la app cuando hay drafts nuevos no vistos; mensaje adaptado según tipo (pagos planificados, suscripciones, automatizaciones, mixto con desglose); excluye voz/imagen; detección por lastCheckDate en UserDefaults; 14 escenarios QA
-- **Alertas de Presupuestos (10.5.D.1 completo)** - Notificaciones push cuando presupuestos alcanzan umbrales configurados (50%, 75%, 90%, 100%); configuración por presupuesto con toggle y chips de umbrales; BudgetAlertService evalúa al crear/aprobar transacciones; BudgetAlertTracker previene duplicados por período (UserDefaults); funciona desde registro manual, Shortcuts/Siri, Inbox; 15 escenarios QA
+- **Alertas de Presupuestos (10.5.D completo)** - D.1: Notificaciones push cuando presupuestos alcanzan umbrales configurados (50%, 75%, 90%, 100%); configuración por presupuesto con toggle y chips de umbrales; BudgetAlertService evalúa al crear/aprobar transacciones; BudgetAlertTracker previene duplicados por período; D.2: Toggle global en Settings > Notificaciones (default OFF, activable en onboarding); 15+ escenarios QA
 - **Widgets iOS WidgetKit (10.5.G.2 completo)** - 4 tipos de widgets: Balance (small/medium con mini gráfico), Últimos Registros (5 transacciones recientes), Pagos Planificados (próximos con filtro), Presupuestos (barras de progreso con colores); WidgetDataCache para sincronización via App Groups; deep links desde widgets (yala://panel, statistics/records, planning, budgets); Background App Refresh cada 4h; 30 escenarios QA (Sección 28)
 - **Control Center iOS 18+ (10.5.G.3 completo)** - 3 ControlWidgets para iOS 18+: QuickExpenseControl (flujo Siri sin abrir app), VoiceEntryControl (abre app en modo voz), ImageEntryControl (abre app en modo imagen); @available(iOS 18.0, *) para compatibilidad; localizaciones 6 idiomas; 15 escenarios QA (Sección 29)
 - **iCloud Sync CloudKit (10.5.G.1 completo)** - Integración nativa SwiftData+CloudKit con ModelConfiguration(cloudKitContainerIdentifier:); toggle opt-in en Settings; SyncSettingsView con estado de sync y cuenta iCloud; containers iCloud.com.jurgenschmidt.yala y iCloud.com.jurgenschmidt.yala.dev; paso opcional en onboarding; Privacy Policy actualizada; 20 escenarios QA (Sección 30)
@@ -154,8 +153,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [x] C.2: Filtro monedas solo con transacciones existentes
 - [x] C.3: Onboarding divisas: recomendada + continentes
 
-**10.5.D: Features (1)** ⏳ PENDIENTE VALIDACIÓN
+**10.5.D: Features (2)** ✅ COMPLETADO
 - [x] D.1: Notificaciones de presupuestos (porcentaje + límite) — código completo, QA pendiente (Sección 27)
+- [x] D.2: Toggle global en Notificaciones para alertas de presupuestos — default OFF, configurable en onboarding
 
 **10.5.G: Sincronización y Widgets** ✅ COMPLETADO
 - [x] G.1: iCloud Sync (CloudKit)
@@ -305,7 +305,7 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Merge de Sección G completa (G.1 + G.2 + G.3)
+Stopped at: D.2 completado (toggle global alertas de presupuestos)
 Next step: Validación manual de QA-SCENARIOS secciones 25-30
 Resume context:
 - **Sección G completa:**
