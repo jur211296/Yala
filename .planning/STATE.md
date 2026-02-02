@@ -149,8 +149,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [x] C.2: Filtro monedas solo con transacciones existentes
 - [x] C.3: Onboarding divisas: recomendada + continentes
 
-**10.5.D: Features (1)** ✅ COMPLETADO
-- [x] D.1: Notificaciones de presupuestos (porcentaje + límite)
+**10.5.D: Features (1)** ⏳ PENDIENTE VALIDACIÓN
+- [x] D.1: Notificaciones de presupuestos (porcentaje + límite) — código completo, QA pendiente (Sección 27)
 
 ### Fase 10: Refinamiento & Notificaciones (V1.1) ✅ COMPLETADA
 
@@ -280,9 +280,13 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Fase 10.5.D.1 completada (Alertas de presupuestos)
-Next step: Fase 10.5 completa - preparar merge a 1.0 o iniciar Fase 11
+Stopped at: Fase 10.5.D.1 código completo (Alertas de presupuestos)
+Next step: Validación manual de QA-SCENARIOS secciones 25, 26, 27
 Resume context:
+- **QA Pendiente:**
+  - Sección 25: Fase 10.5.B y 10.5.C
+  - Sección 26: Modal Unificado Inbox (10.5.F)
+  - Sección 27: Alertas de Presupuestos (10.5.D.1)
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
 - Auditoría de código: CERRADA ✅
