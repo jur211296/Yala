@@ -402,10 +402,23 @@ DoD:
 **10.5.F: Modal Unificado Inbox** ✅
 - [x] F.1: Modal para pagos planificados/suscripciones/automatizaciones
 
-**10.5.G: Sincronización y Widgets** ✅
+**10.5.G: Sincronización y Widgets** ✅ (con bugs pendientes)
 - [x] G.1: iCloud Sync (CloudKit private database)
-- [x] G.2: Widgets iOS (WidgetKit) — balance, gastos del día/semana, próximos pagos
-- [x] G.3: Atajos en centro de control y acciones rápidas en pantalla de bloqueo
+- [x] G.2: Widgets iOS (WidgetKit) — ⚠️ requiere rediseño completo
+- [x] G.3: Control Center — ⚠️ intents no navegan correctamente
+
+---
+
+**🔴 PRIORIDAD ABSOLUTA: Bugs Urgentes (resolver antes de H-K)**
+
+| Bug | Descripción | Esfuerzo |
+|-----|-------------|----------|
+| BUG-1 | Orden notificaciones presupuesto (Onboarding + Settings) | Bajo |
+| BUG-2 | Control Center intents no abren URLs | Bajo |
+| BUG-3 | WidgetKit rediseño completo (15 problemas) | Alto |
+| BUG-4 | Divisas recomendadas en Onboarding | Medio |
+
+---
 
 **10.5.H: Navegación y UI**
 - [ ] H.1: Crear tab propia de Registros (separar de Statistics)

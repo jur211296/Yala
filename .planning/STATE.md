@@ -119,6 +119,35 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ### Fase 10.5: Mejoras Pre-Release (V1.1) — EN PROGRESO
 
+---
+
+## 🔴 PRIORIDAD ABSOLUTA: Bugs Urgentes (resolver primero)
+
+**BUG-1: Orden notificaciones de presupuesto**
+- Ubicación actual incorrecta en Onboarding (al final) y Settings (al inicio)
+- Orden correcto: Pagos planificados → **Alertas de presupuesto** → Novedades de Yala
+- Archivos: `OnboardingView.swift`, `NotificationsSettingsView.swift`
+
+**BUG-2: Control Center - intents no navegan**
+- Los 3 ControlWidgets (QuickExpense, Voice, Image) abren la app pero NO navegan a la pantalla correcta
+- Falta enviar URLs: `yala://voice-entry`, `yala://image-entry`
+- Archivo: `YalaWidgets/ControlWidgets.swift`
+
+**BUG-3: WidgetKit - rediseño completo necesario**
+- 15 problemas detectados (3 críticos, 7 altos)
+- Diseño no sigue línea visual de Yala (colores hardcodeados, no usa DS tokens)
+- Datos incorrectos (balance calculado de transacciones, no cuentas)
+- No todos los periodos disponibles
+- Refresh muy espaciado (2-4h) y bugs en cálculo
+- Archivos: `YalaWidgets/Widgets/*.swift`
+
+**BUG-4: Divisas recomendadas en Onboarding**
+- La sección existe en Settings > Currency > Secondary Currencies
+- Falta añadirla al paso de onboarding de divisas secundarias
+- Referencia: `SecondaryCurrencyPickerSheet.swift` (commit cb01b06)
+
+---
+
 **10.5.A: Bugs Críticos (4)** ✅ COMPLETADO
 - [x] A.1: Share Sheet envía imagen a app incorrecta → App Group y URL Scheme dinámicos
 - [x] A.2: Atajo de automatización no lee JSON de texto → DecodingError detallado
@@ -304,8 +333,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: D.2 completado (toggle global alertas de presupuestos)
-Next step: Validación manual de QA-SCENARIOS secciones 25-30
+Stopped at: Code review completado, bugs urgentes identificados
+Next step: **🔴 Resolver BUG-1 a BUG-4 antes de continuar con H-K**
 Resume context:
 - **Sección G completa:**
   - G.1: iCloud Sync con SwiftData nativo (44 archivos)
