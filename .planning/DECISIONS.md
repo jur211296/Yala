@@ -40,6 +40,30 @@ Cada decisión sigue esta estructura:
 
 ---
 
+### [2026-02-02] iCloud Sync: Integración Nativa SwiftData + CloudKit
+
+**Contexto:** Implementar sincronización de datos entre dispositivos del usuario. Se evaluaron dos enfoques: (1) integración nativa SwiftData + CloudKit con `cloudKitDatabase: .private()`, (2) implementación manual con CKSyncEngine.
+
+**Decisión:** Usar integración nativa SwiftData + CloudKit.
+
+**Razones:**
+- SwiftData maneja automáticamente push, pull y conflict resolution
+- Conflict resolution "last-writer-wins" es suficiente para finanzas personales (no hay edición colaborativa)
+- Reduce complejidad de implementación significativamente
+- Apple recomienda este enfoque para apps nuevas
+
+**Consecuencias:**
+- Requiere que TODAS las relaciones sean opcionales (CloudKit limitation)
+- `Subcategory.category` cambió de `Category` a `Category?` - impacto en ~50 archivos
+- Se agregó helper `safeCategory` para acceso seguro en código existente
+- `ExchangeRate.dateKey` perdió `@Attribute(.unique)` - deduplicación manejada en servicio
+- Usuario debe reiniciar app al cambiar preferencia de sync (ModelContainer es inmutable)
+- Toggle de iCloud sync está desactivado por defecto (opt-in)
+
+**Estado:** Activa
+
+---
+
 ## Decisiones Superadas
 
 [Decisiones que ya no aplican pero queremos preservar el razonamiento histórico]

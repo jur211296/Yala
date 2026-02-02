@@ -65,7 +65,7 @@ struct SubcategorySelectorSheet: View {
                                             subcategory in
                                             SubcategoryGridItem(
                                                 subcategory: subcategory,
-                                                categoryColor: subcategory.category.colorHex,
+                                                categoryColor: subcategory.safeCategory.colorHex,
                                                 isSelected: isSelected(subcategory),
                                                 action: {
                                                     selectedSubcategory = subcategory

@@ -131,7 +131,7 @@ final class TransactionService {
         let context = try requireContext()
         for transaction in transactions {
             transaction.subcategory = subcategory
-            transaction.category = subcategory.category
+            transaction.category = subcategory.safeCategory
         }
         try context.save()
     }

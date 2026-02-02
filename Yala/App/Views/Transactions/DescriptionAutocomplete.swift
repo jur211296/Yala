@@ -213,7 +213,7 @@ struct AutocompleteHelper {
 
         // Filter subcategories by transaction type using the category relationship
         let filteredSubcategories = allSubcategories.filter { subcategory in
-            let category = subcategory.category
+            let category = subcategory.safeCategory
             switch transactionType {
             case .expense: return !category.isIncome
             case .income: return category.isIncome
@@ -249,7 +249,7 @@ struct AutocompleteHelper {
         }
 
         return filtered.prefix(8).map { subcategory in
-            let colorHex = subcategory.colorHex ?? subcategory.category.colorHex
+            let colorHex = subcategory.colorHex ?? subcategory.safeCategory.colorHex
             return AutocompleteSuggestion(
                 id: "subcat-\(subcategory.persistentModelID.hashValue)",
                 name: subcategory.name,

@@ -1259,7 +1259,7 @@ struct TrendsTabView: View {
                 $0.persistentModelID == subcategoryID
             }) {
                 // Get parent category color as fallback
-                let categoryColor = subcategory.category.colorHex
+                let categoryColor = subcategory.safeCategory.colorHex
                 chips.append(
                     SubcategoryChip(
                         name: subcategory.name,

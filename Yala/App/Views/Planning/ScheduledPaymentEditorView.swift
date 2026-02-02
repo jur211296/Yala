@@ -358,7 +358,7 @@ struct ScheduledPaymentEditorView: View {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: subcategory.iconName ?? "tag.fill")
                             .font(.caption)
-                            .foregroundStyle(Color(hex: subcategory.colorHex ?? subcategory.category.colorHex))
+                            .foregroundStyle(Color(hex: subcategory.colorHex ?? subcategory.safeCategory.colorHex))
                         Text(subcategory.name)
                             .foregroundStyle(.secondary)
                     }

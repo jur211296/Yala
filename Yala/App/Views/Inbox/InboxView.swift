@@ -489,8 +489,8 @@ struct InboxView: View {
                     amount: amount,
                     currencyCode: account.currencyCode,
                     subcategoryName: subcategory.name,
-                    categoryName: subcategory.category.name,
-                    categoryColorHex: subcategory.category.colorHex,
+                    categoryName: subcategory.safeCategory.name,
+                    categoryColorHex: subcategory.safeCategory.colorHex,
                     isExpense: amount < 0
                 )
                 showSwipeSuccessView = true

@@ -80,12 +80,12 @@ struct FavoriteRowView: View {
 
     private var favoriteIcon: some View {
         let colorHex =
-            favorite.subcategory?.category.colorHex
+            favorite.subcategory?.category?.colorHex
             ?? favorite.subcategory?.colorHex
             ?? "#6366F1"
         let iconName =
             favorite.subcategory?.iconName
-            ?? favorite.subcategory?.category.iconName
+            ?? favorite.subcategory?.category?.iconName
             ?? "star.fill"
 
         return ZStack {

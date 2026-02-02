@@ -1664,15 +1664,15 @@ final class PanelViewModel {
         }
 
         if budget.subcategories.count == 1, let subcategory = budget.subcategories.first {
-            let icon = subcategory.iconName ?? subcategory.category.iconName ?? "tag.fill"
-            let color = subcategory.colorHex ?? subcategory.category.colorHex
+            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "tag.fill"
+            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
             return (icon, color)
         }
 
-        let uniqueCategories = Set(budget.subcategories.map { $0.category.persistentModelID })
+        let uniqueCategories = Set(budget.subcategories.map { $0.safeCategory.persistentModelID })
 
         if uniqueCategories.count == 1, let firstSubcategory = budget.subcategories.first {
-            let category = firstSubcategory.category
+            let category = firstSubcategory.safeCategory
             let icon = category.iconName ?? "tag.fill"
             let color = category.colorHex
             return (icon, color)

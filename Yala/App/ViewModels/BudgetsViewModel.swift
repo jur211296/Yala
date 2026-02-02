@@ -354,10 +354,10 @@ final class BudgetsViewModel {
         // Extract data for pure logic function
         let subcategoryCount = budget.subcategories.count
         let firstSubcategory = budget.subcategories.first
-        let firstSubcategoryIcon = firstSubcategory?.iconName ?? firstSubcategory?.category.iconName
-        let firstCategoryColor = firstSubcategory?.colorHex ?? firstSubcategory?.category.colorHex
-        let firstCategoryIcon = firstSubcategory?.category.iconName
-        let uniqueCategoryCount = Set(budget.subcategories.map { $0.category.persistentModelID }).count
+        let firstSubcategoryIcon = firstSubcategory?.iconName ?? firstSubcategory?.safeCategory.iconName
+        let firstCategoryColor = firstSubcategory?.colorHex ?? firstSubcategory?.safeCategory.colorHex
+        let firstCategoryIcon = firstSubcategory?.safeCategory.iconName
+        let uniqueCategoryCount = Set(budget.subcategories.map { $0.safeCategory.persistentModelID }).count
 
         return calculateDisplayProperties(
             subcategoryCount: subcategoryCount,

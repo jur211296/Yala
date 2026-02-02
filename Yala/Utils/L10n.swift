@@ -2437,6 +2437,27 @@ enum L10n {
         static var shortFriday: String { NSLocalizedString("weekday.short.friday", comment: "") }
         static var shortSaturday: String { NSLocalizedString("weekday.short.saturday", comment: "") }
     }
+
+    // MARK: - iCloud Sync
+
+    enum iCloud {
+        static var title: String { NSLocalizedString("icloud.title", comment: "") }
+        static var syncSection: String { NSLocalizedString("icloud.syncSection", comment: "") }
+        static var enableSync: String { NSLocalizedString("icloud.enableSync", comment: "") }
+        static var description: String { NSLocalizedString("icloud.description", comment: "") }
+        static var privacyNote: String { NSLocalizedString("icloud.privacyNote", comment: "") }
+        static var statusSynced: String { NSLocalizedString("icloud.statusSynced", comment: "") }
+        static var statusSyncing: String { NSLocalizedString("icloud.statusSyncing", comment: "") }
+        static var statusDisabled: String { NSLocalizedString("icloud.statusDisabled", comment: "") }
+        static var statusNoAccount: String { NSLocalizedString("icloud.statusNoAccount", comment: "") }
+        static func lastSync(_ time: String) -> String {
+            String(format: NSLocalizedString("icloud.lastSync", comment: ""), time)
+        }
+        static var noAccountWarning: String { NSLocalizedString("icloud.noAccountWarning", comment: "") }
+        static var restartRequired: String { NSLocalizedString("icloud.restartRequired", comment: "") }
+        static var restartMessage: String { NSLocalizedString("icloud.restartMessage", comment: "") }
+        static var restartNow: String { NSLocalizedString("icloud.restartNow", comment: "") }
+    }
 }
 
 // MARK: - App Locale

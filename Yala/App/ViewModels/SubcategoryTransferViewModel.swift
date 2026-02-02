@@ -63,7 +63,7 @@ final class SubcategoryTransferViewModel {
 
     /// Subcategorías disponibles agrupadas por categoría (excluyendo la que se va a eliminar)
     func availableDestinations(excluding subcategoryToDelete: Subcategory) -> [(category: Category, subcategories: [Subcategory])] {
-        let parentCategory = subcategoryToDelete.category
+        let parentCategory = subcategoryToDelete.safeCategory
 
         // Filtrar subcategorías visibles, excluyendo la que se elimina
         let filtered = allSubcategories.filter { subcategory in
@@ -72,11 +72,11 @@ final class SubcategoryTransferViewModel {
                 return false
             }
             // Solo mostrar subcategorías del mismo tipo (ingreso/gasto)
-            return subcategory.category.isIncome == parentCategory.isIncome
+            return subcategory.safeCategory.isIncome == parentCategory.isIncome
         }
 
         // Agrupar por categoría
-        let grouped = Dictionary(grouping: filtered) { $0.category }
+        let grouped = Dictionary(grouping: filtered) { $0.safeCategory }
 
         return
             grouped
@@ -147,7 +147,7 @@ final class SubcategoryTransferViewModel {
     func getOrCreateUnassignedSubcategory(for sourceSubcategory: Subcategory) -> Subcategory? {
         guard let context = modelContext else { return nil }
 
-        let isIncome = sourceSubcategory.category.isIncome
+        let isIncome = sourceSubcategory.safeCategory.isIncome
         let othersName = L10n.Category.others
         let unassignedName = L10n.Subcategory.unassigned
 
@@ -176,7 +176,7 @@ final class SubcategoryTransferViewModel {
 
         // Find or create "Unassigned" subcategory
         var unassignedSubcategory: Subcategory? = allSubcategories.first {
-            $0.name == unassignedName && $0.category.persistentModelID == category.persistentModelID
+            $0.name == unassignedName && $0.safeCategory.persistentModelID == category.persistentModelID
         }
 
         if unassignedSubcategory == nil {

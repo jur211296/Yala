@@ -103,8 +103,8 @@ final class DraftService: DraftServiceProtocol {
         }
         if let subcategory = draft.subcategory {
             draft.cachedSubcategoryName = subcategory.name
-            draft.cachedCategoryColorHex = subcategory.category.colorHex
-            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.category.iconName
+            draft.cachedCategoryColorHex = subcategory.safeCategory.colorHex
+            draft.cachedSubcategoryIcon = subcategory.iconName ?? subcategory.safeCategory.iconName
         }
     }
 
@@ -182,7 +182,7 @@ final class DraftService: DraftServiceProtocol {
         transaction.note = draft.note.isEmpty ? nil : draft.note
         transaction.account = account
         transaction.subcategory = subcategory
-        transaction.category = subcategory.category
+        transaction.category = subcategory.safeCategory
         transaction.tags = draft.tags
         transaction.exchangeRate = abs(exchangeRate)
         transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
@@ -251,7 +251,7 @@ final class DraftService: DraftServiceProtocol {
             transaction.note = draft.note.isEmpty ? nil : draft.note
             transaction.account = account
             transaction.subcategory = subcategory
-            transaction.category = subcategory.category
+            transaction.category = subcategory.safeCategory
             transaction.tags = draft.tags
             transaction.exchangeRate = abs(exchangeRate)
             transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue

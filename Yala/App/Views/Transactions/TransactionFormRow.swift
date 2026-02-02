@@ -144,7 +144,7 @@ struct SubcategoryFormRow: View {
                         .foregroundStyle(hasError ? .red : .primary)
 
                     if let subcategory = subcategory {
-                        Text(subcategory.category.name)
+                        Text(subcategory.safeCategory.name)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -180,7 +180,7 @@ struct SubcategoryFormRow: View {
     }
 
     private func effectiveColor(for subcategory: Subcategory) -> String {
-        subcategory.colorHex ?? subcategory.category.colorHex
+        subcategory.colorHex ?? subcategory.safeCategory.colorHex
     }
 }
 

@@ -647,7 +647,7 @@ struct PanelView: View {
                                     let color =
                                         (firstSub.colorHex?.isEmpty == false
                                             ? firstSub.colorHex : nil)
-                                        ?? firstSub.category.colorHex
+                                        ?? firstSub.safeCategory.colorHex
                                     FilterChipView(
                                         subcategoryName: firstSub.name,
                                         iconName: firstSub.iconName,
@@ -1173,7 +1173,7 @@ private struct PanelSessionObservers: ViewModifier {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
                     // Only set expense if we found matching subcategories AND all are from expense categories
-                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.category.isIncome }) {
+                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
                 }
