@@ -1506,6 +1506,26 @@
 "shortcut.applePay.error.noAmount" = "Betrag erforderlich. Weisen Sie den Transaktionsbetrag aus Wallet zu.";
 "shortcut.applePay.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfen Sie Ihren Posteingang.";
 
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "Schnellausgabe";
+"control.quickExpense.displayName" = "Schnellausgabe";
+"control.quickExpense.description" = "Erfasse schnell eine Ausgabe";
+"control.quickExpense.intentTitle" = "Yala öffnen";
+"control.quickExpense.intentDescription" = "Öffnet Yala zum Erfassen einer Ausgabe";
+
+"control.voiceEntry.label" = "Sprache";
+"control.voiceEntry.displayName" = "Spracheingabe";
+"control.voiceEntry.description" = "Diktiere deine Ausgabe";
+"control.voiceEntry.intentTitle" = "Spracheingabe öffnen";
+"control.voiceEntry.intentDescription" = "Öffnet Yala im Sprachaufnahmemodus";
+
+"control.imageEntry.label" = "Scannen";
+"control.imageEntry.displayName" = "Beleg scannen";
+"control.imageEntry.description" = "Scanne einen Beleg mit der Kamera";
+"control.imageEntry.intentTitle" = "Belegscanner öffnen";
+"control.imageEntry.intentDescription" = "Öffnet Yala im Kameramodus zum Scannen von Belegen";
+
 // MARK: - Notifications
 "notifications.title" = "Benachrichtigungen";
 "notifications.addNew" = "Neue Benachrichtigung";

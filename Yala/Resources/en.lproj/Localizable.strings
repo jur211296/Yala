@@ -1532,6 +1532,26 @@
 "shortcut.automation.error.noCurrency" = "A currency is required (e.g., USD, PEN, EUR).";
 "shortcut.automation.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
 
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "Quick expense";
+"control.quickExpense.displayName" = "Quick expense";
+"control.quickExpense.description" = "Record an expense quickly";
+"control.quickExpense.intentTitle" = "Open Yala";
+"control.quickExpense.intentDescription" = "Opens Yala to record an expense";
+
+"control.voiceEntry.label" = "Voice";
+"control.voiceEntry.displayName" = "Voice entry";
+"control.voiceEntry.description" = "Dictate your expense";
+"control.voiceEntry.intentTitle" = "Open voice entry";
+"control.voiceEntry.intentDescription" = "Opens Yala in voice recording mode";
+
+"control.imageEntry.label" = "Scan";
+"control.imageEntry.displayName" = "Scan receipt";
+"control.imageEntry.description" = "Scan a receipt with the camera";
+"control.imageEntry.intentTitle" = "Open receipt scanner";
+"control.imageEntry.intentDescription" = "Opens Yala in camera mode to scan receipts";
+
 // MARK: - Notifications
 "notifications.title" = "Notifications";
 "notifications.addNew" = "New notification";
