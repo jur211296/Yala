@@ -1507,6 +1507,26 @@
 "shortcut.applePay.error.noAmount" = "Le montant est requis. Assignez le montant de la transaction Wallet.";
 "shortcut.applePay.success %@ %@" = "Brouillon créé : %@ chez %@. Vérifiez dans votre boîte de réception.";
 
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "Dépense rapide";
+"control.quickExpense.displayName" = "Dépense rapide";
+"control.quickExpense.description" = "Enregistrez une dépense rapidement";
+"control.quickExpense.intentTitle" = "Ouvrir Yala";
+"control.quickExpense.intentDescription" = "Ouvre Yala pour enregistrer une dépense";
+
+"control.voiceEntry.label" = "Voix";
+"control.voiceEntry.displayName" = "Entrée vocale";
+"control.voiceEntry.description" = "Dictez votre dépense";
+"control.voiceEntry.intentTitle" = "Ouvrir l'entrée vocale";
+"control.voiceEntry.intentDescription" = "Ouvre Yala en mode enregistrement vocal";
+
+"control.imageEntry.label" = "Scanner";
+"control.imageEntry.displayName" = "Scanner un reçu";
+"control.imageEntry.description" = "Scannez un reçu avec l'appareil photo";
+"control.imageEntry.intentTitle" = "Ouvrir le scanner de reçus";
+"control.imageEntry.intentDescription" = "Ouvre Yala en mode appareil photo pour scanner des reçus";
+
 // MARK: - Notifications
 "notifications.title" = "Notifications";
 "notifications.addNew" = "Nouvelle notification";

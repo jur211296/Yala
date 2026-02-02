@@ -3941,9 +3941,146 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 
 ---
 
-*Última actualización: 2026-02-02 - Sección 28 (Fase 10.5.G.2 Widgets)*
-*Total escenarios: ~410*
-*Total verificaciones: ~780+*
+## Sección 29: Control Center y Lock Screen (10.5.G.3)
+
+Esta sección cubre la validación de los controles de Yala en el Centro de Control de iOS 18+.
+
+**Requisitos:**
+- iOS 18.0 o superior
+- Widget Extension configurada en Xcode (ver `YalaWidgets/SETUP.md`)
+
+### 29.1 Configuración de Controles
+
+#### Escenario 29.1.1: Añadir controles de Yala al Control Center
+**Precondición:** iOS 18+ device o simulador, Widget Extension instalada
+
+1. Ir a Settings > Control Center
+2. Scroll hasta "More Controls"
+3. Buscar "Yala"
+4. **Verificar:** Aparecen 3 controles disponibles:
+   - "Gasto rápido" (plus.circle.fill)
+   - "Por voz" (mic.fill)
+   - "Escanear" (camera.fill)
+5. Añadir los 3 controles al Control Center
+6. **Verificar:** Los 3 aparecen en el Control Center
+
+#### Escenario 29.1.2: Reorganizar controles
+1. En Settings > Control Center, mover un control de Yala
+2. **Verificar:** El control se mueve correctamente
+3. Abrir Control Center
+4. **Verificar:** El orden refleja los cambios
+
+---
+
+### 29.2 Funcionalidad de Controles
+
+#### Escenario 29.2.1: Control "Gasto rápido"
+**Precondición:** Control añadido al Control Center
+
+1. Deslizar para abrir Control Center
+2. Tocar el control "Gasto rápido"
+3. **Verificar:** Yala se abre
+4. **Verificar:** Se muestra la pantalla de nuevo registro
+
+#### Escenario 29.2.2: Control "Por voz"
+**Precondición:** Control añadido, entrada por voz activada en Settings
+
+1. Deslizar para abrir Control Center
+2. Tocar el control "Por voz"
+3. **Verificar:** Yala se abre
+4. **Verificar:** Se muestra la interfaz de grabación de voz
+
+#### Escenario 29.2.3: Control "Escanear"
+**Precondición:** Control añadido, entrada por imagen activada en Settings
+
+1. Deslizar para abrir Control Center
+2. Tocar el control "Escanear"
+3. **Verificar:** Yala se abre
+4. **Verificar:** Se muestra la interfaz de cámara/galería
+
+---
+
+### 29.3 Control Center desde Lock Screen
+
+#### Escenario 29.3.1: Usar control desde pantalla bloqueada
+**Precondición:** Controles añadidos, dispositivo con Face ID/Touch ID
+
+1. Bloquear dispositivo
+2. Deslizar para abrir Control Center desde Lock Screen
+3. Tocar control "Gasto rápido"
+4. **Verificar:** Se solicita autenticación (Face ID/Touch ID)
+5. Autenticar
+6. **Verificar:** Yala se abre en el registro
+
+#### Escenario 29.3.2: Control desde Lock Screen - Sin biometría activa
+**Precondición:** Biometría desactivada en Settings > Seguridad
+
+1. Bloquear dispositivo
+2. Deslizar para abrir Control Center desde Lock Screen
+3. Tocar control "Gasto rápido"
+4. **Verificar:** Yala se abre directamente (sin solicitar autenticación)
+
+---
+
+### 29.4 Localización
+
+#### Escenario 29.4.1: Labels en español
+1. Cambiar idioma del dispositivo a Español
+2. Ir a Settings > Control Center
+3. **Verificar:** Labels:
+   - "Gasto rápido"
+   - "Registro por voz"
+   - "Escanear recibo"
+
+#### Escenario 29.4.2: Labels en inglés
+1. Cambiar idioma del dispositivo a English
+2. Ir a Settings > Control Center
+3. **Verificar:** Labels:
+   - "Quick expense"
+   - "Voice entry"
+   - "Scan receipt"
+
+---
+
+### 29.5 Casos Edge
+
+#### Escenario 29.5.1: Voz desactivada - Usar control "Por voz"
+**Precondición:** Entrada por voz desactivada en Yala Settings
+
+1. Tocar control "Por voz" desde Control Center
+2. **Verificar:** Yala se abre
+3. **Verificar:** Muestra mensaje indicando que la voz no está activada
+
+#### Escenario 29.5.2: Imagen desactivada - Usar control "Escanear"
+**Precondición:** Entrada por imagen desactivada en Yala Settings
+
+1. Tocar control "Escanear" desde Control Center
+2. **Verificar:** Yala se abre
+3. **Verificar:** Muestra mensaje indicando que la imagen no está activada
+
+#### Escenario 29.5.3: iOS 17 - Sin controles disponibles
+**Precondición:** Dispositivo con iOS 17 o anterior
+
+1. Ir a Settings > Control Center
+2. Buscar "Yala"
+3. **Verificar:** NO aparece Yala en la lista (requiere iOS 18)
+
+---
+
+### Checklist de Validación Rápida 29.x
+
+- [ ] 29.1.1 Controles aparecen en Settings > Control Center
+- [ ] 29.1.2 Se pueden reorganizar
+- [ ] 29.2.1 "Gasto rápido" abre registro
+- [ ] 29.2.2 "Por voz" abre grabación
+- [ ] 29.2.3 "Escanear" abre cámara
+- [ ] 29.3.1 Funciona desde Lock Screen con auth
+- [ ] 29.3.2 Funciona sin biometría
+- [ ] 29.4.1 Localización ES correcta
+- [ ] 29.4.2 Localización EN correcta
+- [ ] 29.5.1 Maneja voz desactivada
+- [ ] 29.5.2 Maneja imagen desactivada
+- [ ] 29.5.3 iOS 17 no muestra controles
 
 ---
 
@@ -4008,7 +4145,6 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 
 ---
 
-*Última actualización: 2026-02-02 - Sección 30 (Fase 10.5.G.1)*
-*Total escenarios: ~410*
-*Total verificaciones: ~780+*
-
+*Última actualización: 2026-02-02 - Secciones 28, 29, 30 (Fase 10.5.G)*
+*Total escenarios: ~430*
+*Total verificaciones: ~820+*

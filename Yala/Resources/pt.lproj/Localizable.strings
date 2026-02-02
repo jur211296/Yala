@@ -1507,6 +1507,26 @@
 "shortcut.applePay.error.noAmount" = "O valor é obrigatório. Atribua o valor da transação do Wallet.";
 "shortcut.applePay.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
 
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "Gasto rápido";
+"control.quickExpense.displayName" = "Gasto rápido";
+"control.quickExpense.description" = "Registre um gasto rapidamente";
+"control.quickExpense.intentTitle" = "Abrir Yala";
+"control.quickExpense.intentDescription" = "Abre o Yala para registrar um gasto";
+
+"control.voiceEntry.label" = "Voz";
+"control.voiceEntry.displayName" = "Entrada por voz";
+"control.voiceEntry.description" = "Dite seu gasto";
+"control.voiceEntry.intentTitle" = "Abrir entrada por voz";
+"control.voiceEntry.intentDescription" = "Abre o Yala em modo de gravação de voz";
+
+"control.imageEntry.label" = "Escanear";
+"control.imageEntry.displayName" = "Escanear recibo";
+"control.imageEntry.description" = "Escaneie um recibo com a câmera";
+"control.imageEntry.intentTitle" = "Abrir scanner de recibos";
+"control.imageEntry.intentDescription" = "Abre o Yala em modo câmera para escanear recibos";
+
 // MARK: - Notifications
 "notifications.title" = "Notificações";
 "notifications.addNew" = "Nova notificação";
