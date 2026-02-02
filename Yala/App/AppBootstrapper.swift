@@ -8,6 +8,7 @@
 
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 /// Centraliza la inicialización de la app y gestión del ciclo de vida.
 @MainActor
@@ -73,6 +74,12 @@ final class AppBootstrapper {
         // 8. Initialize budget alert service
         budgetAlertService.setContext(context)
 
+        // 9. Update widget cache
+        WidgetDataCache.updateCache(context: context)
+
+        // 10. Register background tasks
+        BackgroundTaskManager.shared.registerTasks()
+
         isInitialized = true
     }
 
@@ -127,6 +134,23 @@ final class AppBootstrapper {
                 print("AppBootstrapper: image-entry blocked - feature disabled")
                 #endif
             }
+
+        case "panel":
+            sessionState.deepLinkDestination = .panel
+
+        case "statistics":
+            // Check for path like statistics/records
+            if url.pathComponents.contains("records") {
+                sessionState.deepLinkDestination = .records
+            } else {
+                sessionState.deepLinkDestination = .statistics
+            }
+
+        case "planning":
+            sessionState.deepLinkDestination = .planning
+
+        case "budgets":
+            sessionState.deepLinkDestination = .budgets
 
         default:
             #if DEBUG

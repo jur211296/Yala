@@ -3677,3 +3677,237 @@ Esta sección cubre la validación de notificaciones push cuando los presupuesto
 *Última actualización: 2026-02-02 - Sección 27 (Fase 10.5.D.1)*
 *Total escenarios: ~380*
 *Total verificaciones: ~750+*
+
+---
+
+## Sección 28: Widgets iOS (WidgetKit) - Fase 10.5.G.2
+
+### Prerrequisitos
+- iPhone con iOS 17+
+- App Yala instalada
+- Al menos 1 cuenta creada
+- Al menos 5 transacciones registradas
+- Al menos 1 presupuesto activo
+- Al menos 1 pago planificado
+
+---
+
+### 28.1 Instalación y Configuración de Widgets
+
+#### Escenario 28.1.1: Agregar widget Balance (Small)
+1. Mantener presionada la pantalla de inicio
+2. Tocar (+) para agregar widget
+3. Buscar "Yala"
+4. Seleccionar widget "Balance" tamaño pequeño
+5. **Verificar:** Widget muestra balance total formateado
+6. **Verificar:** Widget muestra indicador ▲ o ▼ según tendencia
+
+#### Escenario 28.1.2: Agregar widget Balance (Medium)
+1. Agregar widget "Balance" tamaño mediano
+2. **Verificar:** Widget muestra balance total
+3. **Verificar:** Widget muestra mini gráfico de tendencia
+4. **Verificar:** Gráfico tiene área coloreada bajo la línea
+
+#### Escenario 28.1.3: Configurar período del widget Balance
+1. Mantener presionado el widget Balance (Medium)
+2. Tocar "Editar widget"
+3. **Verificar:** Opción "Período" visible
+4. Seleccionar "Mes" (por defecto)
+5. Seleccionar "Semana"
+6. **Verificar:** Gráfico actualiza a tendencia semanal
+
+#### Escenario 28.1.4: Agregar widget Últimos Registros
+1. Agregar widget "Últimos Registros" (medium)
+2. **Verificar:** Lista de 3-5 transacciones recientes
+3. **Verificar:** Cada fila muestra icono, nombre, monto
+4. **Verificar:** Montos negativos en color diferente a positivos
+
+#### Escenario 28.1.5: Agregar widget Pagos Planificados
+1. Agregar widget "Pagos Planificados" (medium)
+2. **Verificar:** Lista de pagos próximos
+3. **Verificar:** Fechas en formato relativo ("Hoy", "Mañana", "3 días")
+
+#### Escenario 28.1.6: Configurar filtro del widget Pagos Planificados
+1. Editar widget "Pagos Planificados"
+2. **Verificar:** Opciones: "Todos", "Recurrentes", "Suscripciones"
+3. Seleccionar "Suscripciones"
+4. **Verificar:** Solo muestra suscripciones
+
+#### Escenario 28.1.7: Agregar widget Presupuestos
+1. Agregar widget "Presupuestos" (medium)
+2. **Verificar:** Barras de progreso de presupuestos
+3. **Verificar:** Colores: verde (< 75%), amarillo (75-90%), rojo (> 90%)
+
+#### Escenario 28.1.8: Configurar modo del widget Presupuestos
+1. Editar widget "Presupuestos"
+2. **Verificar:** Opciones: "Todos", "Críticos (> 75%)"
+3. Seleccionar "Críticos"
+4. **Verificar:** Solo muestra presupuestos con consumo > 75%
+
+---
+
+### 28.2 Actualización de Datos en Widgets
+
+#### Escenario 28.2.1: Actualizar tras nuevo registro
+1. Agregar widget Balance (visible en home)
+2. Abrir app > Crear nuevo gasto de $100
+3. Volver a pantalla de inicio
+4. **Verificar:** Balance actualizado en widget (puede tardar 1-2 segundos)
+
+#### Escenario 28.2.2: Actualizar tras aprobar draft
+1. Tener draft pendiente en Inbox
+2. Widget Balance visible
+3. Aprobar draft
+4. **Verificar:** Balance actualizado
+
+#### Escenario 28.2.3: Actualizar tras bulk approve
+1. Múltiples drafts pendientes
+2. Seleccionar todos > Aprobar
+3. **Verificar:** Widgets se actualizan
+
+#### Escenario 28.2.4: Actualizar tras eliminar transacción
+1. Eliminar una transacción existente
+2. **Verificar:** Balance y Últimos Registros actualizados
+
+#### Escenario 28.2.5: Actualizar en background (>4 horas)
+**Nota:** Difícil de probar manualmente, requiere esperar
+
+1. No abrir la app por 4+ horas
+2. **Verificar:** Widgets aún muestran datos recientes (background refresh)
+
+---
+
+### 28.3 Deep Links desde Widgets
+
+#### Escenario 28.3.1: Tap en widget Balance → Panel
+1. Tocar el widget Balance
+2. **Verificar:** App abre en tab Panel
+
+#### Escenario 28.3.2: Tap en widget Últimos Registros → Records
+1. Tocar el widget "Últimos Registros"
+2. **Verificar:** App abre en Statistics > Records
+
+#### Escenario 28.3.3: Tap en widget Pagos Planificados → Planning
+1. Tocar el widget "Pagos Planificados"
+2. **Verificar:** App abre en tab Planning
+
+#### Escenario 28.3.4: Tap en widget Presupuestos → Budgets
+1. Tocar el widget "Presupuestos"
+2. **Verificar:** App abre en Planning > Presupuestos
+
+#### Escenario 28.3.5: Deep link con app en background
+1. App Yala en background (no cerrada)
+2. Tocar widget Balance
+3. **Verificar:** App viene al frente y navega a Panel
+
+#### Escenario 28.3.6: Deep link con app cerrada
+1. Cerrar app Yala completamente (force quit)
+2. Tocar widget Últimos Registros
+3. **Verificar:** App inicia y navega a Records
+
+---
+
+### 28.4 Estados Vacíos y Edge Cases
+
+#### Escenario 28.4.1: Widget Balance sin cuentas
+**Precondición:** Usuario nuevo, sin cuentas
+
+1. Agregar widget Balance
+2. **Verificar:** Muestra "$0" o mensaje vacío elegante
+
+#### Escenario 28.4.2: Widget Últimos Registros sin transacciones
+1. Usuario sin transacciones
+2. Agregar widget
+3. **Verificar:** Mensaje "Sin registros" o similar
+
+#### Escenario 28.4.3: Widget Pagos Planificados sin pagos
+1. Sin pagos planificados creados
+2. Agregar widget
+3. **Verificar:** Mensaje vacío apropiado
+
+#### Escenario 28.4.4: Widget Presupuestos sin presupuestos
+1. Sin presupuestos creados
+2. Agregar widget
+3. **Verificar:** Mensaje vacío apropiado
+
+#### Escenario 28.4.5: Pago planificado vencido muestra indicador
+1. Crear pago planificado con fecha pasada
+2. Widget Pagos Planificados
+3. **Verificar:** Indicador rojo de "Vencido"
+
+#### Escenario 28.4.6: Data wipe actualiza widgets
+1. Widgets visibles en home
+2. Settings > Borrar todos los datos
+3. **Verificar:** Widgets muestran estados vacíos tras wipe
+
+---
+
+### 28.5 Múltiples Widgets
+
+#### Escenario 28.5.1: Varios widgets del mismo tipo
+1. Agregar 2 widgets Balance (uno small, uno medium)
+2. **Verificar:** Ambos muestran datos consistentes
+
+#### Escenario 28.5.2: Todos los tipos de widgets a la vez
+1. Agregar los 4 tipos de widgets
+2. Crear transacción
+3. **Verificar:** Todos se actualizan correctamente
+
+#### Escenario 28.5.3: Configuraciones independientes
+1. Widget Presupuestos A: modo "Todos"
+2. Widget Presupuestos B: modo "Críticos"
+3. **Verificar:** Cada uno respeta su configuración
+
+---
+
+### 28.6 App Groups y Persistencia
+
+#### Escenario 28.6.1: Datos persisten tras reinicio
+1. Configurar widgets
+2. Reiniciar dispositivo
+3. **Verificar:** Widgets muestran datos correctos sin abrir app
+
+#### Escenario 28.6.2: Datos compartidos entre app y widget
+1. Agregar transacción en app
+2. Sin cerrar app, ver widgets
+3. **Verificar:** Datos sincronizados
+
+---
+
+### Checklist de Validación Rápida 28.x
+
+- [ ] 28.1.1 Widget Balance Small se agrega
+- [ ] 28.1.2 Widget Balance Medium muestra gráfico
+- [ ] 28.1.3 Configurar período funciona
+- [ ] 28.1.4 Widget Últimos Registros lista transacciones
+- [ ] 28.1.5 Widget Pagos Planificados lista pagos
+- [ ] 28.1.6 Filtro de pagos funciona
+- [ ] 28.1.7 Widget Presupuestos muestra barras
+- [ ] 28.1.8 Modo críticos funciona
+- [ ] 28.2.1 Actualiza tras nuevo registro
+- [ ] 28.2.2 Actualiza tras aprobar draft
+- [ ] 28.2.3 Actualiza tras bulk approve
+- [ ] 28.2.4 Actualiza tras eliminar
+- [ ] 28.3.1 Deep link Balance → Panel
+- [ ] 28.3.2 Deep link Registros → Records
+- [ ] 28.3.3 Deep link Pagos → Planning
+- [ ] 28.3.4 Deep link Presupuestos → Budgets
+- [ ] 28.3.5 Deep link con app en background
+- [ ] 28.3.6 Deep link con app cerrada
+- [ ] 28.4.1 Estado vacío Balance
+- [ ] 28.4.2 Estado vacío Registros
+- [ ] 28.4.3 Estado vacío Pagos
+- [ ] 28.4.4 Estado vacío Presupuestos
+- [ ] 28.4.5 Indicador vencido
+- [ ] 28.4.6 Data wipe actualiza widgets
+- [ ] 28.5.1 Múltiples widgets consistentes
+- [ ] 28.5.2 Todos los tipos a la vez
+- [ ] 28.5.3 Configuraciones independientes
+- [ ] 28.6.1 Persiste tras reinicio
+- [ ] 28.6.2 Datos compartidos
+
+---
+
+*Última actualización: 2026-02-02 - Sección 28 (Fase 10.5.G.2 Widgets)*
+*Total escenarios: ~410*
+*Total verificaciones: ~780+*
