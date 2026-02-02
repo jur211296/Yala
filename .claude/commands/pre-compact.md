@@ -1,12 +1,13 @@
 ---
-description: Compacta la conversación estratégicamente preservando contexto crítico
+description: Prepara resumen antes de compactar manualmente (Shift+C)
 ---
 
-Ejecuta una compactación estratégica de la conversación.
+Analiza y presenta qué se preservará/descartará antes de compactar.
+**La compactación real se hace con Shift+C después de este comando.**
 
 ## PROPÓSITO
 
-A diferencia del auto-compact que ocurre cuando se llena el contexto, este comando te permite controlar QUÉ se preserva y CUÁNDO compactar.
+Te permite controlar QUÉ se preserva antes de ejecutar Shift+C.
 
 ## CUÁNDO USAR
 
@@ -63,27 +64,13 @@ Antes de compactar, verificar:
 ¿Procedo con la compactación? (sí/no/primero snapshot)
 ```
 
-### PASO 4: Ejecutar compactación
+### PASO 4: Indicar siguiente paso
 
-Si el usuario confirma, ejecutar el comando interno de compact:
 ```
-/compact
-```
-
-### PASO 5: Verificación post-compact
-
-Después de compactar:
-```
-✓ Compactación completada
-
-Contexto preservado:
-- [Objetivo]
-- [Estado]
-- [Archivos clave]
-
-Tokens liberados: ~[estimado]
-
-Listo para continuar. ¿En qué seguimos?
+═══════════════════════════════════════════════════════════════
+         PRESIONA Shift+C PARA COMPACTAR AHORA
+═══════════════════════════════════════════════════════════════
+El resumen arriba es lo que se preservará.
 ```
 
 ## ALTERNATIVAS
