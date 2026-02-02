@@ -728,6 +728,7 @@
 "settings.secondaryCurrencies" = "Moedas secundarias";
 "settings.secondaryCurrenciesHint" = "Selecione ate 2 moedas para comparar com sua moeda preferida no widget de taxas de cambio.";
 "settings.showMoreCurrencies" = "Ver mais moedas";
+"settings.recommendedCurrencies" = "Recomendadas";
 "common.lastUpdate" = "Ultima atualizacao:";
 
 

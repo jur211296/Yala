@@ -1204,6 +1204,9 @@ enum L10n {
         static var showMoreCurrencies: String {
             NSLocalizedString("settings.showMoreCurrencies", comment: "")
         }
+        static var recommendedCurrencies: String {
+            NSLocalizedString("settings.recommendedCurrencies", comment: "")
+        }
 
         static var versionInfo: String { NSLocalizedString("settings.versionInfo", comment: "") }
 

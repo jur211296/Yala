@@ -3348,6 +3348,35 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 3. **Verificar:** Ejemplos en inglés con la moneda correcta (ej: "50 dollars")
 4. Repetir con alemán, francés, italiano, portugués
 
+### 25.5 Divisas Secundarias con Recomendadas (10.5.C.4)
+
+#### Escenario 25.5.1: Sección Recomendadas visible
+**Precondición:** Moneda preferida = PEN (o cualquier no-USD/EUR/GBP)
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección "RECOMENDADAS" aparece antes de los continentes
+3. **Verificar:** Muestra USD, EUR, GBP con fondo índigo claro
+4. **Verificar:** Las 3 monedas NO aparecen en sus continentes (Norteamérica/Europa)
+
+#### Escenario 25.5.2: Excluye moneda preferida
+**Precondición:** Moneda preferida = USD
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección Recomendadas muestra solo EUR y GBP (sin USD)
+
+#### Escenario 25.5.3: Excluye monedas ya seleccionadas
+**Precondición:** EUR ya seleccionada como secundaria
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección Recomendadas muestra USD y GBP (sin EUR)
+3. **Verificar:** EUR aparece en sección "Seleccionadas"
+
+#### Escenario 25.5.4: Sección oculta si no hay recomendadas disponibles
+**Precondición:** Preferida = USD, Secundarias = EUR y GBP
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección "RECOMENDADAS" NO aparece (las 3 están en uso)
+
 ---
 
 ### Checklist de Validación Rápida
@@ -3368,6 +3397,10 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 - [ ] 25.4.3 Dólar sin país
 - [ ] 25.4.4 Pesos sin país
 - [ ] 25.4.5 Validar otros idiomas
+- [ ] 25.5.1 Sección Recomendadas visible
+- [ ] 25.5.2 Excluye moneda preferida
+- [ ] 25.5.3 Excluye monedas ya seleccionadas
+- [ ] 25.5.4 Sección oculta si no hay recomendadas
 
 ---
 

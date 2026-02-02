@@ -15,12 +15,24 @@ struct SecondaryCurrencyPickerSheet: View {
     /// Maximum number of secondary currencies allowed
     private let maxSelections = 2
 
-    /// All currencies except the preferred one, grouped by continent
+    /// Currencies to show in the recommended section
+    private let recommendedCurrencyPool: [CurrencyCode] = [.usd, .eur, .gbp]
+
+    /// All currencies except the preferred one, grouped by continent (excluding recommended)
     private var availableCurrencies: [(continent: Continent, currencies: [CurrencyCode])] {
         CurrencyCode.groupedByContinent.compactMap { group in
-            let filtered = group.currencies.filter { $0 != preferredCurrency }
+            let filtered = group.currencies.filter { currency in
+                currency != preferredCurrency && !recommendedCurrencyPool.contains(currency)
+            }
             guard !filtered.isEmpty else { return nil }
             return (continent: group.continent, currencies: filtered)
+        }
+    }
+
+    /// Recommended currencies that are available (not preferred, not already selected)
+    private var recommendedCurrencies: [CurrencyCode] {
+        recommendedCurrencyPool.filter { currency in
+            currency != preferredCurrency && !selectedCurrencies.contains(currency)
         }
     }
 
@@ -34,6 +46,11 @@ struct SecondaryCurrencyPickerSheet: View {
                         // Selected section (only if there are selections)
                         if !selectedCurrencies.isEmpty {
                             selectedSection
+                        }
+
+                        // Recommended section (only if there are available recommendations)
+                        if !recommendedCurrencies.isEmpty {
+                            recommendedSection
                         }
 
                         // All currencies by continent
@@ -80,6 +97,31 @@ struct SecondaryCurrencyPickerSheet: View {
                     currencyRow(currency: currency)
                 }
             }
+        }
+    }
+
+    // MARK: - Recommended Section
+
+    private var recommendedSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Settings.recommendedCurrencies)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, DS.Spacing.xs)
+
+            VStack(spacing: 0) {
+                ForEach(Array(recommendedCurrencies.enumerated()), id: \.element) { index, currency in
+                    if index > 0 { SubsectionDivider() }
+                    currencyRow(currency: currency)
+                }
+            }
+            .background(Color.electricIndigo.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.xl)
+                    .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
+            )
         }
     }
 
