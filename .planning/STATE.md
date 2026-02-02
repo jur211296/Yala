@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-02] f4ed518 feat(widgets): add iOS WidgetKit widgets for balance, records, payments and budgets
 - [2026-02-02] 27524db feat(budgets): add push notifications when budget thresholds are reached
 - [2026-02-01] dd339c6 docs(qa): add validation scenarios for inbox alert modal (10.5.F)
 - [2026-02-01] 51cf81c docs: update STATE.md for Phase 10.5.F completion
@@ -33,8 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-01] 126bdf1 feat(onboarding): group currencies by continent with recommended section
 - [2026-02-01] 1ef344f feat(filters): show only currencies with transactions in filters
 - [2026-02-01] 47f995b refactor(ui): simplify scheduled payments visual design for consistency
-- [2026-02-01] 91abfa9 fix(swiftdata): isolate database between Yala and Yala Dev builds
-- [2026-02-01] 1be90fd fix(share): dynamic App Group and URL Scheme for Yala vs Yala Dev
 
 ## Completed in Current Phase
 
@@ -293,9 +292,10 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Fase 10.5.G.2 completa (Widgets iOS)
+Stopped at: Commit f4ed518 - Widgets iOS completos (10.5.G.2)
 Next step: Validación manual de QA-SCENARIOS secciones 25, 26, 27, 28
 Resume context:
+- **Widgets implementados:** Balance (S/M), Últimos Registros, Pagos Planificados, Presupuestos
 - **QA Pendiente:**
   - Sección 25: Fase 10.5.B y 10.5.C
   - Sección 26: Modal Unificado Inbox (10.5.F)
