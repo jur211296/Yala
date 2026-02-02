@@ -12,9 +12,10 @@ import SwiftData
 
 @Model
 final class ExchangeRate {
-    var dateKey: String
-    var base: String
-    var rates: Data
+    // CloudKit: defaults required
+    var dateKey: String = ""
+    var base: String = "USD"
+    var rates: Data = Data()
     /// Unix timestamp from the API response (when the rate was recorded)
     var timestamp: Date?
 

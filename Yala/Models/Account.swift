@@ -12,16 +12,17 @@ import SwiftData
 
 @Model
 final class Account {
-    var name: String
-    var currencyCode: String
-    var colorHex: String
-    var iconName: String
+    // CloudKit: defaults required
+    var name: String = ""
+    var currencyCode: String = "USD"
+    var colorHex: String = "#6366F1"
+    var iconName: String = "creditcard"
 
-    var type: String
+    var type: String = "checking"
     var accountNumber: String?
-    var adjustmentMode: String
-    var excludeFromStatistics: Bool
-    var isArchived: Bool
+    var adjustmentMode: String = "manual"
+    var excludeFromStatistics: Bool = false
+    var isArchived: Bool = false
 
     /// Relación inversa con budgets (muchos-a-muchos)
     var budgets: [Budget] = []
@@ -34,6 +35,9 @@ final class Account {
 
     /// Inverse relationship: scheduled payments linked to this account
     var scheduledPayments: [ScheduledPayment] = []
+
+    /// Inverse relationship: inbox drafts linked to this account (CloudKit requirement)
+    var inboxDrafts: [InboxDraft]? = []
 
     init(
         name: String,

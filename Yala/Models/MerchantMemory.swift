@@ -12,24 +12,24 @@ import SwiftData
 
 @Model
 final class MerchantMemory {
-    /// Nombre normalizado del comercio (canonicalizado)
-    var merchantCanonical: String
+    /// Nombre normalizado del comercio (canonicalizado) - CloudKit: default required
+    var merchantCanonical: String = ""
 
     /// Subcategoría más frecuente asociada a este comercio
-    @Relationship(deleteRule: .nullify)
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.merchantMemories)
     var subcategory: Subcategory?
 
-    /// Veces que el usuario aprobó con esta subcategoría
-    var countApproved: Int
+    /// Veces que el usuario aprobó con esta subcategoría - CloudKit: default required
+    var countApproved: Int = 0
 
-    /// Veces que el usuario cambió la subcategoría sugerida
-    var countCorrected: Int
+    /// Veces que el usuario cambió la subcategoría sugerida - CloudKit: default required
+    var countCorrected: Int = 0
 
-    /// Última vez que se aprobó una transacción de este comercio
-    var lastApprovedAt: Date
+    /// Última vez que se aprobó una transacción de este comercio - CloudKit: default required
+    var lastApprovedAt: Date = Date()
 
-    /// Variantes del nombre del comercio (nombres crudos originales)
-    var aliases: [String]
+    /// Variantes del nombre del comercio (nombres crudos originales) - CloudKit: default required
+    var aliases: [String] = []
 
     // MARK: - Computed Properties
 

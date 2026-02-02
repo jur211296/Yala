@@ -12,18 +12,18 @@ import SwiftData
 
 @Model
 final class Category {
-    // Campos existentes
-    var name: String
-    var colorHex: String
-    var isIncome: Bool
+    // Campos existentes (CloudKit: defaults required)
+    var name: String = ""
+    var colorHex: String = "#6366F1"
+    var isIncome: Bool = false
 
     // Campos adicionales para semilla y gestión en Ajustes
     /// Indica si esta categoría proviene de la semilla inicial de Yala
-    var isDefaultSeed: Bool
+    var isDefaultSeed: Bool = false
     /// Control de visibilidad dentro de la app (para permitir ocultar categorías)
-    var isVisible: Bool
+    var isVisible: Bool = true
     /// Orden de presentación en la lista de categorías
-    var sortOrder: Int
+    var sortOrder: Int = 0
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
 
@@ -34,6 +34,9 @@ final class Category {
 
     /// Inverse relationship: transactions linked to this category
     var transactions: [TransactionItem] = []
+
+    /// Inverse relationship: budgets linked to this category (CloudKit requirement)
+    var budgets: [Budget]? = []
 
     init(
         name: String,

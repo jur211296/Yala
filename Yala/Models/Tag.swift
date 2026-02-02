@@ -12,14 +12,15 @@ import SwiftData
 
 @Model
 final class Tag {
-    var name: String
-    var colorHex: String
+    // CloudKit: defaults required
+    var name: String = ""
+    var colorHex: String = "#FF9F0A"
     var iconName: String = "tag.fill"
-    var isActive: Bool
-    var createdAt: Date
+    var isActive: Bool = true
+    var createdAt: Date = Date()
 
     @Relationship(deleteRule: .nullify, inverse: \TransactionItem.tags)
-    var transactions: [TransactionItem]
+    var transactions: [TransactionItem] = []
 
     /// Relación inversa con budgets (muchos-a-muchos)
     var budgets: [Budget] = []

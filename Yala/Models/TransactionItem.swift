@@ -12,9 +12,10 @@ import SwiftData
 
 @Model
 final class TransactionItem {
-    var date: Date
-    var amount: Double
-    var currencyCode: String
+    // CloudKit: defaults required
+    var date: Date = Date()
+    var amount: Double = 0
+    var currencyCode: String = "USD"
     var note: String?
 
     @Relationship(inverse: \Category.transactions)
@@ -26,7 +27,10 @@ final class TransactionItem {
     @Relationship(inverse: \Account.transactions)
     var account: Account?
 
-    var tags: [Tag]
+    var tags: [Tag] = []
+
+    /// Inverse relationship: draft that created this transaction (CloudKit requirement)
+    var approvedDraft: InboxDraft?
 
     // MARK: - Standardized Currency Data
     /// Tasa de cambio aplicada (Moneda Transacción -> Moneda Preferida)

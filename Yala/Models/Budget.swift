@@ -15,16 +15,17 @@ final class Budget {
     // Stable identifier for tracking (e.g., alert notifications)
     var id: UUID = UUID()
 
-    // Legacy properties (kept for backwards compatibility)
-    var month: Int
-    var year: Int
-    var currencyCode: String
-    var limitAmount: Double
+    // Legacy properties (kept for backwards compatibility) - CloudKit: defaults required
+    var month: Int = 0
+    var year: Int = 0
+    var currencyCode: String = "USD"
+    var limitAmount: Double = 0
+    @Relationship(inverse: \Category.budgets)
     var category: Category?
 
-    // New properties for enhanced budget system
-    var name: String
-    var periodType: String  // "weekly", "monthly", "yearly", "unique"
+    // New properties for enhanced budget system - CloudKit: defaults required
+    var name: String = ""
+    var periodType: String = "monthly"  // "weekly", "monthly", "yearly", "unique"
     var startDate: Date?    // For unique budgets
     var endDate: Date?      // For unique budgets
     var currentPeriodStart: Date?  // For tracking which week/month/year
@@ -39,8 +40,8 @@ final class Budget {
     @Relationship(inverse: \Tag.budgets)
     var tags: [Tag]
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
-    var isActive: Bool
-    var createdAt: Date
+    var isActive: Bool = true
+    var createdAt: Date = Date()
     var isFavorite: Bool = false
     var favoriteOrder: Int = 0
 

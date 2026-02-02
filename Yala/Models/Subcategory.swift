@@ -12,15 +12,16 @@ import SwiftData
 
 @Model
 final class Subcategory {
-    var name: String
+    // CloudKit: defaults required
+    var name: String = ""
     var colorHex: String?
 
     /// Indica si esta subcategoría proviene de la semilla inicial
-    var isDefaultSeed: Bool
+    var isDefaultSeed: Bool = false
     /// Control de visibilidad dentro de la app
-    var isVisible: Bool
+    var isVisible: Bool = true
     /// Orden de presentación dentro de su categoría
-    var sortOrder: Int
+    var sortOrder: Int = 0
     /// Campo reservado para futura "naturaleza" (Necesario / Deseable / etc.)
     var natureRawValue: String?
     /// Nombre del icono SF Symbol (opcional)
@@ -40,6 +41,12 @@ final class Subcategory {
 
     /// Inverse relationship: scheduled payments linked to this subcategory
     var scheduledPayments: [ScheduledPayment] = []
+
+    /// Inverse relationship: inbox drafts linked to this subcategory (CloudKit requirement)
+    var inboxDrafts: [InboxDraft]? = []
+
+    /// Inverse relationship: merchant memories linked to this subcategory (CloudKit requirement)
+    var merchantMemories: [MerchantMemory]? = []
 
     init(
         name: String,

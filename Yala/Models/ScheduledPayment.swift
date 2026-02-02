@@ -18,24 +18,24 @@ final class ScheduledPayment {
     /// Unique identifier (stable across sessions)
     var id: UUID = UUID()
 
-    /// Display name for the scheduled payment (required)
-    var name: String
+    /// Display name for the scheduled payment (required) - CloudKit: default required
+    var name: String = ""
 
     /// Optional description/note
     var note: String?
 
-    // MARK: - Amount & Currency
+    // MARK: - Amount & Currency (CloudKit: defaults required)
 
     /// Payment amount (required)
-    var amount: Double
+    var amount: Double = 0
 
     /// Currency code (ISO 4217)
-    var currencyCode: String
+    var currencyCode: String = "USD"
 
-    // MARK: - Type (income/expense)
+    // MARK: - Type (income/expense) (CloudKit: default required)
 
     /// Transaction type: "income" or "expense"
-    var transactionType: String
+    var transactionType: String = "expense"
 
     // MARK: - Classification
 
@@ -47,26 +47,26 @@ final class ScheduledPayment {
     @Relationship(inverse: \Subcategory.scheduledPayments)
     var subcategory: Subcategory?
 
-    /// Linked tags (many-to-many)
+    /// Linked tags (many-to-many) - CloudKit: default required
     @Relationship(inverse: \Tag.scheduledPayments)
-    var tags: [Tag]
+    var tags: [Tag] = []
 
     /// Optional nature override (nil = use subcategory's nature)
     var natureOverride: String?
 
-    // MARK: - Recurrence
+    // MARK: - Recurrence (CloudKit: defaults required)
 
     /// Whether this is a recurring payment (false = one-time)
-    var isRecurring: Bool
+    var isRecurring: Bool = true
 
     /// Recurrence type: "daily", "weekly", "monthly", "yearly" (only if isRecurring)
-    var recurrenceType: String
+    var recurrenceType: String = "monthly"
 
     /// Recurrence interval: "every X days/weeks/months/years" (default 1)
-    var recurrenceInterval: Int
+    var recurrenceInterval: Int = 1
 
     /// Payment date (for one-time) or next due date (for recurring)
-    var nextDueDate: Date
+    var nextDueDate: Date = Date()
 
     /// Day of month for monthly recurrence (1-31)
     var dayOfMonth: Int?
@@ -81,26 +81,26 @@ final class ScheduledPayment {
     /// Optional end date for recurring payments
     var endDate: Date?
 
-    // MARK: - Payment Category
+    // MARK: - Payment Category (CloudKit: default required)
 
     /// Category: "recurring" or "subscription"
-    var paymentCategory: String
+    var paymentCategory: String = "recurring"
 
-    // MARK: - Notifications
+    // MARK: - Notifications (CloudKit: defaults required)
 
     /// Whether to notify on due date
-    var notifyOnDueDate: Bool
+    var notifyOnDueDate: Bool = true
 
     /// Days before due date to notify (0 = disabled, 1-30 = days before)
-    var notifyDaysBefore: Int
+    var notifyDaysBefore: Int = 0
 
-    // MARK: - Metadata
+    // MARK: - Metadata (CloudKit: defaults required)
 
     /// Whether this payment is active
-    var isActive: Bool
+    var isActive: Bool = true
 
     /// Creation timestamp
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// Last date a notification was sent (to avoid duplicates)
     var lastNotifiedDate: Date?

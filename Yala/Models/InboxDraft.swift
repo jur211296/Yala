@@ -36,8 +36,8 @@ final class InboxDraft: Identifiable {
     var id: PersistentIdentifier { persistentModelID }
     // MARK: - Campos del draft
 
-    /// Descripción/nota del gasto
-    var note: String
+    /// Descripción/nota del gasto (CloudKit: default required)
+    var note: String = ""
 
     /// Monto con signo (negativo = gasto, positivo = ingreso). Nil si no detectado.
     var amount: Double?
@@ -46,27 +46,27 @@ final class InboxDraft: Identifiable {
     var date: Date?
 
     /// Cuenta asociada. Requerido para aprobar.
-    @Relationship(deleteRule: .nullify)
+    @Relationship(deleteRule: .nullify, inverse: \Account.inboxDrafts)
     var account: Account?
 
     /// Subcategoría asociada. Requerido para aprobar.
-    @Relationship(deleteRule: .nullify)
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.inboxDrafts)
     var subcategory: Subcategory?
 
-    /// Etiquetas asociadas (relación N:N)
+    /// Etiquetas asociadas (relación N:N) - CloudKit: default required
     @Relationship(deleteRule: .nullify)
-    var tags: [Tag]
+    var tags: [Tag] = []
 
     /// Transacción creada al aprobar (para sincronización)
     /// Se establece deleteRule: .nullify para que si se elimina la transacción,
     /// el draft conserve su referencia nula y pueda detectar que fue eliminada.
-    @Relationship(deleteRule: .nullify)
+    @Relationship(deleteRule: .nullify, inverse: \TransactionItem.approvedDraft)
     var approvedTransaction: TransactionItem?
 
     // MARK: - Metadatos de origen
 
-    /// Tipo de fuente (voz, foto, screenshot, etc.)
-    var sourceTypeRaw: String
+    /// Tipo de fuente (voz, foto, screenshot, etc.) - CloudKit: default required
+    var sourceTypeRaw: String = "voice"
 
     /// Texto crudo OCR/STT para referencia
     var rawText: String?
@@ -83,14 +83,14 @@ final class InboxDraft: Identifiable {
 
     // MARK: - Estado y validación
 
-    /// Campos que requieren input del usuario (["account", "amount", etc.])
-    var needsUserInput: [String]
+    /// Campos que requieren input del usuario (["account", "amount", etc.]) - CloudKit: default required
+    var needsUserInput: [String] = []
 
     /// Nombres de tags creados automáticamente (para mostrar badge "nuevo")
     var newlyCreatedTagNames: [String] = []
 
-    /// Estado del draft
-    var statusRaw: String
+    /// Estado del draft - CloudKit: default required
+    var statusRaw: String = "pending"
 
     // MARK: - Cached Display Values (para cuando los objetos relacionados son eliminados)
 
@@ -114,10 +114,10 @@ final class InboxDraft: Identifiable {
     /// ID del pago planificado que originó este draft (si aplica)
     var sourceScheduledPaymentID: String?
 
-    // MARK: - Timestamps
+    // MARK: - Timestamps (CloudKit: defaults required)
 
-    var createdAt: Date
-    var updatedAt: Date
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
 
     // MARK: - Computed Properties
 

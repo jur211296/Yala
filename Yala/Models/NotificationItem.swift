@@ -205,17 +205,18 @@ struct ReportConfig: Equatable, Sendable {
 
 @Model
 final class NotificationItem {
-    var id: UUID
-    var name: String
-    var text: String
-    var hour: Int
-    var minute: Int
-    var typeRaw: String
-    var isActive: Bool
-    var iconName: String
-    var colorHex: String
-    var createdAt: Date
-    var sortOrder: Int
+    // CloudKit: defaults required
+    var id: UUID = UUID()
+    var name: String = ""
+    var text: String = ""
+    var hour: Int = 12
+    var minute: Int = 0
+    var typeRaw: String = "custom"
+    var isActive: Bool = true
+    var iconName: String = "bell.fill"
+    var colorHex: String = "#6366F1"
+    var createdAt: Date = Date()
+    var sortOrder: Int = 0
 
     /// JSON-encoded configuration for report notifications
     var configurationData: Data?
