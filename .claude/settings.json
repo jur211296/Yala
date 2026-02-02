@@ -26,23 +26,27 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": {
-          "tools": ["Edit", "Write"]
-        },
+        "matcher": "Edit",
         "hooks": [
           {
             "type": "command",
             "command": "echo \"[$(date +%H:%M:%S)] Editado: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
           }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%H:%M:%S)] Escrito: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": {
-          "tools": ["Bash"],
-          "command_pattern": "git commit"
-        },
+        "matcher": "Bash(git commit*)",
         "hooks": [
           {
             "type": "command",
@@ -53,7 +57,7 @@
     ],
     "Stop": [
       {
-        "matcher": {},
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
