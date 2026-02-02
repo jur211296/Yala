@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-02] 27524db feat(budgets): add push notifications when budget thresholds are reached
 - [2026-02-01] dd339c6 docs(qa): add validation scenarios for inbox alert modal (10.5.F)
 - [2026-02-01] 51cf81c docs: update STATE.md for Phase 10.5.F completion
 - [2026-02-01] 0e91b17 feat(inbox): unified alert modal for new drafts
@@ -34,10 +35,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-01] 47f995b refactor(ui): simplify scheduled payments visual design for consistency
 - [2026-02-01] 91abfa9 fix(swiftdata): isolate database between Yala and Yala Dev builds
 - [2026-02-01] 1be90fd fix(share): dynamic App Group and URL Scheme for Yala vs Yala Dev
-- [2026-02-01] e5dad6a fix(notifications): show ScheduledPaymentAlertModal over sheets
-- [2026-02-01] bd7cdb6 fix(profile): dismiss ProfileView on theme change for immediate apply
-- [2026-02-01] 2b28104 fix(intents): add detailed DecodingError messages in automation JSON parsing
-- [2026-01-31] 3230de0 feat(widget): add interactive legend to exchange rate widget
 
 ## Completed in Current Phase
 
@@ -76,6 +73,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Consistencia Visual Pagos Planificados (10.5.B)** - Summary card sin gradientes (color primario, borde/sombra neutros); section headers simplificados (solo vencidos con indicador rojo); due status en cards simplificado (hotPink solo vencidos, resto secundario); botones calendario sin fondo coloreado; ingresos mantienen teal
 - **UX Divisas (10.5.C completo)** - C.1: Ejemplos voz dinámicos con shortPluralName (ej: "50 soles", "50 dólares") sin país; C.2: Filtro monedas solo muestra las usadas en transacciones, sección oculta si no hay transacciones; C.3: Onboarding agrupa monedas por continente con sección "Recomendada" destacada, sin duplicación
 - **Modal Unificado Inbox (10.5.F completo)** - Modal al volver a la app cuando hay drafts nuevos no vistos; mensaje adaptado según tipo (pagos planificados, suscripciones, automatizaciones, mixto con desglose); excluye voz/imagen; detección por lastCheckDate en UserDefaults; 14 escenarios QA
+- **Alertas de Presupuestos (10.5.D.1 completo)** - Notificaciones push cuando presupuestos alcanzan umbrales configurados (50%, 75%, 90%, 100%); configuración por presupuesto con toggle y chips de umbrales; BudgetAlertService evalúa al crear/aprobar transacciones; BudgetAlertTracker previene duplicados por período (UserDefaults); funciona desde registro manual, Shortcuts/Siri, Inbox; 15 escenarios QA
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -151,8 +149,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [x] C.2: Filtro monedas solo con transacciones existentes
 - [x] C.3: Onboarding divisas: recomendada + continentes
 
-**10.5.D: Features (1)**
-- [ ] D.1: Notificaciones de presupuestos (porcentaje + límite)
+**10.5.D: Features (1)** ✅ COMPLETADO
+- [x] D.1: Notificaciones de presupuestos (porcentaje + límite)
 
 ### Fase 10: Refinamiento & Notificaciones (V1.1) ✅ COMPLETADA
 
@@ -281,9 +279,9 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ## Session Continuity
 
-Last session: 2026-02-01
-Stopped at: Fase 10.5.F completada (Modal unificado para nuevos items en bandeja)
-Next step: 10.5.D (Notificaciones presupuestos)
+Last session: 2026-02-02
+Stopped at: Fase 10.5.D.1 completada (Alertas de presupuestos)
+Next step: Fase 10.5 completa - preparar merge a 1.0 o iniciar Fase 11
 Resume context:
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
