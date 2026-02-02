@@ -13,8 +13,8 @@ Version: 1.1 (en desarrollo)
 Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **Fase 10.5 iniciada** — Mejoras adicionales antes de V1.2
-Last activity: 2026-02-01 — Creada Fase 10.5 en ROADMAP
+Status: **Fase 10.5 en progreso** — Sección G completa (Sync + Widgets + Control Center)
+Last activity: 2026-02-02 — Merge Sección G (iCloud Sync, Widgets iOS, Control Center)
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ██████████████░░ 90% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso)
@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-02] 7e440fe Merge feature/10.5.G.3-control-center into 1.1
+- [2026-02-02] 9ff53cb Merge feature/10.5.G.2-widgets-ios into 1.1
+- [2026-02-02] 1563970 Merge feature/10.5.G.1-icloud-sync into 1.1
 - [2026-02-02] f4ed518 feat(widgets): add iOS WidgetKit widgets for balance, records, payments and budgets
 - [2026-02-02] 27524db feat(budgets): add push notifications when budget thresholds are reached
 - [2026-02-01] dd339c6 docs(qa): add validation scenarios for inbox alert modal (10.5.F)
@@ -74,6 +77,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Modal Unificado Inbox (10.5.F completo)** - Modal al volver a la app cuando hay drafts nuevos no vistos; mensaje adaptado según tipo (pagos planificados, suscripciones, automatizaciones, mixto con desglose); excluye voz/imagen; detección por lastCheckDate en UserDefaults; 14 escenarios QA
 - **Alertas de Presupuestos (10.5.D.1 completo)** - Notificaciones push cuando presupuestos alcanzan umbrales configurados (50%, 75%, 90%, 100%); configuración por presupuesto con toggle y chips de umbrales; BudgetAlertService evalúa al crear/aprobar transacciones; BudgetAlertTracker previene duplicados por período (UserDefaults); funciona desde registro manual, Shortcuts/Siri, Inbox; 15 escenarios QA
 - **Widgets iOS WidgetKit (10.5.G.2 completo)** - 4 tipos de widgets: Balance (small/medium con mini gráfico), Últimos Registros (5 transacciones recientes), Pagos Planificados (próximos con filtro), Presupuestos (barras de progreso con colores); WidgetDataCache para sincronización via App Groups; deep links desde widgets (yala://panel, statistics/records, planning, budgets); Background App Refresh cada 4h; 30 escenarios QA (Sección 28)
+- **Control Center iOS 18+ (10.5.G.3 completo)** - 3 ControlWidgets para iOS 18+: QuickExpenseControl (flujo Siri sin abrir app), VoiceEntryControl (abre app en modo voz), ImageEntryControl (abre app en modo imagen); @available(iOS 18.0, *) para compatibilidad; localizaciones 6 idiomas; 15 escenarios QA (Sección 29)
+- **iCloud Sync CloudKit (10.5.G.1 completo)** - Integración nativa SwiftData+CloudKit con ModelConfiguration(cloudKitContainerIdentifier:); toggle opt-in en Settings; SyncSettingsView con estado de sync y cuenta iCloud; containers iCloud.com.jurgenschmidt.yala y iCloud.com.jurgenschmidt.yala.dev; paso opcional en onboarding; Privacy Policy actualizada; 20 escenarios QA (Sección 30)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -152,17 +157,25 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 **10.5.D: Features (1)** ⏳ PENDIENTE VALIDACIÓN
 - [x] D.1: Notificaciones de presupuestos (porcentaje + límite) — código completo, QA pendiente (Sección 27)
 
-**10.5.G: Widgets iOS (WidgetKit)** ✅ COMPLETADO
-- [x] G.2.1: Widget Extension target creado en Xcode
-- [x] G.2.2: WidgetDataCache + WidgetDataService para datos compartidos
-- [x] G.2.3: BalanceWidget (small: KPI, medium: KPI + mini gráfico)
-- [x] G.2.4: LatestRecordsWidget (5 últimas transacciones)
-- [x] G.2.5: ScheduledPaymentsWidget (próximos pagos con filtro)
-- [x] G.2.6: BudgetsWidget (barras de progreso con colores)
-- [x] G.2.7: Refresh desde app (TransactionService, DraftService)
-- [x] G.2.8: Background App Refresh (BackgroundTaskManager, 4h)
-- [x] G.2.9: Deep links handling (panel, statistics/records, planning, budgets)
-- [x] G.2.10: QA-SCENARIOS sección 28 (30 escenarios)
+**10.5.G: Sincronización y Widgets** ✅ COMPLETADO
+- [x] G.1: iCloud Sync (CloudKit)
+  - Integración nativa SwiftData+CloudKit
+  - Toggle opt-in en SyncSettingsView
+  - Containers: iCloud.com.jurgenschmidt.yala / .dev
+  - Paso opcional en onboarding
+  - Privacy Policy actualizada
+  - 20 escenarios QA (Sección 30)
+- [x] G.2: Widgets iOS (WidgetKit)
+  - 4 widgets: Balance (S/M), Últimos Registros, Pagos, Presupuestos
+  - WidgetDataCache + WidgetDataService
+  - Deep links desde widgets
+  - Background App Refresh cada 4h
+  - 30 escenarios QA (Sección 28)
+- [x] G.3: Control Center (iOS 18+)
+  - 3 ControlWidgets: QuickExpense, Voice, Image
+  - @available(iOS 18.0, *) para compatibilidad
+  - Localizaciones 6 idiomas
+  - 15 escenarios QA (Sección 29)
 
 ### Fase 10: Refinamiento & Notificaciones (V1.1) ✅ COMPLETADA
 
@@ -292,15 +305,20 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Commit f4ed518 - Widgets iOS completos (10.5.G.2)
-Next step: Validación manual de QA-SCENARIOS secciones 25, 26, 27, 28
+Stopped at: Merge de Sección G completa (G.1 + G.2 + G.3)
+Next step: Validación manual de QA-SCENARIOS secciones 25-30
 Resume context:
-- **Widgets implementados:** Balance (S/M), Últimos Registros, Pagos Planificados, Presupuestos
+- **Sección G completa:**
+  - G.1: iCloud Sync con SwiftData nativo (44 archivos)
+  - G.2: 4 WidgetKit widgets (26 archivos)
+  - G.3: 3 ControlWidgets iOS 18+ (11 archivos)
 - **QA Pendiente:**
   - Sección 25: Fase 10.5.B y 10.5.C
   - Sección 26: Modal Unificado Inbox (10.5.F)
   - Sección 27: Alertas de Presupuestos (10.5.D.1)
   - Sección 28: Widgets iOS (10.5.G.2)
+  - Sección 29: Control Center (10.5.G.3)
+  - Sección 30: iCloud Sync (10.5.G.1)
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
 - Auditoría de código: CERRADA ✅

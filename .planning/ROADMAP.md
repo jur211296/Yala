@@ -7,8 +7,14 @@ App iOS de finanzas personales. Registrar y entender gastos, cuentas, presupuest
 ### V1.0 (Release actual)
 Features completas + preparación para beta pública en TestFlight.
 
-### V1.1 (Siguiente release)
-Registro inteligente con IA, widgets iOS, notificaciones y polish final.
+### V1.1 (En desarrollo)
+Registro inteligente con IA, iCloud Sync, Widgets iOS, modo Solo Gastos, modelo Pro/Free.
+
+### V1.2 (App Store Release)
+Watch, iPad/Mac, Smart Insights y reportes financieros.
+
+### V2.0 (Futuro)
+Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 
 ## Domain Expertise
 
@@ -30,14 +36,17 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
-- [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX, dev seed (21 items UAT) ✅ COMPLETADA
-- [ ] **Fase 10.5: Mejoras Pre-Release** - Mejoras adicionales antes de V1.2
+- [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT) ✅
+- [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, modo Solo Gastos, modelo Pro/Free
 
 ### V1.2 (App Store Release)
-- [ ] **Fase 11: Plataforma Avanzada** - Modo solo gastos, Widgets iOS, Smart Insights, Watch, iPad, reportes
+- [ ] **Fase 11: Plataforma Extendida** - Watch, iPad/Mac, Smart Insights, reportes
 
 ### V2.0
-- [ ] **Fase 12: Features Avanzadas** - Split de transacción, y más por definir
+- [ ] **Fase 12: Features Avanzadas** - Splitwise, predicciones, perfiles, metas de ahorro
+
+### Futuro
+- [ ] **Multiplataforma** - Integración opcional Android/Web
 
 ## Phase Details
 
@@ -363,74 +372,120 @@ DoD:
 ---
 
 ### Fase 10.5: Mejoras Pre-Release
-**Goal**: Mejoras adicionales y polish antes de pasar a V1.2
+**Goal**: Completar V1.1 con sync, widgets, personalización y modelo de suscripción
 **Depends on**: Fase 10
-**Research**: Unlikely
+**Research**: Likely (CloudKit, WidgetKit, Control Center APIs)
 **Plans**: TBD
 
-**10.5.A: Bugs Críticos**
-- [ ] A.1: Share Sheet envía imagen a app incorrecta (Yala Dev en lugar de Yala cuando ambas instaladas)
-- [ ] A.2: Atajo de automatización no lee JSON de texto ni crea transacción en bandeja
-- [ ] A.3: Notificación in-app de nuevos items en bandeja no aparece si hay sheet abierta
-- [ ] A.4: Cambio de tema no se aplica inmediatamente a todas las vistas y sheets
+**10.5.A: Bugs Críticos** ✅
+- [x] A.1: Share Sheet envía imagen a app incorrecta → App Group dinámico
+- [x] A.2: Atajo de automatización no lee JSON → DecodingError detallado
+- [x] A.3: Notificación in-app no aparece con sheet → fullScreenCover
+- [x] A.4: Cambio de tema no se aplica → themeRefreshKey
 
-**10.5.B: Consistencia Visual**
-- [ ] B.1: UI de Pagos Planificados inconsistente (alinear con estilo de Presupuestos: colores, montos, sin gradientes)
+**10.5.B: Consistencia Visual** ✅
+- [x] B.1: UI de Pagos Planificados alineada con Presupuestos
 
-**10.5.C: UX y Personalización**
-- [ ] C.1: Ejemplo de registro por voz dice "pesos" hardcodeado — usar moneda preferida del usuario
-- [ ] C.2: Filtro de monedas en DetailContainerView muestra todas — solo mostrar monedas con transacciones
-- [ ] C.3: Onboarding divisas: primero recomendada por región, luego A-Z agrupado por continentes
+**10.5.C: UX y Personalización** ✅
+- [x] C.1: Ejemplo voz usa moneda preferida (shortPluralName)
+- [x] C.2: Filtro monedas solo con transacciones
+- [x] C.3: Onboarding divisas por continente con recomendada
+- [x] C.4: Settings divisas secundarias con continentes + recomendadas (USD, EUR, GBP)
 
-**10.5.D: Features**
-- [ ] D.1: Notificaciones de presupuestos: alertas al alcanzar porcentaje configurable y al llegar al límite
+**10.5.D: Features** ⏳
+- [x] D.1: Notificaciones de presupuestos (umbrales configurables)
+- [ ] D.2: Toggle global en Notificaciones para alertas de presupuestos
+
+**10.5.E: Aislamiento Yala/Dev** ✅
+- [x] E.1: SwiftData aislado (YalaModel vs YalaModel-Dev)
+
+**10.5.F: Modal Unificado Inbox** ✅
+- [x] F.1: Modal para pagos planificados/suscripciones/automatizaciones
+
+**10.5.G: Sincronización y Widgets** ✅
+- [x] G.1: iCloud Sync (CloudKit private database)
+- [x] G.2: Widgets iOS (WidgetKit) — balance, gastos del día/semana, próximos pagos
+- [x] G.3: Atajos en centro de control y acciones rápidas en pantalla de bloqueo
+
+**10.5.H: Navegación y UI**
+- [ ] H.1: Crear tab propia de Registros (separar de Statistics)
+- [ ] H.2: Animaciones nivel app (estilo FAB) y haptic feedback en botones importantes
+
+**10.5.I: Personalización**
+- [ ] I.1: Opción para ocultar variaciones (chips de %)
+- [ ] I.2: Reorganizar Personalización por secciones lógicas
+- [ ] I.3: Definir defaults sensatos para todas las preferencias
+
+**10.5.J: Suscripción Pro**
+- [ ] J.1: Separar funcionalidades Pro vs Free (definir matriz)
+- [ ] J.2: Configurar planes Pro con 7 días gratis de prueba
+
+**10.5.K: Modo Solo Gastos**
+- [ ] K.1: Implementar modo "Solo gastos" (ocultar ingresos y saldos globalmente)
+- [ ] K.2: Toggle en Personalización
+- [ ] K.3: Opción en Onboarding
 
 DoD:
-- 0 bugs críticos (sección A completa)
-- UI de Pagos Planificados consistente con resto de app
-- Personalización correcta en voz y onboarding
-- Notificaciones de presupuestos funcionales
+- iCloud Sync funcional con datos privados
+- Widgets en pantalla de inicio con datos actualizados
+- Atajos accesibles desde centro de control
+- Tab de Registros independiente
+- Animaciones y haptics consistentes
+- Personalización reorganizada con defaults sensatos
+- Modelo Pro/Free claramente definido
+- Modo Solo Gastos oculta ingresos/saldos en toda la app
 
 ---
 
-### Fase 11: Plataforma Avanzada (V1.2 - App Store)
-**Goal**: Modo solo gastos, widgets iOS, insights, Watch y plataformas extendidas
-**Depends on**: Fase 10
-**Research**: Likely (WidgetKit, WatchKit, App Intents, ML/heurísticas)
+### Fase 11: Plataforma Extendida (V1.2 - App Store)
+**Goal**: Watch, iPad/Mac, Smart Insights y reportes
+**Depends on**: Fase 10.5
+**Research**: Likely (WatchKit, iPadOS/macOS adaptations, ML/heurísticas)
 **Plans**: TBD
 
 Incluye:
-- [ ] Modo "Solo gastos" — ocultar ingresos y saldos en toda la app
-- [ ] Acciones rápidas en centro de control y pantalla de bloqueo
-- [ ] Widgets iOS (WidgetKit)
-- [ ] Predicciones de saldo en gráficas de tendencia
-- [ ] Integración con Apple Watch
-- [ ] Refinamiento versión iPad
-- [ ] Vista de Smart Insights
-- [ ] Integrar Smart Insights a lo largo de la app
-- [ ] Vista de reporte financiero
+- [ ] Integración con Apple Watch (registro rápido, balance, widgets)
+- [ ] Refinamiento versión iPad/Mac (layouts adaptados, sidebar)
+- [ ] Vista de Smart Insights (patrones de gasto, alertas inteligentes)
+- [ ] Integrar Smart Insights a lo largo de la app (contextuales)
+- [ ] Vista de reporte financiero (exportable PDF/Excel)
+- [ ] Filtros avanzados: excluir/incluir en DetailContainerView
 
 DoD:
-- Modo solo gastos oculta ingresos/saldos globalmente
-- Widgets funcionales en pantalla de inicio
+- App funcional en Watch con registro y balance
+- Layouts optimizados para iPad y Mac
 - Insights visibles en contexto relevante
-- App funcional en Watch y iPad
 - Reportes financieros exportables
+- Filtros con exclusión/inclusión
 
 ---
 
 ### Fase 12: Features Avanzadas (V2.0)
-**Goal**: Funcionalidades avanzadas post-launch
+**Goal**: Splitwise, predicciones y perfiles de usuario
 **Depends on**: Fase 11
-**Research**: TBD
+**Research**: Likely (APIs Splitwise, ML para predicciones)
 **Plans**: TBD
 
 Incluye:
-- [ ] Split de transacción (dividir en múltiples partes)
-- [ ] Más features por definir
+- [ ] Splitwise integrado (gastos compartidos, deudas)
+- [ ] Predicción de saldo en gráficas de tendencia
+- [ ] Integración BD multiplataforma para Splitwise (sin exponer datos innecesarios)
+- [ ] Perfil para Smart Insights: ahorrador, justo, sobrado
+- [ ] Visualizador de ahorros (metas amarradas a cuentas de ahorro)
+- [ ] Split de transacción (dividir en múltiples partes/personas)
 
 DoD:
-- Por definir
+- Splitwise sincronizado con gastos compartidos
+- Predicciones de saldo visibles en tendencias
+- Perfiles de usuario influyen en insights
+- Metas de ahorro con progreso visual
+
+---
+
+### Futuro (Post V2.0)
+
+Ideas capturadas para evaluación posterior:
+- [ ] Integración multiplataforma opcional (Android, Web) — sync completo para usuarios que lo deseen
 
 ## Progress
 
@@ -458,12 +513,17 @@ DoD:
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 11 | Plataforma Avanzada | Not started | - |
+| 11 | Plataforma Extendida | Not started | - |
 
 ### V2.0
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
 | 12 | Features Avanzadas | Not started | - |
+
+### Futuro
+| Tema | Status |
+|------|--------|
+| Multiplataforma opcional | Backlog |
 
 ---
 
