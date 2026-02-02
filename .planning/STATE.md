@@ -13,8 +13,8 @@ Version: 1.1 (en desarrollo)
 Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **Fase 10.5 en progreso** — Sección G completa (Sync + Widgets + Control Center)
-Last activity: 2026-02-02 — Merge Sección G (iCloud Sync, Widgets iOS, Control Center)
+Status: **Fase 10.5 en progreso** — Notificaciones personalizadas implementadas
+Last activity: 2026-02-02 — Sistema de notificaciones personalizadas (pagos, presupuestos, reportes)
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ██████████████░░ 90% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso)
@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-02] 801bb7e feat(notifications): add personalized scheduled payment and report notifications
+- [2026-02-02] 671dbda docs: mark 10.5.D.2 as completed in STATE and ROADMAP
 - [2026-02-02] b1ae949 feat(onboarding): add budget alerts toggle to notifications step
 - [2026-02-02] 7f0cde5 feat(notifications): add global toggle for budget alerts in settings
 - [2026-02-02] 620eec8 chore: rename /compact to /pre-compact, clarify manual Shift+C requirement
@@ -31,11 +33,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-02] 9ff53cb Merge feature/10.5.G.2-widgets-ios into 1.1
 - [2026-02-02] 1563970 Merge feature/10.5.G.1-icloud-sync into 1.1
 - [2026-02-02] f4ed518 feat(widgets): add iOS WidgetKit widgets for balance, records, payments and budgets
-- [2026-02-02] 27524db feat(budgets): add push notifications when budget thresholds are reached
 - [2026-02-01] 1c32cc2 feat(voice): use dynamic currency names in voice input examples
-- [2026-02-01] 126bdf1 feat(onboarding): group currencies by continent with recommended section
-- [2026-02-01] 1ef344f feat(filters): show only currencies with transactions in filters
-- [2026-02-01] 47f995b refactor(ui): simplify scheduled payments visual design for consistency
 
 ## Completed in Current Phase
 
@@ -78,6 +76,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Widgets iOS WidgetKit (10.5.G.2 completo)** - 4 tipos de widgets: Balance (small/medium con mini gráfico), Últimos Registros (5 transacciones recientes), Pagos Planificados (próximos con filtro), Presupuestos (barras de progreso con colores); WidgetDataCache para sincronización via App Groups; deep links desde widgets (yala://panel, statistics/records, planning, budgets); Background App Refresh cada 4h; 30 escenarios QA (Sección 28)
 - **Control Center iOS 18+ (10.5.G.3 completo)** - 3 ControlWidgets para iOS 18+: QuickExpenseControl (flujo Siri sin abrir app), VoiceEntryControl (abre app en modo voz), ImageEntryControl (abre app en modo imagen); @available(iOS 18.0, *) para compatibilidad; localizaciones 6 idiomas; 15 escenarios QA (Sección 29)
 - **iCloud Sync CloudKit (10.5.G.1 completo)** - Integración nativa SwiftData+CloudKit con ModelConfiguration(cloudKitContainerIdentifier:); toggle opt-in en Settings; SyncSettingsView con estado de sync y cuenta iCloud; containers iCloud.com.jurgenschmidt.yala y iCloud.com.jurgenschmidt.yala.dev; paso opcional en onboarding; Privacy Policy actualizada; 20 escenarios QA (Sección 30)
+- **Notificaciones Personalizadas (10.5.H)** - ScheduledPaymentNotificationService para pagos vencidos/hoy/próximos con nombre y monto ("Hoy vence: Netflix por $29.90"); BudgetAlertService mejorado con montos gastado/límite ("Presupuesto Comida al 50% — $500 de $1,000 gastados"); ReportNotificationService con datos reales calculados (balance, gastos, ingresos, top categoría); verificación de permisos y reprogramación automática al volver a la app o reinstalar; CurrencyUtils.symbol(for:) helper; localizaciones 6 idiomas
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
