@@ -75,7 +75,7 @@ enum CurrencyCode: String, CaseIterable {
 
 ### Flujo estándar
 ```
-/next → [Shift+Tab] → /review-plan → /session-start
+/next → [Shift+Tab] → /review-plan → /plan-ready → /session-start
      → Implementar → /verify-ios → /test-smart → /commit-one
      → /pre-deploy-check → /session-end → /compact → /clear
 ```
@@ -84,7 +84,7 @@ enum CurrencyCode: String, CaseIterable {
 | Fase | Comandos |
 |------|----------|
 | Orientación | `/next` |
-| Planificación | `Shift+Tab` (Plan Mode), `/review-plan` |
+| Planificación | `Shift+Tab` (Plan Mode), `/review-plan`, `/plan-ready` |
 | Análisis | `/analyze-impact`, `/parallel-search` |
 | Verificación | `/verify-ios`, `/test-smart`, `/pre-deploy-check` |
 | Commits | `/commit-one` |
