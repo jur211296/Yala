@@ -297,7 +297,7 @@ struct FavoriteEditorView: View {
                     icon: "creditcard",
                     text: selectedAccount?.name ?? L10n.Transaction.account,
                     isSelected: selectedAccount != nil,
-                    color: selectedAccount != nil ? Color(hex: selectedAccount!.colorHex) : nil
+                    color: selectedAccount.map { Color(hex: $0.colorHex) }
                 ) {
                     showAccountSelector = true
                 }

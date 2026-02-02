@@ -551,7 +551,7 @@ struct InboxDraftEditSheet: View {
                     icon: "creditcard",
                     text: selectedAccount?.name ?? L10n.Transaction.account,
                     isSelected: selectedAccount != nil,
-                    color: selectedAccount != nil ? Color(hex: selectedAccount!.colorHex) : nil
+                    color: selectedAccount.map { Color(hex: $0.colorHex) }
                 ) {
                     dismissKeyboard()
                     showAccountSelector = true
@@ -988,7 +988,13 @@ struct InboxDraftEditSheet: View {
             }
         )
 
-        guard let transactions = try? modelContext.fetch(descriptor) else {
+        let transactions: [TransactionItem]
+        do {
+            transactions = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("InboxDraftEditSheet: Error checking duplicates: \(error)")
+            #endif
             return nil
         }
 

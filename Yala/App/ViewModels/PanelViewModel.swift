@@ -726,15 +726,8 @@ final class PanelViewModel {
                 if let sub = transaction.subcategory {
                     if sub.nature != nature { return false }
                 } else {
-                    if nature == .unclassified {
-                        if transaction.subcategory != nil
-                            && transaction.subcategory!.nature != .unclassified
-                        {
-                            return false
-                        }
-                    } else {
-                        return false
-                    }
+                    // No subcategory - only pass if looking for unclassified
+                    if nature != .unclassified { return false }
                 }
             }
 
@@ -835,15 +828,8 @@ final class PanelViewModel {
                 if let sub = transaction.subcategory {
                     if sub.nature != nature { return false }
                 } else {
-                    if nature == .unclassified {
-                        if transaction.subcategory != nil
-                            && transaction.subcategory!.nature != .unclassified
-                        {
-                            return false
-                        }
-                    } else {
-                        return false
-                    }
+                    // No subcategory - only pass if looking for unclassified
+                    if nature != .unclassified { return false }
                 }
             }
 
@@ -890,7 +876,7 @@ final class PanelViewModel {
                 effectiveInterval = DateInterval(start: start, end: Date())
             } else {
                 let startOfYear = calendar.date(
-                    from: calendar.dateComponents([.year], from: Date()))!
+                    from: calendar.dateComponents([.year], from: Date())) ?? Date()
                 effectiveInterval = DateInterval(start: startOfYear, end: Date())
             }
         } else {
