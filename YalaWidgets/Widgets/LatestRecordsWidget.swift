@@ -182,7 +182,7 @@ struct TransactionRow: View {
             Text(formattedAmount)
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(transaction.isIncome ? .green : .primary)
+                .foregroundColor(transaction.isIncome ? WidgetColors.income : .primary)
         }
     }
 

@@ -225,6 +225,23 @@ struct OnboardingView: View {
 
     // MARK: - Step 3: Secondary Currencies
 
+    /// Currencies to show in the recommended section
+    private let recommendedCurrencyPool: [CurrencyCode] = [.usd, .eur, .gbp]
+
+    /// Recommended currencies (excluding the preferred one, but including already selected)
+    private var recommendedSecondaryCurrencies: [CurrencyCode] {
+        recommendedCurrencyPool.filter { currency in
+            currency != selectedCurrency
+        }
+    }
+
+    /// Other currencies (excluding recommended and selected)
+    private var otherSecondaryCurrencies: [CurrencyCode] {
+        CurrencyCode.allCases.filter { currency in
+            currency != selectedCurrency && !recommendedCurrencyPool.contains(currency)
+        }
+    }
+
     private var secondaryCurrenciesStep: some View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.md) {
@@ -246,16 +263,34 @@ struct OnboardingView: View {
             .padding(.top, DS.Spacing.xl)
 
             ScrollView {
-                LazyVStack(spacing: DS.Spacing.sm) {
-                    ForEach(CurrencyCode.allCases.filter { $0 != selectedCurrency }) { currency in
-                        let isSelected = selectedSecondaryCurrencies.contains(currency)
-                        currencyRow(currency, isSelected: isSelected, showCheckmark: true) {
-                            if isSelected {
-                                selectedSecondaryCurrencies.remove(currency)
-                            } else if selectedSecondaryCurrencies.count < 2 {
-                                selectedSecondaryCurrencies.insert(currency)
+                LazyVStack(spacing: DS.Spacing.lg) {
+                    // Recommended section (if any available)
+                    if !recommendedSecondaryCurrencies.isEmpty {
+                        recommendedSecondaryCurrenciesSection
+                    }
+
+                    // Other currencies section
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Text(L10n.Common.others)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .padding(.leading, DS.Spacing.xs)
+
+                        VStack(spacing: 0) {
+                            ForEach(otherSecondaryCurrencies) { currency in
+                                let isSelected = selectedSecondaryCurrencies.contains(currency)
+                                currencyRow(currency, isSelected: isSelected, showCheckmark: true) {
+                                    if isSelected {
+                                        selectedSecondaryCurrencies.remove(currency)
+                                    } else if selectedSecondaryCurrencies.count < 2 {
+                                        selectedSecondaryCurrencies.insert(currency)
+                                    }
+                                }
                             }
                         }
+                        .background(Color.yalaCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xl)
@@ -266,6 +301,36 @@ struct OnboardingView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.bottom, DS.Spacing.md)
+        }
+    }
+
+    /// Recommended currencies section with highlighted background
+    private var recommendedSecondaryCurrenciesSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Settings.recommendedCurrencies)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, DS.Spacing.xs)
+
+            VStack(spacing: 0) {
+                ForEach(recommendedSecondaryCurrencies) { currency in
+                    let isSelected = selectedSecondaryCurrencies.contains(currency)
+                    currencyRow(currency, isSelected: isSelected, showCheckmark: true) {
+                        if isSelected {
+                            selectedSecondaryCurrencies.remove(currency)
+                        } else if selectedSecondaryCurrencies.count < 2 {
+                            selectedSecondaryCurrencies.insert(currency)
+                        }
+                    }
+                }
+            }
+            .background(Color.electricIndigo.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.md)
+                    .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
+            )
         }
     }
 
@@ -441,8 +506,8 @@ struct OnboardingView: View {
                     // System section
                     notificationGroupHeader(L10n.Notifications.sectionSystem)
                     notificationToggleRow(.scheduledPayments)
-                    notificationToggleRow(.announcements)
                     budgetAlertsToggleRow
+                    notificationToggleRow(.announcements)
                 }
                 .padding(.horizontal, DS.Spacing.xl)
             }
@@ -892,6 +957,16 @@ struct OnboardingView: View {
     }
 
     private func createSelectedNotifications() {
+        // Guard: Only create if no notifications exist yet
+        let descriptor = FetchDescriptor<NotificationItem>()
+        let existingCount = (try? modelContext.fetchCount(descriptor)) ?? 0
+        guard existingCount == 0 else {
+            #if DEBUG
+            print("OnboardingView: Notifications already exist (\(existingCount)), skipping creation")
+            #endif
+            return
+        }
+
         // Create all default notifications
         let allDefaults = NotificationItem.createDefaults()
 

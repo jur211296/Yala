@@ -518,8 +518,9 @@ struct VoiceEntryIntent: AppIntent {
             throw VoiceImageIntentError.voiceNotEnabled
         }
 
-        // Open the app with voice-entry URL
-        if let url = URL(string: "yala://voice-entry") {
+        // Open the app with voice-entry URL (dynamic scheme for Yala vs Yala Dev)
+        let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
+        if let url = URL(string: "\(urlScheme)://voice-entry") {
             await UIApplication.shared.open(url)
         }
 
@@ -545,8 +546,9 @@ struct ImageEntryIntent: AppIntent {
             throw VoiceImageIntentError.imageNotEnabled
         }
 
-        // Open the app with image-entry URL
-        if let url = URL(string: "yala://image-entry") {
+        // Open the app with image-entry URL (dynamic scheme for Yala vs Yala Dev)
+        let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
+        if let url = URL(string: "\(urlScheme)://image-entry") {
             await UIApplication.shared.open(url)
         }
 

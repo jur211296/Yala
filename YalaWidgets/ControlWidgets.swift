@@ -2,134 +2,94 @@
 //  ControlWidgets.swift
 //  YalaWidgets
 //
-//  Control Center widgets for iOS 18+ using ControlWidget API.
-//  These controls open the main Yala app to perform actions.
+//  Control Center widgets for iOS 18+.
+//  Opens the Yala app to perform specific actions.
 //
-//  Behavior:
-//  - QuickExpense: Opens app to new transaction screen
-//  - VoiceEntry: Opens app in voice input mode
-//  - ImageEntry: Opens app in camera/receipt scanning mode
+//  Strategy: Use App Group to communicate the desired action,
+//  then openAppWhenRun to launch the app which reads the action.
 //
 
 import AppIntents
 import SwiftUI
 import WidgetKit
 
-// MARK: - Quick Expense Control
+// MARK: - Manual Entry Control
 
-/// Control Center button for quick expense entry.
-/// Opens the app to start a new transaction.
 @available(iOS 18.0, *)
-struct QuickExpenseControl: ControlWidget {
+struct ManualEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(
-            kind: "com.yala.control.quickExpense"
-        ) {
-            ControlWidgetButton(action: OpenQuickExpenseIntent()) {
-                Label {
-                    Text("control.quickExpense.label")
-                } icon: {
-                    Image(systemName: "plus.circle.fill")
-                }
+        StaticControlConfiguration(kind: "com.yala.control.manualEntry") {
+            ControlWidgetButton(action: OpenManualEntryIntent()) {
+                Label("Nuevo gasto", systemImage: "plus.circle.fill")
             }
         }
-        .displayName("control.quickExpense.displayName")
-        .description("control.quickExpense.description")
+        .displayName("Nuevo gasto")
+        .description("Abre Yala para registrar un gasto")
     }
 }
 
 // MARK: - Voice Entry Control
 
-/// Control Center button for voice entry.
-/// Opens the app with voice input mode.
 @available(iOS 18.0, *)
 struct VoiceEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(
-            kind: "com.yala.control.voiceEntry"
-        ) {
+        StaticControlConfiguration(kind: "com.yala.control.voiceEntry") {
             ControlWidgetButton(action: OpenVoiceEntryIntent()) {
-                Label {
-                    Text("control.voiceEntry.label")
-                } icon: {
-                    Image(systemName: "mic.fill")
-                }
+                Label("Por voz", systemImage: "mic.fill")
             }
         }
-        .displayName("control.voiceEntry.displayName")
-        .description("control.voiceEntry.description")
+        .displayName("Gasto por voz")
+        .description("Dicta tu gasto a Yala")
     }
 }
 
 // MARK: - Image Entry Control
 
-/// Control Center button for image/receipt scanning.
-/// Opens the app with camera mode.
 @available(iOS 18.0, *)
 struct ImageEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(
-            kind: "com.yala.control.imageEntry"
-        ) {
+        StaticControlConfiguration(kind: "com.yala.control.imageEntry") {
             ControlWidgetButton(action: OpenImageEntryIntent()) {
-                Label {
-                    Text("control.imageEntry.label")
-                } icon: {
-                    Image(systemName: "camera.fill")
-                }
+                Label("Por foto", systemImage: "camera.fill")
             }
         }
-        .displayName("control.imageEntry.displayName")
-        .description("control.imageEntry.description")
+        .displayName("Gasto por foto")
+        .description("Escanea un recibo con Yala")
     }
 }
 
-// MARK: - Control Intents
+// MARK: - Intents
 
-/// Intent that opens the app for quick expense entry.
-/// Uses URL scheme: yala://new-transaction
 @available(iOS 18.0, *)
-struct OpenQuickExpenseIntent: ControlConfigurationIntent {
-    static var title: LocalizedStringResource = "control.quickExpense.intentTitle"
-    static var description = IntentDescription("control.quickExpense.intentDescription")
+struct OpenManualEntryIntent: AppIntent {
+    static var title: LocalizedStringResource = "Nuevo gasto"
+    static var description = IntentDescription("Abre Yala para registrar un gasto")
     static var openAppWhenRun: Bool = true
 
-    @MainActor
     func perform() async throws -> some IntentResult {
-        // Opens the app via openAppWhenRun
-        // App will show new transaction screen by default
+        // Minimal intent - just open the app
         return .result()
     }
 }
 
-/// Intent that opens the app for voice entry.
-/// Uses URL scheme: yala://voice-entry
 @available(iOS 18.0, *)
-struct OpenVoiceEntryIntent: ControlConfigurationIntent {
-    static var title: LocalizedStringResource = "control.voiceEntry.intentTitle"
-    static var description = IntentDescription("control.voiceEntry.intentDescription")
+struct OpenVoiceEntryIntent: AppIntent {
+    static var title: LocalizedStringResource = "Gasto por voz"
+    static var description = IntentDescription("Dicta tu gasto a Yala")
     static var openAppWhenRun: Bool = true
 
-    @MainActor
     func perform() async throws -> some IntentResult {
-        // The app's scene delegate will handle presenting voice entry
-        // based on the launch context
         return .result()
     }
 }
 
-/// Intent that opens the app for image entry.
-/// Uses URL scheme: yala://image-entry
 @available(iOS 18.0, *)
-struct OpenImageEntryIntent: ControlConfigurationIntent {
-    static var title: LocalizedStringResource = "control.imageEntry.intentTitle"
-    static var description = IntentDescription("control.imageEntry.intentDescription")
+struct OpenImageEntryIntent: AppIntent {
+    static var title: LocalizedStringResource = "Gasto por foto"
+    static var description = IntentDescription("Escanea un recibo con Yala")
     static var openAppWhenRun: Bool = true
 
-    @MainActor
     func perform() async throws -> some IntentResult {
-        // The app's scene delegate will handle presenting image entry
-        // based on the launch context
         return .result()
     }
 }

@@ -22,14 +22,13 @@ struct NotificationsSettingsView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    // Budget alerts toggle (SIEMPRE visible, al inicio)
-                    budgetAlertsSection
-
-                    // Notificaciones configurables
+                    // Notificaciones configurables con budgetAlerts integrado
                     if viewModel.isEmpty {
+                        // Solo mostrar budgetAlertsSection cuando no hay otras notificaciones
+                        budgetAlertsSection
                         emptyState
                     } else {
-                        notificationsList
+                        notificationsListWithBudgetAlerts
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -122,6 +121,81 @@ struct NotificationsSettingsView: View {
 
     // MARK: - Notifications List
 
+    /// Notifications list with budgetAlertsSection inserted before announcements
+    private var notificationsListWithBudgetAlerts: some View {
+        let notificationsExceptAnnouncements = viewModel.notifications.filter {
+            $0.notificationType != .announcements
+        }
+        let announcementsNotification = viewModel.notifications.first {
+            $0.notificationType == .announcements
+        }
+
+        return VStack(spacing: DS.Spacing.md) {
+            // All notifications except announcements
+            ForEach(notificationsExceptAnnouncements) { notification in
+                notificationCard(for: notification)
+            }
+
+            // Budget alerts (between regular notifications and announcements)
+            budgetAlertsSection
+
+            // Announcements at the end
+            if let announcement = announcementsNotification {
+                notificationCard(for: announcement)
+            }
+        }
+    }
+
+    private func notificationCard(for notification: NotificationItem) -> some View {
+        NotificationCard(
+            notification: notification,
+            onToggle: { isActive in
+                notification.isActive = isActive
+                viewModel.saveContext()
+                Task {
+                    if isActive {
+                        let status = await NotificationService.shared.checkPermissionStatus()
+
+                        switch status {
+                        case .notDetermined:
+                            let granted = await NotificationService.shared.requestPermission()
+                            if granted {
+                                await NotificationService.shared.scheduleNotification(for: notification)
+                            } else {
+                                await MainActor.run {
+                                    notification.isActive = false
+                                    viewModel.saveContext()
+                                }
+                            }
+
+                        case .denied:
+                            await MainActor.run {
+                                notification.isActive = false
+                                viewModel.saveContext()
+                                viewModel.showPermissionAlert = true
+                            }
+
+                        case .authorized, .provisional, .ephemeral:
+                            await NotificationService.shared.scheduleNotification(for: notification)
+
+                        @unknown default:
+                            break
+                        }
+                    } else {
+                        await NotificationService.shared.cancelNotification(for: notification)
+                    }
+                }
+            },
+            onTap: {
+                viewModel.selectedNotification = notification
+            },
+            onDelete: notification.notificationType.isDeletable ? {
+                deleteNotification(notification)
+            } : nil
+        )
+    }
+
+    /// Legacy notifications list (kept for reference, not used)
     private var notificationsList: some View {
         VStack(spacing: DS.Spacing.md) {
             ForEach(viewModel.notifications) { notification in

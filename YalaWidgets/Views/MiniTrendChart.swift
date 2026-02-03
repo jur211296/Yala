@@ -15,8 +15,8 @@ struct MiniTrendChart: View {
 
     init(
         dataPoints: [WidgetTrendPoint],
-        lineColor: Color = .blue,
-        fillColor: Color = .blue.opacity(0.2)
+        lineColor: Color = WidgetColors.accent,
+        fillColor: Color = WidgetColors.accent.opacity(0.2)
     ) {
         self.dataPoints = dataPoints
         self.lineColor = lineColor

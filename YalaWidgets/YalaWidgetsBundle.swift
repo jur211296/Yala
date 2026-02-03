@@ -16,11 +16,10 @@ struct YalaWidgetsBundle: WidgetBundle {
         LatestRecordsWidget()
         ScheduledPaymentsWidget()
         BudgetsWidget()
-        YalaWidgetsControl()
 
         // Control Center widgets (iOS 18+)
         if #available(iOS 18.0, *) {
-            QuickExpenseControl()
+            ManualEntryControl()
             VoiceEntryControl()
             ImageEntryControl()
         }

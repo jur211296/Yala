@@ -163,7 +163,7 @@ struct ScheduledPaymentsWidgetView: View {
                     VStack(spacing: 4) {
                         Image(systemName: "checkmark.circle")
                             .font(.title2)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(WidgetColors.success)
                         Text("Sin pagos pendientes")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -204,12 +204,12 @@ struct PaymentRow: View {
             // Overdue indicator or category icon
             ZStack {
                 Circle()
-                    .fill(payment.isOverdue ? Color.red.opacity(0.2) : Color.blue.opacity(0.2))
+                    .fill(payment.isOverdue ? WidgetColors.overdue.opacity(0.2) : WidgetColors.accent.opacity(0.2))
                     .frame(width: 24, height: 24)
 
                 Image(systemName: payment.isOverdue ? "exclamationmark" : categoryIcon)
                     .font(.system(size: 10))
-                    .foregroundColor(payment.isOverdue ? .red : .blue)
+                    .foregroundColor(payment.isOverdue ? WidgetColors.overdue : WidgetColors.accent)
             }
 
             // Name and date
@@ -220,7 +220,7 @@ struct PaymentRow: View {
 
                 Text(formattedDate)
                     .font(.caption2)
-                    .foregroundColor(payment.isOverdue ? .red : .secondary)
+                    .foregroundColor(payment.isOverdue ? WidgetColors.overdue : .secondary)
                     .lineLimit(1)
             }
 
@@ -230,7 +230,7 @@ struct PaymentRow: View {
             Text(formattedAmount)
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(payment.isIncome ? .green : (payment.isOverdue ? .red : .primary))
+                .foregroundColor(payment.isIncome ? WidgetColors.income : (payment.isOverdue ? WidgetColors.overdue : .primary))
         }
     }
 
