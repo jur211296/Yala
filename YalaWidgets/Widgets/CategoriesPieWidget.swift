@@ -182,8 +182,8 @@ struct CategoriesPieWidgetView: View {
                     )
                     .frame(maxWidth: .infinity)
 
-                    // Legend 2 columns (right, ~40% width)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: WDS.Spacing.xs) {
+                    // Legend 1 column (right)
+                    VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
                         ForEach(entry.categories, id: \.id) { category in
                             HStack(spacing: WDS.Spacing.xxs) {
                                 Circle()
@@ -195,7 +195,7 @@ struct CategoriesPieWidgetView: View {
                             }
                         }
                     }
-                    .frame(width: 130)
+                    .frame(width: 90)
                 }
             }
         }

@@ -183,28 +183,20 @@ struct SubcategoriesPieWidgetView: View {
                     )
                     .frame(maxWidth: .infinity)
 
-                    // Legend 2 columns (right, ~40% width)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: WDS.Spacing.xs) {
+                    // Legend 1 column (right)
+                    VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
                         ForEach(entry.subcategories, id: \.id) { subcategory in
                             HStack(spacing: WDS.Spacing.xxs) {
                                 Circle()
                                     .fill(Color(hex: subcategory.colorHex))
                                     .frame(width: 6, height: 6)
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text(subcategory.name)
-                                        .font(WDS.Typography.tiny)
-                                        .lineLimit(1)
-                                    if !subcategory.categoryName.isEmpty {
-                                        Text(subcategory.categoryName)
-                                            .font(.system(size: 8))
-                                            .foregroundStyle(.tertiary)
-                                            .lineLimit(1)
-                                    }
-                                }
+                                Text(subcategory.name)
+                                    .font(WDS.Typography.tiny)
+                                    .lineLimit(1)
                             }
                         }
                     }
-                    .frame(width: 130)
+                    .frame(width: 90)
                 }
             }
         }

@@ -363,7 +363,7 @@ enum WidgetDataService {
     private static func buildTopCategories(
         from transactions: [WidgetTransaction],
         totalExpense: Double,
-        limit: Int = 5
+        limit: Int = 20
     ) -> [WidgetCategory] {
         // Group expenses by category
         var categoryTotals: [String: (name: String, icon: String, color: String, amount: Double)] = [:]
@@ -405,7 +405,7 @@ enum WidgetDataService {
     private static func buildTopSubcategories(
         from transactions: [WidgetTransaction],
         totalExpense: Double,
-        limit: Int = 5
+        limit: Int = 20
     ) -> [WidgetSubcategory] {
         // Group expenses by subcategory
         var subcategoryTotals: [String: (name: String, categoryName: String, icon: String?, color: String, amount: Double)] = [:]
