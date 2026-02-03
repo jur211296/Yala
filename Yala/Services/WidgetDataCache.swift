@@ -66,15 +66,77 @@ struct WidgetTrendData: Codable {
     let monthlyPoints: [WidgetTrendPoint]
 }
 
+/// Account balance for widget calculations
+struct WidgetAccountBalance: Codable {
+    let id: String
+    let name: String
+    let balance: Double
+    let currencyCode: String
+    let isExcludedFromStats: Bool
+}
+
+/// Category with aggregated data for widgets
+struct WidgetCategory: Codable {
+    let id: String
+    let name: String
+    let iconName: String
+    let colorHex: String
+    let amount: Double
+    let percentage: Double
+}
+
+/// Subcategory with aggregated data for widgets
+struct WidgetSubcategory: Codable {
+    let id: String
+    let name: String
+    let categoryName: String
+    let iconName: String?
+    let colorHex: String
+    let amount: Double
+    let percentage: Double
+}
+
+/// Cash flow point for bidirectional charts
+struct WidgetCashFlowPoint: Codable {
+    let date: Date
+    let income: Double
+    let expense: Double
+    let net: Double
+}
+
+/// Precalculated summary for a period
+struct WidgetPeriodSummary: Codable {
+    let totalIncome: Double
+    let totalExpense: Double
+    let netCashFlow: Double
+    let topCategories: [WidgetCategory]
+    let topSubcategories: [WidgetSubcategory]
+    let cashFlowPoints: [WidgetCashFlowPoint]
+}
+
 /// Complete widget data snapshot
 struct WidgetDataSnapshot: Codable {
-    let totalBalance: Double
-    let preferredCurrencyCode: String
+    // Metadata
     let lastUpdated: Date
+    let preferredCurrencyCode: String
+    let currencyDisplayFormat: String  // "symbol" or "code"
+
+    // Account data for real balance calculation
+    let accountBalances: [WidgetAccountBalance]
+    let totalBalance: Double
+
+    // Raw transactions for dynamic calculations (last 90 days, max 500)
     let transactions: [WidgetTransaction]
+
+    // Budgets and payments (not filtered by period)
     let budgets: [WidgetBudget]
     let scheduledPayments: [WidgetScheduledPayment]
+
+    // Trend data with multiple granularities
     let trendData: WidgetTrendData
+
+    // Precalculated for "This Month" (most common period)
+    let thisMonthSummary: WidgetPeriodSummary
 }
 
 // MARK: - WidgetDataCache
@@ -233,14 +295,45 @@ enum WidgetDataCache {
         // Build trend data with multiple granularities (uses ALL transactions)
         let trendData = buildTrendData(transactions: allTransactions, totalBalance: totalBalance)
 
+        // Build account balances for widgets (calculate balance from transactions)
+        let widgetAccountBalances = accounts.map { account in
+            // Calculate account balance from its transactions
+            let accountTransactions = allTransactions.filter { $0.account?.persistentModelID == account.persistentModelID }
+            let accountBalance = accountTransactions.reduce(0.0) { sum, tx in
+                sum + (tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
+            }
+
+            return WidgetAccountBalance(
+                id: account.persistentModelID.hashValue.description,
+                name: account.name,
+                balance: accountBalance,
+                currencyCode: account.currencyCode,
+                isExcludedFromStats: account.excludeFromStatistics
+            )
+        }
+
+        // Get currency display format preference
+        let currencyDisplayFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "symbol"
+
+        // Build thisMonth summary (precalculated for most common period)
+        let thisMonthSummary = buildPeriodSummary(
+            transactions: recentTransactions,
+            periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date(),
+            periodEnd: Date(),
+            currencyCode: preferredCurrency
+        )
+
         return WidgetDataSnapshot(
-            totalBalance: totalBalance,
-            preferredCurrencyCode: preferredCurrency,
             lastUpdated: Date(),
+            preferredCurrencyCode: preferredCurrency,
+            currencyDisplayFormat: currencyDisplayFormat,
+            accountBalances: widgetAccountBalances,
+            totalBalance: totalBalance,
             transactions: widgetTransactions,
             budgets: widgetBudgets,
             scheduledPayments: widgetPayments,
-            trendData: trendData
+            trendData: trendData,
+            thisMonthSummary: thisMonthSummary
         )
     }
 
@@ -444,5 +537,192 @@ enum WidgetDataCache {
             print("WidgetDataCache: Error encoding snapshot: \(error)")
             #endif
         }
+    }
+
+    // MARK: - Period Summary Calculations
+
+    private static func buildPeriodSummary(
+        transactions: [TransactionItem],
+        periodStart: Date,
+        periodEnd: Date,
+        currencyCode: String
+    ) -> WidgetPeriodSummary {
+        // Filter transactions for the period
+        let periodTransactions = transactions.filter { tx in
+            tx.date >= periodStart && tx.date <= periodEnd
+        }
+
+        // Calculate totals
+        var totalIncome: Double = 0
+        var totalExpense: Double = 0
+
+        for tx in periodTransactions {
+            let amount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+            if tx.category?.isIncome == true {
+                totalIncome += abs(amount)
+            } else {
+                totalExpense += abs(amount)
+            }
+        }
+
+        let netCashFlow = totalIncome - totalExpense
+
+        // Build top categories (expenses only, top 5)
+        let topCategories = buildTopCategories(
+            transactions: periodTransactions,
+            totalExpense: totalExpense,
+            limit: 5
+        )
+
+        // Build top subcategories (expenses only, top 5)
+        let topSubcategories = buildTopSubcategories(
+            transactions: periodTransactions,
+            totalExpense: totalExpense,
+            limit: 5
+        )
+
+        // Build cash flow by day
+        let cashFlowPoints = buildCashFlowByDay(
+            transactions: periodTransactions,
+            periodStart: periodStart,
+            periodEnd: periodEnd
+        )
+
+        return WidgetPeriodSummary(
+            totalIncome: totalIncome,
+            totalExpense: totalExpense,
+            netCashFlow: netCashFlow,
+            topCategories: topCategories,
+            topSubcategories: topSubcategories,
+            cashFlowPoints: cashFlowPoints
+        )
+    }
+
+    private static func buildTopCategories(
+        transactions: [TransactionItem],
+        totalExpense: Double,
+        limit: Int
+    ) -> [WidgetCategory] {
+        // Group expenses by category
+        var categoryTotals: [String: (category: Category, amount: Double)] = [:]
+
+        for tx in transactions {
+            // Skip income
+            guard tx.category?.isIncome != true else { continue }
+            guard let category = tx.category else { continue }
+
+            let amount = abs(tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
+            let key = category.name
+
+            if var existing = categoryTotals[key] {
+                existing.amount += amount
+                categoryTotals[key] = existing
+            } else {
+                categoryTotals[key] = (category: category, amount: amount)
+            }
+        }
+
+        // Sort by amount and take top N
+        let sorted = categoryTotals.values.sorted { $0.amount > $1.amount }
+        let topN = Array(sorted.prefix(limit))
+
+        return topN.map { item in
+            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
+            return WidgetCategory(
+                id: item.category.persistentModelID.hashValue.description,
+                name: item.category.name,
+                iconName: item.category.iconName ?? "folder",
+                colorHex: item.category.colorHex,
+                amount: item.amount,
+                percentage: percentage
+            )
+        }
+    }
+
+    private static func buildTopSubcategories(
+        transactions: [TransactionItem],
+        totalExpense: Double,
+        limit: Int
+    ) -> [WidgetSubcategory] {
+        // Group expenses by subcategory
+        var subcategoryTotals: [String: (subcategory: Subcategory, category: Category, amount: Double)] = [:]
+
+        for tx in transactions {
+            // Skip income
+            guard tx.category?.isIncome != true else { continue }
+            guard let subcategory = tx.subcategory,
+                  let category = tx.category else { continue }
+
+            let amount = abs(tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
+            let key = "\(category.name)_\(subcategory.name)"
+
+            if var existing = subcategoryTotals[key] {
+                existing.amount += amount
+                subcategoryTotals[key] = existing
+            } else {
+                subcategoryTotals[key] = (subcategory: subcategory, category: category, amount: amount)
+            }
+        }
+
+        // Sort by amount and take top N
+        let sorted = subcategoryTotals.values.sorted { $0.amount > $1.amount }
+        let topN = Array(sorted.prefix(limit))
+
+        return topN.map { item in
+            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
+            return WidgetSubcategory(
+                id: item.subcategory.persistentModelID.hashValue.description,
+                name: item.subcategory.name,
+                categoryName: item.category.name,
+                iconName: item.subcategory.iconName,
+                colorHex: item.category.colorHex,
+                amount: item.amount,
+                percentage: percentage
+            )
+        }
+    }
+
+    private static func buildCashFlowByDay(
+        transactions: [TransactionItem],
+        periodStart: Date,
+        periodEnd: Date
+    ) -> [WidgetCashFlowPoint] {
+        let calendar = Calendar.current
+
+        // Group transactions by day
+        var dailyData: [Date: (income: Double, expense: Double)] = [:]
+
+        for tx in transactions {
+            let day = calendar.startOfDay(for: tx.date)
+            let amount = abs(tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
+
+            var existing = dailyData[day] ?? (income: 0, expense: 0)
+            if tx.category?.isIncome == true {
+                existing.income += amount
+            } else {
+                existing.expense += amount
+            }
+            dailyData[day] = existing
+        }
+
+        // Build points for each day in period
+        var points: [WidgetCashFlowPoint] = []
+        var currentDate = calendar.startOfDay(for: periodStart)
+        let endDay = calendar.startOfDay(for: periodEnd)
+
+        while currentDate <= endDay {
+            let data = dailyData[currentDate] ?? (income: 0, expense: 0)
+            points.append(WidgetCashFlowPoint(
+                date: currentDate,
+                income: data.income,
+                expense: data.expense,
+                net: data.income - data.expense
+            ))
+
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
+            currentDate = nextDay
+        }
+
+        return points
     }
 }
