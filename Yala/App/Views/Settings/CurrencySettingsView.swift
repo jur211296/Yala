@@ -434,7 +434,9 @@ struct CurrencySettingsView: View {
                 }
 
             } catch {
+                #if DEBUG
                 print("CurrencySettingsView: Error updating transactions: \(error)")
+                #endif
             }
 
             isUpdating = false
