@@ -161,7 +161,7 @@ struct SmallCashFlowView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://panel"))
     }
@@ -183,61 +183,62 @@ struct MediumCashFlowView: View {
     let entry: CashFlowEntry
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.xl) {
-            // Left: KPI and breakdown
-            VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
-                WidgetHeader(
-                    title: "Flujo neto",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
-                    icon: "arrow.left.arrow.right"
-                )
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+            // Header full width: title left, subtitle right
+            WidgetHeader(
+                title: "Flujo neto",
+                subtitle: entry.period.toWidgetPeriod.displayName,
+                icon: "arrow.left.arrow.right",
+                inline: true
+            )
 
-                Spacer()
+            // Content: KPI + breakdown left, bars right
+            HStack(spacing: WDS.Spacing.lg) {
+                // Left: KPI and income/expense breakdown
+                VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
+                    Spacer()
 
-                WidgetKPI(
-                    amount: entry.netCashFlow,
-                    currencyCode: entry.currencyCode,
-                    displayFormat: entry.currencyDisplayFormat,
-                    color: WidgetColors.forCashFlow(entry.netCashFlow),
-                    size: .medium
-                )
+                    WidgetKPI(
+                        amount: entry.netCashFlow,
+                        currencyCode: entry.currencyCode,
+                        displayFormat: entry.currencyDisplayFormat,
+                        color: WidgetColors.forCashFlow(entry.netCashFlow),
+                        size: .medium
+                    )
 
-                // Income/Expense labels
-                HStack(spacing: WDS.Spacing.lg) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Ingresos")
-                            .font(WDS.Typography.tiny)
-                            .foregroundStyle(.secondary)
-                        Text(formatAmount(entry.totalIncome))
-                            .font(WDS.Typography.value)
-                            .foregroundColor(WidgetColors.income)
+                    // Income/Expense labels
+                    HStack(spacing: WDS.Spacing.md) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Ingresos")
+                                .font(WDS.Typography.tiny)
+                                .foregroundStyle(.secondary)
+                            Text(formatAmount(entry.totalIncome))
+                                .font(WDS.Typography.value)
+                                .foregroundColor(WidgetColors.income)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Gastos")
+                                .font(WDS.Typography.tiny)
+                                .foregroundStyle(.secondary)
+                            Text(formatAmount(entry.totalExpense))
+                                .font(WDS.Typography.value)
+                                .foregroundColor(WidgetColors.expense)
+                        }
                     }
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Gastos")
-                            .font(WDS.Typography.tiny)
-                            .foregroundStyle(.secondary)
-                        Text(formatAmount(entry.totalExpense))
-                            .font(WDS.Typography.value)
-                            .foregroundColor(WidgetColors.expense)
-                    }
+                    Spacer()
                 }
-            }
-            .frame(maxWidth: 160, alignment: .leading)
+                .frame(maxWidth: 160, alignment: .leading)
 
-            // Right: Stacked bars comparison
-            VStack(spacing: WDS.Spacing.sm) {
-                Spacer()
-
+                // Right: Stacked bars comparison
                 CashFlowBars(
                     income: entry.totalIncome,
                     expense: entry.totalExpense
                 )
-
-                Spacer()
             }
         }
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://panel"))
     }
@@ -321,7 +322,7 @@ struct LargeCashFlowView: View {
                 }
             }
         }
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://panel"))
     }

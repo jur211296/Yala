@@ -182,7 +182,7 @@ struct SmallBalanceView: View {
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://panel"))
     }
@@ -192,29 +192,32 @@ struct MediumBalanceView: View {
     let entry: BalanceEntry
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.xl) {
-            // Left: Balance info
-            VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
-                WidgetHeader(
-                    title: "Balance",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
-                    icon: "creditcard.fill"
-                )
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+            // Header full width: title left, subtitle right
+            WidgetHeader(
+                title: "Balance",
+                subtitle: entry.period.toWidgetPeriod.displayName,
+                icon: "creditcard.fill",
+                inline: true
+            )
 
-                Spacer()
+            // Content: KPI left, chart right
+            HStack(spacing: WDS.Spacing.lg) {
+                // Left: KPI
+                VStack(alignment: .leading) {
+                    Spacer()
+                    WidgetKPI(
+                        amount: entry.balance,
+                        currencyCode: entry.currencyCode,
+                        displayFormat: entry.currencyDisplayFormat,
+                        color: WidgetColors.forBalance(entry.balance),
+                        size: .medium
+                    )
+                    Spacer()
+                }
+                .frame(maxWidth: 140, alignment: .leading)
 
-                WidgetKPI(
-                    amount: entry.balance,
-                    currencyCode: entry.currencyCode,
-                    displayFormat: entry.currencyDisplayFormat,
-                    color: WidgetColors.forBalance(entry.balance),
-                    size: .medium
-                )
-            }
-            .frame(maxWidth: 140, alignment: .leading)
-
-            // Right: Trend chart
-            VStack {
+                // Right: Trend chart
                 if entry.trendData.count >= 2 {
                     MiniTrendChart(
                         dataPoints: entry.trendData,
@@ -234,7 +237,7 @@ struct MediumBalanceView: View {
                 }
             }
         }
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://panel"))
     }

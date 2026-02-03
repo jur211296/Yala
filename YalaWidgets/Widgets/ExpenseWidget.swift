@@ -139,7 +139,7 @@ struct SmallExpenseView: View {
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://statistics/records"))
     }
@@ -149,29 +149,32 @@ struct MediumExpenseView: View {
     let entry: ExpenseEntry
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.xl) {
-            // Left: Expense info
-            VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
-                WidgetHeader(
-                    title: "Gastos",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
-                    icon: "arrow.down.circle.fill"
-                )
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+            // Header full width: title left, subtitle right
+            WidgetHeader(
+                title: "Gastos",
+                subtitle: entry.period.toWidgetPeriod.displayName,
+                icon: "arrow.down.circle.fill",
+                inline: true
+            )
 
-                Spacer()
+            // Content: KPI left, chart right
+            HStack(spacing: WDS.Spacing.lg) {
+                // Left: KPI
+                VStack(alignment: .leading) {
+                    Spacer()
+                    WidgetKPI(
+                        amount: entry.totalExpense,
+                        currencyCode: entry.currencyCode,
+                        displayFormat: entry.currencyDisplayFormat,
+                        color: WidgetColors.expense,
+                        size: .medium
+                    )
+                    Spacer()
+                }
+                .frame(maxWidth: 140, alignment: .leading)
 
-                WidgetKPI(
-                    amount: entry.totalExpense,
-                    currencyCode: entry.currencyCode,
-                    displayFormat: entry.currencyDisplayFormat,
-                    color: WidgetColors.expense,
-                    size: .medium
-                )
-            }
-            .frame(maxWidth: 140, alignment: .leading)
-
-            // Right: Trend chart (expense trend)
-            VStack {
+                // Right: Trend chart (expense trend)
                 if entry.trendData.count >= 2 {
                     MiniTrendChart(
                         dataPoints: entry.trendData,
@@ -191,7 +194,7 @@ struct MediumExpenseView: View {
                 }
             }
         }
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://statistics/records"))
     }
