@@ -9,6 +9,7 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import Charts
 
 // MARK: - Configuration Intent
 
@@ -35,13 +36,16 @@ struct CategoriesPieEntry: TimelineEntry {
         CategoriesPieEntry(
             date: Date(),
             categories: [
-                WidgetCategory(id: "1", name: "Alimentación", iconName: "fork.knife", colorHex: "6366F1", amount: 1200, percentage: 37),
-                WidgetCategory(id: "2", name: "Transporte", iconName: "car.fill", colorHex: "FF0080", amount: 800, percentage: 25),
-                WidgetCategory(id: "3", name: "Servicios", iconName: "bolt.fill", colorHex: "00C2CB", amount: 600, percentage: 18),
-                WidgetCategory(id: "4", name: "Entretenimiento", iconName: "gamecontroller.fill", colorHex: "F59E0B", amount: 400, percentage: 12),
-                WidgetCategory(id: "5", name: "Otros", iconName: "ellipsis.circle", colorHex: "6B7280", amount: 250, percentage: 8)
+                WidgetCategory(id: "1", name: "Alimentación", iconName: "fork.knife", colorHex: "6366F1", amount: 1200, percentage: 30),
+                WidgetCategory(id: "2", name: "Transporte", iconName: "car.fill", colorHex: "FF0080", amount: 800, percentage: 20),
+                WidgetCategory(id: "3", name: "Servicios", iconName: "bolt.fill", colorHex: "00C2CB", amount: 600, percentage: 15),
+                WidgetCategory(id: "4", name: "Entretenimiento", iconName: "gamecontroller.fill", colorHex: "F59E0B", amount: 400, percentage: 10),
+                WidgetCategory(id: "5", name: "Salud", iconName: "heart.fill", colorHex: "EF4444", amount: 350, percentage: 9),
+                WidgetCategory(id: "6", name: "Educación", iconName: "book.fill", colorHex: "8B5CF6", amount: 250, percentage: 6),
+                WidgetCategory(id: "7", name: "Hogar", iconName: "house.fill", colorHex: "10B981", amount: 200, percentage: 5),
+                WidgetCategory(id: "8", name: "Otros", iconName: "ellipsis.circle", colorHex: "6B7280", amount: 200, percentage: 5)
             ],
-            totalExpense: 3250,
+            totalExpense: 4000,
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
@@ -84,10 +88,10 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
         // Get summary for the period
         let summary = WidgetDataService.calculateSummary(for: period)
 
-        // Limit to 5 categories, group the rest as "Others"
+        // Limit to 12 categories (matching PanelView), group the rest as "Others"
         var categories = summary?.topCategories ?? []
-        if categories.count > 5 {
-            let top5 = Array(categories.prefix(5))
+        if categories.count > 12 {
+            let top5 = Array(categories.prefix(12))
             let othersAmount = categories.dropFirst(5).reduce(0) { $0 + $1.amount }
             let totalExpense = summary?.totalExpense ?? 1
             let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
@@ -159,35 +163,39 @@ struct CategoriesPieWidgetView: View {
                 }
                 Spacer()
             } else {
-                // Donut chart
-                HStack {
-                    Spacer()
-                    MiniDonutChart(
+                // Chart with bubbles (left) + Legend (right)
+                HStack(alignment: .top, spacing: WDS.Spacing.md) {
+                    // Pie chart with bubbles (~60% width)
+                    WidgetSectorChart(
                         segments: entry.categories.map { category in
-                            DonutSegment(
+                            WidgetSectorSegment(
                                 id: category.id,
-                                value: category.amount,
-                                color: Color(hex: category.colorHex),
-                                label: category.name
+                                name: category.name,
+                                iconName: category.iconName,
+                                amount: category.amount,
+                                percentage: category.percentage,
+                                colorHex: category.colorHex
                             )
                         },
-                        innerRadiusRatio: 0.55
+                        innerRadiusRatio: 0.50,
+                        showBubbles: true
                     )
-                    .frame(width: 100, height: 100)
-                    Spacer()
-                }
+                    .frame(maxWidth: .infinity)
 
-                Spacer(minLength: WDS.Spacing.sm)
-
-                // Legend
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: WDS.Spacing.sm) {
-                    ForEach(entry.categories, id: \.id) { category in
-                        PieLegendItem(
-                            category: category,
-                            currencyCode: entry.currencyCode,
-                            displayFormat: entry.currencyDisplayFormat
-                        )
+                    // Legend 2 columns (right, ~40% width)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: WDS.Spacing.xs) {
+                        ForEach(entry.categories, id: \.id) { category in
+                            HStack(spacing: WDS.Spacing.xxs) {
+                                Circle()
+                                    .fill(Color(hex: category.colorHex))
+                                    .frame(width: 6, height: 6)
+                                Text(category.name)
+                                    .font(WDS.Typography.tiny)
+                                    .lineLimit(1)
+                            }
+                        }
                     }
+                    .frame(width: 130)
                 }
             }
         }
@@ -207,32 +215,6 @@ struct CategoriesPieWidgetView: View {
             : entry.currencyCode
 
         return "\(currency) \(formatted)"
-    }
-}
-
-// MARK: - Legend Item
-
-struct PieLegendItem: View {
-    let category: WidgetCategory
-    let currencyCode: String
-    let displayFormat: String
-
-    var body: some View {
-        HStack(spacing: WDS.Spacing.xs) {
-            Circle()
-                .fill(Color(hex: category.colorHex))
-                .frame(width: 8, height: 8)
-
-            Text(category.name)
-                .font(WDS.Typography.tiny)
-                .lineLimit(1)
-
-            Spacer()
-
-            Text("\(Int(category.percentage))%")
-                .font(WDS.Typography.tiny)
-                .foregroundStyle(.secondary)
-        }
     }
 }
 

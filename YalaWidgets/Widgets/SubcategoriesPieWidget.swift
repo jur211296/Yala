@@ -9,6 +9,7 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import Charts
 
 // MARK: - Configuration Intent
 
@@ -35,13 +36,16 @@ struct SubcategoriesPieEntry: TimelineEntry {
         SubcategoriesPieEntry(
             date: Date(),
             subcategories: [
-                WidgetSubcategory(id: "1", name: "Restaurantes", categoryName: "Alimentación", iconName: nil, colorHex: "6366F1", amount: 800, percentage: 25),
-                WidgetSubcategory(id: "2", name: "Supermercado", categoryName: "Alimentación", iconName: nil, colorHex: "818CF8", amount: 400, percentage: 12),
-                WidgetSubcategory(id: "3", name: "Taxi", categoryName: "Transporte", iconName: nil, colorHex: "FF0080", amount: 500, percentage: 15),
-                WidgetSubcategory(id: "4", name: "Streaming", categoryName: "Entretenimiento", iconName: nil, colorHex: "00C2CB", amount: 350, percentage: 11),
-                WidgetSubcategory(id: "5", name: "Otros", categoryName: "", iconName: nil, colorHex: "6B7280", amount: 1200, percentage: 37)
+                WidgetSubcategory(id: "1", name: "Restaurantes", categoryName: "Alimentación", iconName: "fork.knife", colorHex: "6366F1", amount: 800, percentage: 20),
+                WidgetSubcategory(id: "2", name: "Supermercado", categoryName: "Alimentación", iconName: "cart.fill", colorHex: "818CF8", amount: 600, percentage: 15),
+                WidgetSubcategory(id: "3", name: "Taxi", categoryName: "Transporte", iconName: "car.fill", colorHex: "FF0080", amount: 500, percentage: 13),
+                WidgetSubcategory(id: "4", name: "Streaming", categoryName: "Entretenimiento", iconName: "play.tv.fill", colorHex: "00C2CB", amount: 350, percentage: 9),
+                WidgetSubcategory(id: "5", name: "Electricidad", categoryName: "Servicios", iconName: "bolt.fill", colorHex: "F59E0B", amount: 400, percentage: 10),
+                WidgetSubcategory(id: "6", name: "Gasolina", categoryName: "Transporte", iconName: "fuelpump.fill", colorHex: "EF4444", amount: 350, percentage: 9),
+                WidgetSubcategory(id: "7", name: "Gimnasio", categoryName: "Salud", iconName: "dumbbell.fill", colorHex: "10B981", amount: 250, percentage: 6),
+                WidgetSubcategory(id: "8", name: "Otros", categoryName: "", iconName: "ellipsis.circle", colorHex: "6B7280", amount: 750, percentage: 18)
             ],
-            totalExpense: 3250,
+            totalExpense: 4000,
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
@@ -84,10 +88,10 @@ struct SubcategoriesPieWidgetProvider: AppIntentTimelineProvider {
         // Get summary for the period
         let summary = WidgetDataService.calculateSummary(for: period)
 
-        // Limit to 5 subcategories, group the rest as "Others"
+        // Limit to 12 subcategories (matching PanelView), group the rest as "Others"
         var subcategories = summary?.topSubcategories ?? []
-        if subcategories.count > 5 {
-            let top5 = Array(subcategories.prefix(5))
+        if subcategories.count > 12 {
+            let top5 = Array(subcategories.prefix(12))
             let othersAmount = subcategories.dropFirst(5).reduce(0) { $0 + $1.amount }
             let totalExpense = summary?.totalExpense ?? 1
             let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
@@ -160,35 +164,47 @@ struct SubcategoriesPieWidgetView: View {
                 }
                 Spacer()
             } else {
-                // Donut chart
-                HStack {
-                    Spacer()
-                    MiniDonutChart(
+                // Chart with bubbles (left) + Legend (right)
+                HStack(alignment: .top, spacing: WDS.Spacing.md) {
+                    // Pie chart with bubbles (~60% width)
+                    WidgetSectorChart(
                         segments: entry.subcategories.map { subcategory in
-                            DonutSegment(
+                            WidgetSectorSegment(
                                 id: subcategory.id,
-                                value: subcategory.amount,
-                                color: Color(hex: subcategory.colorHex),
-                                label: subcategory.name
+                                name: subcategory.name,
+                                iconName: subcategory.iconName,
+                                amount: subcategory.amount,
+                                percentage: subcategory.percentage,
+                                colorHex: subcategory.colorHex
                             )
                         },
-                        innerRadiusRatio: 0.55
+                        innerRadiusRatio: 0.50,
+                        showBubbles: true
                     )
-                    .frame(width: 100, height: 100)
-                    Spacer()
-                }
+                    .frame(maxWidth: .infinity)
 
-                Spacer(minLength: WDS.Spacing.sm)
-
-                // Legend
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: WDS.Spacing.sm) {
-                    ForEach(entry.subcategories, id: \.id) { subcategory in
-                        SubcategoryPieLegendItem(
-                            subcategory: subcategory,
-                            currencyCode: entry.currencyCode,
-                            displayFormat: entry.currencyDisplayFormat
-                        )
+                    // Legend 2 columns (right, ~40% width)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: WDS.Spacing.xs) {
+                        ForEach(entry.subcategories, id: \.id) { subcategory in
+                            HStack(spacing: WDS.Spacing.xxs) {
+                                Circle()
+                                    .fill(Color(hex: subcategory.colorHex))
+                                    .frame(width: 6, height: 6)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(subcategory.name)
+                                        .font(WDS.Typography.tiny)
+                                        .lineLimit(1)
+                                    if !subcategory.categoryName.isEmpty {
+                                        Text(subcategory.categoryName)
+                                            .font(.system(size: 8))
+                                            .foregroundStyle(.tertiary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                            }
+                        }
                     }
+                    .frame(width: 130)
                 }
             }
         }
@@ -208,41 +224,6 @@ struct SubcategoriesPieWidgetView: View {
             : entry.currencyCode
 
         return "\(currency) \(formatted)"
-    }
-}
-
-// MARK: - Legend Item
-
-struct SubcategoryPieLegendItem: View {
-    let subcategory: WidgetSubcategory
-    let currencyCode: String
-    let displayFormat: String
-
-    var body: some View {
-        HStack(spacing: WDS.Spacing.xs) {
-            Circle()
-                .fill(Color(hex: subcategory.colorHex))
-                .frame(width: 8, height: 8)
-
-            VStack(alignment: .leading, spacing: 0) {
-                Text(subcategory.name)
-                    .font(WDS.Typography.tiny)
-                    .lineLimit(1)
-
-                if !subcategory.categoryName.isEmpty {
-                    Text(subcategory.categoryName)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer()
-
-            Text("\(Int(subcategory.percentage))%")
-                .font(WDS.Typography.tiny)
-                .foregroundStyle(.secondary)
-        }
     }
 }
 
