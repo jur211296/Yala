@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-03] 0efd960 feat(widgets): implement Phase 4 - 13 widgets with WDS infrastructure
+- [2026-02-02] 68d5842 feat(widgets): add widget design infrastructure with reusable components
+- [2026-02-02] 6cb17c5 feat(widgets): expand data snapshot with categories, subcategories and cash flow
 - [2026-02-02] 801bb7e feat(notifications): add personalized scheduled payment and report notifications
 - [2026-02-02] 671dbda docs: mark 10.5.D.2 as completed in STATE and ROADMAP
 - [2026-02-02] b1ae949 feat(onboarding): add budget alerts toggle to notifications step
@@ -33,7 +36,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-02] 9ff53cb Merge feature/10.5.G.2-widgets-ios into 1.1
 - [2026-02-02] 1563970 Merge feature/10.5.G.1-icloud-sync into 1.1
 - [2026-02-02] f4ed518 feat(widgets): add iOS WidgetKit widgets for balance, records, payments and budgets
-- [2026-02-01] 1c32cc2 feat(voice): use dynamic currency names in voice input examples
 
 ## Completed in Current Phase
 
@@ -138,12 +140,14 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Alternativa funcionando:** Atajos de Siri (VoiceEntry, ImageEntry)
 - Archivo: `YalaWidgets/ControlWidgets.swift`
 
-**BUG-3: WidgetKit - rediseño completo necesario**
-- 15 problemas detectados (3 críticos, 7 altos)
-- Diseño no sigue línea visual de Yala (colores hardcodeados, no usa DS tokens)
-- Datos incorrectos (balance calculado de transacciones, no cuentas)
-- No todos los periodos disponibles
-- Refresh muy espaciado (2-4h) y bugs en cálculo
+**BUG-3: WidgetKit - rediseño completo** ✅ Fase 4 COMPLETADA
+- ~~15 problemas detectados (3 críticos, 7 altos)~~
+- ✅ Fase 1: Balance y trend corregidos (cac52b6)
+- ✅ Fase 2: DTOs expandidos (6cb17c5)
+- ✅ Fase 3: Infraestructura WDS (68d5842)
+- ✅ Fase 4: 13 widgets implementados (0efd960)
+- ⏳ Fase 5: Verificar archivos en target Xcode
+- ⏳ Fase 6: Verificación vs PanelView
 - Archivos: `YalaWidgets/Widgets/*.swift`
 
 **BUG-4: Divisas recomendadas en Onboarding**
@@ -343,14 +347,17 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: BUG-1 y BUG-4 completados, BUG-2 bloqueado, BUG-3 pendiente verificación
-Next step: **Verificar BUG-3 (cálculos de widgets) y continuar con H-K**
+Last session: 2026-02-03
+Stopped at: BUG-3 Fase 4 completada (13 widgets implementados)
+Next step: **BUG-3 Fase 5-6 (Verificar target Xcode + verificación vs PanelView)**
 Resume context:
+- **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
+- **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
+- **BUG-3 Fase 3 ✅:** Infraestructura de widgets (WidgetColors DS, WDS tokens, WidgetHeader, WidgetKPI, WidgetProgressBar, CurrencySymbols, MiniDonutChart, Color+Hex compartido)
+- **BUG-3 Fase 4 ✅:** 13 widgets implementados (Balance, Expense, CashFlow, TopCategories, TopSubcategories, CategoriesPie, SubcategoriesPie, LatestRecords, ScheduledPayments, Budgets, QuickManual, QuickVoice, QuickImage)
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
 - **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)
-- **BUG-3 ⏳ PENDIENTE:** Widget cálculos corregidos, pendiente verificación visual
 - **Sección G completa:**
   - G.1: iCloud Sync con SwiftData nativo (44 archivos)
   - G.2: 4 WidgetKit widgets (26 archivos)
