@@ -788,6 +788,8 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 
 | Fecha | Issue | Cambio |
 |-------|-------|--------|
+| 2026-02-03 | - | Fase 6.5: Rediseño widgets Medium (Balance, Expense) con Swift Charts idéntico a PanelView, ejes reducidos (8pt), color Balance=electricIndigo |
+| 2026-02-03 | CF.1 | CashFlow Medium rediseñado: header (título+subtítulo izq, KPI derecha), barras horizontales full-width idénticas a PanelView compacto |
 | 2026-02-03 | CF.2 | Fase 6.3 completada - gráfica CashFlow Large igual a PanelView (Swift Charts, agrupamiento, línea net flow, SmartAxisHelper, backgrounds yalaCard) |
 | 2026-02-03 | BW.2, EW.2, CF.1, TC.2, TS.1 | Fase 6.3 parcial - issues aceptados como están, enfoque en CF.2 |
 | 2026-02-03 | G.5 | Fase 6.4 completada - deeplinks dinámicos con WidgetURLHelper, ExpenseWidget corregido |

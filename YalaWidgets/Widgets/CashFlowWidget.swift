@@ -183,60 +183,89 @@ struct SmallCashFlowView: View {
 struct MediumCashFlowView: View {
     let entry: CashFlowEntry
 
+    private var maxValue: Double {
+        max(entry.totalIncome, entry.totalExpense, 1)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
-            // Header full width: title left, subtitle right
-            WidgetHeader(
-                title: "Flujo neto",
-                subtitle: entry.period.toWidgetPeriod.displayName,
-                icon: "arrow.left.arrow.right",
-                inline: true
-            )
+            // Header row: title+subtitle left, KPI right
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
+                    Text("Flujo neto")
+                        .font(WDS.Typography.title)
+                        .foregroundStyle(.primary)
+                    Text(entry.period.toWidgetPeriod.displayName)
+                        .font(WDS.Typography.subtitle)
+                        .foregroundStyle(.secondary)
+                }
 
-            // Content: KPI + breakdown left, bars right
-            HStack(spacing: WDS.Spacing.lg) {
-                // Left: KPI and income/expense breakdown
-                VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
-                    Spacer()
+                Spacer()
 
-                    WidgetKPI(
-                        amount: entry.netCashFlow,
-                        currencyCode: entry.currencyCode,
-                        displayFormat: entry.currencyDisplayFormat,
-                        color: .primary,
-                        size: .medium
-                    )
+                WidgetKPI(
+                    amount: entry.netCashFlow,
+                    currencyCode: entry.currencyCode,
+                    displayFormat: entry.currencyDisplayFormat,
+                    color: .primary,
+                    size: .small
+                )
+            }
 
-                    // Income/Expense labels
-                    HStack(spacing: WDS.Spacing.md) {
-                        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                            Text("Ingresos")
-                                .font(WDS.Typography.tiny)
-                                .foregroundStyle(.secondary)
-                            Text(formatAmount(entry.totalIncome))
-                                .font(WDS.Typography.value)
-                                .foregroundColor(WidgetColors.income)
-                        }
+            Spacer(minLength: WDS.Spacing.xs)
 
-                        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                            Text("Gastos")
-                                .font(WDS.Typography.tiny)
-                                .foregroundStyle(.secondary)
-                            Text(formatAmount(entry.totalExpense))
-                                .font(WDS.Typography.value)
-                                .foregroundColor(WidgetColors.expense)
+            // Bars section - identical to PanelView compact
+            VStack(spacing: WDS.Spacing.md) {
+                // Income bar
+                VStack(spacing: WDS.Spacing.xxs) {
+                    HStack {
+                        Text("Ingresos")
+                            .font(WDS.Typography.label)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatCurrency(entry.totalIncome))
+                            .font(WDS.Typography.value)
+                            .foregroundStyle(.primary)
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            // Track
+                            Capsule()
+                                .fill(Color.primary.opacity(0.05))
+                                .frame(height: 8)
+                            // Fill
+                            Capsule()
+                                .fill(WidgetColors.income)
+                                .frame(width: max(geo.size.width * CGFloat(entry.totalIncome / maxValue), 6), height: 8)
                         }
                     }
-
-                    Spacer()
+                    .frame(height: 8)
                 }
-                .frame(maxWidth: 160, alignment: .leading)
 
-                // Right: Stacked bars comparison
-                CashFlowBars(
-                    income: entry.totalIncome,
-                    expense: entry.totalExpense
-                )
+                // Expense bar
+                VStack(spacing: WDS.Spacing.xxs) {
+                    HStack {
+                        Text("Gastos")
+                            .font(WDS.Typography.label)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatCurrency(entry.totalExpense))
+                            .font(WDS.Typography.value)
+                            .foregroundStyle(.primary)
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            // Track
+                            Capsule()
+                                .fill(Color.primary.opacity(0.05))
+                                .frame(height: 8)
+                            // Fill
+                            Capsule()
+                                .fill(WidgetColors.expense)
+                                .frame(width: max(geo.size.width * CGFloat(entry.totalExpense / maxValue), 6), height: 8)
+                        }
+                    }
+                    .frame(height: 8)
+                }
             }
         }
         .padding(WDS.Spacing.xs)
@@ -244,11 +273,14 @@ struct MediumCashFlowView: View {
         .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 
-    private func formatAmount(_ value: Double) -> String {
+    private func formatCurrency(_ value: Double) -> String {
+        let symbol = entry.currencyDisplayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: entry.currencyCode)
+            : entry.currencyCode
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "0"
+        return "\(symbol) \(formatter.string(from: NSNumber(value: value)) ?? "0")"
     }
 }
 
@@ -567,7 +599,7 @@ struct BidirectionalCashFlowChart: View {
         .chartXAxis {
             AxisMarks(values: smartAxisDates) { value in
                 AxisGridLine()
-                    .foregroundStyle(Color.gray.opacity(0.15))
+                    .foregroundStyle(Color.secondary.opacity(0.1))
                 if let date = value.as(Date.self) {
                     // Smart anchoring: first label left-aligned, last right-aligned
                     let isFirst = date == smartAxisDates.first
@@ -576,7 +608,7 @@ struct BidirectionalCashFlowChart: View {
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.caption2.bold())
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -585,11 +617,11 @@ struct BidirectionalCashFlowChart: View {
         .chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.gray.opacity(0.15))
+                    .foregroundStyle(Color.secondary.opacity(0.1))
                 if let doubleValue = value.as(Double.self) {
                     AxisValueLabel {
                         Text(formatK(doubleValue))
-                            .font(.system(size: 9))
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                 }

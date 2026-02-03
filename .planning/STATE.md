@@ -150,6 +150,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ Fase 6.2 parcial: UI Global (padding 4pt, header inline, sin decimales)
 - ✅ Fase 6.3: UI por widget (CashFlow Large con Swift Charts igual a PanelView)
 - ✅ Fase 6.4: Deeplinks dinámicos (WidgetURLHelper lee URL_SCHEME del bundle)
+- ✅ Fase 6.5: Widgets Medium rediseñados (Balance, Expense, CashFlow) con Swift Charts idéntico a PanelView
 - 🔴 Pendiente: G.2 KPIs poco llamativos (limitación de fuente del sistema)
 - **Documentación completa:** [`.planning/BUG-3-WIDGETS.md`](.planning/BUG-3-WIDGETS.md)
 - **Issues QA:** 12 ✅ resueltos, 1 🔴 pendiente (limitación de fuente)
@@ -358,8 +359,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: BUG-3 Fase 6.3 completada (CashFlow Large)
-Next step: Revisión de otros widgets o QA manual
+Stopped at: BUG-3 Fase 6.5 completada (widgets Medium rediseñados)
+Next step: QA manual de widgets o otros bugs
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
@@ -370,6 +371,11 @@ Resume context:
 - **BUG-3 Fase 6.2 parcial:** G.1 padding 16pt→4pt, G.3 header inline para Medium, sin decimales en montos; G.2 KPIs sin cambio (limitación fuente)
 - **BUG-3 Fase 6.3 ✅:** CashFlow Large igual a PanelView (Swift Charts, agrupamiento día/semana/mes, línea+puntos net flow, SmartAxisHelper copiado al target, backgrounds yalaCard, KPIs en .primary)
 - **BUG-3 Fase 6.4 ✅:** Deeplinks dinámicos con WidgetURLHelper (lee URL_SCHEME del bundle), ExpenseWidget corregido
+- **BUG-3 Fase 6.5 ✅:** Widgets Medium rediseñados:
+  - CashFlow Medium: header (título+subtítulo izq, KPI der), barras horizontales full-width idénticas a PanelView compacto
+  - Balance Medium: Swift Charts con AreaMark+LineMark, color electricIndigo, ejes 8pt
+  - Expense Medium: Swift Charts con AreaMark+LineMark, color expense, ejes 8pt
+  - Parámetros idénticos a PanelView: gradient 0.1→0.05, gridlines secondary.opacity(0.1), lineWidth 2, .monotone
 - **Aprendizaje clave:** Siempre usar Swift Charts para widgets que replican PanelView (grouping, calendarUnit, SmartAxisHelper, mismos tokens)
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
