@@ -140,13 +140,13 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Alternativa funcionando:** Atajos de Siri (VoiceEntry, ImageEntry)
 - Archivo: `YalaWidgets/ControlWidgets.swift`
 
-**BUG-3: WidgetKit - rediseño completo** ✅ Fase 4 COMPLETADA
+**BUG-3: WidgetKit - rediseño completo** ✅ Fase 5 COMPLETADA
 - ~~15 problemas detectados (3 críticos, 7 altos)~~
 - ✅ Fase 1: Balance y trend corregidos (cac52b6)
 - ✅ Fase 2: DTOs expandidos (6cb17c5)
 - ✅ Fase 3: Infraestructura WDS (68d5842)
 - ✅ Fase 4: 13 widgets implementados (0efd960)
-- ⏳ Fase 5: Verificar archivos en target Xcode
+- ✅ Fase 5: Archivos verificados en target Xcode (folder references)
 - ⏳ Fase 6: Verificación vs PanelView
 - Archivos: `YalaWidgets/Widgets/*.swift`
 
@@ -348,13 +348,14 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: BUG-3 Fase 4 completada (13 widgets implementados)
-Next step: **BUG-3 Fase 5-6 (Verificar target Xcode + verificación vs PanelView)**
+Stopped at: BUG-3 Fase 5 completada (verificación target Xcode + code review)
+Next step: **BUG-3 Fase 6 (Verificación de datos vs PanelView)**
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
 - **BUG-3 Fase 3 ✅:** Infraestructura de widgets (WidgetColors DS, WDS tokens, WidgetHeader, WidgetKPI, WidgetProgressBar, CurrencySymbols, MiniDonutChart, Color+Hex compartido)
 - **BUG-3 Fase 4 ✅:** 13 widgets implementados (Balance, Expense, CashFlow, TopCategories, TopSubcategories, CategoriesPie, SubcategoriesPie, LatestRecords, ScheduledPayments, Budgets, QuickManual, QuickVoice, QuickImage)
+- **BUG-3 Fase 5 ✅:** Archivos en target verificados (folder references = inclusión automática), BUILD SUCCEEDED, code review pasado (12 archivos, 0 críticos)
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
 - **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)
