@@ -175,6 +175,9 @@ struct MainTabView: View {
                 case .records:
                     sessionState.selectedDetailTab = .records
                     sessionState.selectedMainTab = .statistics
+                case .categories:
+                    sessionState.selectedDetailTab = .categories
+                    sessionState.selectedMainTab = .statistics
                 case .planning:
                     sessionState.selectedMainTab = .planning
                 case .budgets:
@@ -420,7 +423,11 @@ struct GlobalSearchView: View {
         )
         .task {
             // Delay to let Query load, then reveal content smoothly
-            try? await Task.sleep(for: .milliseconds(300))
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+            } catch {
+                // Task cancelled - continue with animation anyway
+            }
             await MainActor.run {
                 withAnimation(.easeIn(duration: 0.2)) {
                     isDataReady = true

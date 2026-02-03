@@ -87,13 +87,17 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
     private func createEntry(for configuration: BalanceWidgetIntent) -> BalanceEntry {
         let balance = WidgetDataService.getTotalBalance()
         let currency = WidgetDataService.getPreferredCurrency()
-        var trendData = WidgetDataService.getTrendData()
+
+        // Get trend data based on period (use daily points for week/month)
+        let allTrendData = WidgetDataService.getTrendData()
+        var trendData: [WidgetTrendPoint] = allTrendData?.dailyPoints ?? []
 
         // Filter trend data based on period
         if configuration.trendPeriod == .week {
             let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
             trendData = trendData.filter { $0.date >= weekAgo }
         }
+        // For .month, use all 90 days (dailyPoints covers this)
 
         return BalanceEntry(
             date: Date(),
@@ -142,7 +146,7 @@ struct SmallBalanceView: View {
 
             Text(formattedBalance)
                 .font(.system(.title, design: .rounded, weight: .bold))
-                .foregroundColor(entry.balance >= 0 ? .primary : .red)
+                .foregroundColor(entry.balance >= 0 ? .primary : WidgetColors.negative)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
 
@@ -185,7 +189,7 @@ struct MediumBalanceView: View {
 
                 Text(formattedBalance)
                     .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundColor(entry.balance >= 0 ? .primary : .red)
+                    .foregroundColor(entry.balance >= 0 ? .primary : WidgetColors.negative)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
 
@@ -206,8 +210,8 @@ struct MediumBalanceView: View {
                 if entry.trendData.count >= 2 {
                     MiniTrendChart(
                         dataPoints: entry.trendData,
-                        lineColor: entry.balance >= 0 ? Color.green : Color.red,
-                        fillColor: (entry.balance >= 0 ? Color.green : Color.red).opacity(0.15)
+                        lineColor: WidgetColors.trendLine(balance: entry.balance),
+                        fillColor: WidgetColors.trendFill(balance: entry.balance)
                     )
                 } else {
                     VStack {

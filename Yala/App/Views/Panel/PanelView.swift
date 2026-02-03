@@ -336,6 +336,13 @@ struct PanelView: View {
                 sessionState.shouldShowImageEntry = false
             }
         }
+        .onChange(of: sessionState.shouldShowNewTransaction) { _, shouldShow in
+            // Open NewTransactionView when triggered by widget deep link
+            if shouldShow {
+                showNewTransaction = true
+                sessionState.shouldShowNewTransaction = false
+            }
+        }
         .onChange(of: viewModel.trendType) {
             // Sync trend type to SessionState when it changes
             viewModel.syncToSessionState(sessionState)

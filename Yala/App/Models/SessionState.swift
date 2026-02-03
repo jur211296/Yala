@@ -60,6 +60,7 @@ enum DeepLinkDestination {
     case panel
     case statistics
     case records
+    case categories
     case planning
     case budgets
 }
@@ -320,6 +321,10 @@ class SessionState {
     /// Flag to trigger image entry from App Shortcut
     /// When true, PanelView will open ImageSelectionView
     var shouldShowImageEntry: Bool = false
+
+    /// Flag to trigger new transaction form from widget deep link
+    /// When true, PanelView will open NewTransactionView
+    var shouldShowNewTransaction: Bool = false
 
     /// Deep link destination from widgets
     /// When set, app navigates to specified destination and clears this

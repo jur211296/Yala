@@ -91,12 +91,72 @@ final class AppBootstrapper {
 
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
+        // Check for pending Control Center action first
+        checkForPendingControlAction()
+
         checkForPendingSharedImage()
         checkForPendingInboxDrafts(context: context)
 
         // Verify and reschedule notifications if needed
         Task {
             await ensureNotificationsScheduled(context: context)
+        }
+    }
+
+    // MARK: - Control Center Action Handling
+
+    /// App Group identifier from Info.plist
+    private var appGroupID: String {
+        Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String ?? "group.com.jurgenschmidt.yala"
+    }
+
+    /// Checks for and processes pending Control Center widget actions
+    private func checkForPendingControlAction() {
+        #if DEBUG
+        print("AppBootstrapper: Checking for pending Control Center action in App Group: \(appGroupID)")
+        #endif
+
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            #if DEBUG
+            print("AppBootstrapper: Could not access App Group UserDefaults")
+            #endif
+            return
+        }
+
+        guard let action = defaults.string(forKey: "pendingControlAction") else {
+            #if DEBUG
+            print("AppBootstrapper: No pending Control Center action found")
+            #endif
+            return
+        }
+
+        // Clear the action immediately to prevent re-processing
+        defaults.removeObject(forKey: "pendingControlAction")
+        defaults.synchronize()
+
+        #if DEBUG
+        print("AppBootstrapper: Processing Control Center action: \(action)")
+        #endif
+
+        // Process the action as if it were a deep link
+        switch action {
+        case "panel":
+            sessionState.deepLinkDestination = .panel
+
+        case "voice-entry":
+            if UserDefaults.standard.bool(forKey: "enableVoiceInput") {
+                sessionState.shouldShowVoiceEntry = true
+            }
+
+        case "image-entry":
+            if UserDefaults.standard.bool(forKey: "enableImageInput") {
+                sessionState.shouldShowImageEntry = true
+            }
+
+        default:
+            #if DEBUG
+            print("AppBootstrapper: Unknown Control Center action: \(action)")
+            #endif
         }
     }
 
@@ -144,13 +204,18 @@ final class AppBootstrapper {
                 #endif
             }
 
+        case "new-transaction":
+            sessionState.shouldShowNewTransaction = true
+
         case "panel":
             sessionState.deepLinkDestination = .panel
 
         case "statistics":
-            // Check for path like statistics/records
+            // Check for path like statistics/records or statistics/categories
             if url.pathComponents.contains("records") {
                 sessionState.deepLinkDestination = .records
+            } else if url.pathComponents.contains("categories") {
+                sessionState.deepLinkDestination = .categories
             } else {
                 sessionState.deepLinkDestination = .statistics
             }

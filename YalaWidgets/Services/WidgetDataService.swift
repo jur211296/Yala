@@ -54,6 +54,16 @@ struct WidgetTrendPoint: Codable {
     let balance: Double
 }
 
+/// Multi-granularity trend data for different periods
+struct WidgetTrendData: Codable {
+    /// Daily points for short periods (last 90 days)
+    let dailyPoints: [WidgetTrendPoint]
+    /// Weekly points for medium periods (last 2 years, ~104 points max)
+    let weeklyPoints: [WidgetTrendPoint]
+    /// Monthly points for long periods (all time, ~120 points max for 10 years)
+    let monthlyPoints: [WidgetTrendPoint]
+}
+
 /// Complete widget data snapshot
 struct WidgetDataSnapshot: Codable {
     let totalBalance: Double
@@ -62,7 +72,7 @@ struct WidgetDataSnapshot: Codable {
     let transactions: [WidgetTransaction]
     let budgets: [WidgetBudget]
     let scheduledPayments: [WidgetScheduledPayment]
-    let trendData: [WidgetTrendPoint]
+    let trendData: WidgetTrendData
 }
 
 // MARK: - WidgetDataService
@@ -168,9 +178,36 @@ enum WidgetDataService {
         return Array(payments.prefix(limit))
     }
 
-    /// Returns trend data for chart
-    static func getTrendData() -> [WidgetTrendPoint] {
-        loadSnapshot()?.trendData ?? []
+    /// Returns trend data for chart (full structure with all granularities)
+    static func getTrendData() -> WidgetTrendData? {
+        loadSnapshot()?.trendData
+    }
+
+    /// Returns trend data appropriate for the given period
+    /// - Parameter period: The period to get trend data for
+    /// - Returns: Array of trend points at appropriate granularity
+    static func getTrendData(for period: WidgetPeriod) -> [WidgetTrendPoint] {
+        guard let trendData = getTrendData() else { return [] }
+
+        switch period {
+        case .today, .yesterday, .thisWeek, .lastWeek, .thisMonth, .lastMonth:
+            // Short/medium periods: use daily points
+            return filterPoints(trendData.dailyPoints, for: period)
+
+        case .thisQuarter, .lastQuarter, .thisYear, .lastYear:
+            // Long periods: use weekly points
+            return filterPoints(trendData.weeklyPoints, for: period)
+
+        case .allTime:
+            // All time: use monthly points
+            return trendData.monthlyPoints
+        }
+    }
+
+    /// Filter points to match the requested period
+    private static func filterPoints(_ points: [WidgetTrendPoint], for period: WidgetPeriod) -> [WidgetTrendPoint] {
+        let interval = period.dateInterval()
+        return points.filter { interval.contains($0.date) }
     }
 
     /// Returns the last update timestamp
@@ -198,6 +235,107 @@ enum ScheduledPaymentFilter: String, CaseIterable {
         case .all: return "Todos"
         case .recurring: return "Planificados"
         case .subscription: return "Suscripciones"
+        }
+    }
+}
+
+// MARK: - Trend Period
+
+/// Period options for widget trend data
+enum WidgetPeriod: String, CaseIterable, Codable {
+    case today
+    case yesterday
+    case thisWeek
+    case lastWeek
+    case thisMonth
+    case lastMonth
+    case thisQuarter
+    case lastQuarter
+    case thisYear
+    case lastYear
+    case allTime
+
+    var displayName: String {
+        switch self {
+        case .today: return "Hoy"
+        case .yesterday: return "Ayer"
+        case .thisWeek: return "Esta semana"
+        case .lastWeek: return "Semana pasada"
+        case .thisMonth: return "Este mes"
+        case .lastMonth: return "Mes pasado"
+        case .thisQuarter: return "Este trimestre"
+        case .lastQuarter: return "Trimestre pasado"
+        case .thisYear: return "Este año"
+        case .lastYear: return "Año pasado"
+        case .allTime: return "Todo el tiempo"
+        }
+    }
+
+    /// Returns the date interval for this period
+    func dateInterval() -> DateInterval {
+        let calendar = Calendar.current
+        let now = Date()
+
+        switch self {
+        case .today:
+            let start = calendar.startOfDay(for: now)
+            return DateInterval(start: start, end: now)
+
+        case .yesterday:
+            let todayStart = calendar.startOfDay(for: now)
+            let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart
+            return DateInterval(start: yesterdayStart, end: todayStart)
+
+        case .thisWeek:
+            let start = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
+            return DateInterval(start: start, end: now)
+
+        case .lastWeek:
+            let thisWeekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
+            let lastWeekStart = calendar.date(byAdding: .weekOfYear, value: -1, to: thisWeekStart) ?? now
+            return DateInterval(start: lastWeekStart, end: thisWeekStart)
+
+        case .thisMonth:
+            let start = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+            return DateInterval(start: start, end: now)
+
+        case .lastMonth:
+            let thisMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+            let lastMonthStart = calendar.date(byAdding: .month, value: -1, to: thisMonthStart) ?? now
+            return DateInterval(start: lastMonthStart, end: thisMonthStart)
+
+        case .thisQuarter:
+            let month = calendar.component(.month, from: now)
+            let quarterStartMonth = ((month - 1) / 3) * 3 + 1
+            var components = calendar.dateComponents([.year], from: now)
+            components.month = quarterStartMonth
+            components.day = 1
+            let start = calendar.date(from: components) ?? now
+            return DateInterval(start: start, end: now)
+
+        case .lastQuarter:
+            let month = calendar.component(.month, from: now)
+            let quarterStartMonth = ((month - 1) / 3) * 3 + 1
+            var components = calendar.dateComponents([.year], from: now)
+            components.month = quarterStartMonth
+            components.day = 1
+            let thisQuarterStart = calendar.date(from: components) ?? now
+            let lastQuarterStart = calendar.date(byAdding: .month, value: -3, to: thisQuarterStart) ?? now
+            return DateInterval(start: lastQuarterStart, end: thisQuarterStart)
+
+        case .thisYear:
+            let start = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
+            return DateInterval(start: start, end: now)
+
+        case .lastYear:
+            let thisYearStart = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
+            let lastYearStart = calendar.date(byAdding: .year, value: -1, to: thisYearStart) ?? now
+            return DateInterval(start: lastYearStart, end: thisYearStart)
+
+        case .allTime:
+            // Return a very large interval (from year 2000 to now)
+            let start = calendar.date(from: DateComponents(year: 2000, month: 1, day: 1)) ?? now
+            return DateInterval(start: start, end: now)
         }
     }
 }
