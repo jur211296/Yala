@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-03] 00bfc7a docs: update BUG-3 Phase 6.2 progress
+- [2026-02-03] 6d0afa3 fix(widgets): reduce padding to 4pt and remove decimals
+- [2026-02-03] 75adcec fix(widgets): add inline header mode and restructure Medium layouts
 - [2026-02-03] 0efd960 feat(widgets): implement Phase 4 - 13 widgets with WDS infrastructure
 - [2026-02-02] 68d5842 feat(widgets): add widget design infrastructure with reusable components
 - [2026-02-02] 6cb17c5 feat(widgets): expand data snapshot with categories, subcategories and cash flow
@@ -140,26 +143,30 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Alternativa funcionando:** Atajos de Siri (VoiceEntry, ImageEntry)
 - Archivo: `YalaWidgets/ControlWidgets.swift`
 
-**BUG-3: WidgetKit - rediseño completo** ✅ Fase 5 COMPLETADA
-- ~~15 problemas detectados (3 críticos, 7 altos)~~
-- ✅ Fase 1: Balance y trend corregidos (cac52b6)
-- ✅ Fase 2: DTOs expandidos (6cb17c5)
-- ✅ Fase 3: Infraestructura WDS (68d5842)
-- ✅ Fase 4: 13 widgets implementados (0efd960)
-- ✅ Fase 5: Archivos verificados en target Xcode (folder references)
-- ⏳ Fase 6: Verificación vs PanelView
-- Archivos: `YalaWidgets/Widgets/*.swift`
+**BUG-3: WidgetKit - rediseño completo** 🟡 Fase 6 EN PROGRESO
+- ✅ Fases 1-5 completadas (infraestructura, 13 widgets implementados)
+- ✅ Fase 6.1: Cálculos críticos corregidos (divisa, balance, gastos, ingresos, top subcategorías)
+- ✅ Fase 6.2 parcial: UI Global (padding 4pt, header inline, sin decimales)
+- 🔴 Fase 6.3-6.4: UI por widget y deeplinks pendientes
+- **Documentación completa:** [`.planning/BUG-3-WIDGETS.md`](.planning/BUG-3-WIDGETS.md)
+- **Issues QA:** 7 ✅ resueltos, 6 🔴 pendientes (1 UI global, 4 UI por widget, 1 deeplinks)
+- Archivos: `YalaWidgets/Widgets/*.swift`, `Yala/Services/WidgetDataCache.swift`
 
 **BUG-4: Divisas recomendadas en Onboarding**
 - La sección existe en Settings > Currency > Secondary Currencies
 - Falta añadirla al paso de onboarding de divisas secundarias
 - Referencia: `SecondaryCurrencyPickerSheet.swift` (commit cb01b06)
 
-**REVIEW-1: iCloud Sync - verificar funcionamiento**
+**REVIEW-1: iCloud Sync - verificar funcionamiento** 🔴 URGENTE
 - El sync no parece funcionar al 100%
 - Investigar y entender el flujo actual de CloudKit
 - Verificar si los datos se sincronizan entre dispositivos
+- **NUEVO (2026-02-03):** Usuario eliminó app completamente y al reinstalar se cargó con datos
+  - iCloud sync OFF por default en iPhone, pero ON en iPad
+  - Posible sync inesperado desde iPad sin consentimiento explícito
+  - Investigar: ¿CloudKit sincroniza aunque el toggle local esté OFF?
 - Archivos: `SwiftDataConfiguration.swift`, `SyncSettingsView.swift`
+- **Prioridad:** Resolver después de BUG-2 y BUG-3
 
 ---
 
@@ -348,14 +355,16 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: BUG-3 Fase 5 completada (verificación target Xcode + code review)
-Next step: **BUG-3 Fase 6 (Verificación de datos vs PanelView)**
+Stopped at: BUG-3 Fase 6.2 parcial completada (UI Global)
+Next step: **BUG-3 Fase 6.3 (UI por Widget) o Fase 6.4 (Deeplinks)**
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
 - **BUG-3 Fase 3 ✅:** Infraestructura de widgets (WidgetColors DS, WDS tokens, WidgetHeader, WidgetKPI, WidgetProgressBar, CurrencySymbols, MiniDonutChart, Color+Hex compartido)
 - **BUG-3 Fase 4 ✅:** 13 widgets implementados (Balance, Expense, CashFlow, TopCategories, TopSubcategories, CategoriesPie, SubcategoriesPie, LatestRecords, ScheduledPayments, Budgets, QuickManual, QuickVoice, QuickImage)
 - **BUG-3 Fase 5 ✅:** Archivos en target verificados (folder references = inclusión automática), BUILD SUCCEEDED, code review pasado (12 archivos, 0 críticos)
+- **BUG-3 Fase 6.1 ✅:** Cálculos críticos corregidos (G.4 divisa, BW.1 balance, EW.1 gastos, CF.3/CF.4 flujo, TS.2 subcategorías)
+- **BUG-3 Fase 6.2 parcial:** G.1 padding 16pt→4pt, G.3 header inline para Medium, sin decimales en montos; G.2 KPIs sin cambio (limitación fuente)
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
 - **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)

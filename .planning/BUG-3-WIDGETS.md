@@ -572,10 +572,223 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 
 ## PRÓXIMOS PASOS
 
-1. **Fase 1:** Corregir cálculos en WidgetDataCache (balance, trend, spent)
-2. **Fase 2:** Expandir WidgetDataSnapshot con todos los datos necesarios
-3. **Fase 3:** Crear enum WidgetPeriod con todos los períodos
-4. **Fase 4:** Implementar widgets en orden de prioridad
-5. **Fase 5:** Migrar colores a DS tokens
-6. **Fase 6:** Testing de datos vs PanelView
+1. **Fase 1:** Corregir cálculos en WidgetDataCache (balance, trend, spent) ✅
+2. **Fase 2:** Expandir WidgetDataSnapshot con todos los datos necesarios ✅
+3. **Fase 3:** Crear enum WidgetPeriod con todos los períodos ✅
+4. **Fase 4:** Implementar widgets en orden de prioridad ✅
+5. **Fase 5:** Migrar colores a DS tokens ✅
+6. **Fase 6:** Testing de datos vs PanelView 🔴 EN PROGRESO
+
+---
+
+# ISSUES DE QA (2026-02-03)
+
+**Última actualización:** 2026-02-03
+**Estado:** 🟡 EN PROGRESO (Fase 6.2 parcial - 7/13 resueltos)
+
+---
+
+## 📋 Instrucciones de Actualización
+
+**Al resolver un issue, Claude DEBE:**
+
+1. **Cambiar el emoji del issue** de 🔴 a ✅
+2. **Actualizar la tabla de progreso** (incrementar ✅, decrementar 🔴)
+3. **Agregar entrada al historial** con fecha, ID del issue y descripción breve del fix
+4. **Si se completa una fase**, actualizar el estado general arriba
+
+**Ejemplo de actualización:**
+```markdown
+### G.1 ✅ Padding excesivo (era 🔴)
+- **Resuelto:** 2026-02-03
+- **Fix:** Reducido padding de 16 a 8 en WDS.swift
+```
+
+---
+
+## Resumen de Progreso
+
+| Categoría | Total | ✅ | 🔴 |
+|-----------|-------|-----|-----|
+| Cálculos Críticos | 5 | 5 | 0 |
+| UI Global | 3 | 2 | 1 |
+| UI por Widget | 4 | 0 | 4 |
+| Deeplinks | 1 | 0 | 1 |
+| **TOTAL** | **13** | **7** | **6** |
+
+---
+
+## 🔴 Problemas Globales (afectan múltiples widgets)
+
+### G.1 ✅ Padding excesivo
+- **Descripción:** Demasiado padding a los lados y arriba/abajo. Desperdicio de espacio valioso del widget.
+- **Impacto:** Todos los widgets
+- **Resuelto:** 2026-02-03
+- **Fix:** Reducido padding de 16pt a 4pt (`WDS.Spacing.xs`) en todos los widgets
+- **Archivos:** Todos los widgets en `YalaWidgets/Widgets/*.swift`
+
+### G.2 🔴 KPIs poco llamativos
+- **Descripción:** El formato de texto de los KPIs necesita más peso visual (más grueso/negrita).
+- **Impacto:** Todos los widgets con KPIs
+- **Nota:** Se intentaron varios pesos (`.heavy`, `.black`) pero el diseño `.rounded` de SF no muestra diferencia visual significativa. Depende de limitaciones de la fuente del sistema.
+- **Archivos:** `YalaWidgets/Theme/WidgetDesignTokens.swift`
+
+### G.3 ✅ Widgets Medium - contenido cortado
+- **Descripción:** En widgets medium (TopCategories, TopSubcategories, Últimos registros, Pagos planificados, Presupuestos) se corta el título y el último registro. El padding superior e inferior se ignora.
+- **Impacto:** Widgets medium
+- **Resuelto:** 2026-02-03
+- **Fix:**
+  - Agregado parámetro `inline: Bool` a `WidgetHeader` (default `false`)
+  - Medium widgets usan `inline: true` → título izquierda, subtítulo derecha en misma línea
+  - Restructurado layout de `MediumBalanceView`, `MediumExpenseView`, `MediumCashFlowView` con header full-width
+- **Archivos:** `YalaWidgets/Views/WidgetHeader.swift`, `BalanceWidget.swift`, `ExpenseWidget.swift`, `CashFlowWidget.swift`
+
+### G.4 ✅ Divisa incorrecta
+- **Descripción:** Los signos de divisa NO cuadran con la divisa preferida seleccionada por el usuario.
+- **Impacto:** TODOS los widgets
+- **Resuelto:** 2026-02-03
+- **Archivos:** `Yala/Services/WidgetDataCache.swift` (preferredCurrency)
+
+### G.5 🔴 Deeplinks incorrectos
+- **Descripción:** Todos los deeplinks abren PanelView. Deberían abrir destinos específicos.
+- **Destinos correctos:**
+  | Widget | Destino correcto |
+  |--------|------------------|
+  | Categorías | Estadísticas > Categorías |
+  | Flujo/Balance/Gasto | PanelView ✅ |
+  | Últimos registros | Estadísticas > Registros |
+  | Pagos planificados | Planificación > Pagos planificados |
+  | Presupuestos | Planificación > Presupuestos |
+  | Registro manual | Nueva transacción |
+  | Registro voz | Modo voz (si permisos OK, sino PanelView + mensaje) |
+  | Registro imagen | Modo imagen (si permisos OK, sino PanelView + mensaje) |
+- **Archivos:** Widgets individuales (deep link URLs), `Yala/App/YalaApp.swift` (URL handler)
+
+---
+
+## 🔴 Issues por Widget
+
+### BalanceWidget
+
+#### BW.1 ✅ Cálculo incorrecto
+- **Descripción:** Balance no cuadra con PanelView. La diferencia no es mucha pero no coincide.
+- **Periodo probado:** "Todo el tiempo"
+- **Resuelto:** 2026-02-03
+- **Archivos:** `WidgetDataCache.swift` (buildPeriodSummary)
+
+#### BW.2 🔴 Gráfica con puntos en 0
+- **Descripción:** La gráfica tiene demasiados puntos en 0. La gráfica de Trends en PanelView solo muestra puntos con datos.
+- **Solución propuesta:** Solo mostrar días con transacciones (mínimo 3 puntos)
+- **Archivos:** `WidgetDataCache.swift` (buildDailyTrend)
+
+---
+
+### ExpenseWidget
+
+#### EW.1 ✅ Cálculo MUY incorrecto
+- **Descripción:** Gasto no cuadra con PanelView. La diferencia es MUY amplia - hay un problema serio en el cálculo.
+- **Periodo probado:** "Todo el tiempo"
+- **Resuelto:** 2026-02-03
+- **Archivos:** `WidgetDataCache.swift` (buildPeriodSummary, totalExpense)
+
+#### EW.2 🔴 Gráfica con puntos en 0
+- **Descripción:** Misma issue que BalanceWidget - demasiados puntos en 0.
+- **Archivos:** `WidgetDataCache.swift` (buildDailyTrend)
+
+---
+
+### CashFlowWidget
+
+#### CF.1 🔴 UI Medium - barras no ocupan ancho
+- **Descripción:** Las barras deberían abarcar todo el ancho en lugar de solo medio widget, como en PanelView.
+- **Archivos:** `YalaWidgets/Widgets/CashFlowWidget.swift`
+
+#### CF.2 🔴 UI Large - gráfica horrible
+- **Descripción:** La gráfica de barras no se parece en nada a la de PanelView. Está "horrible".
+- **Archivos:** `YalaWidgets/Widgets/CashFlowWidget.swift`
+
+#### CF.3 ✅ Cálculo - Ingresos = 0
+- **Descripción:** Todos los ingresos dicen 0.
+- **Causa probable:** Lógica de `isIncome` incorrecta
+- **Resuelto:** 2026-02-03
+- **Archivos:** `WidgetDataCache.swift` (totalIncome calculation)
+
+#### CF.4 ✅ Cálculo - Gastos erróneos
+- **Descripción:** Los gastos cuadran con ExpenseWidget (que está mal). Por lo tanto el flujo también está mal.
+- **Resuelto:** 2026-02-03 (dependía de EW.1)
+- **Archivos:** `WidgetDataCache.swift`
+
+---
+
+### TopCategoriesWidget
+
+#### TC.1 🔴 UI Medium - contenido cortado
+- **Descripción:** Está bastante decente pero se corta arriba y abajo.
+- **Archivos:** `YalaWidgets/Widgets/TopCategoriesWidget.swift`
+
+#### TC.2 🔴 UI Large - gráfica circular no se parece a PanelView
+- **Descripción:**
+  - La gráfica circular no se parece en nada a la de PanelView
+  - ¿Es posible que el gráfico tenga los iconos de las categorías?
+  - ¿Podemos mostrar más de 5 categorías? (Top 5 es para Medium, en Large quiere todas)
+- **Archivos:** `YalaWidgets/Widgets/TopCategoriesWidget.swift`, `YalaWidgets/Components/MiniDonutChart.swift`
+
+---
+
+### TopSubcategoriesWidget
+
+#### TS.1 🔴 Mismos issues que TopCategories
+- **Descripción:** UI Medium cortado, UI Large no se parece a PanelView.
+- **Archivos:** `YalaWidgets/Widgets/TopSubcategoriesWidget.swift`
+
+#### TS.2 ✅ Cálculo - Top 5 incorrecto
+- **Descripción:** Las subcategorías que salen en el top 5 NO son realmente las top 5. Algo está mal en el cálculo.
+- **Resuelto:** 2026-02-03
+- **Archivos:** `WidgetDataCache.swift` (buildTopSubcategories)
+
+---
+
+## Orden de Resolución Recomendado
+
+### Fase 6.1: Globales Críticos (Cálculos) ✅ COMPLETADA
+1. ✅ **G.4** Divisa incorrecta
+2. ✅ **EW.1** Cálculo de gastos
+3. ✅ **CF.3** Ingresos = 0
+4. ✅ **CF.4** Gastos erróneos (dependía de EW.1)
+5. ✅ **TS.2** Top 5 subcategorías incorrecto
+6. ✅ **BW.1** Balance incorrecto
+
+### Fase 6.2: UI Global 🟡 PARCIAL (2/3)
+6. ✅ **G.1** Padding excesivo → Reducido a 4pt
+7. 🔴 **G.2** KPIs poco llamativos → Limitación de fuente, sin solución viable
+8. ✅ **G.3** Contenido cortado en Medium → Header inline implementado
+
+### Fase 6.3: UI por Widget
+9. **BW.2 + EW.2** Gráficas con puntos en 0
+10. **CF.1** Barras CashFlow Medium
+11. **CF.2** Gráfica CashFlow Large
+12. **TC.2 + TS.1** Gráficas circulares Large
+
+### Fase 6.4: Deeplinks
+13. **G.5** Corregir todos los deeplinks
+
+---
+
+## Historial de Cambios
+
+| Fecha | Issue | Cambio |
+|-------|-------|--------|
+| 2026-02-03 | G.1, G.3 | Fase 6.2 parcial - padding 4pt, header inline para Medium, sin decimales en montos, layout Medium restructurado |
+| 2026-02-03 | G.4, BW.1, EW.1, CF.3, CF.4, TS.2 | Fase 6.1 completada - todos los cálculos críticos corregidos |
+| 2026-02-03 | - | Sección QA creada con 13 issues identificados |
+
+---
+
+## Referencias
+
+- **STATE.md:** Sección BUG-3
+- **Código principal:** `Yala/Services/WidgetDataCache.swift`
+- **Widgets:** `YalaWidgets/Widgets/*.swift`
+- **Design System widgets:** `YalaWidgets/Design/WDS.swift`
+- **Componentes compartidos:** `YalaWidgets/Components/*.swift`
 
