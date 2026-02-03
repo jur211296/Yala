@@ -221,7 +221,7 @@ struct BudgetRow: View {
     }
 
     private var progressColor: Color {
-        WidgetColors.budgetProgress(percentUsed: budget.percentUsed)
+        WidgetColors.forBudget(percentUsed: budget.percentUsed)
     }
 
     private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
