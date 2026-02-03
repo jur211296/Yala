@@ -55,11 +55,11 @@ struct WidgetKPI: View {
     private var formattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 0
 
         let absAmount = abs(amount)
-        let formatted = formatter.string(from: NSNumber(value: absAmount)) ?? "0.00"
+        let formatted = formatter.string(from: NSNumber(value: absAmount)) ?? "0"
 
         let prefix = amount < 0 ? "-" : ""
         let currency = displayFormat == "symbol"

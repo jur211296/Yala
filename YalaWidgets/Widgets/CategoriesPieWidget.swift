@@ -191,7 +191,7 @@ struct CategoriesPieWidgetView: View {
                 }
             }
         }
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://statistics/categories"))
     }

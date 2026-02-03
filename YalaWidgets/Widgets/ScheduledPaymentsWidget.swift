@@ -140,7 +140,7 @@ struct ScheduledPaymentsWidgetView: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(WDS.Spacing.xl)
+        .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(URL(string: "yala://planning"))
     }
@@ -232,7 +232,7 @@ struct PaymentRowView: View {
     private var formattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 2
+        formatter.maximumFractionDigits = 0
 
         let formatted = formatter.string(from: NSNumber(value: payment.amount)) ?? "0"
         let prefix = payment.isIncome ? "+" : ""
