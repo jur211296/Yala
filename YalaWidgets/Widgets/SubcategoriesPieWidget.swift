@@ -194,7 +194,7 @@ struct SubcategoriesPieWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://statistics/categories"))
+        .widgetURL(WidgetURLHelper.url(for: "statistics/categories"))
     }
 
     private var formattedTotal: String {

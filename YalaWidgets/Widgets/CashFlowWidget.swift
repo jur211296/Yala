@@ -163,7 +163,7 @@ struct SmallCashFlowView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://panel"))
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 
     private func formatAmount(_ value: Double) -> String {
@@ -240,7 +240,7 @@ struct MediumCashFlowView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://panel"))
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 
     private func formatAmount(_ value: Double) -> String {
@@ -324,7 +324,7 @@ struct LargeCashFlowView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://panel"))
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 
     private func formatAmount(_ value: Double) -> String {

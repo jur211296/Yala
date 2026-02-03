@@ -60,7 +60,7 @@ struct QuickManualEntryWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(WDS.Spacing.xs)
-        .widgetURL(URL(string: "yala://new-transaction"))
+        .widgetURL(WidgetURLHelper.url(for: "new-transaction"))
     }
 }
 
@@ -106,7 +106,7 @@ struct QuickVoiceEntryWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(WDS.Spacing.xs)
-        .widgetURL(URL(string: "yala://voice-entry"))
+        .widgetURL(WidgetURLHelper.url(for: "voice-entry"))
     }
 }
 
@@ -152,7 +152,7 @@ struct QuickImageEntryWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(WDS.Spacing.xs)
-        .widgetURL(URL(string: "yala://image-entry"))
+        .widgetURL(WidgetURLHelper.url(for: "image-entry"))
     }
 }
 

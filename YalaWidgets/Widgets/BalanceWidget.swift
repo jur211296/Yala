@@ -184,7 +184,7 @@ struct SmallBalanceView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://panel"))
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 }
 
@@ -239,7 +239,7 @@ struct MediumBalanceView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://panel"))
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 }
 

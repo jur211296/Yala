@@ -140,7 +140,7 @@ struct BudgetsWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://budgets"))
+        .widgetURL(WidgetURLHelper.url(for: "budgets"))
     }
 }
 

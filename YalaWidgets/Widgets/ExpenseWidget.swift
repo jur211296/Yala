@@ -141,7 +141,7 @@ struct SmallExpenseView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://statistics/records"))
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 }
 
@@ -196,7 +196,7 @@ struct MediumExpenseView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(URL(string: "yala://statistics/records"))
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 }
 

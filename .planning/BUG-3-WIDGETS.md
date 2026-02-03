@@ -613,8 +613,8 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 | Cálculos Críticos | 5 | 5 | 0 |
 | UI Global | 3 | 2 | 1 |
 | UI por Widget | 4 | 0 | 4 |
-| Deeplinks | 1 | 0 | 1 |
-| **TOTAL** | **13** | **7** | **6** |
+| Deeplinks | 1 | 1 | 0 |
+| **TOTAL** | **13** | **8** | **5** |
 
 ---
 
@@ -649,20 +649,16 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 - **Resuelto:** 2026-02-03
 - **Archivos:** `Yala/Services/WidgetDataCache.swift` (preferredCurrency)
 
-### G.5 🔴 Deeplinks incorrectos
-- **Descripción:** Todos los deeplinks abren PanelView. Deberían abrir destinos específicos.
-- **Destinos correctos:**
-  | Widget | Destino correcto |
-  |--------|------------------|
-  | Categorías | Estadísticas > Categorías |
-  | Flujo/Balance/Gasto | PanelView ✅ |
-  | Últimos registros | Estadísticas > Registros |
-  | Pagos planificados | Planificación > Pagos planificados |
-  | Presupuestos | Planificación > Presupuestos |
-  | Registro manual | Nueva transacción |
-  | Registro voz | Modo voz (si permisos OK, sino PanelView + mensaje) |
-  | Registro imagen | Modo imagen (si permisos OK, sino PanelView + mensaje) |
-- **Archivos:** Widgets individuales (deep link URLs), `Yala/App/YalaApp.swift` (URL handler)
+### G.5 ✅ Deeplinks incorrectos
+- **Descripción:** Todos los deeplinks abrían PanelView porque usaban scheme hardcodeado (`yala://`) en lugar del dinámico (`yaladev://` en dev).
+- **Resuelto:** 2026-02-03
+- **Fix:**
+  - Creado `WidgetURLHelper.swift` que lee `URL_SCHEME` del bundle del widget
+  - Actualizado todos los widgets para usar `WidgetURLHelper.url(for: "path")`
+  - Corregido ExpenseWidget: path de `statistics/records` → `panel`
+- **Archivos:**
+  - Nuevo: `YalaWidgets/Utils/WidgetURLHelper.swift`
+  - Modificados: 11 widgets (17 líneas)
 
 ---
 
@@ -778,6 +774,7 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 
 | Fecha | Issue | Cambio |
 |-------|-------|--------|
+| 2026-02-03 | G.5 | Fase 6.4 completada - deeplinks dinámicos con WidgetURLHelper, ExpenseWidget corregido |
 | 2026-02-03 | G.1, G.3 | Fase 6.2 parcial - padding 4pt, header inline para Medium, sin decimales en montos, layout Medium restructurado |
 | 2026-02-03 | G.4, BW.1, EW.1, CF.3, CF.4, TS.2 | Fase 6.1 completada - todos los cálculos críticos corregidos |
 | 2026-02-03 | - | Sección QA creada con 13 issues identificados |
