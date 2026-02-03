@@ -139,10 +139,10 @@ struct SmallCashFlowView: View {
                 size: .large
             )
 
-            // Small income/expense summary
-            HStack(spacing: WDS.Spacing.md) {
+            // Small income/expense summary (vertical layout to avoid truncation)
+            VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
                 Label {
-                    Text(formatCompact(entry.totalIncome))
+                    Text(formatAmount(entry.totalIncome))
                         .font(WDS.Typography.tiny)
                 } icon: {
                     Image(systemName: "arrow.up")
@@ -151,7 +151,7 @@ struct SmallCashFlowView: View {
                 .foregroundColor(WidgetColors.income)
 
                 Label {
-                    Text(formatCompact(entry.totalExpense))
+                    Text(formatAmount(entry.totalExpense))
                         .font(WDS.Typography.tiny)
                 } icon: {
                     Image(systemName: "arrow.down")
@@ -166,11 +166,14 @@ struct SmallCashFlowView: View {
         .widgetURL(URL(string: "yala://panel"))
     }
 
-    private func formatCompact(_ value: Double) -> String {
-        if value >= 1000 {
-            return String(format: "%.1fK", value / 1000)
-        }
-        return String(format: "%.0f", value)
+    private func formatAmount(_ value: Double) -> String {
+        let symbol = entry.currencyDisplayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: entry.currencyCode)
+            : entry.currencyCode
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return "\(symbol) \(formatter.string(from: NSNumber(value: value)) ?? "0")"
     }
 }
 

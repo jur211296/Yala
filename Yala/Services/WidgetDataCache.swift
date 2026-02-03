@@ -137,6 +137,9 @@ struct WidgetDataSnapshot: Codable {
 
     // Precalculated for "This Month" (most common period)
     let thisMonthSummary: WidgetPeriodSummary
+
+    // Precalculated for "All Time" using ALL transactions (not just 90 days)
+    let allTimeSummary: WidgetPeriodSummary
 }
 
 // MARK: - WidgetDataCache
@@ -161,10 +164,6 @@ enum WidgetDataCache {
 
         // Trigger widget refresh
         WidgetCenter.shared.reloadAllTimelines()
-
-        #if DEBUG
-        print("WidgetDataCache: Cache updated at \(Date())")
-        #endif
     }
 
     /// Clears the widget cache
@@ -241,8 +240,8 @@ enum WidgetDataCache {
         // Calculate total balance using ALL transactions (not just recent)
         let totalBalance = calculateTotalBalance(accounts: accounts, transactions: allTransactions)
 
-        // Get preferred currency (from first account or default)
-        let preferredCurrency = accounts.first?.currencyCode ?? "USD"
+        // Get preferred currency from user settings (single source of truth)
+        let preferredCurrency = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "USD"
 
         // Build widget transactions (last 10 for display, from recent 90 days)
         let widgetTransactions = Array(recentTransactions.prefix(10)).map { tx in
@@ -256,7 +255,7 @@ enum WidgetDataCache {
                 categoryColor: tx.category?.colorHex,
                 categoryIcon: tx.category?.iconName,
                 subcategoryName: tx.subcategory?.name,
-                isIncome: tx.category?.isIncome ?? false,
+                isIncome: (tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount) > 0,
                 amountInPreferredCurrency: tx.amountInPreferredCurrency
             )
         }
@@ -323,6 +322,14 @@ enum WidgetDataCache {
             currencyCode: preferredCurrency
         )
 
+        // Build allTime summary using ALL transactions (not just 90 days)
+        let allTimeSummary = buildPeriodSummary(
+            transactions: allTransactions,
+            periodStart: Date.distantPast,
+            periodEnd: Date(),
+            currencyCode: preferredCurrency
+        )
+
         return WidgetDataSnapshot(
             lastUpdated: Date(),
             preferredCurrencyCode: preferredCurrency,
@@ -333,7 +340,8 @@ enum WidgetDataCache {
             budgets: widgetBudgets,
             scheduledPayments: widgetPayments,
             trendData: trendData,
-            thisMonthSummary: thisMonthSummary
+            thisMonthSummary: thisMonthSummary,
+            allTimeSummary: allTimeSummary
         )
     }
 
@@ -388,8 +396,9 @@ enum WidgetDataCache {
         // Sum expenses that match budget criteria
         var spent: Double = 0
         for tx in periodTransactions {
-            // Skip income
-            if tx.category?.isIncome == true { continue }
+            // Skip income (positive amounts are income)
+            let txAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+            if txAmount > 0 { continue }
 
             // Check if transaction matches budget filters
             let matchesSubcategory = (budget.subcategories ?? []).isEmpty ||
@@ -398,7 +407,7 @@ enum WidgetDataCache {
                 (budget.accounts ?? []).contains(where: { $0.name == tx.account?.name })
 
             if matchesSubcategory && matchesAccount {
-                spent += tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+                spent += abs(txAmount)
             }
         }
 
@@ -416,28 +425,42 @@ enum WidgetDataCache {
             transactionsByDay[day, default: 0] += amount
         }
 
-        // Build daily points (last 90 days)
+        // Find the earliest transaction date to avoid showing flat line before data exists
+        let earliestTransactionDate = transactions.map(\.date).min()
+        let daysOfData: Int
+        if let earliest = earliestTransactionDate {
+            daysOfData = calendar.dateComponents([.day], from: earliest, to: Date()).day ?? 90
+        } else {
+            daysOfData = 0
+        }
+
+        // Build daily points (limited to days with actual data, max 90)
+        let dailyDays = min(daysOfData + 1, 90)  // +1 to include the first transaction day
         let dailyPoints = buildDailyTrend(
             transactionsByDay: transactionsByDay,
             totalBalance: totalBalance,
-            days: 90,
+            days: dailyDays,
             calendar: calendar
         )
 
-        // Build weekly points (last 2 years = 104 weeks)
+        // Build weekly points (limited to weeks with actual data, max 104)
+        let weeksOfData = (daysOfData / 7) + 1
+        let weeklyPeriods = min(weeksOfData, 104)
         let weeklyPoints = buildAggregatedTrend(
             transactionsByDay: transactionsByDay,
             totalBalance: totalBalance,
-            periods: 104,
+            periods: weeklyPeriods,
             component: .weekOfYear,
             calendar: calendar
         )
 
-        // Build monthly points (last 10 years = 120 months max)
+        // Build monthly points (limited to months with actual data, max 120)
+        let monthsOfData = (daysOfData / 30) + 1
+        let monthlyPeriods = min(monthsOfData, 120)
         let monthlyPoints = buildAggregatedTrend(
             transactionsByDay: transactionsByDay,
             totalBalance: totalBalance,
-            periods: 120,
+            periods: monthlyPeriods,
             component: .month,
             calendar: calendar
         )
@@ -547,9 +570,9 @@ enum WidgetDataCache {
         periodEnd: Date,
         currencyCode: String
     ) -> WidgetPeriodSummary {
-        // Filter transactions for the period
+        // Filter transactions for the period, excluding balance adjustments
         let periodTransactions = transactions.filter { tx in
-            tx.date >= periodStart && tx.date <= periodEnd
+            tx.date >= periodStart && tx.date <= periodEnd && tx.balanceAdjustmentType == nil
         }
 
         // Calculate totals
@@ -558,8 +581,9 @@ enum WidgetDataCache {
 
         for tx in periodTransactions {
             let amount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
-            if tx.category?.isIncome == true {
-                totalIncome += abs(amount)
+            // Use amount sign to determine income/expense (positive = income, negative = expense)
+            if amount > 0 {
+                totalIncome += amount
             } else {
                 totalExpense += abs(amount)
             }
@@ -607,11 +631,14 @@ enum WidgetDataCache {
         var categoryTotals: [String: (category: Category, amount: Double)] = [:]
 
         for tx in transactions {
-            // Skip income
-            guard tx.category?.isIncome != true else { continue }
+            // Skip balance adjustments
+            guard tx.balanceAdjustmentType == nil else { continue }
+            // Skip income (positive amounts are income)
+            let rawAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+            guard rawAmount < 0 else { continue }
             guard let category = tx.category else { continue }
 
-            let amount = abs(tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
+            let amount = abs(rawAmount)
             let key = category.name
 
             if var existing = categoryTotals[key] {
@@ -648,12 +675,15 @@ enum WidgetDataCache {
         var subcategoryTotals: [String: (subcategory: Subcategory, category: Category, amount: Double)] = [:]
 
         for tx in transactions {
-            // Skip income
-            guard tx.category?.isIncome != true else { continue }
+            // Skip balance adjustments
+            guard tx.balanceAdjustmentType == nil else { continue }
+            // Skip income (positive amounts are income)
+            let rawAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+            guard rawAmount < 0 else { continue }
             guard let subcategory = tx.subcategory,
                   let category = tx.category else { continue }
 
-            let amount = abs(tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
+            let amount = abs(rawAmount)
             let key = "\(category.name)_\(subcategory.name)"
 
             if var existing = subcategoryTotals[key] {
@@ -693,34 +723,58 @@ enum WidgetDataCache {
         var dailyData: [Date: (income: Double, expense: Double)] = [:]
 
         for tx in transactions {
+            // Skip balance adjustments
+            guard tx.balanceAdjustmentType == nil else { continue }
+
             let day = calendar.startOfDay(for: tx.date)
-            let amount = abs(tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
+            let rawAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
-            if tx.category?.isIncome == true {
-                existing.income += amount
+            // Use amount sign to determine income/expense (positive = income, negative = expense)
+            if rawAmount > 0 {
+                existing.income += rawAmount
             } else {
-                existing.expense += amount
+                existing.expense += abs(rawAmount)
             }
             dailyData[day] = existing
         }
 
         // Build points for each day in period
+        // For very long periods (allTime), only include days with actual transactions
+        // to avoid generating millions of empty points
         var points: [WidgetCashFlowPoint] = []
-        var currentDate = calendar.startOfDay(for: periodStart)
-        let endDay = calendar.startOfDay(for: periodEnd)
 
-        while currentDate <= endDay {
-            let data = dailyData[currentDate] ?? (income: 0, expense: 0)
-            points.append(WidgetCashFlowPoint(
-                date: currentDate,
-                income: data.income,
-                expense: data.expense,
-                net: data.income - data.expense
-            ))
+        let daysBetween = calendar.dateComponents([.day], from: periodStart, to: periodEnd).day ?? 0
+        let isLongPeriod = daysBetween > 365  // More than 1 year
 
-            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
-            currentDate = nextDay
+        if isLongPeriod {
+            // For long periods, only include days that have data
+            for (day, data) in dailyData {
+                points.append(WidgetCashFlowPoint(
+                    date: day,
+                    income: data.income,
+                    expense: data.expense,
+                    net: data.income - data.expense
+                ))
+            }
+            points.sort { $0.date < $1.date }
+        } else {
+            // For short periods, fill in all days (including empty ones)
+            var currentDate = calendar.startOfDay(for: periodStart)
+            let endDay = calendar.startOfDay(for: periodEnd)
+
+            while currentDate <= endDay {
+                let data = dailyData[currentDate] ?? (income: 0, expense: 0)
+                points.append(WidgetCashFlowPoint(
+                    date: currentDate,
+                    income: data.income,
+                    expense: data.expense,
+                    net: data.income - data.expense
+                ))
+
+                guard let nextDay = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
+                currentDate = nextDay
+            }
         }
 
         return points

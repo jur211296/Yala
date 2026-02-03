@@ -79,15 +79,20 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
         let summary = WidgetDataService.calculateSummary(for: period)
         let totalExpense = summary?.totalExpense ?? 0
 
-        // Get trend data for the selected period
-        let trendData = WidgetDataService.getTrendData(for: period)
+        // Build expense trend from cashFlowPoints (cumulative expense over time)
+        let cashFlowPoints = summary?.cashFlowPoints ?? []
+        var cumulativeExpense: Double = 0
+        let expenseTrendData: [WidgetTrendPoint] = cashFlowPoints.map { point in
+            cumulativeExpense += point.expense
+            return WidgetTrendPoint(date: point.date, balance: cumulativeExpense)
+        }
 
         return ExpenseEntry(
             date: Date(),
             totalExpense: totalExpense,
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
-            trendData: trendData,
+            trendData: expenseTrendData,
             isPlaceholder: false,
             period: configuration.period
         )

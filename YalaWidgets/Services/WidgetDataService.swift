@@ -135,6 +135,10 @@ struct WidgetDataSnapshot: Codable {
 
     // Precalculated for "This Month" (most common period)
     let thisMonthSummary: WidgetPeriodSummary
+
+    // Precalculated for "All Time" using ALL transactions (not just 90 days)
+    // Optional for backwards compatibility with old cache format
+    let allTimeSummary: WidgetPeriodSummary?
 }
 
 // MARK: - WidgetDataService
@@ -300,13 +304,18 @@ enum WidgetDataService {
     }
 
     /// Calculates summary for a specific period using raw transactions
-    /// For thisMonth, returns the precalculated summary for performance
+    /// For thisMonth and allTime, returns precalculated summaries for performance
     static func calculateSummary(for period: WidgetPeriod) -> WidgetPeriodSummary? {
         guard let snapshot = loadSnapshot() else { return nil }
 
         // For thisMonth, use precalculated
         if period == .thisMonth {
             return snapshot.thisMonthSummary
+        }
+
+        // For allTime, use precalculated if available (calculated from ALL transactions, not just 90 days)
+        if period == .allTime, let allTimeSummary = snapshot.allTimeSummary {
+            return allTimeSummary
         }
 
         // For other periods, calculate from raw transactions

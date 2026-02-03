@@ -428,8 +428,13 @@ struct CurrencySettingsView: View {
                 // Signal widget to refresh with new preferred currency
                 SessionState.shared.needsExchangeRateWidgetRefresh = true
 
+                // Update widget cache with new currency values (must be on MainActor)
+                await MainActor.run {
+                    WidgetDataCache.updateCache(context: modelContext)
+                }
+
             } catch {
-                print("Error updating transactions: \(error)")
+                print("CurrencySettingsView: Error updating transactions: \(error)")
             }
 
             isUpdating = false
