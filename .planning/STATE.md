@@ -123,14 +123,19 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## 🔴 PRIORIDAD ABSOLUTA: Bugs Urgentes (resolver primero)
 
-**BUG-1: Orden notificaciones de presupuesto**
-- Ubicación actual incorrecta en Onboarding (al final) y Settings (al inicio)
-- Orden correcto: Pagos planificados → **Alertas de presupuesto** → Novedades de Yala
-- Archivos: `OnboardingView.swift`, `NotificationsSettingsView.swift`
+**BUG-1: Orden notificaciones de presupuesto** ✅ COMPLETADO
+- ~~Ubicación actual incorrecta en Onboarding (al final) y Settings (al inicio)~~
+- Orden correcto implementado: Pagos planificados → **Alertas de presupuesto** → Novedades de Yala
+- Fix en `OnboardingView.swift:441-445` y `NotificationsSettingsView.swift:125-147`
+- También corregido bug de duplicación de notificaciones en onboarding
 
-**BUG-2: Control Center - intents no navegan**
-- Los 3 ControlWidgets (QuickExpense, Voice, Image) abren la app pero NO navegan a la pantalla correcta
-- Falta enviar URLs: `yala://voice-entry`, `yala://image-entry`
+**BUG-2: Control Center - widgets no funcionan** 🔴 BLOQUEADO
+- Los 3 ControlWidgets aparecen pero NO ejecutan ninguna acción al presionarlos
+- El intent `perform()` nunca se ejecuta (verificado con logs)
+- Error persistente: `Using kCFPreferencesAnyUser with a container is only allowed for System Containers`
+- App Group registrado y habilitado en ambos targets, pero error persiste
+- **Documentación completa:** `.planning/BUG-2-CONTROL-CENTER.md`
+- **Alternativa funcionando:** Atajos de Siri (VoiceEntry, ImageEntry)
 - Archivo: `YalaWidgets/ControlWidgets.swift`
 
 **BUG-3: WidgetKit - rediseño completo necesario**
@@ -339,9 +344,13 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Code review completado, bugs urgentes identificados
-Next step: **🔴 Resolver BUG-1 a BUG-4 antes de continuar con H-K**
+Stopped at: BUG-1 y BUG-4 completados, BUG-2 bloqueado, BUG-3 pendiente verificación
+Next step: **Verificar BUG-3 (cálculos de widgets) y continuar con H-K**
 Resume context:
+- **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
+- **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
+- **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)
+- **BUG-3 ⏳ PENDIENTE:** Widget cálculos corregidos, pendiente verificación visual
 - **Sección G completa:**
   - G.1: iCloud Sync con SwiftData nativo (44 archivos)
   - G.2: 4 WidgetKit widgets (26 archivos)
