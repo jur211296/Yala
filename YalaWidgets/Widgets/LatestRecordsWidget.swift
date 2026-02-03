@@ -228,7 +228,7 @@ struct LatestRecordsWidget: Widget {
             provider: LatestRecordsProvider()
         ) { entry in
             LatestRecordsWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Últimos registros")
         .description("Tus transacciones más recientes")

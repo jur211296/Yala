@@ -212,7 +212,7 @@ struct ExpenseWidget: Widget {
             provider: ExpenseWidgetProvider()
         ) { entry in
             ExpenseWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Gastos")
         .description("Tus gastos totales del período")

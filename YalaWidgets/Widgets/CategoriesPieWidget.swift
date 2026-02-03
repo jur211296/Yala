@@ -248,7 +248,7 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Categorías (Pie)")
         .description("Distribución de gastos por categoría")

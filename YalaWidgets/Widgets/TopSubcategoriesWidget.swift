@@ -232,7 +232,7 @@ struct TopSubcategoriesWidget: Widget {
             provider: TopSubcategoriesWidgetProvider()
         ) { entry in
             TopSubcategoriesWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Top Subcategorías")
         .description("Tus subcategorías con más gastos")

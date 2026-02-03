@@ -177,7 +177,7 @@ struct SmallBalanceView: View {
                 amount: entry.balance,
                 currencyCode: entry.currencyCode,
                 displayFormat: entry.currencyDisplayFormat,
-                color: WidgetColors.forBalance(entry.balance),
+                color: .primary,
                 size: .large
             )
         }
@@ -210,7 +210,7 @@ struct MediumBalanceView: View {
                         amount: entry.balance,
                         currencyCode: entry.currencyCode,
                         displayFormat: entry.currencyDisplayFormat,
-                        color: WidgetColors.forBalance(entry.balance),
+                        color: .primary,
                         size: .medium
                     )
                     Spacer()
@@ -255,7 +255,7 @@ struct BalanceWidget: Widget {
             provider: BalanceWidgetProvider()
         ) { entry in
             BalanceWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Balance")
         .description("Tu balance total con tendencia")

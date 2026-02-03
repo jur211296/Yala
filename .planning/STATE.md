@@ -144,14 +144,15 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Alternativa funcionando:** Atajos de Siri (VoiceEntry, ImageEntry)
 - Archivo: `YalaWidgets/ControlWidgets.swift`
 
-**BUG-3: WidgetKit - rediseño completo** 🟡 Fase 6 EN PROGRESO
+**BUG-3: WidgetKit - rediseño completo** 🟡 Fase 6 CASI COMPLETA
 - ✅ Fases 1-5 completadas (infraestructura, 13 widgets implementados)
 - ✅ Fase 6.1: Cálculos críticos corregidos (divisa, balance, gastos, ingresos, top subcategorías)
 - ✅ Fase 6.2 parcial: UI Global (padding 4pt, header inline, sin decimales)
+- ✅ Fase 6.3: UI por widget (CashFlow Large con Swift Charts igual a PanelView)
 - ✅ Fase 6.4: Deeplinks dinámicos (WidgetURLHelper lee URL_SCHEME del bundle)
-- 🔴 Fase 6.3: UI por widget pendiente (gráficas, barras CashFlow, pie charts)
+- 🔴 Pendiente: G.2 KPIs poco llamativos (limitación de fuente del sistema)
 - **Documentación completa:** [`.planning/BUG-3-WIDGETS.md`](.planning/BUG-3-WIDGETS.md)
-- **Issues QA:** 8 ✅ resueltos, 5 🔴 pendientes (1 UI global, 4 UI por widget)
+- **Issues QA:** 12 ✅ resueltos, 1 🔴 pendiente (limitación de fuente)
 - Archivos: `YalaWidgets/Widgets/*.swift`, `Yala/Services/WidgetDataCache.swift`
 
 **BUG-4: Divisas recomendadas en Onboarding**
@@ -357,8 +358,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: BUG-3 Fase 6.4 completada (Deeplinks)
-Next step: **BUG-3 Fase 6.3 (UI por Widget)** - gráficas con puntos en 0, barras CashFlow, pie charts
+Stopped at: BUG-3 Fase 6.3 completada (CashFlow Large)
+Next step: Revisión de otros widgets o QA manual
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
@@ -367,7 +368,9 @@ Resume context:
 - **BUG-3 Fase 5 ✅:** Archivos en target verificados (folder references = inclusión automática), BUILD SUCCEEDED, code review pasado (12 archivos, 0 críticos)
 - **BUG-3 Fase 6.1 ✅:** Cálculos críticos corregidos (G.4 divisa, BW.1 balance, EW.1 gastos, CF.3/CF.4 flujo, TS.2 subcategorías)
 - **BUG-3 Fase 6.2 parcial:** G.1 padding 16pt→4pt, G.3 header inline para Medium, sin decimales en montos; G.2 KPIs sin cambio (limitación fuente)
+- **BUG-3 Fase 6.3 ✅:** CashFlow Large igual a PanelView (Swift Charts, agrupamiento día/semana/mes, línea+puntos net flow, SmartAxisHelper copiado al target, backgrounds yalaCard, KPIs en .primary)
 - **BUG-3 Fase 6.4 ✅:** Deeplinks dinámicos con WidgetURLHelper (lee URL_SCHEME del bundle), ExpenseWidget corregido
+- **Aprendizaje clave:** Siempre usar Swift Charts para widgets que replican PanelView (grouping, calendarUnit, SmartAxisHelper, mismos tokens)
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
 - **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)

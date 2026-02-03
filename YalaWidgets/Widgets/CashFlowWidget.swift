@@ -9,6 +9,7 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import Charts
 
 // MARK: - Configuration Intent
 
@@ -135,7 +136,7 @@ struct SmallCashFlowView: View {
                 amount: entry.netCashFlow,
                 currencyCode: entry.currencyCode,
                 displayFormat: entry.currencyDisplayFormat,
-                color: WidgetColors.forCashFlow(entry.netCashFlow),
+                color: .primary,
                 size: .large
             )
 
@@ -202,7 +203,7 @@ struct MediumCashFlowView: View {
                         amount: entry.netCashFlow,
                         currencyCode: entry.currencyCode,
                         displayFormat: entry.currencyDisplayFormat,
-                        color: WidgetColors.forCashFlow(entry.netCashFlow),
+                        color: .primary,
                         size: .medium
                     )
 
@@ -272,7 +273,7 @@ struct LargeCashFlowView: View {
                     amount: entry.netCashFlow,
                     currencyCode: entry.currencyCode,
                     displayFormat: entry.currencyDisplayFormat,
-                    color: WidgetColors.forCashFlow(entry.netCashFlow),
+                    color: .primary,
                     size: .small
                 )
             }
@@ -302,7 +303,7 @@ struct LargeCashFlowView: View {
 
             // Cash flow chart
             if entry.cashFlowPoints.count >= 2 {
-                BidirectionalCashFlowChart(points: entry.cashFlowPoints)
+                BidirectionalCashFlowChart(points: entry.cashFlowPoints, period: entry.period)
             } else {
                 VStack {
                     Spacer()
@@ -395,56 +396,204 @@ struct CashFlowBars: View {
     }
 }
 
-/// Bidirectional bar chart showing daily income/expense
+/// Bidirectional bar chart showing income/expense using Swift Charts
+/// Groups data according to period: week→day, month→week, quarter/year→month
 struct BidirectionalCashFlowChart: View {
     let points: [WidgetCashFlowPoint]
+    let period: WidgetPeriodOption
 
-    private var maxValue: Double {
-        let maxIncome = points.map(\.income).max() ?? 0
-        let maxExpense = points.map(\.expense).max() ?? 0
-        return max(maxIncome, maxExpense, 1)
+    /// Grouping type based on period
+    private enum Grouping {
+        case day
+        case week
+        case month
+
+        var calendarUnit: Calendar.Component {
+            switch self {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
+            }
+        }
+
+        var xPadding: Int {
+            switch self {
+            case .day: return 1
+            case .week: return 4
+            case .month: return 15
+            }
+        }
+    }
+
+    /// Determine grouping based on period
+    private var grouping: Grouping {
+        switch period {
+        case .today, .yesterday, .thisWeek, .lastWeek:
+            return .day
+        case .thisMonth, .lastMonth:
+            return .week
+        case .thisQuarter, .lastQuarter, .thisYear, .lastYear, .allTime:
+            return .month
+        }
+    }
+
+    /// Group points according to the grouping strategy
+    private var groupedPoints: [WidgetCashFlowPoint] {
+        let calendar = Calendar.current
+
+        // Group by the appropriate granularity
+        var grouped: [Date: (income: Double, expense: Double)] = [:]
+
+        for point in points {
+            let groupDate: Date
+            switch grouping {
+            case .day:
+                groupDate = calendar.startOfDay(for: point.date)
+            case .week:
+                let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: point.date)
+                groupDate = calendar.date(from: components) ?? point.date
+            case .month:
+                let components = calendar.dateComponents([.year, .month], from: point.date)
+                groupDate = calendar.date(from: components) ?? point.date
+            }
+
+            var existing = grouped[groupDate] ?? (income: 0, expense: 0)
+            existing.income += point.income
+            existing.expense += point.expense
+            grouped[groupDate] = existing
+        }
+
+        return grouped
+            .map { date, data in
+                WidgetCashFlowPoint(
+                    date: date,
+                    income: data.income,
+                    expense: data.expense,
+                    net: data.income - data.expense
+                )
+            }
+            .filter { $0.income > 0 || $0.expense > 0 }
+            .sorted { $0.date < $1.date }
+    }
+
+    /// Y-axis domain with bidirectional scale
+    private var yDomain: ClosedRange<Double> {
+        let maxIncome = groupedPoints.map(\.income).max() ?? 0
+        let maxExpense = groupedPoints.map(\.expense).max() ?? 0
+        let incomeTop = maxIncome * 1.1
+        let expenseBottom = -maxExpense * 1.1
+        return expenseBottom...incomeTop
+    }
+
+    /// X-axis domain with asymmetric padding
+    private var xDomain: ClosedRange<Date> {
+        guard let firstDate = groupedPoints.first?.date,
+              let lastDate = groupedPoints.last?.date else {
+            return Date()...Date()
+        }
+        let calendar = Calendar.current
+        let paddedEnd = calendar.date(byAdding: .day, value: grouping.xPadding, to: lastDate) ?? lastDate
+        return firstDate...paddedEnd
+    }
+
+    /// Smart axis dates using SmartAxisHelper (up to 5 labels)
+    private var smartAxisDates: [Date] {
+        guard let first = groupedPoints.first?.date,
+              let last = groupedPoints.last?.date else { return [] }
+        return SmartAxisHelper.calculateSmartAxisDates(from: first, to: last)
+    }
+
+    /// Format axis label using SmartAxisHelper
+    private func smartAxisLabel(for date: Date) -> String {
+        guard let first = groupedPoints.first?.date,
+              let last = groupedPoints.last?.date else { return "" }
+        return SmartAxisHelper.formatAxisLabel(for: date, startDate: first, endDate: last)
+    }
+
+    /// Format Y value as K
+    private func formatK(_ value: Double) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        if absValue >= 1000 {
+            return String(format: "%@%.0fK", sign, absValue / 1000.0)
+        }
+        return String(format: "%@%.0f", sign, absValue)
     }
 
     var body: some View {
-        GeometryReader { geo in
-            let barWidth = max((geo.size.width - CGFloat(points.count - 1) * 2) / CGFloat(points.count), 4)
-            let midY = geo.size.height / 2
+        Chart {
+            // Zero baseline (dashed line)
+            RuleMark(y: .value("Zero", 0))
+                .foregroundStyle(Color.gray.opacity(0.4))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
 
-            HStack(alignment: .center, spacing: 2) {
-                ForEach(Array(points.enumerated()), id: \.offset) { _, point in
-                    VStack(spacing: 0) {
-                        // Income (above center)
-                        Spacer(minLength: 0)
+            ForEach(Array(groupedPoints.enumerated()), id: \.offset) { _, point in
+                // Income bars (upward - teal)
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Income", point.income)
+                )
+                .foregroundStyle(WidgetColors.income.gradient)
+                .cornerRadius(WDS.Radius.xs)
 
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(WidgetColors.income)
-                            .frame(
-                                width: barWidth,
-                                height: max(CGFloat(point.income / maxValue) * (midY - 4), point.income > 0 ? 2 : 0)
-                            )
+                // Expense bars (downward - pink)
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Expense", -point.expense)
+                )
+                .foregroundStyle(WidgetColors.expense.gradient)
+                .cornerRadius(WDS.Radius.xs)
 
-                        // Center line reference
-                        Color.clear.frame(height: 1)
+                // Net flow line (purple)
+                LineMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Net", point.net)
+                )
+                .foregroundStyle(WidgetColors.electricIndigo)
+                .lineStyle(StrokeStyle(lineWidth: 2))
+                .interpolationMethod(.monotone)
 
-                        // Expense (below center)
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(WidgetColors.expense)
-                            .frame(
-                                width: barWidth,
-                                height: max(CGFloat(point.expense / maxValue) * (midY - 4), point.expense > 0 ? 2 : 0)
-                            )
+                // Net flow points (purple dots)
+                PointMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Net", point.net)
+                )
+                .foregroundStyle(WidgetColors.electricIndigo)
+                .symbolSize(20)
+            }
+        }
+        .chartXScale(domain: xDomain)
+        .chartYScale(domain: yDomain)
+        .chartXAxis {
+            AxisMarks(values: smartAxisDates) { value in
+                AxisGridLine()
+                    .foregroundStyle(Color.gray.opacity(0.15))
+                if let date = value.as(Date.self) {
+                    // Smart anchoring: first label left-aligned, last right-aligned
+                    let isFirst = date == smartAxisDates.first
+                    let isLast = date == smartAxisDates.last
+                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
 
-                        Spacer(minLength: 0)
+                    AxisValueLabel(anchor: anchor) {
+                        Text(smartAxisLabel(for: date))
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
-            .overlay(
-                // Center line
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(height: 1)
-                    .position(x: geo.size.width / 2, y: midY)
-            )
+        }
+        .chartYAxis {
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                    .foregroundStyle(Color.gray.opacity(0.15))
+                if let doubleValue = value.as(Double.self) {
+                    AxisValueLabel {
+                        Text(formatK(doubleValue))
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
     }
 }
@@ -461,7 +610,7 @@ struct CashFlowWidget: Widget {
             provider: CashFlowWidgetProvider()
         ) { entry in
             CashFlowWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Flujo de dinero")
         .description("Tu flujo de dinero neto")

@@ -13,8 +13,11 @@ import SwiftUI
 enum WidgetColors {
     // MARK: - Brand Colors (from UIHelpers.swift)
 
+    /// Primary brand color (Electric Indigo #6366F1)
+    static let primary = Color(hex: "6366F1")
+
     /// Electric Indigo - Primary accent, balance positive (#6366F1)
-    static let electricIndigo = Color(hex: "6366F1")
+    static let electricIndigo = primary
 
     /// Hot Pink - Expenses (#FF0080)
     static let hotPink = Color(hex: "FF0080")
@@ -49,6 +52,20 @@ enum WidgetColors {
 
     /// Overdue/error state (red)
     static let overdue = negative
+
+    // MARK: - Background Colors
+
+    /// Card background (adapts to light/dark mode)
+    /// Light: white, Dark: dark slate (#1C2847)
+    static var yalaCard: Color {
+        Color(
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.11, green: 0.16, blue: 0.28, alpha: 1.0)
+                    : UIColor.white
+            }
+        )
+    }
 
     // MARK: - Helpers
 

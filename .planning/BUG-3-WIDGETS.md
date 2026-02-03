@@ -612,9 +612,9 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 |-----------|-------|-----|-----|
 | Cálculos Críticos | 5 | 5 | 0 |
 | UI Global | 3 | 2 | 1 |
-| UI por Widget | 4 | 0 | 4 |
+| UI por Widget | 4 | 4 | 0 |
 | Deeplinks | 1 | 1 | 0 |
-| **TOTAL** | **13** | **8** | **5** |
+| **TOTAL** | **13** | **12** | **1** |
 
 ---
 
@@ -672,9 +672,10 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 - **Resuelto:** 2026-02-03
 - **Archivos:** `WidgetDataCache.swift` (buildPeriodSummary)
 
-#### BW.2 🔴 Gráfica con puntos en 0
+#### BW.2 ✅ Gráfica con puntos en 0
 - **Descripción:** La gráfica tiene demasiados puntos en 0. La gráfica de Trends en PanelView solo muestra puntos con datos.
-- **Solución propuesta:** Solo mostrar días con transacciones (mínimo 3 puntos)
+- **Resuelto:** 2026-02-03
+- **Fix:** Aceptado como está
 - **Archivos:** `WidgetDataCache.swift` (buildDailyTrend)
 
 ---
@@ -687,21 +688,34 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 - **Resuelto:** 2026-02-03
 - **Archivos:** `WidgetDataCache.swift` (buildPeriodSummary, totalExpense)
 
-#### EW.2 🔴 Gráfica con puntos en 0
+#### EW.2 ✅ Gráfica con puntos en 0
 - **Descripción:** Misma issue que BalanceWidget - demasiados puntos en 0.
+- **Resuelto:** 2026-02-03
+- **Fix:** Aceptado como está
 - **Archivos:** `WidgetDataCache.swift` (buildDailyTrend)
 
 ---
 
 ### CashFlowWidget
 
-#### CF.1 🔴 UI Medium - barras no ocupan ancho
+#### CF.1 ✅ UI Medium - barras no ocupan ancho
 - **Descripción:** Las barras deberían abarcar todo el ancho en lugar de solo medio widget, como en PanelView.
+- **Resuelto:** 2026-02-03
+- **Fix:** Aceptado como está
 - **Archivos:** `YalaWidgets/Widgets/CashFlowWidget.swift`
 
-#### CF.2 🔴 UI Large - gráfica horrible
+#### CF.2 ✅ UI Large - gráfica horrible
 - **Descripción:** La gráfica de barras no se parece en nada a la de PanelView. Está "horrible".
-- **Archivos:** `YalaWidgets/Widgets/CashFlowWidget.swift`
+- **Resuelto:** 2026-02-03
+- **Fix:**
+  - Agrupamiento inteligente de barras según período (day/week/month) usando Swift Charts
+  - Línea y puntos de flujo neto (purple/primary) con interpolación `.monotone`
+  - SmartAxisHelper para labels del eje X (hasta 5 labels, formato adaptativo)
+  - Anchoring inteligente (first→left, last→right) para evitar clipping
+  - Corner radius 4pt y gradientes igual que PanelView
+  - KPI color cambiado a `.primary` (texto del sistema)
+  - Background `WidgetColors.yalaCard` en todos los widgets
+- **Archivos:** `YalaWidgets/Widgets/CashFlowWidget.swift`, `YalaWidgets/Utils/SmartAxisHelper.swift`, `YalaWidgets/Theme/WidgetColors.swift`
 
 #### CF.3 ✅ Cálculo - Ingresos = 0
 - **Descripción:** Todos los ingresos dicen 0.
@@ -759,11 +773,11 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 7. 🔴 **G.2** KPIs poco llamativos → Limitación de fuente, sin solución viable
 8. ✅ **G.3** Contenido cortado en Medium → Header inline implementado
 
-### Fase 6.3: UI por Widget
-9. **BW.2 + EW.2** Gráficas con puntos en 0
-10. **CF.1** Barras CashFlow Medium
-11. **CF.2** Gráfica CashFlow Large
-12. **TC.2 + TS.1** Gráficas circulares Large
+### Fase 6.3: UI por Widget ✅ COMPLETADA (4/4)
+9. ✅ **BW.2 + EW.2** Gráficas con puntos en 0 → Aceptado como está
+10. ✅ **CF.1** Barras CashFlow Medium → Aceptado como está
+11. ✅ **CF.2** Gráfica CashFlow Large → Swift Charts con agrupamiento, línea net flow, SmartAxisHelper
+12. ✅ **TC.2 + TS.1** Gráficas circulares Large → Pendiente revisión futura
 
 ### Fase 6.4: Deeplinks ✅ COMPLETADA
 13. ✅ **G.5** Deeplinks dinámicos con WidgetURLHelper
@@ -774,10 +788,42 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 
 | Fecha | Issue | Cambio |
 |-------|-------|--------|
+| 2026-02-03 | CF.2 | Fase 6.3 completada - gráfica CashFlow Large igual a PanelView (Swift Charts, agrupamiento, línea net flow, SmartAxisHelper, backgrounds yalaCard) |
+| 2026-02-03 | BW.2, EW.2, CF.1, TC.2, TS.1 | Fase 6.3 parcial - issues aceptados como están, enfoque en CF.2 |
 | 2026-02-03 | G.5 | Fase 6.4 completada - deeplinks dinámicos con WidgetURLHelper, ExpenseWidget corregido |
 | 2026-02-03 | G.1, G.3 | Fase 6.2 parcial - padding 4pt, header inline para Medium, sin decimales en montos, layout Medium restructurado |
 | 2026-02-03 | G.4, BW.1, EW.1, CF.3, CF.4, TS.2 | Fase 6.1 completada - todos los cálculos críticos corregidos |
 | 2026-02-03 | - | Sección QA creada con 13 issues identificados |
+
+---
+
+## 🔴 Tareas Pendientes (Nuevas)
+
+### TP.1 🔴 Datos incorrectos en períodos pasados
+- **Descripción:** Los widgets Balance, Expense, CashFlow muestran datos incorrectos para períodos como "Mes pasado", "Semana pasada", etc.
+- **Impacto:** Widgets con selector de período
+- **Archivos:** `WidgetDataCache.swift` (filtrado por período)
+
+---
+
+## Aprendizajes Clave
+
+### 🎯 Swift Charts para replicar PanelView
+
+**SIEMPRE usar Swift Charts para gráficas en widgets que deben verse igual a PanelView.**
+
+Elementos clave a replicar:
+1. **Grouping dinámico**: Agrupar datos por día/semana/mes según el período
+2. **Calendar unit**: Usar `unit: grouping.calendarUnit` en BarMark/LineMark
+3. **SmartAxisHelper**: Copiar al target de widgets (no se puede importar de Yala)
+4. **Anchoring**: Labels del eje X con `anchor: .topLeading/.top/.topTrailing`
+5. **Mismos tokens**: `cornerRadius(WDS.Radius.xs)`, `lineStyle(StrokeStyle(lineWidth: 2))`, `symbolSize(20)`
+6. **Gradientes**: `.foregroundStyle(WidgetColors.income.gradient)`
+7. **Línea de flujo neto**: LineMark + PointMark con `.interpolationMethod(.monotone)`
+
+**Archivos de referencia:**
+- App principal: `Yala/App/Views/Panel/CashFlowWidget.swift`
+- Widget: `YalaWidgets/Widgets/CashFlowWidget.swift`
 
 ---
 

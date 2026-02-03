@@ -73,7 +73,7 @@ struct QuickManualEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { _ in
             QuickManualEntryWidgetView()
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Nuevo registro")
         .description("Registra un gasto o ingreso manualmente")
@@ -119,7 +119,7 @@ struct QuickVoiceEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { _ in
             QuickVoiceEntryWidgetView()
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Registro por voz")
         .description("Dicta tu gasto o ingreso")
@@ -165,7 +165,7 @@ struct QuickImageEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { _ in
             QuickImageEntryWidgetView()
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
         .configurationDisplayName("Escanear recibo")
         .description("Registra desde una foto o recibo")
