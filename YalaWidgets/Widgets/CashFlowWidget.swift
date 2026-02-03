@@ -209,7 +209,7 @@ struct MediumCashFlowView: View {
 
                     // Income/Expense labels
                     HStack(spacing: WDS.Spacing.md) {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
                             Text("Ingresos")
                                 .font(WDS.Typography.tiny)
                                 .foregroundStyle(.secondary)
@@ -218,7 +218,7 @@ struct MediumCashFlowView: View {
                                 .foregroundColor(WidgetColors.income)
                         }
 
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
                             Text("Gastos")
                                 .font(WDS.Typography.tiny)
                                 .foregroundStyle(.secondary)
