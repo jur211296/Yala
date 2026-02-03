@@ -3,7 +3,7 @@
 //  YalaWidgets
 //
 //  Widget showing the latest transactions.
-//  Supports Medium size with 3-5 records.
+//  Supports Medium size with 3-4 records.
 //
 
 import WidgetKit
@@ -14,6 +14,7 @@ import SwiftUI
 struct LatestRecordsEntry: TimelineEntry {
     let date: Date
     let transactions: [WidgetTransaction]
+    let currencyDisplayFormat: String
     let isPlaceholder: Bool
 
     static var placeholder: LatestRecordsEntry {
@@ -53,13 +54,14 @@ struct LatestRecordsEntry: TimelineEntry {
                     currencyCode: "PEN",
                     note: "Salario",
                     categoryName: "Ingresos",
-                    categoryColor: "#45B7D1",
+                    categoryColor: "#00C2CB",
                     categoryIcon: "banknote",
                     subcategoryName: "Salario",
                     isIncome: true,
                     amountInPreferredCurrency: 2500.00
                 )
             ],
+            currencyDisplayFormat: "symbol",
             isPlaceholder: true
         )
     }
@@ -90,10 +92,13 @@ struct LatestRecordsProvider: TimelineProvider {
     }
 
     private func createEntry() -> LatestRecordsEntry {
-        let transactions = WidgetDataService.getRecentTransactions(limit: 5)
+        let transactions = WidgetDataService.getRecentTransactions(limit: 4)
+        let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
+
         return LatestRecordsEntry(
             date: Date(),
             transactions: transactions,
+            currencyDisplayFormat: displayFormat,
             isPlaceholder: false
         )
     }
@@ -105,28 +110,23 @@ struct LatestRecordsWidgetView: View {
     var entry: LatestRecordsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
             // Header
-            HStack {
-                Image(systemName: "list.bullet.rectangle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("Últimos registros")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
+            WidgetHeader(
+                title: "Últimos registros",
+                icon: "list.bullet.rectangle"
+            )
 
             if entry.transactions.isEmpty {
                 Spacer()
                 HStack {
                     Spacer()
-                    VStack(spacing: 4) {
+                    VStack(spacing: WDS.Spacing.xs) {
                         Image(systemName: "tray")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
                         Text("Sin registros")
-                            .font(.caption)
+                            .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
                     Spacer()
@@ -135,42 +135,49 @@ struct LatestRecordsWidgetView: View {
             } else {
                 // Transaction list
                 ForEach(Array(entry.transactions.prefix(4).enumerated()), id: \.element.id) { _, transaction in
-                    TransactionRow(transaction: transaction)
+                    TransactionRowView(
+                        transaction: transaction,
+                        displayFormat: entry.currencyDisplayFormat
+                    )
                 }
 
                 Spacer(minLength: 0)
             }
         }
-        .padding()
+        .padding(WDS.Spacing.xl)
+        .clipped()
         .widgetURL(URL(string: "yala://statistics/records"))
     }
 }
 
-struct TransactionRow: View {
+// MARK: - Transaction Row
+
+struct TransactionRowView: View {
     let transaction: WidgetTransaction
+    let displayFormat: String
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: WDS.ListItem.internalSpacing) {
             // Category icon with color
             ZStack {
                 Circle()
                     .fill(categoryColor.opacity(0.2))
-                    .frame(width: 24, height: 24)
+                    .frame(width: WDS.ListItem.iconSize, height: WDS.ListItem.iconSize)
 
                 Image(systemName: transaction.categoryIcon ?? "questionmark")
-                    .font(.system(size: 10))
+                    .font(.system(size: WDS.Icon.sm))
                     .foregroundColor(categoryColor)
             }
 
             // Note/category
             VStack(alignment: .leading, spacing: 0) {
                 Text(transaction.note ?? transaction.categoryName ?? "Sin nota")
-                    .font(.caption)
+                    .font(WDS.Typography.label)
                     .lineLimit(1)
 
                 if let subcategory = transaction.subcategoryName {
                     Text(subcategory)
-                        .font(.caption2)
+                        .font(WDS.Typography.tiny)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -178,11 +185,10 @@ struct TransactionRow: View {
 
             Spacer()
 
-            // Amount
+            // Amount (show in original currency)
             Text(formattedAmount)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(transaction.isIncome ? WidgetColors.income : .primary)
+                .font(WDS.Typography.value)
+                .foregroundColor(transaction.isIncome ? WidgetColors.income : WidgetColors.expense)
         }
     }
 
@@ -198,13 +204,16 @@ struct TransactionRow: View {
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 2
 
-        let amount = transaction.amountInPreferredCurrency != 0
-            ? transaction.amountInPreferredCurrency
-            : transaction.amount
-
+        // Use original currency amount
+        let amount = transaction.amount
         let formatted = formatter.string(from: NSNumber(value: amount)) ?? "0"
+
         let prefix = transaction.isIncome ? "+" : "-"
-        return "\(prefix)\(formatted)"
+        let currency = displayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: transaction.currencyCode)
+            : transaction.currencyCode
+
+        return "\(prefix)\(currency) \(formatted)"
     }
 }
 
@@ -233,4 +242,15 @@ struct LatestRecordsWidget: Widget {
     LatestRecordsWidget()
 } timeline: {
     LatestRecordsEntry.placeholder
+}
+
+#Preview("Empty", as: .systemMedium) {
+    LatestRecordsWidget()
+} timeline: {
+    LatestRecordsEntry(
+        date: Date(),
+        transactions: [],
+        currencyDisplayFormat: "symbol",
+        isPlaceholder: false
+    )
 }

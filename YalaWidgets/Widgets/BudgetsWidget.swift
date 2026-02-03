@@ -3,46 +3,19 @@
 //  YalaWidgets
 //
 //  Widget showing budget progress.
-//  Supports Medium size with configurable budget selection.
+//  Supports Medium size with top 3 budgets sorted by usage.
 //
 
 import WidgetKit
 import SwiftUI
-import AppIntents
-
-// MARK: - Configuration Intent
-
-struct BudgetsWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Presupuestos" }
-    static var description: IntentDescription { "Muestra el progreso de tus presupuestos" }
-
-    @Parameter(title: "Mostrar", default: .critical)
-    var displayMode: BudgetDisplayMode
-}
-
-enum BudgetDisplayMode: String, AppEnum {
-    case critical = "critical"
-    case all = "all"
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        "Modo"
-    }
-
-    static var caseDisplayRepresentations: [BudgetDisplayMode: DisplayRepresentation] {
-        [
-            .critical: "Más críticos",
-            .all: "Todos"
-        ]
-    }
-}
 
 // MARK: - Timeline Entry
 
 struct BudgetsEntry: TimelineEntry {
     let date: Date
     let budgets: [WidgetBudget]
+    let currencyDisplayFormat: String
     let isPlaceholder: Bool
-    let displayMode: BudgetDisplayMode
 
     static var placeholder: BudgetsEntry {
         BudgetsEntry(
@@ -76,50 +49,51 @@ struct BudgetsEntry: TimelineEntry {
                     percentUsed: 30
                 )
             ],
-            isPlaceholder: true,
-            displayMode: .critical
+            currencyDisplayFormat: "symbol",
+            isPlaceholder: true
         )
     }
 }
 
 // MARK: - Timeline Provider
 
-struct BudgetsWidgetProvider: AppIntentTimelineProvider {
+struct BudgetsWidgetProvider: TimelineProvider {
     typealias Entry = BudgetsEntry
-    typealias Intent = BudgetsWidgetIntent
 
     func placeholder(in context: Context) -> BudgetsEntry {
         .placeholder
     }
 
-    func snapshot(for configuration: BudgetsWidgetIntent, in context: Context) async -> BudgetsEntry {
+    func getSnapshot(in context: Context, completion: @escaping (BudgetsEntry) -> Void) {
         if context.isPreview {
-            return .placeholder
+            completion(.placeholder)
+        } else {
+            completion(createEntry())
         }
-        return createEntry(for: configuration)
     }
 
-    func timeline(for configuration: BudgetsWidgetIntent, in context: Context) async -> Timeline<BudgetsEntry> {
-        let entry = createEntry(for: configuration)
+    func getTimeline(in context: Context, completion: @escaping (Timeline<BudgetsEntry>) -> Void) {
+        let entry = createEntry()
 
         // Refresh every 4 hours
         let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
 
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
+        completion(timeline)
     }
 
-    private func createEntry(for configuration: BudgetsWidgetIntent) -> BudgetsEntry {
-        let sortByCritical = configuration.displayMode == .critical
-        var budgets = WidgetDataService.getBudgets(sortByCritical: sortByCritical)
-
-        // Limit to 3-4 budgets for widget display
+    private func createEntry() -> BudgetsEntry {
+        // Get budgets sorted by critical (highest % used first)
+        var budgets = WidgetDataService.getBudgets(sortByCritical: true)
         budgets = Array(budgets.prefix(3))
+
+        let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
         return BudgetsEntry(
             date: Date(),
             budgets: budgets,
-            isPlaceholder: false,
-            displayMode: configuration.displayMode
+            currencyDisplayFormat: displayFormat,
+            isPlaceholder: false
         )
     }
 }
@@ -130,28 +104,23 @@ struct BudgetsWidgetView: View {
     var entry: BudgetsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
             // Header
-            HStack {
-                Image(systemName: "chart.pie")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("Presupuestos")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
+            WidgetHeader(
+                title: "Presupuestos",
+                icon: "chart.pie"
+            )
 
             if entry.budgets.isEmpty {
                 Spacer()
                 HStack {
                     Spacer()
-                    VStack(spacing: 4) {
+                    VStack(spacing: WDS.Spacing.xs) {
                         Image(systemName: "chart.pie")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
                         Text("Sin presupuestos")
-                            .font(.caption)
+                            .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
                     Spacer()
@@ -160,61 +129,57 @@ struct BudgetsWidgetView: View {
             } else {
                 // Budget list
                 ForEach(entry.budgets, id: \.id) { budget in
-                    BudgetRow(budget: budget)
+                    BudgetRowView(
+                        budget: budget,
+                        displayFormat: entry.currencyDisplayFormat
+                    )
                 }
 
                 Spacer(minLength: 0)
             }
         }
-        .padding()
+        .padding(WDS.Spacing.xl)
+        .clipped()
         .widgetURL(URL(string: "yala://budgets"))
     }
 }
 
-struct BudgetRow: View {
+// MARK: - Budget Row
+
+struct BudgetRowView: View {
     let budget: WidgetBudget
+    let displayFormat: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
             HStack {
                 Text(budget.name)
-                    .font(.caption)
+                    .font(WDS.Typography.label)
                     .lineLimit(1)
 
                 Spacer()
 
                 Text("\(Int(budget.percentUsed))%")
-                    .font(.caption)
-                    .fontWeight(.medium)
+                    .font(WDS.Typography.label)
                     .foregroundColor(progressColor)
             }
 
             // Progress bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // Background
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 6)
-
-                    // Progress
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(progressColor)
-                        .frame(width: progressWidth(in: geometry.size.width), height: 6)
-                }
-            }
-            .frame(height: 6)
+            WidgetProgressBar.budget(
+                percentUsed: budget.percentUsed,
+                height: WDS.Progress.height
+            )
 
             // Amount info
             HStack {
                 Text(formattedSpent)
-                    .font(.caption2)
+                    .font(WDS.Typography.tiny)
                     .foregroundStyle(.secondary)
 
                 Spacer()
 
                 Text("de \(formattedLimit)")
-                    .font(.caption2)
+                    .font(WDS.Typography.tiny)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -224,23 +189,30 @@ struct BudgetRow: View {
         WidgetColors.forBudget(percentUsed: budget.percentUsed)
     }
 
-    private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
-        let percent = min(budget.percentUsed, 100) / 100
-        return totalWidth * CGFloat(percent)
-    }
-
     private var formattedSpent: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
+
+        let formatted = formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
+        let currency = displayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: budget.currencyCode)
+            : budget.currencyCode
+
+        return "\(currency) \(formatted)"
     }
 
     private var formattedLimit: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
+
+        let formatted = formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
+        let currency = displayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: budget.currencyCode)
+            : budget.currencyCode
+
+        return "\(currency) \(formatted)"
     }
 }
 
@@ -250,9 +222,8 @@ struct BudgetsWidget: Widget {
     let kind: String = "BudgetsWidget"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(
+        StaticConfiguration(
             kind: kind,
-            intent: BudgetsWidgetIntent.self,
             provider: BudgetsWidgetProvider()
         ) { entry in
             BudgetsWidgetView(entry: entry)
@@ -270,4 +241,54 @@ struct BudgetsWidget: Widget {
     BudgetsWidget()
 } timeline: {
     BudgetsEntry.placeholder
+}
+
+#Preview("Empty", as: .systemMedium) {
+    BudgetsWidget()
+} timeline: {
+    BudgetsEntry(
+        date: Date(),
+        budgets: [],
+        currencyDisplayFormat: "symbol",
+        isPlaceholder: false
+    )
+}
+
+#Preview("Over Budget", as: .systemMedium) {
+    BudgetsWidget()
+} timeline: {
+    BudgetsEntry(
+        date: Date(),
+        budgets: [
+            WidgetBudget(
+                id: "1",
+                name: "Alimentación",
+                limitAmount: 800,
+                spentAmount: 920,
+                currencyCode: "PEN",
+                periodType: "monthly",
+                percentUsed: 115
+            ),
+            WidgetBudget(
+                id: "2",
+                name: "Entretenimiento",
+                limitAmount: 300,
+                spentAmount: 290,
+                currencyCode: "PEN",
+                periodType: "monthly",
+                percentUsed: 97
+            ),
+            WidgetBudget(
+                id: "3",
+                name: "Transporte",
+                limitAmount: 400,
+                spentAmount: 250,
+                currencyCode: "PEN",
+                periodType: "monthly",
+                percentUsed: 62
+            )
+        ],
+        currencyDisplayFormat: "symbol",
+        isPlaceholder: false
+    )
 }

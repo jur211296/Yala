@@ -3,56 +3,19 @@
 //  YalaWidgets
 //
 //  Widget showing upcoming scheduled payments.
-//  Supports Medium size with filter configuration.
+//  Supports Medium size with default sorting (overdue first, then by date).
 //
 
 import WidgetKit
 import SwiftUI
-import AppIntents
-
-// MARK: - Configuration Intent
-
-struct ScheduledPaymentsWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Pagos planificados" }
-    static var description: IntentDescription { "Muestra tus próximos pagos" }
-
-    @Parameter(title: "Mostrar", default: .all)
-    var filter: PaymentFilterOption
-}
-
-enum PaymentFilterOption: String, AppEnum {
-    case all = "all"
-    case recurring = "recurring"
-    case subscription = "subscription"
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        "Filtro"
-    }
-
-    static var caseDisplayRepresentations: [PaymentFilterOption: DisplayRepresentation] {
-        [
-            .all: "Todos",
-            .recurring: "Planificados",
-            .subscription: "Suscripciones"
-        ]
-    }
-
-    var toServiceFilter: ScheduledPaymentFilter {
-        switch self {
-        case .all: return .all
-        case .recurring: return .recurring
-        case .subscription: return .subscription
-        }
-    }
-}
 
 // MARK: - Timeline Entry
 
 struct ScheduledPaymentsEntry: TimelineEntry {
     let date: Date
     let payments: [WidgetScheduledPayment]
+    let currencyDisplayFormat: String
     let isPlaceholder: Bool
-    let filter: PaymentFilterOption
 
     static var placeholder: ScheduledPaymentsEntry {
         ScheduledPaymentsEntry(
@@ -89,51 +52,50 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                     isIncome: false
                 )
             ],
-            isPlaceholder: true,
-            filter: .all
+            currencyDisplayFormat: "symbol",
+            isPlaceholder: true
         )
     }
 }
 
 // MARK: - Timeline Provider
 
-struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
+struct ScheduledPaymentsProvider: TimelineProvider {
     typealias Entry = ScheduledPaymentsEntry
-    typealias Intent = ScheduledPaymentsWidgetIntent
 
     func placeholder(in context: Context) -> ScheduledPaymentsEntry {
         .placeholder
     }
 
-    func snapshot(for configuration: ScheduledPaymentsWidgetIntent, in context: Context) async -> ScheduledPaymentsEntry {
+    func getSnapshot(in context: Context, completion: @escaping (ScheduledPaymentsEntry) -> Void) {
         if context.isPreview {
-            return .placeholder
+            completion(.placeholder)
+        } else {
+            completion(createEntry())
         }
-        return createEntry(for: configuration)
     }
 
-    func timeline(for configuration: ScheduledPaymentsWidgetIntent, in context: Context) async -> Timeline<ScheduledPaymentsEntry> {
-        let entry = createEntry(for: configuration)
+    func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduledPaymentsEntry>) -> Void) {
+        let entry = createEntry()
 
         // Refresh at midnight or after 4 hours
         let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
         let fourHours = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
         let refreshDate = min(midnight, fourHours)
 
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
+        completion(timeline)
     }
 
-    private func createEntry(for configuration: ScheduledPaymentsWidgetIntent) -> ScheduledPaymentsEntry {
-        let payments = WidgetDataService.getScheduledPayments(
-            filter: configuration.filter.toServiceFilter,
-            limit: 4
-        )
+    private func createEntry() -> ScheduledPaymentsEntry {
+        let payments = WidgetDataService.getScheduledPayments(filter: .all, limit: 4)
+        let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
         return ScheduledPaymentsEntry(
             date: Date(),
             payments: payments,
-            isPlaceholder: false,
-            filter: configuration.filter
+            currencyDisplayFormat: displayFormat,
+            isPlaceholder: false
         )
     }
 }
@@ -144,28 +106,23 @@ struct ScheduledPaymentsWidgetView: View {
     var entry: ScheduledPaymentsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
             // Header
-            HStack {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(headerTitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
+            WidgetHeader(
+                title: "Próximos pagos",
+                icon: "calendar.badge.clock"
+            )
 
             if entry.payments.isEmpty {
                 Spacer()
                 HStack {
                     Spacer()
-                    VStack(spacing: 4) {
+                    VStack(spacing: WDS.Spacing.xs) {
                         Image(systemName: "checkmark.circle")
                             .font(.title2)
                             .foregroundStyle(WidgetColors.success)
                         Text("Sin pagos pendientes")
-                            .font(.caption)
+                            .font(WDS.Typography.body)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -174,52 +131,48 @@ struct ScheduledPaymentsWidgetView: View {
             } else {
                 // Payments list
                 ForEach(entry.payments, id: \.id) { payment in
-                    PaymentRow(payment: payment)
+                    PaymentRowView(
+                        payment: payment,
+                        displayFormat: entry.currencyDisplayFormat
+                    )
                 }
 
                 Spacer(minLength: 0)
             }
         }
-        .padding()
+        .padding(WDS.Spacing.xl)
+        .clipped()
         .widgetURL(URL(string: "yala://planning"))
-    }
-
-    private var headerTitle: String {
-        switch entry.filter {
-        case .all:
-            return "Próximos pagos"
-        case .recurring:
-            return "Pagos planificados"
-        case .subscription:
-            return "Suscripciones"
-        }
     }
 }
 
-struct PaymentRow: View {
+// MARK: - Payment Row
+
+struct PaymentRowView: View {
     let payment: WidgetScheduledPayment
+    let displayFormat: String
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: WDS.ListItem.internalSpacing) {
             // Overdue indicator or category icon
             ZStack {
                 Circle()
-                    .fill(payment.isOverdue ? WidgetColors.overdue.opacity(0.2) : WidgetColors.accent.opacity(0.2))
-                    .frame(width: 24, height: 24)
+                    .fill(iconBackgroundColor)
+                    .frame(width: WDS.ListItem.iconSize, height: WDS.ListItem.iconSize)
 
-                Image(systemName: payment.isOverdue ? "exclamationmark" : categoryIcon)
-                    .font(.system(size: 10))
-                    .foregroundColor(payment.isOverdue ? WidgetColors.overdue : WidgetColors.accent)
+                Image(systemName: iconName)
+                    .font(.system(size: WDS.Icon.sm))
+                    .foregroundColor(iconColor)
             }
 
             // Name and date
             VStack(alignment: .leading, spacing: 0) {
                 Text(payment.name)
-                    .font(.caption)
+                    .font(WDS.Typography.label)
                     .lineLimit(1)
 
                 Text(formattedDate)
-                    .font(.caption2)
+                    .font(WDS.Typography.tiny)
                     .foregroundColor(payment.isOverdue ? WidgetColors.overdue : .secondary)
                     .lineLimit(1)
             }
@@ -228,14 +181,34 @@ struct PaymentRow: View {
 
             // Amount
             Text(formattedAmount)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(payment.isIncome ? WidgetColors.income : (payment.isOverdue ? WidgetColors.overdue : .primary))
+                .font(WDS.Typography.value)
+                .foregroundColor(amountColor)
         }
     }
 
-    private var categoryIcon: String {
-        payment.paymentCategory == "subscription" ? "repeat" : "calendar"
+    private var iconName: String {
+        if payment.isOverdue {
+            return "exclamationmark"
+        }
+        return payment.paymentCategory == "subscription" ? "repeat" : "calendar"
+    }
+
+    private var iconColor: Color {
+        payment.isOverdue ? WidgetColors.overdue : WidgetColors.accent
+    }
+
+    private var iconBackgroundColor: Color {
+        (payment.isOverdue ? WidgetColors.overdue : WidgetColors.accent).opacity(0.2)
+    }
+
+    private var amountColor: Color {
+        if payment.isIncome {
+            return WidgetColors.income
+        }
+        if payment.isOverdue {
+            return WidgetColors.overdue
+        }
+        return .primary
     }
 
     private var formattedDate: String {
@@ -243,7 +216,6 @@ struct PaymentRow: View {
             return "Vencido"
         }
 
-        let formatter = DateFormatter()
         let calendar = Calendar.current
 
         if calendar.isDateInToday(payment.nextDueDate) {
@@ -251,6 +223,7 @@ struct PaymentRow: View {
         } else if calendar.isDateInTomorrow(payment.nextDueDate) {
             return "Mañana"
         } else {
+            let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"
             return formatter.string(from: payment.nextDueDate)
         }
@@ -263,7 +236,11 @@ struct PaymentRow: View {
 
         let formatted = formatter.string(from: NSNumber(value: payment.amount)) ?? "0"
         let prefix = payment.isIncome ? "+" : ""
-        return "\(prefix)\(formatted)"
+        let currency = displayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: payment.currencyCode)
+            : payment.currencyCode
+
+        return "\(prefix)\(currency) \(formatted)"
     }
 }
 
@@ -273,15 +250,14 @@ struct ScheduledPaymentsWidget: Widget {
     let kind: String = "ScheduledPaymentsWidget"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(
+        StaticConfiguration(
             kind: kind,
-            intent: ScheduledPaymentsWidgetIntent.self,
             provider: ScheduledPaymentsProvider()
         ) { entry in
             ScheduledPaymentsWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("Pagos planificados")
+        .configurationDisplayName("Próximos pagos")
         .description("Tus próximos pagos y suscripciones")
         .supportedFamilies([.systemMedium])
     }
@@ -293,4 +269,15 @@ struct ScheduledPaymentsWidget: Widget {
     ScheduledPaymentsWidget()
 } timeline: {
     ScheduledPaymentsEntry.placeholder
+}
+
+#Preview("Empty", as: .systemMedium) {
+    ScheduledPaymentsWidget()
+} timeline: {
+    ScheduledPaymentsEntry(
+        date: Date(),
+        payments: [],
+        currencyDisplayFormat: "symbol",
+        isPlaceholder: false
+    )
 }

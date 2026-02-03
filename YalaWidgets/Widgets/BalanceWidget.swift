@@ -16,23 +16,58 @@ struct BalanceWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "Balance" }
     static var description: IntentDescription { "Muestra tu balance total" }
 
-    @Parameter(title: "Periodo de tendencia", default: .week)
-    var trendPeriod: TrendPeriod
+    @Parameter(title: "Período", default: .thisMonth)
+    var period: WidgetPeriodOption
 }
 
-enum TrendPeriod: String, AppEnum {
-    case week = "week"
-    case month = "month"
+/// AppEnum wrapper for WidgetPeriod (AppIntents requires AppEnum conformance)
+enum WidgetPeriodOption: String, AppEnum {
+    case today
+    case yesterday
+    case thisWeek
+    case lastWeek
+    case thisMonth
+    case lastMonth
+    case thisQuarter
+    case lastQuarter
+    case thisYear
+    case lastYear
+    case allTime
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        "Periodo"
+        "Período"
     }
 
-    static var caseDisplayRepresentations: [TrendPeriod: DisplayRepresentation] {
+    static var caseDisplayRepresentations: [WidgetPeriodOption: DisplayRepresentation] {
         [
-            .week: "Última semana",
-            .month: "Último mes"
+            .today: "Hoy",
+            .yesterday: "Ayer",
+            .thisWeek: "Esta semana",
+            .lastWeek: "Semana pasada",
+            .thisMonth: "Este mes",
+            .lastMonth: "Mes pasado",
+            .thisQuarter: "Este trimestre",
+            .lastQuarter: "Trimestre pasado",
+            .thisYear: "Este año",
+            .lastYear: "Año pasado",
+            .allTime: "Todo el tiempo"
         ]
+    }
+
+    var toWidgetPeriod: WidgetPeriod {
+        switch self {
+        case .today: return .today
+        case .yesterday: return .yesterday
+        case .thisWeek: return .thisWeek
+        case .lastWeek: return .lastWeek
+        case .thisMonth: return .thisMonth
+        case .lastMonth: return .lastMonth
+        case .thisQuarter: return .thisQuarter
+        case .lastQuarter: return .lastQuarter
+        case .thisYear: return .thisYear
+        case .lastYear: return .lastYear
+        case .allTime: return .allTime
+        }
     }
 }
 
@@ -42,18 +77,20 @@ struct BalanceEntry: TimelineEntry {
     let date: Date
     let balance: Double
     let currencyCode: String
+    let currencyDisplayFormat: String
     let trendData: [WidgetTrendPoint]
     let isPlaceholder: Bool
-    let trendPeriod: TrendPeriod
+    let period: WidgetPeriodOption
 
     static var placeholder: BalanceEntry {
         BalanceEntry(
             date: Date(),
             balance: 12500.00,
             currencyCode: "PEN",
+            currencyDisplayFormat: "symbol",
             trendData: [],
             isPlaceholder: true,
-            trendPeriod: .week
+            period: .thisMonth
         )
     }
 }
@@ -87,25 +124,20 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
     private func createEntry(for configuration: BalanceWidgetIntent) -> BalanceEntry {
         let balance = WidgetDataService.getTotalBalance()
         let currency = WidgetDataService.getPreferredCurrency()
+        let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
+        let period = configuration.period.toWidgetPeriod
 
-        // Get trend data based on period (use daily points for week/month)
-        let allTrendData = WidgetDataService.getTrendData()
-        var trendData: [WidgetTrendPoint] = allTrendData?.dailyPoints ?? []
-
-        // Filter trend data based on period
-        if configuration.trendPeriod == .week {
-            let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-            trendData = trendData.filter { $0.date >= weekAgo }
-        }
-        // For .month, use all 90 days (dailyPoints covers this)
+        // Get trend data for the selected period
+        let trendData = WidgetDataService.getTrendData(for: period)
 
         return BalanceEntry(
             date: Date(),
             balance: balance,
             currencyCode: currency,
+            currencyDisplayFormat: displayFormat,
             trendData: trendData,
             isPlaceholder: false,
-            trendPeriod: configuration.trendPeriod
+            period: configuration.period
         )
     }
 }
@@ -132,42 +164,27 @@ struct SmallBalanceView: View {
     let entry: BalanceEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: "creditcard.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("Balance")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+        VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
+            WidgetHeader(
+                title: "Balance",
+                subtitle: entry.period.toWidgetPeriod.displayName,
+                icon: "creditcard.fill"
+            )
 
             Spacer()
 
-            Text(formattedBalance)
-                .font(.system(.title, design: .rounded, weight: .bold))
-                .foregroundColor(entry.balance >= 0 ? .primary : WidgetColors.negative)
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-
-            Text(entry.currencyCode)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            WidgetKPI(
+                amount: entry.balance,
+                currencyCode: entry.currencyCode,
+                displayFormat: entry.currencyDisplayFormat,
+                color: WidgetColors.forBalance(entry.balance),
+                size: .large
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
+        .padding(WDS.Spacing.xl)
+        .clipped()
         .widgetURL(URL(string: "yala://panel"))
-    }
-
-    private var formattedBalance: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-
-        let absBalance = abs(entry.balance)
-        let formatted = formatter.string(from: NSNumber(value: absBalance)) ?? "0.00"
-        return entry.balance >= 0 ? formatted : "-\(formatted)"
     }
 }
 
@@ -175,35 +192,26 @@ struct MediumBalanceView: View {
     let entry: BalanceEntry
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: WDS.Spacing.xl) {
             // Left: Balance info
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Image(systemName: "creditcard.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("Balance")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Text(formattedBalance)
-                    .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundColor(entry.balance >= 0 ? .primary : WidgetColors.negative)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-
-                Text(entry.currencyCode)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
+                WidgetHeader(
+                    title: "Balance",
+                    subtitle: entry.period.toWidgetPeriod.displayName,
+                    icon: "creditcard.fill"
+                )
 
                 Spacer()
 
-                Text(periodLabel)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                WidgetKPI(
+                    amount: entry.balance,
+                    currencyCode: entry.currencyCode,
+                    displayFormat: entry.currencyDisplayFormat,
+                    color: WidgetColors.forBalance(entry.balance),
+                    size: .medium
+                )
             }
-            .frame(maxWidth: 120, alignment: .leading)
+            .frame(maxWidth: 140, alignment: .leading)
 
             // Right: Trend chart
             VStack {
@@ -214,40 +222,21 @@ struct MediumBalanceView: View {
                         fillColor: WidgetColors.trendFill(balance: entry.balance)
                     )
                 } else {
-                    VStack {
+                    VStack(spacing: WDS.Spacing.xs) {
                         Image(systemName: "chart.line.uptrend.xyaxis")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
                         Text("Sin datos")
-                            .font(.caption2)
+                            .font(WDS.Typography.tiny)
                             .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
         }
-        .padding()
+        .padding(WDS.Spacing.xl)
+        .clipped()
         .widgetURL(URL(string: "yala://panel"))
-    }
-
-    private var formattedBalance: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-
-        let absBalance = abs(entry.balance)
-        let formatted = formatter.string(from: NSNumber(value: absBalance)) ?? "0.00"
-        return entry.balance >= 0 ? formatted : "-\(formatted)"
-    }
-
-    private var periodLabel: String {
-        switch entry.trendPeriod {
-        case .week:
-            return "Última semana"
-        case .month:
-            return "Último mes"
-        }
     }
 }
 
@@ -280,9 +269,10 @@ struct BalanceWidget: Widget {
         date: Date(),
         balance: 15420.50,
         currencyCode: "PEN",
+        currencyDisplayFormat: "symbol",
         trendData: [],
         isPlaceholder: false,
-        trendPeriod: .week
+        period: .thisMonth
     )
 }
 
@@ -293,6 +283,7 @@ struct BalanceWidget: Widget {
         date: Date(),
         balance: 15420.50,
         currencyCode: "PEN",
+        currencyDisplayFormat: "symbol",
         trendData: [
             WidgetTrendPoint(date: Date().addingTimeInterval(-6 * 86400), balance: 14000),
             WidgetTrendPoint(date: Date().addingTimeInterval(-5 * 86400), balance: 14500),
@@ -303,6 +294,20 @@ struct BalanceWidget: Widget {
             WidgetTrendPoint(date: Date(), balance: 15420),
         ],
         isPlaceholder: false,
-        trendPeriod: .week
+        period: .thisWeek
+    )
+}
+
+#Preview("Negative Balance", as: .systemSmall) {
+    BalanceWidget()
+} timeline: {
+    BalanceEntry(
+        date: Date(),
+        balance: -2350.00,
+        currencyCode: "PEN",
+        currencyDisplayFormat: "symbol",
+        trendData: [],
+        isPlaceholder: false,
+        period: .thisMonth
     )
 }

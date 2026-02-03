@@ -11,11 +11,22 @@ import WidgetKit
 @main
 struct YalaWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        // WidgetKit widgets (iOS 17+)
+        // Data widgets
         BalanceWidget()
+        ExpenseWidget()
+        CashFlowWidget()
+        TopCategoriesWidget()
+        TopSubcategoriesWidget()
+        CategoriesPieWidget()
+        SubcategoriesPieWidget()
         LatestRecordsWidget()
         ScheduledPaymentsWidget()
         BudgetsWidget()
+
+        // Quick action widgets
+        QuickManualEntryWidget()
+        QuickVoiceEntryWidget()
+        QuickImageEntryWidget()
 
         // Control Center widgets (iOS 18+)
         if #available(iOS 18.0, *) {
