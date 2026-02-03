@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-03] 5bdb5c2 fix(widgets): use dynamic URL scheme for deeplinks
 - [2026-02-03] 00bfc7a docs: update BUG-3 Phase 6.2 progress
 - [2026-02-03] 6d0afa3 fix(widgets): reduce padding to 4pt and remove decimals
 - [2026-02-03] 75adcec fix(widgets): add inline header mode and restructure Medium layouts
@@ -147,9 +148,10 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ Fases 1-5 completadas (infraestructura, 13 widgets implementados)
 - ✅ Fase 6.1: Cálculos críticos corregidos (divisa, balance, gastos, ingresos, top subcategorías)
 - ✅ Fase 6.2 parcial: UI Global (padding 4pt, header inline, sin decimales)
-- 🔴 Fase 6.3-6.4: UI por widget y deeplinks pendientes
+- ✅ Fase 6.4: Deeplinks dinámicos (WidgetURLHelper lee URL_SCHEME del bundle)
+- 🔴 Fase 6.3: UI por widget pendiente (gráficas, barras CashFlow, pie charts)
 - **Documentación completa:** [`.planning/BUG-3-WIDGETS.md`](.planning/BUG-3-WIDGETS.md)
-- **Issues QA:** 7 ✅ resueltos, 6 🔴 pendientes (1 UI global, 4 UI por widget, 1 deeplinks)
+- **Issues QA:** 8 ✅ resueltos, 5 🔴 pendientes (1 UI global, 4 UI por widget)
 - Archivos: `YalaWidgets/Widgets/*.swift`, `Yala/Services/WidgetDataCache.swift`
 
 **BUG-4: Divisas recomendadas en Onboarding**
@@ -355,8 +357,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: BUG-3 Fase 6.2 parcial completada (UI Global)
-Next step: **BUG-3 Fase 6.3 (UI por Widget) o Fase 6.4 (Deeplinks)**
+Stopped at: BUG-3 Fase 6.4 completada (Deeplinks)
+Next step: **BUG-3 Fase 6.3 (UI por Widget)** - gráficas con puntos en 0, barras CashFlow, pie charts
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
@@ -365,6 +367,7 @@ Resume context:
 - **BUG-3 Fase 5 ✅:** Archivos en target verificados (folder references = inclusión automática), BUILD SUCCEEDED, code review pasado (12 archivos, 0 críticos)
 - **BUG-3 Fase 6.1 ✅:** Cálculos críticos corregidos (G.4 divisa, BW.1 balance, EW.1 gastos, CF.3/CF.4 flujo, TS.2 subcategorías)
 - **BUG-3 Fase 6.2 parcial:** G.1 padding 16pt→4pt, G.3 header inline para Medium, sin decimales en montos; G.2 KPIs sin cambio (limitación fuente)
+- **BUG-3 Fase 6.4 ✅:** Deeplinks dinámicos con WidgetURLHelper (lee URL_SCHEME del bundle), ExpenseWidget corregido
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
 - **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)

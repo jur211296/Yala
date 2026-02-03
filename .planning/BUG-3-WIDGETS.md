@@ -584,7 +584,7 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 # ISSUES DE QA (2026-02-03)
 
 **Última actualización:** 2026-02-03
-**Estado:** 🟡 EN PROGRESO (Fase 6.2 parcial - 7/13 resueltos)
+**Estado:** 🟡 EN PROGRESO (Fase 6.4 completada - 8/13 resueltos)
 
 ---
 
@@ -765,8 +765,8 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 11. **CF.2** Gráfica CashFlow Large
 12. **TC.2 + TS.1** Gráficas circulares Large
 
-### Fase 6.4: Deeplinks
-13. **G.5** Corregir todos los deeplinks
+### Fase 6.4: Deeplinks ✅ COMPLETADA
+13. ✅ **G.5** Deeplinks dinámicos con WidgetURLHelper
 
 ---
 
