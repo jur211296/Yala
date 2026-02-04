@@ -185,7 +185,7 @@ struct SubcategoryRow: View {
                 Text("\(Int(subcategory.percentage))%")
                     .font(WDS.Typography.labelSmall)
                     .foregroundStyle(subcategoryColor)
-                    .frame(width: 32, alignment: .trailing)
+                    .frame(width: WDS.ListItem.percentageWidth, alignment: .trailing)
             }
 
             // Progress bar aligned with text

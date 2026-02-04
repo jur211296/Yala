@@ -270,7 +270,7 @@ struct MediumExpenseView: View {
 
                             AxisValueLabel(anchor: anchor) {
                                 Text(smartAxisLabel(for: date))
-                                    .font(.system(size: 8, weight: .medium))
+                                    .font(WDS.Typography.axis)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -283,7 +283,7 @@ struct MediumExpenseView: View {
                         if let doubleValue = value.as(Double.self) {
                             AxisValueLabel {
                                 Text(formatK(doubleValue))
-                                    .font(.system(size: 8))
+                                    .font(WDS.Typography.axisRegular)
                                     .foregroundStyle(.secondary)
                             }
                         }

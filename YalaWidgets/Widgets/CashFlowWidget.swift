@@ -147,7 +147,7 @@ struct SmallCashFlowView: View {
                         .font(WDS.Typography.tiny)
                 } icon: {
                     Image(systemName: "arrow.up")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(WDS.Typography.barValue)
                 }
                 .foregroundColor(WidgetColors.income)
 
@@ -156,7 +156,7 @@ struct SmallCashFlowView: View {
                         .font(WDS.Typography.tiny)
                 } icon: {
                     Image(systemName: "arrow.down")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(WDS.Typography.barValue)
                 }
                 .foregroundColor(WidgetColors.expense)
             }

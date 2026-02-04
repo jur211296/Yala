@@ -224,7 +224,7 @@ struct PaymentRowView: View {
             return String(localized: "widget.ui.tomorrow", bundle: .main)
         } else {
             let formatter = DateFormatter()
-            formatter.dateFormat = "d MMM"
+            formatter.setLocalizedDateFormatFromTemplate("dMMM")
             return formatter.string(from: payment.nextDueDate)
         }
     }

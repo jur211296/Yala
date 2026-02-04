@@ -96,6 +96,15 @@ enum WDS {
 
         /// Tiny text (percentages, dates)
         static let tiny = Font.system(.caption2)
+
+        /// Chart axis labels (8pt medium)
+        static let axis = Font.system(size: 8, weight: .medium)
+
+        /// Chart axis labels regular weight (8pt)
+        static let axisRegular = Font.system(size: 8)
+
+        /// Bar chart value labels (8pt bold)
+        static let barValue = Font.system(size: 8, weight: .bold)
     }
 
     // MARK: - Icon Sizes
@@ -144,5 +153,16 @@ enum WDS {
 
         /// Compact icon size for TopCategories/TopSubcategories widgets
         static let iconSizeCompact: CGFloat = 24
+
+        /// Percentage column width for alignment
+        static let percentageWidth: CGFloat = 32
+    }
+
+    // MARK: - Quick Entry
+
+    /// Dimensions for quick entry action widgets
+    enum QuickEntry {
+        /// Circle container size for action icons
+        static let circleSize: CGFloat = 56
     }
 }

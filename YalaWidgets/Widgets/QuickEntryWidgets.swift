@@ -45,7 +45,7 @@ struct QuickManualEntryWidgetView: View {
             ZStack {
                 Circle()
                     .fill(WidgetColors.electricIndigo.opacity(0.15))
-                    .frame(width: 56, height: 56)
+                    .frame(width: WDS.QuickEntry.circleSize, height: WDS.QuickEntry.circleSize)
 
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: WDS.Icon.xl))
@@ -91,7 +91,7 @@ struct QuickVoiceEntryWidgetView: View {
             ZStack {
                 Circle()
                     .fill(WidgetColors.yalaTeal.opacity(0.15))
-                    .frame(width: 56, height: 56)
+                    .frame(width: WDS.QuickEntry.circleSize, height: WDS.QuickEntry.circleSize)
 
                 Image(systemName: "mic.fill")
                     .font(.system(size: WDS.Icon.xl))
@@ -137,7 +137,7 @@ struct QuickImageEntryWidgetView: View {
             ZStack {
                 Circle()
                     .fill(WidgetColors.hotPink.opacity(0.15))
-                    .frame(width: 56, height: 56)
+                    .frame(width: WDS.QuickEntry.circleSize, height: WDS.QuickEntry.circleSize)
 
                 Image(systemName: "camera.fill")
                     .font(.system(size: WDS.Icon.xl))
