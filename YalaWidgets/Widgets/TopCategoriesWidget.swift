@@ -167,6 +167,7 @@ struct CategoryRow: View {
                     Image(systemName: category.iconName)
                         .font(.system(size: WDS.Icon.sm))
                         .foregroundColor(categoryColor)
+                        .widgetAccentable()
                 }
 
                 // Name
@@ -186,6 +187,7 @@ struct CategoryRow: View {
                     .font(WDS.Typography.labelSmall)
                     .foregroundStyle(categoryColor)
                     .frame(width: WDS.ListItem.percentageWidth, alignment: .trailing)
+                    .widgetAccentable()
             }
 
             // Progress bar aligned with text (left padding = iconSize + spacing)
@@ -197,6 +199,7 @@ struct CategoryRow: View {
                     RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
                         .fill(categoryColor)
                         .frame(width: geo.size.width * CGFloat(min(category.percentage, 100) / 100))
+                        .widgetAccentable()
                 }
             }
             .frame(height: WDS.Progress.heightCompact)

@@ -162,6 +162,7 @@ struct BudgetRowView: View {
                 Text("\(Int(budget.percentUsed))%")
                     .font(WDS.Typography.label)
                     .foregroundColor(progressColor)
+                    .widgetAccentable()
             }
 
             // Progress bar

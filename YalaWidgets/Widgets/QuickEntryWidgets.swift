@@ -50,6 +50,7 @@ struct QuickManualEntryWidgetView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: WDS.Icon.xl))
                     .foregroundColor(WidgetColors.electricIndigo)
+                    .widgetAccentable()
             }
 
             Text("widget.ui.newRecord", bundle: .main)
@@ -96,6 +97,7 @@ struct QuickVoiceEntryWidgetView: View {
                 Image(systemName: "mic.fill")
                     .font(.system(size: WDS.Icon.xl))
                     .foregroundColor(WidgetColors.yalaTeal)
+                    .widgetAccentable()
             }
 
             Text("widget.ui.voiceRecord", bundle: .main)
@@ -142,6 +144,7 @@ struct QuickImageEntryWidgetView: View {
                 Image(systemName: "camera.fill")
                     .font(.system(size: WDS.Icon.xl))
                     .foregroundColor(WidgetColors.hotPink)
+                    .widgetAccentable()
             }
 
             Text("widget.ui.scanReceipt", bundle: .main)

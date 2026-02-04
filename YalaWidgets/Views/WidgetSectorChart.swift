@@ -8,6 +8,7 @@
 
 import SwiftUI
 import Charts
+import WidgetKit
 
 // MARK: - Segment Data
 

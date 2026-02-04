@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 /// Horizontal progress bar with color coding
 struct WidgetProgressBar: View {
@@ -35,6 +36,7 @@ struct WidgetProgressBar: View {
                 RoundedRectangle(cornerRadius: height / 2)
                     .fill(color)
                     .frame(width: progressWidth(in: geometry.size.width))
+                    .widgetAccentable()
             }
         }
         .frame(height: height)

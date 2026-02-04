@@ -296,6 +296,7 @@ struct MediumBalanceView: View {
                         .foregroundStyle(lineColor)
                     }
                 }
+                .widgetAccentable()
                 .chartXScale(domain: xDomain)
                 .chartYScale(domain: yDomain)
                 .chartXAxis {

@@ -167,6 +167,7 @@ struct TransactionRowView: View {
                 Image(systemName: transaction.categoryIcon ?? "questionmark")
                     .font(.system(size: WDS.Icon.sm))
                     .foregroundColor(categoryColor)
+                    .widgetAccentable()
             }
 
             // Note/category
@@ -189,6 +190,7 @@ struct TransactionRowView: View {
             Text(formattedAmount)
                 .font(WDS.Typography.value)
                 .foregroundColor(transaction.isIncome ? WidgetColors.income : WidgetColors.expense)
+                .widgetAccentable()
         }
     }
 

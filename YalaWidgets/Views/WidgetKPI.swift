@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 /// Displays a formatted monetary amount
 struct WidgetKPI: View {
@@ -50,6 +51,7 @@ struct WidgetKPI: View {
             .foregroundColor(color)
             .minimumScaleFactor(0.5)
             .lineLimit(1)
+            .widgetAccentable()
     }
 
     private var formattedAmount: String {

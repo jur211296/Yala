@@ -167,6 +167,7 @@ struct SubcategoryRow: View {
                     Image(systemName: subcategory.iconName ?? "tag.fill")
                         .font(.system(size: WDS.Icon.sm))
                         .foregroundColor(subcategoryColor)
+                        .widgetAccentable()
                 }
 
                 // Only subcategory name (no parent category)
@@ -186,6 +187,7 @@ struct SubcategoryRow: View {
                     .font(WDS.Typography.labelSmall)
                     .foregroundStyle(subcategoryColor)
                     .frame(width: WDS.ListItem.percentageWidth, alignment: .trailing)
+                    .widgetAccentable()
             }
 
             // Progress bar aligned with text
@@ -197,6 +199,7 @@ struct SubcategoryRow: View {
                     RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
                         .fill(subcategoryColor)
                         .frame(width: geo.size.width * CGFloat(min(subcategory.percentage, 100) / 100))
+                        .widgetAccentable()
                 }
             }
             .frame(height: WDS.Progress.heightCompact)

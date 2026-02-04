@@ -150,6 +150,7 @@ struct SmallCashFlowView: View {
                         .font(WDS.Typography.barValue)
                 }
                 .foregroundColor(WidgetColors.income)
+                .widgetAccentable()
 
                 Label {
                     Text(formatAmount(entry.totalExpense))
@@ -159,6 +160,7 @@ struct SmallCashFlowView: View {
                         .font(WDS.Typography.barValue)
                 }
                 .foregroundColor(WidgetColors.expense)
+                .widgetAccentable()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -236,6 +238,7 @@ struct MediumCashFlowView: View {
                             Capsule()
                                 .fill(WidgetColors.income)
                                 .frame(width: max(geo.size.width * CGFloat(entry.totalIncome / maxValue), 6), height: 8)
+                                .widgetAccentable()
                         }
                     }
                     .frame(height: 8)
@@ -262,6 +265,7 @@ struct MediumCashFlowView: View {
                             Capsule()
                                 .fill(WidgetColors.expense)
                                 .frame(width: max(geo.size.width * CGFloat(entry.totalExpense / maxValue), 6), height: 8)
+                                .widgetAccentable()
                         }
                     }
                     .frame(height: 8)
@@ -316,6 +320,7 @@ struct LargeCashFlowView: View {
                     Circle()
                         .fill(WidgetColors.income)
                         .frame(width: 8, height: 8)
+                        .widgetAccentable()
                     Text("\(String(localized: "widget.ui.income", bundle: .main)): \(formatAmount(entry.totalIncome))")
                         .font(WDS.Typography.label)
                         .foregroundStyle(.secondary)
@@ -325,6 +330,7 @@ struct LargeCashFlowView: View {
                     Circle()
                         .fill(WidgetColors.expense)
                         .frame(width: 8, height: 8)
+                        .widgetAccentable()
                     Text("\(String(localized: "widget.ui.expenses", bundle: .main)): \(formatAmount(entry.totalExpense))")
                         .font(WDS.Typography.label)
                         .foregroundStyle(.secondary)
@@ -587,6 +593,7 @@ struct BidirectionalCashFlowChart: View {
                 .symbolSize(20)
             }
         }
+        .widgetAccentable()
         .chartXScale(domain: xDomain)
         .chartYScale(domain: yDomain)
         .chartXAxis {

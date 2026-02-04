@@ -163,6 +163,7 @@ struct PaymentRowView: View {
                 Image(systemName: iconName)
                     .font(.system(size: WDS.Icon.sm))
                     .foregroundColor(iconColor)
+                    .widgetAccentable()
             }
 
             // Name and date
@@ -183,6 +184,7 @@ struct PaymentRowView: View {
             Text(formattedAmount)
                 .font(WDS.Typography.value)
                 .foregroundColor(amountColor)
+                .widgetAccentable()
         }
     }
 
