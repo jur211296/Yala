@@ -184,13 +184,7 @@ struct ScheduledPaymentsWidget: View {
             // Amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
                 .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.electricIndigo, Color.hotPink],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .foregroundStyle(.primary)
 
             // Payment count
             Text(paymentCountLabel(activeCount))
@@ -278,7 +272,7 @@ struct ScheduledPaymentsWidget: View {
             // Info
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.payment.name)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -291,7 +285,7 @@ struct ScheduledPaymentsWidget: View {
 
             // Amount
             Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode))
-                .font(.subheadline.weight(.bold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
         }
     }

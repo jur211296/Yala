@@ -496,7 +496,7 @@ struct ScheduledPaymentsListView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(payment.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
 
                     Text(dates.map { dateFormatter.string(from: $0) }.joined(separator: ", "))
@@ -507,7 +507,7 @@ struct ScheduledPaymentsListView: View {
                 Spacer()
 
                 Text(YalaFormatter.currency(value: payment.amount, currencyCode: currencyCode))
-                    .font(.subheadline.weight(.bold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
 
                 Image(systemName: "chevron.right")
@@ -518,6 +518,7 @@ struct ScheduledPaymentsListView: View {
             .background(Color.yalaCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Empty State

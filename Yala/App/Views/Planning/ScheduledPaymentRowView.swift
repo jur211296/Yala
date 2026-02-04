@@ -23,7 +23,7 @@ struct ScheduledPaymentRowView: View {
                 // Payment info
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(summary.payment.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -36,7 +36,7 @@ struct ScheduledPaymentRowView: View {
                 // Amount (right-aligned)
                 VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     Text(formattedAmount)
-                        .font(.subheadline.weight(.bold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(amountColor)
 
                     // Recurrence badge
@@ -59,6 +59,7 @@ struct ScheduledPaymentRowView: View {
             )
             .opacity(summary.payment.isPaidForCurrentCycle ? 0.6 : 1.0)
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Components
@@ -153,11 +154,8 @@ struct ScheduledPaymentRowView: View {
 
 
     private var amountColor: Color {
-        if summary.payment.transactionType == "income" {
-            return Color.teal
-        } else {
-            return summary.dueStatus == .past ? Color.hotPink : .primary
-        }
+        // Only highlight past due payments in hotPink, everything else is neutral
+        summary.dueStatus == .past ? Color.hotPink : .primary
     }
 
     private var formattedAmount: String {
