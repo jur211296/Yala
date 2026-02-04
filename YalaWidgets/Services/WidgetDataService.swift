@@ -423,7 +423,7 @@ enum WidgetDataService {
                 subcategoryTotals[key] = (
                     name: subcategoryName,
                     categoryName: categoryName,
-                    icon: nil,  // Subcategories may not have icons in WidgetTransaction
+                    icon: tx.categoryIcon,  // Use category icon as fallback
                     color: tx.categoryColor ?? "#808080",
                     amount: amount
                 )

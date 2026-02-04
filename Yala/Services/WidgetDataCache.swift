@@ -704,7 +704,7 @@ enum WidgetDataCache {
                 id: item.subcategory.persistentModelID.hashValue.description,
                 name: item.subcategory.name,
                 categoryName: item.category.name,
-                iconName: item.subcategory.iconName,
+                iconName: item.subcategory.iconName ?? item.category.iconName,
                 colorHex: item.category.colorHex,
                 amount: item.amount,
                 percentage: percentage

@@ -111,8 +111,8 @@ struct WidgetSectorChart: View {
     private func connectorLines(center: CGPoint, chartRadius: CGFloat) -> some View {
         Path { path in
             for item in processedSegments {
-                // Only show line for segments > 4%
-                if shouldShowBubble(for: item) {
+                // Only show line for segments > 4% AND with icon
+                if shouldShowBubble(for: item), item.iconName != nil {
                     let angle = item.midAngle
 
                     // Start: Edge of the pie slice
