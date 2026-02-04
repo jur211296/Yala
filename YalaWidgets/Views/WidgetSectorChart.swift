@@ -156,6 +156,7 @@ struct WidgetSectorChart: View {
             let bubbleY = center.y + sin(angle) * bubbleDistance
 
             ZStack {
+                // Bubble icon
                 Circle()
                     .fill(Color(hex: item.colorHex))
                     .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
@@ -164,6 +165,17 @@ struct WidgetSectorChart: View {
                 Image(systemName: iconName)
                     .font(.system(size: fontSize, weight: .bold))
                     .foregroundStyle(.white)
+
+                // Percentage label (only for segments > 10%)
+                if item.percentage > 10.0 {
+                    Text("\(Int(item.percentage))%")
+                        .font(WDS.Typography.tiny)
+                        .foregroundStyle(.primary)
+                        .offset(
+                            x: cos(angle) * 24,
+                            y: sin(angle) * 24
+                        )
+                }
             }
             .position(x: bubbleX, y: bubbleY)
         }
