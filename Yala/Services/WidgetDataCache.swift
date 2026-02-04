@@ -140,6 +140,9 @@ struct WidgetDataSnapshot: Codable {
 
     // Precalculated for "All Time" using ALL transactions (not just 90 days)
     let allTimeSummary: WidgetPeriodSummary
+
+    // Precalculated summaries for all periods (keyed by period rawValue)
+    let periodSummaries: [String: WidgetPeriodSummary]
 }
 
 // MARK: - WidgetDataCache
@@ -314,16 +317,36 @@ enum WidgetDataCache {
         // Get currency display format preference
         let currencyDisplayFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "symbol"
 
-        // Build thisMonth summary (precalculated for most common period)
-        let thisMonthSummary = buildPeriodSummary(
+        // Build summaries for ALL widget periods using DetailPeriod (source of truth)
+        // Uses allTransactions to ensure correct data for past periods like lastYear
+        var periodSummaries: [String: WidgetPeriodSummary] = [:]
+
+        // Widget periods aligned with DetailPeriod (excluding custom)
+        let widgetPeriods: [DetailPeriod] = [
+            .thisWeek, .last7Days, .last30Days, .thisMonth,
+            .lastMonth, .thisYear, .lastYear, .allTime
+        ]
+
+        for period in widgetPeriods {
+            let interval = period.dateInterval()
+            let summary = buildPeriodSummary(
+                transactions: allTransactions,
+                periodStart: interval.start,
+                periodEnd: interval.end,
+                currencyCode: preferredCurrency
+            )
+            periodSummaries[period.rawValue] = summary
+        }
+
+        // Legacy fields for backwards compatibility
+        let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
             transactions: recentTransactions,
             periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date(),
             periodEnd: Date(),
             currencyCode: preferredCurrency
         )
 
-        // Build allTime summary using ALL transactions (not just 90 days)
-        let allTimeSummary = buildPeriodSummary(
+        let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
             transactions: allTransactions,
             periodStart: Date.distantPast,
             periodEnd: Date(),
@@ -341,7 +364,8 @@ enum WidgetDataCache {
             scheduledPayments: widgetPayments,
             trendData: trendData,
             thisMonthSummary: thisMonthSummary,
-            allTimeSummary: allTimeSummary
+            allTimeSummary: allTimeSummary,
+            periodSummaries: periodSummaries
         )
     }
 

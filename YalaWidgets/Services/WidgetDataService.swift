@@ -139,6 +139,10 @@ struct WidgetDataSnapshot: Codable {
     // Precalculated for "All Time" using ALL transactions (not just 90 days)
     // Optional for backwards compatibility with old cache format
     let allTimeSummary: WidgetPeriodSummary?
+
+    // Precalculated summaries for all periods (keyed by WidgetPeriod.rawValue)
+    // Optional for backwards compatibility
+    let periodSummaries: [String: WidgetPeriodSummary]?
 }
 
 // MARK: - WidgetDataService
@@ -315,22 +319,27 @@ enum WidgetDataService {
         loadSnapshot()?.thisMonthSummary
     }
 
-    /// Calculates summary for a specific period using raw transactions
-    /// For thisMonth and allTime, returns precalculated summaries for performance
+    /// Returns precalculated summary for a specific period
+    /// All summaries are precalculated in WidgetDataCache to ensure accuracy
     static func calculateSummary(for period: WidgetPeriod) -> WidgetPeriodSummary? {
         guard let snapshot = loadSnapshot() else { return nil }
 
-        // For thisMonth, use precalculated
+        // First try the new periodSummaries dictionary (preferred)
+        if let summaries = snapshot.periodSummaries,
+           let summary = summaries[period.rawValue] {
+            return summary
+        }
+
+        // Fallback to legacy fields for backwards compatibility
         if period == .thisMonth {
             return snapshot.thisMonthSummary
         }
 
-        // For allTime, use precalculated if available (calculated from ALL transactions, not just 90 days)
         if period == .allTime, let allTimeSummary = snapshot.allTimeSummary {
             return allTimeSummary
         }
 
-        // For other periods, calculate from raw transactions
+        // Last resort: calculate from raw transactions (only works for recent periods within 90 days)
         let interval = period.dateInterval()
         let filtered = snapshot.transactions.filter { interval.contains($0.date) }
 
