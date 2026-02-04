@@ -1,6 +1,6 @@
 //
 //  AudioRecorderService.swift
-//  Neto
+//  Yala
 //
 //  Service for recording audio from the microphone for voice transcription.
 //

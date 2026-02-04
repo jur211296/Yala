@@ -2,7 +2,7 @@
 //  RecordDateSectionView.swift
 //  Yala
 //
-//  Created by Neto - Records Feature.
+//  Created by Yala - Records Feature.
 //
 
 import SwiftUI

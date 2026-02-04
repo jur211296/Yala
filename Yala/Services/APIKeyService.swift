@@ -1,6 +1,6 @@
 //
 //  APIKeyService.swift
-//  Neto
+//  Yala
 //
 //  Service for accessing API keys injected via xcconfig at build time.
 //  Keys are stored in Secrets.xcconfig (git-ignored) and injected into Info.plist.

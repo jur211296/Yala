@@ -2,7 +2,7 @@
 //  TransactionSuccessView.swift
 //  Yala
 //
-//  Created by Neto - Success confirmation screen after transaction registration.
+//  Created by Yala - Success confirmation screen after transaction registration.
 //
 
 import SwiftUI

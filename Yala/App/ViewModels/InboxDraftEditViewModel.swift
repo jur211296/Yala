@@ -1,6 +1,6 @@
 //
 //  InboxDraftEditViewModel.swift
-//  Neto
+//  Yala
 //
 //  ViewModel para InboxDraftEditSheet - maneja pending drafts para "Aprobar siguiente".
 //  Refactor D.8: @Query → ViewModel

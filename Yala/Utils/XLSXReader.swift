@@ -1,6 +1,6 @@
 //
 //  XLSXReader.swift
-//  Neto
+//  Yala
 //
 //  Lector de archivos Excel (.xlsx) para importación de transacciones.
 //  Utiliza CoreXLSX para parsear archivos Excel y devolver filas crudas.

@@ -2,7 +2,7 @@
 //  TransactionFormRow.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftUI

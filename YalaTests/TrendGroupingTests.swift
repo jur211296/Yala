@@ -1,6 +1,6 @@
 //
 //  TrendGroupingTests.swift
-//  NetoTests
+//  YalaTests
 //
 //  Unit tests for TrendGrouping extension methods.
 //

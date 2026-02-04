@@ -1,6 +1,6 @@
 //
 //  InboxDraftEditSheet.swift
-//  Neto
+//  Yala
 //
 //  Sheet para editar un draft de la bandeja de entrada.
 //  Mismo diseño que NewTransactionView pero prefilled desde el draft.

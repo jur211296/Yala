@@ -1,6 +1,6 @@
 //
 //  DetailContainerViewModel.swift
-//  Neto
+//  Yala
 //
 //  ViewModel para DetailContainerView - maneja carga de datos para Statistics tabs.
 //  Refactor D.8: @Query → ViewModel

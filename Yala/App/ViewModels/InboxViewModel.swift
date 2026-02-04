@@ -1,6 +1,6 @@
 //
 //  InboxViewModel.swift
-//  Neto
+//  Yala
 //
 //  ViewModel para InboxView - maneja drafts de transacciones.
 //  Refactor D.8: @Query → ViewModel

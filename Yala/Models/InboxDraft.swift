@@ -1,6 +1,6 @@
 //
 //  InboxDraft.swift
-//  Neto
+//  Yala
 //
 //  Modelo para borradores de transacciones en la bandeja de entrada.
 //  Fase 8: Registro Inteligente

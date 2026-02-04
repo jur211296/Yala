@@ -1,6 +1,6 @@
 //
 //  TrendProcessingTests.swift
-//  NetoTests
+//  YalaTests
 //
 //  Unit tests for TrendProcessingHelper.
 //

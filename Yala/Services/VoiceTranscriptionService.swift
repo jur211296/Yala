@@ -1,6 +1,6 @@
 //
 //  VoiceTranscriptionService.swift
-//  Neto
+//  Yala
 //
 //  Service for transcribing voice recordings using OpenAI Whisper API.
 //

@@ -1,6 +1,6 @@
 //
 //  InboxBulkActionsSheet.swift
-//  Neto
+//  Yala
 //
 //  Sheet para acciones en lote sobre drafts seleccionados.
 //  Fase 8: Registro Inteligente - Subfase 8.2

@@ -1,6 +1,6 @@
 //
 //  TranscriptionParserService.swift
-//  Neto
+//  Yala
 //
 //  Service for parsing transcribed text into structured transaction data using OpenAI LLM.
 //

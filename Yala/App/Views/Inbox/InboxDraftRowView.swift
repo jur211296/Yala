@@ -1,6 +1,6 @@
 //
 //  InboxDraftRowView.swift
-//  Neto
+//  Yala
 //
 //  Fila individual para drafts en la bandeja de entrada.
 //  Fase 8: Registro Inteligente

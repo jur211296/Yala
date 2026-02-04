@@ -1,6 +1,6 @@
 //
 //  FilterServiceTests.swift
-//  NetoTests
+//  YalaTests
 //
 //  Tests for FilterService unified filtering logic.
 //

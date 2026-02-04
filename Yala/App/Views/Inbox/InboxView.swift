@@ -1,6 +1,6 @@
 //
 //  InboxView.swift
-//  Neto
+//  Yala
 //
 //  Bandeja de entrada para borradores de transacciones.
 //  Fase 8: Registro Inteligente

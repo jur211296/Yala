@@ -1,6 +1,6 @@
 //
 //  VoiceRecordingView.swift
-//  Neto
+//  Yala
 //
 //  Sheet view for recording voice input and creating transaction drafts.
 //

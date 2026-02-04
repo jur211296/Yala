@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] 61e1158 refactor(notifications): improve notification titles and empty states
 - [2026-02-04] 6033eca feat(widgets): improve layout and add cache updates
 - [2026-02-04] e733518 fix(charts): prevent duplicate axis labels in bar charts
 - [2026-02-04] 3b4adcd feat(widgets): add widgetAccentable support for iOS 18 tinted mode
@@ -39,14 +40,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-04] 5427940 fix(widgets): align WidgetPeriod with DetailPeriod for correct data
 - [2026-02-04] 1399aa3 fix(widgets): update cache on all transaction-affecting actions
 - [2026-02-03] 5bdb5c2 fix(widgets): use dynamic URL scheme for deeplinks
-- [2026-02-03] 00bfc7a docs: update BUG-3 Phase 6.2 progress
-- [2026-02-03] 6d0afa3 fix(widgets): reduce padding to 4pt and remove decimals
-- [2026-02-02] 68d5842 feat(widgets): add widget design infrastructure with reusable components
-- [2026-02-02] 6cb17c5 feat(widgets): expand data snapshot with categories, subcategories and cash flow
-- [2026-02-02] 801bb7e feat(notifications): add personalized scheduled payment and report notifications
-- [2026-02-02] 671dbda docs: mark 10.5.D.2 as completed in STATE and ROADMAP
-- [2026-02-02] b1ae949 feat(onboarding): add budget alerts toggle to notifications step
-- [2026-02-02] 7f0cde5 feat(notifications): add global toggle for budget alerts in settings
 
 ## Completed in Current Phase
 

@@ -2,7 +2,7 @@
 //  DescriptionAutocomplete.swift
 //  Yala
 //
-//  Created by Neto - Autocomplete suggestions for description field.
+//  Created by Yala - Autocomplete suggestions for description field.
 //
 
 import SwiftData
