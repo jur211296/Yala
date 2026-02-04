@@ -8,6 +8,7 @@
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
+import WidgetKit
 
 // MARK: - Import Result Model
 
@@ -561,6 +562,7 @@ struct ImportIntroSheet: View {
 
                     // Save to persist transactions
                     try modelContext.save()
+                    WidgetDataCache.updateCache(context: modelContext)
                     print("🔵 [IMPORT] Save complete")
 
                     // Calculate date range of imported transactions for exchange rate fetch
@@ -653,6 +655,7 @@ struct ImportIntroSheet: View {
 
                     // Save to persist transactions
                     try modelContext.save()
+                    WidgetDataCache.updateCache(context: modelContext)
                     print("🔵 [IMPORT-MULTI] Save complete")
 
                     // Calculate date range for exchange rate fetch

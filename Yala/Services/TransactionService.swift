@@ -134,6 +134,7 @@ final class TransactionService {
             transaction.currencyCode = account.currencyCode
         }
         try context.save()
+        WidgetDataCache.updateCache(context: context)
     }
 
     /// Updates subcategory for multiple transactions
@@ -147,6 +148,7 @@ final class TransactionService {
             transaction.category = subcategory.safeCategory
         }
         try context.save()
+        WidgetDataCache.updateCache(context: context)
     }
 
     /// Adds tags to multiple transactions
@@ -207,6 +209,7 @@ final class TransactionService {
             transaction.amount = sign * abs(amount)
         }
         try context.save()
+        WidgetDataCache.updateCache(context: context)
     }
 }
 

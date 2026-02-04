@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftData
+import WidgetKit
 
 // Clase de utilidad para operaciones de borrado masivo de datos de usuario.
 // Marcada como @MainActor porque ModelContext debe usarse desde el hilo principal.
@@ -172,7 +173,12 @@ final class DataWipeService {
         resetAllUserPreferences()
 
         // ============================================================
-        // PASO 3: Reseed de datos iniciales si corresponde
+        // PASO 3: Limpiar cache de widgets
+        // ============================================================
+        WidgetDataCache.clearCache()
+
+        // ============================================================
+        // PASO 4: Reseed de datos iniciales si corresponde
         // ============================================================
         if reseedInitialData {
             try reseedInitialAppState(in: context)

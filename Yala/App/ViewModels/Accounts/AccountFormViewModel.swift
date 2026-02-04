@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 #if canImport(UIKit)
     import UIKit
@@ -310,6 +311,7 @@ final class AccountFormViewModel {
         // Force save to ensure @Query observers are notified of changes
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
         } catch {
             isShowingSaveError = true
             return false

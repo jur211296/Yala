@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 // MARK: - New Transaction ViewModel
 
@@ -467,6 +468,7 @@ final class NewTransactionViewModel {
                 result = [tx]
             }
             try context.save()
+            WidgetDataCache.updateCache(context: context)
             isSaving = false
             return result
         } catch {
