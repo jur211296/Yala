@@ -588,6 +588,10 @@ enum WidgetDataCache {
             // Sync firstWeekday preference for widget calendar calculations
             let firstWeekday = UserDefaults.standard.integer(forKey: "firstWeekday")
             defaults.set(firstWeekday > 0 ? firstWeekday : 2, forKey: "firstWeekday")
+
+            // Sync defaultPeriod preference for "Same as app" option in widgets
+            let defaultPeriod = UserDefaults.standard.string(forKey: "defaultPeriod") ?? "allTime"
+            defaults.set(defaultPeriod, forKey: "defaultPeriod")
         } catch {
             #if DEBUG
             print("WidgetDataCache: Error encoding snapshot: \(error)")

@@ -177,6 +177,17 @@ enum WidgetDataService {
         return calendar
     }
 
+    /// Returns the user's default period from the main app
+    /// Falls back to .thisMonth if not set or invalid
+    static func getAppDefaultPeriod() -> WidgetPeriod {
+        guard let defaults = sharedDefaults,
+              let rawValue = defaults.string(forKey: "defaultPeriod"),
+              let period = WidgetPeriod(rawValue: rawValue) else {
+            return .thisMonth
+        }
+        return period
+    }
+
     // MARK: - Public API
 
     /// Loads the cached widget data snapshot

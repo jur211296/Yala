@@ -82,6 +82,7 @@
 
 // MARK: - Period (selector de período)
 "widget.period.type" = "Período";
+"widget.period.sameAsApp" = "Mismo que en la app";
 "widget.period.thisWeek" = "Esta semana";
 "widget.period.last7Days" = "Últimos 7 días";
 "widget.period.last30Days" = "Últimos 30 días";

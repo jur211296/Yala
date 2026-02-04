@@ -17,13 +17,15 @@ struct BalanceWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.balance.title" }
     static var description: IntentDescription { "widget.intent.balance.desc" }
 
-    @Parameter(title: "widget.period.type", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 }
 
 /// AppEnum wrapper for WidgetPeriod (AppIntents requires AppEnum conformance)
 /// Aligned with DetailPeriod from main app (8 cases, excluding custom)
+/// sameAsApp reads user's default period from app settings
 enum WidgetPeriodOption: String, AppEnum {
+    case sameAsApp
     case thisWeek
     case last7Days
     case last30Days
@@ -39,6 +41,7 @@ enum WidgetPeriodOption: String, AppEnum {
 
     static var caseDisplayRepresentations: [WidgetPeriodOption: DisplayRepresentation] {
         [
+            .sameAsApp: DisplayRepresentation(title: "widget.period.sameAsApp"),
             .thisWeek: DisplayRepresentation(title: "widget.period.thisWeek"),
             .last7Days: DisplayRepresentation(title: "widget.period.last7Days"),
             .last30Days: DisplayRepresentation(title: "widget.period.last30Days"),
@@ -52,6 +55,7 @@ enum WidgetPeriodOption: String, AppEnum {
 
     var toWidgetPeriod: WidgetPeriod {
         switch self {
+        case .sameAsApp: return WidgetDataService.getAppDefaultPeriod()
         case .thisWeek: return .thisWeek
         case .last7Days: return .last7Days
         case .last30Days: return .last30Days

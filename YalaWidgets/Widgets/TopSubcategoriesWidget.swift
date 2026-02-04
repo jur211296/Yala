@@ -16,7 +16,7 @@ struct TopSubcategoriesWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.topSubcategories.title" }
     static var description: IntentDescription { "widget.intent.topSubcategories.desc" }
 
-    @Parameter(title: "widget.period.type", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 }
 

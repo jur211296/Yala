@@ -17,7 +17,7 @@ struct ExpenseWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.expense.title" }
     static var description: IntentDescription { "widget.intent.expense.desc" }
 
-    @Parameter(title: "widget.period.type", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 }
 

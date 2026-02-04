@@ -17,7 +17,7 @@ struct CashFlowWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.cashFlow.title" }
     static var description: IntentDescription { "widget.intent.cashFlow.desc" }
 
-    @Parameter(title: "widget.period.type", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 }
 
@@ -458,8 +458,8 @@ struct BidirectionalCashFlowChart: View {
     /// Matches PanelViewModel logic: day for week/month periods, month for year+
     private var grouping: Grouping {
         switch period {
-        case .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
-            return .day  // Daily bars for week and month periods
+        case .sameAsApp, .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
+            return .day  // Daily bars for week and month periods (sameAsApp defaults to day granularity)
         case .thisYear, .lastYear, .allTime:
             return .month
         }

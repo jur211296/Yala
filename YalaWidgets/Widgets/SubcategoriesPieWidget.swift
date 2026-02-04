@@ -17,7 +17,7 @@ struct SubcategoriesPieWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.subcategoriesPie.title" }
     static var description: IntentDescription { "widget.intent.subcategoriesPie.desc" }
 
-    @Parameter(title: "widget.period.type", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 }
 
