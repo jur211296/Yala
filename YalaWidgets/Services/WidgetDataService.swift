@@ -110,6 +110,9 @@ struct WidgetPeriodSummary: Codable {
     let topCategories: [WidgetCategory]
     let topSubcategories: [WidgetSubcategory]
     let cashFlowPoints: [WidgetCashFlowPoint]
+    /// Historical balance at the END of the period (sum of all transactions up to period end)
+    /// Optional for backwards compatibility with old cache format
+    let periodBalance: Double?
 }
 
 /// Complete widget data snapshot
@@ -207,6 +210,24 @@ enum WidgetDataService {
     /// Returns the total balance, or 0 if no data
     static func getTotalBalance() -> Double {
         loadSnapshot()?.totalBalance ?? 0
+    }
+
+    /// Returns the historical balance for a specific period
+    /// For current periods (thisMonth, thisWeek, etc.): returns current total balance
+    /// For past periods (lastMonth, lastYear, etc.): returns balance as it was at the end of that period
+    static func getBalance(for period: WidgetPeriod) -> Double {
+        guard let snapshot = loadSnapshot() else { return 0 }
+
+        // Try to get precalculated periodBalance from summary
+        if let summaries = snapshot.periodSummaries,
+           let summary = summaries[period.rawValue],
+           let periodBalance = summary.periodBalance {
+            return periodBalance
+        }
+
+        // Fallback to current total balance for current periods
+        // (old cache format or current periods)
+        return snapshot.totalBalance
     }
 
     /// Returns the preferred currency code, or "USD" if no data
@@ -377,7 +398,8 @@ enum WidgetDataService {
             netCashFlow: netCashFlow,
             topCategories: topCategories,
             topSubcategories: topSubcategories,
-            cashFlowPoints: cashFlowPoints
+            cashFlowPoints: cashFlowPoints,
+            periodBalance: nil  // Fallback calculation doesn't have access to all transactions
         )
     }
 

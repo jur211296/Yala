@@ -115,10 +115,10 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
     }
 
     private func createEntry(for configuration: BalanceWidgetIntent) -> BalanceEntry {
-        let balance = WidgetDataService.getTotalBalance()
+        let period = configuration.period.toWidgetPeriod
+        let balance = WidgetDataService.getBalance(for: period)
         let currency = WidgetDataService.getPreferredCurrency()
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
-        let period = configuration.period.toWidgetPeriod
 
         // Get trend data for the selected period
         let trendData = WidgetDataService.getTrendData(for: period)

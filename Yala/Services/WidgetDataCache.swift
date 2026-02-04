@@ -112,6 +112,10 @@ struct WidgetPeriodSummary: Codable {
     let topCategories: [WidgetCategory]
     let topSubcategories: [WidgetSubcategory]
     let cashFlowPoints: [WidgetCashFlowPoint]
+    /// Historical balance at the END of the period (sum of all transactions up to period end)
+    /// For current periods: current total balance
+    /// For past periods: balance as it was at the end of that period
+    let periodBalance: Double?
 }
 
 /// Complete widget data snapshot
@@ -333,7 +337,8 @@ enum WidgetDataCache {
                 transactions: allTransactions,
                 periodStart: interval.start,
                 periodEnd: interval.end,
-                currencyCode: preferredCurrency
+                currencyCode: preferredCurrency,
+                allTransactionsForBalance: allTransactions
             )
             periodSummaries[period.rawValue] = summary
         }
@@ -596,7 +601,8 @@ enum WidgetDataCache {
         transactions: [TransactionItem],
         periodStart: Date,
         periodEnd: Date,
-        currencyCode: String
+        currencyCode: String,
+        allTransactionsForBalance: [TransactionItem]? = nil
     ) -> WidgetPeriodSummary {
         // Filter transactions for the period, excluding balance adjustments
         let periodTransactions = transactions.filter { tx in
@@ -618,6 +624,18 @@ enum WidgetDataCache {
         }
 
         let netCashFlow = totalIncome - totalExpense
+
+        // Calculate historical balance at end of period
+        // This is the sum of ALL transactions up to periodEnd (not just period transactions)
+        // Matches TrendDataProcessor.fillBalanceBuckets logic
+        var periodBalance: Double = 0
+        if let allTx = allTransactionsForBalance {
+            for tx in allTx where tx.date < periodEnd {
+                periodBalance += tx.amountInPreferredCurrency != 0
+                    ? tx.amountInPreferredCurrency
+                    : tx.amount
+            }
+        }
 
         // Build top categories (expenses only, top 20 for Large widgets)
         let topCategories = buildTopCategories(
@@ -646,7 +664,8 @@ enum WidgetDataCache {
             netCashFlow: netCashFlow,
             topCategories: topCategories,
             topSubcategories: topSubcategories,
-            cashFlowPoints: cashFlowPoints
+            cashFlowPoints: cashFlowPoints,
+            periodBalance: allTransactionsForBalance != nil ? periodBalance : nil
         )
     }
 
