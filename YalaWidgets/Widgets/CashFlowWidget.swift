@@ -341,7 +341,11 @@ struct LargeCashFlowView: View {
 
             // Cash flow chart
             if entry.cashFlowPoints.count >= 2 {
-                BidirectionalCashFlowChart(points: entry.cashFlowPoints, period: entry.period)
+                BidirectionalCashFlowChart(
+                    points: entry.cashFlowPoints,
+                    period: entry.period,
+                    resolvedPeriod: entry.period.toWidgetPeriod
+                )
             } else {
                 VStack {
                     Spacer()
@@ -439,6 +443,7 @@ struct CashFlowBars: View {
 struct BidirectionalCashFlowChart: View {
     let points: [WidgetCashFlowPoint]
     let period: WidgetPeriodOption
+    let resolvedPeriod: WidgetPeriod
 
     /// Grouping type based on period (day or month only, matches PanelView)
     private enum Grouping {
@@ -460,14 +465,14 @@ struct BidirectionalCashFlowChart: View {
         }
     }
 
-    /// Determine grouping based on period
+    /// Determine grouping based on resolved period (not WidgetPeriodOption)
     /// Matches PanelViewModel logic: day for week/month periods, month for year+
     private var grouping: Grouping {
-        switch period {
-        case .sameAsApp, .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
-            return .day  // Daily bars for week and month periods (sameAsApp defaults to day granularity)
+        switch resolvedPeriod {
+        case .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
+            return .day  // Daily bars for week and month periods
         case .thisYear, .lastYear, .allTime:
-            return .month
+            return .month  // Monthly bars for year+ periods
         }
     }
 
@@ -516,29 +521,42 @@ struct BidirectionalCashFlowChart: View {
         return expenseBottom...incomeTop
     }
 
-    /// X-axis domain with asymmetric padding
+    /// X-axis domain with extended padding for few data points
     private var xDomain: ClosedRange<Date> {
         guard let firstDate = groupedPoints.first?.date,
               let lastDate = groupedPoints.last?.date else {
             return Date()...Date()
         }
-        let calendar = Calendar.current
-        let paddedEnd = calendar.date(byAdding: .day, value: grouping.xPadding, to: lastDate) ?? lastDate
-        return firstDate...paddedEnd
+        return SmartAxisHelper.extendedXDomain(
+            dataPoints: groupedPoints.count,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            grouping: grouping.calendarUnit
+        )
     }
 
     /// Smart axis dates using SmartAxisHelper (up to 5 labels)
+    /// Uses actual data dates to prevent duplicate labels (e.g., "ene", "ene", "feb")
     private var smartAxisDates: [Date] {
-        guard let first = groupedPoints.first?.date,
-              let last = groupedPoints.last?.date else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(from: first, to: last)
+        guard !groupedPoints.isEmpty else { return [] }
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: groupedPoints.map(\.date),
+            grouping: grouping.calendarUnit
+        )
     }
 
-    /// Format axis label using SmartAxisHelper
+    /// Format axis label using SmartAxisHelper with grouping
     private func smartAxisLabel(for date: Date) -> String {
         guard let first = groupedPoints.first?.date,
               let last = groupedPoints.last?.date else { return "" }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: first, endDate: last)
+        // Use forceGrouping to ensure correct format for the grouping type
+        let forceGrouping: Calendar.Component? = grouping == .month ? .month : nil
+        return SmartAxisHelper.formatAxisLabel(
+            for: date,
+            startDate: first,
+            endDate: last,
+            forceGrouping: forceGrouping
+        )
     }
 
     /// Format Y value as K
@@ -601,10 +619,12 @@ struct BidirectionalCashFlowChart: View {
                 AxisGridLine()
                     .foregroundStyle(Color.secondary.opacity(0.1))
                 if let date = value.as(Date.self) {
-                    // Smart anchoring: first label left-aligned, last right-aligned
-                    let isFirst = date == smartAxisDates.first
-                    let isLast = date == smartAxisDates.last
-                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+                    // Smart anchoring based on data point count
+                    let anchor = SmartAxisHelper.axisLabelAnchor(
+                        for: date,
+                        in: smartAxisDates,
+                        dataPointCount: groupedPoints.count
+                    )
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))

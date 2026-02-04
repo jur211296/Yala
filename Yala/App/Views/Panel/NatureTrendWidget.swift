@@ -319,40 +319,67 @@ struct NatureTrendChartView: View {
     // MARK: - Smart Axis Logic
 
     /// Calculate smart axis dates for chart X-axis
+    /// Uses actual data dates to prevent duplicate labels (e.g., "ene", "ene", "feb")
     private var smartAxisDates: [Date] {
         guard !points.isEmpty else { return [] }
-        guard let firstDate = points.first?.date,
-            let lastDate = points.last?.date
-        else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+
+        let calendarUnit: Calendar.Component = {
+            switch grouping {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
+            }
+        }()
+
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: points.map(\.date),
+            grouping: calendarUnit
+        )
     }
 
-    /// Format axis label based on data span
+    /// Format axis label based on data span and grouping
     private func smartAxisLabel(for date: Date) -> String {
         guard let firstDate = points.first?.date,
             let lastDate = points.last?.date
         else { return "" }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+
+        // Determine calendar unit for forceGrouping
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil  // Use span-based logic for days
+            }
+        }()
+
+        return SmartAxisHelper.formatAxisLabel(
+            for: date,
+            startDate: firstDate,
+            endDate: lastDate,
+            forceGrouping: forceGrouping
+        )
     }
 
-    /// X-axis domain based on actual data range (not period range)
+    /// X-axis domain based on actual data range with extended padding for few data points
     private var dataXDomain: ClosedRange<Date> {
         guard let firstDate = points.first?.date,
             let lastDate = points.last?.date
         else { return interval.start...interval.end }
-        // Asymmetric padding: less on left, more on right (where Y-axis labels are)
-        let calendar = Calendar.current
-        let (startPadding, endPadding): (Int, Int) = {
+
+        let calendarUnit: Calendar.Component = {
             switch grouping {
-            case .day: return (0, 1)
-            case .week: return (0, 4)
-            case .month: return (0, 30)
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
             }
         }()
-        let paddedStart =
-            calendar.date(byAdding: .day, value: -startPadding, to: firstDate) ?? firstDate
-        let paddedEnd = calendar.date(byAdding: .day, value: endPadding, to: lastDate) ?? lastDate
-        return paddedStart...paddedEnd
+
+        return SmartAxisHelper.extendedXDomain(
+            dataPoints: points.count,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            grouping: calendarUnit
+        )
     }
 
     var body: some View {
@@ -406,10 +433,12 @@ struct NatureTrendChartView: View {
                     .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
 
                 if let date = value.as(Date.self) {
-                    // Use trailing anchor for last label to prevent truncation
-                    let isLast = date == smartAxisDates.last
-                    let isFirst = date == smartAxisDates.first
-                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+                    // Use smart anchor based on data count
+                    let anchor = SmartAxisHelper.axisLabelAnchor(
+                        for: date,
+                        in: smartAxisDates,
+                        dataPointCount: points.count
+                    )
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
