@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] e733518 fix(charts): prevent duplicate axis labels in bar charts
+- [2026-02-04] 3b4adcd feat(widgets): add widgetAccentable support for iOS 18 tinted mode
+- [2026-02-04] 9e86af6 fix(widgets): enable Control Center widget actions to trigger app flows
 - [2026-02-04] 875d4a6 refactor(icloud): simplify sync to always-on when iCloud available
 - [2026-02-04] eba675b refactor(widgets): remove deprecated period code and fix widget logic
 - [2026-02-04] f3c6f08 refactor(widgets): replace hardcoded values with WDS design tokens
@@ -86,8 +89,10 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Control Center iOS 18+ (10.5.G.3 completo)** - 3 ControlWidgets para iOS 18+: QuickExpenseControl (flujo Siri sin abrir app), VoiceEntryControl (abre app en modo voz), ImageEntryControl (abre app en modo imagen); @available(iOS 18.0, *) para compatibilidad; localizaciones 6 idiomas; 15 escenarios QA (Sección 29)
 - **iCloud Sync CloudKit (10.5.G.1 completo)** - Integración nativa SwiftData+CloudKit con ModelConfiguration(cloudKitContainerIdentifier:); toggle opt-in en Settings; SyncSettingsView con estado de sync y cuenta iCloud; containers iCloud.com.jurgenschmidt.yala y iCloud.com.jurgenschmidt.yala.dev; paso opcional en onboarding; Privacy Policy actualizada; 20 escenarios QA (Sección 30)
 - **Localización de Widgets (i18n)** - 13 widgets localizados con ~65 claves en es/en; AppIntents (title, description, @Parameter), WidgetPeriodOption enum, textos UI (headers, empty states, labels), Control Widgets iOS 18+; archivos eliminados (templates no usados)
+- **Soporte Modo Teñido iOS 18 (widgetAccentable)** - `.widgetAccentable()` agregado a 12 archivos de widgets para soporte de tinted mode; KPIs, progress bars, charts, iconos y montos se tiñen con el color de acento del usuario; pie charts excluidos (mantienen colores para diferenciación visual)
 - **Notificaciones Personalizadas (10.5.H)** - ScheduledPaymentNotificationService para pagos vencidos/hoy/próximos con nombre y monto ("Hoy vence: Netflix por $29.90"); BudgetAlertService mejorado con montos gastado/límite ("Presupuesto Comida al 50% — $500 de $1,000 gastados"); ReportNotificationService con datos reales calculados (balance, gastos, ingresos, top categoría); verificación de permisos y reprogramación automática al volver a la app o reinstalar; CurrencyUtils.symbol(for:) helper; localizaciones 6 idiomas
 - **iCloud Sync Always-On (10.5.G.1 mejora)** - Sync simplificado a always-on (sin toggle opt-in); Settings solo muestra estado (sin restart); detección de datos iCloud al instalar para saltar onboarding; pantalla "Sincronizando..." mientras espera datos (5s timeout); localizaciones completas en 6 idiomas para todas las claves iCloud
+- **Fix etiquetas duplicadas en gráficos de barras** - Nueva función `calculateSmartAxisDates(forDataDates:grouping:)` en SmartAxisHelper que usa fechas reales de datos en vez de interpolación lineal para agrupación mes/semana; previene etiquetas duplicadas como "ene", "ene", "feb" cuando hay pocos datos; actualizado en CashFlowWidget, NatureTrendWidget (app y widget)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -140,14 +145,12 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - Fix en `OnboardingView.swift:441-445` y `NotificationsSettingsView.swift:125-147`
 - También corregido bug de duplicación de notificaciones en onboarding
 
-**BUG-2: Control Center - widgets no funcionan** 🔴 BLOQUEADO
-- Los 3 ControlWidgets aparecen pero NO ejecutan ninguna acción al presionarlos
-- El intent `perform()` nunca se ejecuta (verificado con logs)
-- Error persistente: `Using kCFPreferencesAnyUser with a container is only allowed for System Containers`
-- App Group registrado y habilitado en ambos targets, pero error persiste
-- **Documentación completa:** `.planning/BUG-2-CONTROL-CENTER.md`
-- **Alternativa funcionando:** Atajos de Siri (VoiceEntry, ImageEntry)
-- Archivo: `YalaWidgets/ControlWidgets.swift`
+**BUG-2: Control Center - widgets no funcionan** ✅ COMPLETADO
+- Causa raíz: Intent file solo en widget extension target, no en main app
+- Fix: Crear `Shared/ControlCenterIntents.swift` con target membership dual (Yala + YalaWidgetsExtension)
+- También corregido: UserDefaults keys incorrectas (`enableVoiceInput` → `voiceInputEnabled`)
+- Agregado case "new-transaction" faltante en AppBootstrapper
+- Commit: 9e86af6
 
 **BUG-3: WidgetKit - rediseño completo** ✅ COMPLETADO
 - ✅ Fases 1-5 completadas (infraestructura, 13 widgets implementados)
@@ -360,7 +363,7 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: iCloud Sync simplificado a siempre activo
+Stopped at: Fix etiquetas duplicadas en gráficos de barras (SmartAxisHelper grouping-aware)
 Next step: Preparar release V1.1
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
