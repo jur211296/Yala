@@ -38,8 +38,8 @@ final class ReportNotificationService {
             let data = calculateReportData(config: report.reportConfig, context: context)
 
             await NotificationService.shared.sendTestNotification(
-                title: "Yala - \(report.name)",
-                body: formatReportBody(report.reportConfig, data: data)
+                title: report.name,
+                body: formatReportBody(report.reportConfig, reportType: report.notificationType, data: data)
             )
         }
     }
@@ -143,7 +143,7 @@ final class ReportNotificationService {
         }
     }
 
-    private func formatReportBody(_ config: ReportConfig, data: ReportData) -> String {
+    private func formatReportBody(_ config: ReportConfig, reportType: NotificationType, data: ReportData) -> String {
         let currencyCode = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
         let symbol = CurrencyUtils.symbol(for: currencyCode)
 
@@ -151,11 +151,28 @@ final class ReportNotificationService {
         case .balance:
             return L10n.Notifications.reportBalance("\(symbol)\(data.balance.formatted())")
         case .expenses:
+            // Empty state check
+            if data.totalExpense == 0 {
+                switch reportType {
+                case .dailyReport: return L10n.Notifications.emptyExpensesDaily
+                case .weeklyReport: return L10n.Notifications.emptyExpensesWeekly
+                case .monthlyReport: return L10n.Notifications.emptyExpensesMonthly
+                default: return L10n.Notifications.emptyExpensesDaily
+                }
+            }
             return L10n.Notifications.reportExpenses("\(symbol)\(data.totalExpense.formatted())")
         case .income:
+            // Empty state check
+            if data.totalIncome == 0 {
+                return L10n.Notifications.emptyIncome
+            }
             return L10n.Notifications.reportIncome("\(symbol)\(data.totalIncome.formatted())")
         case .topCategory:
-            return L10n.Notifications.reportTopCategory(data.topCategory ?? "—")
+            // Empty state check
+            if data.topCategory == nil {
+                return L10n.Notifications.emptyTopCategory
+            }
+            return L10n.Notifications.reportTopCategory(data.topCategory!)
         }
     }
 

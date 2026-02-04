@@ -17,6 +17,7 @@ struct BudgetEditorView: View {
     @State private var viewModel = BudgetEditorViewModel()
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @AppStorage("budgetAlertsEnabled") private var budgetAlertsGloballyEnabled: Bool = false
 
     let budget: Budget?
 
@@ -283,6 +284,19 @@ struct BudgetEditorView: View {
                 }
                 .tint(Color.brandPrimary)
                 .padding()
+
+                // Hint when global notifications are disabled
+                if !budgetAlertsGloballyEnabled {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "info.circle")
+                            .font(.caption)
+                        Text(L10n.Budgets.alertsGlobalDisabledHint)
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.md)
+                }
 
                 if alertEnabled {
                     SubsectionDivider()

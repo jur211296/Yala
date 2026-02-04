@@ -223,7 +223,7 @@ final class BudgetAlertService {
         }
 
         await NotificationService.shared.sendTestNotification(
-            title: "Yala",
+            title: budgetName,
             body: message
         )
     }

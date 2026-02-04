@@ -351,7 +351,7 @@ final class NotificationItem {
                 hour: NotificationType.endOfDay.defaultTime.hour,
                 minute: NotificationType.endOfDay.defaultTime.minute,
                 type: .endOfDay,
-                isActive: true,
+                isActive: false,
                 sortOrder: 0
             ),
             NotificationItem(
@@ -401,7 +401,7 @@ final class NotificationItem {
                 hour: NotificationType.scheduledPayments.defaultTime.hour,
                 minute: NotificationType.scheduledPayments.defaultTime.minute,
                 type: .scheduledPayments,
-                isActive: true,
+                isActive: false,
                 sortOrder: 5
             ),
             NotificationItem(

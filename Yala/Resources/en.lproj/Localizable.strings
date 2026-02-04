@@ -395,6 +395,7 @@
 "budgets.alerts.message.75" = "Budget \"%@\" at 75%% — %@ of %@ spent";
 "budgets.alerts.message.90" = "Warning: \"%@\" almost depleted — %@ of %@";
 "budgets.alerts.message.100" = "Budget \"%@\" depleted — You spent %@ of %@";
+"budgets.alerts.globalDisabledHint" = "Enable budget alerts in Profile > Notifications to receive them";
 "budgets.new" = "New Budget";
 "budgets.edit" = "Edit Budget";
 "budgets.delete" = "Delete Budget";
@@ -1648,6 +1649,13 @@
 "notifications.report.expenses" = "You spent: %@";
 "notifications.report.income" = "You received: %@";
 "notifications.report.topCategory" = "Your top expense: %@";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "Quiet day! No expenses ✨";
+"notifications.report.empty.expenses.weekly" = "Quiet week! No expenses recorded ✨";
+"notifications.report.empty.expenses.monthly" = "Quiet month! No expenses recorded ✨";
+"notifications.report.empty.income" = "No income recorded this period";
+"notifications.report.empty.topCategory" = "No expenses! Your wallet rested 😊";
 
 // MARK: - iCloud Sync
 

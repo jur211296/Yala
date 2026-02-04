@@ -393,6 +393,7 @@
 "budgets.alerts.message.75" = "Orcamento \"%@\" em 75%% — %@ de %@ gastos";
 "budgets.alerts.message.90" = "Atencao: \"%@\" quase esgotado — %@ de %@";
 "budgets.alerts.message.100" = "Orcamento \"%@\" esgotado — Voce gastou %@ de %@";
+"budgets.alerts.globalDisabledHint" = "Ative os alertas de orcamento em Perfil > Notificacoes para recebe-los";
 "budgets.new" = "Novo orcamento";
 "budgets.edit" = "Editar orcamento";
 "budgets.delete" = "Eliminar orcamento";
@@ -1618,6 +1619,13 @@
 "notifications.report.expenses" = "Voce gastou: %@";
 "notifications.report.income" = "Voce recebeu: %@";
 "notifications.report.topCategory" = "Seu maior gasto: %@";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "Dia tranquilo! Sem gastos ✨";
+"notifications.report.empty.expenses.weekly" = "Semana tranquila! Sem gastos registrados ✨";
+"notifications.report.empty.expenses.monthly" = "Mês tranquilo! Sem gastos registrados ✨";
+"notifications.report.empty.income" = "Sem receitas registradas neste período";
+"notifications.report.empty.topCategory" = "Sem gastos! Sua carteira descansou 😊";
 
 // Test report samples
 "notifications.testReport.balance" = "Seu saldo atual: R$ 1.250,00";

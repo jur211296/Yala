@@ -154,7 +154,7 @@ final class ScheduledPaymentNotificationService {
         }
 
         await NotificationService.shared.sendTestNotification(
-            title: "Yala",
+            title: payment.name,
             body: message
         )
     }

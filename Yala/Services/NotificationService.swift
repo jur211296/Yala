@@ -78,7 +78,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Create content
         let content = UNMutableNotificationContent()
-        content.title = "Yala"
+        content.title = item.name
         content.body = item.displayText
         content.sound = .default
 

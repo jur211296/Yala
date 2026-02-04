@@ -1619,6 +1619,9 @@ enum L10n {
         static func alertMessage100(_ name: String, _ spent: String, _ limit: String) -> String {
             String(format: NSLocalizedString("budgets.alerts.message.100", comment: ""), name, spent, limit)
         }
+
+        /// Hint when budget alerts are globally disabled
+        static var alertsGlobalDisabledHint: String { NSLocalizedString("budgets.alerts.globalDisabledHint", comment: "") }
     }
 
     // MARK: - Planning
@@ -2494,6 +2497,13 @@ enum L10n {
         static func reportTopCategory(_ category: String) -> String {
             String(format: NSLocalizedString("notifications.report.topCategory", comment: ""), category)
         }
+
+        // Empty state messages
+        static var emptyExpensesDaily: String { NSLocalizedString("notifications.report.empty.expenses.daily", comment: "") }
+        static var emptyExpensesWeekly: String { NSLocalizedString("notifications.report.empty.expenses.weekly", comment: "") }
+        static var emptyExpensesMonthly: String { NSLocalizedString("notifications.report.empty.expenses.monthly", comment: "") }
+        static var emptyIncome: String { NSLocalizedString("notifications.report.empty.income", comment: "") }
+        static var emptyTopCategory: String { NSLocalizedString("notifications.report.empty.topCategory", comment: "") }
     }
 
     // MARK: - Weekday

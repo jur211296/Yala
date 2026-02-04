@@ -395,6 +395,7 @@
 "budgets.alerts.message.75" = "Presupuesto \"%@\" al 75%% — %@ de %@ gastados";
 "budgets.alerts.message.90" = "Cuidado: \"%@\" casi agotado — %@ de %@";
 "budgets.alerts.message.100" = "Presupuesto \"%@\" agotado — Gastaste %@ de %@";
+"budgets.alerts.globalDisabledHint" = "Activa las alertas de presupuesto en Perfil > Notificaciones para recibirlas";
 "budgets.new" = "Nuevo presupuesto";
 "budgets.edit" = "Editar presupuesto";
 "budgets.delete" = "Eliminar presupuesto";
@@ -1648,6 +1649,13 @@
 "notifications.report.expenses" = "Gastaste: %@";
 "notifications.report.income" = "Recibiste: %@";
 "notifications.report.topCategory" = "Tu mayor gasto: %@";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "¡Día tranquilo! No hubo gastos ✨";
+"notifications.report.empty.expenses.weekly" = "¡Semana tranquila! No registraste gastos ✨";
+"notifications.report.empty.expenses.monthly" = "¡Mes tranquilo! No registraste gastos ✨";
+"notifications.report.empty.income" = "Sin ingresos registrados este período";
+"notifications.report.empty.topCategory" = "¡Sin gastos! Tu bolsillo descansó 😊";
 
 // MARK: - iCloud Sync
 

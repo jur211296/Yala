@@ -393,6 +393,7 @@
 "budgets.alerts.message.75" = "Budget \"%@\" a 75%% — %@ sur %@ depenses";
 "budgets.alerts.message.90" = "Attention: \"%@\" presque epuise — %@ sur %@";
 "budgets.alerts.message.100" = "Budget \"%@\" epuise — %@ sur %@ depenses";
+"budgets.alerts.globalDisabledHint" = "Active les alertes de budget dans Profil > Notifications pour les recevoir";
 "budgets.new" = "Nouveau budget";
 "budgets.edit" = "Modifier le budget";
 "budgets.delete" = "Supprimer le budget";
@@ -1618,6 +1619,13 @@
 "notifications.report.expenses" = "Tu as depense: %@";
 "notifications.report.income" = "Tu as recu: %@";
 "notifications.report.topCategory" = "Ta plus grosse depense: %@";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "Journée tranquille ! Pas de dépenses ✨";
+"notifications.report.empty.expenses.weekly" = "Semaine tranquille ! Pas de dépenses enregistrées ✨";
+"notifications.report.empty.expenses.monthly" = "Mois tranquille ! Pas de dépenses enregistrées ✨";
+"notifications.report.empty.income" = "Pas de revenus enregistrés cette période";
+"notifications.report.empty.topCategory" = "Pas de dépenses ! Ton portefeuille s'est reposé 😊";
 
 // Test report samples
 "notifications.testReport.balance" = "Ton solde actuel : 1 250,00 €";
