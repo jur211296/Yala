@@ -362,8 +362,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Refactor de widgets (tokens WDS para fonts y dimensiones hardcodeadas)
-Next step: QA manual de widgets en simulador o BUG-2 Control Center
+Stopped at: QA manual completado (Secciones 25-28)
+Next step: REVIEW-1 iCloud Sync o preparar release V1.1
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
@@ -401,13 +401,14 @@ Resume context:
   - G.1: iCloud Sync con SwiftData nativo (44 archivos)
   - G.2: 4 WidgetKit widgets (26 archivos)
   - G.3: 3 ControlWidgets iOS 18+ (11 archivos)
+- **QA Completado:**
+  - Sección 25: Fase 10.5.B y 10.5.C ✅
+  - Sección 26: Modal Unificado Inbox (10.5.F) ✅
+  - Sección 27: Alertas de Presupuestos (10.5.D.1) ✅
+  - Sección 28: Widgets iOS (10.5.G.2) ✅
 - **QA Pendiente:**
-  - Sección 25: Fase 10.5.B y 10.5.C
-  - Sección 26: Modal Unificado Inbox (10.5.F)
-  - Sección 27: Alertas de Presupuestos (10.5.D.1)
-  - Sección 28: Widgets iOS (10.5.G.2)
-  - Sección 29: Control Center (10.5.G.3)
-  - Sección 30: iCloud Sync (10.5.G.1)
+  - Sección 29: Control Center (10.5.G.3) — bloqueado por BUG-2
+  - Sección 30: iCloud Sync (10.5.G.1) — pendiente REVIEW-1
 - V1.0 completa ✅ (Fases 1-9)
 - V1.1 completa ✅ (Fase 8 y Fase 10)
 - Auditoría de código: CERRADA ✅

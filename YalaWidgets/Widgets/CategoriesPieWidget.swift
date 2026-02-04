@@ -91,12 +91,12 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
         // Limit to 12 categories (matching PanelView), group the rest as "Others"
         var categories = summary?.topCategories ?? []
         if categories.count > 12 {
-            let top5 = Array(categories.prefix(12))
-            let othersAmount = categories.dropFirst(5).reduce(0) { $0 + $1.amount }
+            let top12 = Array(categories.prefix(12))
+            let othersAmount = categories.dropFirst(12).reduce(0) { $0 + $1.amount }
             let totalExpense = summary?.totalExpense ?? 1
             let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
 
-            categories = top5 + [
+            categories = top12 + [
                 WidgetCategory(
                     id: "others",
                     name: "Otros",

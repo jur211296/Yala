@@ -429,21 +429,19 @@ struct CashFlowBars: View {
 }
 
 /// Bidirectional bar chart showing income/expense using Swift Charts
-/// Groups data according to period: week→day, month→week, quarter/year→month
+/// Groups data according to period: week/month→day, year+→month (matches PanelView)
 struct BidirectionalCashFlowChart: View {
     let points: [WidgetCashFlowPoint]
     let period: WidgetPeriodOption
 
-    /// Grouping type based on period
+    /// Grouping type based on period (day or month only, matches PanelView)
     private enum Grouping {
         case day
-        case week
         case month
 
         var calendarUnit: Calendar.Component {
             switch self {
             case .day: return .day
-            case .week: return .weekOfYear
             case .month: return .month
             }
         }
@@ -451,19 +449,17 @@ struct BidirectionalCashFlowChart: View {
         var xPadding: Int {
             switch self {
             case .day: return 1
-            case .week: return 4
             case .month: return 15
             }
         }
     }
 
     /// Determine grouping based on period
+    /// Matches PanelViewModel logic: day for week/month periods, month for year+
     private var grouping: Grouping {
         switch period {
-        case .thisWeek, .last7Days:
-            return .day
-        case .last30Days, .thisMonth, .lastMonth:
-            return .week
+        case .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
+            return .day  // Daily bars for week and month periods
         case .thisYear, .lastYear, .allTime:
             return .month
         }
@@ -481,9 +477,6 @@ struct BidirectionalCashFlowChart: View {
             switch grouping {
             case .day:
                 groupDate = calendar.startOfDay(for: point.date)
-            case .week:
-                let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: point.date)
-                groupDate = calendar.date(from: components) ?? point.date
             case .month:
                 let components = calendar.dateComponents([.year, .month], from: point.date)
                 groupDate = calendar.date(from: components) ?? point.date
