@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] b69b8b1 fix(widgets): remove force unwraps in dateInterval()
+- [2026-02-04] 7f678f5 fix(widgets): calculate historical balance for past periods
+- [2026-02-04] 919166a fix(widgets): precalculate summaries for all periods
 - [2026-02-04] 5427940 fix(widgets): align WidgetPeriod with DetailPeriod for correct data
 - [2026-02-04] 1399aa3 fix(widgets): update cache on all transaction-affecting actions
 - [2026-02-03] 5bdb5c2 fix(widgets): use dynamic URL scheme for deeplinks

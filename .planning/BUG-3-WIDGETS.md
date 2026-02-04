@@ -822,7 +822,7 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 | 2026-02-03 | - | Fase 6.5: Rediseño widgets Medium (Balance, Expense) con Swift Charts idéntico a PanelView, ejes reducidos (8pt), color Balance=electricIndigo |
 | 2026-02-03 | CF.1 | CashFlow Medium rediseñado: header (título+subtítulo izq, KPI derecha), barras horizontales full-width idénticas a PanelView compacto |
 | 2026-02-03 | CF.2 | Fase 6.3 completada - gráfica CashFlow Large igual a PanelView (Swift Charts, agrupamiento, línea net flow, SmartAxisHelper, backgrounds yalaCard) |
-| 2026-02-04 | TP.1 | Fase 6.8 - WidgetPeriod alineado con DetailPeriod (8 períodos), firstWeekday sync |
+| 2026-02-04 | TP.1 | Fase 6.8 - WidgetPeriod alineado con DetailPeriod, periodSummaries precalculados, balance histórico |
 | 2026-02-03 | BW.2, EW.2, CF.1, TC.2, TS.1 | Fase 6.3 parcial - issues aceptados como están, enfoque en CF.2 |
 | 2026-02-03 | G.5 | Fase 6.4 completada - deeplinks dinámicos con WidgetURLHelper, ExpenseWidget corregido |
 | 2026-02-03 | G.1, G.3 | Fase 6.2 parcial - padding 4pt, header inline para Medium, sin decimales en montos, layout Medium restructurado |
@@ -842,7 +842,10 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
   - WidgetPeriod reducido de 11 a 8 casos (igual que DetailPeriod sin custom)
   - dateInterval() ahora usa endOfToday (inclusive) igual que DetailPeriod
   - Períodos finales: thisWeek, last7Days, last30Days, thisMonth, lastMonth, thisYear, lastYear, allTime
-- **Commit:** `5427940`
+  - periodSummaries: diccionario con summaries precalculados para todos los períodos
+  - periodBalance: balance histórico al final del período (no balance actual)
+  - Force unwraps eliminados en dateInterval() con fallbacks seguros
+- **Commits:** `5427940`, `919166a`, `7f678f5`, `b69b8b1`
 
 ---
 
