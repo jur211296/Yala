@@ -109,7 +109,7 @@ struct ScheduledPaymentsWidgetView: View {
         VStack(alignment: .leading, spacing: WDS.Spacing.md) {
             // Header
             WidgetHeader(
-                title: "Próximos pagos",
+                title: String(localized: "widget.ui.upcomingPayments", bundle: .main),
                 icon: "calendar.badge.clock"
             )
 
@@ -121,7 +121,7 @@ struct ScheduledPaymentsWidgetView: View {
                         Image(systemName: "checkmark.circle")
                             .font(.title2)
                             .foregroundStyle(WidgetColors.success)
-                        Text("Sin pagos pendientes")
+                        Text("widget.ui.noPayments", bundle: .main)
                             .font(WDS.Typography.body)
                             .foregroundStyle(.secondary)
                     }
@@ -213,15 +213,15 @@ struct PaymentRowView: View {
 
     private var formattedDate: String {
         if payment.isOverdue {
-            return "Vencido"
+            return String(localized: "widget.ui.overdue", bundle: .main)
         }
 
         let calendar = Calendar.current
 
         if calendar.isDateInToday(payment.nextDueDate) {
-            return "Hoy"
+            return String(localized: "widget.ui.today", bundle: .main)
         } else if calendar.isDateInTomorrow(payment.nextDueDate) {
-            return "Mañana"
+            return String(localized: "widget.ui.tomorrow", bundle: .main)
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"
@@ -257,8 +257,8 @@ struct ScheduledPaymentsWidget: Widget {
             ScheduledPaymentsWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Próximos pagos")
-        .description("Tus próximos pagos y suscripciones")
+        .configurationDisplayName("widget.gallery.scheduledPayments")
+        .description("widget.gallery.scheduledPayments.desc")
         .supportedFamilies([.systemMedium])
     }
 }

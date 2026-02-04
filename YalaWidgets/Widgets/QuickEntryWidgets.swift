@@ -52,7 +52,7 @@ struct QuickManualEntryWidgetView: View {
                     .foregroundColor(WidgetColors.electricIndigo)
             }
 
-            Text("Nuevo registro")
+            Text("widget.ui.newRecord", bundle: .main)
                 .font(WDS.Typography.label)
                 .foregroundStyle(.primary)
 
@@ -75,8 +75,8 @@ struct QuickManualEntryWidget: Widget {
             QuickManualEntryWidgetView()
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Nuevo registro")
-        .description("Registra un gasto o ingreso manualmente")
+        .configurationDisplayName("widget.gallery.quickManual")
+        .description("widget.gallery.quickManual.desc")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -98,7 +98,7 @@ struct QuickVoiceEntryWidgetView: View {
                     .foregroundColor(WidgetColors.yalaTeal)
             }
 
-            Text("Registro por voz")
+            Text("widget.ui.voiceRecord", bundle: .main)
                 .font(WDS.Typography.label)
                 .foregroundStyle(.primary)
 
@@ -121,8 +121,8 @@ struct QuickVoiceEntryWidget: Widget {
             QuickVoiceEntryWidgetView()
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Registro por voz")
-        .description("Dicta tu gasto o ingreso")
+        .configurationDisplayName("widget.gallery.quickVoice")
+        .description("widget.gallery.quickVoice.desc")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -144,7 +144,7 @@ struct QuickImageEntryWidgetView: View {
                     .foregroundColor(WidgetColors.hotPink)
             }
 
-            Text("Escanear recibo")
+            Text("widget.ui.scanReceipt", bundle: .main)
                 .font(WDS.Typography.label)
                 .foregroundStyle(.primary)
 
@@ -167,8 +167,8 @@ struct QuickImageEntryWidget: Widget {
             QuickImageEntryWidgetView()
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Escanear recibo")
-        .description("Registra desde una foto o recibo")
+        .configurationDisplayName("widget.gallery.quickImage")
+        .description("widget.gallery.quickImage.desc")
         .supportedFamilies([.systemSmall])
     }
 }

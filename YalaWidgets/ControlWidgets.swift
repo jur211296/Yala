@@ -20,11 +20,11 @@ struct ManualEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.manualEntry") {
             ControlWidgetButton(action: OpenManualEntryIntent()) {
-                Label("Nuevo gasto", systemImage: "plus.circle.fill")
+                Label("widget.control.newExpense", systemImage: "plus.circle.fill")
             }
         }
-        .displayName("Nuevo gasto")
-        .description("Abre Yala para registrar un gasto")
+        .displayName("widget.control.newExpense")
+        .description("widget.control.newExpense.desc")
     }
 }
 
@@ -35,11 +35,11 @@ struct VoiceEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.voiceEntry") {
             ControlWidgetButton(action: OpenVoiceEntryIntent()) {
-                Label("Por voz", systemImage: "mic.fill")
+                Label("widget.control.voiceLabel", systemImage: "mic.fill")
             }
         }
-        .displayName("Gasto por voz")
-        .description("Dicta tu gasto a Yala")
+        .displayName("widget.control.voiceExpense")
+        .description("widget.control.voiceExpense.desc")
     }
 }
 
@@ -50,11 +50,11 @@ struct ImageEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.imageEntry") {
             ControlWidgetButton(action: OpenImageEntryIntent()) {
-                Label("Por foto", systemImage: "camera.fill")
+                Label("widget.control.photoLabel", systemImage: "camera.fill")
             }
         }
-        .displayName("Gasto por foto")
-        .description("Escanea un recibo con Yala")
+        .displayName("widget.control.photoExpense")
+        .description("widget.control.photoExpense.desc")
     }
 }
 
@@ -62,8 +62,8 @@ struct ImageEntryControl: ControlWidget {
 
 @available(iOS 18.0, *)
 struct OpenManualEntryIntent: AppIntent {
-    static var title: LocalizedStringResource = "Nuevo gasto"
-    static var description = IntentDescription("Abre Yala para registrar un gasto")
+    static var title: LocalizedStringResource = "widget.control.newExpense"
+    static var description = IntentDescription("widget.control.newExpense.desc")
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
@@ -74,8 +74,8 @@ struct OpenManualEntryIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct OpenVoiceEntryIntent: AppIntent {
-    static var title: LocalizedStringResource = "Gasto por voz"
-    static var description = IntentDescription("Dicta tu gasto a Yala")
+    static var title: LocalizedStringResource = "widget.control.voiceExpense"
+    static var description = IntentDescription("widget.control.voiceExpense.desc")
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
@@ -85,8 +85,8 @@ struct OpenVoiceEntryIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct OpenImageEntryIntent: AppIntent {
-    static var title: LocalizedStringResource = "Gasto por foto"
-    static var description = IntentDescription("Escanea un recibo con Yala")
+    static var title: LocalizedStringResource = "widget.control.photoExpense"
+    static var description = IntentDescription("widget.control.photoExpense.desc")
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {

@@ -1,0 +1,107 @@
+/*
+  Localizable.strings (English)
+  YalaWidgets
+
+  English localization for widget texts.
+*/
+
+// MARK: - Gallery (widget gallery names and descriptions)
+"widget.gallery.scheduledPayments" = "Upcoming Payments";
+"widget.gallery.scheduledPayments.desc" = "Your upcoming payments and subscriptions";
+"widget.gallery.quickManual" = "New Record";
+"widget.gallery.quickManual.desc" = "Record an expense or income manually";
+"widget.gallery.quickVoice" = "Voice Record";
+"widget.gallery.quickVoice.desc" = "Dictate your expense or income";
+"widget.gallery.quickImage" = "Scan Receipt";
+"widget.gallery.quickImage.desc" = "Record from a photo or receipt";
+"widget.gallery.cashFlow" = "Cash Flow";
+"widget.gallery.cashFlow.desc" = "Your net cash flow";
+"widget.gallery.balance" = "Balance";
+"widget.gallery.balance.desc" = "Your total balance with trend";
+"widget.gallery.budgets" = "Budgets";
+"widget.gallery.budgets.desc" = "Your budget progress";
+"widget.gallery.latestRecords" = "Latest Records";
+"widget.gallery.latestRecords.desc" = "Your most recent transactions";
+"widget.gallery.expense" = "Expenses";
+"widget.gallery.expense.desc" = "Your total expenses for the period";
+"widget.gallery.categoriesPie" = "Categories (Pie)";
+"widget.gallery.categoriesPie.desc" = "Expense distribution by category";
+"widget.gallery.subcategoriesPie" = "Subcategories (Pie)";
+"widget.gallery.subcategoriesPie.desc" = "Expense distribution by subcategory";
+"widget.gallery.topCategories" = "Top Categories";
+"widget.gallery.topCategories.desc" = "Your categories with most expenses";
+"widget.gallery.topSubcategories" = "Top Subcategories";
+"widget.gallery.topSubcategories.desc" = "Your subcategories with most expenses";
+
+// MARK: - Intent titles and descriptions
+"widget.intent.cashFlow.title" = "Cash Flow";
+"widget.intent.cashFlow.desc" = "Shows your net cash flow";
+"widget.intent.balance.title" = "Balance";
+"widget.intent.balance.desc" = "Shows your total balance";
+"widget.intent.expense.title" = "Expenses";
+"widget.intent.expense.desc" = "Shows your total expenses";
+"widget.intent.categoriesPie.title" = "Categories (Pie)";
+"widget.intent.categoriesPie.desc" = "Expense distribution by category";
+"widget.intent.subcategoriesPie.title" = "Subcategories (Pie)";
+"widget.intent.subcategoriesPie.desc" = "Expense distribution by subcategory";
+"widget.intent.topCategories.title" = "Top Categories";
+"widget.intent.topCategories.desc" = "Shows your categories with most expenses";
+"widget.intent.topSubcategories.title" = "Top Subcategories";
+"widget.intent.topSubcategories.desc" = "Shows your subcategories with most expenses";
+
+// MARK: - UI (texts in widget views)
+"widget.ui.noPayments" = "No pending payments";
+"widget.ui.noBudgets" = "No budgets";
+"widget.ui.noRecords" = "No records";
+"widget.ui.noExpenses" = "No expenses";
+"widget.ui.noData" = "No data";
+"widget.ui.notEnoughData" = "Not enough data";
+"widget.ui.income" = "Income";
+"widget.ui.expenses" = "Expenses";
+"widget.ui.balance" = "Balance";
+"widget.ui.netFlow" = "Net Flow";
+"widget.ui.cashFlow" = "Cash Flow";
+"widget.ui.total" = "Total";
+"widget.ui.ofLimit" = "of %@";
+"widget.ui.newRecord" = "New Record";
+"widget.ui.voiceRecord" = "Voice Record";
+"widget.ui.scanReceipt" = "Scan Receipt";
+"widget.ui.upcomingPayments" = "Upcoming Payments";
+"widget.ui.budgets" = "Budgets";
+"widget.ui.latestRecords" = "Latest Records";
+"widget.ui.categories" = "Categories";
+"widget.ui.subcategories" = "Subcategories";
+"widget.ui.topCategories" = "Top Categories";
+"widget.ui.topSubcategories" = "Top Subcategories";
+"widget.ui.noNote" = "No note";
+
+// MARK: - Date labels
+"widget.ui.overdue" = "Overdue";
+"widget.ui.today" = "Today";
+"widget.ui.tomorrow" = "Tomorrow";
+
+// MARK: - Period (period selector)
+"widget.period.type" = "Period";
+"widget.period.thisWeek" = "This Week";
+"widget.period.last7Days" = "Last 7 Days";
+"widget.period.last30Days" = "Last 30 Days";
+"widget.period.thisMonth" = "This Month";
+"widget.period.lastMonth" = "Last Month";
+"widget.period.thisYear" = "This Year";
+"widget.period.lastYear" = "Last Year";
+"widget.period.allTime" = "All Time";
+
+// MARK: - Payment Category
+"widget.paymentCategory.all" = "All";
+"widget.paymentCategory.recurring" = "Recurring";
+"widget.paymentCategory.subscription" = "Subscriptions";
+
+// MARK: - Control Widgets
+"widget.control.newExpense" = "New Expense";
+"widget.control.newExpense.desc" = "Open Yala to record an expense";
+"widget.control.voiceExpense" = "Voice Expense";
+"widget.control.voiceExpense.desc" = "Dictate your expense to Yala";
+"widget.control.photoExpense" = "Photo Expense";
+"widget.control.photoExpense.desc" = "Scan a receipt with Yala";
+"widget.control.voiceLabel" = "Voice";
+"widget.control.photoLabel" = "Photo";

@@ -14,10 +14,10 @@ import Charts
 // MARK: - Configuration Intent
 
 struct ExpenseWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Gastos" }
-    static var description: IntentDescription { "Muestra tus gastos totales" }
+    static var title: LocalizedStringResource { "widget.intent.expense.title" }
+    static var description: IntentDescription { "widget.intent.expense.desc" }
 
-    @Parameter(title: "Período", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .thisMonth)
     var period: WidgetPeriodOption
 }
 
@@ -124,8 +124,8 @@ struct SmallExpenseView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
             WidgetHeader(
-                title: "Gastos",
-                subtitle: entry.period.toWidgetPeriod.displayName,
+                title: String(localized: "widget.ui.expenses", bundle: .main),
+                subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                 icon: "arrow.down.circle.fill"
             )
 
@@ -213,10 +213,10 @@ struct MediumExpenseView: View {
             // Header row: title+subtitle left, KPI right
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                    Text("Gastos")
+                    Text("widget.ui.expenses", bundle: .main)
                         .font(WDS.Typography.title)
                         .foregroundStyle(.primary)
-                    Text(entry.period.toWidgetPeriod.displayName)
+                    Text(entry.period.toWidgetPeriod.localizedDisplayName)
                         .font(WDS.Typography.subtitle)
                         .foregroundStyle(.secondary)
                 }
@@ -295,7 +295,7 @@ struct MediumExpenseView: View {
                     Image(systemName: "chart.line.downtrend.xyaxis")
                         .font(.title2)
                         .foregroundStyle(.tertiary)
-                    Text("Sin datos")
+                    Text("widget.ui.noData", bundle: .main)
                         .font(WDS.Typography.tiny)
                         .foregroundStyle(.tertiary)
                 }
@@ -322,8 +322,8 @@ struct ExpenseWidget: Widget {
             ExpenseWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Gastos")
-        .description("Tus gastos totales del período")
+        .configurationDisplayName("widget.gallery.expense")
+        .description("widget.gallery.expense.desc")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

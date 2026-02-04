@@ -14,10 +14,10 @@ import Charts
 // MARK: - Configuration Intent
 
 struct CategoriesPieWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Categorías (Pie)" }
-    static var description: IntentDescription { "Distribución de gastos por categoría" }
+    static var title: LocalizedStringResource { "widget.intent.categoriesPie.title" }
+    static var description: IntentDescription { "widget.intent.categoriesPie.desc" }
 
-    @Parameter(title: "Período", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .thisMonth)
     var period: WidgetPeriodOption
 }
 
@@ -130,15 +130,15 @@ struct CategoriesPieWidgetView: View {
             // Header with total
             HStack {
                 WidgetHeader(
-                    title: "Categorías",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
+                    title: String(localized: "widget.ui.categories", bundle: .main),
+                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                     icon: "chart.pie.fill"
                 )
 
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text("Total")
+                    Text("widget.ui.total", bundle: .main)
                         .font(WDS.Typography.tiny)
                         .foregroundStyle(.secondary)
                     Text(formattedTotal)
@@ -155,7 +155,7 @@ struct CategoriesPieWidgetView: View {
                         Image(systemName: "chart.pie")
                             .font(.largeTitle)
                             .foregroundStyle(.tertiary)
-                        Text("Sin gastos")
+                        Text("widget.ui.noExpenses", bundle: .main)
                             .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
@@ -213,8 +213,8 @@ struct CategoriesPieWidget: Widget {
             CategoriesPieWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Categorías (Pie)")
-        .description("Distribución de gastos por categoría")
+        .configurationDisplayName("widget.gallery.categoriesPie")
+        .description("widget.gallery.categoriesPie.desc")
         .supportedFamilies([.systemLarge])
     }
 }

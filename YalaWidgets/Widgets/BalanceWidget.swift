@@ -14,10 +14,10 @@ import Charts
 // MARK: - Configuration Intent
 
 struct BalanceWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Balance" }
-    static var description: IntentDescription { "Muestra tu balance total" }
+    static var title: LocalizedStringResource { "widget.intent.balance.title" }
+    static var description: IntentDescription { "widget.intent.balance.desc" }
 
-    @Parameter(title: "Período", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .thisMonth)
     var period: WidgetPeriodOption
 }
 
@@ -34,19 +34,19 @@ enum WidgetPeriodOption: String, AppEnum {
     case allTime
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        "Período"
+        TypeDisplayRepresentation(name: "widget.period.type")
     }
 
     static var caseDisplayRepresentations: [WidgetPeriodOption: DisplayRepresentation] {
         [
-            .thisWeek: "Esta semana",
-            .last7Days: "Últimos 7 días",
-            .last30Days: "Últimos 30 días",
-            .thisMonth: "Este mes",
-            .lastMonth: "Mes pasado",
-            .thisYear: "Este año",
-            .lastYear: "Año pasado",
-            .allTime: "Todo el tiempo"
+            .thisWeek: DisplayRepresentation(title: "widget.period.thisWeek"),
+            .last7Days: DisplayRepresentation(title: "widget.period.last7Days"),
+            .last30Days: DisplayRepresentation(title: "widget.period.last30Days"),
+            .thisMonth: DisplayRepresentation(title: "widget.period.thisMonth"),
+            .lastMonth: DisplayRepresentation(title: "widget.period.lastMonth"),
+            .thisYear: DisplayRepresentation(title: "widget.period.thisYear"),
+            .lastYear: DisplayRepresentation(title: "widget.period.lastYear"),
+            .allTime: DisplayRepresentation(title: "widget.period.allTime")
         ]
     }
 
@@ -159,8 +159,8 @@ struct SmallBalanceView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
             WidgetHeader(
-                title: "Balance",
-                subtitle: entry.period.toWidgetPeriod.displayName,
+                title: String(localized: "widget.ui.balance", bundle: .main),
+                subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                 icon: "creditcard.fill"
             )
 
@@ -248,10 +248,10 @@ struct MediumBalanceView: View {
             // Header row: title+subtitle left, KPI right
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                    Text("Balance")
+                    Text("widget.ui.balance", bundle: .main)
                         .font(WDS.Typography.title)
                         .foregroundStyle(.primary)
-                    Text(entry.period.toWidgetPeriod.displayName)
+                    Text(entry.period.toWidgetPeriod.localizedDisplayName)
                         .font(WDS.Typography.subtitle)
                         .foregroundStyle(.secondary)
                 }
@@ -330,7 +330,7 @@ struct MediumBalanceView: View {
                     Image(systemName: "chart.line.uptrend.xyaxis")
                         .font(.title2)
                         .foregroundStyle(.tertiary)
-                    Text("Sin datos")
+                    Text("widget.ui.noData", bundle: .main)
                         .font(WDS.Typography.tiny)
                         .foregroundStyle(.tertiary)
                 }
@@ -357,8 +357,8 @@ struct BalanceWidget: Widget {
             BalanceWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Balance")
-        .description("Tu balance total con tendencia")
+        .configurationDisplayName("widget.gallery.balance")
+        .description("widget.gallery.balance.desc")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

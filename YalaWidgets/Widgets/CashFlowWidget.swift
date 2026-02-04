@@ -14,10 +14,10 @@ import Charts
 // MARK: - Configuration Intent
 
 struct CashFlowWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Flujo de dinero" }
-    static var description: IntentDescription { "Muestra tu flujo de dinero neto" }
+    static var title: LocalizedStringResource { "widget.intent.cashFlow.title" }
+    static var description: IntentDescription { "widget.intent.cashFlow.desc" }
 
-    @Parameter(title: "Período", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .thisMonth)
     var period: WidgetPeriodOption
 }
 
@@ -125,8 +125,8 @@ struct SmallCashFlowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
             WidgetHeader(
-                title: "Flujo neto",
-                subtitle: entry.period.toWidgetPeriod.displayName,
+                title: String(localized: "widget.ui.netFlow", bundle: .main),
+                subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                 icon: "arrow.left.arrow.right"
             )
 
@@ -192,10 +192,10 @@ struct MediumCashFlowView: View {
             // Header row: title+subtitle left, KPI right
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                    Text("Flujo neto")
+                    Text("widget.ui.netFlow", bundle: .main)
                         .font(WDS.Typography.title)
                         .foregroundStyle(.primary)
-                    Text(entry.period.toWidgetPeriod.displayName)
+                    Text(entry.period.toWidgetPeriod.localizedDisplayName)
                         .font(WDS.Typography.subtitle)
                         .foregroundStyle(.secondary)
                 }
@@ -218,7 +218,7 @@ struct MediumCashFlowView: View {
                 // Income bar
                 VStack(spacing: WDS.Spacing.xxs) {
                     HStack {
-                        Text("Ingresos")
+                        Text("widget.ui.income", bundle: .main)
                             .font(WDS.Typography.label)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -244,7 +244,7 @@ struct MediumCashFlowView: View {
                 // Expense bar
                 VStack(spacing: WDS.Spacing.xxs) {
                     HStack {
-                        Text("Gastos")
+                        Text("widget.ui.expenses", bundle: .main)
                             .font(WDS.Typography.label)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -294,8 +294,8 @@ struct LargeCashFlowView: View {
             // Header row
             HStack {
                 WidgetHeader(
-                    title: "Flujo de dinero",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
+                    title: String(localized: "widget.ui.cashFlow", bundle: .main),
+                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                     icon: "arrow.left.arrow.right"
                 )
 
@@ -316,7 +316,7 @@ struct LargeCashFlowView: View {
                     Circle()
                         .fill(WidgetColors.income)
                         .frame(width: 8, height: 8)
-                    Text("Ingresos: \(formatAmount(entry.totalIncome))")
+                    Text("\(String(localized: "widget.ui.income", bundle: .main)): \(formatAmount(entry.totalIncome))")
                         .font(WDS.Typography.label)
                         .foregroundStyle(.secondary)
                 }
@@ -325,7 +325,7 @@ struct LargeCashFlowView: View {
                     Circle()
                         .fill(WidgetColors.expense)
                         .frame(width: 8, height: 8)
-                    Text("Gastos: \(formatAmount(entry.totalExpense))")
+                    Text("\(String(localized: "widget.ui.expenses", bundle: .main)): \(formatAmount(entry.totalExpense))")
                         .font(WDS.Typography.label)
                         .foregroundStyle(.secondary)
                 }
@@ -345,7 +345,7 @@ struct LargeCashFlowView: View {
                             Image(systemName: "chart.bar")
                                 .font(.title)
                                 .foregroundStyle(.tertiary)
-                            Text("Sin datos suficientes")
+                            Text("widget.ui.notEnoughData", bundle: .main)
                                 .font(WDS.Typography.body)
                                 .foregroundStyle(.tertiary)
                         }
@@ -386,7 +386,7 @@ struct CashFlowBars: View {
                 HStack {
                     Image(systemName: "arrow.up")
                         .font(.system(size: 10, weight: .bold))
-                    Text("Ingresos")
+                    Text("widget.ui.income", bundle: .main)
                         .font(WDS.Typography.tiny)
                 }
                 .foregroundColor(WidgetColors.income)
@@ -408,7 +408,7 @@ struct CashFlowBars: View {
                 HStack {
                     Image(systemName: "arrow.down")
                         .font(.system(size: 10, weight: .bold))
-                    Text("Gastos")
+                    Text("widget.ui.expenses", bundle: .main)
                         .font(WDS.Typography.tiny)
                 }
                 .foregroundColor(WidgetColors.expense)
@@ -644,8 +644,8 @@ struct CashFlowWidget: Widget {
             CashFlowWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Flujo de dinero")
-        .description("Tu flujo de dinero neto")
+        .configurationDisplayName("widget.gallery.cashFlow")
+        .description("widget.gallery.cashFlow.desc")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

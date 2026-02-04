@@ -107,7 +107,7 @@ struct BudgetsWidgetView: View {
         VStack(alignment: .leading, spacing: WDS.Spacing.md) {
             // Header
             WidgetHeader(
-                title: "Presupuestos",
+                title: String(localized: "widget.ui.budgets", bundle: .main),
                 icon: "chart.pie"
             )
 
@@ -119,7 +119,7 @@ struct BudgetsWidgetView: View {
                         Image(systemName: "chart.pie")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
-                        Text("Sin presupuestos")
+                        Text("widget.ui.noBudgets", bundle: .main)
                             .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
@@ -178,7 +178,7 @@ struct BudgetRowView: View {
 
                 Spacer()
 
-                Text("de \(formattedLimit)")
+                Text(String(format: String(localized: "widget.ui.ofLimit", bundle: .main), formattedLimit))
                     .font(WDS.Typography.tiny)
                     .foregroundStyle(.tertiary)
             }
@@ -229,8 +229,8 @@ struct BudgetsWidget: Widget {
             BudgetsWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Presupuestos")
-        .description("Progreso de tus presupuestos")
+        .configurationDisplayName("widget.gallery.budgets")
+        .description("widget.gallery.budgets.desc")
         .supportedFamilies([.systemMedium])
     }
 }

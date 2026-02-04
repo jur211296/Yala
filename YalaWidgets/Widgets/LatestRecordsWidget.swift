@@ -113,7 +113,7 @@ struct LatestRecordsWidgetView: View {
         VStack(alignment: .leading, spacing: WDS.Spacing.md) {
             // Header
             WidgetHeader(
-                title: "Últimos registros",
+                title: String(localized: "widget.ui.latestRecords", bundle: .main),
                 icon: "list.bullet.rectangle"
             )
 
@@ -125,7 +125,7 @@ struct LatestRecordsWidgetView: View {
                         Image(systemName: "tray")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
-                        Text("Sin registros")
+                        Text("widget.ui.noRecords", bundle: .main)
                             .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
@@ -171,7 +171,7 @@ struct TransactionRowView: View {
 
             // Note/category
             VStack(alignment: .leading, spacing: 0) {
-                Text(transaction.note ?? transaction.categoryName ?? "Sin nota")
+                Text(transaction.note ?? transaction.categoryName ?? String(localized: "widget.ui.noNote", bundle: .main))
                     .font(WDS.Typography.label)
                     .lineLimit(1)
 
@@ -230,8 +230,8 @@ struct LatestRecordsWidget: Widget {
             LatestRecordsWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Últimos registros")
-        .description("Tus transacciones más recientes")
+        .configurationDisplayName("widget.gallery.latestRecords")
+        .description("widget.gallery.latestRecords.desc")
         .supportedFamilies([.systemMedium])
     }
 }

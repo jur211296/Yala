@@ -13,10 +13,10 @@ import AppIntents
 // MARK: - Configuration Intent
 
 struct TopCategoriesWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Top Categorías" }
-    static var description: IntentDescription { "Muestra tus categorías con más gastos" }
+    static var title: LocalizedStringResource { "widget.intent.topCategories.title" }
+    static var description: IntentDescription { "widget.intent.topCategories.desc" }
 
-    @Parameter(title: "Período", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .thisMonth)
     var period: WidgetPeriodOption
 }
 
@@ -104,8 +104,8 @@ struct TopCategoriesWidgetView: View {
             // Header
             HStack {
                 WidgetHeader(
-                    title: "Top Categorías",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
+                    title: String(localized: "widget.ui.topCategories", bundle: .main),
+                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                     icon: "chart.bar.fill",
                     inline: true
                 )
@@ -120,7 +120,7 @@ struct TopCategoriesWidgetView: View {
                         Image(systemName: "tray")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
-                        Text("Sin gastos")
+                        Text("widget.ui.noExpenses", bundle: .main)
                             .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
@@ -236,8 +236,8 @@ struct TopCategoriesWidget: Widget {
             TopCategoriesWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Top Categorías")
-        .description("Tus categorías con más gastos")
+        .configurationDisplayName("widget.gallery.topCategories")
+        .description("widget.gallery.topCategories.desc")
         .supportedFamilies([.systemMedium])
     }
 }

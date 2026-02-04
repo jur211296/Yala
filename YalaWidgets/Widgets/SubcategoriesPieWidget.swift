@@ -14,10 +14,10 @@ import Charts
 // MARK: - Configuration Intent
 
 struct SubcategoriesPieWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Subcategorías (Pie)" }
-    static var description: IntentDescription { "Distribución de gastos por subcategoría" }
+    static var title: LocalizedStringResource { "widget.intent.subcategoriesPie.title" }
+    static var description: IntentDescription { "widget.intent.subcategoriesPie.desc" }
 
-    @Parameter(title: "Período", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .thisMonth)
     var period: WidgetPeriodOption
 }
 
@@ -131,15 +131,15 @@ struct SubcategoriesPieWidgetView: View {
             // Header with total
             HStack {
                 WidgetHeader(
-                    title: "Subcategorías",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
+                    title: String(localized: "widget.ui.subcategories", bundle: .main),
+                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                     icon: "chart.pie.fill"
                 )
 
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text("Total")
+                    Text("widget.ui.total", bundle: .main)
                         .font(WDS.Typography.tiny)
                         .foregroundStyle(.secondary)
                     Text(formattedTotal)
@@ -156,7 +156,7 @@ struct SubcategoriesPieWidgetView: View {
                         Image(systemName: "chart.pie")
                             .font(.largeTitle)
                             .foregroundStyle(.tertiary)
-                        Text("Sin gastos")
+                        Text("widget.ui.noExpenses", bundle: .main)
                             .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
@@ -214,8 +214,8 @@ struct SubcategoriesPieWidget: Widget {
             SubcategoriesPieWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Subcategorías (Pie)")
-        .description("Distribución de gastos por subcategoría")
+        .configurationDisplayName("widget.gallery.subcategoriesPie")
+        .description("widget.gallery.subcategoriesPie.desc")
         .supportedFamilies([.systemLarge])
     }
 }

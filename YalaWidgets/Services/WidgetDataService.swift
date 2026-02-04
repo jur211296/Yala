@@ -533,9 +533,9 @@ enum ScheduledPaymentFilter: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .all: return "Todos"
-        case .recurring: return "Planificados"
-        case .subscription: return "Suscripciones"
+        case .all: return String(localized: "widget.paymentCategory.all", bundle: .main)
+        case .recurring: return String(localized: "widget.paymentCategory.recurring", bundle: .main)
+        case .subscription: return String(localized: "widget.paymentCategory.subscription", bundle: .main)
         }
     }
 }
@@ -555,15 +555,19 @@ enum WidgetPeriod: String, CaseIterable, Codable {
     case allTime
 
     var displayName: String {
+        localizedDisplayName
+    }
+
+    var localizedDisplayName: String {
         switch self {
-        case .thisWeek: return "Esta semana"
-        case .last7Days: return "Últimos 7 días"
-        case .last30Days: return "Últimos 30 días"
-        case .thisMonth: return "Este mes"
-        case .lastMonth: return "Mes pasado"
-        case .thisYear: return "Este año"
-        case .lastYear: return "Año pasado"
-        case .allTime: return "Todo el tiempo"
+        case .thisWeek: return String(localized: "widget.period.thisWeek", bundle: .main)
+        case .last7Days: return String(localized: "widget.period.last7Days", bundle: .main)
+        case .last30Days: return String(localized: "widget.period.last30Days", bundle: .main)
+        case .thisMonth: return String(localized: "widget.period.thisMonth", bundle: .main)
+        case .lastMonth: return String(localized: "widget.period.lastMonth", bundle: .main)
+        case .thisYear: return String(localized: "widget.period.thisYear", bundle: .main)
+        case .lastYear: return String(localized: "widget.period.lastYear", bundle: .main)
+        case .allTime: return String(localized: "widget.period.allTime", bundle: .main)
         }
     }
 

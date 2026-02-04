@@ -13,10 +13,10 @@ import AppIntents
 // MARK: - Configuration Intent
 
 struct TopSubcategoriesWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Top Subcategorías" }
-    static var description: IntentDescription { "Muestra tus subcategorías con más gastos" }
+    static var title: LocalizedStringResource { "widget.intent.topSubcategories.title" }
+    static var description: IntentDescription { "widget.intent.topSubcategories.desc" }
 
-    @Parameter(title: "Período", default: .thisMonth)
+    @Parameter(title: "widget.period.type", default: .thisMonth)
     var period: WidgetPeriodOption
 }
 
@@ -104,8 +104,8 @@ struct TopSubcategoriesWidgetView: View {
             // Header
             HStack {
                 WidgetHeader(
-                    title: "Top Subcategorías",
-                    subtitle: entry.period.toWidgetPeriod.displayName,
+                    title: String(localized: "widget.ui.topSubcategories", bundle: .main),
+                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                     icon: "list.bullet.indent",
                     inline: true
                 )
@@ -120,7 +120,7 @@ struct TopSubcategoriesWidgetView: View {
                         Image(systemName: "tray")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
-                        Text("Sin gastos")
+                        Text("widget.ui.noExpenses", bundle: .main)
                             .font(WDS.Typography.body)
                             .foregroundStyle(.tertiary)
                     }
@@ -236,8 +236,8 @@ struct TopSubcategoriesWidget: Widget {
             TopSubcategoriesWidgetView(entry: entry)
                 .containerBackground(WidgetColors.yalaCard, for: .widget)
         }
-        .configurationDisplayName("Top Subcategorías")
-        .description("Tus subcategorías con más gastos")
+        .configurationDisplayName("widget.gallery.topSubcategories")
+        .description("widget.gallery.topSubcategories.desc")
         .supportedFamilies([.systemMedium])
     }
 }
