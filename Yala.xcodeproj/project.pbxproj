@@ -80,6 +80,13 @@
 			);
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
 		};
+		CFA3952D2F33BC1500ED1D89 /* Exceptions for "Yala" folder in "YalaWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/ControlCenterIntents.swift,
+			);
+			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
+		};
 		CFADC3C92F2A42810040D198 /* Exceptions for "YalaShare" folder in "YalaShare" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -101,6 +108,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				96CFFFB62EC3CF09002AC31C /* Exceptions for "Yala" folder in "Yala" target */,
+				CFA3952D2F33BC1500ED1D89 /* Exceptions for "Yala" folder in "YalaWidgetsExtension" target */,
 			);
 			path = Yala;
 			sourceTree = "<group>";

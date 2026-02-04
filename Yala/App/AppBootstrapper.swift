@@ -143,13 +143,16 @@ final class AppBootstrapper {
         case "panel":
             sessionState.deepLinkDestination = .panel
 
+        case "new-transaction":
+            sessionState.shouldShowNewTransaction = true
+
         case "voice-entry":
-            if UserDefaults.standard.bool(forKey: "enableVoiceInput") {
+            if UserDefaults.standard.bool(forKey: "voiceInputEnabled") {
                 sessionState.shouldShowVoiceEntry = true
             }
 
         case "image-entry":
-            if UserDefaults.standard.bool(forKey: "enableImageInput") {
+            if UserDefaults.standard.bool(forKey: "imageInputEnabled") {
                 sessionState.shouldShowImageEntry = true
             }
 
@@ -187,7 +190,7 @@ final class AppBootstrapper {
             checkForPendingSharedImage()
 
         case "voice-entry":
-            if UserDefaults.standard.bool(forKey: "enableVoiceInput") {
+            if UserDefaults.standard.bool(forKey: "voiceInputEnabled") {
                 sessionState.shouldShowVoiceEntry = true
             } else {
                 #if DEBUG
@@ -196,7 +199,7 @@ final class AppBootstrapper {
             }
 
         case "image-entry":
-            if UserDefaults.standard.bool(forKey: "enableImageInput") {
+            if UserDefaults.standard.bool(forKey: "imageInputEnabled") {
                 sessionState.shouldShowImageEntry = true
             } else {
                 #if DEBUG
