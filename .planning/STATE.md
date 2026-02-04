@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] eddc1bc fix(widgets): redesign TopCategories/TopSubcategories with compact layout
 - [2026-02-04] b69b8b1 fix(widgets): remove force unwraps in dateInterval()
 - [2026-02-04] 7f678f5 fix(widgets): calculate historical balance for past periods
 - [2026-02-04] 919166a fix(widgets): precalculate summaries for all periods
@@ -33,7 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-03] 00bfc7a docs: update BUG-3 Phase 6.2 progress
 - [2026-02-03] 6d0afa3 fix(widgets): reduce padding to 4pt and remove decimals
 - [2026-02-03] 75adcec fix(widgets): add inline header mode and restructure Medium layouts
-- [2026-02-03] 0efd960 feat(widgets): implement Phase 4 - 13 widgets with WDS infrastructure
 - [2026-02-02] 68d5842 feat(widgets): add widget design infrastructure with reusable components
 - [2026-02-02] 6cb17c5 feat(widgets): expand data snapshot with categories, subcategories and cash flow
 - [2026-02-02] 801bb7e feat(notifications): add personalized scheduled payment and report notifications
@@ -149,17 +149,17 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Alternativa funcionando:** Atajos de Siri (VoiceEntry, ImageEntry)
 - Archivo: `YalaWidgets/ControlWidgets.swift`
 
-**BUG-3: WidgetKit - rediseño completo** 🟡 Fase 6 CASI COMPLETA
+**BUG-3: WidgetKit - rediseño completo** ✅ COMPLETADO
 - ✅ Fases 1-5 completadas (infraestructura, 13 widgets implementados)
 - ✅ Fase 6.1: Cálculos críticos corregidos (divisa, balance, gastos, ingresos, top subcategorías)
-- ✅ Fase 6.2 parcial: UI Global (padding 4pt, header inline, sin decimales)
+- ✅ Fase 6.2: UI Global (padding 4pt, header inline, sin decimales, G.2 aceptado como limitación de fuente)
 - ✅ Fase 6.3: UI por widget (CashFlow Large con Swift Charts igual a PanelView)
 - ✅ Fase 6.4: Deeplinks dinámicos (WidgetURLHelper lee URL_SCHEME del bundle)
 - ✅ Fase 6.5: Widgets Medium rediseñados (Balance, Expense, CashFlow) con Swift Charts idéntico a PanelView
 - ✅ Fase 6.6: Pie Charts Large rediseñados (CategoriesPie, SubcategoriesPie) con Swift Charts SectorMark, bubbles con iconos, porcentajes > 10%
-- 🔴 Pendiente: G.2 KPIs poco llamativos (limitación de fuente del sistema)
+- ✅ Fase 6.9: TopCategories/TopSubcategories Medium rediseñados con layout compacto de una línea, iconos para ambos
 - **Documentación completa:** [`.planning/BUG-3-WIDGETS.md`](.planning/BUG-3-WIDGETS.md)
-- **Issues QA:** 14 ✅ resueltos, 1 🔴 pendiente (limitación de fuente)
+- **Issues QA:** 15/15 ✅ resueltos
 - Archivos: `YalaWidgets/Widgets/*.swift`, `Yala/Services/WidgetDataCache.swift`
 
 **BUG-4: Divisas recomendadas en Onboarding**
@@ -365,8 +365,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: BUG-3 Fase 6.7 completada (Widget Cache Sync en todas las acciones)
-Next step: QA manual de widgets o otros bugs
+Stopped at: BUG-3 completado (15/15 issues, Fase 6.9 TopCategories/TopSubcategories rediseñados)
+Next step: QA manual de widgets en simulador o BUG-2 Control Center
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
@@ -389,6 +389,14 @@ Resume context:
   - AccountFormViewModel: saldo inicial
   - TransactionService: bulk updates (cuenta, subcategoría, monto)
   - DataWipeService: clearCache al borrar datos
+- **BUG-3 Fase 6.9 ✅:** TopCategories/TopSubcategories Medium rediseñados:
+  - Layout compacto de una línea: [Icon 24pt] Nombre ... Monto XX%
+  - SubcategoryRow ahora usa icono (igual que categorías) en vez de dot de 12pt
+  - Barra de progreso alineada con texto (padding left = icon + spacing)
+  - Spacing reducido de 8pt a 6pt, header inline
+  - G.2 (KPIs poco llamativos) aceptado como limitación de fuente SF
+  - TC.1 resuelto (contenido ya no se corta)
+- **BUG-3 ✅ COMPLETADO:** 15/15 issues resueltos
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
 - **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)
