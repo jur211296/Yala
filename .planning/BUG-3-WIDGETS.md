@@ -16,7 +16,7 @@
 | **Subtítulo** | Período seleccionado (ej: "Este mes", "Esta semana") |
 | **KPI** | Número grande, prominente, con divisa |
 | **Divisa** | Según preferencia del usuario en Perfil > Organización (símbolo o código) |
-| **Períodos** | Mismos que PanelView: Hoy, Ayer, Esta semana, Semana pasada, Este mes, Mes pasado, Este trimestre, Trimestre pasado, Este año, Año pasado, Todo el tiempo |
+| **Períodos** | Mismos que PanelView (8): Esta semana, Últimos 7 días, Últimos 30 días, Este mes, Mes pasado, Este año, Año pasado, Todo el tiempo |
 | **Click** | Navega a la vista correspondiente en la app |
 | **Datos** | DEBEN cuadrar exactamente con los KPIs de PanelView para el mismo período |
 | **Colores** | Usar DS tokens: `Color.yalaTeal` (ingresos), `Color.hotPink` (gastos), `Color.electricIndigo` (accent) |
@@ -822,6 +822,7 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 | 2026-02-03 | - | Fase 6.5: Rediseño widgets Medium (Balance, Expense) con Swift Charts idéntico a PanelView, ejes reducidos (8pt), color Balance=electricIndigo |
 | 2026-02-03 | CF.1 | CashFlow Medium rediseñado: header (título+subtítulo izq, KPI derecha), barras horizontales full-width idénticas a PanelView compacto |
 | 2026-02-03 | CF.2 | Fase 6.3 completada - gráfica CashFlow Large igual a PanelView (Swift Charts, agrupamiento, línea net flow, SmartAxisHelper, backgrounds yalaCard) |
+| 2026-02-04 | TP.1 | Fase 6.8 - WidgetPeriod alineado con DetailPeriod (8 períodos), firstWeekday sync |
 | 2026-02-03 | BW.2, EW.2, CF.1, TC.2, TS.1 | Fase 6.3 parcial - issues aceptados como están, enfoque en CF.2 |
 | 2026-02-03 | G.5 | Fase 6.4 completada - deeplinks dinámicos con WidgetURLHelper, ExpenseWidget corregido |
 | 2026-02-03 | G.1, G.3 | Fase 6.2 parcial - padding 4pt, header inline para Medium, sin decimales en montos, layout Medium restructurado |
@@ -830,12 +831,18 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 
 ---
 
-## 🔴 Tareas Pendientes (Nuevas)
+## ✅ Tareas Pendientes (Resueltas)
 
-### TP.1 🔴 Datos incorrectos en períodos pasados
-- **Descripción:** Los widgets Balance, Expense, CashFlow muestran datos incorrectos para períodos como "Mes pasado", "Semana pasada", etc.
+### TP.1 ✅ Datos incorrectos en períodos pasados
+- **Descripción:** Los widgets Balance, Expense, CashFlow mostraban datos incorrectos para períodos como "Mes pasado", "Semana pasada", etc.
 - **Impacto:** Widgets con selector de período
-- **Archivos:** `WidgetDataCache.swift` (filtrado por período)
+- **Resolución:** Alineación completa de WidgetPeriod con DetailPeriod
+  - Helper `widgetConfiguredCalendar()` que lee firstWeekday del App Group
+  - Sincronización de firstWeekday en saveSnapshot() y al cambiar en Settings
+  - WidgetPeriod reducido de 11 a 8 casos (igual que DetailPeriod sin custom)
+  - dateInterval() ahora usa endOfToday (inclusive) igual que DetailPeriod
+  - Períodos finales: thisWeek, last7Days, last30Days, thisMonth, lastMonth, thisYear, lastYear, allTime
+- **Commit:** `5427940`
 
 ---
 
