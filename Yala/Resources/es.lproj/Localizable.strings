@@ -1202,6 +1202,8 @@
 
 "settings.widgetHints" = "Textos de ayuda";
 "settings.widgetHintsDescription" = "Muestra botones de info en los widgets con explicaciones sobre cada gráfica.";
+"settings.showVariations" = "Comparativas";
+"settings.showVariationsDescription" = "Muestra variaciones porcentuales y gráficas comparativas vs el periodo anterior.";
 "settings.decimalPlaces" = "Decimales";
 "settings.decimalPlacesDescription" = "Se aplica solo a totales y gráficas. Los registros individuales siempre muestran 2 decimales.";
 "settings.decimalsNone" = "Sin decimales";

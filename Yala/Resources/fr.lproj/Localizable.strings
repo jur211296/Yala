@@ -1190,6 +1190,8 @@
 
 "settings.widgetHints" = "Textes d'aide";
 "settings.widgetHintsDescription" = "Afficher des boutons d'info sur les widgets avec des explications sur chaque graphique.";
+"settings.showVariations" = "Comparaisons";
+"settings.showVariationsDescription" = "Affiche les variations en pourcentage et les graphiques comparatifs vs la période précédente.";
 "settings.decimalPlaces" = "Décimales";
 "settings.decimalPlacesDescription" = "S'applique uniquement aux totaux et graphiques. Les enregistrements individuels affichent toujours 2 décimales.";
 "settings.decimalsNone" = "Sans décimales";

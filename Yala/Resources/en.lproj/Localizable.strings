@@ -1202,6 +1202,8 @@
 
 "settings.widgetHints" = "Help hints";
 "settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
+"settings.showVariations" = "Comparisons";
+"settings.showVariationsDescription" = "Show percentage variations and comparison charts vs the previous period.";
 "settings.decimalPlaces" = "Decimal places";
 "settings.decimalPlacesDescription" = "Applies only to totals and charts. Individual records always show 2 decimals.";
 "settings.decimalsNone" = "No decimals";

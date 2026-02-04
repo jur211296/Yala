@@ -18,6 +18,7 @@ struct PersonalizationSettingsView: View {
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
+    @AppStorage("showVariations") private var showVariations: Bool = true
     @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
 
@@ -101,7 +102,7 @@ struct PersonalizationSettingsView: View {
                         Text(L10n.Settings.tabBarConfigInfo)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, DS.Spacing.xxs)
                     }
 
                     // Default Period Section - Single Row Style
@@ -142,7 +143,7 @@ struct PersonalizationSettingsView: View {
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 4)
+                        .padding(.horizontal, DS.Spacing.xxs)
                     }
 
                     // Colorful Icons Toggle Section
@@ -172,7 +173,7 @@ struct PersonalizationSettingsView: View {
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 4)
+                        .padding(.horizontal, DS.Spacing.xxs)
                     }
 
                     // First Weekday Section
@@ -209,7 +210,7 @@ struct PersonalizationSettingsView: View {
                         Text(L10n.Settings.firstWeekdayDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, DS.Spacing.xxs)
                     }
 
                     // Widget Hints Toggle Section
@@ -237,7 +238,35 @@ struct PersonalizationSettingsView: View {
                         Text(L10n.Settings.widgetHintsDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, DS.Spacing.xxs)
+                    }
+
+                    // Show Variations Toggle Section
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Text(L10n.Settings.showVariations)
+                                .font(.body)
+                                .foregroundStyle(Color.yalaPrimaryText)
+
+                            Spacer()
+
+                            Toggle("", isOn: $showVariations)
+                                .labelsHidden()
+                                .tint(Color.brandPrimary)
+                        }
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(Color.yalaCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                        )
+
+                        Text(L10n.Settings.showVariationsDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, DS.Spacing.xxs)
                     }
 
                     // Decimal Places Section
@@ -274,7 +303,7 @@ struct PersonalizationSettingsView: View {
                         Text(L10n.Settings.decimalPlacesDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, DS.Spacing.xxs)
                     }
 
                     // Currency Display Format Section
@@ -311,7 +340,7 @@ struct PersonalizationSettingsView: View {
                         Text(L10n.Settings.currencyFormatDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, DS.Spacing.xxs)
                     }
 
                     Spacer()
@@ -595,7 +624,7 @@ private struct DecimalsPickerSheet: View {
             onSelect(option.value)
         } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
                         .font(.body)
                         .foregroundStyle(Color.yalaPrimaryText)
@@ -679,7 +708,7 @@ private struct CurrencyFormatPickerSheet: View {
             onSelect(option.value)
         } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
                         .font(.body)
                         .foregroundStyle(Color.yalaPrimaryText)

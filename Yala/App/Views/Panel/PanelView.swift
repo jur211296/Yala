@@ -70,8 +70,8 @@ struct PanelView: View {
     @State private var showCustomPeriodPicker = false
 
     @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
-        .rawValue
+    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
+    @AppStorage("showVariations") private var showVariations: Bool = true
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
@@ -781,7 +781,7 @@ struct PanelView: View {
                         .foregroundStyle(Color.primary)
                 }
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, DS.Spacing.xxs)
 
             // Custom Grid Layout (VStack of Rows)
             VStack(spacing: DS.Spacing.lg) {
@@ -929,7 +929,7 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-                showVariationHeader: viewModel.selectedPeriod != .allTime
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .topSubcategories {
             TopSubcategoriesWidget(
@@ -954,7 +954,7 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-                showVariationHeader: viewModel.selectedPeriod != .allTime
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .categoriesPie {
             CategoriesPieWidget(
@@ -970,7 +970,7 @@ struct PanelView: View {
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-                showVariationHeader: true
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .subcategoriesPie {
             SubcategoriesPieWidget(
@@ -994,7 +994,7 @@ struct PanelView: View {
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-                showVariationHeader: true
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .cashFlow {
             if let summary = viewModel.cashFlowSummary {
@@ -1034,7 +1034,7 @@ struct PanelView: View {
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousNatureTotalAmount,
                 previousAmountByNature: viewModel.previousNatureAmounts,
-                showVariationHeader: viewModel.selectedPeriod != .allTime,
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
                 isIncomeMode: viewModel.selectedTransactionNatures == [.income]
             )
         } else if config.type == .exchangeRate {

@@ -19,6 +19,10 @@ struct CategoriesTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    // MARK: - Settings
+
+    @AppStorage("showVariations") private var showVariations: Bool = true
+
     // MARK: - Data (passed from parent)
 
     let accounts: [Account]
@@ -424,9 +428,9 @@ struct CategoriesTabView: View {
         }
     }
 
-    /// Determines if comparison selector should be visible
+    /// Determines if comparison selector should be visible (only when showVariations is ON)
     private var showComparisonSelector: Bool {
-        PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
+        showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
     }
 
     /// Comparison mode selector (M/A toggle)
@@ -451,8 +455,8 @@ struct CategoriesTabView: View {
         } label: {
             Text(mode.shortName)
                 .font(.caption2.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {
@@ -561,7 +565,7 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: viewModel.detailPeriod != .allTime
+                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -603,7 +607,7 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: viewModel.detailPeriod != .allTime
+                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -644,7 +648,7 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: viewModel.detailPeriod != .allTime
+                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -753,7 +757,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
-            showVariationHeader: viewModel.detailPeriod != .allTime,
+            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
@@ -780,7 +784,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
-            showVariationHeader: viewModel.detailPeriod != .allTime,
+            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
@@ -835,7 +839,7 @@ struct CategoriesTabView: View {
                         currencyCode: defaultCurrencyCode,
                         selectedCategoryID: effectiveCategoryID,
                         isExpanded: isListExpanded,
-                        showVariation: viewModel.detailPeriod != .allTime,
+                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectCategory: { categoryID in
                             if effectiveCategoryID == categoryID {
@@ -863,7 +867,7 @@ struct CategoriesTabView: View {
                         selectedCategoryID: effectiveCategoryID,
                         selectedSubcategoryID: selectedSubcategoryID,
                         isExpanded: isListExpanded,
-                        showVariation: viewModel.detailPeriod != .allTime,
+                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectSubcategory: { subcategoryID in
                             if selectedSubcategoryID == subcategoryID {
@@ -1658,7 +1662,7 @@ private struct AllCategoriesListContent: View {
                         }
                         .padding(.vertical, DS.Spacing.md)
                         .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(0.1))
+                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -1738,7 +1742,7 @@ private struct AllSubcategoriesListContent: View {
                         }
                         .padding(.vertical, DS.Spacing.md)
                         .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(0.1))
+                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)

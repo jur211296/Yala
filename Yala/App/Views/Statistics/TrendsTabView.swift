@@ -27,6 +27,10 @@ struct TrendsTabView: View {
     let tags: [Tag]
     let allTransactions: [TransactionItem]
 
+    // MARK: - Settings
+
+    @AppStorage("showVariations") private var showVariations: Bool = true
+
     // MARK: - Persistent Sort Order (matches Profile/Accounts view)
 
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
@@ -395,8 +399,8 @@ struct TrendsTabView: View {
 
             metricSelector
 
-            // Comparison mode selector (hidden for periods where only one mode makes sense)
-            if PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
+            // Comparison mode selector (hidden when showVariations is OFF or for periods where only one mode makes sense)
+            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
                 comparisonModeSelector
             }
         }
@@ -428,7 +432,7 @@ struct TrendsTabView: View {
             Text(mode.shortName)
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {
@@ -452,8 +456,8 @@ struct TrendsTabView: View {
                 chartCard
                     .tag(0)
 
-                // Period Comparison Card (Page 1) - only if not All Time
-                if trendsViewModel.detailPeriod != .allTime {
+                // Period Comparison Card (Page 1) - only if not All Time AND showVariations is ON
+                if showVariations && trendsViewModel.detailPeriod != .allTime {
                     periodComparisonCard
                         .tag(1)
                 }
@@ -461,8 +465,8 @@ struct TrendsTabView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 330)
 
-            // Page indicators (centered)
-            if trendsViewModel.detailPeriod != .allTime {
+            // Page indicators (centered) - only show when there are 2 pages
+            if showVariations && trendsViewModel.detailPeriod != .allTime {
                 HStack(spacing: DS.Spacing.sm) {
                     ForEach(0..<2, id: \.self) { index in
                         Circle()
@@ -499,8 +503,8 @@ struct TrendsTabView: View {
 
                     Spacer()
 
-                    // Variation chip with "vs period" text below (hidden for All Time)
-                    if trendsViewModel.detailPeriod != .allTime {
+                    // Variation chip with "vs period" text below (hidden for All Time or when showVariations is OFF)
+                    if showVariations && trendsViewModel.detailPeriod != .allTime {
                         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                             VariationChip(
                                 currentAmount: currentPeriodTotal,
@@ -619,7 +623,7 @@ struct TrendsTabView: View {
                                     .minimumScaleFactor(0.7)
                             }
                         }
-                        .padding(.top, 4)
+                        .padding(.top, DS.Spacing.xs)
                     }
 
                     Spacer()
@@ -712,8 +716,8 @@ struct TrendsTabView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                // Show previous period value for comparison (hidden for All Time)
-                if trendsViewModel.detailPeriod != .allTime,
+                // Show previous period value for comparison (hidden for All Time or when showVariations is OFF)
+                if showVariations && trendsViewModel.detailPeriod != .allTime,
                    let prevTotal = previousPeriodTotal {
                     Text("vs \(YalaFormatter.number(value: prevTotal))")
                         .font(.caption)
@@ -722,7 +726,7 @@ struct TrendsTabView: View {
                         .minimumScaleFactor(0.7)
                 }
             }
-            .padding(.top, 4)
+            .padding(.top, DS.Spacing.xs)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -779,7 +783,7 @@ struct TrendsTabView: View {
             Image(systemName: metric.iconName)
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? metric.color.opacity(0.4) : metric.color))
                 .background(
                     Group {
@@ -915,7 +919,7 @@ struct TrendsTabView: View {
             Image(systemName: viewType.iconName)
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {
@@ -1057,8 +1061,9 @@ struct TrendsTabView: View {
         title: String,
         currencyCode: String
     ) -> some View {
-        // Calculate previous total based on selected metric
+        // Calculate previous total based on selected metric (only when showVariations is ON)
         let previousTotal: Double? = {
+            guard showVariations else { return nil }
             guard trendsViewModel.detailPeriod != .allTime else { return nil }
             guard let prev = previousSummary else { return nil }
             switch trendsViewModel.selectedMetric {
@@ -1081,7 +1086,7 @@ struct TrendsTabView: View {
             customTitle: title,
             displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric),
             previousAmount: previousTotal,
-            comparisonPeriodText: trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
+            comparisonPeriodText: showVariations && trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
             showInfoHint: false
         )
     }
@@ -1320,10 +1325,21 @@ struct TrendsTabView: View {
         let baseInterval = trendsViewModel.panelDateInterval
 
         // For All Time, calculate effective interval based on actual transactions
-        let fetchedTransactions = try? modelContext.fetch(FetchDescriptor<TransactionItem>())
+        let fetchedTransactions: [TransactionItem]
+        do {
+            fetchedTransactions = try modelContext.fetch(FetchDescriptor<TransactionItem>())
+        } catch {
+            #if DEBUG
+            print("TrendsTabView: Error fetching transactions for interval calculation: \(error)")
+            #endif
+            cashFlowSummary = nil
+            cashFlowByAccount = [:]
+            cashFlowByCurrency = [:]
+            return
+        }
         let effectiveInterval: DateInterval
         if trendsViewModel.detailPeriod == .allTime {
-            let dates = (fetchedTransactions ?? []).map(\.date)
+            let dates = fetchedTransactions.map(\.date)
             if let firstDate = dates.min(), let lastDate = dates.max() {
                 let calendar = Calendar.current
                 let start = calendar.startOfDay(for: firstDate)
@@ -1353,7 +1369,7 @@ struct TrendsTabView: View {
 
         // Filter transactions (reuse fetchedTransactions from above)
         let filtered = FilterService.filterForTrends(
-            transactions: fetchedTransactions ?? [],
+            transactions: fetchedTransactions,
             accounts: accounts,
             criteria: criteria
         )
@@ -1399,7 +1415,7 @@ struct TrendsTabView: View {
         cashFlowByCurrency = byCurrency
 
         // 4. Calculate PREVIOUS period cash flow for variation chip
-        calculatePreviousCashFlow(fetchedTransactions: fetchedTransactions ?? [])
+        calculatePreviousCashFlow(fetchedTransactions: fetchedTransactions)
     }
 
     /// Calculate previous period cash flow summary for VariationChip

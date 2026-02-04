@@ -1266,6 +1266,12 @@ enum L10n {
         static var widgetHintsDescription: String {
             NSLocalizedString("settings.widgetHintsDescription", comment: "")
         }
+        static var showVariations: String {
+            NSLocalizedString("settings.showVariations", comment: "")
+        }
+        static var showVariationsDescription: String {
+            NSLocalizedString("settings.showVariationsDescription", comment: "")
+        }
         static var decimalPlaces: String {
             NSLocalizedString("settings.decimalPlaces", comment: "")
         }

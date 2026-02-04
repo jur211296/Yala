@@ -10,6 +10,10 @@ import SwiftUI
 /// Compact chip showing percentage variation (e.g., "+12.5%", "-3.2%", "N/A")
 struct VariationChip: View {
 
+    // MARK: - Settings
+
+    @AppStorage("showVariations") private var showVariations: Bool = true
+
     // MARK: - Properties
 
     /// The variation percentage (nil shows "N/A" or hides based on showNAWhenNil)
@@ -77,7 +81,10 @@ struct VariationChip: View {
 
     @ViewBuilder
     var body: some View {
-        if let variation = variation {
+        // Hide entirely when showVariations is OFF
+        if !showVariations {
+            EmptyView()
+        } else if let variation = variation {
             // Show formatted variation percentage
             Text(PreviousPeriodHelper.formatVariationValue(variation))
                 .font(size.font)

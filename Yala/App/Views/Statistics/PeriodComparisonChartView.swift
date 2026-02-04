@@ -21,6 +21,7 @@ struct PeriodComparisonChartView: View {
     let chartHeight: CGFloat
     let period: DetailPeriod
     let comparisonMode: ComparisonMode
+    var showPreviousPeriod: Bool = true
 
     @Environment(\.colorScheme) var colorScheme
     @State private var draggingDate: Date?  // For transient drag state
@@ -70,16 +71,18 @@ struct PeriodComparisonChartView: View {
             let primaryLineColor = trendType.color
             let previousLineColor = Color.yalaSecondaryText
 
-            // Previous period line - separate series (using clipped points)
-            ForEach(clippedPreviousPoints) { point in
-                LineMark(
-                    x: .value("Date", point.date),  // Already adjusted in clippedPreviousPoints
-                    y: .value("Previous", point.value),
-                    series: .value("Period", "Previous")
-                )
-                .foregroundStyle(previousLineColor.opacity(0.5))
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
-                .interpolationMethod(.monotone)
+            // Previous period line - separate series (using clipped points) - only show when showPreviousPeriod is true
+            if showPreviousPeriod {
+                ForEach(clippedPreviousPoints) { point in
+                    LineMark(
+                        x: .value("Date", point.date),  // Already adjusted in clippedPreviousPoints
+                        y: .value("Previous", point.value),
+                        series: .value("Period", "Previous")
+                    )
+                    .foregroundStyle(previousLineColor.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
+                    .interpolationMethod(.monotone)
+                }
             }
 
             // Current period line - separate series
@@ -222,14 +225,16 @@ struct PeriodComparisonChartView: View {
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 
-                // Previous period legend
-                HStack(spacing: DS.Spacing.xs) {
-                    Rectangle()
-                        .fill(Color.yalaSecondaryText.opacity(0.5))
-                        .frame(width: 20, height: 3)
-                    Text(L10n.Statistics.previousPeriod)
-                        .font(.caption2)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                // Previous period legend (only show when showPreviousPeriod is true)
+                if showPreviousPeriod {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Rectangle()
+                            .fill(Color.yalaSecondaryText.opacity(0.5))
+                            .frame(width: 20, height: 3)
+                        Text(L10n.Statistics.previousPeriod)
+                            .font(.caption2)
+                            .foregroundStyle(Color.yalaSecondaryText)
+                    }
                 }
             }
         }
