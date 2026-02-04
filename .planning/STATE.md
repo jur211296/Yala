@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] 6033eca feat(widgets): improve layout and add cache updates
 - [2026-02-04] e733518 fix(charts): prevent duplicate axis labels in bar charts
 - [2026-02-04] 3b4adcd feat(widgets): add widgetAccentable support for iOS 18 tinted mode
 - [2026-02-04] 9e86af6 fix(widgets): enable Control Center widget actions to trigger app flows
@@ -363,7 +364,7 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Fix etiquetas duplicadas en gráficos de barras (SmartAxisHelper grouping-aware)
+Stopped at: Mejoras widgets (3 items, 2 decimales, cache updates en budget/payment/voice)
 Next step: Preparar release V1.1
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
