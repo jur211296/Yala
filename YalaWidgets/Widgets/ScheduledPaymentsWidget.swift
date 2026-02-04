@@ -94,7 +94,7 @@ struct ScheduledPaymentsProvider: TimelineProvider {
     }
 
     private func createEntry() -> ScheduledPaymentsEntry {
-        let payments = WidgetDataService.getScheduledPayments(filter: .all, limit: 4)
+        let payments = WidgetDataService.getScheduledPayments(filter: .all, limit: 3)
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
         return ScheduledPaymentsEntry(
@@ -245,9 +245,10 @@ struct PaymentRowView: View {
     private var formattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
 
-        let formatted = formatter.string(from: NSNumber(value: payment.amount)) ?? "0"
+        let formatted = formatter.string(from: NSNumber(value: payment.amount)) ?? "0.00"
         let prefix = payment.isIncome ? "+" : ""
         let currency = displayFormat == "symbol"
             ? CurrencySymbols.symbol(for: payment.currencyCode)

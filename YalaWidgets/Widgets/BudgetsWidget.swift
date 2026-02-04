@@ -179,10 +179,16 @@ struct BudgetRowView: View {
 
                 Spacer()
 
+                // Spent/Limit compact
+                Text(formattedAmounts)
+                    .font(WDS.Typography.tiny)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: true, vertical: false)
+
                 Text("\(Int(budget.percentUsed))%")
                     .font(WDS.Typography.labelSmall)
                     .foregroundStyle(progressColor)
-                    .frame(width: WDS.ListItem.percentageWidth, alignment: .trailing)
+                    .fixedSize(horizontal: true, vertical: false)
                     .widgetAccentable()
             }
 
@@ -191,18 +197,6 @@ struct BudgetRowView: View {
                 percentUsed: budget.percentUsed,
                 height: WDS.Progress.heightCompact
             )
-            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
-
-            // Row 3: Gasto / Límite
-            HStack {
-                Text(formattedSpent)
-                    .font(WDS.Typography.tiny)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(String(format: String(localized: "widget.ui.ofLimit", bundle: .main), formattedLimit))
-                    .font(WDS.Typography.tiny)
-                    .foregroundStyle(.tertiary)
-            }
             .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
         }
     }
@@ -215,30 +209,18 @@ struct BudgetRowView: View {
         WidgetColors.forBudget(percentUsed: budget.percentUsed)
     }
 
-    private var formattedSpent: String {
+    private var formattedAmounts: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
 
-        let formatted = formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
+        let spent = formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
+        let limit = formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
         let currency = displayFormat == "symbol"
             ? CurrencySymbols.symbol(for: budget.currencyCode)
             : budget.currencyCode
 
-        return "\(currency) \(formatted)"
-    }
-
-    private var formattedLimit: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-
-        let formatted = formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
-        let currency = displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: budget.currencyCode)
-            : budget.currencyCode
-
-        return "\(currency) \(formatted)"
+        return "\(currency)\(spent)/\(limit)"
     }
 }
 

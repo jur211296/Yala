@@ -92,7 +92,7 @@ struct LatestRecordsProvider: TimelineProvider {
     }
 
     private func createEntry() -> LatestRecordsEntry {
-        let transactions = WidgetDataService.getRecentTransactions(limit: 4)
+        let transactions = WidgetDataService.getRecentTransactions(limit: 3)
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
         return LatestRecordsEntry(
@@ -134,7 +134,7 @@ struct LatestRecordsWidgetView: View {
                 Spacer()
             } else {
                 // Transaction list
-                ForEach(Array(entry.transactions.prefix(4).enumerated()), id: \.element.id) { _, transaction in
+                ForEach(Array(entry.transactions.prefix(3).enumerated()), id: \.element.id) { _, transaction in
                     TransactionRowView(
                         transaction: transaction,
                         displayFormat: entry.currencyDisplayFormat
@@ -205,11 +205,12 @@ struct TransactionRowView: View {
     private var formattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
 
         // Use original currency amount
         let amount = transaction.amount
-        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "0"
+        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "0.00"
 
         let prefix = transaction.isIncome ? "+" : "-"
         let currency = displayFormat == "symbol"

@@ -181,6 +181,7 @@ final class BudgetEditorViewModel {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
             return true
         } catch {
             print("BudgetEditorViewModel: Error saving budget: \(error)")

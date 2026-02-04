@@ -949,6 +949,7 @@ struct InboxDraftEditSheet: View {
 
         do {
             try modelContext.save()
+            WidgetDataCache.updateCache(context: modelContext)
 
             // Prepare success view data
             approvedTransaction = transaction

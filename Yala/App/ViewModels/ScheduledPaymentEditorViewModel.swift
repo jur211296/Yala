@@ -159,6 +159,7 @@ final class ScheduledPaymentEditorViewModel {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
             return true
         } catch {
             print("ScheduledPaymentEditorViewModel: Error saving payment: \(error)")
