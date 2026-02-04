@@ -1,0 +1,108 @@
+/*
+  Localizable.strings (Portuguese)
+  YalaWidgets
+
+  Portuguese localization for widget texts.
+*/
+
+// MARK: - Gallery (widget gallery names and descriptions)
+"widget.gallery.scheduledPayments" = "Pagamentos Futuros";
+"widget.gallery.scheduledPayments.desc" = "Seus próximos pagamentos e assinaturas";
+"widget.gallery.quickManual" = "Novo Registro";
+"widget.gallery.quickManual.desc" = "Registre uma despesa ou receita manualmente";
+"widget.gallery.quickVoice" = "Registro por Voz";
+"widget.gallery.quickVoice.desc" = "Dite sua despesa ou receita";
+"widget.gallery.quickImage" = "Escanear Recibo";
+"widget.gallery.quickImage.desc" = "Registre a partir de uma foto ou recibo";
+"widget.gallery.cashFlow" = "Fluxo de Caixa";
+"widget.gallery.cashFlow.desc" = "Seu fluxo de caixa líquido";
+"widget.gallery.balance" = "Saldo";
+"widget.gallery.balance.desc" = "Seu saldo total com tendência";
+"widget.gallery.budgets" = "Orçamentos";
+"widget.gallery.budgets.desc" = "Seu progresso de orçamento";
+"widget.gallery.latestRecords" = "Últimos Registros";
+"widget.gallery.latestRecords.desc" = "Suas transações mais recentes";
+"widget.gallery.expense" = "Despesas";
+"widget.gallery.expense.desc" = "Suas despesas totais do período";
+"widget.gallery.categoriesPie" = "Categorias (Pizza)";
+"widget.gallery.categoriesPie.desc" = "Distribuição de despesas por categoria";
+"widget.gallery.subcategoriesPie" = "Subcategorias (Pizza)";
+"widget.gallery.subcategoriesPie.desc" = "Distribuição de despesas por subcategoria";
+"widget.gallery.topCategories" = "Top Categorias";
+"widget.gallery.topCategories.desc" = "Suas categorias com mais despesas";
+"widget.gallery.topSubcategories" = "Top Subcategorias";
+"widget.gallery.topSubcategories.desc" = "Suas subcategorias com mais despesas";
+
+// MARK: - Intent titles and descriptions
+"widget.intent.cashFlow.title" = "Fluxo de Caixa";
+"widget.intent.cashFlow.desc" = "Mostra seu fluxo de caixa líquido";
+"widget.intent.balance.title" = "Saldo";
+"widget.intent.balance.desc" = "Mostra seu saldo total";
+"widget.intent.expense.title" = "Despesas";
+"widget.intent.expense.desc" = "Mostra suas despesas totais";
+"widget.intent.categoriesPie.title" = "Categorias (Pizza)";
+"widget.intent.categoriesPie.desc" = "Distribuição de despesas por categoria";
+"widget.intent.subcategoriesPie.title" = "Subcategorias (Pizza)";
+"widget.intent.subcategoriesPie.desc" = "Distribuição de despesas por subcategoria";
+"widget.intent.topCategories.title" = "Top Categorias";
+"widget.intent.topCategories.desc" = "Mostra suas categorias com mais despesas";
+"widget.intent.topSubcategories.title" = "Top Subcategorias";
+"widget.intent.topSubcategories.desc" = "Mostra suas subcategorias com mais despesas";
+
+// MARK: - UI (texts in widget views)
+"widget.ui.noPayments" = "Sem pagamentos pendentes";
+"widget.ui.noBudgets" = "Sem orçamentos";
+"widget.ui.noRecords" = "Sem registros";
+"widget.ui.noExpenses" = "Sem despesas";
+"widget.ui.noData" = "Sem dados";
+"widget.ui.notEnoughData" = "Dados insuficientes";
+"widget.ui.income" = "Receita";
+"widget.ui.expenses" = "Despesas";
+"widget.ui.balance" = "Saldo";
+"widget.ui.netFlow" = "Fluxo Líquido";
+"widget.ui.cashFlow" = "Fluxo de Caixa";
+"widget.ui.total" = "Total";
+"widget.ui.ofLimit" = "de %@";
+"widget.ui.newRecord" = "Novo Registro";
+"widget.ui.voiceRecord" = "Registro por Voz";
+"widget.ui.scanReceipt" = "Escanear Recibo";
+"widget.ui.upcomingPayments" = "Pagamentos Futuros";
+"widget.ui.budgets" = "Orçamentos";
+"widget.ui.latestRecords" = "Últimos Registros";
+"widget.ui.categories" = "Categorias";
+"widget.ui.subcategories" = "Subcategorias";
+"widget.ui.topCategories" = "Top Categorias";
+"widget.ui.topSubcategories" = "Top Subcategorias";
+"widget.ui.noNote" = "Sem nota";
+
+// MARK: - Date labels
+"widget.ui.overdue" = "Atrasado";
+"widget.ui.today" = "Hoje";
+"widget.ui.tomorrow" = "Amanhã";
+
+// MARK: - Period (period selector)
+"widget.period.type" = "Período";
+"widget.period.sameAsApp" = "Igual ao app";
+"widget.period.thisWeek" = "Esta Semana";
+"widget.period.last7Days" = "Últimos 7 Dias";
+"widget.period.last30Days" = "Últimos 30 Dias";
+"widget.period.thisMonth" = "Este Mês";
+"widget.period.lastMonth" = "Mês Passado";
+"widget.period.thisYear" = "Este Ano";
+"widget.period.lastYear" = "Ano Passado";
+"widget.period.allTime" = "Todo o Tempo";
+
+// MARK: - Payment Category
+"widget.paymentCategory.all" = "Todos";
+"widget.paymentCategory.recurring" = "Recorrentes";
+"widget.paymentCategory.subscription" = "Assinaturas";
+
+// MARK: - Control Widgets
+"widget.control.newExpense" = "Nova Despesa";
+"widget.control.newExpense.desc" = "Abra o Yala para registrar uma despesa";
+"widget.control.voiceExpense" = "Despesa por Voz";
+"widget.control.voiceExpense.desc" = "Dite sua despesa para o Yala";
+"widget.control.photoExpense" = "Despesa por Foto";
+"widget.control.photoExpense.desc" = "Escaneie um recibo com o Yala";
+"widget.control.voiceLabel" = "Voz";
+"widget.control.photoLabel" = "Foto";
