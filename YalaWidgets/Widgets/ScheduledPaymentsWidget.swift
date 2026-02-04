@@ -29,7 +29,9 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                     nextDueDate: Date().addingTimeInterval(86400 * 2),
                     isOverdue: false,
                     paymentCategory: "subscription",
-                    isIncome: false
+                    isIncome: false,
+                    iconName: "play.tv.fill",
+                    colorHex: "#E50914"
                 ),
                 WidgetScheduledPayment(
                     id: "2",
@@ -39,7 +41,9 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                     nextDueDate: Date().addingTimeInterval(-86400),
                     isOverdue: true,
                     paymentCategory: "recurring",
-                    isIncome: false
+                    isIncome: false,
+                    iconName: "house.fill",
+                    colorHex: "#6366F1"
                 ),
                 WidgetScheduledPayment(
                     id: "3",
@@ -49,7 +53,9 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                     nextDueDate: Date().addingTimeInterval(86400 * 5),
                     isOverdue: false,
                     paymentCategory: "subscription",
-                    isIncome: false
+                    isIncome: false,
+                    iconName: "music.note",
+                    colorHex: "#1DB954"
                 )
             ],
             currencyDisplayFormat: "symbol",
@@ -106,7 +112,7 @@ struct ScheduledPaymentsWidgetView: View {
     var entry: ScheduledPaymentsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
             // Header
             WidgetHeader(
                 title: String(localized: "widget.ui.upcomingPayments", bundle: .main),
@@ -153,16 +159,17 @@ struct PaymentRowView: View {
     let displayFormat: String
 
     var body: some View {
-        HStack(spacing: WDS.ListItem.internalSpacing) {
-            // Overdue indicator or category icon
+        HStack(spacing: WDS.Spacing.sm) {
+            // Icon badge con color de la subcategoría/payment
             ZStack {
                 Circle()
-                    .fill(iconBackgroundColor)
-                    .frame(width: WDS.ListItem.iconSize, height: WDS.ListItem.iconSize)
+                    .fill(paymentColor.opacity(0.2))
+                    .frame(width: WDS.ListItem.iconSizeCompact,
+                           height: WDS.ListItem.iconSizeCompact)
 
                 Image(systemName: iconName)
                     .font(.system(size: WDS.Icon.sm))
-                    .foregroundColor(iconColor)
+                    .foregroundColor(payment.isOverdue ? WidgetColors.overdue : paymentColor)
                     .widgetAccentable()
             }
 
@@ -188,19 +195,23 @@ struct PaymentRowView: View {
         }
     }
 
+    // Icono con fallback para backwards compatibility
     private var iconName: String {
         if payment.isOverdue {
             return "exclamationmark"
         }
-        return payment.paymentCategory == "subscription" ? "repeat" : "calendar"
+        if let icon = payment.iconName {
+            return icon
+        }
+        // Fallback basado en paymentCategory
+        return payment.paymentCategory == "subscription"
+            ? "creditcard.and.123"
+            : "arrow.trianglehead.2.clockwise.rotate.90"
     }
 
-    private var iconColor: Color {
-        payment.isOverdue ? WidgetColors.overdue : WidgetColors.accent
-    }
-
-    private var iconBackgroundColor: Color {
-        (payment.isOverdue ? WidgetColors.overdue : WidgetColors.accent).opacity(0.2)
+    // Color con fallback para backwards compatibility
+    private var paymentColor: Color {
+        Color(hex: payment.colorHex ?? "#6366F1")
     }
 
     private var amountColor: Color {

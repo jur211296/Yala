@@ -36,6 +36,8 @@ struct WidgetBudget: Codable {
     let currencyCode: String
     let periodType: String
     let percentUsed: Double
+    let iconName: String
+    let colorHex: String
 }
 
 /// Lightweight scheduled payment data for widgets
@@ -48,6 +50,8 @@ struct WidgetScheduledPayment: Codable {
     let isOverdue: Bool
     let paymentCategory: String  // "recurring" or "subscription"
     let isIncome: Bool
+    let iconName: String
+    let colorHex: String
 }
 
 /// Balance trend data point for widgets
@@ -271,6 +275,7 @@ enum WidgetDataCache {
         let widgetBudgets = budgets.map { budget in
             let spent = calculateBudgetSpent(budget: budget, transactions: recentTransactions)
             let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
+            let (icon, color) = getBudgetDisplayProperties(budget: budget)
 
             return WidgetBudget(
                 id: budget.id.uuidString,
@@ -279,14 +284,18 @@ enum WidgetDataCache {
                 spentAmount: spent,
                 currencyCode: budget.currencyCode,
                 periodType: budget.periodType,
-                percentUsed: percentUsed
+                percentUsed: percentUsed,
+                iconName: icon,
+                colorHex: color
             )
         }
 
         // Build widget scheduled payments
         let today = Calendar.current.startOfDay(for: Date())
         let widgetPayments = scheduledPayments.map { payment in
-            WidgetScheduledPayment(
+            let (icon, color) = getPaymentDisplayProperties(payment: payment)
+
+            return WidgetScheduledPayment(
                 id: payment.id.uuidString,
                 name: payment.name,
                 amount: payment.amount,
@@ -294,7 +303,9 @@ enum WidgetDataCache {
                 nextDueDate: payment.nextDueDate,
                 isOverdue: payment.nextDueDate < today,
                 paymentCategory: payment.paymentCategory,
-                isIncome: payment.transactionType == "income"
+                isIncome: payment.transactionType == "income",
+                iconName: icon,
+                colorHex: color
             )
         }
 
@@ -441,6 +452,49 @@ enum WidgetDataCache {
         }
 
         return spent
+    }
+
+    /// Extracts display properties (icon, color) from a budget based on its subcategories
+    private static func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
+        let subcategories = budget.subcategories ?? []
+        guard !subcategories.isEmpty else {
+            return ("chart.pie.fill", "#6366F1")
+        }
+
+        if subcategories.count == 1, let subcategory = subcategories.first {
+            // Single subcategory: use its icon/color, or fallback to category
+            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "tag.fill"
+            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
+            return (icon, color)
+        }
+
+        // Multiple subcategories: check if all from same category
+        let uniqueCategories = Set(subcategories.map { $0.safeCategory.persistentModelID })
+        if uniqueCategories.count == 1, let firstSubcategory = subcategories.first {
+            let category = firstSubcategory.safeCategory
+            let icon = category.iconName ?? "tag.fill"
+            let color = category.colorHex
+            return (icon, color)
+        }
+
+        // Multiple categories: use generic icon
+        return ("chart.pie.fill", "#6366F1")
+    }
+
+    /// Extracts display properties (icon, color) from a scheduled payment
+    private static func getPaymentDisplayProperties(payment: ScheduledPayment) -> (icon: String, color: String) {
+        if let subcategory = payment.subcategory {
+            // Use subcategory icon/color, or fallback to category
+            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "creditcard.fill"
+            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
+            return (icon, color)
+        }
+
+        // No subcategory: use icon based on payment category
+        if payment.paymentCategory == "subscription" {
+            return ("creditcard.and.123", "#6366F1")
+        }
+        return ("arrow.trianglehead.2.clockwise.rotate.90", "#6366F1")
     }
 
     private static func buildTrendData(transactions: [TransactionItem], totalBalance: Double) -> WidgetTrendData {

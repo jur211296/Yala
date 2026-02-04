@@ -28,7 +28,9 @@ struct BudgetsEntry: TimelineEntry {
                     spentAmount: 720,
                     currencyCode: "PEN",
                     periodType: "monthly",
-                    percentUsed: 90
+                    percentUsed: 90,
+                    iconName: "fork.knife",
+                    colorHex: "#FF6B6B"
                 ),
                 WidgetBudget(
                     id: "2",
@@ -37,7 +39,9 @@ struct BudgetsEntry: TimelineEntry {
                     spentAmount: 180,
                     currencyCode: "PEN",
                     periodType: "monthly",
-                    percentUsed: 60
+                    percentUsed: 60,
+                    iconName: "gamecontroller.fill",
+                    colorHex: "#45B7D1"
                 ),
                 WidgetBudget(
                     id: "3",
@@ -46,7 +50,9 @@ struct BudgetsEntry: TimelineEntry {
                     spentAmount: 120,
                     currencyCode: "PEN",
                     periodType: "monthly",
-                    percentUsed: 30
+                    percentUsed: 30,
+                    iconName: "car.fill",
+                    colorHex: "#4ECDC4"
                 )
             ],
             currencyDisplayFormat: "symbol",
@@ -104,7 +110,7 @@ struct BudgetsWidgetView: View {
     var entry: BudgetsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
             // Header
             WidgetHeader(
                 title: String(localized: "widget.ui.budgets", bundle: .main),
@@ -151,8 +157,22 @@ struct BudgetRowView: View {
     let displayFormat: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
-            HStack {
+        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
+            // Row 1: Icon + Name + %
+            HStack(spacing: WDS.Spacing.sm) {
+                // Icon badge compacto
+                ZStack {
+                    Circle()
+                        .fill(budgetColor.opacity(0.2))
+                        .frame(width: WDS.ListItem.iconSizeCompact,
+                               height: WDS.ListItem.iconSizeCompact)
+
+                    Image(systemName: budget.iconName ?? "chart.pie.fill")
+                        .font(.system(size: WDS.Icon.sm))
+                        .foregroundColor(budgetColor)
+                        .widgetAccentable()
+                }
+
                 Text(budget.name)
                     .font(WDS.Typography.label)
                     .lineLimit(1)
@@ -160,30 +180,35 @@ struct BudgetRowView: View {
                 Spacer()
 
                 Text("\(Int(budget.percentUsed))%")
-                    .font(WDS.Typography.label)
-                    .foregroundColor(progressColor)
+                    .font(WDS.Typography.labelSmall)
+                    .foregroundStyle(progressColor)
+                    .frame(width: WDS.ListItem.percentageWidth, alignment: .trailing)
                     .widgetAccentable()
             }
 
-            // Progress bar
+            // Row 2: Progress bar alineada con texto
             WidgetProgressBar.budget(
                 percentUsed: budget.percentUsed,
-                height: WDS.Progress.height
+                height: WDS.Progress.heightCompact
             )
+            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
 
-            // Amount info
+            // Row 3: Gasto / Límite
             HStack {
                 Text(formattedSpent)
                     .font(WDS.Typography.tiny)
                     .foregroundStyle(.secondary)
-
                 Spacer()
-
                 Text(String(format: String(localized: "widget.ui.ofLimit", bundle: .main), formattedLimit))
                     .font(WDS.Typography.tiny)
                     .foregroundStyle(.tertiary)
             }
+            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
         }
+    }
+
+    private var budgetColor: Color {
+        Color(hex: budget.colorHex ?? "#6366F1")
     }
 
     private var progressColor: Color {
@@ -268,7 +293,9 @@ struct BudgetsWidget: Widget {
                 spentAmount: 920,
                 currencyCode: "PEN",
                 periodType: "monthly",
-                percentUsed: 115
+                percentUsed: 115,
+                iconName: "fork.knife",
+                colorHex: "#FF6B6B"
             ),
             WidgetBudget(
                 id: "2",
@@ -277,7 +304,9 @@ struct BudgetsWidget: Widget {
                 spentAmount: 290,
                 currencyCode: "PEN",
                 periodType: "monthly",
-                percentUsed: 97
+                percentUsed: 97,
+                iconName: "gamecontroller.fill",
+                colorHex: "#45B7D1"
             ),
             WidgetBudget(
                 id: "3",
@@ -286,7 +315,9 @@ struct BudgetsWidget: Widget {
                 spentAmount: 250,
                 currencyCode: "PEN",
                 periodType: "monthly",
-                percentUsed: 62
+                percentUsed: 62,
+                iconName: "car.fill",
+                colorHex: "#4ECDC4"
             )
         ],
         currencyDisplayFormat: "symbol",

@@ -34,6 +34,8 @@ struct WidgetBudget: Codable {
     let currencyCode: String
     let periodType: String
     let percentUsed: Double
+    let iconName: String?   // Optional for backwards compatibility - fallback: "chart.pie.fill"
+    let colorHex: String?   // Optional for backwards compatibility - fallback: "#6366F1"
 }
 
 /// Lightweight scheduled payment data for widgets
@@ -46,6 +48,8 @@ struct WidgetScheduledPayment: Codable {
     let isOverdue: Bool
     let paymentCategory: String  // "recurring" or "subscription"
     let isIncome: Bool
+    let iconName: String?   // Optional for backwards compatibility - fallback based on paymentCategory
+    let colorHex: String?   // Optional for backwards compatibility - fallback: "#6366F1"
 }
 
 /// Balance trend data point for widgets

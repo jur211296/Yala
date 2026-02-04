@@ -110,7 +110,7 @@ struct LatestRecordsWidgetView: View {
     var entry: LatestRecordsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
             // Header
             WidgetHeader(
                 title: String(localized: "widget.ui.latestRecords", bundle: .main),
@@ -157,12 +157,13 @@ struct TransactionRowView: View {
     let displayFormat: String
 
     var body: some View {
-        HStack(spacing: WDS.ListItem.internalSpacing) {
+        HStack(spacing: WDS.Spacing.sm) {
             // Category icon with color
             ZStack {
                 Circle()
                     .fill(categoryColor.opacity(0.2))
-                    .frame(width: WDS.ListItem.iconSize, height: WDS.ListItem.iconSize)
+                    .frame(width: WDS.ListItem.iconSizeCompact,
+                           height: WDS.ListItem.iconSizeCompact)
 
                 Image(systemName: transaction.categoryIcon ?? "questionmark")
                     .font(.system(size: WDS.Icon.sm))
