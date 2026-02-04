@@ -163,40 +163,21 @@ struct CategoriesPieWidgetView: View {
                 }
                 Spacer()
             } else {
-                // Chart with bubbles (left) + Legend (right)
-                HStack(alignment: .top, spacing: WDS.Spacing.md) {
-                    // Pie chart with bubbles (~60% width)
-                    WidgetSectorChart(
-                        segments: entry.categories.map { category in
-                            WidgetSectorSegment(
-                                id: category.id,
-                                name: category.name,
-                                iconName: category.iconName,
-                                amount: category.amount,
-                                percentage: category.percentage,
-                                colorHex: category.colorHex
-                            )
-                        },
-                        innerRadiusRatio: 0.50,
-                        showBubbles: true
-                    )
-                    .frame(maxWidth: .infinity)
-
-                    // Legend 1 column (right)
-                    VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                        ForEach(entry.categories, id: \.id) { category in
-                            HStack(spacing: WDS.Spacing.xxs) {
-                                Circle()
-                                    .fill(Color(hex: category.colorHex))
-                                    .frame(width: 6, height: 6)
-                                Text(category.name)
-                                    .font(WDS.Typography.tiny)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                    .frame(width: 90)
-                }
+                // Pie chart with bubbles (full width, no legend)
+                WidgetSectorChart(
+                    segments: entry.categories.map { category in
+                        WidgetSectorSegment(
+                            id: category.id,
+                            name: category.name,
+                            iconName: category.iconName,
+                            amount: category.amount,
+                            percentage: category.percentage,
+                            colorHex: category.colorHex
+                        )
+                    },
+                    innerRadiusRatio: 0.50,
+                    showBubbles: true
+                )
             }
         }
         .padding(WDS.Spacing.xs)

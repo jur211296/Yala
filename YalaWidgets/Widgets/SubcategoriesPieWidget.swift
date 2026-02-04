@@ -164,40 +164,21 @@ struct SubcategoriesPieWidgetView: View {
                 }
                 Spacer()
             } else {
-                // Chart with bubbles (left) + Legend (right)
-                HStack(alignment: .top, spacing: WDS.Spacing.md) {
-                    // Pie chart with bubbles (~60% width)
-                    WidgetSectorChart(
-                        segments: entry.subcategories.map { subcategory in
-                            WidgetSectorSegment(
-                                id: subcategory.id,
-                                name: subcategory.name,
-                                iconName: subcategory.iconName,
-                                amount: subcategory.amount,
-                                percentage: subcategory.percentage,
-                                colorHex: subcategory.colorHex
-                            )
-                        },
-                        innerRadiusRatio: 0.50,
-                        showBubbles: true
-                    )
-                    .frame(maxWidth: .infinity)
-
-                    // Legend 1 column (right)
-                    VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                        ForEach(entry.subcategories, id: \.id) { subcategory in
-                            HStack(spacing: WDS.Spacing.xxs) {
-                                Circle()
-                                    .fill(Color(hex: subcategory.colorHex))
-                                    .frame(width: 6, height: 6)
-                                Text(subcategory.name)
-                                    .font(WDS.Typography.tiny)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                    .frame(width: 90)
-                }
+                // Pie chart with bubbles (full width, no legend)
+                WidgetSectorChart(
+                    segments: entry.subcategories.map { subcategory in
+                        WidgetSectorSegment(
+                            id: subcategory.id,
+                            name: subcategory.name,
+                            iconName: subcategory.iconName,
+                            amount: subcategory.amount,
+                            percentage: subcategory.percentage,
+                            colorHex: subcategory.colorHex
+                        )
+                    },
+                    innerRadiusRatio: 0.50,
+                    showBubbles: true
+                )
             }
         }
         .padding(WDS.Spacing.xs)
