@@ -3,6 +3,7 @@
 //  Yala
 //
 //  Monitors iCloud sync status for UI display.
+//  Sync is always enabled when iCloud account is available.
 //
 
 import CloudKit
@@ -24,27 +25,13 @@ final class iCloudSyncService {
         case idle
         case syncing
         case error(String)
-        case disabled
         case noAccount
     }
 
     private(set) var syncStatus: SyncStatus = .idle
     private(set) var lastSyncDate: Date?
 
-    /// Whether iCloud sync is enabled by user
-    var isEnabled: Bool {
-        get { SwiftDataConfiguration.iCloudSyncEnabled }
-        set {
-            SwiftDataConfiguration.iCloudSyncEnabled = newValue
-            if newValue {
-                checkAccountStatus()
-            } else {
-                syncStatus = .disabled
-            }
-        }
-    }
-
-    /// Whether iCloud account is available
+    /// Whether iCloud account is available (sync is automatic when true)
     var isAccountAvailable: Bool {
         SwiftDataConfiguration.isICloudAvailable()
     }
@@ -64,11 +51,6 @@ final class iCloudSyncService {
     // MARK: - Account Status
 
     func checkAccountStatus() {
-        if !isEnabled {
-            syncStatus = .disabled
-            return
-        }
-
         if !isAccountAvailable {
             syncStatus = .noAccount
             return

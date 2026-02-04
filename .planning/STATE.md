@@ -165,16 +165,11 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - Falta añadirla al paso de onboarding de divisas secundarias
 - Referencia: `SecondaryCurrencyPickerSheet.swift` (commit cb01b06)
 
-**REVIEW-1: iCloud Sync - verificar funcionamiento** 🔴 URGENTE
-- El sync no parece funcionar al 100%
-- Investigar y entender el flujo actual de CloudKit
-- Verificar si los datos se sincronizan entre dispositivos
-- **NUEVO (2026-02-03):** Usuario eliminó app completamente y al reinstalar se cargó con datos
-  - iCloud sync OFF por default en iPhone, pero ON en iPad
-  - Posible sync inesperado desde iPad sin consentimiento explícito
-  - Investigar: ¿CloudKit sincroniza aunque el toggle local esté OFF?
-- Archivos: `SwiftDataConfiguration.swift`, `SyncSettingsView.swift`
-- **Prioridad:** Resolver después de BUG-2 y BUG-3
+**REVIEW-1: iCloud Sync** ✅ COMPLETADO
+- Simplificado: sync siempre activo si hay cuenta iCloud
+- Eliminado toggle opt-in (causaba confusión entre dispositivos)
+- Vista de Settings ahora solo muestra estado de sincronización
+- Comportamiento consistente: si tienes cuenta iCloud, tus datos se sincronizan
 
 ---
 
@@ -363,9 +358,14 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Limpieza código legacy períodos y corrección bugs widgets (eba675b)
-Next step: REVIEW-1 iCloud Sync o preparar release V1.1
+Stopped at: iCloud Sync simplificado a siempre activo
+Next step: Preparar release V1.1
 Resume context:
+- **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
+  - Eliminado `iCloudSyncEnabled` de UserDefaults
+  - Eliminado estado `.disabled` de `iCloudSyncService`
+  - `iCloudSyncSettingsView` ahora solo muestra estado (sin toggle ni reinicio)
+  - Eliminadas 6 claves de localización innecesarias
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
 - **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
 - **BUG-3 Fase 3 ✅:** Infraestructura de widgets (WidgetColors DS, WDS tokens, WidgetHeader, WidgetKPI, WidgetProgressBar, CurrencySymbols, MiniDonutChart, Color+Hex compartido)

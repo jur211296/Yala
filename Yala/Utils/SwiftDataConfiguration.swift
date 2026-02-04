@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Configuración centralizada de SwiftData para aislamiento entre builds.
-//  Incluye soporte opcional para CloudKit sync.
+//  CloudKit sync siempre activo si hay cuenta iCloud.
 //
 
 import CloudKit
@@ -20,12 +20,6 @@ enum SwiftDataConfiguration {
             return "iCloud.com.jurgenschmidt.yala.dev"
         }
         return "iCloud.com.jurgenschmidt.yala"
-    }
-
-    /// User preference for iCloud sync (default: OFF)
-    static var iCloudSyncEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: "iCloudSyncEnabled") }
-        set { UserDefaults.standard.set(newValue, forKey: "iCloudSyncEnabled") }
     }
 
     /// Check if iCloud account is available
@@ -63,9 +57,9 @@ enum SwiftDataConfiguration {
         ])
     }
 
-    /// ModelConfiguration - with or without CloudKit based on user preference
+    /// ModelConfiguration - CloudKit enabled automatically if iCloud account available
     static var configuration: ModelConfiguration {
-        if iCloudSyncEnabled && isICloudAvailable() {
+        if isICloudAvailable() {
             return ModelConfiguration(
                 databaseName,
                 cloudKitDatabase: .private(cloudKitContainerIdentifier)

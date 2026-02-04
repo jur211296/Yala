@@ -2512,22 +2512,16 @@ enum L10n {
 
     enum iCloud {
         static var title: String { NSLocalizedString("icloud.title", comment: "") }
-        static var syncSection: String { NSLocalizedString("icloud.syncSection", comment: "") }
-        static var enableSync: String { NSLocalizedString("icloud.enableSync", comment: "") }
         static var description: String { NSLocalizedString("icloud.description", comment: "") }
         static var privacyNote: String { NSLocalizedString("icloud.privacyNote", comment: "") }
         static var statusSynced: String { NSLocalizedString("icloud.statusSynced", comment: "") }
         static var statusSyncing: String { NSLocalizedString("icloud.statusSyncing", comment: "") }
-        static var statusDisabled: String { NSLocalizedString("icloud.statusDisabled", comment: "") }
         static var statusNoAccount: String { NSLocalizedString("icloud.statusNoAccount", comment: "") }
         static var statusError: String { NSLocalizedString("icloud.statusError", comment: "") }
         static func lastSync(_ time: String) -> String {
             String(format: NSLocalizedString("icloud.lastSync", comment: ""), time)
         }
         static var noAccountWarning: String { NSLocalizedString("icloud.noAccountWarning", comment: "") }
-        static var restartRequired: String { NSLocalizedString("icloud.restartRequired", comment: "") }
-        static var restartMessage: String { NSLocalizedString("icloud.restartMessage", comment: "") }
-        static var restartNow: String { NSLocalizedString("icloud.restartNow", comment: "") }
     }
 }
 
