@@ -22,15 +22,13 @@ struct BalanceWidgetIntent: WidgetConfigurationIntent {
 }
 
 /// AppEnum wrapper for WidgetPeriod (AppIntents requires AppEnum conformance)
+/// Aligned with DetailPeriod from main app (8 cases, excluding custom)
 enum WidgetPeriodOption: String, AppEnum {
-    case today
-    case yesterday
     case thisWeek
-    case lastWeek
+    case last7Days
+    case last30Days
     case thisMonth
     case lastMonth
-    case thisQuarter
-    case lastQuarter
     case thisYear
     case lastYear
     case allTime
@@ -41,14 +39,11 @@ enum WidgetPeriodOption: String, AppEnum {
 
     static var caseDisplayRepresentations: [WidgetPeriodOption: DisplayRepresentation] {
         [
-            .today: "Hoy",
-            .yesterday: "Ayer",
             .thisWeek: "Esta semana",
-            .lastWeek: "Semana pasada",
+            .last7Days: "Últimos 7 días",
+            .last30Days: "Últimos 30 días",
             .thisMonth: "Este mes",
             .lastMonth: "Mes pasado",
-            .thisQuarter: "Este trimestre",
-            .lastQuarter: "Trimestre pasado",
             .thisYear: "Este año",
             .lastYear: "Año pasado",
             .allTime: "Todo el tiempo"
@@ -57,14 +52,11 @@ enum WidgetPeriodOption: String, AppEnum {
 
     var toWidgetPeriod: WidgetPeriod {
         switch self {
-        case .today: return .today
-        case .yesterday: return .yesterday
         case .thisWeek: return .thisWeek
-        case .lastWeek: return .lastWeek
+        case .last7Days: return .last7Days
+        case .last30Days: return .last30Days
         case .thisMonth: return .thisMonth
         case .lastMonth: return .lastMonth
-        case .thisQuarter: return .thisQuarter
-        case .lastQuarter: return .lastQuarter
         case .thisYear: return .thisYear
         case .lastYear: return .lastYear
         case .allTime: return .allTime

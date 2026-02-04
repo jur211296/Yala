@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 struct PersonalizationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -350,6 +351,13 @@ struct PersonalizationSettingsView: View {
                     // Force recalculation of dateInterval with new firstWeekday
                     let currentPeriod = sessionState.selectedPeriod
                     sessionState.selectedPeriod = currentPeriod
+
+                    // Sync to App Group for widgets
+                    if let defaults = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
+                        defaults.set(weekday.rawValue, forKey: "firstWeekday")
+                    }
+                    WidgetCenter.shared.reloadAllTimelines()
+
                     showingWeekdayPicker = false
                 }
             )

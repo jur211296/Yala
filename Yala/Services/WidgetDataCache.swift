@@ -555,6 +555,10 @@ enum WidgetDataCache {
         do {
             let data = try JSONEncoder().encode(snapshot)
             defaults.set(data, forKey: cacheKey)
+
+            // Sync firstWeekday preference for widget calendar calculations
+            let firstWeekday = UserDefaults.standard.integer(forKey: "firstWeekday")
+            defaults.set(firstWeekday > 0 ? firstWeekday : 2, forKey: "firstWeekday")
         } catch {
             #if DEBUG
             print("WidgetDataCache: Error encoding snapshot: \(error)")

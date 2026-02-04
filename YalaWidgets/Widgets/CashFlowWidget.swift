@@ -460,11 +460,11 @@ struct BidirectionalCashFlowChart: View {
     /// Determine grouping based on period
     private var grouping: Grouping {
         switch period {
-        case .today, .yesterday, .thisWeek, .lastWeek:
+        case .thisWeek, .last7Days:
             return .day
-        case .thisMonth, .lastMonth:
+        case .last30Days, .thisMonth, .lastMonth:
             return .week
-        case .thisQuarter, .lastQuarter, .thisYear, .lastYear, .allTime:
+        case .thisYear, .lastYear, .allTime:
             return .month
         }
     }
