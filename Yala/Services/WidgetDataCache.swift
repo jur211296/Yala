@@ -591,18 +591,18 @@ enum WidgetDataCache {
 
         let netCashFlow = totalIncome - totalExpense
 
-        // Build top categories (expenses only, top 5)
+        // Build top categories (expenses only, top 20 for Large widgets)
         let topCategories = buildTopCategories(
             transactions: periodTransactions,
             totalExpense: totalExpense,
-            limit: 5
+            limit: 20
         )
 
-        // Build top subcategories (expenses only, top 5)
+        // Build top subcategories (expenses only, top 20 for Large widgets)
         let topSubcategories = buildTopSubcategories(
             transactions: periodTransactions,
             totalExpense: totalExpense,
-            limit: 5
+            limit: 20
         )
 
         // Build cash flow by day

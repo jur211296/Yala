@@ -170,10 +170,10 @@ struct WidgetSectorChart: View {
                 if item.percentage > 10.0 {
                     Text("\(Int(item.percentage))%")
                         .font(WDS.Typography.tiny)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color(hex: item.colorHex))
                         .offset(
-                            x: cos(angle) * 24,
-                            y: sin(angle) * 24
+                            x: cos(angle) * 30,
+                            y: sin(angle) * 30
                         )
                 }
             }
