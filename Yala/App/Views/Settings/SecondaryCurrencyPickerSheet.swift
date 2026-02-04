@@ -15,14 +15,29 @@ struct SecondaryCurrencyPickerSheet: View {
     /// Maximum number of secondary currencies allowed
     private let maxSelections = 2
 
-    /// Currencies to show in the recommended section
-    private let recommendedCurrencyPool: [CurrencyCode] = [.usd, .eur, .gbp]
+    /// Base pool of globally recommended currencies
+    private let globalRecommendedPool: [CurrencyCode] = [.usd, .eur, .gbp]
+
+    /// User's regional currency
+    private var userRegionalCurrency: CurrencyCode {
+        CurrencyDefaults.detectCurrencyFromRegion()
+    }
+
+    /// Currencies to show in the recommended section: regional first, then USD/EUR/GBP (no duplicates)
+    private var recommendedCurrencyPool: [CurrencyCode] {
+        var result: [CurrencyCode] = [userRegionalCurrency]
+        for currency in globalRecommendedPool where currency != userRegionalCurrency {
+            result.append(currency)
+        }
+        return result
+    }
 
     /// All currencies except the preferred one, grouped by continent (excluding recommended)
     private var availableCurrencies: [(continent: Continent, currencies: [CurrencyCode])] {
-        CurrencyCode.groupedByContinent.compactMap { group in
+        let pool = recommendedCurrencyPool
+        return CurrencyCode.groupedByContinent.compactMap { group in
             let filtered = group.currencies.filter { currency in
-                currency != preferredCurrency && !recommendedCurrencyPool.contains(currency)
+                currency != preferredCurrency && !pool.contains(currency)
             }
             guard !filtered.isEmpty else { return nil }
             return (continent: group.continent, currencies: filtered)

@@ -397,6 +397,13 @@ struct CurrencySettingsView: View {
     private func updatePreferredCurrency(to newCurrency: CurrencyCode) {
         guard newCurrency != preferredCurrency else { return }
 
+        // Auto-remove from secondary currencies if it was selected there
+        if secondaryCurrencies.contains(newCurrency) {
+            var updated = secondaryCurrencies
+            updated.remove(newCurrency)
+            secondaryCurrenciesRaw = updated.map { $0.rawValue }.joined(separator: ",")
+        }
+
         isUpdating = true
         updateProgress = 0.0
 
