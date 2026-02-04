@@ -35,9 +35,9 @@ struct TopSubcategoriesEntry: TimelineEntry {
         TopSubcategoriesEntry(
             date: Date(),
             subcategories: [
-                WidgetSubcategory(id: "1", name: "Restaurantes", categoryName: "Alimentación", iconName: nil, colorHex: "FF6B6B", amount: 800, percentage: 25),
-                WidgetSubcategory(id: "2", name: "Taxi", categoryName: "Transporte", iconName: nil, colorHex: "4ECDC4", amount: 500, percentage: 15),
-                WidgetSubcategory(id: "3", name: "Streaming", categoryName: "Entretenimiento", iconName: nil, colorHex: "45B7D1", amount: 350, percentage: 11)
+                WidgetSubcategory(id: "1", name: "Restaurantes y Cafés", categoryName: "Alimentación", iconName: "fork.knife", colorHex: "FF6B6B", amount: 800, percentage: 25),
+                WidgetSubcategory(id: "2", name: "Taxi y Transporte", categoryName: "Transporte", iconName: "car.fill", colorHex: "4ECDC4", amount: 500, percentage: 15),
+                WidgetSubcategory(id: "3", name: "Streaming y Suscripciones", categoryName: "Entretenimiento", iconName: "play.tv", colorHex: "45B7D1", amount: 350, percentage: 11)
             ],
             totalExpense: 3250,
             currencyCode: "PEN",
@@ -100,13 +100,14 @@ struct TopSubcategoriesWidgetView: View {
     var entry: TopSubcategoriesEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
             // Header
             HStack {
                 WidgetHeader(
                     title: "Top Subcategorías",
                     subtitle: entry.period.toWidgetPeriod.displayName,
-                    icon: "list.bullet.indent"
+                    icon: "list.bullet.indent",
+                    inline: true
                 )
                 Spacer()
             }
@@ -153,52 +154,53 @@ struct SubcategoryRow: View {
     let displayFormat: String
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.md) {
-            // Color indicator (smaller than category icon)
-            Circle()
-                .fill(subcategoryColor)
-                .frame(width: 12, height: 12)
+        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
+            // Single line: Icon + Name + Amount + %
+            HStack(spacing: WDS.Spacing.sm) {
+                // Icon badge (same style as categories)
+                ZStack {
+                    Circle()
+                        .fill(subcategoryColor.opacity(0.2))
+                        .frame(width: WDS.ListItem.iconSizeCompact,
+                               height: WDS.ListItem.iconSizeCompact)
 
-            // Name and progress
-            VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(subcategory.name)
-                            .font(WDS.Typography.label)
-                            .lineLimit(1)
-
-                        Text(subcategory.categoryName)
-                            .font(WDS.Typography.tiny)
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
-                    }
-
-                    Spacer()
-
-                    Text(formattedAmount)
-                        .font(WDS.Typography.value)
-                        .foregroundStyle(.secondary)
+                    Image(systemName: subcategory.iconName ?? "tag.fill")
+                        .font(.system(size: WDS.Icon.sm))
+                        .foregroundColor(subcategoryColor)
                 }
 
-                // Progress bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                            .fill(Color.gray.opacity(0.15))
+                // Only subcategory name (no parent category)
+                Text(subcategory.name)
+                    .font(WDS.Typography.label)
+                    .lineLimit(1)
 
-                        RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                            .fill(subcategoryColor)
-                            .frame(width: geo.size.width * CGFloat(min(subcategory.percentage, 100) / 100))
-                    }
-                }
-                .frame(height: WDS.Progress.heightCompact)
+                Spacer()
+
+                // Amount
+                Text(formattedAmount)
+                    .font(WDS.Typography.value)
+                    .foregroundStyle(.secondary)
+
+                // Percentage inline
+                Text("\(Int(subcategory.percentage))%")
+                    .font(WDS.Typography.labelSmall)
+                    .foregroundStyle(subcategoryColor)
+                    .frame(width: 32, alignment: .trailing)
             }
 
-            // Percentage
-            Text("\(Int(subcategory.percentage))%")
-                .font(WDS.Typography.tiny)
-                .foregroundStyle(.tertiary)
-                .frame(width: 30, alignment: .trailing)
+            // Progress bar aligned with text
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
+                        .fill(Color.gray.opacity(0.15))
+
+                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
+                        .fill(subcategoryColor)
+                        .frame(width: geo.size.width * CGFloat(min(subcategory.percentage, 100) / 100))
+                }
+            }
+            .frame(height: WDS.Progress.heightCompact)
+            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
         }
     }
 

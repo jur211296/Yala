@@ -141,5 +141,8 @@ enum WDS {
 
         /// Icon badge size
         static let iconSize: CGFloat = 28
+
+        /// Compact icon size for TopCategories/TopSubcategories widgets
+        static let iconSizeCompact: CGFloat = 24
     }
 }

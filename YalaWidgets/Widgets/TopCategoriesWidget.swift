@@ -35,9 +35,9 @@ struct TopCategoriesEntry: TimelineEntry {
         TopCategoriesEntry(
             date: Date(),
             categories: [
-                WidgetCategory(id: "1", name: "Alimentación", iconName: "fork.knife", colorHex: "FF6B6B", amount: 1200, percentage: 37),
-                WidgetCategory(id: "2", name: "Transporte", iconName: "car.fill", colorHex: "4ECDC4", amount: 800, percentage: 25),
-                WidgetCategory(id: "3", name: "Entretenimiento", iconName: "gamecontroller.fill", colorHex: "45B7D1", amount: 600, percentage: 18)
+                WidgetCategory(id: "1", name: "Alimentación y Bebidas", iconName: "fork.knife", colorHex: "FF6B6B", amount: 1200, percentage: 37),
+                WidgetCategory(id: "2", name: "Transporte Público", iconName: "car.fill", colorHex: "4ECDC4", amount: 800, percentage: 25),
+                WidgetCategory(id: "3", name: "Entretenimiento y Ocio", iconName: "gamecontroller.fill", colorHex: "45B7D1", amount: 600, percentage: 18)
             ],
             totalExpense: 3250,
             currencyCode: "PEN",
@@ -100,13 +100,14 @@ struct TopCategoriesWidgetView: View {
     var entry: TopCategoriesEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
+        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
             // Header
             HStack {
                 WidgetHeader(
                     title: "Top Categorías",
                     subtitle: entry.period.toWidgetPeriod.displayName,
-                    icon: "chart.bar.fill"
+                    icon: "chart.bar.fill",
+                    inline: true
                 )
                 Spacer()
             }
@@ -153,50 +154,53 @@ struct CategoryRow: View {
     let displayFormat: String
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.md) {
-            // Icon badge
-            ZStack {
-                Circle()
-                    .fill(categoryColor.opacity(0.2))
-                    .frame(width: WDS.ListItem.iconSize, height: WDS.ListItem.iconSize)
+        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
+            // Single line: Icon + Name + Amount + %
+            HStack(spacing: WDS.Spacing.sm) {
+                // Compact icon badge
+                ZStack {
+                    Circle()
+                        .fill(categoryColor.opacity(0.2))
+                        .frame(width: WDS.ListItem.iconSizeCompact,
+                               height: WDS.ListItem.iconSizeCompact)
 
-                Image(systemName: category.iconName)
-                    .font(.system(size: WDS.Icon.sm))
-                    .foregroundColor(categoryColor)
-            }
-
-            // Name and progress
-            VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                HStack {
-                    Text(category.name)
-                        .font(WDS.Typography.label)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    Text(formattedAmount)
-                        .font(WDS.Typography.value)
-                        .foregroundStyle(.secondary)
+                    Image(systemName: category.iconName)
+                        .font(.system(size: WDS.Icon.sm))
+                        .foregroundColor(categoryColor)
                 }
 
-                // Progress bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                            .fill(Color.gray.opacity(0.15))
+                // Name
+                Text(category.name)
+                    .font(WDS.Typography.label)
+                    .lineLimit(1)
 
-                        RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                            .fill(categoryColor)
-                            .frame(width: geo.size.width * CGFloat(min(category.percentage, 100) / 100))
-                    }
-                }
-                .frame(height: WDS.Progress.heightCompact)
+                Spacer()
 
-                // Percentage
+                // Amount
+                Text(formattedAmount)
+                    .font(WDS.Typography.value)
+                    .foregroundStyle(.secondary)
+
+                // Percentage inline
                 Text("\(Int(category.percentage))%")
-                    .font(WDS.Typography.tiny)
-                    .foregroundStyle(.tertiary)
+                    .font(WDS.Typography.labelSmall)
+                    .foregroundStyle(categoryColor)
+                    .frame(width: 32, alignment: .trailing)
             }
+
+            // Progress bar aligned with text (left padding = iconSize + spacing)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
+                        .fill(Color.gray.opacity(0.15))
+
+                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
+                        .fill(categoryColor)
+                        .frame(width: geo.size.width * CGFloat(min(category.percentage, 100) / 100))
+                }
+            }
+            .frame(height: WDS.Progress.heightCompact)
+            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
         }
     }
 
