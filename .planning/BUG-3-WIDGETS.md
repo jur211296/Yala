@@ -802,12 +802,22 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
     - Subcategorías usan icono de categoría padre como fallback
     - Sin leyenda (bubbles con iconos proveen contexto suficiente)
 
+### Fase 6.7: Widget Cache Sync ✅ COMPLETADA
+15. ✅ **Cache update en todas las acciones de transacciones**:
+    - NewTransactionViewModel: crear/editar transacciones manuales
+    - ImportIntroSheet: importación CSV/XLSX (mono y multi-moneda)
+    - AccountFormViewModel: saldo inicial de cuenta
+    - TransactionService: bulk updates (cuenta, subcategoría, monto)
+    - DataWipeService: limpiar cache al borrar datos
+    - Widgets ahora se actualizan inmediatamente en TODAS las acciones
+
 ---
 
 ## Historial de Cambios
 
 | Fecha | Issue | Cambio |
 |-------|-------|--------|
+| 2026-02-04 | - | Fase 6.7: Widget cache sync en todas las acciones (NewTransactionVM, Import, AccountForm, TransactionService bulk, DataWipeService) |
 | 2026-02-04 | TC.2, TS.1 | Fase 6.6: Pie Charts Large rediseñados con Swift Charts SectorMark, bubbles con iconos, connector lines, porcentajes > 10%, límite 5→20 categorías, subcategorías usan icono de categoría padre |
 | 2026-02-03 | - | Fase 6.5: Rediseño widgets Medium (Balance, Expense) con Swift Charts idéntico a PanelView, ejes reducidos (8pt), color Balance=electricIndigo |
 | 2026-02-03 | CF.1 | CashFlow Medium rediseñado: header (título+subtítulo izq, KPI derecha), barras horizontales full-width idénticas a PanelView compacto |

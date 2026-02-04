@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] 1399aa3 fix(widgets): update cache on all transaction-affecting actions
 - [2026-02-03] 5bdb5c2 fix(widgets): use dynamic URL scheme for deeplinks
 - [2026-02-03] 00bfc7a docs: update BUG-3 Phase 6.2 progress
 - [2026-02-03] 6d0afa3 fix(widgets): reduce padding to 4pt and remove decimals
@@ -360,7 +361,7 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: BUG-3 Fase 6.6 completada (Pie Charts Large rediseñados)
+Stopped at: BUG-3 Fase 6.7 completada (Widget Cache Sync en todas las acciones)
 Next step: QA manual de widgets o otros bugs
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
@@ -378,6 +379,12 @@ Resume context:
   - Expense Medium: Swift Charts con AreaMark+LineMark, color expense, ejes 8pt
   - Parámetros idénticos a PanelView: gradient 0.1→0.05, gridlines secondary.opacity(0.1), lineWidth 2, .monotone
 - **Aprendizaje clave:** Siempre usar Swift Charts para widgets que replican PanelView (grouping, calendarUnit, SmartAxisHelper, mismos tokens)
+- **BUG-3 Fase 6.7 ✅:** Widget cache sync en todas las acciones de transacciones:
+  - NewTransactionViewModel: crear/editar manuales
+  - ImportIntroSheet: CSV/XLSX mono y multi-moneda
+  - AccountFormViewModel: saldo inicial
+  - TransactionService: bulk updates (cuenta, subcategoría, monto)
+  - DataWipeService: clearCache al borrar datos
 - **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
 - **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
 - **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)
