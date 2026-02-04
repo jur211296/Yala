@@ -523,37 +523,8 @@ struct ScheduledPaymentsListView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: emptyStateIcon)
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.electricIndigo, Color.hotPink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(NSLocalizedString("scheduled.empty.title", comment: ""))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(NSLocalizedString("scheduled.empty.message", comment: ""))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, DS.Spacing.xxxl)
+        YalaEmptyState.noScheduledPayments(icon: emptyStateIcon)
+            .padding(.top, DS.Spacing.xxxl)
     }
 
     private var emptyStateIcon: String {

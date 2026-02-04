@@ -133,6 +133,17 @@ extension YalaEmptyState {
             action: action
         )
     }
+
+    /// Empty state for no scheduled payments
+    static func noScheduledPayments(icon: String = "calendar.badge.clock", action: (() -> Void)? = nil) -> YalaEmptyState {
+        YalaEmptyState(
+            icon: icon,
+            title: NSLocalizedString("scheduled.empty.title", comment: ""),
+            message: NSLocalizedString("scheduled.empty.message", comment: ""),
+            actionTitle: action != nil ? NSLocalizedString("scheduled.new", comment: "") : nil,
+            action: action
+        )
+    }
 }
 
 #Preview {

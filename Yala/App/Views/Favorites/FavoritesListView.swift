@@ -129,37 +129,9 @@ struct FavoritesListView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.xxl) {
+        VStack {
             Spacer()
-
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "star.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.electricIndigo, Color.hotPink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Favorites.noFavorites)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Favorites.createTemplate)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-
+            YalaEmptyState.noFavorites()
             Spacer()
         }
     }
