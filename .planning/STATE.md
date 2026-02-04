@@ -151,9 +151,10 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ Fase 6.3: UI por widget (CashFlow Large con Swift Charts igual a PanelView)
 - ✅ Fase 6.4: Deeplinks dinámicos (WidgetURLHelper lee URL_SCHEME del bundle)
 - ✅ Fase 6.5: Widgets Medium rediseñados (Balance, Expense, CashFlow) con Swift Charts idéntico a PanelView
+- ✅ Fase 6.6: Pie Charts Large rediseñados (CategoriesPie, SubcategoriesPie) con Swift Charts SectorMark, bubbles con iconos, porcentajes > 10%
 - 🔴 Pendiente: G.2 KPIs poco llamativos (limitación de fuente del sistema)
 - **Documentación completa:** [`.planning/BUG-3-WIDGETS.md`](.planning/BUG-3-WIDGETS.md)
-- **Issues QA:** 12 ✅ resueltos, 1 🔴 pendiente (limitación de fuente)
+- **Issues QA:** 14 ✅ resueltos, 1 🔴 pendiente (limitación de fuente)
 - Archivos: `YalaWidgets/Widgets/*.swift`, `Yala/Services/WidgetDataCache.swift`
 
 **BUG-4: Divisas recomendadas en Onboarding**
@@ -358,8 +359,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ## Session Continuity
 
-Last session: 2026-02-03
-Stopped at: BUG-3 Fase 6.5 completada (widgets Medium rediseñados)
+Last session: 2026-02-04
+Stopped at: BUG-3 Fase 6.6 completada (Pie Charts Large rediseñados)
 Next step: QA manual de widgets o otros bugs
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)

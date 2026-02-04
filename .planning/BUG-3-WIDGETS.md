@@ -614,7 +614,8 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 | UI Global | 3 | 2 | 1 |
 | UI por Widget | 4 | 4 | 0 |
 | Deeplinks | 1 | 1 | 0 |
-| **TOTAL** | **13** | **12** | **1** |
+| Pie Charts | 2 | 2 | 0 |
+| **TOTAL** | **15** | **14** | **1** |
 
 ---
 
@@ -736,20 +737,30 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 - **Descripción:** Está bastante decente pero se corta arriba y abajo.
 - **Archivos:** `YalaWidgets/Widgets/TopCategoriesWidget.swift`
 
-#### TC.2 🔴 UI Large - gráfica circular no se parece a PanelView
+#### TC.2 ✅ UI Large - gráfica circular rediseñada
 - **Descripción:**
   - La gráfica circular no se parece en nada a la de PanelView
   - ¿Es posible que el gráfico tenga los iconos de las categorías?
   - ¿Podemos mostrar más de 5 categorías? (Top 5 es para Medium, en Large quiere todas)
-- **Archivos:** `YalaWidgets/Widgets/TopCategoriesWidget.swift`, `YalaWidgets/Components/MiniDonutChart.swift`
+- **Resuelto:** 2026-02-04
+- **Fix:**
+  - WidgetSectorChart con Swift Charts SectorMark
+  - Bubbles con iconos de categoría conectados por líneas
+  - Porcentajes fuera del icono (> 10%) en color del segmento
+  - Límite aumentado de 5 a 20 categorías en WidgetDataCache
+- **Archivos:** `YalaWidgets/Views/WidgetSectorChart.swift`, `YalaWidgets/Widgets/CategoriesPieWidget.swift`, `Yala/Services/WidgetDataCache.swift`
 
 ---
 
 ### TopSubcategoriesWidget
 
-#### TS.1 🔴 Mismos issues que TopCategories
+#### TS.1 ✅ UI Large rediseñada (mismo patrón que TC.2)
 - **Descripción:** UI Medium cortado, UI Large no se parece a PanelView.
-- **Archivos:** `YalaWidgets/Widgets/TopSubcategoriesWidget.swift`
+- **Resuelto:** 2026-02-04
+- **Fix:**
+  - Mismo patrón que CategoriesPieWidget
+  - Subcategorías usan icono de categoría padre como fallback
+- **Archivos:** `YalaWidgets/Widgets/SubcategoriesPieWidget.swift`, `Yala/Services/WidgetDataCache.swift`
 
 #### TS.2 ✅ Cálculo - Top 5 incorrecto
 - **Descripción:** Las subcategorías que salen en el top 5 NO son realmente las top 5. Algo está mal en el cálculo.
@@ -782,12 +793,22 @@ Estos datos deben cachearse en `WidgetDataCache` y leerse desde `WidgetDataServi
 ### Fase 6.4: Deeplinks ✅ COMPLETADA
 13. ✅ **G.5** Deeplinks dinámicos con WidgetURLHelper
 
+### Fase 6.6: Pie Charts Large ✅ COMPLETADA
+14. ✅ **TC.2 + TS.1** Rediseño pie charts con Swift Charts SectorMark:
+    - WidgetSectorChart componente reutilizable con bubbles e iconos
+    - Connector lines desde segmentos hacia bubbles
+    - Porcentajes fuera del icono (color del segmento) para > 10%
+    - Límite aumentado de 5 a 20 categorías/subcategorías en WidgetDataCache
+    - Subcategorías usan icono de categoría padre como fallback
+    - Sin leyenda (bubbles con iconos proveen contexto suficiente)
+
 ---
 
 ## Historial de Cambios
 
 | Fecha | Issue | Cambio |
 |-------|-------|--------|
+| 2026-02-04 | TC.2, TS.1 | Fase 6.6: Pie Charts Large rediseñados con Swift Charts SectorMark, bubbles con iconos, connector lines, porcentajes > 10%, límite 5→20 categorías, subcategorías usan icono de categoría padre |
 | 2026-02-03 | - | Fase 6.5: Rediseño widgets Medium (Balance, Expense) con Swift Charts idéntico a PanelView, ejes reducidos (8pt), color Balance=electricIndigo |
 | 2026-02-03 | CF.1 | CashFlow Medium rediseñado: header (título+subtítulo izq, KPI derecha), barras horizontales full-width idénticas a PanelView compacto |
 | 2026-02-03 | CF.2 | Fase 6.3 completada - gráfica CashFlow Large igual a PanelView (Swift Charts, agrupamiento, línea net flow, SmartAxisHelper, backgrounds yalaCard) |
