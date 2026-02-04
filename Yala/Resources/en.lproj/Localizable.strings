@@ -1660,3 +1660,5 @@
 "icloud.statusError" = "Sync Error";
 "icloud.lastSync" = "Last sync: %@";
 "icloud.noAccountWarning" = "Sign in to iCloud in Settings to enable sync.";
+"icloud.syncingData" = "Syncing your data...";
+"icloud.syncingDescription" = "We're retrieving your information from iCloud.";

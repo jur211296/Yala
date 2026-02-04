@@ -1660,3 +1660,5 @@
 "icloud.statusError" = "Error de sincronización";
 "icloud.lastSync" = "Última sincronización: %@";
 "icloud.noAccountWarning" = "Inicia sesión en iCloud en Ajustes para activar la sincronización.";
+"icloud.syncingData" = "Sincronizando tus datos...";
+"icloud.syncingDescription" = "Estamos recuperando tu información de iCloud.";

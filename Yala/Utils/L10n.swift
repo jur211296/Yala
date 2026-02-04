@@ -2522,6 +2522,8 @@ enum L10n {
             String(format: NSLocalizedString("icloud.lastSync", comment: ""), time)
         }
         static var noAccountWarning: String { NSLocalizedString("icloud.noAccountWarning", comment: "") }
+        static var syncingData: String { NSLocalizedString("icloud.syncingData", comment: "") }
+        static var syncingDescription: String { NSLocalizedString("icloud.syncingDescription", comment: "") }
     }
 }
 

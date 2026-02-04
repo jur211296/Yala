@@ -1624,3 +1624,17 @@
 "notifications.testReport.expenses" = "Você gastou R$ 350,00 neste período";
 "notifications.testReport.income" = "Você recebeu R$ 2.500,00 neste período";
 "notifications.testReport.topCategory" = "Seu maior gasto: Alimentação (R$ 180,00)";
+
+// MARK: - iCloud
+
+"icloud.title" = "Sincronização iCloud";
+"icloud.description" = "Seus dados sincronizam automaticamente com o iCloud e estão disponíveis em todos os seus dispositivos Apple com a mesma conta.";
+"icloud.privacyNote" = "Seus dados são armazenados de forma privada na sua conta pessoal do iCloud. Yala não tem acesso a eles.";
+"icloud.statusSynced" = "Sincronizado";
+"icloud.statusSyncing" = "Sincronizando...";
+"icloud.statusNoAccount" = "Sem conta iCloud";
+"icloud.statusError" = "Erro de sincronização";
+"icloud.lastSync" = "Última sincronização: %@";
+"icloud.noAccountWarning" = "Entre no iCloud em Ajustes para ativar a sincronização.";
+"icloud.syncingData" = "Sincronizando seus dados...";
+"icloud.syncingDescription" = "Estamos recuperando suas informações do iCloud.";

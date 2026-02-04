@@ -15,34 +15,31 @@ struct ContentView: View {
     @State private var showOnboarding: Bool = false
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
+    @State private var isWaitingForSync: Bool = false
     @Environment(\.scenePhase) private var scenePhase
+
+    /// Query to detect existing data (for iCloud sync detection)
+    @Query private var accounts: [Account]
 
     private let authService = BiometricAuthService.shared
 
     /// Minimum splash duration (2.5 seconds to enjoy the animation)
     private let minimumSplashDuration: Double = 2.5
 
+    /// Check if there's existing data (accounts synced from iCloud or local)
+    private var hasExistingData: Bool {
+        !accounts.isEmpty
+    }
+
     var body: some View {
         ZStack {
-            // Main content (always rendered underneath)
-            MainTabView()
-                .onAppear {
-                    // Show onboarding if not completed
-                    if !hasCompletedOnboarding {
-                        showOnboarding = true
-                    }
-                }
-                .onChange(of: hasCompletedOnboarding) { _, newValue in
-                    // React to data wipe: show onboarding when flag is reset
-                    if !newValue {
-                        showOnboarding = true
-                    }
-                }
-                .fullScreenCover(isPresented: $showOnboarding) {
-                    OnboardingView {
-                        showOnboarding = false
-                    }
-                }
+            // iCloud sync loading view (when waiting for data)
+            if isWaitingForSync {
+                cloudSyncLoadingView
+            } else {
+                // Main content (always rendered underneath)
+                MainTabView()
+            }
 
             // Splash screen overlay
             if showSplash {
@@ -55,6 +52,27 @@ struct ContentView: View {
                             dismissSplash()
                         }
                     }
+            }
+        }
+        .task {
+            await checkInitialSyncState()
+        }
+        .onChange(of: accounts.count) { _, newCount in
+            // Detect when data arrives from iCloud
+            if isWaitingForSync && newCount > 0 {
+                isWaitingForSync = false
+                hasCompletedOnboarding = true
+            }
+        }
+        .onChange(of: hasCompletedOnboarding) { _, newValue in
+            // React to data wipe: show onboarding when flag is reset
+            if !newValue && !isWaitingForSync {
+                showOnboarding = true
+            }
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                showOnboarding = false
             }
         }
         // Biometric lock as fullScreenCover (covers everything including sheets)
@@ -103,6 +121,59 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             showSplash = false
         }
+    }
+
+    /// Check initial sync state and decide whether to show onboarding or wait for iCloud data
+    private func checkInitialSyncState() async {
+        // Guard: if already completed onboarding, nothing to do
+        guard !hasCompletedOnboarding else { return }
+
+        // Small delay to let @Query hydrate with local data
+        try? await Task.sleep(for: .milliseconds(200))
+
+        // If there's already data (from iCloud or local), mark as completed
+        if hasExistingData {
+            hasCompletedOnboarding = true
+            return
+        }
+
+        // If no iCloud available, show onboarding directly
+        guard SwiftDataConfiguration.isICloudAvailable() else {
+            showOnboarding = true
+            return
+        }
+
+        // iCloud available but no data yet: wait for sync
+        isWaitingForSync = true
+
+        // Timeout of 5 seconds
+        try? await Task.sleep(for: .seconds(5))
+
+        // If still waiting and no data arrived, show onboarding
+        if isWaitingForSync && !hasExistingData {
+            isWaitingForSync = false
+            showOnboarding = true
+        }
+    }
+
+    /// Loading view shown while waiting for iCloud sync
+    @ViewBuilder
+    private var cloudSyncLoadingView: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            ProgressView()
+                .scaleEffect(1.5)
+
+            Text(L10n.iCloud.syncingData)
+                .font(.headline)
+
+            Text(L10n.iCloud.syncingDescription)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(DS.Spacing.xxl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.yalaBackground)
     }
 }
 

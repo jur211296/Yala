@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] 875d4a6 refactor(icloud): simplify sync to always-on when iCloud available
 - [2026-02-04] eba675b refactor(widgets): remove deprecated period code and fix widget logic
 - [2026-02-04] f3c6f08 refactor(widgets): replace hardcoded values with WDS design tokens
 - [2026-02-04] 443acc5 feat(widgets): localize all widget texts for i18n support
@@ -86,6 +87,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **iCloud Sync CloudKit (10.5.G.1 completo)** - Integración nativa SwiftData+CloudKit con ModelConfiguration(cloudKitContainerIdentifier:); toggle opt-in en Settings; SyncSettingsView con estado de sync y cuenta iCloud; containers iCloud.com.jurgenschmidt.yala y iCloud.com.jurgenschmidt.yala.dev; paso opcional en onboarding; Privacy Policy actualizada; 20 escenarios QA (Sección 30)
 - **Localización de Widgets (i18n)** - 13 widgets localizados con ~65 claves en es/en; AppIntents (title, description, @Parameter), WidgetPeriodOption enum, textos UI (headers, empty states, labels), Control Widgets iOS 18+; archivos eliminados (templates no usados)
 - **Notificaciones Personalizadas (10.5.H)** - ScheduledPaymentNotificationService para pagos vencidos/hoy/próximos con nombre y monto ("Hoy vence: Netflix por $29.90"); BudgetAlertService mejorado con montos gastado/límite ("Presupuesto Comida al 50% — $500 de $1,000 gastados"); ReportNotificationService con datos reales calculados (balance, gastos, ingresos, top categoría); verificación de permisos y reprogramación automática al volver a la app o reinstalar; CurrencyUtils.symbol(for:) helper; localizaciones 6 idiomas
+- **iCloud Sync Always-On (10.5.G.1 mejora)** - Sync simplificado a always-on (sin toggle opt-in); Settings solo muestra estado (sin restart); detección de datos iCloud al instalar para saltar onboarding; pantalla "Sincronizando..." mientras espera datos (5s timeout); localizaciones completas en 6 idiomas para todas las claves iCloud
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
