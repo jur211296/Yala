@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] eba675b refactor(widgets): remove deprecated period code and fix widget logic
 - [2026-02-04] f3c6f08 refactor(widgets): replace hardcoded values with WDS design tokens
 - [2026-02-04] 443acc5 feat(widgets): localize all widget texts for i18n support
 - [2026-02-04] eddc1bc fix(widgets): redesign TopCategories/TopSubcategories with compact layout
@@ -362,7 +363,7 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: QA manual completado (Secciones 25-28)
+Stopped at: Limpieza código legacy períodos y corrección bugs widgets (eba675b)
 Next step: REVIEW-1 iCloud Sync o preparar release V1.1
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
