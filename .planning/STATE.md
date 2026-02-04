@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-04] f3c6f08 refactor(widgets): replace hardcoded values with WDS design tokens
+- [2026-02-04] 443acc5 feat(widgets): localize all widget texts for i18n support
 - [2026-02-04] eddc1bc fix(widgets): redesign TopCategories/TopSubcategories with compact layout
 - [2026-02-04] b69b8b1 fix(widgets): remove force unwraps in dateInterval()
 - [2026-02-04] 7f678f5 fix(widgets): calculate historical balance for past periods
@@ -33,18 +35,12 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-03] 5bdb5c2 fix(widgets): use dynamic URL scheme for deeplinks
 - [2026-02-03] 00bfc7a docs: update BUG-3 Phase 6.2 progress
 - [2026-02-03] 6d0afa3 fix(widgets): reduce padding to 4pt and remove decimals
-- [2026-02-03] 75adcec fix(widgets): add inline header mode and restructure Medium layouts
 - [2026-02-02] 68d5842 feat(widgets): add widget design infrastructure with reusable components
 - [2026-02-02] 6cb17c5 feat(widgets): expand data snapshot with categories, subcategories and cash flow
 - [2026-02-02] 801bb7e feat(notifications): add personalized scheduled payment and report notifications
 - [2026-02-02] 671dbda docs: mark 10.5.D.2 as completed in STATE and ROADMAP
 - [2026-02-02] b1ae949 feat(onboarding): add budget alerts toggle to notifications step
 - [2026-02-02] 7f0cde5 feat(notifications): add global toggle for budget alerts in settings
-- [2026-02-02] 620eec8 chore: rename /compact to /pre-compact, clarify manual Shift+C requirement
-- [2026-02-02] 7e440fe Merge feature/10.5.G.3-control-center into 1.1
-- [2026-02-02] 9ff53cb Merge feature/10.5.G.2-widgets-ios into 1.1
-- [2026-02-02] 1563970 Merge feature/10.5.G.1-icloud-sync into 1.1
-- [2026-02-02] f4ed518 feat(widgets): add iOS WidgetKit widgets for balance, records, payments and budgets
 
 ## Completed in Current Phase
 
@@ -87,6 +83,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Widgets iOS WidgetKit (10.5.G.2 completo)** - 4 tipos de widgets: Balance (small/medium con mini gráfico), Últimos Registros (5 transacciones recientes), Pagos Planificados (próximos con filtro), Presupuestos (barras de progreso con colores); WidgetDataCache para sincronización via App Groups; deep links desde widgets (yala://panel, statistics/records, planning, budgets); Background App Refresh cada 4h; 30 escenarios QA (Sección 28)
 - **Control Center iOS 18+ (10.5.G.3 completo)** - 3 ControlWidgets para iOS 18+: QuickExpenseControl (flujo Siri sin abrir app), VoiceEntryControl (abre app en modo voz), ImageEntryControl (abre app en modo imagen); @available(iOS 18.0, *) para compatibilidad; localizaciones 6 idiomas; 15 escenarios QA (Sección 29)
 - **iCloud Sync CloudKit (10.5.G.1 completo)** - Integración nativa SwiftData+CloudKit con ModelConfiguration(cloudKitContainerIdentifier:); toggle opt-in en Settings; SyncSettingsView con estado de sync y cuenta iCloud; containers iCloud.com.jurgenschmidt.yala y iCloud.com.jurgenschmidt.yala.dev; paso opcional en onboarding; Privacy Policy actualizada; 20 escenarios QA (Sección 30)
+- **Localización de Widgets (i18n)** - 13 widgets localizados con ~65 claves en es/en; AppIntents (title, description, @Parameter), WidgetPeriodOption enum, textos UI (headers, empty states, labels), Control Widgets iOS 18+; archivos eliminados (templates no usados)
 - **Notificaciones Personalizadas (10.5.H)** - ScheduledPaymentNotificationService para pagos vencidos/hoy/próximos con nombre y monto ("Hoy vence: Netflix por $29.90"); BudgetAlertService mejorado con montos gastado/límite ("Presupuesto Comida al 50% — $500 de $1,000 gastados"); ReportNotificationService con datos reales calculados (balance, gastos, ingresos, top categoría); verificación de permisos y reprogramación automática al volver a la app o reinstalar; CurrencyUtils.symbol(for:) helper; localizaciones 6 idiomas
 
 ### Fase 6 (archivado)
@@ -365,7 +362,7 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: BUG-3 completado (15/15 issues, Fase 6.9 TopCategories/TopSubcategories rediseñados)
+Stopped at: Refactor de widgets (tokens WDS para fonts y dimensiones hardcodeadas)
 Next step: QA manual de widgets en simulador o BUG-2 Control Center
 Resume context:
 - **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
