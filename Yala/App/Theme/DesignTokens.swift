@@ -193,6 +193,23 @@ enum DS {
         static let borderOpacity: Double = 0.1
     }
 
+    // MARK: - Button Dimensions
+
+    /// Standard button size tokens
+    enum Button {
+        /// FAB (Floating Action Button) diameter - 56pt standard
+        static let fabSize: CGFloat = 56
+
+        /// Action button size (toolbar, selection bar) - 44pt HIG minimum
+        static let actionSize: CGFloat = 44
+
+        /// FAB menu pill width
+        static let fabMenuWidth: CGFloat = 140
+
+        /// Icon size inside FAB menu buttons
+        static let fabMenuIconSize: CGFloat = 24
+    }
+
     // MARK: - Icon Badge Dimensions
 
     /// Icon size and badge tokens

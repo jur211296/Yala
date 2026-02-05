@@ -271,6 +271,8 @@ struct MainTabView: View {
             StatisticsView()
         case .planning:
             PlanningView()
+        case .records:
+            RecordsStandaloneView()
         }
     }
 
@@ -299,6 +301,7 @@ enum AppTab: Hashable {
     case planning
     case more
     case search
+    case records
 }
 
 // MARK: - More View

@@ -491,6 +491,7 @@
 "tab.planning" = "Planejamento";
 "tab.more" = "Mais";
 "tab.search" = "Buscar";
+"tab.records" = "Registros";
 "common.moreOptions" = "Mais opcoes";
 "common.comingSoon" = "Em breve";
 "panel.greeting" = "Olá, %@";

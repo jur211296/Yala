@@ -493,6 +493,7 @@
 "tab.planning" = "Planning";
 "tab.more" = "More";
 "tab.search" = "Search";
+"tab.records" = "Records";
 "common.moreOptions" = "More options";
 "common.comingSoon" = "Coming soon";
 "panel.greeting" = "Hello, %@";

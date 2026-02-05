@@ -108,6 +108,7 @@ enum L10n {
         static var planning: String { NSLocalizedString("tab.planning", comment: "") }
         static var more: String { NSLocalizedString("tab.more", comment: "") }
         static var search: String { NSLocalizedString("tab.search", comment: "") }
+        static var records: String { NSLocalizedString("tab.records", comment: "") }
     }
 
     // MARK: - Period
