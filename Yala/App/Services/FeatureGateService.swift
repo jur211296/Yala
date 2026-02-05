@@ -70,28 +70,46 @@ final class FeatureGateService {
 
     private init() {}
 
-    // MARK: - Debug Support
+    // MARK: - Build Detection
 
-    #if DEBUG
-    /// Force free tier for testing (ignores real subscription status)
-    private var forceFreeTier: Bool {
-        UserDefaults.standard.bool(forKey: "debug.forceFreeTier")
+    /// Whether this is the Dev build (bundle ID ends with .dev)
+    static var isDevBuild: Bool {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
+        return bundleID.lowercased().hasSuffix(".dev")
     }
 
-    /// Force pro tier for testing (ignores real subscription status)
-    private var forceProTier: Bool {
-        UserDefaults.standard.bool(forKey: "debug.forceProTier")
+    // MARK: - Dev Build Toggle
+
+    /// Key for dev build Pro simulation toggle
+    private static let devSimulateProKey = "dev.simulateProUser"
+
+    /// In Dev builds: toggle to simulate Pro (default true)
+    /// This is persisted and can be changed from Settings
+    var devSimulatePro: Bool {
+        get {
+            // Default to true (Pro) if key hasn't been set
+            if UserDefaults.standard.object(forKey: Self.devSimulateProKey) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: Self.devSimulateProKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.devSimulateProKey)
+        }
     }
-    #endif
 
     // MARK: - Pro Status
 
     /// Whether the current user has Pro access
+    /// - Dev build: Based on devSimulatePro toggle (default Pro)
+    /// - Production build: Based on real subscription status
     var isProUser: Bool {
-        #if DEBUG
-        if forceProTier { return true }
-        if forceFreeTier { return false }
-        #endif
+        // Dev build uses toggle from Settings
+        if Self.isDevBuild {
+            return devSimulatePro
+        }
+
+        // Production build uses real subscription status
         return StoreKitManager.shared.isProUser
     }
 

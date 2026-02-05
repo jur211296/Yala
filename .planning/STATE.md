@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] a5f41d0 fix(ux): add missing Pro gates in Statistics FAB and accounts carousel
+- [2026-02-05] 16c2d71 fix(ux): improve Pro/Free UI design and consistency
+- [2026-02-05] dbc4a49 docs: update STATE.md with Pro/Free system progress
 - [2026-02-05] 776154f feat(i18n): add Pro/Free subscription strings in 6 languages
 - [2026-02-05] 4863239 feat(subscription): integrate Pro/Free gates across views
 - [2026-02-05] be1786c feat(subscription): add Pro/Free UI components
@@ -95,6 +98,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Toggle Comparativas (10.5.I)** - Toggle en Personalización para mostrar/ocultar variaciones vs periodo anterior; oculta chips de variación, selector M/A, línea de periodo anterior en gráficas, carrusel de comparación; @AppStorage propaga setting a todos los componentes; fix try? sin manejo de error en TrendsTabView; valores hardcodeados reemplazados por DS.Spacing tokens; localizaciones 6 idiomas
 - **Tab Registros Standalone (10.5.J)** - Nueva tab "Registros" en sección "Más" con RecordsStandaloneView; FAB completo con voice/image input; selection mode y bulk edit; filtros sincronizados con SessionState (SSOT); promocionable a tabs principales desde Perfil > Personalización; tokens DS.Button para dimensiones FAB/action buttons; localizaciones 6 idiomas
 - **Animaciones y Haptic Feedback (10.5.K)** - DS.Haptic helpers centralizados (success, selection, medium, light, warning); constantes spring en DS.Animation; haptic en FAB toggle/menu (3 vistas), save transaction (success), delete (warning); animación de selección en RecordRowView con bounce; animación de entrada en TransactionSuccessView con stagger; action bar animado slide-up con contentTransition; respeta accessibilityReduceMotion
+- **Sistema Pro/Free (10.5.L)** - FeatureGateService con enum ProFeature (accounts, budgets, voiceInput, imageInput, premiumIcons); límites Free (2 cuentas, 3 presupuestos); gates en AccountsSettingsListView, BudgetsListView, PanelView (FAB voz/imagen), ProfileView (toggles), AppIconSettingsView; ProBadge component; UpgradePromptSheet contextual (limitReached/proFeature/trialExpired); StoreKitManager extendido (trial detection, wasProUser, syncToAppGroup); localizaciones 6 idiomas; gates en DetailContainerView FAB y carrusel de cuentas
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -364,9 +368,9 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ## Session Continuity
 
-Last session: 2026-02-04
-Stopped at: Animaciones y haptic feedback implementados en FAB, selección de records, success screen y action bar
-Next step: Validación manual de animaciones/haptics en dispositivo físico, luego preparar release V1.1
+Last session: 2026-02-05
+Stopped at: Sistema Pro/Free completo - gates en FAB de Estadísticas y carrusel de cuentas
+Next step: Validación manual del sistema Pro/Free en simulador/dispositivo, luego preparar release V1.1
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults

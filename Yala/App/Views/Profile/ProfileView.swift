@@ -118,6 +118,11 @@ struct ProfileView: View {
                         ayudaSection
                         legalSection
 
+                        // Developer section (only in Dev build)
+                        if FeatureGateService.isDevBuild {
+                            developerSection
+                        }
+
                         // Version info
                         Text(L10n.Settings.versionInfo)
                             .font(.caption2)
@@ -708,6 +713,49 @@ struct ProfileView: View {
                         iconColor: .gray)
                 }
                 .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Developer Section (Dev Build Only)
+
+    @ViewBuilder
+    private var developerSection: some View {
+        SectionBox(title: "Developer") {
+            VStack(spacing: 0) {
+                HStack {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.yellow, .orange],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Simular Pro")
+                            .font(.body)
+                            .foregroundStyle(Color.yalaPrimaryText)
+                        Text("Activar para probar features Pro")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: Binding(
+                        get: { FeatureGateService.shared.devSimulatePro },
+                        set: { FeatureGateService.shared.devSimulatePro = $0 }
+                    ))
+                    .labelsHidden()
+                    .tint(Color.brandPrimary)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
