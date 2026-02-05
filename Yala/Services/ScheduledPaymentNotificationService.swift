@@ -153,9 +153,10 @@ final class ScheduledPaymentNotificationService {
                 : L10n.Notifications.ScheduledPayment.overdue(payment.name, formattedAmount)
         }
 
-        await NotificationService.shared.sendTestNotification(
+        await NotificationService.shared.sendNotification(
             title: payment.name,
-            body: message
+            body: message,
+            deepLink: "planning"
         )
     }
 

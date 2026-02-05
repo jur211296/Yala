@@ -222,9 +222,10 @@ final class BudgetAlertService {
         default: message = "\(budgetName): \(threshold)%"
         }
 
-        await NotificationService.shared.sendTestNotification(
+        await NotificationService.shared.sendNotification(
             title: budgetName,
-            body: message
+            body: message,
+            deepLink: "budgets"
         )
     }
 }

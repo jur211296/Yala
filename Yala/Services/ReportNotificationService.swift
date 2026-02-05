@@ -31,27 +31,68 @@ final class ReportNotificationService {
         guard await NotificationService.shared.isAuthorized() else { return }
 
         let reports = fetchActiveReportNotifications(context: context)
+        var sentCount = 0
 
         for report in reports {
             guard shouldSendNow(report) else { continue }
 
             let data = calculateReportData(config: report.reportConfig, context: context)
 
-            await NotificationService.shared.sendTestNotification(
+            await NotificationService.shared.sendNotification(
                 title: report.name,
-                body: formatReportBody(report.reportConfig, reportType: report.notificationType, data: data)
+                body: formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
+                deepLink: "statistics"
             )
+
+            // Mark as notified to prevent duplicate sends
+            report.lastNotifiedDate = Date()
+            sentCount += 1
+        }
+
+        // Save changes if any notifications were sent
+        if sentCount > 0 {
+            do {
+                try context.save()
+                #if DEBUG
+                print("ReportNotificationService: Sent \(sentCount) report notifications")
+                #endif
+            } catch {
+                #if DEBUG
+                print("ReportNotificationService: Error saving lastNotifiedDate: \(error)")
+                #endif
+            }
         }
     }
 
     // MARK: - Timing Check
 
     /// Determines if the report should be sent now based on configuration
+    /// Checks: 1) Not already notified today, 2) Within 30min window of scheduled time, 3) Correct day/weekday
     private func shouldSendNow(_ report: NotificationItem) -> Bool {
         let calendar = Calendar.current
         let now = Date()
         let config = report.reportConfig
 
+        // 1. Already notified today? Skip to avoid spam
+        if let lastNotified = report.lastNotifiedDate,
+           calendar.isDateInToday(lastNotified) {
+            return false
+        }
+
+        // 2. Has the scheduled time passed today?
+        // We accept any time after the scheduled time on the same day
+        // (lastNotifiedDate check above prevents duplicates)
+        guard let scheduledToday = calendar.date(
+            bySettingHour: report.hour,
+            minute: report.minute,
+            second: 0,
+            of: now
+        ) else { return false }
+
+        // Only send if we're past the scheduled time (same day)
+        guard now >= scheduledToday else { return false }
+
+        // 3. Check day/weekday based on notification type
         switch report.notificationType {
         case .dailyReport:
             // Daily: check selected weekdays

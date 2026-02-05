@@ -34,6 +34,38 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         completionHandler([.banner, .sound, .badge])
     }
 
+    /// Handle notification tap - navigate to deep link destination
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+
+        if let destination = userInfo["deepLink"] as? String {
+            DispatchQueue.main.async {
+                switch destination {
+                case "statistics":
+                    SessionState.shared.deepLinkDestination = .statistics
+                case "planning":
+                    SessionState.shared.deepLinkDestination = .planning
+                case "budgets":
+                    SessionState.shared.deepLinkDestination = .budgets
+                case "records":
+                    SessionState.shared.deepLinkDestination = .records
+                case "categories":
+                    SessionState.shared.deepLinkDestination = .categories
+                default:
+                    #if DEBUG
+                    print("NotificationService: Unknown deep link destination: \(destination)")
+                    #endif
+                }
+            }
+        }
+
+        completionHandler()
+    }
+
     // MARK: - Permission
 
     /// Request notification permission from user
@@ -64,9 +96,20 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     // MARK: - Scheduling
 
     /// Schedule a notification
+    /// Note: Dynamic content types (dailyReport, weeklyReport, monthlyReport) are NOT scheduled
+    /// here because UNCalendarNotificationTrigger freezes content at schedule time.
+    /// They are handled by background tasks and foreground checks instead.
     func scheduleNotification(for item: NotificationItem) async {
         guard item.isActive else {
             await cancelNotification(for: item)
+            return
+        }
+
+        // Dynamic content types are handled by background tasks, not iOS scheduling
+        if item.notificationType.requiresDynamicContent {
+            #if DEBUG
+            print("NotificationService: Skipping iOS scheduling for dynamic type: \(item.notificationType.rawValue)")
+            #endif
             return
         }
 
@@ -141,8 +184,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
     }
 
-    /// Send a test notification immediately (for preview)
-    func sendTestNotification(title: String, body: String) async {
+    /// Send an immediate notification with optional deep link
+    /// - Parameters:
+    ///   - title: Notification title
+    ///   - body: Notification body text
+    ///   - deepLink: Optional deep link destination (e.g., "statistics", "planning", "budgets")
+    func sendNotification(title: String, body: String, deepLink: String? = nil) async {
         // Check permission first
         guard await isAuthorized() else { return }
 
@@ -151,11 +198,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         content.body = body
         content.sound = .default
 
+        if let deepLink = deepLink {
+            content.userInfo = ["deepLink": deepLink]
+        }
+
         // Trigger in 1 second
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
 
         let request = UNNotificationRequest(
-            identifier: "test-\(UUID().uuidString)",
+            identifier: "notification-\(UUID().uuidString)",
             content: content,
             trigger: trigger
         )
@@ -164,14 +215,42 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             try await notificationCenter.add(request)
         } catch {
             #if DEBUG
-            print("Error sending test notification: \(error)")
+            print("Error sending notification: \(error)")
             #endif
         }
+    }
+
+    /// Send a test notification immediately (for preview) - wrapper for compatibility
+    func sendTestNotification(title: String, body: String) async {
+        await sendNotification(title: title, body: body, deepLink: nil)
     }
 
     /// Cancel all notifications
     func cancelAllNotifications() {
         notificationCenter.removeAllPendingNotificationRequests()
+    }
+
+    /// Cancel any previously scheduled dynamic notifications (reports)
+    /// Called during bootstrap to clean up old scheduled notifications that would have static content
+    @MainActor
+    func cancelDynamicNotifications(context: ModelContext) async {
+        let descriptor = FetchDescriptor<NotificationItem>(
+            predicate: #Predicate {
+                $0.typeRaw == "dailyReport" ||
+                $0.typeRaw == "weeklyReport" ||
+                $0.typeRaw == "monthlyReport"
+            }
+        )
+
+        guard let items = try? context.fetch(descriptor) else { return }
+
+        for item in items {
+            await cancelNotification(for: item)
+        }
+
+        #if DEBUG
+        print("NotificationService: Cancelled \(items.count) dynamic notification schedules")
+        #endif
     }
 
     /// Reschedule all active notifications
@@ -225,15 +304,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     // MARK: - Seed Default Notifications
 
-    /// Create default notifications if none exist
+    /// Create default notifications if none exist (verified by type to avoid duplicates)
     @MainActor
     func seedDefaultNotificationsIfNeeded(context: ModelContext) {
-        // Check if notifications already exist
+        // Fetch existing notifications to check by type
         let descriptor = FetchDescriptor<NotificationItem>()
 
-        let existingCount: Int
+        let existing: [NotificationItem]
         do {
-            existingCount = try context.fetchCount(descriptor)
+            existing = try context.fetch(descriptor)
         } catch {
             #if DEBUG
             print("NotificationService: Error checking existing notifications: \(error)")
@@ -241,16 +320,25 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             return
         }
 
-        guard existingCount == 0 else { return }
+        // Build set of existing types
+        let existingTypes = Set(existing.map { $0.typeRaw })
 
-        // Create defaults
+        // Create defaults only for missing types
         let defaults = NotificationItem.createDefaults()
-        for item in defaults {
+        var inserted = 0
+
+        for item in defaults where !existingTypes.contains(item.typeRaw) {
             context.insert(item)
+            inserted += 1
         }
+
+        guard inserted > 0 else { return }
 
         do {
             try context.save()
+            #if DEBUG
+            print("NotificationService: Seeded \(inserted) missing notification types")
+            #endif
         } catch {
             #if DEBUG
             print("NotificationService: Error saving default notifications: \(error)")
