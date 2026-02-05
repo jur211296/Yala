@@ -566,6 +566,9 @@ struct DetailContainerView: View {
 
     private func refreshRecordsData() {
         DispatchQueue.main.async {
+            // Reload fresh data from SwiftData before applying filters
+            // This ensures deleted/modified transactions are reflected immediately
+            dataViewModel.loadData()
             recordsViewModel.applyFilters(
                 transactions: dataViewModel.allTransactions,
                 accounts: dataViewModel.accounts,

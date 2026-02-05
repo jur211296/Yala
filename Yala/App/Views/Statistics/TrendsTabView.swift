@@ -193,8 +193,12 @@ struct TrendsTabView: View {
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
-        // NOTE: Removed .onChange(of: allTransactions) - it caused crashes during data wipe
-        // CashFlow updates via other onChange triggers (period, filters, etc.)
+        // Use count instead of full array to avoid crashes during data wipe
+        // while still detecting when transactions are added/deleted
+        .onChange(of: allTransactions.count) {
+            calculateCashFlowData()
+            calculatePeriodComparisonData()
+        }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
