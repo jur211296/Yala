@@ -251,70 +251,68 @@ struct ProfileView: View {
 
     private var profileHeader: some View {
         VStack(spacing: DS.Spacing.md) {
-            ZStack {
-                // Pro users get golden gradient ring
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            colors: isProUser
-                                ? [Color.yellow, Color.orange]
-                                : [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 4
-                    )
-                    .frame(width: 100, height: 100)
-
-                if let imageData = userProfileImageData,
-                    let uiImage = UIImage(data: imageData)
-                {
-                    // User photo
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 90, height: 90)
-                        .clipShape(Circle())
-                } else {
-                    // Custom icon or default
+            // Avatar - tappable to edit profile
+            Button {
+                activeSheet = .personalDetails
+            } label: {
+                ZStack {
+                    // Pro users get golden gradient ring
                     Circle()
-                        .fill(Color.electricIndigo.opacity(0.1))
-                        .frame(width: 90, height: 90)
+                        .stroke(
+                            LinearGradient(
+                                colors: isProUser
+                                    ? [Color.yellow, Color.orange]
+                                    : [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 4
+                        )
+                        .frame(width: 100, height: 100)
 
-                    Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
-                        .font(.system(size: 40))
-                        .foregroundStyle(Color.electricIndigo)
-                }
-
-                // Spark badge for Pro users
-                if isProUser {
-                    ZStack {
+                    if let imageData = userProfileImageData,
+                        let uiImage = UIImage(data: imageData)
+                    {
+                        // User photo
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 90, height: 90)
+                            .clipShape(Circle())
+                    } else {
+                        // Custom icon or default
                         Circle()
-                            .fill(Color.yalaCard)
-                        YalaSpark(size: .medium, animated: true)
+                            .fill(Color.electricIndigo.opacity(0.1))
+                            .frame(width: 90, height: 90)
+
+                        Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
+                            .font(.system(size: 40))
+                            .foregroundStyle(Color.electricIndigo)
                     }
-                    .frame(width: 28, height: 28)
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    .offset(x: 38, y: -38)
+
+                    // Spark badge for Pro users
+                    if isProUser {
+                        ZStack {
+                            Circle()
+                                .fill(Color.yalaCard)
+                            YalaSpark(size: .medium, animated: true)
+                        }
+                        .frame(width: 28, height: 28)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .offset(x: 38, y: -38)
+                    }
                 }
             }
+            .buttonStyle(.plain)
 
-            // Name with Pro badge
-            HStack(spacing: DS.Spacing.sm) {
-                Text(userName)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.primary)
+            // Name
+            Text(userName)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.primary)
 
-                if isProUser {
-                    ProBadge(size: .medium)
-                }
-            }
-
-            // Pro member subtitle
+            // Pro badge with cyan spark (only here, so it stands out)
             if isProUser {
-                Text(L10n.Profile.proMember)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.orange)
+                proBadgeWithCyanSpark
             }
 
             Button(L10n.Profile.edit) {
@@ -356,6 +354,32 @@ struct ProfileView: View {
         .sheet(isPresented: $showUpgradeForImage) {
             UpgradePromptSheet(feature: .imageInput, context: .proFeature)
         }
+    }
+
+    // MARK: - Pro Badge with Cyan Spark
+
+    /// Custom Pro badge with cyan spark so it stands out against the gold background
+    private var proBadgeWithCyanSpark: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            // Cyan spark (instead of gold)
+            YalaSparkShape()
+                .fill(Color.cyan)
+                .frame(width: 12, height: 12)
+
+            Text("PRO")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .background(
+            LinearGradient(
+                colors: [Color.yellow, Color.orange],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(Capsule())
     }
 
     // MARK: - Sections
