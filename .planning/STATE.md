@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] 716d6bd fix(ui): improve ProfileView header with clickable avatar and cyan Pro badge
 - [2026-02-05] 911154c feat(ui): add avatar editor with photo/icon selection menu
 - [2026-02-05] 3d87a20 fix(ui): ProfileToolbarButton uses sharedBackgroundVisibility for toolbar integration
 - [2026-02-05] 207d012 feat(ui): add YalaSpark to ProBadge and upgrade buttons
@@ -33,7 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-05] 16c2d71 fix(ux): improve Pro/Free UI design and consistency
 - [2026-02-05] dbc4a49 docs: update STATE.md with Pro/Free system progress
 - [2026-02-05] 776154f feat(i18n): add Pro/Free subscription strings in 6 languages
-- [2026-02-05] 4863239 feat(subscription): integrate Pro/Free gates across views
 - [2026-02-04] 562820c feat(ux): add haptic feedback and animations
 - [2026-02-04] 40b7925 feat(settings): add toggle to show/hide period variations
 - [2026-02-04] 9c7a3fa refactor(ui): unify scheduled payments text styles with Records
@@ -371,8 +371,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: ProfileToolbarButton refactorizado con sharedBackgroundVisibility + avatar editor con selector de iconos
-Next step: Continuar refinando UI de perfil o próxima tarea de ROADMAP
+Stopped at: ProfileView mejorado - avatar clickable, Pro badge con estrella cyan
+Next step: Continuar con próxima tarea de ROADMAP
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults
