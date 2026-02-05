@@ -40,6 +40,22 @@ struct ProBadge: View {
             case .large: return DS.Chip.paddingV
             }
         }
+
+        var sparkSize: YalaSpark.Size {
+            switch self {
+            case .small: return .small
+            case .medium: return .small
+            case .large: return .medium
+            }
+        }
+
+        var iconSpacing: CGFloat {
+            switch self {
+            case .small: return DS.Spacing.xxs
+            case .medium: return DS.Spacing.xs
+            case .large: return DS.Spacing.xs
+            }
+        }
     }
 
     // MARK: - Properties
@@ -49,19 +65,22 @@ struct ProBadge: View {
     // MARK: - Body
 
     var body: some View {
-        Text("PRO")
-            .font(size.font)
-            .foregroundStyle(.white)
-            .padding(.horizontal, size.horizontalPadding)
-            .padding(.vertical, size.verticalPadding)
-            .background(
-                LinearGradient(
-                    colors: [Color.yellow, Color.orange],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+        HStack(spacing: size.iconSpacing) {
+            YalaSpark(size: size.sparkSize, animated: false)
+            Text("PRO")
+                .font(size.font)
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, size.horizontalPadding)
+        .padding(.vertical, size.verticalPadding)
+        .background(
+            LinearGradient(
+                colors: [Color.yellow, Color.orange],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
-            .clipShape(Capsule())
+        )
+        .clipShape(Capsule())
     }
 }
 

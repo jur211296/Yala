@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] b09474c feat(ui): add ProfileToolbarButton and golden YalaSpark
+- [2026-02-05] 897fcad fix(ux): voice/image rows now unlock correctly when simulating Pro
 - [2026-02-05] a5f41d0 fix(ux): add missing Pro gates in Statistics FAB and accounts carousel
 - [2026-02-05] 16c2d71 fix(ux): improve Pro/Free UI design and consistency
 - [2026-02-05] dbc4a49 docs: update STATE.md with Pro/Free system progress
@@ -32,7 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-05] be1786c feat(subscription): add Pro/Free UI components
 - [2026-02-05] 655c912 feat(subscription): add FeatureGateService and extend StoreKitManager
 - [2026-02-04] 562820c feat(ux): add haptic feedback and animations
-- [2026-02-04] 1749d05 feat(records): add standalone Records tab in More section
 - [2026-02-04] 40b7925 feat(settings): add toggle to show/hide period variations
 - [2026-02-04] 9c7a3fa refactor(ui): unify scheduled payments text styles with Records
 - [2026-02-04] f863c40 feat(currency): add recommended section and auto-deselect logic
@@ -98,7 +99,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Toggle Comparativas (10.5.I)** - Toggle en Personalización para mostrar/ocultar variaciones vs periodo anterior; oculta chips de variación, selector M/A, línea de periodo anterior en gráficas, carrusel de comparación; @AppStorage propaga setting a todos los componentes; fix try? sin manejo de error en TrendsTabView; valores hardcodeados reemplazados por DS.Spacing tokens; localizaciones 6 idiomas
 - **Tab Registros Standalone (10.5.J)** - Nueva tab "Registros" en sección "Más" con RecordsStandaloneView; FAB completo con voice/image input; selection mode y bulk edit; filtros sincronizados con SessionState (SSOT); promocionable a tabs principales desde Perfil > Personalización; tokens DS.Button para dimensiones FAB/action buttons; localizaciones 6 idiomas
 - **Animaciones y Haptic Feedback (10.5.K)** - DS.Haptic helpers centralizados (success, selection, medium, light, warning); constantes spring en DS.Animation; haptic en FAB toggle/menu (3 vistas), save transaction (success), delete (warning); animación de selección en RecordRowView con bounce; animación de entrada en TransactionSuccessView con stagger; action bar animado slide-up con contentTransition; respeta accessibilityReduceMotion
-- **Sistema Pro/Free (10.5.L)** - FeatureGateService con enum ProFeature (accounts, budgets, voiceInput, imageInput, premiumIcons); límites Free (2 cuentas, 3 presupuestos); gates en AccountsSettingsListView, BudgetsListView, PanelView (FAB voz/imagen), ProfileView (toggles), AppIconSettingsView; ProBadge component; UpgradePromptSheet contextual (limitReached/proFeature/trialExpired); StoreKitManager extendido (trial detection, wasProUser, syncToAppGroup); localizaciones 6 idiomas; gates en DetailContainerView FAB y carrusel de cuentas
+- **Sistema Pro/Free (10.5.L)** - FeatureGateService con enum ProFeature (accounts, budgets, voiceInput, imageInput, premiumIcons); límites Free (2 cuentas, 3 presupuestos); gates en AccountsSettingsListView, BudgetsListView, PanelView (FAB voz/imagen), ProfileView (toggles), AppIconSettingsView; ProBadge component; UpgradePromptSheet contextual (limitReached/proFeature/trialExpired); StoreKitManager extendido (trial detection, wasProUser, syncToAppGroup); localizaciones 6 idiomas; gates en DetailContainerView FAB y carrusel de cuentas; fix toggle Simular Pro (devSimulatePro como stored property para @Observable, eliminar .disabled() que causaba dimming)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -369,8 +370,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Sistema Pro/Free completo - gates en FAB de Estadísticas y carrusel de cuentas
-Next step: Validación manual del sistema Pro/Free en simulador/dispositivo, luego preparar release V1.1
+Stopped at: ProfileToolbarButton y YalaSpark dorado implementados en 4 vistas
+Next step: Commit cambios pendientes (ProBadge, LimitReachedBanner, strings) o continuar con validación Pro/Free
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults

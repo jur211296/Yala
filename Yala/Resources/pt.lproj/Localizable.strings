@@ -723,6 +723,7 @@
 "profile.privacyTitle" = "Seus dados nunca saem do seu dispositivo";
 "profile.privacyDesc" = "Yala armazena seus dados pessoais apenas no seu dispositivo. Nao temos acesso a eles nem os compartilhamos com terceiros. Se voce excluir o app, todos os seus dados serao apagados.";
 "profile.aliasFutureNote" = "Nota: A validacao de unicidade do alias estara disponivel quando a funcionalidade de despesas compartilhadas for implementada.";
+"profile.proMember" = "Membro PRO";
 
 "settings.currencyDescription" = "Escolha sua moeda principal e consulte as taxas de cambio atualizadas.";
 "settings.preferredCurrency" = "Moeda preferida";

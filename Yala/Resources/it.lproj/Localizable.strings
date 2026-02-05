@@ -723,6 +723,7 @@
 "profile.privacyTitle" = "I tuoi dati non lasciano mai il tuo dispositivo";
 "profile.privacyDesc" = "Yala memorizza i tuoi dati personali solo sul tuo dispositivo. Non abbiamo accesso ad essi e non li condividiamo con terzi. Se elimini l'app, tutti i tuoi dati verranno cancellati.";
 "profile.aliasFutureNote" = "Nota: La validazione dell'unicita dell'alias sara disponibile quando verra implementata la funzionalita di spese condivise.";
+"profile.proMember" = "Membro PRO";
 
 "settings.currencyDescription" = "Scegli la tua valuta principale e consulta i tassi di cambio aggiornati.";
 "settings.preferredCurrency" = "Valuta preferita";

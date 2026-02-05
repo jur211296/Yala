@@ -1370,6 +1370,9 @@ enum L10n {
         static var aliasFutureNote: String {
             NSLocalizedString("profile.aliasFutureNote", comment: "")
         }
+        static var proMember: String {
+            NSLocalizedString("profile.proMember", comment: "Pro member subtitle")
+        }
     }
 
     // MARK: - Common

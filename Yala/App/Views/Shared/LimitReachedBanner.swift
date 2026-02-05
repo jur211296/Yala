@@ -40,13 +40,16 @@ struct LimitReachedBanner: View {
             Button {
                 onUpgrade()
             } label: {
-                Text(L10n.FeatureGate.upgrade)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .background(Color.brandPrimary)
-                    .clipShape(Capsule())
+                HStack(spacing: DS.Spacing.xs) {
+                    YalaSpark(size: .small, animated: false)
+                    Text(L10n.FeatureGate.upgrade)
+                        .font(.caption.weight(.semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(Color.brandPrimary)
+                .clipShape(Capsule())
             }
         }
         .padding(DS.Spacing.md)
