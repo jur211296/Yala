@@ -24,14 +24,16 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] 776154f feat(i18n): add Pro/Free subscription strings in 6 languages
+- [2026-02-05] 4863239 feat(subscription): integrate Pro/Free gates across views
+- [2026-02-05] be1786c feat(subscription): add Pro/Free UI components
+- [2026-02-05] 655c912 feat(subscription): add FeatureGateService and extend StoreKitManager
+- [2026-02-04] 562820c feat(ux): add haptic feedback and animations
+- [2026-02-04] 1749d05 feat(records): add standalone Records tab in More section
 - [2026-02-04] 40b7925 feat(settings): add toggle to show/hide period variations
 - [2026-02-04] 9c7a3fa refactor(ui): unify scheduled payments text styles with Records
 - [2026-02-04] f863c40 feat(currency): add recommended section and auto-deselect logic
 - [2026-02-04] 6219467 chore: rename Neto references to Yala in file headers
-- [2026-02-04] 65f23e5 refactor(ui): unify empty states without gradients
-- [2026-02-04] 61e1158 refactor(notifications): improve notification titles and empty states
-- [2026-02-04] 6033eca feat(widgets): improve layout and add cache updates
-- [2026-02-04] e733518 fix(charts): prevent duplicate axis labels in bar charts
 - [2026-02-04] 3b4adcd feat(widgets): add widgetAccentable support for iOS 18 tinted mode
 - [2026-02-04] 9e86af6 fix(widgets): enable Control Center widget actions to trigger app flows
 - [2026-02-04] 875d4a6 refactor(icloud): simplify sync to always-on when iCloud available
@@ -91,6 +93,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **iCloud Sync Always-On (10.5.G.1 mejora)** - Sync simplificado a always-on (sin toggle opt-in); Settings solo muestra estado (sin restart); detección de datos iCloud al instalar para saltar onboarding; pantalla "Sincronizando..." mientras espera datos (5s timeout); localizaciones completas en 6 idiomas para todas las claves iCloud
 - **Fix etiquetas duplicadas en gráficos de barras** - Nueva función `calculateSmartAxisDates(forDataDates:grouping:)` en SmartAxisHelper que usa fechas reales de datos en vez de interpolación lineal para agrupación mes/semana; previene etiquetas duplicadas como "ene", "ene", "feb" cuando hay pocos datos; actualizado en CashFlowWidget, NatureTrendWidget (app y widget)
 - **Toggle Comparativas (10.5.I)** - Toggle en Personalización para mostrar/ocultar variaciones vs periodo anterior; oculta chips de variación, selector M/A, línea de periodo anterior en gráficas, carrusel de comparación; @AppStorage propaga setting a todos los componentes; fix try? sin manejo de error en TrendsTabView; valores hardcodeados reemplazados por DS.Spacing tokens; localizaciones 6 idiomas
+- **Tab Registros Standalone (10.5.J)** - Nueva tab "Registros" en sección "Más" con RecordsStandaloneView; FAB completo con voice/image input; selection mode y bulk edit; filtros sincronizados con SessionState (SSOT); promocionable a tabs principales desde Perfil > Personalización; tokens DS.Button para dimensiones FAB/action buttons; localizaciones 6 idiomas
+- **Animaciones y Haptic Feedback (10.5.K)** - DS.Haptic helpers centralizados (success, selection, medium, light, warning); constantes spring en DS.Animation; haptic en FAB toggle/menu (3 vistas), save transaction (success), delete (warning); animación de selección en RecordRowView con bounce; animación de entrada en TransactionSuccessView con stagger; action bar animado slide-up con contentTransition; respeta accessibilityReduceMotion
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -361,8 +365,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Toggle showVariations implementado para ocultar comparativas de periodo anterior
-Next step: Validación manual de toggle showVariations, luego preparar release V1.1
+Stopped at: Animaciones y haptic feedback implementados en FAB, selección de records, success screen y action bar
+Next step: Validación manual de animaciones/haptics en dispositivo físico, luego preparar release V1.1
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults
