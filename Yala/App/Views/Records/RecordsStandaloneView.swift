@@ -165,10 +165,8 @@ struct RecordsStandaloneView: View {
         // iOS 26 spacer creates separate glass groups
         ToolbarSpacer(.fixed, placement: .topBarTrailing)
 
-        ToolbarItem(placement: .topBarTrailing) {
-            ProfileToolbarButton {
-                isPresentingSettings = true
-            }
+        ProfileToolbarItem {
+            isPresentingSettings = true
         }
     }
 

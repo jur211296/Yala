@@ -78,10 +78,8 @@ struct PlanningView: View {
                 }
 
                 // Profile button
-                ToolbarItem(placement: .topBarTrailing) {
-                    ProfileToolbarButton {
-                        isPresentingSettings = true
-                    }
+                ProfileToolbarItem {
+                    isPresentingSettings = true
                 }
             }
             .sheet(isPresented: $isPresentingSettings) {

@@ -8,13 +8,21 @@
 import SwiftUI
 import UIKit
 
+// MARK: - ProfileToolbarButton
+
 struct ProfileToolbarButton: View {
     // MARK: - Data Access
 
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
 
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
+    }
+
+    /// The icon to display (custom or default)
+    private var displayIcon: String {
+        userProfileIcon.isEmpty ? "person.fill" : userProfileIcon
     }
 
     // MARK: - Properties
@@ -23,71 +31,69 @@ struct ProfileToolbarButton: View {
 
     // MARK: - Constants
 
-    private let avatarSize: CGFloat = 32
+    private let size: CGFloat = 40
     private let ringWidth: CGFloat = 2
     private let sparkBadgeSize: CGFloat = 14
-    private let sparkOffset: CGFloat = 4
 
     // MARK: - Body
 
     var body: some View {
         Button(action: action) {
-            ZStack(alignment: .bottomTrailing) {
-                // Avatar with ring
-                avatarView
-
-                // Spark badge (only PRO)
-                if isProUser {
-                    sparkBadge
-                }
+            avatar
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive())
+        .overlay(alignment: .bottomTrailing) {
+            if isProUser {
+                sparkBadge
+                    .offset(x: 4, y: 4)
             }
-            // Frame extended to include the spark badge offset
-            .frame(width: avatarSize + sparkOffset, height: avatarSize + sparkOffset)
-            .contentShape(Rectangle())
         }
     }
 
-    // MARK: - Avatar View
+    // MARK: - Avatar
 
-    private var avatarView: some View {
-        ZStack {
-            // Outer ring (golden for PRO, electricIndigo for Free)
-            Circle()
-                .stroke(
-                    isProUser
-                        ? LinearGradient(
-                            colors: [.yellow, .orange],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                          )
-                        : LinearGradient(
-                            colors: [.electricIndigo, .electricIndigo.opacity(0.6)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                          ),
-                    lineWidth: ringWidth
-                )
-                .frame(width: avatarSize, height: avatarSize)
-
-            // Inner content
+    private var avatar: some View {
+        Group {
             if let imageData = userProfileImageData,
                let uiImage = UIImage(data: imageData) {
+                // User photo
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: avatarSize - ringWidth * 2, height: avatarSize - ringWidth * 2)
-                    .clipShape(Circle())
+                    .frame(width: size, height: size)
             } else {
-                // Fallback: person.fill icon
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: avatarSize - ringWidth * 2, height: avatarSize - ringWidth * 2)
-
-                Image(systemName: "person.fill")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.electricIndigo)
+                // White background with icon (custom or default)
+                Color.white
+                    .frame(width: size, height: size)
+                    .overlay {
+                        Image(systemName: displayIcon)
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(Color.electricIndigo)
+                    }
             }
         }
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .strokeBorder(ringGradient, lineWidth: ringWidth)
+        }
+    }
+
+    // MARK: - Ring Gradient
+
+    private var ringGradient: LinearGradient {
+        isProUser
+            ? LinearGradient(
+                colors: [.yellow, .orange],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+              )
+            : LinearGradient(
+                colors: [.electricIndigo, .electricIndigo.opacity(0.6)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+              )
     }
 
     // MARK: - Spark Badge
@@ -102,7 +108,21 @@ struct ProfileToolbarButton: View {
                 .scaleEffect(0.8)
         }
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-        .offset(x: sparkOffset, y: sparkOffset)
+    }
+}
+
+// MARK: - ProfileToolbarItem
+
+/// ToolbarContent wrapper that applies .sharedBackgroundVisibility(.hidden)
+/// to remove toolbar's default glass (button has its own glass effect).
+struct ProfileToolbarItem: ToolbarContent {
+    let action: () -> Void
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            ProfileToolbarButton(action: action)
+        }
+        .sharedBackgroundVisibility(.hidden)
     }
 }
 

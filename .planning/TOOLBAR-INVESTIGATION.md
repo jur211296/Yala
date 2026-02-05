@@ -7,13 +7,22 @@ El `ProfileToolbarButton` no se comporta igual que `YalaToolbarButton` en los to
 
 ---
 
-## Problema 1: Toolbar Único (PanelView)
+## Problema 1: Toolbar Único (PanelView) ✅ RESUELTO
 
-### Objetivo
+### Solución Final
+1. Usar `.sharedBackgroundVisibility(.hidden)` en el ToolbarItem para ocultar el glass del toolbar
+2. Aplicar `.glassEffect(.regular.interactive())` directamente al botón para el efecto de tap
+3. Tamaño: 40pt con ring de 2pt
+
+### Implementación
+- `ProfileToolbarButton`: Componente con avatar (foto o icono), ring gradiente y spark badge (Pro)
+- `ProfileToolbarItem`: Wrapper de ToolbarContent que aplica `.sharedBackgroundVisibility(.hidden)`
+
+### Objetivo Original
 El ProfileToolbarButton debe abarcar todo el espacio del toolbar igual que YalaToolbarButton, viéndose como un círculo completo que "llena" el botón.
 
-### Estado actual
-El avatar se ve pequeño/encapsulado, no llena el espacio como lo hace un YalaToolbarButton con un SF Symbol.
+### Estado anterior
+El avatar se veía pequeño/encapsulado, no llenaba el espacio como lo hace un YalaToolbarButton con un SF Symbol.
 
 ### Referencia: YalaToolbarButton
 ```swift
@@ -64,13 +73,19 @@ struct YalaToolbarButton: View {
 
 ---
 
-## Problema 2: Toolbar Múltiple (RecordsStandaloneView, DetailContainerView, PlanningView)
+## Problema 2: Toolbar Múltiple (RecordsStandaloneView, DetailContainerView, PlanningView) ✅ RESUELTO
 
-### Objetivo
+### Solución Final
+Añadir `placement: .topBarTrailing` al ToolbarSpacer:
+```swift
+ToolbarSpacer(.fixed, placement: .topBarTrailing)
+```
+
+### Objetivo Original
 Usar `ToolbarSpacer(.fixed)` para que los botones de acción y el ProfileToolbarButton se vean como dos grupos glass separados (como en la imagen de Apple HIG).
 
-### Estado actual
-El ToolbarSpacer no está creando la separación visual esperada. Los botones se ven juntos en lugar de en grupos separados.
+### Estado anterior
+El ToolbarSpacer no estaba creando la separación visual esperada. Los botones se veían juntos en lugar de en grupos separados.
 
 ### Estructura actual
 ```swift

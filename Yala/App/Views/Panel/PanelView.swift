@@ -159,11 +159,6 @@ struct PanelView: View {
         }
     }
 
-    private var settingsToolbarButton: some View {
-        ProfileToolbarButton {
-            isPresentingSettings = true
-        }
-    }
 
     /// Prefill subcategory name for NewTransactionView
     private var prefillSubcategoryName: String? {
@@ -181,8 +176,8 @@ struct PanelView: View {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
                     }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        settingsToolbarButton
+                    ProfileToolbarItem {
+                        isPresentingSettings = true
                     }
                 }
         }
