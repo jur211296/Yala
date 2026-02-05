@@ -15,8 +15,17 @@ struct AccountsSettingsListView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel = AccountsSettingsListViewModel()
+    @State private var showUpgradeSheet = false
 
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
+
+    private var activeAccountsCount: Int {
+        viewModel.orderedActiveAccounts.count
+    }
+
+    private var isAtLimit: Bool {
+        FeatureGateService.shared.isAtLimit(.accounts, currentCount: activeAccountsCount)
+    }
 
     var body: some View {
         ZStack {
@@ -24,6 +33,16 @@ struct AccountsSettingsListView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
+                    // Limit reached banner
+                    if isAtLimit {
+                        LimitReachedBanner(
+                            feature: .accounts,
+                            currentCount: activeAccountsCount
+                        ) {
+                            showUpgradeSheet = true
+                        }
+                    }
+
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -59,7 +78,11 @@ struct AccountsSettingsListView: View {
                     }
 
                     YalaToolbarButton(systemName: "plus") {
-                        viewModel.isPresentingCreateAccount = true
+                        if FeatureGateService.shared.canCreate(.accounts, currentCount: activeAccountsCount) {
+                            viewModel.isPresentingCreateAccount = true
+                        } else {
+                            showUpgradeSheet = true
+                        }
                     }
                 }
             }
@@ -76,6 +99,9 @@ struct AccountsSettingsListView: View {
                 existingNames: viewModel.existingNamesExcluding(account),
                 accountToEdit: account
             )
+        }
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradePromptSheet(feature: .accounts, context: .limitReached)
         }
         .onAppear {
             viewModel.setContext(modelContext)

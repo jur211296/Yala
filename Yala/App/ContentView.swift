@@ -184,6 +184,11 @@ struct MainTabView: View {
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
+    // Queries for downgrade resolution
+    @Query private var allAccounts: [Account]
+    @Query private var allBudgets: [Budget]
+    @State private var showDowngradeResolution = false
+
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
     }
@@ -258,6 +263,27 @@ struct MainTabView: View {
 
                 // Clear after handling
                 sessionState.deepLinkDestination = nil
+            }
+            .onChange(of: sessionState.shouldShowDowngradeResolution) { _, shouldShow in
+                // Show downgrade resolution sheet when triggered by AppBootstrapper
+                if shouldShow {
+                    // Check if there's actual excess before showing
+                    let activeAccounts = allAccounts.filter { !$0.isArchived }
+                    let activeBudgets = allBudgets.filter { $0.isActive }
+
+                    if activeAccounts.count > 2 || activeBudgets.count > 3 {
+                        showDowngradeResolution = true
+                    }
+                    sessionState.shouldShowDowngradeResolution = false
+                }
+            }
+            .sheet(isPresented: $showDowngradeResolution) {
+                DowngradeResolutionSheet(
+                    accounts: allAccounts,
+                    budgets: allBudgets
+                ) {
+                    showDowngradeResolution = false
+                }
             }
         }
     }

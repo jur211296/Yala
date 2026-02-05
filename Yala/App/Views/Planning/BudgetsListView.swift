@@ -18,7 +18,16 @@ struct BudgetsListView: View {
     @State private var viewModel = BudgetsViewModel()
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
+    @State private var showUpgradeSheet = false
     @AppStorage("budgets.hideInactive") private var hideInactive: Bool = false
+
+    private var activeBudgetsCount: Int {
+        viewModel.activeBudgetsCount
+    }
+
+    private var isAtLimit: Bool {
+        FeatureGateService.shared.isAtLimit(.budgets, currentCount: activeBudgetsCount)
+    }
 
     var body: some View {
         ZStack {
@@ -26,6 +35,18 @@ struct BudgetsListView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
+                    // Limit reached banner
+                    if isAtLimit {
+                        LimitReachedBanner(
+                            feature: .budgets,
+                            currentCount: activeBudgetsCount
+                        ) {
+                            showUpgradeSheet = true
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.md)
+                    }
+
                     controlsBar
 
                     listContent
@@ -57,6 +78,9 @@ struct BudgetsListView: View {
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradePromptSheet(feature: .budgets, context: .limitReached)
         }
         .onAppear {
             viewModel.setContext(modelContext)
@@ -288,8 +312,12 @@ struct BudgetsListView: View {
                 Spacer()
 
                 Button {
-                    viewModel.editingBudget = nil
-                    viewModel.showBudgetEditor = true
+                    if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
+                        viewModel.editingBudget = nil
+                        viewModel.showBudgetEditor = true
+                    } else {
+                        showUpgradeSheet = true
+                    }
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .bold))

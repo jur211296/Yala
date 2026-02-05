@@ -54,6 +54,11 @@ final class BudgetsViewModel {
     /// Budgets grouped by status
     var groupedBudgets: [(status: BudgetStatus, budgets: [BudgetSummary])] = []
 
+    /// Count of active budgets (for Pro tier limit checking)
+    var activeBudgetsCount: Int {
+        allBudgets.filter { $0.isActive }.count
+    }
+
     // MARK: - Initialization
 
     init() {

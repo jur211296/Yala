@@ -148,12 +148,20 @@ final class AppBootstrapper {
 
         case "voice-entry":
             if UserDefaults.standard.bool(forKey: "voiceInputEnabled") {
-                sessionState.shouldShowVoiceEntry = true
+                if FeatureGateService.shared.canAccess(.voiceInput) {
+                    sessionState.shouldShowVoiceEntry = true
+                } else {
+                    sessionState.shouldShowUpgradeForVoice = true
+                }
             }
 
         case "image-entry":
             if UserDefaults.standard.bool(forKey: "imageInputEnabled") {
-                sessionState.shouldShowImageEntry = true
+                if FeatureGateService.shared.canAccess(.imageInput) {
+                    sessionState.shouldShowImageEntry = true
+                } else {
+                    sessionState.shouldShowUpgradeForImage = true
+                }
             }
 
         default:
@@ -191,7 +199,15 @@ final class AppBootstrapper {
 
         case "voice-entry":
             if UserDefaults.standard.bool(forKey: "voiceInputEnabled") {
-                sessionState.shouldShowVoiceEntry = true
+                // Check Pro gate
+                if FeatureGateService.shared.canAccess(.voiceInput) {
+                    sessionState.shouldShowVoiceEntry = true
+                } else {
+                    sessionState.shouldShowUpgradeForVoice = true
+                    #if DEBUG
+                    print("AppBootstrapper: voice-entry blocked - Pro feature")
+                    #endif
+                }
             } else {
                 #if DEBUG
                 print("AppBootstrapper: voice-entry blocked - feature disabled")
@@ -200,7 +216,15 @@ final class AppBootstrapper {
 
         case "image-entry":
             if UserDefaults.standard.bool(forKey: "imageInputEnabled") {
-                sessionState.shouldShowImageEntry = true
+                // Check Pro gate
+                if FeatureGateService.shared.canAccess(.imageInput) {
+                    sessionState.shouldShowImageEntry = true
+                } else {
+                    sessionState.shouldShowUpgradeForImage = true
+                    #if DEBUG
+                    print("AppBootstrapper: image-entry blocked - Pro feature")
+                    #endif
+                }
             } else {
                 #if DEBUG
                 print("AppBootstrapper: image-entry blocked - feature disabled")
@@ -254,6 +278,50 @@ final class AppBootstrapper {
         await store.loadProducts()
         await store.updateSubscriptionStatus()
         sessionState.isProUser = store.isProUser
+
+        // Sync to App Group for widgets
+        store.syncToAppGroup()
+
+        // Check for downgrade (user was Pro but no longer is)
+        checkForDowngrade()
+    }
+
+    /// Check if user has downgraded from Pro and needs to resolve excess items
+    private func checkForDowngrade() {
+        let store = StoreKitManager.shared
+
+        guard store.justDowngraded else { return }
+
+        #if DEBUG
+        print("AppBootstrapper: Detected downgrade from Pro to Free")
+        #endif
+
+        // Reset premium app icon if needed
+        resetPremiumIconIfNeeded()
+
+        // Mark that we need to show downgrade resolution
+        // The actual resolution sheet is shown from ContentView which has access to data
+        sessionState.shouldShowDowngradeResolution = true
+    }
+
+    /// Reset app icon to Original if user is Free and has premium icon
+    private func resetPremiumIconIfNeeded() {
+        guard !FeatureGateService.shared.isProUser else { return }
+
+        let currentIconName = UIApplication.shared.alternateIconName
+
+        // If user has an alternate icon set (premium), reset to default
+        if currentIconName != nil {
+            UIApplication.shared.setAlternateIconName(nil) { error in
+                #if DEBUG
+                if let error = error {
+                    print("AppBootstrapper: Failed to reset app icon: \(error)")
+                } else {
+                    print("AppBootstrapper: Reset premium icon to Original")
+                }
+                #endif
+            }
+        }
     }
 
     private func processDueScheduledPayments(context: ModelContext) {

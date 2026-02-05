@@ -89,6 +89,10 @@ struct PanelView: View {
     /// FAB menu expanded state
     @State private var showFABMenu = false
 
+    /// Upgrade prompt sheets for gated features
+    @State private var showUpgradeForVoice = false
+    @State private var showUpgradeForImage = false
+
     /// Check if Statistics tab is visible
     private var isStatisticsVisible: Bool {
         TabBarConfiguration.fromJSON(tabConfigJSON).activeTabs.contains(.statistics)
@@ -101,6 +105,16 @@ struct PanelView: View {
         return hasActiveAccounts && hasVisibleSubcategories
     }
 
+    /// Check if voice input is locked (Pro feature)
+    private var isVoiceLocked: Bool {
+        !FeatureGateService.shared.canAccess(.voiceInput)
+    }
+
+    /// Check if image input is locked (Pro feature)
+    private var isImageLocked: Bool {
+        !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
     /// Navigate to Statistics detail, setting temporary tab if needed
     private func navigateToStatistics(_ detailTab: DetailViewTab) {
         if !isStatisticsVisible {
@@ -110,6 +124,51 @@ struct PanelView: View {
         sessionState.navigateToDetail(detailTab)
     }
 
+    // MARK: - Toolbar Buttons
+
+    private var inboxToolbarButton: some View {
+        Button {
+            showInbox = true
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "tray.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Color.electricIndigo)
+
+                // Badge with count
+                if pendingDrafts.count > 0 {
+                    Text("\(min(pendingDrafts.count, 99))")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule()
+                                .fill(Color.hotPink)
+                        )
+                        .offset(x: 8, y: -6)
+                }
+            }
+        }
+    }
+
+    private var settingsToolbarButton: some View {
+        Button {
+            isPresentingSettings = true
+        } label: {
+            Image(systemName: "person.fill")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(Color.electricIndigo)
+        }
+    }
+
+    /// Prefill subcategory name for NewTransactionView
+    private var prefillSubcategoryName: String? {
+        viewModel.selectedSubcategoryIDs.first.flatMap { subcategoryID in
+            allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
+        }
+    }
+
     var body: some View {
         NavigationStack {
             mainContent
@@ -117,143 +176,48 @@ struct PanelView: View {
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button {
-                            showInbox = true
-                        } label: {
-                            ZStack(alignment: .topTrailing) {
-                                Image(systemName: "tray.fill")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundStyle(Color.electricIndigo)
-
-                                // Badge with count
-                                if pendingDrafts.count > 0 {
-                                    Text("\(min(pendingDrafts.count, 99))")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .padding(.horizontal, 4)
-                                        .padding(.vertical, 1)
-                                        .background(
-                                            Capsule()
-                                                .fill(Color.hotPink)
-                                        )
-                                        .offset(x: 8, y: -6)
-                                }
-                            }
-                        }
+                        inboxToolbarButton
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            isPresentingSettings = true
-                        } label: {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(Color.electricIndigo)
-                        }
+                        settingsToolbarButton
                     }
-                }
-                .sheet(item: $accountFormSheet) { sheet in
-                    AccountFormView(
-                        existingNames: existingAccountNames(editingAccount: sheet.account),
-                        accountToEdit: sheet.account
-                    )
-                    .onDisappear {
-                        // Force recalculation when account form closes
-                        // (initial balance changes may not trigger @Query immediately)
-                        recalculateData()
-                    }
-                }
-                .sheet(isPresented: $isPresentingSettings, onDismiss: {
-                    recalculateData()
-                }) {
-                    ProfileView()
-                }
-                .sheet(isPresented: $showWidgetPreferences) {
-                    WidgetPreferencesView(viewModel: viewModel)
-                        .presentationDragIndicator(.visible)
-                }
-                .sheet(isPresented: $showNewTransaction, onDismiss: {
-                    recalculateData()
-                }) {
-                    // Convert selected subcategory ID back to name for prefill
-                    let prefillSubcategoryName: String? = viewModel.selectedSubcategoryIDs.first.flatMap { subcategoryID in
-                        allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
-                    }
-                    NewTransactionView(
-                        prefillAccountID: viewModel.selectedAccountID,
-                        prefillCategoryID: viewModel.selectedCategoryID,
-                        prefillSubcategoryName: prefillSubcategoryName
-                    )
-                }
-                .sheet(isPresented: $showVoiceRecording, onDismiss: {
-                    if navigateToInboxAfterVoice {
-                        navigateToInboxAfterVoice = false
-                        showInbox = true
-                    }
-                    if switchToImageAfterVoice {
-                        switchToImageAfterVoice = false
-                        // Small delay to allow sheet dismiss animation
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showImageSelection = true
-                        }
-                    }
-                    recalculateData()
-                }) {
-                    VoiceRecordingView(
-                        onSavedToInbox: {
-                            navigateToInboxAfterVoice = true
-                        },
-                        onSwitchToImage: {
-                            switchToImageAfterVoice = true
-                        }
-                    )
-                }
-                .sheet(isPresented: $showImageSelection, onDismiss: {
-                    if navigateToInboxAfterImage {
-                        navigateToInboxAfterImage = false
-                        showInbox = true
-                    }
-                    recalculateData()
-                }) {
-                    ImageSelectionView(onSavedToInbox: {
-                        navigateToInboxAfterImage = true
-                    })
-                }
-                .sheet(isPresented: $showCustomPeriodPicker) {
-                    CustomPeriodPickerSheet(
-                        minDate: transactionDateRange.start,
-                        maxDate: transactionDateRange.end,
-                        currentRange: sessionState.customDateRange
-                    )
-                }
-                .sheet(isPresented: $showBudgetFavoritesSettings, onDismiss: {
-                    recalculateData()
-                }) {
-                    NavigationStack {
-                        BudgetsFavoritesSettingsView()
-                    }
-                }
-                .sheet(isPresented: $showInbox, onDismiss: {
-                    recalculateData()
-                }) {
-                    InboxView(onNavigateToRecords: {
-                        navigateToStatistics(.records)
-                    })
                 }
         }
+        .modifier(
+            PanelSheetsModifier(
+                accountFormSheet: $accountFormSheet,
+                isPresentingSettings: $isPresentingSettings,
+                showWidgetPreferences: $showWidgetPreferences,
+                showNewTransaction: $showNewTransaction,
+                showVoiceRecording: $showVoiceRecording,
+                showImageSelection: $showImageSelection,
+                showCustomPeriodPicker: $showCustomPeriodPicker,
+                showBudgetFavoritesSettings: $showBudgetFavoritesSettings,
+                showInbox: $showInbox,
+                showUpgradeForVoice: $showUpgradeForVoice,
+                showUpgradeForImage: $showUpgradeForImage,
+                navigateToInboxAfterVoice: $navigateToInboxAfterVoice,
+                switchToImageAfterVoice: $switchToImageAfterVoice,
+                navigateToInboxAfterImage: $navigateToInboxAfterImage,
+                existingAccountNames: existingAccountNames,
+                prefillAccountID: viewModel.selectedAccountID,
+                prefillCategoryID: viewModel.selectedCategoryID,
+                prefillSubcategoryName: prefillSubcategoryName,
+                transactionDateRange: transactionDateRange,
+                customDateRange: sessionState.customDateRange,
+                viewModel: viewModel,
+                navigateToStatistics: navigateToStatistics,
+                recalculateData: recalculateData
+            )
+        )
         .onAppear {
             viewModel.setContext(
                 modelContext,
                 exchangeRateService: exchangeRateService,
                 currencyConverter: currencyConverter
             )
-
-            // Note: seedCategoriesIfNeeded removed - now handled by OnboardingView step 5
             TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext)
-
-            // Sync all filters from SessionState -> ViewModel
             viewModel.syncFromSessionState(sessionState)
-
-            // Ensure consistency
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
                 accounts: accounts,
                 currentOrderRaw: accountsSortOrderNamesRaw
@@ -261,93 +225,33 @@ struct PanelView: View {
             if newOrder != accountsSortOrderNamesRaw {
                 accountsSortOrderNamesRaw = newOrder
             }
-
-            // Initial Trend Calculation (async to avoid blocking UI)
             recalculateData()
         }
-        .onChange(of: sessionState.selectedMainTab) { _, _ in
-            // Close FAB menu when navigating away from Panel
-            if showFABMenu {
-                showFABMenu = false
-            }
-        }
-        .onChange(of: accounts) {
-            let newOrder = viewModel.ensureAccountsSortOrderConsistency(
+        .modifier(
+            PanelDataObservers(
                 accounts: accounts,
-                currentOrderRaw: accountsSortOrderNamesRaw
+                transactions: transactions,
+                budgets: budgets,
+                allSubcategories: allSubcategories,
+                sessionState: sessionState,
+                viewModel: viewModel,
+                showFABMenu: $showFABMenu,
+                accountsSortOrderNamesRaw: $accountsSortOrderNamesRaw,
+                defaultCurrencyCodeRaw: $defaultCurrencyCodeRaw,
+                recalculateData: recalculateData
             )
-            if newOrder != accountsSortOrderNamesRaw {
-                accountsSortOrderNamesRaw = newOrder
-            }
-        }
-        // Note: Filter onChange handlers removed - filters are now SSOT computed properties
-        // that read/write directly to SessionState. PanelSessionObservers handles recalculation.
-        .onChange(of: transactions) {
-            // Recalculate when transactions change
-            recalculateData()
-        }
-        .onChange(of: budgets) {
-            // Recalculate when budgets change (favorites toggled, reordered, etc.)
-            recalculateData()
-        }
-        .onChange(of: allSubcategories) {
-            // Recalculate when subcategories change (nature edited, etc.)
-            recalculateData()
-        }
-        .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in
-            // Recalculate when favorites are modified from any view (Profile, Planning, etc.)
-            if needsRefresh {
-                recalculateData()
-                sessionState.needsBudgetsWidgetRefresh = false
-            }
-        }
-        .onChange(of: defaultCurrencyCodeRaw) {
-            // Recalculate when preferred currency changes
-            recalculateData()
-        }
-        .onChange(of: sessionState.formattingVersion) {
-            // Force recalculation when formatting settings change (rounded amounts, etc.)
-            recalculateData()
-        }
-        .onChange(of: sessionState.shouldShowInbox) { _, shouldShow in
-            // Open Inbox when triggered by Share Extension
-            if shouldShow {
-                showInbox = true
-                sessionState.shouldShowInbox = false
-            }
-        }
-        .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
-            // Open ImageSelectionView when shared image is pending
-            if hasPending && sessionState.pendingSharedImageURL != nil {
-                showImageSelection = true
-            }
-        }
-        .onChange(of: sessionState.shouldShowVoiceEntry) { _, shouldShow in
-            // Open VoiceRecordingSheet when triggered by App Shortcut
-            if shouldShow {
-                showVoiceRecording = true
-                sessionState.shouldShowVoiceEntry = false
-            }
-        }
-        .onChange(of: sessionState.shouldShowImageEntry) { _, shouldShow in
-            // Open ImageSelectionView when triggered by App Shortcut
-            if shouldShow {
-                showImageSelection = true
-                sessionState.shouldShowImageEntry = false
-            }
-        }
-        .onChange(of: sessionState.shouldShowNewTransaction) { _, shouldShow in
-            // Open NewTransactionView when triggered by widget deep link
-            if shouldShow {
-                showNewTransaction = true
-                sessionState.shouldShowNewTransaction = false
-            }
-        }
-        .onChange(of: viewModel.trendType) {
-            // Sync trend type to SessionState when it changes
-            viewModel.syncToSessionState(sessionState)
-            recalculateData()
-        }
+        )
+        .modifier(
+            PanelSheetTriggers(
+                sessionState: sessionState,
+                showInbox: $showInbox,
+                showImageSelection: $showImageSelection,
+                showVoiceRecording: $showVoiceRecording,
+                showNewTransaction: $showNewTransaction,
+                showUpgradeForVoice: $showUpgradeForVoice,
+                showUpgradeForImage: $showUpgradeForImage
+            )
+        )
         .modifier(
             PanelSessionObservers(
                 sessionState: sessionState,
@@ -405,12 +309,17 @@ struct PanelView: View {
                             fabMenuButton(
                                 icon: "waveform",
                                 text: L10n.Panel.fabVoice,
-                                color: .electricIndigo
+                                color: .electricIndigo,
+                                isLocked: isVoiceLocked
                             ) {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                     showFABMenu = false
                                 }
-                                showVoiceRecording = true
+                                if isVoiceLocked {
+                                    showUpgradeForVoice = true
+                                } else {
+                                    showVoiceRecording = true
+                                }
                             }
                         }
 
@@ -419,12 +328,17 @@ struct PanelView: View {
                             fabMenuButton(
                                 icon: "photo",
                                 text: L10n.Panel.fabImage,
-                                color: .teal
+                                color: .teal,
+                                isLocked: isImageLocked
                             ) {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                     showFABMenu = false
                                 }
-                                showImageSelection = true
+                                if isImageLocked {
+                                    showUpgradeForImage = true
+                                } else {
+                                    showImageSelection = true
+                                }
                             }
                         }
 
@@ -490,7 +404,13 @@ struct PanelView: View {
         }
     }
 
-    private func fabMenuButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func fabMenuButton(
+        icon: String,
+        text: String,
+        color: Color,
+        isLocked: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         Button {
             DS.Haptic.selection()
             action()
@@ -503,15 +423,19 @@ struct PanelView: View {
                 Text(text)
                     .font(.subheadline.weight(.semibold))
 
+                if isLocked {
+                    ProBadge(size: .small)
+                }
+
                 Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
-            .frame(width: 140)
+            .frame(width: isLocked ? 170 : 140)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(color)
+            .background(isLocked ? Color.gray : color)
             .clipShape(Capsule())
-            .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
         .phaseAnimator([false, true]) { content, phase in
@@ -1136,6 +1060,252 @@ struct PanelView: View {
 struct AccountFormSheet: Identifiable {
     let id = UUID()
     let account: Account?
+}
+
+// MARK: - Panel Data Observers Modifier
+
+/// Encapsulates data-related onChange observers to reduce body complexity
+private struct PanelDataObservers: ViewModifier {
+    let accounts: [Account]
+    let transactions: [TransactionItem]
+    let budgets: [Budget]
+    let allSubcategories: [Subcategory]
+    let sessionState: SessionState
+    let viewModel: PanelViewModel
+    @Binding var showFABMenu: Bool
+    @Binding var accountsSortOrderNamesRaw: String
+    @Binding var defaultCurrencyCodeRaw: String
+    let recalculateData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: sessionState.selectedMainTab) { _, _ in
+                if showFABMenu {
+                    showFABMenu = false
+                }
+            }
+            .onChange(of: accounts) { _, _ in
+                let newOrder = viewModel.ensureAccountsSortOrderConsistency(
+                    accounts: accounts,
+                    currentOrderRaw: accountsSortOrderNamesRaw
+                )
+                if newOrder != accountsSortOrderNamesRaw {
+                    accountsSortOrderNamesRaw = newOrder
+                }
+            }
+            .onChange(of: transactions) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: budgets) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: allSubcategories) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in
+                if needsRefresh {
+                    recalculateData()
+                    sessionState.needsBudgetsWidgetRefresh = false
+                }
+            }
+            .onChange(of: defaultCurrencyCodeRaw) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: sessionState.formattingVersion) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: viewModel.trendType) { _, _ in
+                viewModel.syncToSessionState(sessionState)
+                recalculateData()
+            }
+    }
+}
+
+// MARK: - Panel Sheet Triggers Modifier
+
+/// Encapsulates onChange observers that trigger sheet presentations
+private struct PanelSheetTriggers: ViewModifier {
+    let sessionState: SessionState
+    @Binding var showInbox: Bool
+    @Binding var showImageSelection: Bool
+    @Binding var showVoiceRecording: Bool
+    @Binding var showNewTransaction: Bool
+    @Binding var showUpgradeForVoice: Bool
+    @Binding var showUpgradeForImage: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: sessionState.shouldShowInbox) { _, shouldShow in
+                if shouldShow {
+                    showInbox = true
+                    sessionState.shouldShowInbox = false
+                }
+            }
+            .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
+                if hasPending && sessionState.pendingSharedImageURL != nil {
+                    showImageSelection = true
+                }
+            }
+            .onChange(of: sessionState.shouldShowVoiceEntry) { _, shouldShow in
+                if shouldShow {
+                    showVoiceRecording = true
+                    sessionState.shouldShowVoiceEntry = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowImageEntry) { _, shouldShow in
+                if shouldShow {
+                    showImageSelection = true
+                    sessionState.shouldShowImageEntry = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowNewTransaction) { _, shouldShow in
+                if shouldShow {
+                    showNewTransaction = true
+                    sessionState.shouldShowNewTransaction = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowUpgradeForVoice) { _, shouldShow in
+                if shouldShow {
+                    showUpgradeForVoice = true
+                    sessionState.shouldShowUpgradeForVoice = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowUpgradeForImage) { _, shouldShow in
+                if shouldShow {
+                    showUpgradeForImage = true
+                    sessionState.shouldShowUpgradeForImage = false
+                }
+            }
+    }
+}
+
+// MARK: - Panel Sheets Modifier
+
+/// Encapsulates sheet presentations to reduce body complexity and avoid type-checker limits
+private struct PanelSheetsModifier: ViewModifier {
+    @Binding var accountFormSheet: AccountFormSheet?
+    @Binding var isPresentingSettings: Bool
+    @Binding var showWidgetPreferences: Bool
+    @Binding var showNewTransaction: Bool
+    @Binding var showVoiceRecording: Bool
+    @Binding var showImageSelection: Bool
+    @Binding var showCustomPeriodPicker: Bool
+    @Binding var showBudgetFavoritesSettings: Bool
+    @Binding var showInbox: Bool
+    @Binding var showUpgradeForVoice: Bool
+    @Binding var showUpgradeForImage: Bool
+    @Binding var navigateToInboxAfterVoice: Bool
+    @Binding var switchToImageAfterVoice: Bool
+    @Binding var navigateToInboxAfterImage: Bool
+
+    let existingAccountNames: (Account?) -> [String]
+    let prefillAccountID: PersistentIdentifier?
+    let prefillCategoryID: PersistentIdentifier?
+    let prefillSubcategoryName: String?
+    let transactionDateRange: (start: Date, end: Date)
+    let customDateRange: DateInterval?
+    let viewModel: PanelViewModel
+    let navigateToStatistics: (DetailViewTab) -> Void
+    let recalculateData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: $accountFormSheet) { sheet in
+                AccountFormView(
+                    existingNames: existingAccountNames(sheet.account),
+                    accountToEdit: sheet.account
+                )
+                .onDisappear {
+                    recalculateData()
+                }
+            }
+            .sheet(isPresented: $isPresentingSettings, onDismiss: {
+                recalculateData()
+            }) {
+                ProfileView()
+            }
+            .sheet(isPresented: $showWidgetPreferences) {
+                WidgetPreferencesView(viewModel: viewModel)
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showNewTransaction, onDismiss: {
+                recalculateData()
+            }) {
+                NewTransactionView(
+                    prefillAccountID: prefillAccountID,
+                    prefillCategoryID: prefillCategoryID,
+                    prefillSubcategoryName: prefillSubcategoryName
+                )
+            }
+            .sheet(isPresented: $showVoiceRecording, onDismiss: {
+                handleVoiceRecordingDismiss()
+            }) {
+                VoiceRecordingView(
+                    onSavedToInbox: {
+                        navigateToInboxAfterVoice = true
+                    },
+                    onSwitchToImage: {
+                        switchToImageAfterVoice = true
+                    }
+                )
+            }
+            .sheet(isPresented: $showImageSelection, onDismiss: {
+                handleImageSelectionDismiss()
+            }) {
+                ImageSelectionView(onSavedToInbox: {
+                    navigateToInboxAfterImage = true
+                })
+            }
+            .sheet(isPresented: $showCustomPeriodPicker) {
+                CustomPeriodPickerSheet(
+                    minDate: transactionDateRange.start,
+                    maxDate: transactionDateRange.end,
+                    currentRange: customDateRange
+                )
+            }
+            .sheet(isPresented: $showBudgetFavoritesSettings, onDismiss: {
+                recalculateData()
+            }) {
+                NavigationStack {
+                    BudgetsFavoritesSettingsView()
+                }
+            }
+            .sheet(isPresented: $showInbox, onDismiss: {
+                recalculateData()
+            }) {
+                InboxView(onNavigateToRecords: {
+                    navigateToStatistics(.records)
+                })
+            }
+            .sheet(isPresented: $showUpgradeForVoice) {
+                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showUpgradeForImage) {
+                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+            }
+    }
+
+    private func handleVoiceRecordingDismiss() {
+        if navigateToInboxAfterVoice {
+            navigateToInboxAfterVoice = false
+            showInbox = true
+        }
+        if switchToImageAfterVoice {
+            switchToImageAfterVoice = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showImageSelection = true
+            }
+        }
+        recalculateData()
+    }
+
+    private func handleImageSelectionDismiss() {
+        if navigateToInboxAfterImage {
+            navigateToInboxAfterImage = false
+            showInbox = true
+        }
+        recalculateData()
+    }
 }
 
 // MARK: - Panel Observers

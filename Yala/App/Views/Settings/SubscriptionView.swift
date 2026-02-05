@@ -17,6 +17,7 @@ struct SubscriptionView: View {
     @State private var showManageSubscription = false
     @State private var showError = false
     @State private var animateHero = false
+    @State private var showSuccessView = false
 
     var body: some View {
         ZStack {
@@ -50,6 +51,15 @@ struct SubscriptionView: View {
             if newValue != nil {
                 showError = true
             }
+        }
+        .onChange(of: store.didJustSubscribe) { _, didSubscribe in
+            if didSubscribe {
+                showSuccessView = true
+                store.didJustSubscribe = false
+            }
+        }
+        .fullScreenCover(isPresented: $showSuccessView) {
+            SubscriptionSuccessView()
         }
     }
 

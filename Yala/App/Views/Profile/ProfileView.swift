@@ -43,6 +43,21 @@ struct ProfileView: View {
     @State private var showPermissionDeniedAlert: Bool = false
     @State private var permissionDeniedType: String = ""
 
+    // Subscription state
+    @State private var showSubscriptionSheet = false
+
+    private var isProUser: Bool {
+        StoreKitManager.shared.isProUser
+    }
+
+    private var isInTrial: Bool {
+        StoreKitManager.shared.isInTrial
+    }
+
+    private var trialDaysRemaining: Int {
+        StoreKitManager.shared.trialDaysRemaining
+    }
+
     enum ProfileSheet: Identifiable {
         case personalDetails
         case importIntro
@@ -221,10 +236,13 @@ struct ProfileView: View {
     private var profileHeader: some View {
         VStack(spacing: DS.Spacing.md) {
             ZStack {
+                // Pro users get golden gradient ring
                 Circle()
                     .stroke(
                         LinearGradient(
-                            colors: [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
+                            colors: isProUser
+                                ? [Color.yellow, Color.orange]
+                                : [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -249,19 +267,57 @@ struct ProfileView: View {
                         .font(.system(size: 40))
                         .foregroundStyle(Color.electricIndigo)
                 }
+
+                // Crown badge for Pro users
+                if isProUser {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.yellow, Color.orange],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .padding(6)
+                        .background(Circle().fill(Color.yalaCard))
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .offset(x: 38, y: -38)
+                }
             }
 
-            Text(userName)
-                .font(.title2.weight(.bold))
-                .foregroundStyle(.primary)
+            // Name with Pro badge
+            HStack(spacing: DS.Spacing.sm) {
+                Text(userName)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+
+                if isProUser {
+                    ProBadge(size: .medium)
+                }
+            }
 
             Button(L10n.Profile.edit) {
                 activeSheet = .personalDetails
             }
             .font(.subheadline.weight(.medium))
             .foregroundStyle(Color.electricIndigo)
+
+            // Trial banner
+            if isInTrial {
+                TrialBanner(daysRemaining: trialDaysRemaining) {
+                    showSubscriptionSheet = true
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+            }
         }
         .padding(.top, 8)
+        .sheet(isPresented: $showSubscriptionSheet) {
+            NavigationStack {
+                SubscriptionView()
+            }
+        }
     }
 
     // MARK: - Sections
