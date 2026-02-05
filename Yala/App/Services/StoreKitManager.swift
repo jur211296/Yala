@@ -37,6 +37,54 @@ final class StoreKitManager {
     /// Error message to display
     var errorMessage: String?
 
+    // MARK: - Trial State
+
+    /// Whether user is currently in a trial period
+    private(set) var isInTrial: Bool = false
+
+    /// Trial end date (if in trial)
+    private(set) var trialEndDate: Date?
+
+    /// Subscription expiration date
+    private(set) var subscriptionExpirationDate: Date?
+
+    /// Days remaining in trial
+    var trialDaysRemaining: Int {
+        guard let endDate = trialEndDate else { return 0 }
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: endDate).day ?? 0
+        return max(0, days)
+    }
+
+    /// Whether trial is expiring soon (2 days or less)
+    var isTrialExpiringSoon: Bool {
+        isInTrial && trialDaysRemaining <= 2 && trialDaysRemaining > 0
+    }
+
+    // MARK: - Downgrade Detection
+
+    private let wasProUserKey = "yala.wasProUser"
+
+    /// Whether user was previously a Pro user (persisted)
+    var wasProUser: Bool {
+        get { UserDefaults.standard.bool(forKey: wasProUserKey) }
+        set { UserDefaults.standard.set(newValue, forKey: wasProUserKey) }
+    }
+
+    /// Whether user just downgraded from Pro to Free
+    var justDowngraded: Bool {
+        wasProUser && !isProUser
+    }
+
+    // MARK: - Post-Purchase State
+
+    /// Flag to trigger celebration animation after successful purchase
+    var didJustSubscribe: Bool = false
+
+    // MARK: - App Group
+
+    /// App Group identifier for sharing state with widgets
+    private let appGroupID = "group.com.yala.shared"
+
     // MARK: - Private
 
     private var transactionListener: Task<Void, Never>?
@@ -86,6 +134,7 @@ final class StoreKitManager {
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
                 await updateSubscriptionStatus()
+                didJustSubscribe = true
                 return true
 
             case .userCancelled:
@@ -124,15 +173,54 @@ final class StoreKitManager {
         var foundActive: StoreKit.Transaction?
 
         for await result in StoreKit.Transaction.currentEntitlements {
-            if let transaction = try? checkVerified(result) {
+            do {
+                let transaction = try checkVerified(result)
                 if transaction.productType == .autoRenewable {
                     foundActive = transaction
                 }
+            } catch {
+                #if DEBUG
+                print("StoreKitManager: Transaction verification failed: \(error)")
+                #endif
             }
         }
 
         activeSubscription = foundActive
-        isProUser = foundActive != nil
+        let nowProUser = foundActive != nil
+
+        // Detect trial via offer type
+        if let transaction = foundActive {
+            isInTrial = transaction.offer?.type == .introductory
+            trialEndDate = isInTrial ? transaction.expirationDate : nil
+            subscriptionExpirationDate = transaction.expirationDate
+        } else {
+            isInTrial = false
+            trialEndDate = nil
+            subscriptionExpirationDate = nil
+        }
+
+        // Update Pro status
+        isProUser = nowProUser
+
+        // Track for downgrade detection
+        if isProUser {
+            wasProUser = true
+        }
+
+        // Sync to App Group for widgets
+        syncToAppGroup()
+    }
+
+    /// Sync subscription state to App Group for widget access
+    func syncToAppGroup() {
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            #if DEBUG
+            print("StoreKitManager: Failed to access App Group")
+            #endif
+            return
+        }
+        defaults.set(isProUser, forKey: "isProUser")
+        defaults.synchronize()
     }
 
     // MARK: - Helpers
@@ -177,9 +265,14 @@ final class StoreKitManager {
         Task.detached { [weak self] in
             for await result in StoreKit.Transaction.updates {
                 guard let self else { return }
-                if let transaction = try? self.checkVerified(result) {
+                do {
+                    let transaction = try self.checkVerified(result)
                     await transaction.finish()
                     await self.updateSubscriptionStatus()
+                } catch {
+                    #if DEBUG
+                    print("StoreKitManager: Transaction update verification failed: \(error)")
+                    #endif
                 }
             }
         }

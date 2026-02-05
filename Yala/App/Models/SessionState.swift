@@ -326,6 +326,18 @@ class SessionState {
     /// When true, PanelView will open NewTransactionView
     var shouldShowNewTransaction: Bool = false
 
+    /// Flag to trigger upgrade sheet for voice feature from deep link
+    var shouldShowUpgradeForVoice: Bool = false
+
+    /// Flag to trigger upgrade sheet for image feature from deep link
+    var shouldShowUpgradeForImage: Bool = false
+
+    /// Flag to show subscription success celebration
+    var shouldShowSubscriptionSuccess: Bool = false
+
+    /// Flag to show downgrade resolution sheet
+    var shouldShowDowngradeResolution: Bool = false
+
     /// Deep link destination from widgets
     /// When set, app navigates to specified destination and clears this
     var deepLinkDestination: DeepLinkDestination?
