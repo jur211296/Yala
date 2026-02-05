@@ -197,17 +197,28 @@ final class DataWipeService {
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
         defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: "PEN"
 
+        // --- Visualización ---
+        defaults.removeObject(forKey: "showVariations")         // Default: true
+        defaults.removeObject(forKey: "decimalPlaces")          // Default: 0
+        defaults.removeObject(forKey: "currencyDisplayFormat")  // Default: "code"
+
         // --- Perfil de usuario ---
         defaults.removeObject(forKey: "userName")               // Default: "Usuario"
         defaults.removeObject(forKey: "userAlias")              // Default: ""
         defaults.removeObject(forKey: "userProfileImageData")   // Default: nil
+        defaults.removeObject(forKey: "userProfileIcon")        // Default: "" (sin emoji)
+
+        // --- Features de entrada ---
+        defaults.removeObject(forKey: "voiceInputEnabled")      // Default: false
+        defaults.removeObject(forKey: "voiceLanguage")          // Default: VoiceLanguage.system.rawValue
+        defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
 
         // --- Orden de listas ---
         defaults.removeObject(forKey: "accountsSortOrderNames") // Default: ""
         defaults.removeObject(forKey: "tagsSortOrderNames")     // Default: ""
 
         // --- Configuración de widgets ---
-        defaults.removeObject(forKey: "widgetConfigs")
+        defaults.removeObject(forKey: "panel_widget_configs_v1") // Key real usada por WidgetConfigManager
 
         // --- Estado del servicio de tipos de cambio ---
         defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
@@ -215,10 +226,14 @@ final class DataWipeService {
 
         // --- Preferencias de presupuestos ---
         defaults.removeObject(forKey: "budgets.hideInactive")   // Default: false
+        defaults.removeObject(forKey: "budgetAlertsEnabled")    // Default: false
 
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
+
+        // --- Legacy (compatibilidad) ---
+        defaults.removeObject(forKey: "preferredCurrency")      // Reemplazado por defaultCurrencyCode
 
         // Forzar sincronización inmediata
         defaults.synchronize()
