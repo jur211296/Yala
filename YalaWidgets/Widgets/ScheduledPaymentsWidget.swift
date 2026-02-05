@@ -4,10 +4,43 @@
 //
 //  Widget showing upcoming scheduled payments.
 //  Supports Medium size with default sorting (overdue first, then by date).
+//  Configurable: selection mode (auto/custom) and theme (yala/system).
 //
 
 import WidgetKit
 import SwiftUI
+import AppIntents
+
+// MARK: - Configuration Intent
+
+struct ScheduledPaymentsWidgetIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource { "widget.intent.scheduledPayments.title" }
+    static var description: IntentDescription { "widget.intent.scheduledPayments.desc" }
+
+    @Parameter(title: "widget.selection.mode.type", default: .automatic)
+    var selectionMode: SelectionModeOption
+
+    @Parameter(title: "widget.select.payments")
+    var selectedPayments: [ScheduledPaymentAppEntity]?
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
+
+    static var parameterSummary: some ParameterSummary {
+        When(\ScheduledPaymentsWidgetIntent.$selectionMode, .equalTo, .custom) {
+            Summary {
+                \ScheduledPaymentsWidgetIntent.$selectionMode
+                \ScheduledPaymentsWidgetIntent.$selectedPayments
+                \ScheduledPaymentsWidgetIntent.$theme
+            }
+        } otherwise: {
+            Summary {
+                \ScheduledPaymentsWidgetIntent.$selectionMode
+                \ScheduledPaymentsWidgetIntent.$theme
+            }
+        }
+    }
+}
 
 // MARK: - Timeline Entry
 
@@ -16,6 +49,7 @@ struct ScheduledPaymentsEntry: TimelineEntry {
     let payments: [WidgetScheduledPayment]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    let theme: WidgetThemeOption
 
     static var placeholder: ScheduledPaymentsEntry {
         ScheduledPaymentsEntry(
@@ -59,49 +93,65 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                 )
             ],
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true
+            isPlaceholder: true,
+            theme: .yala
         )
     }
 }
 
 // MARK: - Timeline Provider
 
-struct ScheduledPaymentsProvider: TimelineProvider {
+struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
     typealias Entry = ScheduledPaymentsEntry
+    typealias Intent = ScheduledPaymentsWidgetIntent
 
     func placeholder(in context: Context) -> ScheduledPaymentsEntry {
         .placeholder
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (ScheduledPaymentsEntry) -> Void) {
+    func snapshot(for configuration: ScheduledPaymentsWidgetIntent, in context: Context) async -> ScheduledPaymentsEntry {
         if context.isPreview {
-            completion(.placeholder)
-        } else {
-            completion(createEntry())
+            return .placeholder
         }
+        return createEntry(for: configuration)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduledPaymentsEntry>) -> Void) {
-        let entry = createEntry()
+    func timeline(for configuration: ScheduledPaymentsWidgetIntent, in context: Context) async -> Timeline<ScheduledPaymentsEntry> {
+        let entry = createEntry(for: configuration)
 
         // Refresh at midnight or after 4 hours
         let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
         let fourHours = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
         let refreshDate = min(midnight, fourHours)
 
-        let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
-        completion(timeline)
+        return Timeline(entries: [entry], policy: .after(refreshDate))
     }
 
-    private func createEntry() -> ScheduledPaymentsEntry {
-        let payments = WidgetDataService.getScheduledPayments(filter: .all, limit: 3)
+    private func createEntry(for configuration: ScheduledPaymentsWidgetIntent) -> ScheduledPaymentsEntry {
+        var payments: [WidgetScheduledPayment]
+
+        if configuration.selectionMode == .custom,
+           let selected = configuration.selectedPayments,
+           !selected.isEmpty {
+            // Custom mode: filter by selected IDs and maintain selection order
+            let allPayments = WidgetDataService.getScheduledPayments(filter: .all, limit: 100)
+            payments = selected.compactMap { entity in
+                allPayments.first { $0.id == entity.id }
+            }
+            payments = Array(payments.prefix(3))
+        } else {
+            // Automatic mode: next 3 by date (overdue first)
+            payments = WidgetDataService.getScheduledPayments(filter: .all, limit: 3)
+        }
+
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
         return ScheduledPaymentsEntry(
             date: Date(),
             payments: payments,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false
+            isPlaceholder: false,
+            theme: configuration.theme
         )
     }
 }
@@ -264,12 +314,16 @@ struct ScheduledPaymentsWidget: Widget {
     let kind: String = "ScheduledPaymentsWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(
+        AppIntentConfiguration(
             kind: kind,
+            intent: ScheduledPaymentsWidgetIntent.self,
             provider: ScheduledPaymentsProvider()
         ) { entry in
             ScheduledPaymentsWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.scheduledPayments")
         .description("widget.gallery.scheduledPayments.desc")
@@ -292,6 +346,32 @@ struct ScheduledPaymentsWidget: Widget {
         date: Date(),
         payments: [],
         currencyDisplayFormat: "symbol",
-        isPlaceholder: false
+        isPlaceholder: false,
+        theme: .yala
+    )
+}
+
+#Preview("System Theme", as: .systemMedium) {
+    ScheduledPaymentsWidget()
+} timeline: {
+    ScheduledPaymentsEntry(
+        date: Date(),
+        payments: [
+            WidgetScheduledPayment(
+                id: "1",
+                name: "Netflix",
+                amount: 44.90,
+                currencyCode: "PEN",
+                nextDueDate: Date().addingTimeInterval(86400 * 2),
+                isOverdue: false,
+                paymentCategory: "subscription",
+                isIncome: false,
+                iconName: "play.tv.fill",
+                colorHex: "#E50914"
+            )
+        ],
+        currencyDisplayFormat: "symbol",
+        isPlaceholder: false,
+        theme: .system
     )
 }

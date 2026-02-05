@@ -18,6 +18,9 @@ struct TopSubcategoriesWidgetIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -30,6 +33,7 @@ struct TopSubcategoriesEntry: TimelineEntry {
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    let theme: WidgetThemeOption
 
     static var placeholder: TopSubcategoriesEntry {
         TopSubcategoriesEntry(
@@ -43,7 +47,8 @@ struct TopSubcategoriesEntry: TimelineEntry {
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            theme: .yala
         )
     }
 }
@@ -89,7 +94,8 @@ struct TopSubcategoriesWidgetProvider: AppIntentTimelineProvider {
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            theme: configuration.theme
         )
     }
 }
@@ -237,7 +243,10 @@ struct TopSubcategoriesWidget: Widget {
             provider: TopSubcategoriesWidgetProvider()
         ) { entry in
             TopSubcategoriesWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.topSubcategories")
         .description("widget.gallery.topSubcategories.desc")
@@ -263,6 +272,7 @@ struct TopSubcategoriesWidget: Widget {
         currencyCode: "PEN",
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }

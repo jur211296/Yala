@@ -19,6 +19,9 @@ struct CategoriesPieWidgetIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -31,6 +34,7 @@ struct CategoriesPieEntry: TimelineEntry {
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    let theme: WidgetThemeOption
 
     static var placeholder: CategoriesPieEntry {
         CategoriesPieEntry(
@@ -49,7 +53,8 @@ struct CategoriesPieEntry: TimelineEntry {
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            theme: .yala
         )
     }
 }
@@ -115,7 +120,8 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            theme: configuration.theme
         )
     }
 }
@@ -211,7 +217,10 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.categoriesPie")
         .description("widget.gallery.categoriesPie.desc")
@@ -237,6 +246,7 @@ struct CategoriesPieWidget: Widget {
         currencyCode: "PEN",
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }

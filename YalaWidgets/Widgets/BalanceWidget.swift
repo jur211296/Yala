@@ -19,6 +19,9 @@ struct BalanceWidgetIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
 }
 
 /// AppEnum wrapper for WidgetPeriod (AppIntents requires AppEnum conformance)
@@ -78,6 +81,7 @@ struct BalanceEntry: TimelineEntry {
     let trendData: [WidgetTrendPoint]
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    let theme: WidgetThemeOption
 
     static var placeholder: BalanceEntry {
         BalanceEntry(
@@ -87,7 +91,8 @@ struct BalanceEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             trendData: [],
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            theme: .yala
         )
     }
 }
@@ -134,7 +139,8 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
             currencyDisplayFormat: displayFormat,
             trendData: trendData,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            theme: configuration.theme
         )
     }
 }
@@ -360,7 +366,10 @@ struct BalanceWidget: Widget {
             provider: BalanceWidgetProvider()
         ) { entry in
             BalanceWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.balance")
         .description("widget.gallery.balance.desc")
@@ -380,7 +389,8 @@ struct BalanceWidget: Widget {
         currencyDisplayFormat: "symbol",
         trendData: [],
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }
 
@@ -402,7 +412,8 @@ struct BalanceWidget: Widget {
             WidgetTrendPoint(date: Date(), balance: 15420),
         ],
         isPlaceholder: false,
-        period: .thisWeek
+        period: .thisWeek,
+        theme: .yala
     )
 }
 
@@ -416,6 +427,7 @@ struct BalanceWidget: Widget {
         currencyDisplayFormat: "symbol",
         trendData: [],
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }

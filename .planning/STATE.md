@@ -24,6 +24,10 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] dfdc277 refactor(ui): organize PersonalizationSettingsView into sections
+- [2026-02-05] 463cd47 fix(sync): reload data on transaction delete and trends update
+- [2026-02-05] 3f0099f fix(notifications): add background task reliability and model support
+- [2026-02-05] 692c87f fix(notifications): add deep links, dynamic content, and duplicate prevention
 - [2026-02-05] 716d6bd fix(ui): improve ProfileView header with clickable avatar and cyan Pro badge
 - [2026-02-05] 911154c feat(ui): add avatar editor with photo/icon selection menu
 - [2026-02-05] 3d87a20 fix(ui): ProfileToolbarButton uses sharedBackgroundVisibility for toolbar integration
@@ -32,8 +36,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-05] 897fcad fix(ux): voice/image rows now unlock correctly when simulating Pro
 - [2026-02-05] a5f41d0 fix(ux): add missing Pro gates in Statistics FAB and accounts carousel
 - [2026-02-05] 16c2d71 fix(ux): improve Pro/Free UI design and consistency
-- [2026-02-05] dbc4a49 docs: update STATE.md with Pro/Free system progress
-- [2026-02-05] 776154f feat(i18n): add Pro/Free subscription strings in 6 languages
 - [2026-02-04] 562820c feat(ux): add haptic feedback and animations
 - [2026-02-04] 40b7925 feat(settings): add toggle to show/hide period variations
 - [2026-02-04] 9c7a3fa refactor(ui): unify scheduled payments text styles with Records
@@ -96,11 +98,14 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Soporte Modo Teñido iOS 18 (widgetAccentable)** - `.widgetAccentable()` agregado a 12 archivos de widgets para soporte de tinted mode; KPIs, progress bars, charts, iconos y montos se tiñen con el color de acento del usuario; pie charts excluidos (mantienen colores para diferenciación visual)
 - **Notificaciones Personalizadas (10.5.H)** - ScheduledPaymentNotificationService para pagos vencidos/hoy/próximos con nombre y monto ("Hoy vence: Netflix por $29.90"); BudgetAlertService mejorado con montos gastado/límite ("Presupuesto Comida al 50% — $500 de $1,000 gastados"); ReportNotificationService con datos reales calculados (balance, gastos, ingresos, top categoría); verificación de permisos y reprogramación automática al volver a la app o reinstalar; CurrencyUtils.symbol(for:) helper; localizaciones 6 idiomas
 - **iCloud Sync Always-On (10.5.G.1 mejora)** - Sync simplificado a always-on (sin toggle opt-in); Settings solo muestra estado (sin restart); detección de datos iCloud al instalar para saltar onboarding; pantalla "Sincronizando..." mientras espera datos (5s timeout); localizaciones completas en 6 idiomas para todas las claves iCloud
+- **Personalización de Widgets iOS (10.5.G.4)** - Tema (Yala/iOS) para 10 widgets de datos; modo de selección (Automático/Personalizado) para BudgetsWidget y ScheduledPaymentsWidget; AppEntity + EntityQuery para Budget y ScheduledPayment; ParameterSummary condicional para mostrar selector solo en modo custom; localizaciones es/en (tema, selección, entidades)
 - **Fix etiquetas duplicadas en gráficos de barras** - Nueva función `calculateSmartAxisDates(forDataDates:grouping:)` en SmartAxisHelper que usa fechas reales de datos en vez de interpolación lineal para agrupación mes/semana; previene etiquetas duplicadas como "ene", "ene", "feb" cuando hay pocos datos; actualizado en CashFlowWidget, NatureTrendWidget (app y widget)
 - **Toggle Comparativas (10.5.I)** - Toggle en Personalización para mostrar/ocultar variaciones vs periodo anterior; oculta chips de variación, selector M/A, línea de periodo anterior en gráficas, carrusel de comparación; @AppStorage propaga setting a todos los componentes; fix try? sin manejo de error en TrendsTabView; valores hardcodeados reemplazados por DS.Spacing tokens; localizaciones 6 idiomas
 - **Tab Registros Standalone (10.5.J)** - Nueva tab "Registros" en sección "Más" con RecordsStandaloneView; FAB completo con voice/image input; selection mode y bulk edit; filtros sincronizados con SessionState (SSOT); promocionable a tabs principales desde Perfil > Personalización; tokens DS.Button para dimensiones FAB/action buttons; localizaciones 6 idiomas
 - **Animaciones y Haptic Feedback (10.5.K)** - DS.Haptic helpers centralizados (success, selection, medium, light, warning); constantes spring en DS.Animation; haptic en FAB toggle/menu (3 vistas), save transaction (success), delete (warning); animación de selección en RecordRowView con bounce; animación de entrada en TransactionSuccessView con stagger; action bar animado slide-up con contentTransition; respeta accessibilityReduceMotion
 - **Sistema Pro/Free (10.5.L)** - FeatureGateService con enum ProFeature (accounts, budgets, voiceInput, imageInput, premiumIcons); límites Free (2 cuentas, 3 presupuestos); gates en AccountsSettingsListView, BudgetsListView, PanelView (FAB voz/imagen), ProfileView (toggles), AppIconSettingsView; ProBadge component; UpgradePromptSheet contextual (limitReached/proFeature/trialExpired); StoreKitManager extendido (trial detection, wasProUser, syncToAppGroup); localizaciones 6 idiomas; gates en DetailContainerView FAB y carrusel de cuentas; fix toggle Simular Pro (devSimulatePro como stored property para @Observable, eliminar .disabled() que causaba dimming)
+- **Fix Sistema Notificaciones (10.5.M)** - Deep links al tocar notificaciones (→statistics, →planning, →budgets); contenido dinámico para reportes (datos reales vs hints estáticos); prevención de duplicados por tipo (no count); background tasks con respaldo 1h después; ventana ampliada a mismo día para foreground check; requiresDynamicContent y lastNotifiedDate en NotificationItem; cancelDynamicNotifications en bootstrap
+- **Fix Sincronización de Datos (10.5.N)** - Lista de registros ahora actualiza inmediatamente al eliminar transacción (refreshRecordsData llama loadData primero); Cash Flow ya no muestra empty state falso (onChange de allTransactions.count en TrendsTabView)
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -371,8 +376,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: ProfileView mejorado - avatar clickable, Pro badge con estrella cyan
-Next step: Continuar con próxima tarea de ROADMAP
+Stopped at: Personalización de widgets iOS (tema + selección de items)
+Next step: Continuar con mejoras del ROADMAP
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults

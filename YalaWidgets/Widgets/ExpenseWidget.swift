@@ -19,6 +19,9 @@ struct ExpenseWidgetIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -31,6 +34,7 @@ struct ExpenseEntry: TimelineEntry {
     let trendData: [WidgetTrendPoint]
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    let theme: WidgetThemeOption
 
     static var placeholder: ExpenseEntry {
         ExpenseEntry(
@@ -40,7 +44,8 @@ struct ExpenseEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             trendData: [],
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            theme: .yala
         )
     }
 }
@@ -95,7 +100,8 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
             currencyDisplayFormat: displayFormat,
             trendData: expenseTrendData,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            theme: configuration.theme
         )
     }
 }
@@ -321,7 +327,10 @@ struct ExpenseWidget: Widget {
             provider: ExpenseWidgetProvider()
         ) { entry in
             ExpenseWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.expense")
         .description("widget.gallery.expense.desc")
@@ -341,7 +350,8 @@ struct ExpenseWidget: Widget {
         currencyDisplayFormat: "symbol",
         trendData: [],
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }
 
@@ -363,6 +373,7 @@ struct ExpenseWidget: Widget {
             WidgetTrendPoint(date: Date(), balance: 3250),
         ],
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }

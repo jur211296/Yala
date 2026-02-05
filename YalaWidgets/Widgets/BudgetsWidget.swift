@@ -4,10 +4,43 @@
 //
 //  Widget showing budget progress.
 //  Supports Medium size with top 3 budgets sorted by usage.
+//  Configurable: selection mode (auto/custom) and theme (yala/system).
 //
 
 import WidgetKit
 import SwiftUI
+import AppIntents
+
+// MARK: - Configuration Intent
+
+struct BudgetsWidgetIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource { "widget.intent.budgets.title" }
+    static var description: IntentDescription { "widget.intent.budgets.desc" }
+
+    @Parameter(title: "widget.selection.mode.type", default: .automatic)
+    var selectionMode: SelectionModeOption
+
+    @Parameter(title: "widget.select.budgets")
+    var selectedBudgets: [BudgetAppEntity]?
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
+
+    static var parameterSummary: some ParameterSummary {
+        When(\BudgetsWidgetIntent.$selectionMode, .equalTo, .custom) {
+            Summary {
+                \BudgetsWidgetIntent.$selectionMode
+                \BudgetsWidgetIntent.$selectedBudgets
+                \BudgetsWidgetIntent.$theme
+            }
+        } otherwise: {
+            Summary {
+                \BudgetsWidgetIntent.$selectionMode
+                \BudgetsWidgetIntent.$theme
+            }
+        }
+    }
+}
 
 // MARK: - Timeline Entry
 
@@ -16,6 +49,7 @@ struct BudgetsEntry: TimelineEntry {
     let budgets: [WidgetBudget]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    let theme: WidgetThemeOption
 
     static var placeholder: BudgetsEntry {
         BudgetsEntry(
@@ -56,42 +90,58 @@ struct BudgetsEntry: TimelineEntry {
                 )
             ],
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true
+            isPlaceholder: true,
+            theme: .yala
         )
     }
 }
 
 // MARK: - Timeline Provider
 
-struct BudgetsWidgetProvider: TimelineProvider {
+struct BudgetsWidgetProvider: AppIntentTimelineProvider {
     typealias Entry = BudgetsEntry
+    typealias Intent = BudgetsWidgetIntent
 
     func placeholder(in context: Context) -> BudgetsEntry {
         .placeholder
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (BudgetsEntry) -> Void) {
+    func snapshot(for configuration: BudgetsWidgetIntent, in context: Context) async -> BudgetsEntry {
         if context.isPreview {
-            completion(.placeholder)
-        } else {
-            completion(createEntry())
+            return .placeholder
         }
+        return createEntry(for: configuration)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<BudgetsEntry>) -> Void) {
-        let entry = createEntry()
+    func timeline(for configuration: BudgetsWidgetIntent, in context: Context) async -> Timeline<BudgetsEntry> {
+        let entry = createEntry(for: configuration)
 
         // Refresh every 4 hours
         let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
 
-        let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
-        completion(timeline)
+        return Timeline(entries: [entry], policy: .after(refreshDate))
     }
 
-    private func createEntry() -> BudgetsEntry {
-        // Get budgets sorted by critical (highest % used first)
-        var budgets = WidgetDataService.getBudgets(sortByCritical: true)
-        budgets = Array(budgets.prefix(3))
+    private func createEntry(for configuration: BudgetsWidgetIntent) -> BudgetsEntry {
+        var budgets: [WidgetBudget]
+
+        if configuration.selectionMode == .custom,
+           let selected = configuration.selectedBudgets,
+           !selected.isEmpty {
+            // Custom mode: filter by selected IDs
+            let selectedIDs = Set(selected.map(\.id))
+            let allBudgets = WidgetDataService.getBudgets(sortByCritical: false)
+            budgets = allBudgets.filter { selectedIDs.contains($0.id) }
+            // Maintain selection order
+            budgets = selected.compactMap { entity in
+                allBudgets.first { $0.id == entity.id }
+            }
+            budgets = Array(budgets.prefix(3))
+        } else {
+            // Automatic mode: top 3 by % used
+            budgets = WidgetDataService.getBudgets(sortByCritical: true)
+            budgets = Array(budgets.prefix(3))
+        }
 
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
@@ -99,7 +149,8 @@ struct BudgetsWidgetProvider: TimelineProvider {
             date: Date(),
             budgets: budgets,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false
+            isPlaceholder: false,
+            theme: configuration.theme
         )
     }
 }
@@ -230,12 +281,16 @@ struct BudgetsWidget: Widget {
     let kind: String = "BudgetsWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(
+        AppIntentConfiguration(
             kind: kind,
+            intent: BudgetsWidgetIntent.self,
             provider: BudgetsWidgetProvider()
         ) { entry in
             BudgetsWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.budgets")
         .description("widget.gallery.budgets.desc")
@@ -258,7 +313,8 @@ struct BudgetsWidget: Widget {
         date: Date(),
         budgets: [],
         currencyDisplayFormat: "symbol",
-        isPlaceholder: false
+        isPlaceholder: false,
+        theme: .yala
     )
 }
 
@@ -303,6 +359,31 @@ struct BudgetsWidget: Widget {
             )
         ],
         currencyDisplayFormat: "symbol",
-        isPlaceholder: false
+        isPlaceholder: false,
+        theme: .yala
+    )
+}
+
+#Preview("System Theme", as: .systemMedium) {
+    BudgetsWidget()
+} timeline: {
+    BudgetsEntry(
+        date: Date(),
+        budgets: [
+            WidgetBudget(
+                id: "1",
+                name: "Alimentación",
+                limitAmount: 800,
+                spentAmount: 720,
+                currencyCode: "PEN",
+                periodType: "monthly",
+                percentUsed: 90,
+                iconName: "fork.knife",
+                colorHex: "#FF6B6B"
+            )
+        ],
+        currencyDisplayFormat: "symbol",
+        isPlaceholder: false,
+        theme: .system
     )
 }

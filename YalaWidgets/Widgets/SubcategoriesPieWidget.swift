@@ -19,6 +19,9 @@ struct SubcategoriesPieWidgetIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -31,6 +34,7 @@ struct SubcategoriesPieEntry: TimelineEntry {
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    let theme: WidgetThemeOption
 
     static var placeholder: SubcategoriesPieEntry {
         SubcategoriesPieEntry(
@@ -49,7 +53,8 @@ struct SubcategoriesPieEntry: TimelineEntry {
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            theme: .yala
         )
     }
 }
@@ -116,7 +121,8 @@ struct SubcategoriesPieWidgetProvider: AppIntentTimelineProvider {
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            theme: configuration.theme
         )
     }
 }
@@ -212,7 +218,10 @@ struct SubcategoriesPieWidget: Widget {
             provider: SubcategoriesPieWidgetProvider()
         ) { entry in
             SubcategoriesPieWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.subcategoriesPie")
         .description("widget.gallery.subcategoriesPie.desc")
@@ -238,6 +247,7 @@ struct SubcategoriesPieWidget: Widget {
         currencyCode: "PEN",
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }

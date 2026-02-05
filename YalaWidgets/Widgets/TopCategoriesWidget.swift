@@ -18,6 +18,9 @@ struct TopCategoriesWidgetIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -30,6 +33,7 @@ struct TopCategoriesEntry: TimelineEntry {
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    let theme: WidgetThemeOption
 
     static var placeholder: TopCategoriesEntry {
         TopCategoriesEntry(
@@ -43,7 +47,8 @@ struct TopCategoriesEntry: TimelineEntry {
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            theme: .yala
         )
     }
 }
@@ -89,7 +94,8 @@ struct TopCategoriesWidgetProvider: AppIntentTimelineProvider {
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            theme: configuration.theme
         )
     }
 }
@@ -237,7 +243,10 @@ struct TopCategoriesWidget: Widget {
             provider: TopCategoriesWidgetProvider()
         ) { entry in
             TopCategoriesWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.topCategories")
         .description("widget.gallery.topCategories.desc")
@@ -263,6 +272,7 @@ struct TopCategoriesWidget: Widget {
         currencyCode: "PEN",
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        theme: .yala
     )
 }

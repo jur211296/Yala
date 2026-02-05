@@ -48,6 +48,30 @@
 "widget.intent.topCategories.desc" = "Muestra tus categorías con más gastos";
 "widget.intent.topSubcategories.title" = "Top Subcategorías";
 "widget.intent.topSubcategories.desc" = "Muestra tus subcategorías con más gastos";
+"widget.intent.budgets.title" = "Presupuestos";
+"widget.intent.budgets.desc" = "Muestra el progreso de tus presupuestos";
+"widget.intent.scheduledPayments.title" = "Próximos pagos";
+"widget.intent.scheduledPayments.desc" = "Muestra tus próximos pagos planificados";
+"widget.intent.latestRecords.title" = "Últimos registros";
+"widget.intent.latestRecords.desc" = "Muestra tus transacciones más recientes";
+
+// MARK: - Theme
+"widget.theme.type" = "Tema";
+"widget.theme.yala" = "Yala";
+"widget.theme.system" = "iOS";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "Mostrar";
+"widget.selection.automatic" = "Automático";
+"widget.selection.custom" = "Personalizado";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "Presupuestos";
+"widget.select.payments" = "Pagos";
+
+// MARK: - Entities
+"widget.entity.budget" = "Presupuesto";
+"widget.entity.payment" = "Pago planificado";
 
 // MARK: - UI (textos en vistas de widgets)
 "widget.ui.noPayments" = "Sin pagos pendientes";

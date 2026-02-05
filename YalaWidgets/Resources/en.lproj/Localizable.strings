@@ -48,6 +48,30 @@
 "widget.intent.topCategories.desc" = "Shows your categories with most expenses";
 "widget.intent.topSubcategories.title" = "Top Subcategories";
 "widget.intent.topSubcategories.desc" = "Shows your subcategories with most expenses";
+"widget.intent.budgets.title" = "Budgets";
+"widget.intent.budgets.desc" = "Shows your budget progress";
+"widget.intent.scheduledPayments.title" = "Upcoming Payments";
+"widget.intent.scheduledPayments.desc" = "Shows your upcoming scheduled payments";
+"widget.intent.latestRecords.title" = "Latest Records";
+"widget.intent.latestRecords.desc" = "Shows your most recent transactions";
+
+// MARK: - Theme
+"widget.theme.type" = "Theme";
+"widget.theme.yala" = "Yala";
+"widget.theme.system" = "iOS";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "Show";
+"widget.selection.automatic" = "Automatic";
+"widget.selection.custom" = "Custom";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "Budgets";
+"widget.select.payments" = "Payments";
+
+// MARK: - Entities
+"widget.entity.budget" = "Budget";
+"widget.entity.payment" = "Scheduled Payment";
 
 // MARK: - UI (texts in widget views)
 "widget.ui.noPayments" = "No pending payments";

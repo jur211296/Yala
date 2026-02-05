@@ -3,11 +3,23 @@
 //  YalaWidgets
 //
 //  Widget showing the latest transactions.
-//  Supports Medium size with 3-4 records.
+//  Supports Medium size with 3 records.
+//  Configurable: theme (yala/system).
 //
 
 import WidgetKit
 import SwiftUI
+import AppIntents
+
+// MARK: - Configuration Intent
+
+struct LatestRecordsWidgetIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource { "widget.intent.latestRecords.title" }
+    static var description: IntentDescription { "widget.intent.latestRecords.desc" }
+
+    @Parameter(title: "widget.theme.type", default: .yala)
+    var theme: WidgetThemeOption
+}
 
 // MARK: - Timeline Entry
 
@@ -16,6 +28,7 @@ struct LatestRecordsEntry: TimelineEntry {
     let transactions: [WidgetTransaction]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    let theme: WidgetThemeOption
 
     static var placeholder: LatestRecordsEntry {
         LatestRecordsEntry(
@@ -62,36 +75,36 @@ struct LatestRecordsEntry: TimelineEntry {
                 )
             ],
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true
+            isPlaceholder: true,
+            theme: .yala
         )
     }
 }
 
 // MARK: - Timeline Provider
 
-struct LatestRecordsProvider: TimelineProvider {
+struct LatestRecordsProvider: AppIntentTimelineProvider {
     typealias Entry = LatestRecordsEntry
+    typealias Intent = LatestRecordsWidgetIntent
 
     func placeholder(in context: Context) -> LatestRecordsEntry {
         .placeholder
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (LatestRecordsEntry) -> Void) {
+    func snapshot(for configuration: LatestRecordsWidgetIntent, in context: Context) async -> LatestRecordsEntry {
         if context.isPreview {
-            completion(.placeholder)
-        } else {
-            completion(createEntry())
+            return .placeholder
         }
+        return createEntry(for: configuration)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<LatestRecordsEntry>) -> Void) {
-        let entry = createEntry()
+    func timeline(for configuration: LatestRecordsWidgetIntent, in context: Context) async -> Timeline<LatestRecordsEntry> {
+        let entry = createEntry(for: configuration)
         let refreshDate = Calendar.current.date(byAdding: .hour, value: 2, to: Date()) ?? Date()
-        let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
-        completion(timeline)
+        return Timeline(entries: [entry], policy: .after(refreshDate))
     }
 
-    private func createEntry() -> LatestRecordsEntry {
+    private func createEntry(for configuration: LatestRecordsWidgetIntent) -> LatestRecordsEntry {
         let transactions = WidgetDataService.getRecentTransactions(limit: 3)
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
@@ -99,7 +112,8 @@ struct LatestRecordsProvider: TimelineProvider {
             date: Date(),
             transactions: transactions,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false
+            isPlaceholder: false,
+            theme: configuration.theme
         )
     }
 }
@@ -227,12 +241,16 @@ struct LatestRecordsWidget: Widget {
     let kind: String = "LatestRecordsWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(
+        AppIntentConfiguration(
             kind: kind,
+            intent: LatestRecordsWidgetIntent.self,
             provider: LatestRecordsProvider()
         ) { entry in
             LatestRecordsWidgetView(entry: entry)
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(
+                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
+                    for: .widget
+                )
         }
         .configurationDisplayName("widget.gallery.latestRecords")
         .description("widget.gallery.latestRecords.desc")
@@ -255,6 +273,33 @@ struct LatestRecordsWidget: Widget {
         date: Date(),
         transactions: [],
         currencyDisplayFormat: "symbol",
-        isPlaceholder: false
+        isPlaceholder: false,
+        theme: .yala
+    )
+}
+
+#Preview("System Theme", as: .systemMedium) {
+    LatestRecordsWidget()
+} timeline: {
+    LatestRecordsEntry(
+        date: Date(),
+        transactions: [
+            WidgetTransaction(
+                id: "1",
+                date: Date(),
+                amount: 45.50,
+                currencyCode: "PEN",
+                note: "Almuerzo",
+                categoryName: "Alimentación",
+                categoryColor: "#FF6B6B",
+                categoryIcon: "fork.knife",
+                subcategoryName: "Restaurantes",
+                isIncome: false,
+                amountInPreferredCurrency: 45.50
+            )
+        ],
+        currencyDisplayFormat: "symbol",
+        isPlaceholder: false,
+        theme: .system
     )
 }
