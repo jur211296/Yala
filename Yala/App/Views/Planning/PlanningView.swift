@@ -61,23 +61,26 @@ struct PlanningView: View {
             .navigationTitle(L10n.Planning.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: DS.Spacing.lg) {
-                        // Favorites button (only for budgets tab)
-                        if selectedTab == .budgets {
-                            Button {
-                                showFavoritesSettings = true
-                            } label: {
-                                Image(systemName: "star.fill")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundStyle(Color.yellow)
-                            }
+                // Favorites button (only for budgets tab)
+                if selectedTab == .budgets {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showFavoritesSettings = true
+                        } label: {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(Color.yellow)
                         }
+                    }
 
-                        // Profile button
-                        ProfileToolbarButton {
-                            isPresentingSettings = true
-                        }
+                    // iOS 26 spacer creates separate glass groups
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                }
+
+                // Profile button
+                ToolbarItem(placement: .topBarTrailing) {
+                    ProfileToolbarButton {
+                        isPresentingSettings = true
                     }
                 }
             }
