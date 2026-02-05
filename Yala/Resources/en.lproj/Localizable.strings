@@ -723,6 +723,10 @@
 "profile.privacyDesc" = "Yala stores your personal data solely on your device. We do not have access to it nor do we share it with third parties. If you delete the app, all your data will be erased.";
 "profile.aliasFutureNote" = "Note: Alias uniqueness validation will be available when shared expenses functionality is implemented.";
 "profile.proMember" = "PRO Member";
+"profile.choosePhoto" = "Choose photo";
+"profile.chooseIcon" = "Choose icon";
+"profile.removeAvatar" = "Remove";
+"profile.editAvatar" = "Edit avatar";
 
 "settings.currencyDescription" = "Choose your main currency and check updated exchange rates.";
 "settings.preferredCurrency" = "Preferred Currency";

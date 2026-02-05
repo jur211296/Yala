@@ -15,6 +15,7 @@ struct PersonalDetailsView: View {
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("userAlias") private var userAlias: String = ""
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
 
     @State private var editedName: String = ""
     @State private var editedAlias: String = ""
@@ -27,6 +28,16 @@ struct PersonalDetailsView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var profileImage: Image?
     @State private var profileUIImage: UIImage?
+
+    // Icon picker sheet
+    @State private var showIconPicker = false
+    @State private var showPhotoPicker = false
+    @State private var selectedIcon: String = ""
+
+    /// Whether user has a custom avatar (photo or icon)
+    private var hasCustomAvatar: Bool {
+        profileImage != nil || !selectedIcon.isEmpty
+    }
 
     var body: some View {
         NavigationStack {
@@ -89,42 +100,101 @@ struct PersonalDetailsView: View {
 
     private var avatarHeader: some View {
         VStack(spacing: DS.Spacing.sm) {
-            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                ZStack {
-                    if let profileImage {
-                        profileImage
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 100, height: 100)
-                            .clipShape(Circle())
-                    } else {
-                        Circle()
-                            .fill(Color.electricIndigo.opacity(0.15))
-                            .frame(width: 100, height: 100)
-
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 44))
-                            .foregroundStyle(Color.electricIndigo)
-                    }
-
-                    // Camera badge overlay
-                    Circle()
-                        .fill(Color.electricIndigo)
-                        .frame(width: 32, height: 32)
-                        .overlay {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.white)
-                        }
-                        .offset(x: 35, y: 35)
+            Menu {
+                // Choose photo option
+                Button {
+                    showPhotoPicker = true
+                } label: {
+                    Label(L10n.Profile.choosePhoto, systemImage: "photo")
                 }
+
+                // Choose icon option
+                Button {
+                    showIconPicker = true
+                } label: {
+                    Label(L10n.Profile.chooseIcon, systemImage: "face.smiling")
+                }
+
+                // Remove option (only if has custom avatar)
+                if hasCustomAvatar {
+                    Divider()
+                    Button(role: .destructive) {
+                        removeCustomAvatar()
+                    } label: {
+                        Label(L10n.Profile.removeAvatar, systemImage: "trash")
+                    }
+                }
+            } label: {
+                avatarDisplay
             }
 
-            Text(profileImage != nil ? L10n.Profile.changePhoto : L10n.Profile.addPhoto)
+            Text(L10n.Profile.editAvatar)
                 .font(.subheadline)
                 .foregroundStyle(Color.electricIndigo)
         }
         .padding(.vertical, DS.Spacing.sm)
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItem, matching: .images)
+        .sheet(isPresented: $showIconPicker) {
+            IconPickerSheet(selectedIcon: $selectedIcon) {
+                // When icon is selected, clear the photo
+                profileImage = nil
+                profileUIImage = nil
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    // MARK: - Avatar Display
+
+    private var avatarDisplay: some View {
+        ZStack {
+            if let profileImage {
+                // User photo
+                profileImage
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 100, height: 100)
+                    .clipShape(Circle())
+            } else if !selectedIcon.isEmpty {
+                // Custom icon
+                Circle()
+                    .fill(Color.electricIndigo.opacity(0.15))
+                    .frame(width: 100, height: 100)
+
+                Image(systemName: selectedIcon)
+                    .font(.system(size: 44))
+                    .foregroundStyle(Color.electricIndigo)
+            } else {
+                // Default
+                Circle()
+                    .fill(Color.electricIndigo.opacity(0.15))
+                    .frame(width: 100, height: 100)
+
+                Image(systemName: "person.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Color.electricIndigo)
+            }
+
+            // Edit badge overlay
+            Circle()
+                .fill(Color.electricIndigo)
+                .frame(width: 32, height: 32)
+                .overlay {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .offset(x: 35, y: 35)
+        }
+    }
+
+    // MARK: - Remove Custom Avatar
+
+    private func removeCustomAvatar() {
+        profileImage = nil
+        profileUIImage = nil
+        selectedIcon = ""
     }
 
     // MARK: - Details Section
@@ -227,6 +297,7 @@ struct PersonalDetailsView: View {
     private func loadCurrentValues() {
         editedName = userName
         editedAlias = userAlias
+        selectedIcon = userProfileIcon
 
         // Load profile image if exists
         if let imageData = userProfileImageData,
@@ -281,11 +352,20 @@ struct PersonalDetailsView: View {
             userAlias = editedAlias.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }
 
-        // Save profile image (if user selected one)
+        // Save profile image or clear it if icon is selected
         if let uiImage = profileUIImage {
             if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
                 userProfileImageData = imageData
+                userProfileIcon = "" // Clear icon when photo is set
             }
+        } else if !selectedIcon.isEmpty {
+            // Icon selected, clear image data
+            userProfileImageData = nil
+            userProfileIcon = selectedIcon
+        } else if !hasCustomAvatar {
+            // User removed avatar, clear both
+            userProfileImageData = nil
+            userProfileIcon = ""
         }
 
         // Dismiss the sheet
@@ -293,6 +373,90 @@ struct PersonalDetailsView: View {
     }
 }
 
+// MARK: - Icon Picker Sheet
+
+struct IconPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedIcon: String
+    var onSelect: () -> Void
+
+    /// Available icons for profile avatar
+    private let availableIcons: [(name: String, symbol: String)] = [
+        ("Persona", "person.fill"),
+        ("Cara feliz", "face.smiling.fill"),
+        ("Estrella", "star.fill"),
+        ("Corazón", "heart.fill"),
+        ("Rayo", "bolt.fill"),
+        ("Corona", "crown.fill"),
+        ("Hoja", "leaf.fill"),
+        ("Llama", "flame.fill"),
+        ("Luna", "moon.fill"),
+        ("Sol", "sun.max.fill"),
+        ("Nube", "cloud.fill"),
+        ("Gota", "drop.fill"),
+    ]
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 70, maximum: 80), spacing: DS.Spacing.md)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: DS.Spacing.lg) {
+                    ForEach(availableIcons, id: \.symbol) { icon in
+                        iconButton(icon)
+                    }
+                }
+                .padding(DS.Spacing.lg)
+            }
+            .navigationTitle(L10n.Profile.chooseIcon)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(L10n.Common.cancel) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func iconButton(_ icon: (name: String, symbol: String)) -> some View {
+        Button {
+            selectedIcon = icon.symbol
+            onSelect()
+            dismiss()
+        } label: {
+            VStack(spacing: DS.Spacing.xs) {
+                ZStack {
+                    Circle()
+                        .fill(selectedIcon == icon.symbol
+                              ? Color.electricIndigo
+                              : Color.electricIndigo.opacity(0.15))
+                        .frame(width: 60, height: 60)
+
+                    Image(systemName: icon.symbol)
+                        .font(.system(size: 28))
+                        .foregroundStyle(selectedIcon == icon.symbol
+                                         ? .white
+                                         : Color.electricIndigo)
+                }
+
+                Text(icon.name)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 #Preview {
     PersonalDetailsView()
+}
+
+#Preview("Icon Picker") {
+    IconPickerSheet(selectedIcon: .constant("star.fill")) { }
 }

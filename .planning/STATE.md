@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] 207d012 feat(ui): add YalaSpark to ProBadge and upgrade buttons
 - [2026-02-05] b09474c feat(ui): add ProfileToolbarButton and golden YalaSpark
 - [2026-02-05] 897fcad fix(ux): voice/image rows now unlock correctly when simulating Pro
 - [2026-02-05] a5f41d0 fix(ux): add missing Pro gates in Statistics FAB and accounts carousel

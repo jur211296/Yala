@@ -26,6 +26,7 @@ struct ProfileView: View {
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
@@ -268,17 +269,19 @@ struct ProfileView: View {
                 if let imageData = userProfileImageData,
                     let uiImage = UIImage(data: imageData)
                 {
+                    // User photo
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFill()
                         .frame(width: 90, height: 90)
                         .clipShape(Circle())
                 } else {
+                    // Custom icon or default
                     Circle()
                         .fill(Color.electricIndigo.opacity(0.1))
                         .frame(width: 90, height: 90)
 
-                    Image(systemName: "person.fill")
+                    Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
                         .font(.system(size: 40))
                         .foregroundStyle(Color.electricIndigo)
                 }

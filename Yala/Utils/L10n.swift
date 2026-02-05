@@ -1373,6 +1373,10 @@ enum L10n {
         static var proMember: String {
             NSLocalizedString("profile.proMember", comment: "Pro member subtitle")
         }
+        static var choosePhoto: String { NSLocalizedString("profile.choosePhoto", comment: "") }
+        static var chooseIcon: String { NSLocalizedString("profile.chooseIcon", comment: "") }
+        static var removeAvatar: String { NSLocalizedString("profile.removeAvatar", comment: "") }
+        static var editAvatar: String { NSLocalizedString("profile.editAvatar", comment: "") }
     }
 
     // MARK: - Common
