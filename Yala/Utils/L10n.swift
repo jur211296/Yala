@@ -1121,6 +1121,10 @@ enum L10n {
         static var personalizationDescription: String {
             NSLocalizedString("settings.personalizationDescription", comment: "")
         }
+        static var sectionInterface: String { NSLocalizedString("settings.sectionInterface", comment: "") }
+        static var sectionCalendar: String { NSLocalizedString("settings.sectionCalendar", comment: "") }
+        static var sectionIndicators: String { NSLocalizedString("settings.sectionIndicators", comment: "") }
+        static var sectionFormat: String { NSLocalizedString("settings.sectionFormat", comment: "") }
         static var accounts: String { NSLocalizedString("settings.accounts", comment: "") }
         static var categories: String { NSLocalizedString("settings.categories", comment: "") }
         static var tags: String { NSLocalizedString("settings.tags", comment: "") }

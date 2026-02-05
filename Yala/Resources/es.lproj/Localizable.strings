@@ -756,6 +756,10 @@
 "settings.appIconDescription" = "Elige el icono que mejor se adapte a tu estilo.";
 "settings.personalization" = "Personalización";
 "settings.personalizationDescription" = "Ajusta cómo funciona Yala según tus preferencias.";
+"settings.sectionInterface" = "Interfaz";
+"settings.sectionCalendar" = "Calendario";
+"settings.sectionIndicators" = "Indicadores";
+"settings.sectionFormat" = "Formato de cantidades";
 "settings.defaultPeriod" = "Período predeterminado";
 "settings.defaultPeriodDescription" = "Este período se aplicará por defecto cada vez que abras la app. Puedes cambiarlo temporalmente desde el selector de período en cualquier momento.";
 "settings.colorfulIcons" = "Iconos coloridos";
