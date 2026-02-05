@@ -85,15 +85,19 @@ final class FeatureGateService {
 
     /// In Dev builds: toggle to simulate Pro (default true)
     /// This is persisted and can be changed from Settings
-    var devSimulatePro: Bool {
-        get {
-            // Default to true (Pro) if key hasn't been set
-            if UserDefaults.standard.object(forKey: Self.devSimulateProKey) == nil {
-                return true
-            }
-            return UserDefaults.standard.bool(forKey: Self.devSimulateProKey)
+    /// Using stored property so @Observable can track changes
+    private var _devSimulatePro: Bool = {
+        // Default to true (Pro) if key hasn't been set
+        if UserDefaults.standard.object(forKey: devSimulateProKey) == nil {
+            return true
         }
+        return UserDefaults.standard.bool(forKey: devSimulateProKey)
+    }()
+
+    var devSimulatePro: Bool {
+        get { _devSimulatePro }
         set {
+            _devSimulatePro = newValue
             UserDefaults.standard.set(newValue, forKey: Self.devSimulateProKey)
         }
     }

@@ -127,7 +127,7 @@ struct ProfileView: View {
                         Text(L10n.Settings.versionInfo)
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                            .padding(.top, 8)
+                            .padding(.top, DS.Spacing.sm)
                     }
                     .padding(.vertical, DS.Spacing.xxl)
                 }
@@ -327,7 +327,7 @@ struct ProfileView: View {
                 .padding(.top, DS.Spacing.sm)
             }
         }
-        .padding(.top, 8)
+        .padding(.top, DS.Spacing.sm)
         .sheet(isPresented: $showSubscriptionSheet) {
             NavigationStack {
                 SubscriptionView()
@@ -471,7 +471,6 @@ struct ProfileView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(!isVoiceLocked && voiceInputEnabled)
 
             // Language selector (only visible when enabled and not locked)
             if voiceInputEnabled && !isVoiceLocked {
@@ -576,7 +575,6 @@ struct ProfileView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(!isImageLocked && imageInputEnabled)
     }
 
     private var datosSection: some View {
