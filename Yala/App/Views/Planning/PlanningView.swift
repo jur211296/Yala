@@ -75,12 +75,8 @@ struct PlanningView: View {
                         }
 
                         // Profile button
-                        Button {
+                        ProfileToolbarButton {
                             isPresentingSettings = true
-                        } label: {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(Color.electricIndigo)
                         }
                     }
                 }

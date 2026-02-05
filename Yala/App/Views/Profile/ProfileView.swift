@@ -49,7 +49,7 @@ struct ProfileView: View {
     @State private var showUpgradeForImage = false
 
     private var isProUser: Bool {
-        StoreKitManager.shared.isProUser
+        FeatureGateService.shared.isProUser
     }
 
     private var isVoiceLocked: Bool {
@@ -283,21 +283,16 @@ struct ProfileView: View {
                         .foregroundStyle(Color.electricIndigo)
                 }
 
-                // Crown badge for Pro users
+                // Spark badge for Pro users
                 if isProUser {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.yellow, Color.orange],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .padding(6)
-                        .background(Circle().fill(Color.yalaCard))
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        .offset(x: 38, y: -38)
+                    ZStack {
+                        Circle()
+                            .fill(Color.yalaCard)
+                        YalaSpark(size: .medium, animated: true)
+                    }
+                    .frame(width: 28, height: 28)
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    .offset(x: 38, y: -38)
                 }
             }
 
@@ -310,6 +305,13 @@ struct ProfileView: View {
                 if isProUser {
                     ProBadge(size: .medium)
                 }
+            }
+
+            // Pro member subtitle
+            if isProUser {
+                Text(L10n.Profile.proMember)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.orange)
             }
 
             Button(L10n.Profile.edit) {
@@ -328,6 +330,18 @@ struct ProfileView: View {
             }
         }
         .padding(.top, DS.Spacing.sm)
+        .padding(.bottom, isProUser ? DS.Spacing.lg : 0)
+        .background(
+            Group {
+                if isProUser {
+                    LinearGradient(
+                        colors: [Color.yellow.opacity(0.03), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+            }
+        )
         .sheet(isPresented: $showSubscriptionSheet) {
             NavigationStack {
                 SubscriptionView()
@@ -723,15 +737,7 @@ struct ProfileView: View {
         SectionBox(title: "Developer") {
             VStack(spacing: 0) {
                 HStack {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.yellow, .orange],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                    YalaSpark(size: .medium, animated: false)
                         .frame(width: 28)
 
                     VStack(alignment: .leading, spacing: 2) {

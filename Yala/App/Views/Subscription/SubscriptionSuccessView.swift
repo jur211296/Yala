@@ -37,24 +37,16 @@ struct SubscriptionSuccessView: View {
             VStack(spacing: DS.Spacing.xxl) {
                 Spacer()
 
-                // Animated crown
+                // Animated spark
                 ZStack {
                     // Glow
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 100))
-                        .foregroundStyle(Color.yellow)
+                    YalaSpark(size: .large, animated: false)
+                        .scaleEffect(5.0)
                         .blur(radius: 30)
                         .opacity(0.5)
 
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.yellow, Color.orange],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                    YalaSpark(size: .large, animated: true)
+                        .scaleEffect(4.0)
                         .shadow(color: Color.orange.opacity(0.5), radius: 10, y: 5)
                 }
                 .scaleEffect(crownScale)

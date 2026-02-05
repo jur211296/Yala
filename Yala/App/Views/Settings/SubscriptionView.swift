@@ -146,24 +146,16 @@ struct SubscriptionView: View {
                 Spacer()
                     .frame(height: 60) // Safe area compensation
 
-                // Crown icon with glow
+                // Spark icon with glow
                 ZStack {
                     // Glow
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 56))
-                        .foregroundStyle(Color.yellow)
+                    YalaSpark(size: .large, animated: false)
+                        .scaleEffect(3.5)
                         .blur(radius: 20)
                         .opacity(animateHero ? 0.6 : 0.3)
 
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 56))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.yellow, Color.orange],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                    YalaSpark(size: .large, animated: true)
+                        .scaleEffect(3.0)
                         .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4)
                 }
                 .scaleEffect(animateHero ? 1.0 : 0.8)
@@ -203,18 +195,11 @@ struct SubscriptionView: View {
                 VStack(spacing: DS.Spacing.md) {
                     ZStack {
                         Circle()
-                            .fill(Color.brandPrimary.opacity(0.1))
+                            .fill(Color.orange.opacity(0.1))
                             .frame(width: 100, height: 100)
 
-                        Image(systemName: "crown.fill")
-                            .font(.system(size: 44))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color.yellow, Color.orange],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+                        YalaSpark(size: .large, animated: true)
+                            .scaleEffect(2.0)
                     }
                     .padding(.bottom, DS.Spacing.sm)
 
@@ -413,15 +398,7 @@ struct SubscriptionView: View {
 
                 Spacer()
 
-                Image(systemName: "crown.fill")
-                    .font(.title3)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.yellow, Color.orange],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                YalaSpark(size: .medium, animated: false)
             }
 
             if let expirationDate = transaction.expirationDate {

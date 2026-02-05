@@ -284,50 +284,54 @@ struct DetailContainerView: View {
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.lg) {
-                // Selection button (only for Records)
-                if selectedTab == .records {
+            HStack(spacing: DS.Spacing.sm) {
+                // Action buttons group
+                HStack(spacing: DS.Spacing.md) {
+                    // Selection button (only for Records)
+                    if selectedTab == .records {
+                        Button {
+                            recordsViewModel.enterSelectionMode()
+                        } label: {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(Color.electricIndigo)
+                        }
+                    }
+
+                    // Filters button
                     Button {
-                        recordsViewModel.enterSelectionMode()
+                        if selectedTab == .records {
+                            recordsViewModel.showFiltersSheet = true
+                        } else {
+                            trendsViewModel.showFiltersSheet = true
+                        }
                     } label: {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "line.3.horizontal.decrease.circle.fill")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundStyle(Color.electricIndigo)
                     }
-                }
+                    .overlay(alignment: .topTrailing) {
+                        let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
+                                           (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
+                                           (selectedTab == .categories && trendsViewModel.activeFilterCount > 0)
 
-                // Filters button
-                Button {
-                    if selectedTab == .records {
-                        recordsViewModel.showFiltersSheet = true
-                    } else {
-                        trendsViewModel.showFiltersSheet = true
-                    }
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
-                }
-                .overlay(alignment: .topTrailing) {
-                    let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0)
-
-                    if showIndicator {
-                        Circle()
-                            .fill(Color.hotPink)
-                            .frame(width: 8, height: 8)
-                            .offset(x: 2, y: -2)
+                        if showIndicator {
+                            Circle()
+                                .fill(Color.hotPink)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 2, y: -2)
+                        }
                     }
                 }
 
-                // Profile button
-                Button {
+                // Visual divider to separate actions from profile
+                Rectangle()
+                    .fill(Color.primary.opacity(0.1))
+                    .frame(width: 1, height: 20)
+
+                // Profile button separated visually
+                ProfileToolbarButton {
                     isPresentingSettings = true
-                } label: {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
                 }
             }
         }

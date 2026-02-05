@@ -67,23 +67,17 @@ struct UpgradePromptSheet: View {
             VStack(spacing: DS.Spacing.xxl) {
                 Spacer()
 
-                // Icon
+                // Hero spark icon
                 ZStack {
                     // Glow effect
                     Circle()
-                        .fill(context.iconColor.opacity(0.2))
+                        .fill(Color.orange.opacity(0.2))
                         .frame(width: 120, height: 120)
                         .blur(radius: 20)
 
-                    Image(systemName: context.icon)
-                        .font(.system(size: 56))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.yellow, Color.orange],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                    // Large animated spark
+                    YalaSpark(size: .large, animated: true)
+                        .scaleEffect(2.5)
                 }
 
                 // Title

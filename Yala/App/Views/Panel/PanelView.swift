@@ -160,12 +160,8 @@ struct PanelView: View {
     }
 
     private var settingsToolbarButton: some View {
-        Button {
+        ProfileToolbarButton {
             isPresentingSettings = true
-        } label: {
-            Image(systemName: "person.fill")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(Color.electricIndigo)
         }
     }
 
