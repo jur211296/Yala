@@ -6,6 +6,67 @@ Este documento define los patrones UI que DEBEN respetarse en toda la app para m
 
 ---
 
+## iOS 26 Liquid Glass (PRIORIDAD MÁXIMA)
+
+**SIEMPRE preferir APIs nativas de iOS 26 para mantener la app moderna y actualizada.**
+
+Yala es una app iOS 26+. Esto significa que DEBEMOS usar las APIs más recientes del sistema en lugar de soluciones manuales o legacy.
+
+### APIs Obligatorias
+
+| Patrón Legacy | API iOS 26 | Cuándo Usar |
+|---------------|------------|-------------|
+| `Rectangle` divider en toolbar | `ToolbarSpacer(.fixed, placement:)` | Separar grupos de botones en toolbar |
+| `Spacer()` en toolbar | `ToolbarSpacer(.flexible)` | Espacio flexible entre items |
+| `.background(Color.gray.opacity(0.2))` | `.glassEffect(.regular)` | Chips, barras flotantes, elementos translúcidos |
+| Custom blur effects | `.glassEffect()` variants | Cualquier efecto de profundidad |
+
+### Ejemplo: Toolbar con Separación (Grupos Glass Separados)
+
+```swift
+// ✅ iOS 26: Grupos glass separados (cada ToolbarItem en su propia píldora)
+.toolbar {
+    ToolbarItem(placement: .topBarTrailing) {
+        HStack(spacing: DS.Spacing.md) {
+            Button { } label: { Image(systemName: "checkmark.circle.fill") }
+            Button { } label: { Image(systemName: "line.3.horizontal.decrease.circle.fill") }
+        }
+    }
+
+    // ⚠️ CRÍTICO: ToolbarSpacer REQUIERE placement para crear grupos glass separados
+    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+    ToolbarItem(placement: .topBarTrailing) {
+        ProfileToolbarButton { }
+    }
+}
+
+// ❌ MAL: ToolbarSpacer sin placement (NO crea separación visual)
+ToolbarSpacer(.fixed)  // Los botones quedan en la misma píldora glass
+
+// ❌ Legacy: Divider manual (NO usar)
+HStack {
+    actionButtons
+    Rectangle().fill(Color.primary.opacity(0.1)).frame(width: 1, height: 20)
+    ProfileToolbarButton { }
+}
+```
+
+### ToolbarSpacer - Referencia Rápida
+
+| Uso | Sintaxis |
+|-----|----------|
+| Separar en grupos glass | `ToolbarSpacer(.fixed, placement: .topBarTrailing)` |
+| Espacio flexible | `ToolbarSpacer(.flexible, placement: .topBarTrailing)` |
+| Item sin fondo glass | `.sharedBackgroundVisibility(.hidden)` en el ToolbarItem |
+
+**Documentación:** Ver `.planning/TOOLBAR-INVESTIGATION.md` para investigación completa.
+
+### Filosofía
+> Si existe una API de iOS 26 que resuelve un problema de UI, **USARLA** en lugar de implementar soluciones manuales. Esto garantiza que la app se vea nativa, moderna, y se beneficie automáticamente de mejoras futuras del sistema.
+
+---
+
 ## Reglas de Oro (NUNCA violar)
 
 ### 1. Áreas de Toque
@@ -431,6 +492,7 @@ Los formularios de **creación** (NO edición) DEBEN auto-posicionar el cursor e
 
 Antes de commitear cambios de UI, verificar:
 
+- [ ] ¿Se usan APIs nativas de iOS 26 donde aplique? (`ToolbarSpacer`, `.glassEffect()`, etc.)
 - [ ] ¿Todas las filas clicables usan `Button` + `contentShape(Rectangle())`?
 - [ ] ¿Se usan tokens de `DS.Spacing` en lugar de valores hardcodeados?
 - [ ] ¿Se usan tokens de `DS.Radius` para corners?

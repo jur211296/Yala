@@ -17,7 +17,19 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - Scheme principal: Yala
 - Unit tests: YalaTests
 - UI tests: YalaUITests
+- **Target iOS 26+** - SIEMPRE usar APIs nativas de iOS 26 (Liquid Glass, ToolbarSpacer, etc.)
 - **Simulador estándar: iPhone 17 Pro** (SIEMPRE usar este para builds, tests y simulación)
+
+## iOS 26 Liquid Glass (OBLIGATORIO)
+**SIEMPRE preferir APIs nativas de iOS 26 para mantener la app moderna y actualizada.**
+
+Ejemplos de APIs a usar:
+- `ToolbarSpacer(.fixed, placement: .topBarTrailing)` para crear grupos glass separados en toolbars (⚠️ placement es OBLIGATORIO)
+- `.glassEffect()` para chips, barras flotantes y elementos translúcidos
+- Nuevos estilos de NavigationBar con morphing automático
+- Cualquier API nueva que reemplace patrones legacy
+
+**Regla:** Si existe una API de iOS 26 que mejore la integración con el sistema, USARLA en lugar de soluciones manuales.
 
 ## SwiftData (fuente de verdad)
 El ModelContainer se configura en YalaApp.swift con estas entidades:
