@@ -45,9 +45,19 @@ struct ProfileView: View {
 
     // Subscription state
     @State private var showSubscriptionSheet = false
+    @State private var showUpgradeForVoice = false
+    @State private var showUpgradeForImage = false
 
     private var isProUser: Bool {
         StoreKitManager.shared.isProUser
+    }
+
+    private var isVoiceLocked: Bool {
+        !FeatureGateService.shared.canAccess(.voiceInput)
+    }
+
+    private var isImageLocked: Bool {
+        !FeatureGateService.shared.canAccess(.imageInput)
     }
 
     private var isInTrial: Bool {
@@ -318,6 +328,12 @@ struct ProfileView: View {
                 SubscriptionView()
             }
         }
+        .sheet(isPresented: $showUpgradeForVoice) {
+            UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+        }
+        .sheet(isPresented: $showUpgradeForImage) {
+            UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+        }
     }
 
     // MARK: - Sections
@@ -391,48 +407,69 @@ struct ProfileView: View {
     private var voiceInputRow: some View {
         VStack(spacing: 0) {
             // Toggle row
-            HStack(spacing: DS.Spacing.md) {
-                if colorfulIcons {
-                    Image(systemName: "waveform.badge.mic")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.cyan)
-                        )
-                } else {
-                    Image(systemName: "waveform.badge.mic")
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .frame(width: 28)
+            Button {
+                if isVoiceLocked {
+                    showUpgradeForVoice = true
                 }
-
-                Text(L10n.Settings.voiceInputEnabled)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                Toggle("", isOn: $voiceInputEnabled)
-                    .labelsHidden()
-                    .tint(Color.brandPrimary)
-                    .onChange(of: voiceInputEnabled) { _, isEnabled in
-                        guard isEnabled else { return }
-                        let status = AVAudioApplication.shared.recordPermission
-                        if status == .undetermined {
-                            AVAudioApplication.requestRecordPermission { _ in }
-                        } else if status == .denied {
-                            permissionDeniedType = L10n.Settings.voiceInputEnabled
-                            showPermissionDeniedAlert = true
-                        }
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    if colorfulIcons {
+                        Image(systemName: "waveform.badge.mic")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.cyan)
+                            )
+                            .opacity(isVoiceLocked ? 0.5 : 1)
+                    } else {
+                        Image(systemName: "waveform.badge.mic")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28)
+                            .opacity(isVoiceLocked ? 0.5 : 1)
                     }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.FormRow.paddingV)
 
-            // Language selector (only visible when enabled)
-            if voiceInputEnabled {
+                    Text(L10n.Settings.voiceInputEnabled)
+                        .font(.body)
+                        .foregroundStyle(isVoiceLocked ? .secondary : .primary)
+
+                    if isVoiceLocked {
+                        ProBadge(size: .small)
+                    }
+
+                    Spacer()
+
+                    if isVoiceLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Toggle("", isOn: $voiceInputEnabled)
+                            .labelsHidden()
+                            .tint(Color.brandPrimary)
+                            .onChange(of: voiceInputEnabled) { _, isEnabled in
+                                guard isEnabled else { return }
+                                let status = AVAudioApplication.shared.recordPermission
+                                if status == .undetermined {
+                                    AVAudioApplication.requestRecordPermission { _ in }
+                                } else if status == .denied {
+                                    permissionDeniedType = L10n.Settings.voiceInputEnabled
+                                    showPermissionDeniedAlert = true
+                                }
+                            }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(!isVoiceLocked && voiceInputEnabled)
+
+            // Language selector (only visible when enabled and not locked)
+            if voiceInputEnabled && !isVoiceLocked {
                 HStack(spacing: DS.Spacing.md) {
                     // Empty space to align with icon
                     Color.clear
@@ -475,45 +512,66 @@ struct ProfileView: View {
     }
 
     private var imageInputRow: some View {
-        HStack(spacing: DS.Spacing.md) {
-            if colorfulIcons {
-                Image(systemName: "photo.on.rectangle")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.orange)
-                    )
-            } else {
-                Image(systemName: "photo.on.rectangle")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .frame(width: 28)
+        Button {
+            if isImageLocked {
+                showUpgradeForImage = true
             }
-
-            Text(L10n.Settings.imageInputEnabled)
-                .font(.body)
-                .foregroundStyle(.primary)
-
-            Spacer()
-
-            Toggle("", isOn: $imageInputEnabled)
-                .labelsHidden()
-                .tint(Color.brandPrimary)
-                .onChange(of: imageInputEnabled) { _, isEnabled in
-                    guard isEnabled else { return }
-                    let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-                    if status == .notDetermined {
-                        PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
-                    } else if status == .denied || status == .restricted {
-                        permissionDeniedType = L10n.Settings.imageInputEnabled
-                        showPermissionDeniedAlert = true
-                    }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                if colorfulIcons {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.orange)
+                        )
+                        .opacity(isImageLocked ? 0.5 : 1)
+                } else {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .frame(width: 28)
+                        .opacity(isImageLocked ? 0.5 : 1)
                 }
+
+                Text(L10n.Settings.imageInputEnabled)
+                    .font(.body)
+                    .foregroundStyle(isImageLocked ? .secondary : .primary)
+
+                if isImageLocked {
+                    ProBadge(size: .small)
+                }
+
+                Spacer()
+
+                if isImageLocked {
+                    Image(systemName: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Toggle("", isOn: $imageInputEnabled)
+                        .labelsHidden()
+                        .tint(Color.brandPrimary)
+                        .onChange(of: imageInputEnabled) { _, isEnabled in
+                            guard isEnabled else { return }
+                            let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                            if status == .notDetermined {
+                                PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
+                            } else if status == .denied || status == .restricted {
+                                permissionDeniedType = L10n.Settings.imageInputEnabled
+                                showPermissionDeniedAlert = true
+                            }
+                        }
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
+        .buttonStyle(.plain)
+        .disabled(!isImageLocked && imageInputEnabled)
     }
 
     private var datosSection: some View {

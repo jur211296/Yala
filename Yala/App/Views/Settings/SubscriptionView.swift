@@ -251,12 +251,11 @@ struct SubscriptionView: View {
 
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 0) {
+            featureRow(icon: "building.columns.fill", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
+            featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
             featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .cyan)
             featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .orange)
-            featureRow(icon: "chart.bar.fill", text: L10n.Subscription.featureReports, color: .brandPrimary)
-            featureRow(icon: "dollarsign.arrow.circlepath", text: L10n.Subscription.featureCurrencies, color: .green)
-            featureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .pink)
-            featureRow(icon: "square.and.arrow.up.fill", text: L10n.Subscription.featureExport, color: .mint)
+            featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.vertical, DS.Spacing.sm)
         .background(Color.yalaCard)

@@ -1677,8 +1677,8 @@
 // MARK: - Feature Gate
 
 // Feature names
-"featureGate.accounts" = "accounts";
-"featureGate.budgets" = "budgets";
+"featureGate.accounts" = "Accounts";
+"featureGate.budgets" = "Budgets";
 "featureGate.voiceInput" = "Voice input";
 "featureGate.imageInput" = "Image input";
 "featureGate.premiumIcons" = "Premium icons";

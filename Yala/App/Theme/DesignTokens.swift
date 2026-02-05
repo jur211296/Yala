@@ -249,8 +249,8 @@ enum DS {
         /// Action button size (toolbar, selection bar) - 44pt HIG minimum
         static let actionSize: CGFloat = 44
 
-        /// FAB menu pill width
-        static let fabMenuWidth: CGFloat = 140
+        /// FAB menu pill width (sized to fit PRO badge)
+        static let fabMenuWidth: CGFloat = 170
 
         /// Icon size inside FAB menu buttons
         static let fabMenuIconSize: CGFloat = 24

@@ -430,7 +430,7 @@ struct PanelView: View {
                 Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
-            .frame(width: isLocked ? 170 : 140)
+            .frame(width: DS.Button.fabMenuWidth)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
             .background(isLocked ? Color.gray : color)

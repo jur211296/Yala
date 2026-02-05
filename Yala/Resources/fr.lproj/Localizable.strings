@@ -1653,8 +1653,8 @@
 // MARK: - Feature Gate
 
 // Feature names
-"featureGate.accounts" = "comptes";
-"featureGate.budgets" = "budgets";
+"featureGate.accounts" = "Comptes";
+"featureGate.budgets" = "Budgets";
 "featureGate.voiceInput" = "Saisie vocale";
 "featureGate.imageInput" = "Saisie par image";
 "featureGate.premiumIcons" = "Icônes premium";

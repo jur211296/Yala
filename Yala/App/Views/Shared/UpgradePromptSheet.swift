@@ -123,12 +123,8 @@ struct UpgradePromptSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                    YalaToolbarButton(systemName: "xmark") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
             }

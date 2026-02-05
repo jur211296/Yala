@@ -33,6 +33,18 @@ struct RecordsStandaloneView: View {
     @State private var showFABMenu = false
     @State private var showVoiceRecording = false
     @State private var showImageSelection = false
+    @State private var showUpgradeForVoice = false
+    @State private var showUpgradeForImage = false
+
+    // MARK: - Pro Feature Gates
+
+    private var isVoiceLocked: Bool {
+        !FeatureGateService.shared.canAccess(.voiceInput)
+    }
+
+    private var isImageLocked: Bool {
+        !FeatureGateService.shared.canAccess(.imageInput)
+    }
 
     // MARK: - AppStorage
 
@@ -55,6 +67,8 @@ struct RecordsStandaloneView: View {
                 showBulkEditSheet: $showBulkEditSheet,
                 showVoiceRecording: $showVoiceRecording,
                 showImageSelection: $showImageSelection,
+                showUpgradeForVoice: $showUpgradeForVoice,
+                showUpgradeForImage: $showUpgradeForImage,
                 isPresentingSettings: $isPresentingSettings,
                 modelContext: modelContext,
                 refreshRecordsData: refreshRecordsData
@@ -197,12 +211,17 @@ struct RecordsStandaloneView: View {
                                     fabMenuButton(
                                         icon: "waveform",
                                         text: L10n.Panel.fabVoice,
-                                        color: .electricIndigo
+                                        color: .electricIndigo,
+                                        isLocked: isVoiceLocked
                                     ) {
                                         withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                             showFABMenu = false
                                         }
-                                        showVoiceRecording = true
+                                        if isVoiceLocked {
+                                            showUpgradeForVoice = true
+                                        } else {
+                                            showVoiceRecording = true
+                                        }
                                     }
                                 }
 
@@ -211,12 +230,17 @@ struct RecordsStandaloneView: View {
                                     fabMenuButton(
                                         icon: "photo",
                                         text: L10n.Panel.fabImage,
-                                        color: .teal
+                                        color: .teal,
+                                        isLocked: isImageLocked
                                     ) {
                                         withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                             showFABMenu = false
                                         }
-                                        showImageSelection = true
+                                        if isImageLocked {
+                                            showUpgradeForImage = true
+                                        } else {
+                                            showImageSelection = true
+                                        }
                                     }
                                 }
 
@@ -290,7 +314,13 @@ struct RecordsStandaloneView: View {
         }
     }
 
-    private func fabMenuButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func fabMenuButton(
+        icon: String,
+        text: String,
+        color: Color,
+        isLocked: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         Button {
             DS.Haptic.selection()
             action()
@@ -303,15 +333,19 @@ struct RecordsStandaloneView: View {
                 Text(text)
                     .font(.subheadline.weight(.semibold))
 
+                if isLocked {
+                    ProBadge(size: .small)
+                }
+
                 Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
             .frame(width: DS.Button.fabMenuWidth)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(color)
+            .background(isLocked ? Color.gray : color)
             .clipShape(Capsule())
-            .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
         .phaseAnimator([false, true]) { content, phase in
@@ -407,6 +441,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
     @Binding var showBulkEditSheet: Bool
     @Binding var showVoiceRecording: Bool
     @Binding var showImageSelection: Bool
+    @Binding var showUpgradeForVoice: Bool
+    @Binding var showUpgradeForImage: Bool
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
@@ -426,6 +462,12 @@ private struct RecordsStandaloneSheets: ViewModifier {
             }
             .sheet(isPresented: $showImageSelection) {
                 ImageSelectionView()
+            }
+            .sheet(isPresented: $showUpgradeForVoice) {
+                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showUpgradeForImage) {
+                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
