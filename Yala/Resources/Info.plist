@@ -31,6 +31,7 @@
 	<array>
 		<string>com.jurgenschmidt.yala.widget-refresh</string>
 		<string>com.jurgenschmidt.yala.report-notification</string>
+		<string>com.jurgenschmidt.yala.report-backup</string>
 	</array>
 	<key>CFBundleIcons</key>
 	<dict>

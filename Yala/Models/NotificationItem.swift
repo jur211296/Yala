@@ -110,6 +110,19 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
     var supportsIconColorCustomization: Bool {
         return self == .custom
     }
+
+    /// Whether this notification requires dynamic content calculated at runtime
+    /// These types should NOT use UNCalendarNotificationTrigger(repeats:) because
+    /// the content would be frozen at schedule time. Instead, they use background
+    /// tasks and foreground checks to send notifications with real data.
+    var requiresDynamicContent: Bool {
+        switch self {
+        case .dailyReport, .weeklyReport, .monthlyReport:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 // MARK: - ReportDataType
@@ -224,6 +237,10 @@ final class NotificationItem {
     /// Selected weekdays as comma-separated string (1=Sun, 2=Mon, ..., 7=Sat)
     /// Empty or nil means all days (daily)
     var weekdaysRaw: String?
+
+    /// Last time this notification was sent (prevents duplicate sends within same period)
+    /// Used by ReportNotificationService to avoid spam when app is opened multiple times
+    var lastNotifiedDate: Date?
 
     /// Computed property for notification type
     var notificationType: NotificationType {

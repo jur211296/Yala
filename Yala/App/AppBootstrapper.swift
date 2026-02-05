@@ -69,7 +69,11 @@ final class AppBootstrapper {
         // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
 
-        // 6.5. Ensure notifications are scheduled (handles reinstall/update case)
+        // 6.5. Cancel any old scheduled dynamic notifications (reports)
+        // These use background tasks now, not iOS scheduling
+        await NotificationService.shared.cancelDynamicNotifications(context: context)
+
+        // 6.6. Ensure static notifications are scheduled (handles reinstall/update case)
         await ensureNotificationsScheduled(context: context)
 
         // 7. Check for pending shared images
@@ -83,6 +87,13 @@ final class AppBootstrapper {
 
         // 10. Register background tasks
         BackgroundTaskManager.shared.registerTasks()
+
+        // 11. Set model container for background tasks and schedule first report task
+        BackgroundTaskManager.shared.setModelContainer(container)
+        BackgroundTaskManager.shared.scheduleNextReportTask(context: context)
+
+        // 12. Check if any report notifications should be sent now (app launch case)
+        await ReportNotificationService.shared.sendDueReports(context: context)
 
         isInitialized = true
     }
@@ -100,6 +111,12 @@ final class AppBootstrapper {
         // Verify and reschedule notifications if needed
         Task {
             await ensureNotificationsScheduled(context: context)
+        }
+
+        // Check if any report notifications should be sent now
+        // This handles the case where user opens app during the notification window
+        Task {
+            await ReportNotificationService.shared.sendDueReports(context: context)
         }
     }
 

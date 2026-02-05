@@ -957,36 +957,46 @@ struct OnboardingView: View {
     }
 
     private func createSelectedNotifications() {
-        // Guard: Only create if no notifications exist yet
+        // Fetch existing notifications to check by type (avoids duplicates on reinstall with iCloud)
         let descriptor = FetchDescriptor<NotificationItem>()
-        let existingCount = (try? modelContext.fetchCount(descriptor)) ?? 0
-        guard existingCount == 0 else {
-            #if DEBUG
-            print("OnboardingView: Notifications already exist (\(existingCount)), skipping creation")
-            #endif
-            return
-        }
+        let existing = (try? modelContext.fetch(descriptor)) ?? []
+        let existingTypes = Set(existing.map { $0.typeRaw })
 
         // Create all default notifications
         let allDefaults = NotificationItem.createDefaults()
+        var inserted = 0
 
         for notification in allDefaults {
+            // Skip if this type already exists
+            guard !existingTypes.contains(notification.typeRaw) else { continue }
+
             // Set active state based on user selection
             let isSelected = selectedNotifications.contains(notification.notificationType)
             notification.isActive = isSelected
 
             modelContext.insert(notification)
+            inserted += 1
 
-            // Schedule if active
-            if isSelected {
+            // Schedule if active (and not a dynamic type)
+            if isSelected && !notification.notificationType.requiresDynamicContent {
                 Task {
                     await NotificationService.shared.scheduleNotification(for: notification)
                 }
             }
         }
 
+        guard inserted > 0 else {
+            #if DEBUG
+            print("OnboardingView: All notification types already exist, skipping creation")
+            #endif
+            return
+        }
+
         do {
             try modelContext.save()
+            #if DEBUG
+            print("OnboardingView: Created \(inserted) notification types")
+            #endif
         } catch {
             print("OnboardingView: Error saving notifications: \(error)")
         }
