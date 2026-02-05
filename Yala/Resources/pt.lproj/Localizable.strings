@@ -1649,3 +1649,58 @@
 "icloud.noAccountWarning" = "Entre no iCloud em Ajustes para ativar a sincronização.";
 "icloud.syncingData" = "Sincronizando seus dados...";
 "icloud.syncingDescription" = "Estamos recuperando suas informações do iCloud.";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "contas";
+"featureGate.budgets" = "orçamentos";
+"featureGate.voiceInput" = "Entrada por voz";
+"featureGate.imageInput" = "Entrada por imagem";
+"featureGate.premiumIcons" = "Ícones premium";
+
+// Titles
+"featureGate.limitReachedTitle" = "Limite atingido";
+"featureGate.proFeatureTitle" = "Função Pro";
+"featureGate.trialExpiredTitle" = "Teste encerrado";
+
+// Messages
+"featureGate.limitReachedMessage" = "Você atingiu o limite de %@ no plano gratuito. Atualize para Pro para criar mais.";
+"featureGate.proFeatureMessage" = "%@ é uma função exclusiva do Yala Pro.";
+"featureGate.trialExpiredMessage" = "Seu período de teste terminou. Assine para continuar aproveitando todas as funções.";
+
+// Actions
+"featureGate.upgradeToPro" = "Atualizar para Pro";
+"featureGate.upgrade" = "Atualizar";
+"featureGate.upgradeForMore" = "Atualize para Pro para mais";
+
+// Limit info
+"featureGate.limitInfo" = "%d de %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "Bem-vindo ao Yala Pro!";
+"subscription.success.subtitle" = "Agora você tem acesso a todas as funções";
+"subscription.success.continue" = "Começar";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "Contas ilimitadas";
+"subscription.feature.unlimitedBudgets" = "Orçamentos ilimitados";
+"subscription.feature.premiumIcons" = "Ícones de app premium";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "Teste gratuito";
+"subscription.trial.endsToday" = "Termina hoje";
+"subscription.trial.endsTomorrow" = "Termina amanhã";
+"subscription.trial.daysRemaining" = "%d dias restantes";
+"subscription.trial.subscribe" = "Assinar";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "Sua assinatura terminou";
+"subscription.downgrade.subtitle" = "Escolha quais contas e orçamentos manter";
+"subscription.downgrade.selectAccounts" = "Selecione %d contas para manter";
+"subscription.downgrade.selectBudgets" = "Selecione %d orçamentos para manter";
+"subscription.downgrade.confirm" = "Confirmar seleção";
+"subscription.downgrade.reactivate" = "Reativar Pro";

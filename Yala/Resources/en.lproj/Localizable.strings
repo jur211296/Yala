@@ -1673,3 +1673,58 @@
 "icloud.noAccountWarning" = "Sign in to iCloud in Settings to enable sync.";
 "icloud.syncingData" = "Syncing your data...";
 "icloud.syncingDescription" = "We're retrieving your information from iCloud.";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "accounts";
+"featureGate.budgets" = "budgets";
+"featureGate.voiceInput" = "Voice input";
+"featureGate.imageInput" = "Image input";
+"featureGate.premiumIcons" = "Premium icons";
+
+// Titles
+"featureGate.limitReachedTitle" = "Limit reached";
+"featureGate.proFeatureTitle" = "Pro feature";
+"featureGate.trialExpiredTitle" = "Trial ended";
+
+// Messages
+"featureGate.limitReachedMessage" = "You've reached the %@ limit on the free plan. Upgrade to Pro to create more.";
+"featureGate.proFeatureMessage" = "%@ is an exclusive Yala Pro feature.";
+"featureGate.trialExpiredMessage" = "Your trial has ended. Subscribe to keep enjoying all features.";
+
+// Actions
+"featureGate.upgradeToPro" = "Upgrade to Pro";
+"featureGate.upgrade" = "Upgrade";
+"featureGate.upgradeForMore" = "Upgrade to Pro for more";
+
+// Limit info
+"featureGate.limitInfo" = "%d of %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "Welcome to Yala Pro!";
+"subscription.success.subtitle" = "You now have access to all features";
+"subscription.success.continue" = "Get started";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "Unlimited accounts";
+"subscription.feature.unlimitedBudgets" = "Unlimited budgets";
+"subscription.feature.premiumIcons" = "Premium app icons";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "Free trial";
+"subscription.trial.endsToday" = "Ends today";
+"subscription.trial.endsTomorrow" = "Ends tomorrow";
+"subscription.trial.daysRemaining" = "%d days remaining";
+"subscription.trial.subscribe" = "Subscribe";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "Your subscription ended";
+"subscription.downgrade.subtitle" = "Choose which accounts and budgets to keep";
+"subscription.downgrade.selectAccounts" = "Select %d accounts to keep";
+"subscription.downgrade.selectBudgets" = "Select %d budgets to keep";
+"subscription.downgrade.confirm" = "Confirm selection";
+"subscription.downgrade.reactivate" = "Reactivate Pro";

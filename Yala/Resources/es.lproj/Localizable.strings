@@ -1673,3 +1673,58 @@
 "icloud.noAccountWarning" = "Inicia sesión en iCloud en Ajustes para activar la sincronización.";
 "icloud.syncingData" = "Sincronizando tus datos...";
 "icloud.syncingDescription" = "Estamos recuperando tu información de iCloud.";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "cuentas";
+"featureGate.budgets" = "presupuestos";
+"featureGate.voiceInput" = "Registro por voz";
+"featureGate.imageInput" = "Registro por imagen";
+"featureGate.premiumIcons" = "Iconos premium";
+
+// Titles
+"featureGate.limitReachedTitle" = "Límite alcanzado";
+"featureGate.proFeatureTitle" = "Función Pro";
+"featureGate.trialExpiredTitle" = "Prueba terminada";
+
+// Messages
+"featureGate.limitReachedMessage" = "Has alcanzado el límite de %@ en el plan gratuito. Actualiza a Pro para crear más.";
+"featureGate.proFeatureMessage" = "%@ es una función exclusiva de Yala Pro.";
+"featureGate.trialExpiredMessage" = "Tu periodo de prueba ha terminado. Suscríbete para seguir disfrutando de todas las funciones.";
+
+// Actions
+"featureGate.upgradeToPro" = "Actualizar a Pro";
+"featureGate.upgrade" = "Actualizar";
+"featureGate.upgradeForMore" = "Actualiza a Pro para crear más";
+
+// Limit info
+"featureGate.limitInfo" = "%d de %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "¡Bienvenido a Yala Pro!";
+"subscription.success.subtitle" = "Ahora tienes acceso a todas las funciones";
+"subscription.success.continue" = "Comenzar";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "Cuentas ilimitadas";
+"subscription.feature.unlimitedBudgets" = "Presupuestos ilimitados";
+"subscription.feature.premiumIcons" = "Iconos de app premium";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "Prueba gratuita";
+"subscription.trial.endsToday" = "Termina hoy";
+"subscription.trial.endsTomorrow" = "Termina mañana";
+"subscription.trial.daysRemaining" = "Quedan %d días";
+"subscription.trial.subscribe" = "Suscribirse";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "Tu suscripción terminó";
+"subscription.downgrade.subtitle" = "Elige qué cuentas y presupuestos conservar";
+"subscription.downgrade.selectAccounts" = "Selecciona %d cuentas para conservar";
+"subscription.downgrade.selectBudgets" = "Selecciona %d presupuestos para conservar";
+"subscription.downgrade.confirm" = "Confirmar selección";
+"subscription.downgrade.reactivate" = "Reactivar Pro";

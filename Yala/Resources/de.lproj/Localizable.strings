@@ -1649,3 +1649,58 @@
 "icloud.noAccountWarning" = "Melde dich in den Einstellungen bei iCloud an, um die Synchronisierung zu aktivieren.";
 "icloud.syncingData" = "Daten werden synchronisiert...";
 "icloud.syncingDescription" = "Wir laden deine Daten aus iCloud.";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "Konten";
+"featureGate.budgets" = "Budgets";
+"featureGate.voiceInput" = "Spracheingabe";
+"featureGate.imageInput" = "Bildeingabe";
+"featureGate.premiumIcons" = "Premium-Symbole";
+
+// Titles
+"featureGate.limitReachedTitle" = "Limit erreicht";
+"featureGate.proFeatureTitle" = "Pro-Funktion";
+"featureGate.trialExpiredTitle" = "Testphase beendet";
+
+// Messages
+"featureGate.limitReachedMessage" = "Du hast das %@-Limit im kostenlosen Plan erreicht. Upgrade auf Pro, um mehr zu erstellen.";
+"featureGate.proFeatureMessage" = "%@ ist eine exklusive Yala Pro-Funktion.";
+"featureGate.trialExpiredMessage" = "Deine Testphase ist beendet. Abonniere, um alle Funktionen weiter zu nutzen.";
+
+// Actions
+"featureGate.upgradeToPro" = "Auf Pro upgraden";
+"featureGate.upgrade" = "Upgraden";
+"featureGate.upgradeForMore" = "Upgrade auf Pro für mehr";
+
+// Limit info
+"featureGate.limitInfo" = "%d von %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "Willkommen bei Yala Pro!";
+"subscription.success.subtitle" = "Du hast jetzt Zugang zu allen Funktionen";
+"subscription.success.continue" = "Los geht's";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "Unbegrenzte Konten";
+"subscription.feature.unlimitedBudgets" = "Unbegrenzte Budgets";
+"subscription.feature.premiumIcons" = "Premium App-Symbole";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "Kostenlose Testversion";
+"subscription.trial.endsToday" = "Endet heute";
+"subscription.trial.endsTomorrow" = "Endet morgen";
+"subscription.trial.daysRemaining" = "Noch %d Tage";
+"subscription.trial.subscribe" = "Abonnieren";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "Dein Abo ist beendet";
+"subscription.downgrade.subtitle" = "Wähle, welche Konten und Budgets du behalten möchtest";
+"subscription.downgrade.selectAccounts" = "Wähle %d Konten zum Behalten";
+"subscription.downgrade.selectBudgets" = "Wähle %d Budgets zum Behalten";
+"subscription.downgrade.confirm" = "Auswahl bestätigen";
+"subscription.downgrade.reactivate" = "Pro reaktivieren";

@@ -1649,3 +1649,58 @@
 "icloud.noAccountWarning" = "Connecte-toi à iCloud dans les Réglages pour activer la synchronisation.";
 "icloud.syncingData" = "Synchronisation de tes données...";
 "icloud.syncingDescription" = "Nous récupérons tes informations depuis iCloud.";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "comptes";
+"featureGate.budgets" = "budgets";
+"featureGate.voiceInput" = "Saisie vocale";
+"featureGate.imageInput" = "Saisie par image";
+"featureGate.premiumIcons" = "Icônes premium";
+
+// Titles
+"featureGate.limitReachedTitle" = "Limite atteinte";
+"featureGate.proFeatureTitle" = "Fonction Pro";
+"featureGate.trialExpiredTitle" = "Essai terminé";
+
+// Messages
+"featureGate.limitReachedMessage" = "Vous avez atteint la limite de %@ du plan gratuit. Passez à Pro pour en créer plus.";
+"featureGate.proFeatureMessage" = "%@ est une fonction exclusive de Yala Pro.";
+"featureGate.trialExpiredMessage" = "Votre période d'essai est terminée. Abonnez-vous pour continuer à profiter de toutes les fonctions.";
+
+// Actions
+"featureGate.upgradeToPro" = "Passer à Pro";
+"featureGate.upgrade" = "Améliorer";
+"featureGate.upgradeForMore" = "Passez à Pro pour plus";
+
+// Limit info
+"featureGate.limitInfo" = "%d sur %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "Bienvenue sur Yala Pro !";
+"subscription.success.subtitle" = "Vous avez maintenant accès à toutes les fonctions";
+"subscription.success.continue" = "Commencer";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "Comptes illimités";
+"subscription.feature.unlimitedBudgets" = "Budgets illimités";
+"subscription.feature.premiumIcons" = "Icônes d'app premium";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "Essai gratuit";
+"subscription.trial.endsToday" = "Se termine aujourd'hui";
+"subscription.trial.endsTomorrow" = "Se termine demain";
+"subscription.trial.daysRemaining" = "%d jours restants";
+"subscription.trial.subscribe" = "S'abonner";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "Votre abonnement a expiré";
+"subscription.downgrade.subtitle" = "Choisissez les comptes et budgets à conserver";
+"subscription.downgrade.selectAccounts" = "Sélectionnez %d comptes à garder";
+"subscription.downgrade.selectBudgets" = "Sélectionnez %d budgets à garder";
+"subscription.downgrade.confirm" = "Confirmer la sélection";
+"subscription.downgrade.reactivate" = "Réactiver Pro";
