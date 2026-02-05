@@ -138,18 +138,18 @@ struct RecordsStandaloneView: View {
                 Button {
                     recordsViewModel.enterSelectionMode()
                 } label: {
-                    Image(systemName: "checkmark.circle.fill")
+                    Image(systemName: "checklist")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(Color.toolbarIconColor)
                 }
 
                 // Filters button
                 Button {
                     recordsViewModel.showFiltersSheet = true
                 } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                    Image(systemName: "line.3.horizontal.decrease")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(Color.toolbarIconColor)
                 }
                 .overlay(alignment: .topTrailing) {
                     if recordsViewModel.activeFilterCount > 0 {
@@ -209,7 +209,7 @@ struct RecordsStandaloneView: View {
                                     fabMenuButton(
                                         icon: "waveform",
                                         text: L10n.Panel.fabVoice,
-                                        color: .electricIndigo,
+                                        color: .hotPink,
                                         isLocked: isVoiceLocked
                                     ) {
                                         withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
@@ -246,7 +246,7 @@ struct RecordsStandaloneView: View {
                                 fabMenuButton(
                                     icon: "square.and.pencil",
                                     text: L10n.Panel.fabManual,
-                                    color: .hotPink
+                                    color: .electricIndigo
                                 ) {
                                     withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                         showFABMenu = false

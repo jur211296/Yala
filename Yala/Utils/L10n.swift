@@ -549,6 +549,9 @@ enum L10n {
         static var type: String { NSLocalizedString("transaction.type", comment: "") }
         static var amount: String { NSLocalizedString("transaction.amount", comment: "") }
         static var description: String { NSLocalizedString("transaction.description", comment: "") }
+        static var descriptionHint: String {
+            NSLocalizedString("transaction.descriptionHint", comment: "")
+        }
         static var note: String { NSLocalizedString("transaction.note", comment: "") }
         static var notePlaceholder: String {
             NSLocalizedString("transaction.notePlaceholder", comment: "")

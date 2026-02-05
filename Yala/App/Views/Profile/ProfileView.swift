@@ -20,6 +20,7 @@ struct ProfileView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var viewModel = ProfileViewModel()
 
@@ -466,7 +467,7 @@ struct ProfileView: View {
                             .frame(width: 28, height: 28)
                             .background(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.cyan)
+                                    .fill(Color.hotPink)
                             )
                             .opacity(isVoiceLocked ? 0.5 : 1)
                     } else {
@@ -570,7 +571,7 @@ struct ProfileView: View {
                         .frame(width: 28, height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.orange)
+                                .fill(Color.teal)
                         )
                         .opacity(isImageLocked ? 0.5 : 1)
                 } else {

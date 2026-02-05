@@ -788,6 +788,7 @@
 "transaction.newTransaction" = "Nuova registrazione";
 "transaction.editTransaction" = "Modifica registrazione";
 "transaction.description" = "Descrizione";
+"transaction.descriptionHint" = "Usa @ conto, ! categoria, # etichetta";
 "transaction.sourceAccount" = "Conto di origine";
 "transaction.destinationAccount" = "Conto di destinazione";
 "transaction.account" = "Conto";
@@ -1524,17 +1525,17 @@
 "control.quickExpense.intentTitle" = "Apri Yala";
 "control.quickExpense.intentDescription" = "Apre Yala per registrare una spesa";
 
-"control.voiceEntry.label" = "Voce";
-"control.voiceEntry.displayName" = "Inserimento vocale";
-"control.voiceEntry.description" = "Detta la tua spesa";
-"control.voiceEntry.intentTitle" = "Apri inserimento vocale";
+"control.voiceEntry.label" = "Registrazione vocale";
+"control.voiceEntry.displayName" = "Registrazione vocale";
+"control.voiceEntry.description" = "Detta la tua registrazione";
+"control.voiceEntry.intentTitle" = "Apri registrazione vocale";
 "control.voiceEntry.intentDescription" = "Apre Yala in modalità registrazione vocale";
 
-"control.imageEntry.label" = "Scansiona";
-"control.imageEntry.displayName" = "Scansiona ricevuta";
-"control.imageEntry.description" = "Scansiona una ricevuta con la fotocamera";
-"control.imageEntry.intentTitle" = "Apri scanner ricevute";
-"control.imageEntry.intentDescription" = "Apre Yala in modalità fotocamera per scansionare ricevute";
+"control.imageEntry.label" = "Registrazione immagine";
+"control.imageEntry.displayName" = "Registrazione immagine";
+"control.imageEntry.description" = "Registra con un'immagine o foto";
+"control.imageEntry.intentTitle" = "Apri registrazione immagine";
+"control.imageEntry.intentDescription" = "Apre Yala in modalità fotocamera per registrare";
 
 // MARK: - Notifications
 "notifications.title" = "Notifiche";

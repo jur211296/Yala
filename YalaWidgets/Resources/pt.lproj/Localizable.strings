@@ -63,9 +63,9 @@
 "widget.ui.cashFlow" = "Fluxo de Caixa";
 "widget.ui.total" = "Total";
 "widget.ui.ofLimit" = "de %@";
-"widget.ui.newRecord" = "Novo Registro";
-"widget.ui.voiceRecord" = "Registro por Voz";
-"widget.ui.scanReceipt" = "Escanear Recibo";
+"widget.ui.newRecord" = "Registro rápido";
+"widget.ui.voiceRecord" = "Registro por voz";
+"widget.ui.scanReceipt" = "Registro por imagem";
 "widget.ui.upcomingPayments" = "Pagamentos Futuros";
 "widget.ui.budgets" = "Orçamentos";
 "widget.ui.latestRecords" = "Últimos Registros";
@@ -100,9 +100,9 @@
 // MARK: - Control Widgets
 "widget.control.newExpense" = "Nova Despesa";
 "widget.control.newExpense.desc" = "Abra o Yala para registrar uma despesa";
-"widget.control.voiceExpense" = "Despesa por Voz";
-"widget.control.voiceExpense.desc" = "Dite sua despesa para o Yala";
-"widget.control.photoExpense" = "Despesa por Foto";
-"widget.control.photoExpense.desc" = "Escaneie um recibo com o Yala";
-"widget.control.voiceLabel" = "Voz";
-"widget.control.photoLabel" = "Foto";
+"widget.control.voiceExpense" = "Registro por voz";
+"widget.control.voiceExpense.desc" = "Dite seu registro para o Yala";
+"widget.control.photoExpense" = "Registro por imagem";
+"widget.control.photoExpense.desc" = "Registre com uma imagem no Yala";
+"widget.control.voiceLabel" = "Registro por voz";
+"widget.control.photoLabel" = "Registro por imagem";

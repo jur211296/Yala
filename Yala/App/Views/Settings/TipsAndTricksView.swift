@@ -180,11 +180,11 @@ enum TipItem: Hashable {
 
     var color: Color {
         switch self {
-        case .voice: return .electricIndigo
-        case .camera: return .orange
+        case .voice: return .hotPink
+        case .camera: return .teal
         case .favorites: return .yellow
-        case .budgets: return .hotPink
-        case .tags: return .teal
+        case .budgets: return .electricIndigo
+        case .tags: return .orange
         case .filters: return .purple
         case .export: return .green
         case .faceID: return .blue

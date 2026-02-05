@@ -788,6 +788,7 @@
 "transaction.newTransaction" = "Novo registro";
 "transaction.editTransaction" = "Editar registro";
 "transaction.description" = "Descricao";
+"transaction.descriptionHint" = "Use @ conta, ! categoria, # etiqueta";
 "transaction.sourceAccount" = "Conta de origem";
 "transaction.destinationAccount" = "Conta de destino";
 "transaction.account" = "Conta";
@@ -1524,17 +1525,17 @@
 "control.quickExpense.intentTitle" = "Abrir Yala";
 "control.quickExpense.intentDescription" = "Abre o Yala para registrar um gasto";
 
-"control.voiceEntry.label" = "Voz";
-"control.voiceEntry.displayName" = "Entrada por voz";
-"control.voiceEntry.description" = "Dite seu gasto";
-"control.voiceEntry.intentTitle" = "Abrir entrada por voz";
+"control.voiceEntry.label" = "Registro por voz";
+"control.voiceEntry.displayName" = "Registro por voz";
+"control.voiceEntry.description" = "Dite seu registro";
+"control.voiceEntry.intentTitle" = "Abrir registro por voz";
 "control.voiceEntry.intentDescription" = "Abre o Yala em modo de gravação de voz";
 
-"control.imageEntry.label" = "Escanear";
-"control.imageEntry.displayName" = "Escanear recibo";
-"control.imageEntry.description" = "Escaneie um recibo com a câmera";
-"control.imageEntry.intentTitle" = "Abrir scanner de recibos";
-"control.imageEntry.intentDescription" = "Abre o Yala em modo câmera para escanear recibos";
+"control.imageEntry.label" = "Registro por imagem";
+"control.imageEntry.displayName" = "Registro por imagem";
+"control.imageEntry.description" = "Registre com uma imagem ou foto";
+"control.imageEntry.intentTitle" = "Abrir registro por imagem";
+"control.imageEntry.intentDescription" = "Abre o Yala em modo câmera para registrar";
 
 // MARK: - Notifications
 "notifications.title" = "Notificações";

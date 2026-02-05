@@ -91,12 +91,12 @@ struct QuickVoiceEntryWidgetView: View {
 
             ZStack {
                 Circle()
-                    .fill(WidgetColors.yalaTeal.opacity(0.15))
+                    .fill(WidgetColors.hotPink.opacity(0.15))
                     .frame(width: WDS.QuickEntry.circleSize, height: WDS.QuickEntry.circleSize)
 
                 Image(systemName: "mic.fill")
                     .font(.system(size: WDS.Icon.xl))
-                    .foregroundColor(WidgetColors.yalaTeal)
+                    .foregroundColor(WidgetColors.hotPink)
                     .widgetAccentable()
             }
 
@@ -138,12 +138,12 @@ struct QuickImageEntryWidgetView: View {
 
             ZStack {
                 Circle()
-                    .fill(WidgetColors.hotPink.opacity(0.15))
+                    .fill(WidgetColors.yalaTeal.opacity(0.15))
                     .frame(width: WDS.QuickEntry.circleSize, height: WDS.QuickEntry.circleSize)
 
                 Image(systemName: "camera.fill")
                     .font(.system(size: WDS.Icon.xl))
-                    .foregroundColor(WidgetColors.hotPink)
+                    .foregroundColor(WidgetColors.yalaTeal)
                     .widgetAccentable()
             }
 

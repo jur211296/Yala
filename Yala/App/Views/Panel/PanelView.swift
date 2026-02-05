@@ -140,7 +140,7 @@ struct PanelView: View {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "tray.fill")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(Color.toolbarIconColor)
 
                 // Badge with count
                 if pendingDrafts.count > 0 {
@@ -308,7 +308,7 @@ struct PanelView: View {
                             fabMenuButton(
                                 icon: "waveform",
                                 text: L10n.Panel.fabVoice,
-                                color: .electricIndigo,
+                                color: .hotPink,
                                 isLocked: isVoiceLocked
                             ) {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
@@ -345,7 +345,7 @@ struct PanelView: View {
                         fabMenuButton(
                             icon: "square.and.pencil",
                             text: L10n.Panel.fabManual,
-                            color: .hotPink
+                            color: .electricIndigo
                         ) {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false

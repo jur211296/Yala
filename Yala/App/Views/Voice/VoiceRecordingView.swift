@@ -79,7 +79,7 @@ struct VoiceRecordingView: View {
                                 L10n.Voice.saving
                             ]
                         ),
-                        accentColor: .electricIndigo,
+                        accentColor: .hotPink,
                         statusText: processingStatus
                     )
                     .transition(.scale.combined(with: .opacity))
@@ -210,11 +210,11 @@ struct VoiceRecordingView: View {
     private var circleColor: Color {
         switch recorder.state {
         case .idle:
-            return .electricIndigo
+            return .hotPink
         case .recording:
             return .hotPink
         case .processing:
-            return .electricIndigo
+            return .hotPink
         }
     }
 
@@ -222,7 +222,7 @@ struct VoiceRecordingView: View {
         switch recorder.state {
         case .idle:
             return LinearGradient(
-                colors: [Color.electricIndigo, Color.electricIndigo.opacity(0.8)],
+                colors: [Color.hotPink, Color.hotPink.opacity(0.8)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -234,7 +234,7 @@ struct VoiceRecordingView: View {
             )
         case .processing:
             return LinearGradient(
-                colors: [Color.electricIndigo.opacity(0.8), Color.electricIndigo.opacity(0.6)],
+                colors: [Color.hotPink.opacity(0.8), Color.hotPink.opacity(0.6)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -266,7 +266,7 @@ struct VoiceRecordingView: View {
                 // Countdown indicator
                 Text("\(countdownValue)")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(Color.hotPink)
                     .contentTransition(.numericText())
                     .padding(.top, DS.Spacing.md)
             } else {
@@ -322,7 +322,7 @@ struct VoiceRecordingView: View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: icon)
                 .font(.caption2)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(Color.hotPink)
 
             Text(text)
                 .font(.caption)
@@ -332,7 +332,7 @@ struct VoiceRecordingView: View {
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.electricIndigo.opacity(0.08))
+        .background(Color.hotPink.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
     }
 
@@ -358,7 +358,7 @@ struct VoiceRecordingView: View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "text.quote")
                 .font(.caption)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(Color.hotPink)
 
             Text(text)
                 .font(.subheadline)
@@ -371,7 +371,7 @@ struct VoiceRecordingView: View {
         .padding(.horizontal, DS.Spacing.md)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.sm)
-                .stroke(Color.electricIndigo.opacity(0.2), lineWidth: 1)
+                .stroke(Color.hotPink.opacity(0.2), lineWidth: 1)
         )
     }
 
@@ -410,7 +410,7 @@ struct VoiceRecordingView: View {
                                 Text(L10n.Voice.tryImage)
                             }
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(Color.hotPink)
                         }
                     }
 
@@ -424,7 +424,7 @@ struct VoiceRecordingView: View {
                             Text(L10n.Voice.openSettings)
                         }
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(Color.hotPink)
                     }
 
                 case .generic, .none:
@@ -438,7 +438,7 @@ struct VoiceRecordingView: View {
                                 Text(L10n.Action.retry)
                             }
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(Color.hotPink)
                         }
                     }
                 }
@@ -485,13 +485,13 @@ struct VoiceRecordingView: View {
                         .frame(width: 72, height: 72)
                         .background(
                             LinearGradient(
-                                colors: [Color.electricIndigo, Color.electricIndigo.opacity(0.85)],
+                                colors: [Color.hotPink, Color.hotPink.opacity(0.85)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .clipShape(Circle())
-                        .shadow(color: Color.electricIndigo.opacity(0.4), radius: 12, x: 0, y: 6)
+                        .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
             } else if isPreviewMode {
                 // Cancel button (stops countdown and returns to idle)
@@ -520,13 +520,13 @@ struct VoiceRecordingView: View {
                         .frame(width: 72, height: 72)
                         .background(
                             LinearGradient(
-                                colors: [Color.electricIndigo, Color.electricIndigo.opacity(0.85)],
+                                colors: [Color.hotPink, Color.hotPink.opacity(0.85)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .clipShape(Circle())
-                        .shadow(color: Color.electricIndigo.opacity(0.4), radius: 12, x: 0, y: 6)
+                        .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
             } else if isProcessing {
                 // Cancel processing button
@@ -557,13 +557,13 @@ struct VoiceRecordingView: View {
                         .frame(width: 80, height: 80)
                         .background(
                             LinearGradient(
-                                colors: [Color.electricIndigo, Color.electricIndigo.opacity(0.85)],
+                                colors: [Color.hotPink, Color.hotPink.opacity(0.85)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .clipShape(Circle())
-                        .shadow(color: Color.electricIndigo.opacity(0.4), radius: 16, x: 0, y: 8)
+                        .shadow(color: Color.hotPink.opacity(0.4), radius: 16, x: 0, y: 8)
                 }
             }
         }

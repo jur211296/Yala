@@ -15,6 +15,7 @@ struct ProfileToolbarButton: View {
 
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
+    @Environment(\.colorScheme) private var colorScheme
 
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
@@ -63,8 +64,10 @@ struct ProfileToolbarButton: View {
                     .scaledToFill()
                     .frame(width: size, height: size)
             } else {
-                // White background with icon (custom or default)
-                Color.white
+                // Adaptive background with icon (custom or default)
+                // Light mode: white background / Dark mode: yalaBackground
+                // Icon: electricIndigo in both modes
+                (colorScheme == .dark ? Color.yalaBackground : Color.white)
                     .frame(width: size, height: size)
                     .overlay {
                         Image(systemName: displayIcon)

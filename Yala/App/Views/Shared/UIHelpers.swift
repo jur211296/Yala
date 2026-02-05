@@ -189,6 +189,11 @@ extension Color {
         #endif
     }
 
+    /// Toolbar Icon Color: electricIndigo in both modes.
+    static var toolbarIconColor: Color {
+        return Color.electricIndigo
+    }
+
     // MARK: - Semantic Colors (Adaptive)
 
     /// Color de fondo principal de la aplicación.

@@ -238,8 +238,8 @@ struct SubscriptionView: View {
         VStack(alignment: .leading, spacing: 0) {
             featureRow(icon: "building.columns.fill", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
             featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
-            featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .cyan)
-            featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .orange)
+            featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
+            featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.vertical, DS.Spacing.sm)

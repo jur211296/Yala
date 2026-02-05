@@ -355,29 +355,38 @@ struct NewTransactionView: View {
             .buttonStyle(.plain)
 
             // Note field with mention detection and popover autocomplete
-            TextField(L10n.Transaction.description, text: $viewModel.note)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .textContentType(.none)
-                .autocorrectionDisabled(false)
-                .focused($isNoteFieldFocused)
-                .frame(maxWidth: 280)
-                .tint(Color(UIColor.label))
-                .onChange(of: viewModel.note) { _, newValue in
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        // Disable #!@ shortcuts for transfers
-                        if viewModel.isTransfer {
-                            currentMentionState = nil
-                        } else {
-                            currentMentionState = MentionState.detect(in: newValue)
+            VStack(spacing: DS.Spacing.xs) {
+                TextField(L10n.Transaction.description, text: $viewModel.note)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .textContentType(.none)
+                    .autocorrectionDisabled(false)
+                    .focused($isNoteFieldFocused)
+                    .frame(maxWidth: 280)
+                    .tint(Color(UIColor.label))
+                    .onChange(of: viewModel.note) { _, newValue in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            // Disable #!@ shortcuts for transfers
+                            if viewModel.isTransfer {
+                                currentMentionState = nil
+                            } else {
+                                currentMentionState = MentionState.detect(in: newValue)
+                            }
                         }
                     }
+                    .popover(isPresented: showAutocompletePopover, arrowEdge: .bottom) {
+                        autocompletePopoverContent
+                            .presentationCompactAdaptation(.popover)
+                    }
+
+                // Shortcut hint (hidden for transfers)
+                if !viewModel.isTransfer {
+                    Text(L10n.Transaction.descriptionHint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .popover(isPresented: showAutocompletePopover, arrowEdge: .bottom) {
-                    autocompletePopoverContent
-                        .presentationCompactAdaptation(.popover)
-                }
+            }
 
             // Amount display (Standard or Transfer)
             if viewModel.needsExchangeRate {

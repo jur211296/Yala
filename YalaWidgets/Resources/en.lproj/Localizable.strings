@@ -87,9 +87,9 @@
 "widget.ui.cashFlow" = "Cash Flow";
 "widget.ui.total" = "Total";
 "widget.ui.ofLimit" = "of %@";
-"widget.ui.newRecord" = "New Record";
-"widget.ui.voiceRecord" = "Voice Record";
-"widget.ui.scanReceipt" = "Scan Receipt";
+"widget.ui.newRecord" = "Quick Entry";
+"widget.ui.voiceRecord" = "Voice Entry";
+"widget.ui.scanReceipt" = "Image Entry";
 "widget.ui.upcomingPayments" = "Upcoming Payments";
 "widget.ui.budgets" = "Budgets";
 "widget.ui.latestRecords" = "Latest Records";
@@ -124,9 +124,9 @@
 // MARK: - Control Widgets
 "widget.control.newExpense" = "New Expense";
 "widget.control.newExpense.desc" = "Open Yala to record an expense";
-"widget.control.voiceExpense" = "Voice Expense";
-"widget.control.voiceExpense.desc" = "Dictate your expense to Yala";
-"widget.control.photoExpense" = "Photo Expense";
-"widget.control.photoExpense.desc" = "Scan a receipt with Yala";
-"widget.control.voiceLabel" = "Voice";
-"widget.control.photoLabel" = "Photo";
+"widget.control.voiceExpense" = "Voice Entry";
+"widget.control.voiceExpense.desc" = "Dictate your entry to Yala";
+"widget.control.photoExpense" = "Image Entry";
+"widget.control.photoExpense.desc" = "Record with an image in Yala";
+"widget.control.voiceLabel" = "Voice Entry";
+"widget.control.photoLabel" = "Image Entry";

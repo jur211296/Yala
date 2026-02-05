@@ -287,10 +287,8 @@ struct InboxDraftRowView: View {
     private var sourceColor: Color {
         switch draft.sourceType {
         case .voice:
-            return .electricIndigo
-        case .receiptPhoto:
-            return .orange
-        case .screenshotList, .screenshotSingle:
+            return .hotPink
+        case .receiptPhoto, .screenshotList, .screenshotSingle:
             return .teal
         case .emailAlert:
             return .blue

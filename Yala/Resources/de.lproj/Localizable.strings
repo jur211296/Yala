@@ -788,6 +788,7 @@
 "transaction.newTransaction" = "Neuer Eintrag";
 "transaction.editTransaction" = "Eintrag bearbeiten";
 "transaction.description" = "Beschreibung";
+"transaction.descriptionHint" = "Nutze @ Konto, ! Kategorie, # Etikett";
 "transaction.sourceAccount" = "Quellkonto";
 "transaction.destinationAccount" = "Zielkonto";
 "transaction.account" = "Konto";
@@ -1524,17 +1525,17 @@
 "control.quickExpense.intentTitle" = "Yala öffnen";
 "control.quickExpense.intentDescription" = "Öffnet Yala zum Erfassen einer Ausgabe";
 
-"control.voiceEntry.label" = "Sprache";
-"control.voiceEntry.displayName" = "Spracheingabe";
-"control.voiceEntry.description" = "Diktiere deine Ausgabe";
-"control.voiceEntry.intentTitle" = "Spracheingabe öffnen";
+"control.voiceEntry.label" = "Spracheintrag";
+"control.voiceEntry.displayName" = "Spracheintrag";
+"control.voiceEntry.description" = "Diktiere deinen Eintrag";
+"control.voiceEntry.intentTitle" = "Spracheintrag öffnen";
 "control.voiceEntry.intentDescription" = "Öffnet Yala im Sprachaufnahmemodus";
 
-"control.imageEntry.label" = "Scannen";
-"control.imageEntry.displayName" = "Beleg scannen";
-"control.imageEntry.description" = "Scanne einen Beleg mit der Kamera";
-"control.imageEntry.intentTitle" = "Belegscanner öffnen";
-"control.imageEntry.intentDescription" = "Öffnet Yala im Kameramodus zum Scannen von Belegen";
+"control.imageEntry.label" = "Bildeintrag";
+"control.imageEntry.displayName" = "Bildeintrag";
+"control.imageEntry.description" = "Registriere mit einem Bild oder Foto";
+"control.imageEntry.intentTitle" = "Bildeintrag öffnen";
+"control.imageEntry.intentDescription" = "Öffnet Yala im Kameramodus zum Registrieren";
 
 // MARK: - Notifications
 "notifications.title" = "Benachrichtigungen";

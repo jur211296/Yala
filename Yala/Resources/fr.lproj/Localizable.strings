@@ -788,6 +788,7 @@
 "transaction.newTransaction" = "Nouvel enregistrement";
 "transaction.editTransaction" = "Modifier l'enregistrement";
 "transaction.description" = "Description";
+"transaction.descriptionHint" = "Utilisez @ compte, ! catégorie, # étiquette";
 "transaction.sourceAccount" = "Compte source";
 "transaction.destinationAccount" = "Compte destination";
 "transaction.account" = "Compte";
@@ -1524,17 +1525,17 @@
 "control.quickExpense.intentTitle" = "Ouvrir Yala";
 "control.quickExpense.intentDescription" = "Ouvre Yala pour enregistrer une dépense";
 
-"control.voiceEntry.label" = "Voix";
-"control.voiceEntry.displayName" = "Entrée vocale";
-"control.voiceEntry.description" = "Dictez votre dépense";
-"control.voiceEntry.intentTitle" = "Ouvrir l'entrée vocale";
+"control.voiceEntry.label" = "Saisie vocale";
+"control.voiceEntry.displayName" = "Saisie vocale";
+"control.voiceEntry.description" = "Dictez votre saisie";
+"control.voiceEntry.intentTitle" = "Ouvrir la saisie vocale";
 "control.voiceEntry.intentDescription" = "Ouvre Yala en mode enregistrement vocal";
 
-"control.imageEntry.label" = "Scanner";
-"control.imageEntry.displayName" = "Scanner un reçu";
-"control.imageEntry.description" = "Scannez un reçu avec l'appareil photo";
-"control.imageEntry.intentTitle" = "Ouvrir le scanner de reçus";
-"control.imageEntry.intentDescription" = "Ouvre Yala en mode appareil photo pour scanner des reçus";
+"control.imageEntry.label" = "Saisie par image";
+"control.imageEntry.displayName" = "Saisie par image";
+"control.imageEntry.description" = "Enregistrez avec une image ou photo";
+"control.imageEntry.intentTitle" = "Ouvrir la saisie par image";
+"control.imageEntry.intentDescription" = "Ouvre Yala en mode appareil photo pour enregistrer";
 
 // MARK: - Notifications
 "notifications.title" = "Notifications";

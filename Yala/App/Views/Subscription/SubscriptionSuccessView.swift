@@ -91,8 +91,8 @@ struct SubscriptionSuccessView: View {
         VStack(spacing: DS.Spacing.md) {
             unlockedFeatureRow(icon: "infinity", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
             unlockedFeatureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
-            unlockedFeatureRow(icon: "waveform", text: L10n.Subscription.featureVoice, color: .cyan)
-            unlockedFeatureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .orange)
+            unlockedFeatureRow(icon: "waveform", text: L10n.Subscription.featureVoice, color: .hotPink)
+            unlockedFeatureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
             unlockedFeatureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.horizontal, DS.Spacing.xl)
