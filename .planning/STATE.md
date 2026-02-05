@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] 911154c feat(ui): add avatar editor with photo/icon selection menu
+- [2026-02-05] 3d87a20 fix(ui): ProfileToolbarButton uses sharedBackgroundVisibility for toolbar integration
 - [2026-02-05] 207d012 feat(ui): add YalaSpark to ProBadge and upgrade buttons
 - [2026-02-05] b09474c feat(ui): add ProfileToolbarButton and golden YalaSpark
 - [2026-02-05] 897fcad fix(ux): voice/image rows now unlock correctly when simulating Pro
@@ -32,8 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-05] dbc4a49 docs: update STATE.md with Pro/Free system progress
 - [2026-02-05] 776154f feat(i18n): add Pro/Free subscription strings in 6 languages
 - [2026-02-05] 4863239 feat(subscription): integrate Pro/Free gates across views
-- [2026-02-05] be1786c feat(subscription): add Pro/Free UI components
-- [2026-02-05] 655c912 feat(subscription): add FeatureGateService and extend StoreKitManager
 - [2026-02-04] 562820c feat(ux): add haptic feedback and animations
 - [2026-02-04] 40b7925 feat(settings): add toggle to show/hide period variations
 - [2026-02-04] 9c7a3fa refactor(ui): unify scheduled payments text styles with Records
@@ -371,8 +371,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: ProfileToolbarButton y YalaSpark dorado implementados en 4 vistas
-Next step: Commit cambios pendientes (ProBadge, LimitReachedBanner, strings) o continuar con validación Pro/Free
+Stopped at: ProfileToolbarButton refactorizado con sharedBackgroundVisibility + avatar editor con selector de iconos
+Next step: Continuar refinando UI de perfil o próxima tarea de ROADMAP
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults
