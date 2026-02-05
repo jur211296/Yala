@@ -50,6 +50,20 @@ struct DetailContainerView: View {
     /// FAB menu expanded state
     @State private var showFABMenu = false
 
+    /// Upgrade prompt sheets for Pro features
+    @State private var showUpgradeForVoice = false
+    @State private var showUpgradeForImage = false
+
+    // MARK: - Pro Feature Gates
+
+    private var isVoiceLocked: Bool {
+        !FeatureGateService.shared.canAccess(.voiceInput)
+    }
+
+    private var isImageLocked: Bool {
+        !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
     /// Check if voice input can be used (requires accounts and subcategories)
     private var canUseVoiceInput: Bool {
         dataViewModel.canUseVoiceInput
@@ -105,6 +119,8 @@ struct DetailContainerView: View {
                     isPresentingSettings: $isPresentingSettings,
                     showVoiceRecording: $showVoiceRecording,
                     showImageSelection: $showImageSelection,
+                    showUpgradeForVoice: $showUpgradeForVoice,
+                    showUpgradeForImage: $showUpgradeForImage,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
                     syncFiltersToTrends: syncFiltersToTrends,
@@ -358,12 +374,17 @@ struct DetailContainerView: View {
                             fabMenuButton(
                                 icon: "waveform",
                                 text: L10n.Panel.fabVoice,
-                                color: .electricIndigo
+                                color: .electricIndigo,
+                                isLocked: isVoiceLocked
                             ) {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                     showFABMenu = false
                                 }
-                                showVoiceRecording = true
+                                if isVoiceLocked {
+                                    showUpgradeForVoice = true
+                                } else {
+                                    showVoiceRecording = true
+                                }
                             }
                         }
 
@@ -372,12 +393,17 @@ struct DetailContainerView: View {
                             fabMenuButton(
                                 icon: "photo",
                                 text: L10n.Panel.fabImage,
-                                color: .teal
+                                color: .teal,
+                                isLocked: isImageLocked
                             ) {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                     showFABMenu = false
                                 }
-                                showImageSelection = true
+                                if isImageLocked {
+                                    showUpgradeForImage = true
+                                } else {
+                                    showImageSelection = true
+                                }
                             }
                         }
 
@@ -451,7 +477,13 @@ struct DetailContainerView: View {
         }
     }
 
-    private func fabMenuButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func fabMenuButton(
+        icon: String,
+        text: String,
+        color: Color,
+        isLocked: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         Button {
             DS.Haptic.selection()
             action()
@@ -459,20 +491,24 @@ struct DetailContainerView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 24)
+                    .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)
                     .font(.subheadline.weight(.semibold))
 
+                if isLocked {
+                    ProBadge(size: .small)
+                }
+
                 Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
-            .frame(width: 140)
+            .frame(width: DS.Button.fabMenuWidth)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(color)
+            .background(isLocked ? Color.gray : color)
             .clipShape(Capsule())
-            .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
         .phaseAnimator([false, true]) { content, phase in
@@ -663,6 +699,8 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var isPresentingSettings: Bool
     @Binding var showVoiceRecording: Bool
     @Binding var showImageSelection: Bool
+    @Binding var showUpgradeForVoice: Bool
+    @Binding var showUpgradeForImage: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
     let syncFiltersToTrends: () -> Void
@@ -683,6 +721,12 @@ private struct DetailContainerSheets: ViewModifier {
             }
             .sheet(isPresented: $showImageSelection) {
                 ImageSelectionView()
+            }
+            .sheet(isPresented: $showUpgradeForVoice) {
+                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showUpgradeForImage) {
+                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {

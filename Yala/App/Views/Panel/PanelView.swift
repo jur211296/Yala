@@ -92,6 +92,13 @@ struct PanelView: View {
     /// Upgrade prompt sheets for gated features
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
+    @State private var showUpgradeForAccounts = false
+
+    /// Check if accounts limit is reached (Pro feature)
+    private var isAccountsLimitReached: Bool {
+        let activeCount = accounts.filter { !$0.isArchived }.count
+        return !FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount)
+    }
 
     /// Check if Statistics tab is visible
     private var isStatisticsVisible: Bool {
@@ -196,6 +203,7 @@ struct PanelView: View {
                 showInbox: $showInbox,
                 showUpgradeForVoice: $showUpgradeForVoice,
                 showUpgradeForImage: $showUpgradeForImage,
+                showUpgradeForAccounts: $showUpgradeForAccounts,
                 navigateToInboxAfterVoice: $navigateToInboxAfterVoice,
                 switchToImageAfterVoice: $switchToImageAfterVoice,
                 navigateToInboxAfterImage: $navigateToInboxAfterImage,
@@ -459,7 +467,11 @@ struct PanelView: View {
                 ),
                 transactions: transactions,
                 onAddAccount: {
-                    accountFormSheet = AccountFormSheet(account: nil)
+                    if isAccountsLimitReached {
+                        showUpgradeForAccounts = true
+                    } else {
+                        accountFormSheet = AccountFormSheet(account: nil)
+                    }
                 },
                 onEditAccount: { account in
                     accountFormSheet = AccountFormSheet(account: account)
@@ -1194,6 +1206,7 @@ private struct PanelSheetsModifier: ViewModifier {
     @Binding var showInbox: Bool
     @Binding var showUpgradeForVoice: Bool
     @Binding var showUpgradeForImage: Bool
+    @Binding var showUpgradeForAccounts: Bool
     @Binding var navigateToInboxAfterVoice: Bool
     @Binding var switchToImageAfterVoice: Bool
     @Binding var navigateToInboxAfterImage: Bool
@@ -1282,6 +1295,9 @@ private struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(isPresented: $showUpgradeForImage) {
                 UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showUpgradeForAccounts) {
+                UpgradePromptSheet(feature: .accounts, context: .limitReached)
             }
     }
 
