@@ -448,6 +448,7 @@ struct PanelView: View {
 
                 // FAB button
                 Button {
+                    DS.Haptic.medium()
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                         showFABMenu.toggle()
                     }
@@ -490,7 +491,10 @@ struct PanelView: View {
     }
 
     private func fabMenuButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button {
+            DS.Haptic.selection()
+            action()
+        } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .semibold))

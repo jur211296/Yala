@@ -41,6 +41,10 @@ struct TransactionSuccessView: View {
     let onCreateAnother: () -> Void
     let onEdit: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showCheckmark = false
+    @State private var showDetails = false
+
     var body: some View {
         ZStack {
             Color.yalaBackground.ignoresSafeArea()
@@ -63,21 +67,28 @@ struct TransactionSuccessView: View {
                         Circle()
                             .fill(data.transactionType.color.opacity(0.15))
                             .frame(width: 80, height: 80)
+                            .scaleEffect(showCheckmark ? 1.0 : 0.5)
+                            .opacity(showCheckmark ? 1.0 : 0.0)
 
                         Image(systemName: "checkmark")
                             .font(.system(size: 36, weight: .semibold))
                             .foregroundStyle(data.transactionType.color)
+                            .scaleEffect(showCheckmark ? 1.0 : 0.0)
+                            .opacity(showCheckmark ? 1.0 : 0.0)
                     }
 
                     Text(L10n.Transaction.successTitle)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
+                        .opacity(showCheckmark ? 1.0 : 0.0)
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 
                 // Transaction details
                 detailsSection
                     .padding(.horizontal, DS.Spacing.xl)
+                    .opacity(showDetails ? 1.0 : 0.0)
+                    .offset(y: showDetails ? 0 : 10)
 
                 Spacer()
 
@@ -103,6 +114,22 @@ struct TransactionSuccessView: View {
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
+                .opacity(showDetails ? 1.0 : 0.0)
+            }
+        }
+        .onAppear {
+            if reduceMotion {
+                showCheckmark = true
+                showDetails = true
+            } else {
+                withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
+                    showCheckmark = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showDetails = true
+                    }
+                }
             }
         }
     }

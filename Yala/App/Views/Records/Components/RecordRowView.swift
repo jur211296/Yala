@@ -20,10 +20,12 @@ struct RecordRowView: View {
     let onToggleSelection: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
             if isSelectionMode {
+                DS.Haptic.selection()
                 onToggleSelection()
             } else {
                 onTap()
@@ -128,12 +130,16 @@ struct RecordRowView: View {
                 Circle()
                     .fill(Color.electricIndigo)
                     .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                    .transition(.scale.combined(with: .opacity))
 
                 Image(systemName: "checkmark")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.white)
+                    .transition(.scale)
             }
         }
+        .sensoryFeedback(.selection, trigger: isSelected)
+        .animation(reduceMotion ? nil : .spring(response: 0.2, dampingFraction: 0.7), value: isSelected)
     }
 
     // MARK: - Subcategory Icon
@@ -166,8 +172,8 @@ struct RecordRowView: View {
                 Text(tag.name)
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, DS.Chip.paddingV)
+                    .padding(.vertical, DS.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color(hex: tag.colorHex))
@@ -188,14 +194,14 @@ struct RecordRowView: View {
         HStack(spacing: DS.Spacing.xs) {
             Circle()
                 .fill(nature.color)
-                .frame(width: 6, height: 6)
+                .frame(width: DS.Chip.dotSize - 2, height: DS.Chip.dotSize - 2)
 
             Text(nature.displayName)
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
+        .padding(.horizontal, DS.Chip.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
                 .fill(nature.color.opacity(0.1))

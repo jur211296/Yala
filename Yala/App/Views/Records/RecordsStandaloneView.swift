@@ -95,11 +95,13 @@ struct RecordsStandaloneView: View {
                     newRecordFAB
                 }
 
-                // Selection action bar
+                // Selection action bar (with animation)
                 if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
                     selectionActionBar
                 }
             }
+            .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.isSelectionMode)
+            .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.selectedRecordIDs.isEmpty)
             .navigationTitle(L10n.Tab.records)
             .toolbar {
                 if recordsViewModel.isSelectionMode {
@@ -238,6 +240,7 @@ struct RecordsStandaloneView: View {
 
                         // FAB button
                         Button {
+                            DS.Haptic.medium()
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu.toggle()
                             }
@@ -288,7 +291,10 @@ struct RecordsStandaloneView: View {
     }
 
     private func fabMenuButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button {
+            DS.Haptic.selection()
+            action()
+        } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .semibold))
@@ -325,6 +331,7 @@ struct RecordsStandaloneView: View {
             HStack(spacing: DS.Spacing.xl) {
                 // Delete button
                 Button(role: .destructive) {
+                    DS.Haptic.warning()
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
@@ -339,11 +346,13 @@ struct RecordsStandaloneView: View {
                 // Selection count
                 Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
                     .font(.subheadline.weight(.semibold))
+                    .contentTransition(.numericText())
 
                 Spacer()
 
                 // Edit button
                 Button {
+                    DS.Haptic.selection()
                     handleEditAction()
                 } label: {
                     Image(systemName: "pencil")
@@ -359,6 +368,7 @@ struct RecordsStandaloneView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     // MARK: - Actions

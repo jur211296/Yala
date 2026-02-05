@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - DS (Design System)
 
@@ -107,6 +108,51 @@ enum DS {
 
         /// 0.4s - Emphasis, modals, sheets
         static let slow: Double = 0.4
+
+        // MARK: Spring Parameters
+
+        /// Spring response time (matches FAB animation)
+        static let springResponse: Double = 0.25
+
+        /// Spring damping (matches FAB animation)
+        static let springDamping: Double = 0.8
+
+        /// Bouncy spring damping for success states
+        static let springBouncy: Double = 0.65
+
+        /// Delay between staggered items
+        static let staggerDelay: Double = 0.05
+    }
+
+    // MARK: - Haptic Feedback
+
+    /// Centralized haptic feedback helpers.
+    /// Usage: `DS.Haptic.success()`, `DS.Haptic.selection()`
+    enum Haptic {
+        /// Success feedback - use after completing important actions (save, confirm)
+        static func success() {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+
+        /// Selection feedback - use for toggle/selection changes
+        static func selection() {
+            UISelectionFeedbackGenerator().selectionChanged()
+        }
+
+        /// Medium impact - use for opening menus, primary actions
+        static func medium() {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+
+        /// Light impact - use for subtle interactions
+        static func light() {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+
+        /// Warning/rigid impact - use for destructive actions (delete)
+        static func warning() {
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        }
     }
 
     // MARK: - Colors

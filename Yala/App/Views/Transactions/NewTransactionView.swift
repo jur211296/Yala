@@ -455,6 +455,7 @@ struct NewTransactionView: View {
                 Text(symbol)
                     .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
                     .foregroundStyle(viewModel.amountColor.opacity(0.7))
+                    .contentTransition(.numericText())
             }
 
             TextField("0.00", text: $viewModel.amountString)
@@ -489,6 +490,7 @@ struct NewTransactionView: View {
                     }
                 }
         }
+        .animation(.easeInOut(duration: DS.Animation.fast), value: viewModel.transactionType)
     }
 
     /// Filters amount input to only allow numbers and one decimal with max 2 decimal places
@@ -711,8 +713,7 @@ struct NewTransactionView: View {
                         icon: "creditcard",
                         text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
                         isSelected: viewModel.selectedAccount != nil,
-                        color: viewModel.selectedAccount != nil
-                            ? Color(hex: viewModel.selectedAccount!.colorHex) : nil
+                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
                     ) {
                         dismissKeyboard()
                         viewModel.showAccountSelector = true
@@ -1001,6 +1002,7 @@ struct NewTransactionView: View {
 
     private func saveTransaction() {
         if viewModel.save(context: modelContext) != nil {
+            DS.Haptic.success()
             // Dismiss keyboard first
             dismissKeyboard()
 
@@ -1159,13 +1161,16 @@ struct NewTransactionView: View {
 
     private func deleteTransaction() {
         guard let transaction = transactionToEdit else { return }
+        DS.Haptic.warning()
 
         do {
             modelContext.delete(transaction)
             try modelContext.save()
             dismiss()
         } catch {
+            #if DEBUG
             print("Error deleting transaction: \(error)")
+            #endif
         }
     }
 
