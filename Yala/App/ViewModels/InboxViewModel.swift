@@ -70,7 +70,9 @@ final class InboxViewModel {
         do {
             allDrafts = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("InboxViewModel: Error loading all drafts: \(error)")
+            #endif
         }
     }
 
@@ -85,7 +87,9 @@ final class InboxViewModel {
         do {
             pendingDrafts = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("InboxViewModel: Error loading pending drafts: \(error)")
+            #endif
         }
     }
 

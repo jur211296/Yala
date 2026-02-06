@@ -107,7 +107,7 @@ struct CurrencySettingsView: View {
                 }
                 .padding(DS.Spacing.xxl)
                 .background(.ultraThinMaterial)
-                .cornerRadius(DS.Radius.lg)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             }
         }
         .navigationTitle(L10n.Settings.currencyAndExchange)
@@ -335,7 +335,7 @@ struct CurrencySettingsView: View {
 
     private func formatLastUpdated(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = Locale.current
         formatter.dateFormat = "d 'de' MMMM yyyy, HH:mm"
         return formatter.string(from: date)
     }

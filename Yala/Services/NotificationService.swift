@@ -242,7 +242,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             }
         )
 
-        guard let items = try? context.fetch(descriptor) else { return }
+        let items: [NotificationItem]
+        do {
+            items = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("NotificationService: Error fetching notification items: \(error)")
+            #endif
+            return
+        }
 
         for item in items {
             await cancelNotification(for: item)

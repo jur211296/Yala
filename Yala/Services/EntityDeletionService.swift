@@ -143,7 +143,14 @@ final class EntityDeletionService {
             }
         )
 
-        return (try? context.fetchCount(descriptor)) ?? 0
+        do {
+            return try context.fetchCount(descriptor)
+        } catch {
+            #if DEBUG
+            print("EntityDeletionService: Error counting transactions for category: \(error)")
+            #endif
+            return 0
+        }
     }
 
     /// Counts transactions linked to a subcategory
@@ -159,7 +166,14 @@ final class EntityDeletionService {
             }
         )
 
-        return (try? context.fetchCount(descriptor)) ?? 0
+        do {
+            return try context.fetchCount(descriptor)
+        } catch {
+            #if DEBUG
+            print("EntityDeletionService: Error counting transactions for subcategory: \(error)")
+            #endif
+            return 0
+        }
     }
 
     /// Counts transactions linked to an account
@@ -175,7 +189,14 @@ final class EntityDeletionService {
             }
         )
 
-        return (try? context.fetchCount(descriptor)) ?? 0
+        do {
+            return try context.fetchCount(descriptor)
+        } catch {
+            #if DEBUG
+            print("EntityDeletionService: Error counting transactions for account: \(error)")
+            #endif
+            return 0
+        }
     }
 
     /// Checks if a subcategory has any linked transactions

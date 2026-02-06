@@ -216,8 +216,10 @@ struct AccountsSettingsListView: View {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let currencyInfoData = currencyInfo(for: currency)
-        let primaryText =
-            (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
+        let primaryText: String = {
+            if let number = account.accountNumber, !number.isEmpty { return number }
+            return account.name
+        }()
 
         return HStack(spacing: DS.Spacing.md) {
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
@@ -281,8 +283,10 @@ struct AccountsSettingsListView: View {
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let currencyInfoTuple = currencyInfo(for: currency)
 
-        let primaryText =
-            (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
+        let primaryText: String = {
+            if let number = account.accountNumber, !number.isEmpty { return number }
+            return account.name
+        }()
 
         HStack(spacing: DS.Spacing.md) {
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)

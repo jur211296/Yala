@@ -43,7 +43,9 @@ final class AccountSelectorViewModel {
         do {
             accounts = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("AccountSelectorViewModel: Error loading accounts: \(error)")
+            #endif
             accounts = []
         }
     }

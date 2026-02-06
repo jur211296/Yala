@@ -268,7 +268,16 @@ final class BackgroundTaskManager {
             }
         )
 
-        guard let reports = try? context.fetch(descriptor), !reports.isEmpty else {
+        let reports: [NotificationItem]
+        do {
+            reports = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("BackgroundTaskManager: Error fetching report notifications: \(error)")
+            #endif
+            return nil
+        }
+        guard !reports.isEmpty else {
             return nil
         }
 

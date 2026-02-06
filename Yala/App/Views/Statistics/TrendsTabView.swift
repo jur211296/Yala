@@ -1767,7 +1767,7 @@ struct CompactRecordRow: View {
 
     private var shortDateFormat: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = Locale.current
         formatter.dateFormat = "d MMM"
         return formatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
     }

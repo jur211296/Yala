@@ -39,7 +39,9 @@ final class InboxDraftEditViewModel {
         do {
             pendingDrafts = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("InboxDraftEditViewModel: Error loading pending drafts: \(error)")
+            #endif
         }
     }
 

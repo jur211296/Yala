@@ -47,7 +47,9 @@ final class SaveAsRecurringViewModel {
         do {
             allTags = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("SaveAsRecurringViewModel: Error loading tags: \(error)")
+            #endif
             allTags = []
         }
     }

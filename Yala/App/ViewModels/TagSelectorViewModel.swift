@@ -52,7 +52,9 @@ final class TagSelectorViewModel {
         do {
             tags = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("TagSelectorViewModel: Error loading tags: \(error)")
+            #endif
             tags = []
         }
     }

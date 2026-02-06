@@ -45,7 +45,9 @@ final class DetailContainerViewModel {
         do {
             allTransactions = try context.fetch(transactionsDescriptor)
         } catch {
+            #if DEBUG
             print("DetailContainerViewModel: Error loading transactions: \(error)")
+            #endif
         }
 
         // Load accounts
@@ -55,7 +57,9 @@ final class DetailContainerViewModel {
         do {
             accounts = try context.fetch(accountsDescriptor)
         } catch {
+            #if DEBUG
             print("DetailContainerViewModel: Error loading accounts: \(error)")
+            #endif
         }
 
         // Load categories
@@ -65,7 +69,9 @@ final class DetailContainerViewModel {
         do {
             categories = try context.fetch(categoriesDescriptor)
         } catch {
+            #if DEBUG
             print("DetailContainerViewModel: Error loading categories: \(error)")
+            #endif
         }
 
         // Load subcategories
@@ -75,7 +81,9 @@ final class DetailContainerViewModel {
         do {
             allSubcategories = try context.fetch(subcategoriesDescriptor)
         } catch {
+            #if DEBUG
             print("DetailContainerViewModel: Error loading subcategories: \(error)")
+            #endif
         }
 
         // Load tags
@@ -85,7 +93,9 @@ final class DetailContainerViewModel {
         do {
             tags = try context.fetch(tagsDescriptor)
         } catch {
+            #if DEBUG
             print("DetailContainerViewModel: Error loading tags: \(error)")
+            #endif
         }
     }
 

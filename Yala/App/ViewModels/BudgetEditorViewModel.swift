@@ -57,7 +57,9 @@ final class BudgetEditorViewModel {
         do {
             categories = try context.fetch(categoryDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetEditorViewModel: Error loading categories: \(error)")
+            #endif
             categories = []
         }
 
@@ -66,7 +68,9 @@ final class BudgetEditorViewModel {
         do {
             allAccounts = try context.fetch(accountDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetEditorViewModel: Error loading accounts: \(error)")
+            #endif
             allAccounts = []
         }
 
@@ -75,7 +79,9 @@ final class BudgetEditorViewModel {
         do {
             allTags = try context.fetch(tagDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetEditorViewModel: Error loading tags: \(error)")
+            #endif
             allTags = []
         }
 
@@ -84,7 +90,9 @@ final class BudgetEditorViewModel {
         do {
             allSubcategories = try context.fetch(subcategoryDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetEditorViewModel: Error loading subcategories: \(error)")
+            #endif
             allSubcategories = []
         }
     }
@@ -184,7 +192,9 @@ final class BudgetEditorViewModel {
             WidgetDataCache.updateCache(context: context)
             return true
         } catch {
+            #if DEBUG
             print("BudgetEditorViewModel: Error saving budget: \(error)")
+            #endif
             showSaveError = true
             return false
         }
@@ -200,7 +210,9 @@ final class BudgetEditorViewModel {
             try service.deleteBudget(budget)
             return true
         } catch {
+            #if DEBUG
             print("BudgetEditorViewModel: Error deleting budget: \(error)")
+            #endif
             showSaveError = true
             return false
         }

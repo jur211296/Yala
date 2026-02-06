@@ -266,7 +266,7 @@ struct InboxBulkActionsSheet: View {
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.green.opacity(0.1))
-        .cornerRadius(DS.Radius.md)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     // MARK: - Actions
@@ -296,7 +296,9 @@ struct InboxBulkActionsSheet: View {
             try draftService.bulkUpdateAccount(selectedDrafts, account: account)
             appliedChanges.insert(.account)
         } catch {
+            #if DEBUG
             print("InboxBulkActionsSheet: Error applying account: \(error)")
+            #endif
         }
     }
 
@@ -306,7 +308,9 @@ struct InboxBulkActionsSheet: View {
             try draftService.bulkUpdateSubcategory(selectedDrafts, subcategory: subcategory)
             appliedChanges.insert(.subcategory)
         } catch {
+            #if DEBUG
             print("InboxBulkActionsSheet: Error applying subcategory: \(error)")
+            #endif
         }
     }
 
@@ -327,7 +331,9 @@ struct InboxBulkActionsSheet: View {
                 }
             }
         } catch {
+            #if DEBUG
             print("InboxBulkActionsSheet: Error approving drafts: \(error)")
+            #endif
         }
     }
 
@@ -338,7 +344,9 @@ struct InboxBulkActionsSheet: View {
             appliedChanges.insert(.reject)
             finishEditing()
         } catch {
+            #if DEBUG
             print("InboxBulkActionsSheet: Error rejecting drafts: \(error)")
+            #endif
         }
     }
 
@@ -349,7 +357,9 @@ struct InboxBulkActionsSheet: View {
             appliedChanges.insert(.delete)
             finishEditing()
         } catch {
+            #if DEBUG
             print("InboxBulkActionsSheet: Error deleting drafts: \(error)")
+            #endif
         }
     }
 
@@ -360,7 +370,9 @@ struct InboxBulkActionsSheet: View {
             appliedChanges.insert(.returnToPending)
             finishEditing()
         } catch {
+            #if DEBUG
             print("InboxBulkActionsSheet: Error returning drafts to pending: \(error)")
+            #endif
         }
     }
 

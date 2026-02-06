@@ -47,7 +47,9 @@ final class SaveAsFavoriteViewModel {
         do {
             allTags = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("SaveAsFavoriteViewModel: Error loading tags: \(error)")
+            #endif
             allTags = []
         }
     }
@@ -71,7 +73,15 @@ final class SaveAsFavoriteViewModel {
         let descriptor = FetchDescriptor<FavoritePayment>(
             sortBy: [SortDescriptor(\.displayOrder, order: .reverse)]
         )
-        let existingFavorites = (try? context.fetch(descriptor)) ?? []
+        let existingFavorites: [FavoritePayment]
+        do {
+            existingFavorites = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("SaveAsFavoriteViewModel: Error fetching existing favorites: \(error)")
+            #endif
+            existingFavorites = []
+        }
         let nextOrder = (existingFavorites.first?.displayOrder ?? -1) + 1
 
         let selectedTags = selectedTagObjects(from: selectedTagIDs)

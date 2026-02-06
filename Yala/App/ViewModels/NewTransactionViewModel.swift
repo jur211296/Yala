@@ -174,7 +174,9 @@ final class NewTransactionViewModel {
         do {
             accounts = try context.fetch(accountsDescriptor)
         } catch {
+            #if DEBUG
             print("NewTransactionViewModel: Error loading accounts: \(error)")
+            #endif
         }
 
         // Load categories
@@ -184,7 +186,9 @@ final class NewTransactionViewModel {
         do {
             categories = try context.fetch(categoriesDescriptor)
         } catch {
+            #if DEBUG
             print("NewTransactionViewModel: Error loading categories: \(error)")
+            #endif
         }
 
         // Load tags
@@ -194,7 +198,9 @@ final class NewTransactionViewModel {
         do {
             tags = try context.fetch(tagsDescriptor)
         } catch {
+            #if DEBUG
             print("NewTransactionViewModel: Error loading tags: \(error)")
+            #endif
         }
 
         // Load visible subcategories
@@ -205,7 +211,9 @@ final class NewTransactionViewModel {
         do {
             subcategories = try context.fetch(subcategoriesDescriptor)
         } catch {
+            #if DEBUG
             print("NewTransactionViewModel: Error loading subcategories: \(error)")
+            #endif
         }
 
         // Load transactions (for recent suggestions)
@@ -215,7 +223,9 @@ final class NewTransactionViewModel {
         do {
             transactions = try context.fetch(transactionsDescriptor)
         } catch {
+            #if DEBUG
             print("NewTransactionViewModel: Error loading transactions: \(error)")
+            #endif
         }
     }
 
@@ -472,7 +482,9 @@ final class NewTransactionViewModel {
             isSaving = false
             return result
         } catch {
+            #if DEBUG
             print("Error saving transaction: \(error)")
+            #endif
             isSaving = false
             return nil
         }
@@ -667,7 +679,16 @@ final class NewTransactionViewModel {
             predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
         )
 
-        if let existing = try? context.fetch(descriptor).first {
+        let fetchedSubcategories: [Subcategory]
+        do {
+            fetchedSubcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching transfer subcategory in Otros: \(error)")
+            #endif
+            fetchedSubcategories = []
+        }
+        if let existing = fetchedSubcategories.first {
             return existing
         }
 
@@ -676,8 +697,18 @@ final class NewTransactionViewModel {
             predicate: #Predicate { $0.name == parentCategoryName }
         )
 
+        let fetchedOtrosCategories: [Category]
+        do {
+            fetchedOtrosCategories = try context.fetch(catDescriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching Otros category: \(error)")
+            #endif
+            fetchedOtrosCategories = []
+        }
+
         let category: Category
-        if let existingCat = try? context.fetch(catDescriptor).first {
+        if let existingCat = fetchedOtrosCategories.first {
             category = existingCat
         } else {
             // Fallback: create "Otros" if somehow missing
@@ -704,7 +735,9 @@ final class NewTransactionViewModel {
             try context.save()
         } catch {
             // Non-critical: SwiftData will auto-save later
+            #if DEBUG
             print("[NewTransactionViewModel] Warning: Could not save subcategory immediately: \(error)")
+            #endif
         }
 
         return subcategory
@@ -720,7 +753,16 @@ final class NewTransactionViewModel {
             predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
         )
 
-        if let existing = try? context.fetch(descriptor).first {
+        let fetchedIncomeSubcategories: [Subcategory]
+        do {
+            fetchedIncomeSubcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching transfer subcategory in Ingresos: \(error)")
+            #endif
+            fetchedIncomeSubcategories = []
+        }
+        if let existing = fetchedIncomeSubcategories.first {
             return existing
         }
 
@@ -729,8 +771,18 @@ final class NewTransactionViewModel {
             predicate: #Predicate { $0.name == parentCategoryName }
         )
 
+        let fetchedIngresosCategories: [Category]
+        do {
+            fetchedIngresosCategories = try context.fetch(catDescriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching Ingresos category: \(error)")
+            #endif
+            fetchedIngresosCategories = []
+        }
+
         let category: Category
-        if let existingCat = try? context.fetch(catDescriptor).first {
+        if let existingCat = fetchedIngresosCategories.first {
             category = existingCat
         } else {
             // Fallback: create "Ingresos" if somehow missing
@@ -755,7 +807,9 @@ final class NewTransactionViewModel {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("[NewTransactionViewModel] Warning: Could not save income transfer subcategory: \(error)")
+            #endif
         }
 
         return subcategory

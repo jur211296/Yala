@@ -128,7 +128,7 @@ struct ExchangeRatesSheet: View {
 
     private func formatLastUpdated(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = Locale.current
         formatter.dateFormat = "d 'de' MMMM yyyy, HH:mm"
         return formatter.string(from: date)
     }

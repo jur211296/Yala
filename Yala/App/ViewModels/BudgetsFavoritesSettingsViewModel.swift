@@ -84,7 +84,9 @@ final class BudgetsFavoritesSettingsViewModel {
         do {
             activeBudgets = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("BudgetsFavoritesSettingsViewModel: Error loading budgets: \(error)")
+            #endif
             activeBudgets = []
         }
     }
@@ -108,7 +110,9 @@ final class BudgetsFavoritesSettingsViewModel {
             try context.save()
             loadBudgets()
         } catch {
+            #if DEBUG
             print("BudgetsFavoritesSettingsViewModel: Error saving: \(error)")
+            #endif
             showSaveError = true
         }
 
@@ -129,7 +133,9 @@ final class BudgetsFavoritesSettingsViewModel {
             try context.save()
             loadBudgets()
         } catch {
+            #if DEBUG
             print("BudgetsFavoritesSettingsViewModel: Error moving: \(error)")
+            #endif
             showSaveError = true
         }
 

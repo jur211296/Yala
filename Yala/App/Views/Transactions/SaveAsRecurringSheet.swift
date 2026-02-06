@@ -789,7 +789,9 @@ struct SaveAsRecurringSheet: View {
             onSaved(L10n.Action.savedAsRecurring)
             dismiss()
         } catch {
+            #if DEBUG
             print("Error saving recurring payment: \(error)")
+            #endif
         }
     }
 }

@@ -121,7 +121,9 @@ final class SubcategorySelectorViewModel {
         do {
             allSubcategories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("SubcategorySelectorViewModel: Error loading subcategories: \(error)")
+            #endif
             allSubcategories = []
         }
     }
@@ -137,7 +139,9 @@ final class SubcategorySelectorViewModel {
         do {
             recentTransactions = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("SubcategorySelectorViewModel: Error loading transactions: \(error)")
+            #endif
             recentTransactions = []
         }
     }

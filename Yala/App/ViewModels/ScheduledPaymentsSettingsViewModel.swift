@@ -61,7 +61,9 @@ final class ScheduledPaymentsSettingsViewModel {
         do {
             allPayments = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ScheduledPaymentsSettingsViewModel: Error loading payments: \(error)")
+            #endif
             allPayments = []
         }
     }
@@ -80,7 +82,9 @@ final class ScheduledPaymentsSettingsViewModel {
             try context.save()
             loadPayments()
         } catch {
+            #if DEBUG
             print("ScheduledPaymentsSettingsViewModel: Error deleting payments: \(error)")
+            #endif
             showDeleteError = true
         }
     }

@@ -51,7 +51,16 @@ enum CategoryImportHelper {
             }
         )
 
-        if let existing = (try? context.fetch(descriptor))?.first {
+        let fetchedCategories: [Category]
+        do {
+            fetchedCategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("CategoryImportHelper: Error fetching category by name: \(error)")
+            #endif
+            fetchedCategories = []
+        }
+        if let existing = fetchedCategories.first {
             // Si existe, simplemente la reutilizamos.
             return existing
         }
@@ -62,7 +71,15 @@ enum CategoryImportHelper {
 
         // sortOrder se coloca al final según el máximo actual.
         let allCategoriesDescriptor = FetchDescriptor<Category>()
-        let allCategories = (try? context.fetch(allCategoriesDescriptor)) ?? []
+        let allCategories: [Category]
+        do {
+            allCategories = try context.fetch(allCategoriesDescriptor)
+        } catch {
+            #if DEBUG
+            print("CategoryImportHelper: Error fetching all categories: \(error)")
+            #endif
+            allCategories = []
+        }
         let nextSortOrder = (allCategories.map { $0.sortOrder }.max() ?? 0) + 1
 
         let newCategory = Category(
@@ -109,16 +126,31 @@ enum CategoryImportHelper {
             }
         )
 
-        if let fetched = try? context.fetch(descriptor) {
-            if let existing = fetched.first(where: { $0.category === parentCategory }) {
-                // Reutilizamos la subcategoría si ya existe en esta categoría.
-                return existing
-            }
+        let fetched: [Subcategory]
+        do {
+            fetched = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("CategoryImportHelper: Error fetching subcategory by name: \(error)")
+            #endif
+            fetched = []
+        }
+        if let existing = fetched.first(where: { $0.category === parentCategory }) {
+            // Reutilizamos la subcategoría si ya existe en esta categoría.
+            return existing
         }
 
         // sortOrder dentro de la categoría padre.
         let allSubcategoriesDescriptor = FetchDescriptor<Subcategory>()
-        let allSubcategories = (try? context.fetch(allSubcategoriesDescriptor)) ?? []
+        let allSubcategories: [Subcategory]
+        do {
+            allSubcategories = try context.fetch(allSubcategoriesDescriptor)
+        } catch {
+            #if DEBUG
+            print("CategoryImportHelper: Error fetching all subcategories: \(error)")
+            #endif
+            allSubcategories = []
+        }
         let siblings = allSubcategories.filter { $0.category == parentCategory }
         let nextSortOrder = (siblings.map { $0.sortOrder }.max() ?? -1) + 1
 

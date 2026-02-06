@@ -959,7 +959,15 @@ struct OnboardingView: View {
     private func createSelectedNotifications() {
         // Fetch existing notifications to check by type (avoids duplicates on reinstall with iCloud)
         let descriptor = FetchDescriptor<NotificationItem>()
-        let existing = (try? modelContext.fetch(descriptor)) ?? []
+        let existing: [NotificationItem]
+        do {
+            existing = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error fetching existing notifications: \(error)")
+            #endif
+            existing = []
+        }
         let existingTypes = Set(existing.map { $0.typeRaw })
 
         // Create all default notifications
@@ -998,7 +1006,9 @@ struct OnboardingView: View {
             print("OnboardingView: Created \(inserted) notification types")
             #endif
         } catch {
+            #if DEBUG
             print("OnboardingView: Error saving notifications: \(error)")
+            #endif
         }
     }
 }

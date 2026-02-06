@@ -169,7 +169,9 @@ final class AccountFormViewModel {
         do {
             allTransactions = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("AccountFormViewModel: Error loading transactions: \(error)")
+            #endif
             allTransactions = []
         }
     }

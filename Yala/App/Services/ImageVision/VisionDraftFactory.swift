@@ -133,7 +133,13 @@ struct VisionDraftFactory {
             }
         )
 
-        guard let accounts = try? context.fetch(descriptor) else {
+        let accounts: [Account]
+        do {
+            accounts = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("VisionDraftFactory: Error fetching accounts by currency: \(error)")
+            #endif
             return nil
         }
 

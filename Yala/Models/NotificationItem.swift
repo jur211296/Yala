@@ -198,12 +198,28 @@ struct ReportConfig: Equatable, Sendable {
             "dataType": dataType.rawValue,
             "dayPreference": dayPreference.rawValue
         ]
-        return try? JSONSerialization.data(withJSONObject: dict)
+        do {
+            return try JSONSerialization.data(withJSONObject: dict)
+        } catch {
+            #if DEBUG
+            print("ReportConfig: Error encoding to data: \(error)")
+            #endif
+            return nil
+        }
     }
 
     /// Decode from Data
     static func fromData(_ data: Data) -> ReportConfig? {
-        guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+        let jsonObject: Any
+        do {
+            jsonObject = try JSONSerialization.jsonObject(with: data)
+        } catch {
+            #if DEBUG
+            print("ReportConfig: Error decoding from data: \(error)")
+            #endif
+            return nil
+        }
+        guard let dict = jsonObject as? [String: String],
               let dataTypeRaw = dict["dataType"],
               let dayPrefRaw = dict["dayPreference"],
               let dataType = ReportDataType(rawValue: dataTypeRaw),

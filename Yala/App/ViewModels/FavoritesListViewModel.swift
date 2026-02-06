@@ -49,7 +49,9 @@ final class FavoritesListViewModel {
         do {
             favorites = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("FavoritesListViewModel: Error loading favorites: \(error)")
+            #endif
             favorites = []
         }
     }
@@ -68,7 +70,9 @@ final class FavoritesListViewModel {
             try context.save()
             loadFavorites()
         } catch {
+            #if DEBUG
             print("FavoritesListViewModel: Error deleting favorites: \(error)")
+            #endif
             showSaveError = true
         }
     }
@@ -88,7 +92,9 @@ final class FavoritesListViewModel {
             try context.save()
             loadFavorites()
         } catch {
+            #if DEBUG
             print("FavoritesListViewModel: Error moving favorites: \(error)")
+            #endif
             showSaveError = true
         }
     }

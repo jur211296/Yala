@@ -41,7 +41,9 @@ final class ExportFiltersStepViewModel {
         do {
             allAccounts = try context.fetch(accountDescriptor)
         } catch {
+            #if DEBUG
             print("ExportFiltersStepViewModel: Error loading accounts: \(error)")
+            #endif
             allAccounts = []
         }
 
@@ -50,7 +52,9 @@ final class ExportFiltersStepViewModel {
         do {
             allCategories = try context.fetch(categoryDescriptor)
         } catch {
+            #if DEBUG
             print("ExportFiltersStepViewModel: Error loading categories: \(error)")
+            #endif
             allCategories = []
         }
 
@@ -59,7 +63,9 @@ final class ExportFiltersStepViewModel {
         do {
             allTags = try context.fetch(tagDescriptor)
         } catch {
+            #if DEBUG
             print("ExportFiltersStepViewModel: Error loading tags: \(error)")
+            #endif
             allTags = []
         }
 
@@ -68,7 +74,9 @@ final class ExportFiltersStepViewModel {
         do {
             allSubcategories = try context.fetch(subcategoryDescriptor)
         } catch {
+            #if DEBUG
             print("ExportFiltersStepViewModel: Error loading subcategories: \(error)")
+            #endif
             allSubcategories = []
         }
     }

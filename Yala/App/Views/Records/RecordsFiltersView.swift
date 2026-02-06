@@ -128,7 +128,7 @@ struct RecordsFiltersView: View {
     private var accountsContent: some View {
         FilterChipsSection(
             icon: "creditcard",
-            title: "Cuentas",
+            title: L10n.Settings.accounts,
             status: selectedAccountsText,
             items: filtersViewModel.activeAccounts,
             showEmptyPlaceholder: false
@@ -214,7 +214,7 @@ struct RecordsFiltersView: View {
     private var tagsContent: some View {
         FilterChipsSection(
             icon: "number",
-            title: "Etiquetas",
+            title: L10n.Settings.tags,
             status: selectedTagsText,
             items: filtersViewModel.activeTags,
             showEmptyPlaceholder: true

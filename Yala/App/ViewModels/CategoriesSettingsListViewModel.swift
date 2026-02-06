@@ -64,7 +64,9 @@ final class CategoriesSettingsListViewModel {
         do {
             categories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("CategoriesSettingsListViewModel: Error loading categories: \(error)")
+            #endif
             categories = []
         }
     }
@@ -115,7 +117,9 @@ final class CategoriesSettingsListViewModel {
             context.processPendingChanges()
             loadCategories()
         } catch {
+            #if DEBUG
             print("CategoriesSettingsListViewModel: Error deleting category: \(error)")
+            #endif
         }
     }
 
@@ -130,7 +134,9 @@ final class CategoriesSettingsListViewModel {
                 return subcategory.safeCategory.persistentModelID == category.persistentModelID
             }.count
         } catch {
+            #if DEBUG
             print("CategoriesSettingsListViewModel: Error counting transactions: \(error)")
+            #endif
             return 0
         }
     }

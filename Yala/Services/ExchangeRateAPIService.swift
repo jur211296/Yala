@@ -123,7 +123,9 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
         do {
             decoded = try JSONDecoder().decode(LiveRateResponse.self, from: data)
         } catch {
+            #if DEBUG
             print("ExchangeRateAPI Decode Error: \(error)")
+            #endif
             throw ExchangeRateProviderError.invalidResponse
         }
 
@@ -201,7 +203,9 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
         do {
             decoded = try JSONDecoder().decode(TimeframeResponse.self, from: data)
         } catch {
+            #if DEBUG
             print("ExchangeRateAPI Timeseries Decode Error: \(error)")
+            #endif
             throw ExchangeRateProviderError.invalidResponse
         }
 

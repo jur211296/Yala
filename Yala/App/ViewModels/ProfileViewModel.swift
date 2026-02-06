@@ -51,7 +51,9 @@ final class ProfileViewModel {
         do {
             allTransactions = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ProfileViewModel: Error loading transactions: \(error)")
+            #endif
             allTransactions = []
         }
     }
@@ -62,7 +64,9 @@ final class ProfileViewModel {
         do {
             accounts = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ProfileViewModel: Error loading accounts: \(error)")
+            #endif
             accounts = []
         }
     }
@@ -73,7 +77,9 @@ final class ProfileViewModel {
         do {
             categories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ProfileViewModel: Error loading categories: \(error)")
+            #endif
             categories = []
         }
     }

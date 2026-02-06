@@ -332,18 +332,24 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
     } catch {
         // Si hay error al leer, preferimos no tocar nada para no
         // corromper datos ni crear semilla en un estado incierto.
+        #if DEBUG
         print("CategorySeed: Error leyendo categorías existentes: \(error)")
+        #endif
         return
     }
 
     guard existingCategoriesCount == 0 else {
         // Ya hay categorías, no ejecutamos semilla otra vez.
+        #if DEBUG
         print("CategorySeed: Semilla NO ejecutada (ya existen categorías).")
+        #endif
         return
     }
 
     // 2. Ejecutar semilla completa de categorías y subcategorías
+    #if DEBUG
     print("CategorySeed: Ejecutando semilla inicial de categorías por defecto...")
+    #endif
 
     for (categoryIndex, definition) in defaultCategorySeedDefinitions.enumerated() {
 
@@ -378,8 +384,12 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
     // 3. Guardar cambios (por seguridad, aunque SwiftData suele autoguardar)
     do {
         try modelContext.save()
+        #if DEBUG
         print("CategorySeed: Semilla de categorías creada correctamente.")
+        #endif
     } catch {
+        #if DEBUG
         print("CategorySeed: Error al guardar la semilla de categorías: \(error)")
+        #endif
     }
 }

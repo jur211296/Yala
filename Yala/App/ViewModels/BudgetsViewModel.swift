@@ -86,7 +86,9 @@ final class BudgetsViewModel {
         do {
             allBudgets = try context.fetch(budgetDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetsViewModel: Error loading budgets: \(error)")
+            #endif
             allBudgets = []
         }
 
@@ -95,7 +97,9 @@ final class BudgetsViewModel {
         do {
             allTransactions = try context.fetch(transactionDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetsViewModel: Error loading transactions: \(error)")
+            #endif
             allTransactions = []
         }
 
@@ -104,7 +108,9 @@ final class BudgetsViewModel {
         do {
             accounts = try context.fetch(accountDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetsViewModel: Error loading accounts: \(error)")
+            #endif
             accounts = []
         }
     }

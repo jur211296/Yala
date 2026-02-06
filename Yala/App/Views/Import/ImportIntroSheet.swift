@@ -529,16 +529,22 @@ struct ImportIntroSheet: View {
         }
     }
     private func performImport(from url: URL, into account: Account) {
+        #if DEBUG
         print("🔵 [IMPORT] Starting import, setting isImporting = true")
+        #endif
         isImporting = true
+        #if DEBUG
         print("🔵 [IMPORT] isImporting is now: \(isImporting)")
+        #endif
 
         // Small delay to allow SwiftUI to render the button change before heavy work starts
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             Task { @MainActor in
                 do {
                     let isXLSX = url.pathExtension.lowercased() == "xlsx"
+                    #if DEBUG
                     print("🔵 [IMPORT] Calling import for \(isXLSX ? "XLSX" : "CSV")")
+                    #endif
 
                     let result: TransactionImportResult
                     if isXLSX {
@@ -558,12 +564,16 @@ struct ImportIntroSheet: View {
                     }
 
                     let createdCount = result.createdCount
+                    #if DEBUG
                     print("🔵 [IMPORT] Import complete, count = \(createdCount)")
+                    #endif
 
                     // Save to persist transactions
                     try modelContext.save()
                     WidgetDataCache.updateCache(context: modelContext)
+                    #if DEBUG
                     print("🔵 [IMPORT] Save complete")
+                    #endif
 
                     // Calculate date range of imported transactions for exchange rate fetch
                     let importedDates = result.drafts.map { $0.date }
@@ -577,13 +587,17 @@ struct ImportIntroSheet: View {
                     // This runs after the main import is complete to avoid @Query issues
                     if let dateRange = dateRange {
                         Task {
+                            #if DEBUG
                             print("🔵 [IMPORT] Fetching exchange rates for date range: \(dateRange)")
+                            #endif
                             await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
                             // Update any transactions with provisional rates
                             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
                             // Trigger widget refresh so Panel recalculates with new data
                             sessionState.needsExchangeRateWidgetRefresh = true
+                            #if DEBUG
                             print("🔵 [IMPORT] Exchange rate fetch complete")
+                            #endif
                         }
                     }
 
@@ -593,7 +607,9 @@ struct ImportIntroSheet: View {
                         message: "\(createdCount) registros importados correctamente.",
                         count: createdCount
                     )
+                    #if DEBUG
                     print("🔵 [IMPORT] Dismissing sheet and notifying parent")
+                    #endif
 
                     // Dismiss sheet first, then notify parent
                     dismiss()
@@ -604,7 +620,9 @@ struct ImportIntroSheet: View {
                     }
 
                 } catch {
+                    #if DEBUG
                     print("🔴 [IMPORT] ERROR: \(error.localizedDescription)")
+                    #endif
                     isImporting = false
                     let errorResult = ImportResult(
                         isSuccess: false,
@@ -623,14 +641,18 @@ struct ImportIntroSheet: View {
     // MARK: - Multi-Currency Import
 
     private func performMultiCurrencyImport(from url: URL, with currencyAccountMap: [String: Account]) {
+        #if DEBUG
         print("🔵 [IMPORT-MULTI] Starting multi-currency import, setting isImporting = true")
+        #endif
         isImporting = true
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             Task { @MainActor in
                 do {
                     let isXLSX = url.pathExtension.lowercased() == "xlsx"
+                    #if DEBUG
                     print("🔵 [IMPORT-MULTI] Calling import for \(isXLSX ? "XLSX" : "CSV") multi-currency")
+                    #endif
 
                     let result: TransactionImportResult
                     if isXLSX {
@@ -651,12 +673,16 @@ struct ImportIntroSheet: View {
 
                     let createdCount = result.createdCount
                     let currencyCount = currencyAccountMap.count
+                    #if DEBUG
                     print("🔵 [IMPORT-MULTI] Import complete, count = \(createdCount) in \(currencyCount) currencies")
+                    #endif
 
                     // Save to persist transactions
                     try modelContext.save()
                     WidgetDataCache.updateCache(context: modelContext)
+                    #if DEBUG
                     print("🔵 [IMPORT-MULTI] Save complete")
+                    #endif
 
                     // Calculate date range for exchange rate fetch
                     let importedDates = result.drafts.map { $0.date }
@@ -669,11 +695,15 @@ struct ImportIntroSheet: View {
                     // Fire background task to fetch exchange rates
                     if let dateRange = dateRange {
                         Task {
+                            #if DEBUG
                             print("🔵 [IMPORT-MULTI] Fetching exchange rates for date range: \(dateRange)")
+                            #endif
                             await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
                             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
                             sessionState.needsExchangeRateWidgetRefresh = true
+                            #if DEBUG
                             print("🔵 [IMPORT-MULTI] Exchange rate fetch complete")
+                            #endif
                         }
                     }
 
@@ -683,7 +713,9 @@ struct ImportIntroSheet: View {
                         message: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
                         count: createdCount
                     )
+                    #if DEBUG
                     print("🔵 [IMPORT-MULTI] Dismissing sheet and notifying parent")
+                    #endif
 
                     dismiss()
 
@@ -692,7 +724,9 @@ struct ImportIntroSheet: View {
                     }
 
                 } catch {
+                    #if DEBUG
                     print("🔴 [IMPORT-MULTI] ERROR: \(error.localizedDescription)")
+                    #endif
                     isImporting = false
                     let errorResult = ImportResult(
                         isSuccess: false,

@@ -47,7 +47,9 @@ final class BudgetAlertService {
         do {
             budgets = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("BudgetAlertService: Error fetching budgets: \(error)")
+            #endif
             return
         }
 
@@ -59,7 +61,9 @@ final class BudgetAlertService {
         do {
             transactions = try context.fetch(txDescriptor)
         } catch {
+            #if DEBUG
             print("BudgetAlertService: Error fetching transactions: \(error)")
+            #endif
             return
         }
 

@@ -441,7 +441,9 @@ struct SaveAsFavoriteSheet: View {
             onSaved(L10n.Action.savedAsFavorite)
             dismiss()
         } catch {
+            #if DEBUG
             print("Error saving favorite: \(error)")
+            #endif
         }
     }
 }

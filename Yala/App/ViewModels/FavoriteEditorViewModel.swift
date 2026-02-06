@@ -31,7 +31,9 @@ final class FavoriteEditorViewModel {
         do {
             existingFavoritesCount = try context.fetchCount(descriptor)
         } catch {
+            #if DEBUG
             print("FavoriteEditorViewModel: Error fetching favorites count: \(error)")
+            #endif
             existingFavoritesCount = 0
         }
     }
@@ -90,7 +92,9 @@ final class FavoriteEditorViewModel {
             try context.save()
             return true
         } catch {
+            #if DEBUG
             print("FavoriteEditorViewModel: Error saving favorite: \(error)")
+            #endif
             showSaveError = true
             return false
         }

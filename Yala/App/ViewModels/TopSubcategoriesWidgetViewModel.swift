@@ -37,7 +37,9 @@ final class TopSubcategoriesWidgetViewModel {
         do {
             allCategories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("TopSubcategoriesWidgetViewModel: Error loading categories: \(error)")
+            #endif
             allCategories = []
         }
     }

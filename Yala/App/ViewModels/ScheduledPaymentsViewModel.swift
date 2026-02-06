@@ -112,7 +112,9 @@ final class ScheduledPaymentsViewModel {
         do {
             allPayments = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ScheduledPaymentsViewModel: Error loading payments: \(error)")
+            #endif
         }
     }
 

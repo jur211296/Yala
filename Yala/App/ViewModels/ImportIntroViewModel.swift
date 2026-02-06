@@ -37,7 +37,9 @@ final class ImportIntroViewModel {
         do {
             allSubcategories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("ImportIntroViewModel: Error loading subcategories: \(error)")
+            #endif
             allSubcategories = []
         }
     }

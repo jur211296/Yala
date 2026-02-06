@@ -141,7 +141,7 @@ struct NewTransactionView: View {
                     } label: {
                         Image(systemName: "star.fill")
                             .font(.system(size: 17, weight: .regular))
-                            .foregroundColor(Color(UIColor.label))
+                            .foregroundStyle(Color(UIColor.label))
                     }
                     .tint(Color(UIColor.label))
                 }
@@ -264,12 +264,12 @@ struct NewTransactionView: View {
                 Text(L10n.Alert.deleteWarning)
             }
             .alert(
-                "Fecha futura no permitida",
+                L10n.Validation.futureDateTitle,
                 isPresented: $viewModel.showFutureDateAlert
             ) {
-                Button("Entendido", role: .cancel) {}
+                Button(L10n.Common.understood, role: .cancel) {}
             } message: {
-                Text("No puedes registrar transacciones con fecha futura. Usa Pagos Planificados para gastos recurrentes.")
+                Text(L10n.Validation.futureDateMessage)
             }
             .sheet(isPresented: $viewModel.showSaveAsFavoriteSheet) {
                 favoriteSheetContent
@@ -812,7 +812,7 @@ struct NewTransactionView: View {
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"
-            formatter.locale = Locale(identifier: "es")
+            formatter.locale = Locale.current
             return formatter.string(from: viewModel.transactionDate)
         }
     }

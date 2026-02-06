@@ -444,7 +444,9 @@ struct InboxView: View {
             do {
                 try draftService.rejectDraft(draft)
             } catch {
+                #if DEBUG
                 print("InboxView: Error rejecting draft: \(error)")
+                #endif
             }
         }
     }
@@ -458,7 +460,9 @@ struct InboxView: View {
             do {
                 try draftService.deleteDraft(draft)
             } catch {
+                #if DEBUG
                 print("InboxView: Error deleting draft: \(error)")
+                #endif
             }
         }
     }
@@ -495,7 +499,9 @@ struct InboxView: View {
                 )
                 showSwipeSuccessView = true
             } catch {
+                #if DEBUG
                 print("InboxView: Error approving draft: \(error)")
+                #endif
             }
         }
     }
@@ -516,7 +522,13 @@ struct InboxView: View {
                 // Allow re-approval by changing status to pending
                 draft.status = .pending
                 draft.updatedAt = Date()
-                try? modelContext.save()
+                do {
+                    try modelContext.save()
+                } catch {
+                    #if DEBUG
+                    print("InboxView: Error saving draft status change: \(error)")
+                    #endif
+                }
                 selectedDraft = draft
             }
 

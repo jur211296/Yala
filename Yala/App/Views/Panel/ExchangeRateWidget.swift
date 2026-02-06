@@ -317,7 +317,7 @@ struct ExchangeRateWidget: View {
                             .padding(.horizontal, DS.Spacing.sm)
                             .padding(.vertical, DS.Spacing.xs)
                             .background(isSelected ? color.opacity(0.1) : Color.clear)
-                            .cornerRadius(DS.Radius.md)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                             .opacity(isSelected ? 1.0 : 0.4)
                         }
                         .buttonStyle(.plain)
@@ -460,11 +460,11 @@ struct ExchangeRateWidget: View {
             Image(systemName: "arrow.left.arrow.right.circle")
                 .font(.title2)
                 .foregroundStyle(.secondary)
-            Text("Puedes seleccionar divisas secundarias en")
+            Text(L10n.ExchangeRate.noSecondaryCurrenciesHint)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Text("Perfil > Divisa y cambio")
+            Text(L10n.ExchangeRate.noSecondaryCurrenciesPath)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color.electricIndigo)
         }

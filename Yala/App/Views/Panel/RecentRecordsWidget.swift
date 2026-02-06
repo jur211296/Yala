@@ -23,7 +23,7 @@ struct RecentRecordsWidget: View {
 
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = Locale.current
         formatter.dateFormat = "d MMM"
         return formatter
     }()

@@ -55,7 +55,9 @@ final class ScheduledPaymentEditorViewModel {
         do {
             allAccounts = try context.fetch(accountDescriptor)
         } catch {
+            #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error loading accounts: \(error)")
+            #endif
             allAccounts = []
         }
 
@@ -64,7 +66,9 @@ final class ScheduledPaymentEditorViewModel {
         do {
             allTags = try context.fetch(tagDescriptor)
         } catch {
+            #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error loading tags: \(error)")
+            #endif
             allTags = []
         }
     }
@@ -162,7 +166,9 @@ final class ScheduledPaymentEditorViewModel {
             WidgetDataCache.updateCache(context: context)
             return true
         } catch {
+            #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error saving payment: \(error)")
+            #endif
             showSaveError = true
             return false
         }
@@ -178,7 +184,9 @@ final class ScheduledPaymentEditorViewModel {
             try service.deleteScheduledPayment(payment)
             return true
         } catch {
+            #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error deleting payment: \(error)")
+            #endif
             showSaveError = true
             return false
         }

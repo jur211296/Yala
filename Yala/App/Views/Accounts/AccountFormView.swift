@@ -303,7 +303,7 @@ struct AccountFormView: View {
                             if viewModel.balanceText.isEmpty {
                                 Text("0.00")
                                     .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.gray.opacity(0.4))
+                                    .foregroundStyle(.gray.opacity(0.4))
                             }
 
                             TextField("", text: $viewModel.balanceText)
@@ -352,7 +352,7 @@ struct AccountFormView: View {
                         Spacer()
                         Text(formatAmount(finalBalance, currency: viewModel.selectedCurrency))
                             .font(.headline)
-                            .foregroundColor(finalBalance >= 0 ? Color.primary : Color.red)
+                            .foregroundStyle(finalBalance >= 0 ? Color.primary : Color.red)
                     }
                     .padding()
                 }
@@ -523,7 +523,9 @@ struct AccountFormView: View {
             try deletionService.deleteAccount(account)
             dismiss()
         } catch {
+            #if DEBUG
             print("AccountFormView: Error deleting account: \(error)")
+            #endif
         }
     }
 }

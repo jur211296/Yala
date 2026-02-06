@@ -107,7 +107,9 @@ final class CategoryDetailViewModel {
         do {
             allSubcategories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("CategoryDetailViewModel: Error loading subcategories: \(error)")
+            #endif
             allSubcategories = []
         }
     }
@@ -124,7 +126,9 @@ final class CategoryDetailViewModel {
                 return subcategory.safeCategory == category
             }.count
         } catch {
+            #if DEBUG
             print("CategoryDetailViewModel: Error counting transactions: \(error)")
+            #endif
             return 0
         }
     }
@@ -153,7 +157,9 @@ final class CategoryDetailViewModel {
             try context.save()
             return true
         } catch {
+            #if DEBUG
             print("CategoryDetailViewModel: Error saving category: \(error)")
+            #endif
             return false
         }
     }
@@ -164,7 +170,9 @@ final class CategoryDetailViewModel {
             try service.deleteCategory(category, withSubcategories: subcategories)
             return true
         } catch {
+            #if DEBUG
             print("CategoryDetailViewModel: Error deleting category: \(error)")
+            #endif
             return false
         }
     }
@@ -175,7 +183,9 @@ final class CategoryDetailViewModel {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("CategoryDetailViewModel: Error discarding new category: \(error)")
+            #endif
         }
     }
 
@@ -193,7 +203,9 @@ final class CategoryDetailViewModel {
             loadSubcategories()
             return true
         } catch {
+            #if DEBUG
             print("CategoryDetailViewModel: Error deleting subcategory: \(error)")
+            #endif
             return false
         }
     }

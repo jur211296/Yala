@@ -43,7 +43,9 @@ final class BulkEditViewModel {
         do {
             allTags = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("BulkEditViewModel: Error loading tags: \(error)")
+            #endif
             allTags = []
         }
     }

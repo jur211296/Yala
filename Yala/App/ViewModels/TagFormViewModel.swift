@@ -72,7 +72,9 @@ final class TagFormViewModel {
         do {
             existingTags = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("TagFormViewModel: Error loading tags: \(error)")
+            #endif
             existingTags = []
         }
     }
@@ -126,7 +128,9 @@ final class TagFormViewModel {
             try context.save()
             return true
         } catch {
+            #if DEBUG
             print("TagFormViewModel: Error saving tag: \(error)")
+            #endif
             return false
         }
     }

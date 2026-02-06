@@ -209,7 +209,16 @@ enum TransactionCSVImportService {
         // After import, update initial balance date if older transactions were imported
         // This ensures the initial balance always precedes all other transactions
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             InitialBalanceService.updateInitialBalanceDateIfNeeded(
                 for: account,
                 allTransactions: allTransactions,
@@ -588,7 +597,15 @@ enum TransactionCSVImportService {
 
         // Obtener colores ya usados para asignar colores únicos a tags nuevos
         let allTagsDescriptor = FetchDescriptor<Tag>()
-        let allTags = (try? context.fetch(allTagsDescriptor)) ?? []
+        let allTags: [Tag]
+        do {
+            allTags = try context.fetch(allTagsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all tags: \(error)")
+            #endif
+            allTags = []
+        }
         var usedColors = allTags.map { $0.colorHex }
 
         var resolved: [Tag] = []
@@ -1102,7 +1119,16 @@ enum TransactionCSVImportService {
 
         // Update initial balance dates for all affected accounts
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for multi-currency initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             for account in Set(currencyAccountMap.values) {
                 InitialBalanceService.updateInitialBalanceDateIfNeeded(
                     for: account,
@@ -1476,7 +1502,16 @@ enum TransactionCSVImportService {
 
         // 4. Actualizar fecha de saldo inicial si es necesario
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for XLSX initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             InitialBalanceService.updateInitialBalanceDateIfNeeded(
                 for: account,
                 allTransactions: allTransactions,
@@ -1618,7 +1653,16 @@ enum TransactionCSVImportService {
 
         // 4. Actualizar fechas de saldo inicial para todas las cuentas afectadas
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for XLSX multi-currency initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             for account in Set(currencyAccountMap.values) {
                 InitialBalanceService.updateInitialBalanceDateIfNeeded(
                     for: account,

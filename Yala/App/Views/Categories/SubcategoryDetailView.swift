@@ -331,7 +331,9 @@ struct SubcategoryDetailView: View {
             try deletionService.deleteSubcategory(subcategory)
             dismiss()
         } catch {
+            #if DEBUG
             print("SubcategoryDetailView: Error deleting subcategory: \(error)")
+            #endif
         }
     }
 
@@ -371,7 +373,9 @@ struct SubcategoryDetailView: View {
         do {
             try modelContext.save()
         } catch {
+            #if DEBUG
             print("Subcategory: Error al guardar subcategoría: \(error)")
+            #endif
         }
 
         dismiss()
@@ -390,7 +394,9 @@ struct SubcategoryDetailView: View {
                 subcategory.sortOrder = index
             }
         } catch {
+            #if DEBUG
             print("Subcategory: Error reordering subcategories: \(error)")
+            #endif
         }
     }
 }

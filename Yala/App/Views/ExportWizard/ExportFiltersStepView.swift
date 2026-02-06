@@ -451,7 +451,7 @@ struct ExportFiltersStepView: View {
         let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
 
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
+        formatter.locale = Locale.current
         formatter.dateFormat = "d MMM yyyy"
 
         return "\(formatter.string(from: interval.start)) - \(formatter.string(from: displayEnd))"

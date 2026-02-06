@@ -263,14 +263,18 @@ struct SubcategoryTransferSheet: View {
             dismiss()
             onComplete()
         } catch {
+            #if DEBUG
             print("Transfer: Error transferring transactions: \(error)")
+            #endif
         }
     }
 
     /// Transfers all transactions to the "Unassigned" subcategory in "Others" category
     private func transferToUnassigned() {
         guard let unassignedSubcategory = viewModel.getOrCreateUnassignedSubcategory(for: subcategoryToDelete) else {
+            #if DEBUG
             print("Transfer: Could not get or create unassigned subcategory")
+            #endif
             return
         }
 
@@ -284,7 +288,9 @@ struct SubcategoryTransferSheet: View {
             dismiss()
             onComplete()
         } catch {
+            #if DEBUG
             print("Transfer: Error deleting transactions: \(error)")
+            #endif
         }
     }
 }

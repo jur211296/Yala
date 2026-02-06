@@ -51,7 +51,9 @@ final class NotificationsSettingsViewModel {
         do {
             notifications = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("NotificationsSettingsViewModel: Error loading notifications: \(error)")
+            #endif
             notifications = []
         }
     }
@@ -65,7 +67,9 @@ final class NotificationsSettingsViewModel {
             try context.save()
             loadNotifications()
         } catch {
+            #if DEBUG
             print("NotificationsSettingsViewModel: Error inserting notification: \(error)")
+            #endif
         }
     }
 
@@ -75,7 +79,9 @@ final class NotificationsSettingsViewModel {
             try context.save()
             loadNotifications()
         } catch {
+            #if DEBUG
             print("NotificationsSettingsViewModel: Error saving context: \(error)")
+            #endif
         }
     }
 
@@ -86,7 +92,9 @@ final class NotificationsSettingsViewModel {
             try context.save()
             loadNotifications()
         } catch {
+            #if DEBUG
             print("NotificationsSettingsViewModel: Error deleting notification: \(error)")
+            #endif
         }
     }
 

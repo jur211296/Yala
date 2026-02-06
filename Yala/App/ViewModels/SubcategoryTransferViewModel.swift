@@ -43,7 +43,9 @@ final class SubcategoryTransferViewModel {
         do {
             allSubcategories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("SubcategoryTransferViewModel: Error loading subcategories: \(error)")
+            #endif
             allSubcategories = []
         }
     }
@@ -54,7 +56,9 @@ final class SubcategoryTransferViewModel {
         do {
             allCategories = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("SubcategoryTransferViewModel: Error loading categories: \(error)")
+            #endif
             allCategories = []
         }
     }
@@ -99,7 +103,9 @@ final class SubcategoryTransferViewModel {
             let allTransactions = try context.fetch(descriptor)
             return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
         } catch {
+            #if DEBUG
             print("SubcategoryTransferViewModel: Error counting transactions: \(error)")
+            #endif
             return 0
         }
     }
@@ -200,7 +206,9 @@ final class SubcategoryTransferViewModel {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("SubcategoryTransferViewModel: Error saving unassigned subcategory: \(error)")
+            #endif
             return nil
         }
 

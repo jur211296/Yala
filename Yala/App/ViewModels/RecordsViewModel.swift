@@ -308,7 +308,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error deleting records: \(error)")
+            #endif
         }
 
         exitSelectionMode()
@@ -380,7 +382,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk account update: \(error)")
+            #endif
         }
     }
 
@@ -394,7 +398,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk subcategory update: \(error)")
+            #endif
         }
     }
 
@@ -413,7 +419,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk tags update: \(error)")
+            #endif
         }
     }
 
@@ -429,7 +437,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk tags removal: \(error)")
+            #endif
         }
     }
 
@@ -442,7 +452,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk note update: \(error)")
+            #endif
         }
     }
 
@@ -455,7 +467,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk amount update: \(error)")
+            #endif
         }
     }
 

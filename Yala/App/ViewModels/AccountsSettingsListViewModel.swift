@@ -107,7 +107,9 @@ final class AccountsSettingsListViewModel {
         do {
             accounts = try context.fetch(accountDescriptor)
         } catch {
+            #if DEBUG
             print("AccountsSettingsListViewModel: Error loading accounts: \(error)")
+            #endif
             accounts = []
         }
 
@@ -118,7 +120,9 @@ final class AccountsSettingsListViewModel {
         do {
             transactions = try context.fetch(transactionDescriptor)
         } catch {
+            #if DEBUG
             print("AccountsSettingsListViewModel: Error loading transactions: \(error)")
+            #endif
             transactions = []
         }
     }

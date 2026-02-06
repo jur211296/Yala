@@ -635,7 +635,14 @@ struct ImageSelectionView: View {
                 draft.statusRaw == "pending"
             }
         )
-        return (try? modelContext.fetch(descriptor)) ?? []
+        do {
+            return try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ImageSelectionView: Error fetching pending drafts: \(error)")
+            #endif
+            return []
+        }
     }
 
     private func resetForRetry() {

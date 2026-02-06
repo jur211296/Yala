@@ -104,7 +104,9 @@ final class PanelViewModel {
         do {
             accounts = try context.fetch(accountsDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading accounts: \(error)")
+            #endif
         }
 
         // Load tags
@@ -112,7 +114,9 @@ final class PanelViewModel {
         do {
             tags = try context.fetch(tagsDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading tags: \(error)")
+            #endif
         }
 
         // Load categories
@@ -120,7 +124,9 @@ final class PanelViewModel {
         do {
             categories = try context.fetch(categoriesDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading categories: \(error)")
+            #endif
         }
 
         // Load subcategories
@@ -128,7 +134,9 @@ final class PanelViewModel {
         do {
             allSubcategories = try context.fetch(subcategoriesDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading subcategories: \(error)")
+            #endif
         }
 
         // Load transactions
@@ -141,7 +149,9 @@ final class PanelViewModel {
         do {
             transactions = try context.fetch(transactionsDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading transactions: \(error)")
+            #endif
         }
 
         // Load active budgets
@@ -152,7 +162,9 @@ final class PanelViewModel {
         do {
             budgets = try context.fetch(budgetsDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading budgets: \(error)")
+            #endif
         }
 
         // Load scheduled payments
@@ -162,7 +174,9 @@ final class PanelViewModel {
         do {
             scheduledPayments = try context.fetch(paymentsDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading scheduled payments: \(error)")
+            #endif
         }
 
         // Load pending inbox drafts
@@ -172,7 +186,9 @@ final class PanelViewModel {
         do {
             pendingDrafts = try context.fetch(draftsDesc)
         } catch {
+            #if DEBUG
             print("PanelViewModel: Error loading pending drafts: \(error)")
+            #endif
         }
     }
 

@@ -104,9 +104,16 @@ extension TabBarConfiguration {
 
     /// Serializa a JSON string para @AppStorage
     func toJSON() -> String {
-        guard let data = try? JSONEncoder().encode(self),
-            let string = String(data: data, encoding: .utf8)
-        else {
+        let data: Data
+        do {
+            data = try JSONEncoder().encode(self)
+        } catch {
+            #if DEBUG
+            print("TabBarConfiguration: Error encoding to JSON: \(error)")
+            #endif
+            return "{\"activeTabs\":[\"panel\",\"statistics\",\"planning\"]}"
+        }
+        guard let string = String(data: data, encoding: .utf8) else {
             return Self.default.toJSON()
         }
         return string
@@ -114,10 +121,19 @@ extension TabBarConfiguration {
 
     /// Deserializa desde JSON string
     static func fromJSON(_ string: String) -> TabBarConfiguration {
-        guard let data = string.data(using: .utf8),
-            var config = try? JSONDecoder().decode(TabBarConfiguration.self, from: data),
-            config.isValid
-        else {
+        guard let data = string.data(using: .utf8) else {
+            return .default
+        }
+        var config: TabBarConfiguration
+        do {
+            config = try JSONDecoder().decode(TabBarConfiguration.self, from: data)
+        } catch {
+            #if DEBUG
+            print("TabBarConfiguration: Error decoding from JSON: \(error)")
+            #endif
+            return .default
+        }
+        guard config.isValid else {
             return .default
         }
         // Ensure panel is always first

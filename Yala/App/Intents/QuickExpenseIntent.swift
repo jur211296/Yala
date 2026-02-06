@@ -12,7 +12,6 @@ import SwiftUI
 
 // MARK: - Transaction Type Enum
 
-@available(iOS 16.0, *)
 enum TransactionTypeAppEnum: String, AppEnum {
     case expense = "expense"
     case income = "income"
@@ -27,7 +26,6 @@ enum TransactionTypeAppEnum: String, AppEnum {
 
 // MARK: - Quick Entry Intent
 
-@available(iOS 16.0, *)
 struct QuickExpenseIntent: AppIntent {
 
     static var title: LocalizedStringResource = "shortcut.quickExpense.title"
@@ -121,10 +119,16 @@ struct QuickExpenseIntent: AppIntent {
         let finalTagName = try await getTagName()
 
         // Create ModelContainer
-        guard let container = try? ModelContainer(
-            for: SwiftDataConfiguration.schema,
-            configurations: SwiftDataConfiguration.configuration
-        ) else {
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
+            )
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error creating ModelContainer: \(error)")
+            #endif
             return .result(dialog: "shortcut.error.database")
         }
 
@@ -198,7 +202,7 @@ struct QuickExpenseIntent: AppIntent {
 
         // Format success message with all details
         let formattedAmount = formatCurrency(amount: finalAmount, currencyCode: transactionCurrency)
-        let noteText = (finalNote?.isEmpty == false) ? finalNote! : "-"
+        let noteText = (finalNote?.isEmpty == false) ? (finalNote ?? "-") : "-"
         let subcategoryText = resolvedSubcategory.name
         let tagText = resolvedTag?.name ?? String(localized: "shortcut.result.noTag")
 
@@ -271,20 +275,43 @@ struct QuickExpenseIntent: AppIntent {
         let descriptor = FetchDescriptor<Account>(
             predicate: #Predicate { $0.name == name }
         )
-        return try? context.fetch(descriptor).first
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error fetching account '\(name)': \(error)")
+            #endif
+            return nil
+        }
     }
 
     private func fetchSubcategory(name: String, categoryName: String, context: ModelContext) -> Subcategory? {
         let descriptor = FetchDescriptor<Subcategory>(
             predicate: #Predicate { $0.name == name }
         )
-        guard let subcategories = try? context.fetch(descriptor) else { return nil }
+        let subcategories: [Subcategory]
+        do {
+            subcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error fetching subcategory '\(name)': \(error)")
+            #endif
+            return nil
+        }
         return subcategories.first { $0.safeCategory.name == categoryName }
     }
 
     private func fetchTag(name: String, context: ModelContext) -> Tag? {
         let descriptor = FetchDescriptor<Tag>()
-        guard let tags = try? context.fetch(descriptor) else { return nil }
+        let tags: [Tag]
+        do {
+            tags = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error fetching tags: \(error)")
+            #endif
+            return nil
+        }
 
         // Case-insensitive and diacritic-insensitive matching
         let normalizedInput = name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
@@ -306,7 +333,6 @@ struct QuickExpenseIntent: AppIntent {
 
 // MARK: - Intent Errors
 
-@available(iOS 16.0, *)
 enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
     case noAccount
     case noSubcategory
@@ -323,7 +349,6 @@ enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
 
 // MARK: - Account App Entity
 
-@available(iOS 16.0, *)
 struct AccountAppEntity: AppEntity {
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "shortcut.entity.account"
@@ -338,7 +363,6 @@ struct AccountAppEntity: AppEntity {
     }
 }
 
-@available(iOS 16.0, *)
 struct AccountQuery: EntityQuery {
 
     @MainActor
@@ -349,10 +373,16 @@ struct AccountQuery: EntityQuery {
 
     @MainActor
     func suggestedEntities() async throws -> [AccountAppEntity] {
-        guard let container = try? ModelContainer(
-            for: SwiftDataConfiguration.schema,
-            configurations: SwiftDataConfiguration.configuration
-        ) else {
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
+            )
+        } catch {
+            #if DEBUG
+            print("AccountQuery: Error creating ModelContainer: \(error)")
+            #endif
             return []
         }
 
@@ -362,7 +392,15 @@ struct AccountQuery: EntityQuery {
             sortBy: [SortDescriptor(\Account.name)]
         )
 
-        guard let accounts = try? context.fetch(descriptor) else { return [] }
+        let accounts: [Account]
+        do {
+            accounts = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("AccountQuery: Error fetching accounts: \(error)")
+            #endif
+            return []
+        }
 
         return accounts.map { account in
             AccountAppEntity(
@@ -376,7 +414,6 @@ struct AccountQuery: EntityQuery {
 
 // MARK: - Expense Subcategory App Entity (isIncome = false)
 
-@available(iOS 16.0, *)
 struct ExpenseSubcategoryAppEntity: AppEntity {
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "shortcut.entity.subcategory"
@@ -391,7 +428,6 @@ struct ExpenseSubcategoryAppEntity: AppEntity {
     }
 }
 
-@available(iOS 16.0, *)
 struct ExpenseSubcategoryQuery: EntityQuery {
 
     @MainActor
@@ -402,10 +438,16 @@ struct ExpenseSubcategoryQuery: EntityQuery {
 
     @MainActor
     func suggestedEntities() async throws -> [ExpenseSubcategoryAppEntity] {
-        guard let container = try? ModelContainer(
-            for: SwiftDataConfiguration.schema,
-            configurations: SwiftDataConfiguration.configuration
-        ) else {
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
+            )
+        } catch {
+            #if DEBUG
+            print("ExpenseSubcategoryQuery: Error creating ModelContainer: \(error)")
+            #endif
             return []
         }
 
@@ -415,7 +457,15 @@ struct ExpenseSubcategoryQuery: EntityQuery {
             sortBy: [SortDescriptor(\Subcategory.name)]
         )
 
-        guard let subcategories = try? context.fetch(descriptor) else { return [] }
+        let subcategories: [Subcategory]
+        do {
+            subcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ExpenseSubcategoryQuery: Error fetching subcategories: \(error)")
+            #endif
+            return []
+        }
 
         // Filter ONLY expense subcategories (isIncome = false)
         // Sort by category A-Z, then subcategory A-Z
@@ -439,7 +489,6 @@ struct ExpenseSubcategoryQuery: EntityQuery {
 
 // MARK: - Income Subcategory App Entity (isIncome = true)
 
-@available(iOS 16.0, *)
 struct IncomeSubcategoryAppEntity: AppEntity {
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "shortcut.entity.subcategory"
@@ -454,7 +503,6 @@ struct IncomeSubcategoryAppEntity: AppEntity {
     }
 }
 
-@available(iOS 16.0, *)
 struct IncomeSubcategoryQuery: EntityQuery {
 
     @MainActor
@@ -465,10 +513,16 @@ struct IncomeSubcategoryQuery: EntityQuery {
 
     @MainActor
     func suggestedEntities() async throws -> [IncomeSubcategoryAppEntity] {
-        guard let container = try? ModelContainer(
-            for: SwiftDataConfiguration.schema,
-            configurations: SwiftDataConfiguration.configuration
-        ) else {
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
+            )
+        } catch {
+            #if DEBUG
+            print("IncomeSubcategoryQuery: Error creating ModelContainer: \(error)")
+            #endif
             return []
         }
 
@@ -478,7 +532,15 @@ struct IncomeSubcategoryQuery: EntityQuery {
             sortBy: [SortDescriptor(\Subcategory.name)]
         )
 
-        guard let subcategories = try? context.fetch(descriptor) else { return [] }
+        let subcategories: [Subcategory]
+        do {
+            subcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("IncomeSubcategoryQuery: Error fetching subcategories: \(error)")
+            #endif
+            return []
+        }
 
         // Filter ONLY income subcategories (isIncome = true)
         // Sort by category A-Z, then subcategory A-Z
@@ -502,7 +564,6 @@ struct IncomeSubcategoryQuery: EntityQuery {
 
 // MARK: - Voice Entry Intent
 
-@available(iOS 16.0, *)
 struct VoiceEntryIntent: AppIntent {
 
     static var title: LocalizedStringResource = "shortcut.voiceEntry.title"
@@ -530,7 +591,6 @@ struct VoiceEntryIntent: AppIntent {
 
 // MARK: - Image Entry Intent
 
-@available(iOS 16.0, *)
 struct ImageEntryIntent: AppIntent {
 
     static var title: LocalizedStringResource = "shortcut.imageEntry.title"
@@ -558,7 +618,6 @@ struct ImageEntryIntent: AppIntent {
 
 // MARK: - Voice/Image Intent Errors
 
-@available(iOS 16.0, *)
 enum VoiceImageIntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
     case voiceNotEnabled
     case imageNotEnabled
@@ -575,7 +634,6 @@ enum VoiceImageIntentError: Swift.Error, CustomLocalizedStringResourceConvertibl
 
 // MARK: - Apple Pay Transaction Intent
 
-@available(iOS 16.0, *)
 struct ApplePayTransactionIntent: AppIntent {
 
     static var title: LocalizedStringResource = "shortcut.applePay.title"
@@ -653,10 +711,16 @@ struct ApplePayTransactionIntent: AppIntent {
         let effectiveDate = Date()
 
         // Create ModelContainer
-        guard let container = try? ModelContainer(
-            for: SwiftDataConfiguration.schema,
-            configurations: SwiftDataConfiguration.configuration
-        ) else {
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
+            )
+        } catch {
+            #if DEBUG
+            print("ApplePayTransactionIntent: Error creating ModelContainer: \(error)")
+            #endif
             return .result(dialog: "shortcut.error.database")
         }
 
@@ -738,7 +802,13 @@ struct ApplePayTransactionIntent: AppIntent {
             }
         )
 
-        guard let accounts = try? context.fetch(descriptor) else {
+        let accounts: [Account]
+        do {
+            accounts = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ApplePayTransactionIntent: Error fetching accounts: \(error)")
+            #endif
             return nil
         }
 
@@ -835,7 +905,6 @@ private struct AutomationTransactionData: Codable {
     let date: String? // ISO format: YYYY-MM-DD
 }
 
-@available(iOS 16.0, *)
 struct AutomationEntryIntent: AppIntent {
 
     static var title: LocalizedStringResource = "shortcut.automation.title"
@@ -925,10 +994,16 @@ struct AutomationEntryIntent: AppIntent {
         let finalNote = transaction.merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         // Create ModelContainer
-        guard let container = try? ModelContainer(
-            for: SwiftDataConfiguration.schema,
-            configurations: SwiftDataConfiguration.configuration
-        ) else {
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
+            )
+        } catch {
+            #if DEBUG
+            print("AutomationEntryIntent: Error creating ModelContainer: \(error)")
+            #endif
             return .result(dialog: "shortcut.error.database")
         }
 
@@ -1008,7 +1083,13 @@ struct AutomationEntryIntent: AppIntent {
             }
         )
 
-        guard let accounts = try? context.fetch(descriptor) else {
+        let accounts: [Account]
+        do {
+            accounts = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("AutomationEntryIntent: Error fetching accounts: \(error)")
+            #endif
             return nil
         }
 

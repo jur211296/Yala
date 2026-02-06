@@ -106,7 +106,15 @@ final class MerchantMemoryService {
             predicate: #Predicate<MerchantMemory> { $0.lastApprovedAt < sixMonthsAgo }
         )
 
-        guard let staleMemories = try? modelContext.fetch(descriptor) else { return }
+        let staleMemories: [MerchantMemory]
+        do {
+            staleMemories = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("MerchantMemoryService: Error fetching stale memories for decay: \(error)")
+            #endif
+            return
+        }
 
         for memory in staleMemories {
             memory.countApproved = max(0, memory.countApproved - 1)
@@ -127,13 +135,30 @@ final class MerchantMemoryService {
         let descriptor = FetchDescriptor<MerchantMemory>(
             predicate: #Predicate<MerchantMemory> { $0.merchantCanonical == canonical }
         )
-        if let exact = try? modelContext.fetch(descriptor).first {
+        let exactResults: [MerchantMemory]
+        do {
+            exactResults = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("MerchantMemoryService: Error fetching memory by canonical: \(error)")
+            #endif
+            exactResults = []
+        }
+        if let exact = exactResults.first {
             return exact
         }
 
         // 2. Fuzzy match: buscar todas las memorias y comparar similaridad
         let allDescriptor = FetchDescriptor<MerchantMemory>()
-        guard let allMemories = try? modelContext.fetch(allDescriptor) else { return nil }
+        let allMemories: [MerchantMemory]
+        do {
+            allMemories = try modelContext.fetch(allDescriptor)
+        } catch {
+            #if DEBUG
+            print("MerchantMemoryService: Error fetching all memories for fuzzy match: \(error)")
+            #endif
+            return nil
+        }
 
         let threshold = 0.85
 

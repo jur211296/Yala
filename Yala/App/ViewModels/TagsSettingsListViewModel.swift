@@ -97,7 +97,9 @@ final class TagsSettingsListViewModel {
         do {
             tags = try context.fetch(descriptor)
         } catch {
+            #if DEBUG
             print("TagsSettingsListViewModel: Error loading tags: \(error)")
+            #endif
             tags = []
         }
     }

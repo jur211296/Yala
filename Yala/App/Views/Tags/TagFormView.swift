@@ -303,7 +303,9 @@ struct TagFormView: View {
             try deletionService.deleteTag(tag)
             dismiss()
         } catch {
+            #if DEBUG
             print("TagFormView: Error deleting tag: \(error)")
+            #endif
         }
     }
 }

@@ -42,6 +42,13 @@ final class ExchangeRate {
     }
 
     func decodedRates() -> [String: Double] {
-        (try? JSONDecoder().decode([String: Double].self, from: rates)) ?? [:]
+        do {
+            return try JSONDecoder().decode([String: Double].self, from: rates)
+        } catch {
+            #if DEBUG
+            print("ExchangeRate: Error decoding rates for \(dateKey): \(error)")
+            #endif
+            return [:]
+        }
     }
 }

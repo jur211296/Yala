@@ -832,7 +832,9 @@ struct InboxDraftEditSheet: View {
         do {
             try draftService.saveDraft(draft)
         } catch {
+            #if DEBUG
             print("InboxDraftEditSheet: Error saving draft: \(error)")
+            #endif
         }
     }
 
@@ -971,7 +973,9 @@ struct InboxDraftEditSheet: View {
                 showSuccessView = true
             }
         } catch {
+            #if DEBUG
             print("Error approving draft: \(error)")
+            #endif
         }
     }
 
@@ -1020,7 +1024,9 @@ struct InboxDraftEditSheet: View {
             try draftService.rejectDraft(draft)
             dismiss()
         } catch {
+            #if DEBUG
             print("InboxDraftEditSheet: Error rejecting draft: \(error)")
+            #endif
         }
     }
 
@@ -1030,7 +1036,9 @@ struct InboxDraftEditSheet: View {
             try draftService.deleteDraft(draft)
             dismiss()
         } catch {
+            #if DEBUG
             print("InboxDraftEditSheet: Error deleting draft: \(error)")
+            #endif
         }
     }
 }

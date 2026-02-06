@@ -23,7 +23,9 @@ struct TransferMigrationService {
             return
         }
 
+        #if DEBUG
         print("[TransferMigration] Starting migration of positive transfers...")
+        #endif
 
         // Find the Income category and its transfer subcategory
         let incomeCategoryName = "Ingresos"
@@ -37,7 +39,9 @@ struct TransferMigrationService {
             categoryName: incomeCategoryName,
             subcategoryNames: transferSubcategoryNames
         ) else {
+            #if DEBUG
             print("[TransferMigration] Could not find or create income transfer subcategory")
+            #endif
             return
         }
 
@@ -64,16 +68,22 @@ struct TransferMigrationService {
 
             if migratedCount > 0 {
                 try context.save()
+                #if DEBUG
                 print("[TransferMigration] Migrated \(migratedCount) positive transfer(s) to Ingresos")
+                #endif
             } else {
+                #if DEBUG
                 print("[TransferMigration] No positive transfers needed migration")
+                #endif
             }
 
             // Mark migration as completed
             UserDefaults.standard.set(true, forKey: migrationCompletedKey)
 
         } catch {
+            #if DEBUG
             print("[TransferMigration] Error during migration: \(error)")
+            #endif
         }
     }
 
@@ -85,7 +95,15 @@ struct TransferMigrationService {
     ) -> Subcategory? {
         // Try to find existing subcategory
         let descriptor = FetchDescriptor<Subcategory>()
-        guard let allSubcategories = try? context.fetch(descriptor) else { return nil }
+        let allSubcategories: [Subcategory]
+        do {
+            allSubcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("[TransferMigration] Error fetching subcategories: \(error)")
+            #endif
+            return nil
+        }
 
         for subcategory in allSubcategories {
             if subcategory.safeCategory.name == categoryName,
@@ -98,7 +116,16 @@ struct TransferMigrationService {
         let catDescriptor = FetchDescriptor<Category>(
             predicate: #Predicate { $0.name == categoryName }
         )
-        guard let incomeCategory = try? context.fetch(catDescriptor).first else {
+        let fetchedCategoryResults: [Category]
+        do {
+            fetchedCategoryResults = try context.fetch(catDescriptor)
+        } catch {
+            #if DEBUG
+            print("[TransferMigration] Error fetching income category: \(error)")
+            #endif
+            return nil
+        }
+        guard let incomeCategory = fetchedCategoryResults.first else {
             return nil
         }
 
@@ -115,7 +142,9 @@ struct TransferMigrationService {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("[TransferMigration] Warning: Could not save new subcategory: \(error)")
+            #endif
         }
 
         return subcategory
