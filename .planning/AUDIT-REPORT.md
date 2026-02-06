@@ -354,7 +354,7 @@ var shouldShowImageEntry: Bool = false    // Image entry triggering
 | ID | Problema | Archivos Afectados |
 |----|----------|-------------------|
 | UI-003 | 0 accessibilityLabel en Views | ~20 componentes interactivos |
-| UI-004 | Colores primarios sin alias semántico | NetoBadge, SubcategoryTransferSheet |
+| UI-004 | Colores primarios sin alias semántico | YalaBadge, SubcategoryTransferSheet |
 | UI-005 | `Color.black.opacity()` para bordes | CategoryDetailView, ScheduledPaymentDetailView |
 
 ### Accesibilidad Faltante

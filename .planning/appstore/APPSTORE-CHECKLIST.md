@@ -2,7 +2,7 @@
 
 ## Overview
 
-Este documento guía la preparación de assets y metadata para publicar Neto en App Store.
+Este documento guía la preparación de assets y metadata para publicar Yala en App Store.
 
 **Idiomas soportados:** ES (principal), EN, DE, FR, IT, PT
 
@@ -44,7 +44,7 @@ Este documento guía la preparación de assets y metadata para publicar Neto en 
 
 ### Cómo Capturar (Xcode)
 
-1. Ejecutar app en Simulator con dispositivo 6.7" (iPhone 15 Pro Max)
+1. Ejecutar app en Simulator con dispositivo 6.7" (iPhone 17 Pro)
 2. Navegar a la pantalla deseada
 3. `Cmd + S` para guardar screenshot
 4. Screenshots se guardan en Desktop por defecto
@@ -78,7 +78,7 @@ Este documento guía la preparación de assets y metadata para publicar Neto en 
 ### Español (ES) - Principal
 
 ```
-App Name: Neto
+App Name: Yala
 Subtitle: Finanzas personales claras
 Promotional Text: Controla tus gastos, entiende tu dinero. Sin complicaciones.
 Keywords: finanzas,gastos,presupuesto,dinero,cuentas,ahorro,balance,personal
@@ -87,7 +87,7 @@ Keywords: finanzas,gastos,presupuesto,dinero,cuentas,ahorro,balance,personal
 ### English (EN)
 
 ```
-App Name: Neto
+App Name: Yala
 Subtitle: Clear personal finances
 Promotional Text: Track expenses, understand your money. No complications.
 Keywords: finance,expenses,budget,money,accounts,savings,balance,personal
@@ -96,7 +96,7 @@ Keywords: finance,expenses,budget,money,accounts,savings,balance,personal
 ### Deutsch (DE)
 
 ```
-App Name: Neto
+App Name: Yala
 Subtitle: Klare persönliche Finanzen
 Promotional Text: Verfolge Ausgaben, verstehe dein Geld. Ohne Komplikationen.
 Keywords: finanzen,ausgaben,budget,geld,konten,sparen,bilanz,persönlich
@@ -105,7 +105,7 @@ Keywords: finanzen,ausgaben,budget,geld,konten,sparen,bilanz,persönlich
 ### Français (FR)
 
 ```
-App Name: Neto
+App Name: Yala
 Subtitle: Finances personnelles claires
 Promotional Text: Suivez vos dépenses, comprenez votre argent. Sans complications.
 Keywords: finances,dépenses,budget,argent,comptes,épargne,solde,personnel
@@ -114,7 +114,7 @@ Keywords: finances,dépenses,budget,argent,comptes,épargne,solde,personnel
 ### Italiano (IT)
 
 ```
-App Name: Neto
+App Name: Yala
 Subtitle: Finanze personali chiare
 Promotional Text: Traccia le spese, comprendi i tuoi soldi. Senza complicazioni.
 Keywords: finanze,spese,budget,soldi,conti,risparmio,bilancio,personale
@@ -123,7 +123,7 @@ Keywords: finanze,spese,budget,soldi,conti,risparmio,bilancio,personale
 ### Português (PT)
 
 ```
-App Name: Neto
+App Name: Yala
 Subtitle: Finanças pessoais claras
 Promotional Text: Acompanhe gastos, entenda seu dinheiro. Sem complicações.
 Keywords: finanças,gastos,orçamento,dinheiro,contas,poupança,saldo,pessoal
@@ -136,7 +136,7 @@ Keywords: finanças,gastos,orçamento,dinheiro,contas,poupança,saldo,pessoal
 ### Español (plantilla base)
 
 ```
-Neto te ayuda a entender tus finanzas personales con claridad.
+Yala te ayuda a entender tus finanzas personales con claridad.
 
 REGISTRA TUS GASTOS
 • Añade transacciones rápidamente con calculadora integrada
@@ -166,13 +166,13 @@ PERSONALIZA TU EXPERIENCIA
 • Configura qué widgets ver en tu panel
 • Exporta e importa tus datos
 
-Neto es 100% offline y tus datos se quedan en tu dispositivo.
+Yala es 100% offline y tus datos se quedan en tu dispositivo.
 ```
 
 ### English (EN)
 
 ```
-Neto helps you understand your personal finances with clarity.
+Yala helps you understand your personal finances with clarity.
 
 TRACK YOUR EXPENSES
 • Add transactions quickly with built-in calculator
@@ -202,13 +202,13 @@ CUSTOMIZE YOUR EXPERIENCE
 • Configure which widgets to display
 • Export and import your data
 
-Neto is 100% offline and your data stays on your device.
+Yala is 100% offline and your data stays on your device.
 ```
 
 ### Deutsch (DE)
 
 ```
-Neto hilft dir, deine persönlichen Finanzen klar zu verstehen.
+Yala hilft dir, deine persönlichen Finanzen klar zu verstehen.
 
 ERFASSE DEINE AUSGABEN
 • Füge Transaktionen schnell mit integriertem Rechner hinzu
@@ -238,13 +238,13 @@ PERSONALISIERE DEIN ERLEBNIS
 • Konfiguriere angezeigte Widgets
 • Exportiere und importiere deine Daten
 
-Neto ist 100% offline und deine Daten bleiben auf deinem Gerät.
+Yala ist 100% offline und deine Daten bleiben auf deinem Gerät.
 ```
 
 ### Français (FR)
 
 ```
-Neto t'aide à comprendre tes finances personnelles avec clarté.
+Yala t'aide à comprendre tes finances personnelles avec clarté.
 
 ENREGISTRE TES DÉPENSES
 • Ajoute des transactions rapidement avec calculatrice intégrée
@@ -274,13 +274,13 @@ PERSONNALISE TON EXPÉRIENCE
 • Configure les widgets affichés
 • Exporte et importe tes données
 
-Neto est 100% hors ligne et tes données restent sur ton appareil.
+Yala est 100% hors ligne et tes données restent sur ton appareil.
 ```
 
 ### Italiano (IT)
 
 ```
-Neto ti aiuta a capire le tue finanze personali con chiarezza.
+Yala ti aiuta a capire le tue finanze personali con chiarezza.
 
 REGISTRA LE TUE SPESE
 • Aggiungi transazioni rapidamente con calcolatrice integrata
@@ -310,13 +310,13 @@ PERSONALIZZA LA TUA ESPERIENZA
 • Configura quali widget visualizzare
 • Esporta e importa i tuoi dati
 
-Neto è 100% offline e i tuoi dati rimangono sul tuo dispositivo.
+Yala è 100% offline e i tuoi dati rimangono sul tuo dispositivo.
 ```
 
 ### Português (PT)
 
 ```
-Neto te ajuda a entender suas finanças pessoais com clareza.
+Yala te ajuda a entender suas finanças pessoais com clareza.
 
 REGISTRE SEUS GASTOS
 • Adicione transações rapidamente com calculadora integrada
@@ -346,7 +346,7 @@ PERSONALIZE SUA EXPERIÊNCIA
 • Configure quais widgets exibir
 • Exporte e importe seus dados
 
-Neto é 100% offline e seus dados ficam no seu dispositivo.
+Yala é 100% offline e seus dados ficam no seu dispositivo.
 ```
 
 ---

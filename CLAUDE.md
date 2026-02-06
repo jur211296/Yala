@@ -32,8 +32,8 @@ Ejemplos de APIs a usar:
 **Regla:** Si existe una API de iOS 26 que mejore la integración con el sistema, USARLA en lugar de soluciones manuales.
 
 ## SwiftData (fuente de verdad)
-El ModelContainer se configura en YalaApp.swift con estas entidades:
-Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
+El ModelContainer se configura via `SwiftDataConfiguration` con estas entidades:
+Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem
 
 ## Divisas (Single Source of Truth)
 **Archivo:** `Yala/Utils/CurrencyUtils.swift` → enum `CurrencyCode`
@@ -121,6 +121,9 @@ Usar el comando apropiado según el tipo de cambio:
 - `TagTests` - Operaciones con tags
 - `TrendProcessingTests` - Procesamiento de tendencias
 - `TrendGroupingTests` - Agrupación de tendencias
+- `NewTransactionViewModelTests` - ViewModel de transacciones (35 tests)
+- `BudgetsViewModelTests` - ViewModel de presupuestos (11 tests)
+- `InboxViewModelTests` - ViewModel de bandeja de entrada (10 tests)
 
 ## Reglas de cambio
 - Evitar refactors grandes si no son necesarios para el feature actual
@@ -270,8 +273,6 @@ private var items: [MiModelo] { viewModel.items }
 ```
 
 ## Control de Ejecución de Comandos
-
-**CRÍTICO:** Consultar EXECUTION-RULES.md para saber qué comandos requieren instrucción explícita del usuario vs cuáles pueden ejecutarse automáticamente.
 
 **Patrón fundamental después de implementar código:**
 1. Mostrar resumen de cambios realizados

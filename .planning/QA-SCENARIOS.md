@@ -1,4 +1,4 @@
-# QA Scenarios - Neto V1.0
+# QA Scenarios - Yala V1.0/V1.1
 
 Documento exhaustivo de escenarios de prueba manual para validación pre-release.
 Ordenado por dependencias de datos para ejecución secuencial.

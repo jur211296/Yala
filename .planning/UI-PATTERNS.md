@@ -94,7 +94,7 @@ HStack {
 - **NUNCA** escribir `.padding(16)` - usar `.padding(.horizontal, DS.Spacing.lg)`
 
 ### 3. Colores Semánticos
-- **SIEMPRE** usar colores del sistema: `Color.netoBackground`, `Color.yalaCard`, `Color.electricIndigo`
+- **SIEMPRE** usar colores del sistema: `Color.yalaBackground`, `Color.yalaCard`, `Color.electricIndigo`
 - **NUNCA** usar colores hardcodeados como `Color.blue` o `Color(hex: "...")`
 
 ---
@@ -148,10 +148,10 @@ HStack {
 - `Color.priorityNature` - Gastos prioritarios/esenciales (teal)
 
 ### Colores Semánticos
-- `Color.netoBackground` - Fondo de app
+- `Color.yalaBackground` - Fondo de app
 - `Color.yalaCard` - Fondo de tarjetas/modales
-- `Color.netoPrimaryText` - Texto principal
-- `Color.netoSecondaryText` - Texto secundario
+- `Color.yalaPrimaryText` - Texto principal
+- `Color.yalaSecondaryText` - Texto secundario
 
 ### Regla de Montos
 - **Ingresos**: `Color.electricIndigo`
@@ -205,8 +205,8 @@ Button(action: onTap) {
 |------|-----|------------|
 | Primario | Acción principal | `YalaPrimaryButton` |
 | Secundario | Acciones alternativas | `YalaSecondaryButton` |
-| Texto | Links, acciones terciarias | `NetoTextButton` |
-| Toolbar | Navegación, cerrar | `NetoToolbarButton` |
+| Texto | Links, acciones terciarias | `YalaTextButton` |
+| Toolbar | Navegación, cerrar | `YalaToolbarButton` |
 | Guardar | Confirmación circular | `YalaSaveButton` |
 
 ### Empty States
@@ -216,15 +216,15 @@ Button(action: onTap) {
 
 ### Loading States
 - `YalaLoadingOverlay` - Modal con overlay oscuro
-- `NetoLoadingInline` - Indicador pequeño inline
-- `NetoLoadingFullScreen` - Pantalla completa
+- `YalaLoadingInline` - Indicador pequeño inline
+- `YalaLoadingFullScreen` - Pantalla completa
 - Skeletons para contenido: `WidgetSkeleton`, `LatestRecordsSkeleton`, etc.
 
 ### Badges
 - `YalaBadge` - Badge genérico (filled/soft/outline)
-- `NetoStatusBadge` - Estados (success/warning/error/info)
-- `NetoTagBadge` - Tags de transacciones
-- `NetoCountBadge` - Contadores
+- `YalaStatusBadge` - Estados (success/warning/error/info)
+- `YalaTagBadge` - Tags de transacciones
+- `YalaCountBadge` - Contadores
 
 ---
 
@@ -514,12 +514,12 @@ Antes de commitear cambios de UI, verificar:
 
 ## Archivos de Referencia
 
-- **Design Tokens**: `Neto/App/Theme/DesignTokens.swift`
-- **Botones**: `Neto/App/Views/Shared/StandardButtons.swift`
-- **Empty States**: `Neto/App/Views/Shared/YalaEmptyState.swift`
-- **Badges**: `Neto/App/Views/Shared/YalaBadge.swift`
-- **Loading**: `Neto/App/Views/Shared/YalaLoadingOverlay.swift`
-- **Skeletons**: `Neto/App/Views/Shared/SkeletonView.swift`
-- **Section Headers**: `Neto/App/Views/Shared/YalaSectionHeader.swift`
-- **Form Rows**: `Neto/App/Views/Transactions/TransactionFormRow.swift`
-- **List Rows**: `Neto/App/Views/Records/Components/RecordRowView.swift`
+- **Design Tokens**: `Yala/App/Theme/DesignTokens.swift`
+- **Botones**: `Yala/App/Views/Shared/StandardButtons.swift`
+- **Empty States**: `Yala/App/Views/Shared/YalaEmptyState.swift`
+- **Badges**: `Yala/App/Views/Shared/YalaBadge.swift`
+- **Loading**: `Yala/App/Views/Shared/YalaLoadingOverlay.swift`
+- **Skeletons**: `Yala/App/Views/Shared/SkeletonView.swift`
+- **Section Headers**: `Yala/App/Views/Shared/YalaSectionHeader.swift`
+- **Form Rows**: `Yala/App/Views/Transactions/TransactionFormRow.swift`
+- **List Rows**: `Yala/App/Views/Records/Components/RecordRowView.swift`

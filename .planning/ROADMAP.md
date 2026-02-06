@@ -1,4 +1,4 @@
-# Roadmap: Neto
+# Roadmap: Yala
 
 ## Overview
 
@@ -37,7 +37,7 @@ Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
 - [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT) ✅
-- [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, modo Solo Gastos, modelo Pro/Free
+- [x] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría ✅
 
 ### V1.2 (App Store Release)
 - [ ] **Fase 11: Plataforma Extendida** - Watch, iPad/Mac, Smart Insights, reportes
@@ -178,7 +178,6 @@ DoD:
 **Goal**: Preparar V1.0 para release público en TestFlight
 **Depends on**: Fase 6
 **Research**: Unlikely
-**Spec**: .planning/PHASE7-BETAPREP-SPEC.md
 **Plans**: TBD
 
 Subfases:
@@ -264,7 +263,6 @@ DoD:
 **Goal**: Automatizar entrada de transacciones con IA
 **Depends on**: Fase 7
 **Research**: Done
-**Spec**: .planning/PHASE8-REGISTRO-SPEC.md
 
 Subfases:
 - [x] 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación) ✅
@@ -402,51 +400,59 @@ DoD:
 **10.5.F: Modal Unificado Inbox** ✅
 - [x] F.1: Modal para pagos planificados/suscripciones/automatizaciones
 
-**10.5.G: Sincronización y Widgets** ✅ (con bugs pendientes)
+**10.5.G: Sincronización y Widgets** ✅
 - [x] G.1: iCloud Sync (CloudKit private database)
-- [x] G.2: Widgets iOS (WidgetKit) — ⚠️ requiere rediseño completo
-- [x] G.3: Control Center — ⚠️ intents no navegan correctamente
+- [x] G.2: Widgets iOS (WidgetKit) — rediseñado completo
+- [x] G.3: Control Center — intents funcionales
+- [x] G.4: Personalización de Widgets (tema, selección)
 
 ---
 
-**🔴 PRIORIDAD ABSOLUTA: Bugs Urgentes (resolver antes de H-K)**
-
-| Bug | Descripción | Esfuerzo |
-|-----|-------------|----------|
-| BUG-1 | Orden notificaciones presupuesto (Onboarding + Settings) | Bajo |
-| BUG-2 | Control Center intents no abren URLs | Bajo |
-| BUG-3 | WidgetKit rediseño completo (15 problemas) | Alto |
-| BUG-4 | Divisas recomendadas en Onboarding | Medio |
+**Bugs Urgentes** ✅ RESUELTOS
+- [x] BUG-1: Orden notificaciones presupuesto ✅
+- [x] BUG-2: Control Center intents ✅
+- [x] BUG-3: WidgetKit rediseño completo (15 issues) ✅
+- [x] BUG-4: Divisas recomendadas en Onboarding ✅
 
 ---
 
-**10.5.H: Navegación y UI**
-- [ ] H.1: Crear tab propia de Registros (separar de Statistics)
-- [ ] H.2: Animaciones nivel app (estilo FAB) y haptic feedback en botones importantes
+**10.5.H: Notificaciones Personalizadas** ✅
+- [x] H.1: Notificaciones con datos reales (pagos, presupuestos, reportes)
 
-**10.5.I: Personalización**
-- [ ] I.1: Opción para ocultar variaciones (chips de %)
-- [ ] I.2: Reorganizar Personalización por secciones lógicas
-- [ ] I.3: Definir defaults sensatos para todas las preferencias
+**10.5.I: Toggle Comparativas** ✅
+- [x] I.1: Toggle para ocultar variaciones vs periodo anterior
 
-**10.5.J: Suscripción Pro**
-- [ ] J.1: Separar funcionalidades Pro vs Free (definir matriz)
-- [ ] J.2: Configurar planes Pro con 7 días gratis de prueba
+**10.5.J: Tab Registros Standalone** ✅
+- [x] J.1: Nueva tab "Registros" independiente con FAB completo
 
-**10.5.K: Modo Solo Gastos**
-- [ ] K.1: Implementar modo "Solo gastos" (ocultar ingresos y saldos globalmente)
-- [ ] K.2: Toggle en Personalización
-- [ ] K.3: Opción en Onboarding
+**10.5.K: Animaciones y Haptics** ✅
+- [x] K.1: DS.Haptic helpers centralizados, DS.Animation springs
+- [x] K.2: Haptics en FAB, save, delete, selection
 
-DoD:
-- iCloud Sync funcional con datos privados
-- Widgets en pantalla de inicio con datos actualizados
-- Atajos accesibles desde centro de control
-- Tab de Registros independiente
-- Animaciones y haptics consistentes
-- Personalización reorganizada con defaults sensatos
-- Modelo Pro/Free claramente definido
-- Modo Solo Gastos oculta ingresos/saldos en toda la app
+**10.5.L: Sistema Pro/Free** ✅
+- [x] L.1: FeatureGateService con límites Free (2 cuentas, 3 presupuestos)
+- [x] L.2: ProBadge, UpgradePromptSheet, gates en vistas
+
+**10.5.M-N: Fix Notificaciones y Sync** ✅
+- [x] M.1: Deep links en notificaciones, contenido dinámico
+- [x] N.1: Fix sincronización al eliminar transacciones
+
+**10.5.O: Auditoría Pre-Launch** ✅
+- [x] O.1: PrivacyInfo.xcprivacy, prints en #if DEBUG, try? → do/catch
+
+**10.5.P: Mejoras Onboarding** ✅
+- [x] P.1: LanguageManager, idioma pre-onboarding, brand voice
+
+**10.5.Q: Fix Dark Mode** ✅
+- [x] Q.1: List→ScrollView+SectionBox en 4 vistas
+
+DoD: ✅
+- iCloud Sync funcional con datos privados ✅
+- Widgets en pantalla de inicio con datos actualizados ✅
+- Atajos accesibles desde centro de control ✅
+- Tab de Registros independiente ✅
+- Animaciones y haptics consistentes ✅
+- Modelo Pro/Free claramente definido ✅
 
 ---
 
@@ -521,7 +527,7 @@ Ideas capturadas para evaluación posterior:
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
 | 10 | Refinamiento & Polish | ✅ Done | 2026-01-30 |
-| 10.5 | Mejoras Pre-Release | In progress | - |
+| 10.5 | Mejoras Pre-Release | ✅ Done | 2026-02-06 |
 
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
