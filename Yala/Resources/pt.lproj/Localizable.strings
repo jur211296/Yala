@@ -1264,8 +1264,8 @@
 
 // MARK: - Onboarding
 
-"onboarding.welcomeTitle" = "Bem-vindo ao Yala";
-"onboarding.welcomeSubtitle" = "Configure seu aplicativo de finanças pessoais em segundos.";
+"onboarding.welcomeTitle" = "Vamos organizar seu dinheiro";
+"onboarding.welcomeSubtitle" = "Só alguns passos para personalizar o Yala para você.";
 "onboarding.nameLabel" = "Qual é o seu nome?";
 "onboarding.namePlaceholder" = "Seu nome";
 "onboarding.currencyTitle" = "Moeda principal";
@@ -1289,7 +1289,7 @@
 "onboarding.notificationsDeselectAll" = "Desativar tudo";
 "onboarding.recommended" = "Recomendada";
 "onboarding.languageTitle" = "Escolha seu idioma";
-"onboarding.languageSubtitle" = "Yala está disponível nestes idiomas. Escolha o que preferir.";
+"onboarding.languageSubtitle" = "Detectamos que seu idioma ainda não é suportado. Não se preocupe, escolha entre estas opções!";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";
@@ -1726,6 +1726,9 @@
 "icloud.noAccountWarning" = "Entre no iCloud em Ajustes para ativar a sincronização.";
 "icloud.syncingData" = "Sincronizando seus dados...";
 "icloud.syncingDescription" = "Estamos recuperando suas informações do iCloud.";
+"icloud.dataFoundTitle" = "Dados encontrados!";
+"icloud.dataFoundMessage" = "Encontramos seus dados no iCloud. Não é preciso configurar novamente.";
+"icloud.dataFoundAction" = "Continuar";
 
 // MARK: - Feature Gate
 

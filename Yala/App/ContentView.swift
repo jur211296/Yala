@@ -13,9 +13,10 @@ import SwiftUI
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding: Bool = false
+    @State private var showLanguageSelection: Bool = false
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
-    @State private var isWaitingForSync: Bool = false
+    @State private var showICloudDataFound: Bool = false
     @Environment(\.scenePhase) private var scenePhase
 
     /// Query to detect existing data (for iCloud sync detection)
@@ -33,12 +34,12 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // iCloud sync loading view (when waiting for data)
-            if isWaitingForSync {
-                cloudSyncLoadingView
-            } else {
-                // Main content (always rendered underneath)
+            // Main content only when onboarding is done; static background otherwise
+            if hasCompletedOnboarding {
                 MainTabView()
+            } else {
+                Color.yalaBackground
+                    .ignoresSafeArea()
             }
 
             // Splash screen overlay
@@ -58,16 +59,32 @@ struct ContentView: View {
             await checkInitialSyncState()
         }
         .onChange(of: accounts.count) { _, newCount in
-            // Detect when data arrives from iCloud
-            if isWaitingForSync && newCount > 0 {
-                isWaitingForSync = false
-                hasCompletedOnboarding = true
+            // iCloud data arrived while user is in onboarding — notify them
+            if showOnboarding && newCount > 0 {
+                showICloudDataFound = true
             }
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
             // React to data wipe: show onboarding when flag is reset
-            if !newValue && !isWaitingForSync {
+            if !newValue {
                 showOnboarding = true
+            }
+        }
+        .alert(L10n.iCloud.dataFoundTitle, isPresented: $showICloudDataFound) {
+            Button(L10n.iCloud.dataFoundAction) {
+                showOnboarding = false
+                hasCompletedOnboarding = true
+            }
+        } message: {
+            Text(L10n.iCloud.dataFoundMessage)
+        }
+        .fullScreenCover(isPresented: $showLanguageSelection) {
+            LanguageSelectionView {
+                showLanguageSelection = false
+                // Only show onboarding if the user hasn't completed it before
+                if !hasCompletedOnboarding {
+                    showOnboarding = true
+                }
             }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
@@ -123,57 +140,35 @@ struct ContentView: View {
         }
     }
 
-    /// Check initial sync state and decide whether to show onboarding or wait for iCloud data
-    private func checkInitialSyncState() async {
-        // Guard: if already completed onboarding, nothing to do
-        guard !hasCompletedOnboarding else { return }
-
-        // Small delay to let @Query hydrate with local data
-        try? await Task.sleep(for: .milliseconds(200))
-
-        // If there's already data (from iCloud or local), mark as completed
-        if hasExistingData {
-            hasCompletedOnboarding = true
-            return
-        }
-
-        // If no iCloud available, show onboarding directly
-        guard SwiftDataConfiguration.isICloudAvailable() else {
-            showOnboarding = true
-            return
-        }
-
-        // iCloud available but no data yet: wait for sync
-        isWaitingForSync = true
-
-        // Timeout of 5 seconds
-        try? await Task.sleep(for: .seconds(5))
-
-        // If still waiting and no data arrived, show onboarding
-        if isWaitingForSync && !hasExistingData {
-            isWaitingForSync = false
-            showOnboarding = true
-        }
+    /// Whether the device language needs an in-app override
+    private var needsLanguageSelection: Bool {
+        !LanguageManager.deviceLanguageIsSupported && LanguageManager.overrideLanguage == nil
     }
 
-    /// Loading view shown while waiting for iCloud sync
-    @ViewBuilder
-    private var cloudSyncLoadingView: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            ProgressView()
-                .scaleEffect(1.5)
+    /// Check initial state and decide whether to show language selection, onboarding, or go straight to app.
+    /// Runs during splash so the wait is invisible to the user.
+    private func checkInitialSyncState() async {
+        // Wait during splash to give iCloud time to deliver data
+        try? await Task.sleep(for: .seconds(2))
 
-            Text(L10n.iCloud.syncingData)
-                .font(.headline)
-
-            Text(L10n.iCloud.syncingDescription)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        if hasCompletedOnboarding || hasExistingData {
+            // Returning user (data from iCloud or previous install)
+            if hasExistingData {
+                hasCompletedOnboarding = true
+            }
+            // Still check if language selection is needed (new feature, per-device)
+            if needsLanguageSelection {
+                showLanguageSelection = true
+            }
+            return
         }
-        .padding(DS.Spacing.xxl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.yalaBackground)
+
+        // New user — no data, no previous onboarding
+        if needsLanguageSelection {
+            showLanguageSelection = true
+        } else {
+            showOnboarding = true
+        }
     }
 }
 
