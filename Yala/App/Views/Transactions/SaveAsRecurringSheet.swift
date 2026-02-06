@@ -92,10 +92,15 @@ struct SaveAsRecurringSheet: View {
         self._amountString = State(initialValue: amount > 0 ? String(format: "%.2f", amount) : "")
         self._note = State(initialValue: note)
         self._includeNote = State(initialValue: !note.isEmpty)
-        self._startDate = State(initialValue: transactionDate)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
+        self._startDate = State(initialValue: max(tomorrow, transactionDate))
         self._dayOfMonth = State(initialValue: Calendar.current.component(.day, from: transactionDate))
         self._yearlyMonth = State(initialValue: Calendar.current.component(.month, from: transactionDate))
         self._yearlyDay = State(initialValue: Calendar.current.component(.day, from: transactionDate))
+    }
+
+    private var tomorrow: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
     }
 
     private var parsedAmount: Double {
@@ -529,7 +534,7 @@ struct SaveAsRecurringSheet: View {
 
             Spacer()
 
-            DatePicker("", selection: $startDate, displayedComponents: .date)
+            DatePicker("", selection: $startDate, in: tomorrow..., displayedComponents: .date)
                 .labelsHidden()
         }
         .padding()
@@ -695,7 +700,7 @@ struct SaveAsRecurringSheet: View {
 
             Spacer()
 
-            DatePicker("", selection: $startDate, displayedComponents: .date)
+            DatePicker("", selection: $startDate, in: tomorrow..., displayedComponents: .date)
                 .labelsHidden()
         }
         .padding()

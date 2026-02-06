@@ -72,6 +72,11 @@ struct BulkEditSheet: View {
     // Track applied changes
     @State private var appliedChanges: Set<BulkEditOption> = []
 
+    // Detected transaction type for subcategory filtering
+    private var detectedTransactionType: TransactionType? {
+        viewModel.getSelectedTransactionType()
+    }
+
     // Selected values for editing
     @State private var selectedAccount: Account?
     @State private var selectedSubcategory: Subcategory?
@@ -99,12 +104,15 @@ struct BulkEditSheet: View {
                                         SubsectionDivider()
                                     }
 
+                                    let isDisabled = option == .subcategory && detectedTransactionType == nil
                                     BulkEditOptionRow(
                                         option: option,
                                         isApplied: appliedChanges.contains(option)
                                     ) {
                                         handleOptionTap(option)
                                     }
+                                    .opacity(isDisabled ? 0.4 : 1.0)
+                                    .allowsHitTesting(!isDisabled)
                                 }
                             }
                         }
@@ -152,7 +160,7 @@ struct BulkEditSheet: View {
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $selectedSubcategory,
-                    transactionType: .expense
+                    transactionType: detectedTransactionType ?? .expense
                 )
                 .onDisappear {
                     if let subcategory = selectedSubcategory {
@@ -228,6 +236,7 @@ struct BulkEditSheet: View {
             selectedAccount = nil
             showAccountSelector = true
         case .subcategory:
+            guard detectedTransactionType != nil else { return }
             selectedSubcategory = nil
             showSubcategorySelector = true
         case .tag:

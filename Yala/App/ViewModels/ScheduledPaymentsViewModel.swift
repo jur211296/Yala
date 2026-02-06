@@ -332,9 +332,11 @@ final class ScheduledPaymentsViewModel {
         return filtered
     }
 
-    /// Calculate total monthly subscription spending for a given month
-    func calculateMonthlyTotal(subscriptions: [ScheduledPayment], for month: Date) -> Double {
+    /// Calculate total monthly subscription spending for a given month, converting all amounts to preferredCurrencyCode
+    func calculateMonthlyTotal(subscriptions: [ScheduledPayment], for month: Date, preferredCurrencyCode: String? = nil) -> Double {
         var total: Double = 0
+        let converter = CurrencyConverter.shared
+        let targetCurrency = preferredCurrencyCode
 
         // Only count expenses (exclude income payments)
         let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
@@ -342,7 +344,25 @@ final class ScheduledPaymentsViewModel {
         for subscription in expensePayments {
             // Calculate how many times this subscription occurs in the month
             let occurrences = getPaymentDatesInMonth(payment: subscription, month: month)
-            total += subscription.amount * Double(occurrences.count)
+            let rawAmount = subscription.amount * Double(occurrences.count)
+
+            // Convert currency if needed
+            if let target = targetCurrency, subscription.currencyCode != target, rawAmount > 0 {
+                let decimalAmount = Decimal(rawAmount)
+                let converted: Decimal
+                if let context = modelContext {
+                    converted = converter.convertWithLatestRate(
+                        decimalAmount, from: subscription.currencyCode, to: target, context: context
+                    )
+                } else {
+                    converted = converter.convertWithFallback(
+                        decimalAmount, from: subscription.currencyCode, to: target
+                    )
+                }
+                total += NSDecimalNumber(decimal: converted).doubleValue
+            } else {
+                total += rawAmount
+            }
         }
 
         return total

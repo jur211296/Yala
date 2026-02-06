@@ -13,6 +13,7 @@ import SwiftUI
 
 /// ViewModel for the Records list view
 /// Manages filter state, selection, and computed data
+@MainActor
 @Observable
 final class RecordsViewModel: Filterable {
 
@@ -479,6 +480,35 @@ final class RecordsViewModel: Filterable {
         return selectedRecordIDs.compactMap { id in
             flatTransactions.first { $0.persistentModelID == id }?.tags
         }
+    }
+
+    /// Detect the transaction type of selected records for bulk edit filtering
+    /// Returns .income if all non-transfer selections are income,
+    /// .expense if all are expense, nil if mixed or only transfers
+    func getSelectedTransactionType() -> TransactionType? {
+        let flatTransactions = groupedRecords.flatMap { $0.records }
+        let selected = flatTransactions.filter { selectedRecordIDs.contains($0.persistentModelID) }
+
+        var hasIncome = false
+        var hasExpense = false
+
+        for transaction in selected {
+            // Skip transactions without subcategory and transfers (system subcategory)
+            guard let subcategory = transaction.subcategory else { continue }
+            if subcategory.isSystemSubcategory { continue }
+
+            if subcategory.safeCategory.isIncome {
+                hasIncome = true
+            } else {
+                hasExpense = true
+            }
+            // Early exit if mixed
+            if hasIncome && hasExpense { return nil }
+        }
+
+        if hasIncome && !hasExpense { return .income }
+        if hasExpense && !hasIncome { return .expense }
+        return nil  // Mixed or only transfers
     }
 
     /// Helper to fetch selected transactions from context

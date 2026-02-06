@@ -39,7 +39,7 @@ struct ScheduledPaymentEditorView: View {
     @State private var isRecurring: Bool = true
     @State private var recurrenceType: RecurrenceType = .monthly
     @State private var recurrenceInterval: Int = 1
-    @State private var paymentDate: Date = Date()  // For one-time or start date
+    @State private var paymentDate: Date = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()  // For one-time or start date
     @State private var dayOfMonth: Int = 1
     @State private var selectedWeekdays: Set<Int> = [2]  // Default Monday (2)
     @State private var yearlyMonth: Int = 1
@@ -61,6 +61,10 @@ struct ScheduledPaymentEditorView: View {
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
+
+    private var tomorrow: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
+    }
 
     init(payment: ScheduledPayment?, defaultCategory: String? = nil, onDelete: (() -> Void)? = nil) {
         self.payment = payment
@@ -489,12 +493,22 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            DatePicker(
-                "",
-                selection: $paymentDate,
-                displayedComponents: .date
-            )
-            .labelsHidden()
+            if payment == nil {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    in: tomorrow...,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            } else {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            }
         }
         .padding()
     }
@@ -663,12 +677,22 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            DatePicker(
-                "",
-                selection: $paymentDate,
-                displayedComponents: .date
-            )
-            .labelsHidden()
+            if payment == nil {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    in: tomorrow...,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            } else {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            }
         }
         .padding()
     }

@@ -55,7 +55,8 @@ struct ScheduledPaymentsListView: View {
     private var summaryCard: some View {
         let monthlyTotal = viewModel.calculateMonthlyTotal(
             subscriptions: activePayments,
-            for: viewModel.calendarDisplayedMonth
+            for: viewModel.calendarDisplayedMonth,
+            preferredCurrencyCode: currencyCode
         )
 
         return VStack(spacing: DS.Spacing.md) {

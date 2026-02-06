@@ -9,6 +9,8 @@ import SwiftData
 import SwiftUI
 
 struct ScheduledPaymentsWidget: View {
+    @Environment(\.modelContext) private var modelContext
+
     let payments: [ScheduledPayment]
     let currencyCode: String
     let period: DetailPeriod
@@ -207,13 +209,27 @@ struct ScheduledPaymentsWidget: View {
         }
 
         var total: Double = 0
+        let converter = CurrencyConverter.shared
 
         // Only count expenses (exclude income payments)
         let expensePayments = filteredPayments.filter { $0.transactionType != "income" }
 
         for payment in expensePayments {
             let occurrences = getPaymentDatesInMonth(payment: payment, month: displayMonth)
-            total += payment.amount * Double(occurrences.count)
+            let rawAmount = payment.amount * Double(occurrences.count)
+
+            // Convert currency if needed
+            if payment.currencyCode != currencyCode, rawAmount > 0 {
+                let converted = converter.convertWithLatestRate(
+                    Decimal(rawAmount),
+                    from: payment.currencyCode,
+                    to: currencyCode,
+                    context: modelContext
+                )
+                total += NSDecimalNumber(decimal: converted).doubleValue
+            } else {
+                total += rawAmount
+            }
         }
 
         return total
@@ -391,7 +407,7 @@ struct ScheduledPaymentsWidget: View {
         let calendar = Calendar.current
         let daysInMonth = calendar.range(of: .day, in: .month, for: displayMonth)?.count ?? 30
 
-        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: displayMonth))!
+        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: displayMonth)) ?? displayMonth
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
 
