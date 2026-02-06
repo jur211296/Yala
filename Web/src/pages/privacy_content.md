@@ -1,25 +1,34 @@
 # Política de Privacidad de Yala
 
-**Última actualización:** Enero 2026
+**Última actualización:** Febrero 2026
 
-## 1. Introducción
-Yala ("la App") es una aplicación de finanzas personales diseñada con un principio fundamental: **tu información financiera te pertenece exclusivamente a ti**. Esta Política de Privacidad explica cómo manejamos (o más bien, cómo *no* manejamos) tus datos.
+## 1. Tu privacidad importa
+Yala es tu app de finanzas personales. Tu información financiera **te pertenece** y así funciona todo en Yala. Aquí te explicamos de forma transparente cómo manejamos tu información.
 
-## 2. Recopilación y almacenamiento de datos
-Yala opera bajo un modelo de "Privacidad Primero" (Privacy-First) y "Almacenamiento Local" (Local Storage).
+## 2. Dónde viven tus datos
+Toda tu información se guarda en tu dispositivo y, si tienes iCloud activo, se sincroniza entre tus dispositivos Apple.
 
-*   **Datos Financieros:** Todas tus transacciones, cuentas, presupuestos y categorizaciones se almacenan **única y exclusivamente en tu dispositivo** (iPhone/iPad). Yala no envía esta información a ningún servidor externo propio ni de terceros.
-*   **Sin cuentas de usuario:** No requerimos que crees una cuenta con email o contraseña para usar la App. No tenemos una base de datos de usuarios.
-*   **Sin conexión bancaria:** Yala no se conecta con tus bancos ni solicita credenciales bancarias.
+* **En tu dispositivo:** Tus gastos, cuentas, presupuestos y configuraciones se guardan directamente en tu iPhone o iPad.
+* **Sin registro:** No necesitas crear una cuenta con email o contraseña para usar Yala.
+* **Sin conexión bancaria:** Yala no se conecta a tu banco ni pide credenciales bancarias.
 
-## 3. Uso de iCloud
-Si tienes activada la copia de seguridad de iCloud en tu dispositivo, los datos de Yala se incluirán en dicha copia. Este proceso es gestionado enteramente por Apple y se rige por la [Política de Privacidad de Apple](https://www.apple.com/legal/privacy/). Nosotros no tenemos acceso a esas copias de seguridad.
+## 3. Sincronización iCloud
+Si tienes iCloud activo, tus datos se sincronizan automáticamente entre tus dispositivos Apple usando la base de datos privada de Apple. Solo tú puedes acceder a ellos — nosotros no tenemos acceso. Si no tienes iCloud, todo se queda en tu dispositivo.
 
-## 4. Análisis y Mejoras (Analytics)
-Para mejorar la estabilidad y el rendimiento de la App, podemos recopilar métricas técnicas **anónimas** (como informes de fallos o "crashes" y estadísticas de uso general de funciones) que no contienen información personal identificable ni detalles financieros.
+## 4. Funciones inteligentes
+Cuando usas entrada por voz o escaneo de imágenes (funciones Pro), tu audio o imagen se procesa mediante un servicio externo de inteligencia artificial para convertirlo en una transacción. Este procesamiento es puntual y no se almacena permanentemente. Estas funciones son opcionales y solo se activan cuando tú las inicias. Para los tipos de cambio, consultamos un servicio externo al que solo se envían códigos de divisa (ej: USD, PEN), nunca tus montos ni información personal.
 
-## 5. Cambios en esta política
-Podemos actualizar esta Política de Privacidad ocasionalmente. Te notificaremos de cualquier cambio significativo a través de una actualización de la App.
+## 5. Lo que NO hacemos
+* No vendemos ni compartimos tus datos con terceros
+* No incluimos publicidad
+* No rastreamos tu actividad
+* No recopilamos identificadores de tu dispositivo
 
-## 6. Contacto
-Si tienes preguntas sobre esta política, puedes contactarnos en: admin@yala-app.pe
+## 6. Tus datos, tu control
+Puedes ver, exportar (CSV o Excel) y borrar todos tus datos en cualquier momento desde la app. Si desinstalas Yala, los datos locales se eliminan. Los datos en iCloud los gestionas desde los ajustes de tu dispositivo.
+
+## 7. Cambios en esta política
+Si actualizamos esta política, publicaremos los cambios en esta página.
+
+## 8. Contacto
+Si tienes preguntas, escríbenos a: admin@yala-app.pe
