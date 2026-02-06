@@ -12,32 +12,55 @@ struct AdjustmentModeSelectorView: View {
     @Binding var selectedAdjustmentMode: AdjustmentMode
 
     var body: some View {
-        List {
-            ForEach(AdjustmentMode.allCases) { mode in
-                HStack(alignment: .top, spacing: DS.Spacing.md) {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text(mode.displayName)
-                            .font(.body)
-                        Text(mode.description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer()
-                    if mode == selectedAdjustmentMode {
-                        Image(systemName: "checkmark")
-                            .foregroundStyle(.tint)
+        ZStack {
+            PanelBackgroundView()
+
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    SectionBox(title: "") {
+                        VStack(spacing: 0) {
+                            ForEach(Array(AdjustmentMode.allCases.enumerated()), id: \.element) { index, mode in
+                                if index > 0 {
+                                    SubsectionDivider()
+                                }
+
+                                Button {
+                                    selectedAdjustmentMode = mode
+                                    dismiss()
+                                } label: {
+                                    HStack(alignment: .top, spacing: DS.Spacing.md) {
+                                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                                            Text(mode.displayName)
+                                                .font(.body)
+                                                .foregroundStyle(.primary)
+                                            Text(mode.description)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+
+                                        Spacer()
+
+                                        if mode == selectedAdjustmentMode {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(Color.electricIndigo)
+                                                .font(.body.weight(.semibold))
+                                        }
+                                    }
+                                    .padding(.horizontal, DS.FormRow.paddingH)
+                                    .padding(.vertical, DS.FormRow.paddingV)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    selectedAdjustmentMode = mode
-                    dismiss()
-                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Color.yalaCard)
         .navigationTitle(L10n.Account.adjustment)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

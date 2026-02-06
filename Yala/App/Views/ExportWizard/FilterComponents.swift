@@ -20,7 +20,7 @@ struct FilterSectionHeader: View {
             Image(systemName: icon)
                 .font(.body)
                 .foregroundStyle(.primary)
-                .frame(width: 24)
+                .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
                 .font(.body)
@@ -45,7 +45,7 @@ struct FilterSelectionRow: View {
             Image(systemName: icon)
                 .font(.body)
                 .foregroundStyle(.primary)
-                .frame(width: 24)
+                .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
                 .font(.body)
@@ -229,32 +229,52 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
     let label: (T) -> String
 
     var body: some View {
-        List {
-            ForEach(items) { item in
-                Button {
-                    if selection.contains(item) {
-                        selection.remove(item)
-                    } else {
-                        selection.insert(item)
-                    }
-                } label: {
-                    HStack {
-                        Text(label(item))
-                            .foregroundStyle(.primary)
+        ZStack {
+            PanelBackgroundView()
 
-                        Spacer()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    SectionBox(title: "") {
+                        VStack(spacing: 0) {
+                            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                                if index > 0 {
+                                    SubsectionDivider()
+                                }
 
-                        if selection.contains(item) {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
+                                Button {
+                                    if selection.contains(item) {
+                                        selection.remove(item)
+                                    } else {
+                                        selection.insert(item)
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(label(item))
+                                            .font(.body)
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+
+                                        if selection.contains(item) {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(Color.brandPrimary)
+                                                .font(.body.weight(.semibold))
+                                        }
+                                    }
+                                    .padding(.horizontal, DS.FormRow.paddingH)
+                                    .padding(.vertical, DS.FormRow.paddingV)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
-                .foregroundStyle(.primary)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Color.yalaCard)
         .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -681,6 +681,7 @@ private struct ExportCustomPeriodPickerSheet: View {
                         in: ...endDate,
                         displayedComponents: .date
                     )
+                    .listRowBackground(Color.yalaCard)
 
                     DatePicker(
                         L10n.Period.endDate,
@@ -688,6 +689,7 @@ private struct ExportCustomPeriodPickerSheet: View {
                         in: startDate...,
                         displayedComponents: .date
                     )
+                    .listRowBackground(Color.yalaCard)
                 }
             }
             .listStyle(.insetGrouped)

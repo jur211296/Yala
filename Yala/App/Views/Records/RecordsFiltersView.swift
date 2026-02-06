@@ -90,7 +90,7 @@ struct RecordsFiltersView: View {
                                 .foregroundStyle(Color.electricIndigo)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.white)
+                                .background(Color.yalaCard)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -112,7 +112,7 @@ struct RecordsFiltersView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Aplicar") {
+                    Button(L10n.Action.apply) {
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
@@ -182,7 +182,7 @@ struct RecordsFiltersView: View {
             HStack(spacing: 0) {
                 FilterSectionHeader(
                     icon: "tag",
-                    title: "Categorías",
+                    title: L10n.Filters.categories,
                     status: selectedCategoriesText
                 )
 
@@ -272,7 +272,7 @@ struct RecordsFiltersView: View {
             // Header
             FilterSectionHeader(
                 icon: "arrow.up.arrow.down",
-                title: "Tipo",
+                title: L10n.Filters.type,
                 status: selectedTransactionNaturesText
             )
             .padding(.horizontal, DS.Spacing.lg)
@@ -284,7 +284,7 @@ struct RecordsFiltersView: View {
                     transactionNatureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
@@ -315,11 +315,11 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTransactionNaturesText: String {
-        if recordsViewModel.selectedTransactionNatures.isEmpty { return "Todos" }
+        if recordsViewModel.selectedTransactionNatures.isEmpty { return L10n.Filters.all }
         if recordsViewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
-            return "Todos"
+            return L10n.Filters.all
         }
-        return recordsViewModel.selectedTransactionNatures.first?.displayName ?? "Todos"
+        return recordsViewModel.selectedTransactionNatures.first?.displayName ?? L10n.Filters.all
     }
 
     // MARK: - Natures Content
@@ -329,7 +329,7 @@ struct RecordsFiltersView: View {
             // Header
             FilterSectionHeader(
                 icon: "leaf.fill",
-                title: "Naturaleza",
+                title: L10n.Filters.nature,
                 status: selectedNaturesText
             )
             .padding(.horizontal, DS.Spacing.lg)
@@ -341,7 +341,7 @@ struct RecordsFiltersView: View {
                     natureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
@@ -374,7 +374,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedNaturesText: String {
-        if recordsViewModel.selectedNatures.isEmpty { return "Todas" }
+        if recordsViewModel.selectedNatures.isEmpty { return L10n.Filters.allNatures }
         return "\(recordsViewModel.selectedNatures.count)"
     }
 
@@ -386,7 +386,7 @@ struct RecordsFiltersView: View {
                 // Header
                 FilterSectionHeader(
                     icon: "arrow.triangle.2.circlepath",
-                    title: "Moneda",
+                    title: L10n.Filters.currency,
                     status: selectedCurrenciesText
                 )
                 .padding(.horizontal, DS.Spacing.lg)
@@ -398,7 +398,7 @@ struct RecordsFiltersView: View {
                         currencyChip(currency)
                     }
                 }
-                .padding(.leading, 52)
+                .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
                 .padding(.trailing, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.md)
             }
@@ -461,7 +461,7 @@ struct RecordsFiltersView: View {
             Image(systemName: "note.text")
                 .font(.body)
                 .foregroundStyle(.primary)
-                .frame(width: 24)
+                .frame(width: DS.FormRow.iconWidth)
 
             TextField(L10n.Filters.noteContains, text: $recordsViewModel.searchText)
         }
@@ -473,31 +473,51 @@ struct RecordsFiltersView: View {
 
     private var accountsSheetView: some View {
         NavigationStack {
-            List {
-                ForEach(filtersViewModel.activeAccounts) { account in
-                    Button {
-                        if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
-                            recordsViewModel.selectedAccounts.remove(account.persistentModelID)
-                        } else {
-                            recordsViewModel.selectedAccounts.insert(account.persistentModelID)
-                        }
-                    } label: {
-                        HStack {
-                            Text(account.name)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.brandPrimary)
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        SectionBox(title: "") {
+                            VStack(spacing: 0) {
+                                ForEach(Array(filtersViewModel.activeAccounts.enumerated()), id: \.element.id) { index, account in
+                                    if index > 0 {
+                                        SubsectionDivider()
+                                    }
+
+                                    Button {
+                                        if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
+                                            recordsViewModel.selectedAccounts.remove(account.persistentModelID)
+                                        } else {
+                                            recordsViewModel.selectedAccounts.insert(account.persistentModelID)
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(account.name)
+                                                .font(.body)
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                            if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
+                                                Image(systemName: "checkmark")
+                                                    .foregroundStyle(Color.brandPrimary)
+                                                    .font(.body.weight(.semibold))
+                                            }
+                                        }
+                                        .padding(.horizontal, DS.FormRow.paddingH)
+                                        .padding(.vertical, DS.FormRow.paddingV)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                     }
-                    .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Color.yalaCard)
             .navigationTitle(L10n.Filters.selectAccounts)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "chevron.left") {
@@ -530,37 +550,57 @@ struct RecordsFiltersView: View {
 
     private var tagsSheetView: some View {
         NavigationStack {
-            List {
-                ForEach(filtersViewModel.activeTags) { tag in
-                    Button {
-                        if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
-                            recordsViewModel.selectedTags.remove(tag.persistentModelID)
-                        } else {
-                            recordsViewModel.selectedTags.insert(tag.persistentModelID)
-                        }
-                    } label: {
-                        HStack {
-                            Circle()
-                                .fill(Color(hex: tag.colorHex))
-                                .frame(width: 10, height: 10)
+            ZStack {
+                PanelBackgroundView()
 
-                            Text(tag.name)
-                                .foregroundStyle(.primary)
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        SectionBox(title: "") {
+                            VStack(spacing: 0) {
+                                ForEach(Array(filtersViewModel.activeTags.enumerated()), id: \.element.id) { index, tag in
+                                    if index > 0 {
+                                        SubsectionDivider()
+                                    }
 
-                            Spacer()
+                                    Button {
+                                        if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
+                                            recordsViewModel.selectedTags.remove(tag.persistentModelID)
+                                        } else {
+                                            recordsViewModel.selectedTags.insert(tag.persistentModelID)
+                                        }
+                                    } label: {
+                                        HStack(spacing: DS.Spacing.md) {
+                                            Circle()
+                                                .fill(Color(hex: tag.colorHex))
+                                                .frame(width: 10, height: 10)
 
-                            if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.brandPrimary)
+                                            Text(tag.name)
+                                                .font(.body)
+                                                .foregroundStyle(.primary)
+
+                                            Spacer()
+
+                                            if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
+                                                Image(systemName: "checkmark")
+                                                    .foregroundStyle(Color.brandPrimary)
+                                                    .font(.body.weight(.semibold))
+                                            }
+                                        }
+                                        .padding(.horizontal, DS.FormRow.paddingH)
+                                        .padding(.vertical, DS.FormRow.paddingV)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                     }
-                    .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Color.yalaCard)
             .navigationTitle(L10n.Filters.selectTags)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "chevron.left") {

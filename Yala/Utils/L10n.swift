@@ -359,11 +359,16 @@ enum L10n {
         static func subcategoriesSelectedCount(_ count: Int) -> String {
             String(format: ls("filters.subcategoriesSelectedCount", comment: ""), count)
         }
+        static var categories: String { ls("filters.categories", comment: "") }
+        static var type: String { ls("filters.type", comment: "") }
+        static var nature: String { ls("filters.nature", comment: "") }
+        static var currency: String { ls("filters.currency", comment: "") }
     }
 
     // MARK: - Actions
 
     enum Action {
+        static var apply: String { ls("action.apply", comment: "") }
         static var cancel: String { ls("action.cancel", comment: "") }
         static var done: String { ls("action.done", comment: "") }
         static var save: String { ls("action.save", comment: "") }

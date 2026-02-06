@@ -111,9 +111,14 @@
 "filters.allNatures" = "Tutte";
 "filters.selectedCount" = "%d selezionate";
 "filters.subcategoriesSelectedCount" = "%d sottocategorie selezionate";
+"filters.categories" = "Categorie";
+"filters.type" = "Tipo";
+"filters.nature" = "Natura";
+"filters.currency" = "Valuta";
 
 // MARK: - Actions
 
+"action.apply" = "Applica";
 "action.cancel" = "Annulla";
 "action.done" = "Fatto";
 "action.save" = "Salva";

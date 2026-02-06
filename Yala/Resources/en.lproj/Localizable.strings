@@ -113,9 +113,14 @@
 "filters.allNatures" = "All";
 "filters.selectedCount" = "%d selected";
 "filters.subcategoriesSelectedCount" = "%d subcategories selected";
+"filters.categories" = "Categories";
+"filters.type" = "Type";
+"filters.nature" = "Nature";
+"filters.currency" = "Currency";
 
 // MARK: - Actions
 
+"action.apply" = "Apply";
 "action.cancel" = "Cancel";
 "action.done" = "Done";
 "action.save" = "Save";
