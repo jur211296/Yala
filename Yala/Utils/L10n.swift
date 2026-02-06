@@ -7,6 +7,52 @@
 
 import Foundation
 
+// MARK: - Language Manager
+
+/// Manages in-app language override for users whose device language is not supported.
+enum LanguageManager {
+    private static let overrideKey = "appLanguageOverride"
+
+    /// Supported languages with native names and flags
+    static let supportedLanguages: [(code: String, nativeName: String, flag: String)] = [
+        ("es", "Español", "🇪🇸"),
+        ("en", "English", "🇺🇸"),
+        ("de", "Deutsch", "🇩🇪"),
+        ("fr", "Français", "🇫🇷"),
+        ("it", "Italiano", "🇮🇹"),
+        ("pt", "Português", "🇧🇷")
+    ]
+
+    /// Whether the device's preferred language is one of our supported languages
+    static var deviceLanguageIsSupported: Bool {
+        let deviceLang = String(Locale.preferredLanguages.first?.prefix(2) ?? "en")
+        return supportedLanguages.contains { $0.code == deviceLang }
+    }
+
+    /// User's language override (nil = use system language)
+    static var overrideLanguage: String? {
+        get { UserDefaults.standard.string(forKey: overrideKey) }
+        set { UserDefaults.standard.set(newValue, forKey: overrideKey) }
+    }
+
+    /// Bundle for loading localized strings (override or main)
+    static var bundle: Bundle {
+        guard let override = overrideLanguage,
+              let path = Bundle.main.path(forResource: override, ofType: "lproj"),
+              let bundle = Bundle(path: path) else {
+            return .main
+        }
+        return bundle
+    }
+}
+
+/// Shorthand for localized string with language override support
+private func ls(_ key: String, comment: String = "") -> String {
+    NSLocalizedString(key, bundle: LanguageManager.bundle, comment: comment)
+}
+
+// MARK: - Localized Strings
+
 /// Namespace for localized strings.
 /// Usage: L10n.Panel.accounts or L10n.Trend.balance
 enum L10n {
@@ -15,28 +61,28 @@ enum L10n {
 
     enum Panel {
         static var accounts: String {
-            NSLocalizedString("panel.accounts", comment: "Accounts section title")
+            ls("panel.accounts", comment: "Accounts section title")
         }
         static var widgets: String {
-            NSLocalizedString("panel.widgets", comment: "Widgets section title")
+            ls("panel.widgets", comment: "Widgets section title")
         }
         static var totalBalance: String {
-            NSLocalizedString("panel.totalBalance", comment: "Total balance label")
+            ls("panel.totalBalance", comment: "Total balance label")
         }
         static func greeting(_ name: String) -> String {
-            String(format: NSLocalizedString("panel.greeting", comment: ""), name)
+            String(format: ls("panel.greeting", comment: ""), name)
         }
         static func title(_ name: String) -> String {
-            String(format: NSLocalizedString("panel.title", comment: ""), name)
+            String(format: ls("panel.title", comment: ""), name)
         }
         static var fabVoice: String {
-            NSLocalizedString("panel.fabVoice", comment: "")
+            ls("panel.fabVoice", comment: "")
         }
         static var fabImage: String {
-            NSLocalizedString("panel.fabImage", comment: "")
+            ls("panel.fabImage", comment: "")
         }
         static var fabManual: String {
-            NSLocalizedString("panel.fabManual", comment: "")
+            ls("panel.fabManual", comment: "")
         }
     }
 
@@ -44,25 +90,25 @@ enum L10n {
 
     enum Trend {
         static var title: String {
-            NSLocalizedString("trend.title", comment: "Trends section title")
+            ls("trend.title", comment: "Trends section title")
         }
         static var balanceTitle: String {
-            NSLocalizedString("trend.balance.title", comment: "Balance trend title")
+            ls("trend.balance.title", comment: "Balance trend title")
         }
         static var incomeTitle: String {
-            NSLocalizedString("trend.income.title", comment: "Income trend title")
+            ls("trend.income.title", comment: "Income trend title")
         }
         static var expenseTitle: String {
-            NSLocalizedString("trend.expense.title", comment: "Expense trend title")
+            ls("trend.expense.title", comment: "Expense trend title")
         }
         static var filterBlockedMessage: String {
-            NSLocalizedString(
+            ls(
                 "trend.filterBlockedMessage",
                 comment: "Message shown when user tries to select balance/income with category filters active"
             )
         }
         static var filterBlockedTitle: String {
-            NSLocalizedString("trend.filterBlockedTitle", comment: "")
+            ls("trend.filterBlockedTitle", comment: "")
         }
     }
 
@@ -70,173 +116,173 @@ enum L10n {
 
     enum TrendType {
         static var balance: String {
-            NSLocalizedString("trendType.balance", comment: "Balance type")
+            ls("trendType.balance", comment: "Balance type")
         }
-        static var income: String { NSLocalizedString("trendType.income", comment: "Income type") }
+        static var income: String { ls("trendType.income", comment: "Income type") }
         static var expense: String {
-            NSLocalizedString("trendType.expense", comment: "Expense type")
+            ls("trendType.expense", comment: "Expense type")
         }
     }
 
     // MARK: - Cash Flow
 
     enum CashFlow {
-        static var title: String { NSLocalizedString("cashFlow.title", comment: "Cash flow title") }
-        static var income: String { NSLocalizedString("cashFlow.income", comment: "Income label") }
+        static var title: String { ls("cashFlow.title", comment: "Cash flow title") }
+        static var income: String { ls("cashFlow.income", comment: "Income label") }
         static var expense: String {
-            NSLocalizedString("cashFlow.expense", comment: "Expense label")
+            ls("cashFlow.expense", comment: "Expense label")
         }
-        static var net: String { NSLocalizedString("cashFlow.net", comment: "Net label") }
+        static var net: String { ls("cashFlow.net", comment: "Net label") }
         static var netFlow: String {
-            NSLocalizedString("cashFlow.netFlow", comment: "Net flow label")
+            ls("cashFlow.netFlow", comment: "Net flow label")
         }
     }
 
     // MARK: - Groupings
 
     enum Groupings {
-        static var daily: String { NSLocalizedString("grouping.day", comment: "") }
-        static var weekly: String { NSLocalizedString("grouping.week", comment: "") }
-        static var monthly: String { NSLocalizedString("grouping.month", comment: "") }
+        static var daily: String { ls("grouping.day", comment: "") }
+        static var weekly: String { ls("grouping.week", comment: "") }
+        static var monthly: String { ls("grouping.month", comment: "") }
     }
 
     // MARK: - Tab
 
     enum Tab {
-        static var panel: String { NSLocalizedString("tab.panel", comment: "") }
-        static var statistics: String { NSLocalizedString("tab.statistics", comment: "") }
-        static var planning: String { NSLocalizedString("tab.planning", comment: "") }
-        static var more: String { NSLocalizedString("tab.more", comment: "") }
-        static var search: String { NSLocalizedString("tab.search", comment: "") }
-        static var records: String { NSLocalizedString("tab.records", comment: "") }
+        static var panel: String { ls("tab.panel", comment: "") }
+        static var statistics: String { ls("tab.statistics", comment: "") }
+        static var planning: String { ls("tab.planning", comment: "") }
+        static var more: String { ls("tab.more", comment: "") }
+        static var search: String { ls("tab.search", comment: "") }
+        static var records: String { ls("tab.records", comment: "") }
     }
 
     // MARK: - Period
 
     enum Period {
-        static var thisWeek: String { NSLocalizedString("period.thisWeek", comment: "") }
-        static var lastWeek: String { NSLocalizedString("period.lastWeek", comment: "") }
-        static var nextWeek: String { NSLocalizedString("period.nextWeek", comment: "") }
-        static var last7Days: String { NSLocalizedString("period.last7Days", comment: "") }
+        static var thisWeek: String { ls("period.thisWeek", comment: "") }
+        static var lastWeek: String { ls("period.lastWeek", comment: "") }
+        static var nextWeek: String { ls("period.nextWeek", comment: "") }
+        static var last7Days: String { ls("period.last7Days", comment: "") }
         static var last30Days: String {
-            NSLocalizedString("period.last30Days", comment: "Last 30 days")
+            ls("period.last30Days", comment: "Last 30 days")
         }
         static var thisMonth: String {
-            NSLocalizedString("period.thisMonth", comment: "This month")
+            ls("period.thisMonth", comment: "This month")
         }
         static var lastMonth: String {
-            NSLocalizedString("period.lastMonth", comment: "Last month")
+            ls("period.lastMonth", comment: "Last month")
         }
         static var nextMonth: String {
-            NSLocalizedString("period.nextMonth", comment: "Next month")
+            ls("period.nextMonth", comment: "Next month")
         }
-        static var thisYear: String { NSLocalizedString("period.thisYear", comment: "This year") }
-        static var lastYear: String { NSLocalizedString("period.lastYear", comment: "Last year") }
-        static var nextYear: String { NSLocalizedString("period.nextYear", comment: "Next year") }
-        static var allTime: String { NSLocalizedString("period.allTime", comment: "All time") }
-        static var custom: String { NSLocalizedString("period.custom", comment: "Custom period") }
+        static var thisYear: String { ls("period.thisYear", comment: "This year") }
+        static var lastYear: String { ls("period.lastYear", comment: "Last year") }
+        static var nextYear: String { ls("period.nextYear", comment: "Next year") }
+        static var allTime: String { ls("period.allTime", comment: "All time") }
+        static var custom: String { ls("period.custom", comment: "Custom period") }
         static var startDate: String {
-            NSLocalizedString("period.startDate", comment: "Start date")
+            ls("period.startDate", comment: "Start date")
         }
-        static var endDate: String { NSLocalizedString("period.endDate", comment: "End date") }
+        static var endDate: String { ls("period.endDate", comment: "End date") }
         static var selectRange: String {
-            NSLocalizedString("period.selectRange", comment: "Select range")
+            ls("period.selectRange", comment: "Select range")
         }
         static var selectedRange: String {
-            NSLocalizedString("period.selectedRange", comment: "Selected range")
+            ls("period.selectedRange", comment: "Selected range")
         }
     }
 
     // MARK: - Statistics
     enum Statistics {
-        static var title: String { NSLocalizedString("statistics.title", comment: "") }
-        static var trends: String { NSLocalizedString("statistics.trends", comment: "") }
-        static var categories: String { NSLocalizedString("statistics.categories", comment: "") }
-        static var records: String { NSLocalizedString("statistics.records", comment: "") }
+        static var title: String { ls("statistics.title", comment: "") }
+        static var trends: String { ls("statistics.trends", comment: "") }
+        static var categories: String { ls("statistics.categories", comment: "") }
+        static var records: String { ls("statistics.records", comment: "") }
         static var noRecordsFiltered: String {
-            NSLocalizedString("statistics.noRecordsFiltered", comment: "")
+            ls("statistics.noRecordsFiltered", comment: "")
         }
         static var noRecordsDescription: String {
-            NSLocalizedString("statistics.noRecordsDescription", comment: "")
+            ls("statistics.noRecordsDescription", comment: "")
         }
         static var periodComparison: String {
-            NSLocalizedString("statistics.periodComparison", comment: "")
+            ls("statistics.periodComparison", comment: "")
         }
         static var vsPreviousPeriod: String {
-            NSLocalizedString("statistics.vsPreviousPeriod", comment: "")
+            ls("statistics.vsPreviousPeriod", comment: "")
         }
         static var vsPreviousYear: String {
-            NSLocalizedString("statistics.vsPreviousYear", comment: "")
+            ls("statistics.vsPreviousYear", comment: "")
         }
         static var currentPeriod: String {
-            NSLocalizedString("statistics.currentPeriod", comment: "")
+            ls("statistics.currentPeriod", comment: "")
         }
         static var previousPeriod: String {
-            NSLocalizedString("statistics.previousPeriod", comment: "")
+            ls("statistics.previousPeriod", comment: "")
         }
         static var latestRecords: String {
-            NSLocalizedString("statistics.latestRecords", comment: "")
+            ls("statistics.latestRecords", comment: "")
         }
         static var noCategoryData: String {
-            NSLocalizedString("statistics.noCategoryData", comment: "")
+            ls("statistics.noCategoryData", comment: "")
         }
         static var noSubcategoryData: String {
-            NSLocalizedString("statistics.noSubcategoryData", comment: "")
+            ls("statistics.noSubcategoryData", comment: "")
         }
         static var noExpensesInPeriod: String {
-            NSLocalizedString("statistics.noExpensesInPeriod", comment: "")
+            ls("statistics.noExpensesInPeriod", comment: "")
         }
         static var topCategories: String {
-            NSLocalizedString("statistics.topCategories", comment: "")
+            ls("statistics.topCategories", comment: "")
         }
         static var topSubcategories: String {
-            NSLocalizedString("statistics.topSubcategories", comment: "")
+            ls("statistics.topSubcategories", comment: "")
         }
         static var noDataToShow: String {
-            NSLocalizedString("statistics.noDataToShow", comment: "")
+            ls("statistics.noDataToShow", comment: "")
         }
         static var noRecords: String {
-            NSLocalizedString("statistics.noRecords", comment: "")
+            ls("statistics.noRecords", comment: "")
         }
         static var ofExpense: String {
-            NSLocalizedString("statistics.ofExpense", comment: "")
+            ls("statistics.ofExpense", comment: "")
         }
         static var spendingAnalysis: String {
-            NSLocalizedString("statistics.spendingAnalysis", comment: "")
+            ls("statistics.spendingAnalysis", comment: "")
         }
         static var incomeAnalysis: String {
-            NSLocalizedString("statistics.incomeAnalysis", comment: "")
+            ls("statistics.incomeAnalysis", comment: "")
         }
     }
 
     // MARK: - Nature
     enum Nature {
         static var title: String {
-            NSLocalizedString("nature.expensesByNature", comment: "Expenses by nature")
+            ls("nature.expensesByNature", comment: "Expenses by nature")
         }
         static var label: String {
-            NSLocalizedString("nature.title", comment: "Nature label")
+            ls("nature.title", comment: "Nature label")
         }
-        static var essential: String { NSLocalizedString("nature.essential", comment: "") }
+        static var essential: String { ls("nature.essential", comment: "") }
         static var essentialDesc: String {
-            NSLocalizedString("nature.essential.desc", comment: "")
+            ls("nature.essential.desc", comment: "")
         }
-        static var priority: String { NSLocalizedString("nature.priority", comment: "") }
+        static var priority: String { ls("nature.priority", comment: "") }
         static var priorityDesc: String {
-            NSLocalizedString("nature.priority.desc", comment: "")
+            ls("nature.priority.desc", comment: "")
         }
-        static var optional: String { NSLocalizedString("nature.optional", comment: "") }
+        static var optional: String { ls("nature.optional", comment: "") }
         static var optionalDesc: String {
-            NSLocalizedString("nature.optional.desc", comment: "")
+            ls("nature.optional.desc", comment: "")
         }
         static var unclassified: String {
-            NSLocalizedString("nature.unclassified", comment: "")
+            ls("nature.unclassified", comment: "")
         }
         static var unclassifiedDesc: String {
-            NSLocalizedString("nature.unclassified.desc", comment: "")
+            ls("nature.unclassified.desc", comment: "")
         }
         static var incomeNotApplicable: String {
-            NSLocalizedString(
+            ls(
                 "nature.incomeNotApplicable",
                 comment: "Message shown when income filter is active - nature classification doesn't apply"
             )
@@ -246,131 +292,131 @@ enum L10n {
     // MARK: - Records
 
     enum Records {
-        static var title: String { NSLocalizedString("records.title", comment: "") }
-        static var latest: String { NSLocalizedString("records.latest", comment: "") }
-        static var noRecords: String { NSLocalizedString("records.noRecords", comment: "") }
+        static var title: String { ls("records.title", comment: "") }
+        static var latest: String { ls("records.latest", comment: "") }
+        static var noRecords: String { ls("records.noRecords", comment: "") }
         static func deleteConfirmTitle(_ count: Int) -> String {
-            String(format: NSLocalizedString("records.deleteConfirmTitle", comment: ""), count)
+            String(format: ls("records.deleteConfirmTitle", comment: ""), count)
         }
     }
 
     // MARK: - Filters
 
     enum Filters {
-        static var title: String { NSLocalizedString("filters.title", comment: "") }
-        static var all: String { NSLocalizedString("filters.all", comment: "") }
-        static var allAccounts: String { NSLocalizedString("filters.allAccounts", comment: "") }
-        static var allCategories: String { NSLocalizedString("filters.allCategories", comment: "") }
-        static var clearFilters: String { NSLocalizedString("filters.clearFilters", comment: "") }
+        static var title: String { ls("filters.title", comment: "") }
+        static var all: String { ls("filters.all", comment: "") }
+        static var allAccounts: String { ls("filters.allAccounts", comment: "") }
+        static var allCategories: String { ls("filters.allCategories", comment: "") }
+        static var clearFilters: String { ls("filters.clearFilters", comment: "") }
         static var selectCategories: String {
-            NSLocalizedString("filters.selectCategories", comment: "")
+            ls("filters.selectCategories", comment: "")
         }
         static var selectAll: String {
-            NSLocalizedString("filters.selectAll", comment: "")
+            ls("filters.selectAll", comment: "")
         }
         static var deselectAll: String {
-            NSLocalizedString("filters.deselectAll", comment: "")
+            ls("filters.deselectAll", comment: "")
         }
         static var noSubcategories: String {
-            NSLocalizedString("filters.noSubcategories", comment: "")
+            ls("filters.noSubcategories", comment: "")
         }
         static var noneSelected: String {
-            NSLocalizedString("filters.noneSelected", comment: "")
+            ls("filters.noneSelected", comment: "")
         }
         static var allSubcategories: String {
-            NSLocalizedString("filters.allSubcategories", comment: "")
+            ls("filters.allSubcategories", comment: "")
         }
         static var filterOptions: String {
-            NSLocalizedString("filters.filterOptions", comment: "")
+            ls("filters.filterOptions", comment: "")
         }
         static var noteContains: String {
-            NSLocalizedString("filters.noteContains", comment: "")
+            ls("filters.noteContains", comment: "")
         }
         static var selectAccounts: String {
-            NSLocalizedString("filters.selectAccounts", comment: "")
+            ls("filters.selectAccounts", comment: "")
         }
         static var selectTags: String {
-            NSLocalizedString("filters.selectTags", comment: "")
+            ls("filters.selectTags", comment: "")
         }
         static var selectCurrencies: String {
-            NSLocalizedString("filters.selectCurrencies", comment: "")
+            ls("filters.selectCurrencies", comment: "")
         }
         static var allTags: String {
-            NSLocalizedString("filters.allTags", comment: "")
+            ls("filters.allTags", comment: "")
         }
         static var noTags: String {
-            NSLocalizedString("filters.noTags", comment: "")
+            ls("filters.noTags", comment: "")
         }
         static var allCurrencies: String {
-            NSLocalizedString("filters.allCurrencies", comment: "")
+            ls("filters.allCurrencies", comment: "")
         }
         static var allNatures: String {
-            NSLocalizedString("filters.allNatures", comment: "")
+            ls("filters.allNatures", comment: "")
         }
         static func selectedCount(_ count: Int) -> String {
-            String(format: NSLocalizedString("filters.selectedCount", comment: ""), count)
+            String(format: ls("filters.selectedCount", comment: ""), count)
         }
         static func subcategoriesSelectedCount(_ count: Int) -> String {
-            String(format: NSLocalizedString("filters.subcategoriesSelectedCount", comment: ""), count)
+            String(format: ls("filters.subcategoriesSelectedCount", comment: ""), count)
         }
     }
 
     // MARK: - Actions
 
     enum Action {
-        static var cancel: String { NSLocalizedString("action.cancel", comment: "") }
-        static var done: String { NSLocalizedString("action.done", comment: "") }
-        static var save: String { NSLocalizedString("action.save", comment: "") }
-        static var delete: String { NSLocalizedString("action.delete", comment: "") }
-        static var edit: String { NSLocalizedString("action.edit", comment: "") }
-        static var add: String { NSLocalizedString("action.add", comment: "") }
-        static var viewAll: String { NSLocalizedString("action.viewAll", comment: "") }
-        static var viewLess: String { NSLocalizedString("action.viewLess", comment: "") }
-        static var multipleEdit: String { NSLocalizedString("action.multipleEdit", comment: "") }
-        static var back: String { NSLocalizedString("action.back", comment: "") }
-        static var next: String { NSLocalizedString("action.next", comment: "") }
-        static var duplicate: String { NSLocalizedString("action.duplicate", comment: "") }
-        static var favorite: String { NSLocalizedString("action.favorite", comment: "") }
-        static var recurring: String { NSLocalizedString("action.recurring", comment: "") }
-        static var saveAsFavorite: String { NSLocalizedString("action.saveAsFavorite", comment: "") }
-        static var saveAsRecurring: String { NSLocalizedString("action.saveAsRecurring", comment: "") }
-        static var savedAsFavorite: String { NSLocalizedString("action.savedAsFavorite", comment: "") }
-        static var savedAsRecurring: String { NSLocalizedString("action.savedAsRecurring", comment: "") }
-        static var duplicated: String { NSLocalizedString("action.duplicated", comment: "") }
-        static var select: String { NSLocalizedString("action.select", comment: "") }
-        static var retry: String { NSLocalizedString("action.retry", comment: "") }
-        static var later: String { NSLocalizedString("action.later", comment: "") }
+        static var cancel: String { ls("action.cancel", comment: "") }
+        static var done: String { ls("action.done", comment: "") }
+        static var save: String { ls("action.save", comment: "") }
+        static var delete: String { ls("action.delete", comment: "") }
+        static var edit: String { ls("action.edit", comment: "") }
+        static var add: String { ls("action.add", comment: "") }
+        static var viewAll: String { ls("action.viewAll", comment: "") }
+        static var viewLess: String { ls("action.viewLess", comment: "") }
+        static var multipleEdit: String { ls("action.multipleEdit", comment: "") }
+        static var back: String { ls("action.back", comment: "") }
+        static var next: String { ls("action.next", comment: "") }
+        static var duplicate: String { ls("action.duplicate", comment: "") }
+        static var favorite: String { ls("action.favorite", comment: "") }
+        static var recurring: String { ls("action.recurring", comment: "") }
+        static var saveAsFavorite: String { ls("action.saveAsFavorite", comment: "") }
+        static var saveAsRecurring: String { ls("action.saveAsRecurring", comment: "") }
+        static var savedAsFavorite: String { ls("action.savedAsFavorite", comment: "") }
+        static var savedAsRecurring: String { ls("action.savedAsRecurring", comment: "") }
+        static var duplicated: String { ls("action.duplicated", comment: "") }
+        static var select: String { ls("action.select", comment: "") }
+        static var retry: String { ls("action.retry", comment: "") }
+        static var later: String { ls("action.later", comment: "") }
     }
 
     // MARK: - Search
 
     enum Search {
-        static var noResults: String { NSLocalizedString("search.noResults", comment: "") }
-        static var tryAnotherTerm: String { NSLocalizedString("search.tryAnotherTerm", comment: "") }
+        static var noResults: String { ls("search.noResults", comment: "") }
+        static var tryAnotherTerm: String { ls("search.tryAnotherTerm", comment: "") }
     }
 
     // MARK: - Date Helpers
 
     enum Date {
-        static var today: String { NSLocalizedString("date.today", comment: "") }
-        static var yesterday: String { NSLocalizedString("date.yesterday", comment: "") }
+        static var today: String { ls("date.today", comment: "") }
+        static var yesterday: String { ls("date.yesterday", comment: "") }
 
         static func weekOf(_ date: String) -> String {
-            String(format: NSLocalizedString("date.weekOf %@", comment: ""), date)
+            String(format: ls("date.weekOf %@", comment: ""), date)
         }
     }
 
     // MARK: - Exchange Rate
 
     enum ExchangeRate {
-        static var title: String { NSLocalizedString("exchangeRate.title", comment: "") }
-        static var updated: String { NSLocalizedString("exchangeRate.updated", comment: "") }
-        static var loadError: String { NSLocalizedString("exchangeRate.loadError", comment: "") }
+        static var title: String { ls("exchangeRate.title", comment: "") }
+        static var updated: String { ls("exchangeRate.updated", comment: "") }
+        static var loadError: String { ls("exchangeRate.loadError", comment: "") }
         static var noSecondaryCurrenciesHint: String {
-            NSLocalizedString("exchangeRate.noSecondaryCurrenciesHint", comment: "")
+            ls("exchangeRate.noSecondaryCurrenciesHint", comment: "")
         }
         static var noSecondaryCurrenciesPath: String {
-            NSLocalizedString("exchangeRate.noSecondaryCurrenciesPath", comment: "")
+            ls("exchangeRate.noSecondaryCurrenciesPath", comment: "")
         }
     }
 
@@ -378,230 +424,230 @@ enum L10n {
 
     enum Currency {
         // Latinoamérica
-        static var pen: String { NSLocalizedString("currency.pen", comment: "") }
-        static var usd: String { NSLocalizedString("currency.usd", comment: "") }
-        static var mxn: String { NSLocalizedString("currency.mxn", comment: "") }
-        static var cop: String { NSLocalizedString("currency.cop", comment: "") }
-        static var brl: String { NSLocalizedString("currency.brl", comment: "") }
-        static var ars: String { NSLocalizedString("currency.ars", comment: "") }
-        static var clp: String { NSLocalizedString("currency.clp", comment: "") }
-        static var uyu: String { NSLocalizedString("currency.uyu", comment: "") }
-        static var bob: String { NSLocalizedString("currency.bob", comment: "") }
-        static var pyg: String { NSLocalizedString("currency.pyg", comment: "") }
-        static var crc: String { NSLocalizedString("currency.crc", comment: "") }
-        static var gtq: String { NSLocalizedString("currency.gtq", comment: "") }
-        static var hnl: String { NSLocalizedString("currency.hnl", comment: "") }
-        static var nio: String { NSLocalizedString("currency.nio", comment: "") }
-        static var pab: String { NSLocalizedString("currency.pab", comment: "") }
-        static var dop: String { NSLocalizedString("currency.dop", comment: "") }
+        static var pen: String { ls("currency.pen", comment: "") }
+        static var usd: String { ls("currency.usd", comment: "") }
+        static var mxn: String { ls("currency.mxn", comment: "") }
+        static var cop: String { ls("currency.cop", comment: "") }
+        static var brl: String { ls("currency.brl", comment: "") }
+        static var ars: String { ls("currency.ars", comment: "") }
+        static var clp: String { ls("currency.clp", comment: "") }
+        static var uyu: String { ls("currency.uyu", comment: "") }
+        static var bob: String { ls("currency.bob", comment: "") }
+        static var pyg: String { ls("currency.pyg", comment: "") }
+        static var crc: String { ls("currency.crc", comment: "") }
+        static var gtq: String { ls("currency.gtq", comment: "") }
+        static var hnl: String { ls("currency.hnl", comment: "") }
+        static var nio: String { ls("currency.nio", comment: "") }
+        static var pab: String { ls("currency.pab", comment: "") }
+        static var dop: String { ls("currency.dop", comment: "") }
         // Europa
-        static var eur: String { NSLocalizedString("currency.eur", comment: "") }
-        static var gbp: String { NSLocalizedString("currency.gbp", comment: "") }
-        static var chf: String { NSLocalizedString("currency.chf", comment: "") }
-        static var sek: String { NSLocalizedString("currency.sek", comment: "") }
-        static var nok: String { NSLocalizedString("currency.nok", comment: "") }
-        static var dkk: String { NSLocalizedString("currency.dkk", comment: "") }
-        static var pln: String { NSLocalizedString("currency.pln", comment: "") }
-        static var czk: String { NSLocalizedString("currency.czk", comment: "") }
-        static var huf: String { NSLocalizedString("currency.huf", comment: "") }
-        static var ron: String { NSLocalizedString("currency.ron", comment: "") }
-        static var rub: String { NSLocalizedString("currency.rub", comment: "") }
-        static var uah: String { NSLocalizedString("currency.uah", comment: "") }
-        static var `try`: String { NSLocalizedString("currency.try", comment: "") }
+        static var eur: String { ls("currency.eur", comment: "") }
+        static var gbp: String { ls("currency.gbp", comment: "") }
+        static var chf: String { ls("currency.chf", comment: "") }
+        static var sek: String { ls("currency.sek", comment: "") }
+        static var nok: String { ls("currency.nok", comment: "") }
+        static var dkk: String { ls("currency.dkk", comment: "") }
+        static var pln: String { ls("currency.pln", comment: "") }
+        static var czk: String { ls("currency.czk", comment: "") }
+        static var huf: String { ls("currency.huf", comment: "") }
+        static var ron: String { ls("currency.ron", comment: "") }
+        static var rub: String { ls("currency.rub", comment: "") }
+        static var uah: String { ls("currency.uah", comment: "") }
+        static var `try`: String { ls("currency.try", comment: "") }
         // Asia
-        static var jpy: String { NSLocalizedString("currency.jpy", comment: "") }
-        static var cny: String { NSLocalizedString("currency.cny", comment: "") }
-        static var krw: String { NSLocalizedString("currency.krw", comment: "") }
-        static var inr: String { NSLocalizedString("currency.inr", comment: "") }
-        static var idr: String { NSLocalizedString("currency.idr", comment: "") }
-        static var php: String { NSLocalizedString("currency.php", comment: "") }
-        static var thb: String { NSLocalizedString("currency.thb", comment: "") }
-        static var myr: String { NSLocalizedString("currency.myr", comment: "") }
-        static var sgd: String { NSLocalizedString("currency.sgd", comment: "") }
-        static var hkd: String { NSLocalizedString("currency.hkd", comment: "") }
-        static var twd: String { NSLocalizedString("currency.twd", comment: "") }
-        static var vnd: String { NSLocalizedString("currency.vnd", comment: "") }
+        static var jpy: String { ls("currency.jpy", comment: "") }
+        static var cny: String { ls("currency.cny", comment: "") }
+        static var krw: String { ls("currency.krw", comment: "") }
+        static var inr: String { ls("currency.inr", comment: "") }
+        static var idr: String { ls("currency.idr", comment: "") }
+        static var php: String { ls("currency.php", comment: "") }
+        static var thb: String { ls("currency.thb", comment: "") }
+        static var myr: String { ls("currency.myr", comment: "") }
+        static var sgd: String { ls("currency.sgd", comment: "") }
+        static var hkd: String { ls("currency.hkd", comment: "") }
+        static var twd: String { ls("currency.twd", comment: "") }
+        static var vnd: String { ls("currency.vnd", comment: "") }
         // Oceanía
-        static var aud: String { NSLocalizedString("currency.aud", comment: "") }
-        static var nzd: String { NSLocalizedString("currency.nzd", comment: "") }
+        static var aud: String { ls("currency.aud", comment: "") }
+        static var nzd: String { ls("currency.nzd", comment: "") }
         // Medio Oriente
-        static var aed: String { NSLocalizedString("currency.aed", comment: "") }
-        static var sar: String { NSLocalizedString("currency.sar", comment: "") }
-        static var ils: String { NSLocalizedString("currency.ils", comment: "") }
-        static var qar: String { NSLocalizedString("currency.qar", comment: "") }
-        static var kwd: String { NSLocalizedString("currency.kwd", comment: "") }
+        static var aed: String { ls("currency.aed", comment: "") }
+        static var sar: String { ls("currency.sar", comment: "") }
+        static var ils: String { ls("currency.ils", comment: "") }
+        static var qar: String { ls("currency.qar", comment: "") }
+        static var kwd: String { ls("currency.kwd", comment: "") }
         // África
-        static var zar: String { NSLocalizedString("currency.zar", comment: "") }
-        static var egp: String { NSLocalizedString("currency.egp", comment: "") }
-        static var ngn: String { NSLocalizedString("currency.ngn", comment: "") }
-        static var kes: String { NSLocalizedString("currency.kes", comment: "") }
-        static var mad: String { NSLocalizedString("currency.mad", comment: "") }
+        static var zar: String { ls("currency.zar", comment: "") }
+        static var egp: String { ls("currency.egp", comment: "") }
+        static var ngn: String { ls("currency.ngn", comment: "") }
+        static var kes: String { ls("currency.kes", comment: "") }
+        static var mad: String { ls("currency.mad", comment: "") }
         // Norteamérica
-        static var cad: String { NSLocalizedString("currency.cad", comment: "") }
+        static var cad: String { ls("currency.cad", comment: "") }
 
         /// Nombres cortos en plural (sin país) para ejemplos de voz
         enum Plural {
             // Latinoamérica
-            static var pen: String { NSLocalizedString("currency.plural.pen", comment: "") }
-            static var usd: String { NSLocalizedString("currency.plural.usd", comment: "") }
-            static var mxn: String { NSLocalizedString("currency.plural.mxn", comment: "") }
-            static var cop: String { NSLocalizedString("currency.plural.cop", comment: "") }
-            static var brl: String { NSLocalizedString("currency.plural.brl", comment: "") }
-            static var ars: String { NSLocalizedString("currency.plural.ars", comment: "") }
-            static var clp: String { NSLocalizedString("currency.plural.clp", comment: "") }
-            static var uyu: String { NSLocalizedString("currency.plural.uyu", comment: "") }
-            static var bob: String { NSLocalizedString("currency.plural.bob", comment: "") }
-            static var pyg: String { NSLocalizedString("currency.plural.pyg", comment: "") }
-            static var crc: String { NSLocalizedString("currency.plural.crc", comment: "") }
-            static var gtq: String { NSLocalizedString("currency.plural.gtq", comment: "") }
-            static var hnl: String { NSLocalizedString("currency.plural.hnl", comment: "") }
-            static var nio: String { NSLocalizedString("currency.plural.nio", comment: "") }
-            static var pab: String { NSLocalizedString("currency.plural.pab", comment: "") }
-            static var dop: String { NSLocalizedString("currency.plural.dop", comment: "") }
+            static var pen: String { ls("currency.plural.pen", comment: "") }
+            static var usd: String { ls("currency.plural.usd", comment: "") }
+            static var mxn: String { ls("currency.plural.mxn", comment: "") }
+            static var cop: String { ls("currency.plural.cop", comment: "") }
+            static var brl: String { ls("currency.plural.brl", comment: "") }
+            static var ars: String { ls("currency.plural.ars", comment: "") }
+            static var clp: String { ls("currency.plural.clp", comment: "") }
+            static var uyu: String { ls("currency.plural.uyu", comment: "") }
+            static var bob: String { ls("currency.plural.bob", comment: "") }
+            static var pyg: String { ls("currency.plural.pyg", comment: "") }
+            static var crc: String { ls("currency.plural.crc", comment: "") }
+            static var gtq: String { ls("currency.plural.gtq", comment: "") }
+            static var hnl: String { ls("currency.plural.hnl", comment: "") }
+            static var nio: String { ls("currency.plural.nio", comment: "") }
+            static var pab: String { ls("currency.plural.pab", comment: "") }
+            static var dop: String { ls("currency.plural.dop", comment: "") }
             // Europa
-            static var eur: String { NSLocalizedString("currency.plural.eur", comment: "") }
-            static var gbp: String { NSLocalizedString("currency.plural.gbp", comment: "") }
-            static var chf: String { NSLocalizedString("currency.plural.chf", comment: "") }
-            static var sek: String { NSLocalizedString("currency.plural.sek", comment: "") }
-            static var nok: String { NSLocalizedString("currency.plural.nok", comment: "") }
-            static var dkk: String { NSLocalizedString("currency.plural.dkk", comment: "") }
-            static var pln: String { NSLocalizedString("currency.plural.pln", comment: "") }
-            static var czk: String { NSLocalizedString("currency.plural.czk", comment: "") }
-            static var huf: String { NSLocalizedString("currency.plural.huf", comment: "") }
-            static var ron: String { NSLocalizedString("currency.plural.ron", comment: "") }
-            static var rub: String { NSLocalizedString("currency.plural.rub", comment: "") }
-            static var uah: String { NSLocalizedString("currency.plural.uah", comment: "") }
-            static var `try`: String { NSLocalizedString("currency.plural.try", comment: "") }
+            static var eur: String { ls("currency.plural.eur", comment: "") }
+            static var gbp: String { ls("currency.plural.gbp", comment: "") }
+            static var chf: String { ls("currency.plural.chf", comment: "") }
+            static var sek: String { ls("currency.plural.sek", comment: "") }
+            static var nok: String { ls("currency.plural.nok", comment: "") }
+            static var dkk: String { ls("currency.plural.dkk", comment: "") }
+            static var pln: String { ls("currency.plural.pln", comment: "") }
+            static var czk: String { ls("currency.plural.czk", comment: "") }
+            static var huf: String { ls("currency.plural.huf", comment: "") }
+            static var ron: String { ls("currency.plural.ron", comment: "") }
+            static var rub: String { ls("currency.plural.rub", comment: "") }
+            static var uah: String { ls("currency.plural.uah", comment: "") }
+            static var `try`: String { ls("currency.plural.try", comment: "") }
             // Asia
-            static var jpy: String { NSLocalizedString("currency.plural.jpy", comment: "") }
-            static var cny: String { NSLocalizedString("currency.plural.cny", comment: "") }
-            static var krw: String { NSLocalizedString("currency.plural.krw", comment: "") }
-            static var inr: String { NSLocalizedString("currency.plural.inr", comment: "") }
-            static var idr: String { NSLocalizedString("currency.plural.idr", comment: "") }
-            static var php: String { NSLocalizedString("currency.plural.php", comment: "") }
-            static var thb: String { NSLocalizedString("currency.plural.thb", comment: "") }
-            static var myr: String { NSLocalizedString("currency.plural.myr", comment: "") }
-            static var sgd: String { NSLocalizedString("currency.plural.sgd", comment: "") }
-            static var hkd: String { NSLocalizedString("currency.plural.hkd", comment: "") }
-            static var twd: String { NSLocalizedString("currency.plural.twd", comment: "") }
-            static var vnd: String { NSLocalizedString("currency.plural.vnd", comment: "") }
+            static var jpy: String { ls("currency.plural.jpy", comment: "") }
+            static var cny: String { ls("currency.plural.cny", comment: "") }
+            static var krw: String { ls("currency.plural.krw", comment: "") }
+            static var inr: String { ls("currency.plural.inr", comment: "") }
+            static var idr: String { ls("currency.plural.idr", comment: "") }
+            static var php: String { ls("currency.plural.php", comment: "") }
+            static var thb: String { ls("currency.plural.thb", comment: "") }
+            static var myr: String { ls("currency.plural.myr", comment: "") }
+            static var sgd: String { ls("currency.plural.sgd", comment: "") }
+            static var hkd: String { ls("currency.plural.hkd", comment: "") }
+            static var twd: String { ls("currency.plural.twd", comment: "") }
+            static var vnd: String { ls("currency.plural.vnd", comment: "") }
             // Oceanía
-            static var aud: String { NSLocalizedString("currency.plural.aud", comment: "") }
-            static var nzd: String { NSLocalizedString("currency.plural.nzd", comment: "") }
+            static var aud: String { ls("currency.plural.aud", comment: "") }
+            static var nzd: String { ls("currency.plural.nzd", comment: "") }
             // Medio Oriente
-            static var aed: String { NSLocalizedString("currency.plural.aed", comment: "") }
-            static var sar: String { NSLocalizedString("currency.plural.sar", comment: "") }
-            static var ils: String { NSLocalizedString("currency.plural.ils", comment: "") }
-            static var qar: String { NSLocalizedString("currency.plural.qar", comment: "") }
-            static var kwd: String { NSLocalizedString("currency.plural.kwd", comment: "") }
+            static var aed: String { ls("currency.plural.aed", comment: "") }
+            static var sar: String { ls("currency.plural.sar", comment: "") }
+            static var ils: String { ls("currency.plural.ils", comment: "") }
+            static var qar: String { ls("currency.plural.qar", comment: "") }
+            static var kwd: String { ls("currency.plural.kwd", comment: "") }
             // África
-            static var zar: String { NSLocalizedString("currency.plural.zar", comment: "") }
-            static var egp: String { NSLocalizedString("currency.plural.egp", comment: "") }
-            static var ngn: String { NSLocalizedString("currency.plural.ngn", comment: "") }
-            static var kes: String { NSLocalizedString("currency.plural.kes", comment: "") }
-            static var mad: String { NSLocalizedString("currency.plural.mad", comment: "") }
+            static var zar: String { ls("currency.plural.zar", comment: "") }
+            static var egp: String { ls("currency.plural.egp", comment: "") }
+            static var ngn: String { ls("currency.plural.ngn", comment: "") }
+            static var kes: String { ls("currency.plural.kes", comment: "") }
+            static var mad: String { ls("currency.plural.mad", comment: "") }
             // Norteamérica
-            static var cad: String { NSLocalizedString("currency.plural.cad", comment: "") }
+            static var cad: String { ls("currency.plural.cad", comment: "") }
         }
     }
 
     // MARK: - Continents
 
     enum Continent {
-        static var latinAmerica: String { NSLocalizedString("continent.latinAmerica", comment: "") }
-        static var europe: String { NSLocalizedString("continent.europe", comment: "") }
-        static var asia: String { NSLocalizedString("continent.asia", comment: "") }
-        static var oceania: String { NSLocalizedString("continent.oceania", comment: "") }
-        static var middleEast: String { NSLocalizedString("continent.middleEast", comment: "") }
-        static var africa: String { NSLocalizedString("continent.africa", comment: "") }
-        static var northAmerica: String { NSLocalizedString("continent.northAmerica", comment: "") }
+        static var latinAmerica: String { ls("continent.latinAmerica", comment: "") }
+        static var europe: String { ls("continent.europe", comment: "") }
+        static var asia: String { ls("continent.asia", comment: "") }
+        static var oceania: String { ls("continent.oceania", comment: "") }
+        static var middleEast: String { ls("continent.middleEast", comment: "") }
+        static var africa: String { ls("continent.africa", comment: "") }
+        static var northAmerica: String { ls("continent.northAmerica", comment: "") }
     }
 
     // MARK: - Empty States
 
     enum Empty {
-        static var noData: String { NSLocalizedString("empty.noData", comment: "") }
-        static var noTransactions: String { NSLocalizedString("empty.noTransactions", comment: "") }
-        static var noFavorites: String { NSLocalizedString("empty.noFavorites", comment: "") }
-        static var noTags: String { NSLocalizedString("empty.noTags", comment: "") }
-        static var noAccounts: String { NSLocalizedString("empty.noAccounts", comment: "") }
-        static var noCategories: String { NSLocalizedString("empty.noCategories", comment: "") }
+        static var noData: String { ls("empty.noData", comment: "") }
+        static var noTransactions: String { ls("empty.noTransactions", comment: "") }
+        static var noFavorites: String { ls("empty.noFavorites", comment: "") }
+        static var noTags: String { ls("empty.noTags", comment: "") }
+        static var noAccounts: String { ls("empty.noAccounts", comment: "") }
+        static var noCategories: String { ls("empty.noCategories", comment: "") }
         static var categoriesDescription: String {
-            NSLocalizedString("empty.categoriesDescription", comment: "")
+            ls("empty.categoriesDescription", comment: "")
         }
         static var noSubcategories: String {
-            NSLocalizedString("empty.noSubcategories", comment: "")
+            ls("empty.noSubcategories", comment: "")
         }
-        static var noExpenses: String { NSLocalizedString("empty.noExpenses", comment: "") }
+        static var noExpenses: String { ls("empty.noExpenses", comment: "") }
         static var tagsDescription: String {
-            NSLocalizedString("empty.tagsDescription", comment: "")
+            ls("empty.tagsDescription", comment: "")
         }
         static var accountsDescription: String {
-            NSLocalizedString("empty.accountsDescription", comment: "")
+            ls("empty.accountsDescription", comment: "")
         }
     }
 
     // MARK: - Transaction
 
     enum Transaction {
-        static var new: String { NSLocalizedString("transaction.new", comment: "") }
-        static var edit: String { NSLocalizedString("transaction.edit", comment: "") }
+        static var new: String { ls("transaction.new", comment: "") }
+        static var edit: String { ls("transaction.edit", comment: "") }
         static var newTransaction: String {
-            NSLocalizedString("transaction.newTransaction", comment: "")
+            ls("transaction.newTransaction", comment: "")
         }
         static var editTransaction: String {
-            NSLocalizedString("transaction.editTransaction", comment: "")
+            ls("transaction.editTransaction", comment: "")
         }
-        static var type: String { NSLocalizedString("transaction.type", comment: "") }
-        static var amount: String { NSLocalizedString("transaction.amount", comment: "") }
-        static var description: String { NSLocalizedString("transaction.description", comment: "") }
+        static var type: String { ls("transaction.type", comment: "") }
+        static var amount: String { ls("transaction.amount", comment: "") }
+        static var description: String { ls("transaction.description", comment: "") }
         static var descriptionHint: String {
-            NSLocalizedString("transaction.descriptionHint", comment: "")
+            ls("transaction.descriptionHint", comment: "")
         }
-        static var note: String { NSLocalizedString("transaction.note", comment: "") }
+        static var note: String { ls("transaction.note", comment: "") }
         static var notePlaceholder: String {
-            NSLocalizedString("transaction.notePlaceholder", comment: "")
+            ls("transaction.notePlaceholder", comment: "")
         }
-        static var date: String { NSLocalizedString("transaction.date", comment: "") }
-        static var tags: String { NSLocalizedString("transaction.tags", comment: "") }
-        static var addTags: String { NSLocalizedString("transaction.addTags", comment: "") }
-        static var category: String { NSLocalizedString("transaction.category", comment: "") }
-        static var subcategory: String { NSLocalizedString("transaction.subcategory", comment: "") }
-        static var select: String { NSLocalizedString("transaction.select", comment: "") }
-        static var total: String { NSLocalizedString("transaction.total", comment: "") }
-        static var income: String { NSLocalizedString("transaction.income", comment: "") }
-        static var expense: String { NSLocalizedString("transaction.expense", comment: "") }
-        static var transfer: String { NSLocalizedString("transaction.transfer", comment: "") }
-        static var origin: String { NSLocalizedString("transaction.origin", comment: "") }
-        static var destination: String { NSLocalizedString("transaction.destination", comment: "") }
+        static var date: String { ls("transaction.date", comment: "") }
+        static var tags: String { ls("transaction.tags", comment: "") }
+        static var addTags: String { ls("transaction.addTags", comment: "") }
+        static var category: String { ls("transaction.category", comment: "") }
+        static var subcategory: String { ls("transaction.subcategory", comment: "") }
+        static var select: String { ls("transaction.select", comment: "") }
+        static var total: String { ls("transaction.total", comment: "") }
+        static var income: String { ls("transaction.income", comment: "") }
+        static var expense: String { ls("transaction.expense", comment: "") }
+        static var transfer: String { ls("transaction.transfer", comment: "") }
+        static var origin: String { ls("transaction.origin", comment: "") }
+        static var destination: String { ls("transaction.destination", comment: "") }
         static var sourceAccount: String {
-            NSLocalizedString("transaction.sourceAccount", comment: "")
+            ls("transaction.sourceAccount", comment: "")
         }
         static var destinationAccount: String {
-            NSLocalizedString("transaction.destinationAccount", comment: "")
+            ls("transaction.destinationAccount", comment: "")
         }
-        static var account: String { NSLocalizedString("transaction.account", comment: "") }
+        static var account: String { ls("transaction.account", comment: "") }
         static var exchangeRate: String {
-            NSLocalizedString("transaction.exchangeRate", comment: "")
+            ls("transaction.exchangeRate", comment: "")
         }
-        static var willReceive: String { NSLocalizedString("transaction.willReceive", comment: "") }
+        static var willReceive: String { ls("transaction.willReceive", comment: "") }
         static var createAnother: String {
-            NSLocalizedString("transaction.createAnother", comment: "")
+            ls("transaction.createAnother", comment: "")
         }
-        static var recents: String { NSLocalizedString("transaction.recents", comment: "") }
+        static var recents: String { ls("transaction.recents", comment: "") }
         static var successTitle: String {
-            NSLocalizedString("transaction.successTitle", comment: "")
+            ls("transaction.successTitle", comment: "")
         }
 
         enum TransactionType {
             static var expense: String {
-                NSLocalizedString("transaction.type.expense", comment: "")
+                ls("transaction.type.expense", comment: "")
             }
             static var income: String {
-                NSLocalizedString("transaction.type.income", comment: "")
+                ls("transaction.type.income", comment: "")
             }
             static var transfer: String {
-                NSLocalizedString("transaction.type.transfer", comment: "")
+                ls("transaction.type.transfer", comment: "")
             }
         }
     }
@@ -609,89 +655,89 @@ enum L10n {
     // MARK: - Account
 
     enum Account {
-        static var new: String { NSLocalizedString("account.new", comment: "") }
-        static var edit: String { NSLocalizedString("account.edit", comment: "") }
-        static var configure: String { NSLocalizedString("account.configure", comment: "") }
-        static var name: String { NSLocalizedString("account.name", comment: "") }
-        static var accountName: String { NSLocalizedString("account.accountName", comment: "") }
-        static var accountNumber: String { NSLocalizedString("account.accountNumber", comment: "") }
-        static var type: String { NSLocalizedString("account.type", comment: "") }
-        static var currency: String { NSLocalizedString("account.currency", comment: "") }
-        static var balance: String { NSLocalizedString("account.balance", comment: "") }
+        static var new: String { ls("account.new", comment: "") }
+        static var edit: String { ls("account.edit", comment: "") }
+        static var configure: String { ls("account.configure", comment: "") }
+        static var name: String { ls("account.name", comment: "") }
+        static var accountName: String { ls("account.accountName", comment: "") }
+        static var accountNumber: String { ls("account.accountNumber", comment: "") }
+        static var type: String { ls("account.type", comment: "") }
+        static var currency: String { ls("account.currency", comment: "") }
+        static var balance: String { ls("account.balance", comment: "") }
         static var initialBalance: String {
-            NSLocalizedString("account.initialBalance", comment: "")
+            ls("account.initialBalance", comment: "")
         }
-        static var sign: String { NSLocalizedString("account.sign", comment: "") }
-        static var positive: String { NSLocalizedString("account.positive", comment: "") }
-        static var negative: String { NSLocalizedString("account.negative", comment: "") }
-        static var adjustment: String { NSLocalizedString("account.adjustment", comment: "") }
-        static var selected: String { NSLocalizedString("account.selected", comment: "") }
-        static var selectAccount: String { NSLocalizedString("account.selectAccount", comment: "") }
-        static var archived: String { NSLocalizedString("account.archived", comment: "") }
-        static var archive: String { NSLocalizedString("account.archive", comment: "") }
-        static var unarchive: String { NSLocalizedString("account.unarchive", comment: "") }
+        static var sign: String { ls("account.sign", comment: "") }
+        static var positive: String { ls("account.positive", comment: "") }
+        static var negative: String { ls("account.negative", comment: "") }
+        static var adjustment: String { ls("account.adjustment", comment: "") }
+        static var selected: String { ls("account.selected", comment: "") }
+        static var selectAccount: String { ls("account.selectAccount", comment: "") }
+        static var archived: String { ls("account.archived", comment: "") }
+        static var archive: String { ls("account.archive", comment: "") }
+        static var unarchive: String { ls("account.unarchive", comment: "") }
         static var excludeFromStats: String {
-            NSLocalizedString("account.excludeFromStats", comment: "")
+            ls("account.excludeFromStats", comment: "")
         }
-        static var delete: String { NSLocalizedString("account.delete", comment: "") }
-        static var deleteError: String { NSLocalizedString("account.deleteError", comment: "") }
+        static var delete: String { ls("account.delete", comment: "") }
+        static var deleteError: String { ls("account.deleteError", comment: "") }
         static var deleteBalanceError: String {
-            NSLocalizedString("account.deleteBalanceError", comment: "")
+            ls("account.deleteBalanceError", comment: "")
         }
-        static var addAccount: String { NSLocalizedString("account.addAccount", comment: "") }
+        static var addAccount: String { ls("account.addAccount", comment: "") }
 
         enum AccountType {
-            static var general: String { NSLocalizedString("account.type.general", comment: "") }
-            static var cash: String { NSLocalizedString("account.type.cash", comment: "") }
-            static var current: String { NSLocalizedString("account.type.current", comment: "") }
-            static var savings: String { NSLocalizedString("account.type.savings", comment: "") }
+            static var general: String { ls("account.type.general", comment: "") }
+            static var cash: String { ls("account.type.cash", comment: "") }
+            static var current: String { ls("account.type.current", comment: "") }
+            static var savings: String { ls("account.type.savings", comment: "") }
             static var creditCard: String {
-                NSLocalizedString("account.type.creditCard", comment: "")
+                ls("account.type.creditCard", comment: "")
             }
             static var investment: String {
-                NSLocalizedString("account.type.investment", comment: "")
+                ls("account.type.investment", comment: "")
             }
-            static var loan: String { NSLocalizedString("account.type.loan", comment: "") }
-            static var other: String { NSLocalizedString("account.type.other", comment: "") }
+            static var loan: String { ls("account.type.loan", comment: "") }
+            static var other: String { ls("account.type.other", comment: "") }
         }
 
         // Balance Adjustments
-        static var newBalance: String { NSLocalizedString("account.newBalance", comment: "") }
+        static var newBalance: String { ls("account.newBalance", comment: "") }
         static var currentBalance: String {
-            NSLocalizedString("account.currentBalance", comment: "")
+            ls("account.currentBalance", comment: "")
         }
         static func adjustmentPreview(_ amount: String) -> String {
-            String(format: NSLocalizedString("account.adjustmentPreview", comment: ""), amount)
+            String(format: ls("account.adjustmentPreview", comment: ""), amount)
         }
         static var initialBalanceNote: String {
-            NSLocalizedString("account.initialBalanceNote", comment: "")
+            ls("account.initialBalanceNote", comment: "")
         }
         static var adjustmentNote: String {
-            NSLocalizedString("account.adjustmentNote", comment: "")
+            ls("account.adjustmentNote", comment: "")
         }
         static func existingInitialBalance(_ amount: String) -> String {
-            String(format: NSLocalizedString("account.existingInitialBalance", comment: ""), amount)
+            String(format: ls("account.existingInitialBalance", comment: ""), amount)
         }
         static var modifyInitialBalance: String {
-            NSLocalizedString("account.modifyInitialBalance", comment: "")
+            ls("account.modifyInitialBalance", comment: "")
         }
         static var adjustmentDate: String {
-            NSLocalizedString("account.adjustmentDate", comment: "")
+            ls("account.adjustmentDate", comment: "")
         }
         static var finalBalance: String {
-            NSLocalizedString("account.finalBalance", comment: "")
+            ls("account.finalBalance", comment: "")
         }
         static var adjustByEntry: String {
-            NSLocalizedString("account.adjustByEntry", comment: "")
+            ls("account.adjustByEntry", comment: "")
         }
         static var adjustByEntryDesc: String {
-            NSLocalizedString("account.adjustByEntryDesc", comment: "")
+            ls("account.adjustByEntryDesc", comment: "")
         }
         static var changeInitialBalanceName: String {
-            NSLocalizedString("account.changeInitialBalanceName", comment: "")
+            ls("account.changeInitialBalanceName", comment: "")
         }
         static var changeInitialBalanceDesc: String {
-            NSLocalizedString("account.changeInitialBalanceDesc", comment: "")
+            ls("account.changeInitialBalanceDesc", comment: "")
         }
 
     }
@@ -699,411 +745,411 @@ enum L10n {
     // MARK: - Category
 
     enum Category {
-        static var new: String { NSLocalizedString("category.new", comment: "") }
-        static var edit: String { NSLocalizedString("category.edit", comment: "") }
-        static var editTitle: String { NSLocalizedString("category.editTitle", comment: "") }
-        static var name: String { NSLocalizedString("category.name", comment: "") }
-        static var nature: String { NSLocalizedString("category.nature", comment: "") }
-        static var show: String { NSLocalizedString("category.show", comment: "") }
-        static var hiddenTitle: String { NSLocalizedString("category.hiddenTitle", comment: "") }
+        static var new: String { ls("category.new", comment: "") }
+        static var edit: String { ls("category.edit", comment: "") }
+        static var editTitle: String { ls("category.editTitle", comment: "") }
+        static var name: String { ls("category.name", comment: "") }
+        static var nature: String { ls("category.nature", comment: "") }
+        static var show: String { ls("category.show", comment: "") }
+        static var hiddenTitle: String { ls("category.hiddenTitle", comment: "") }
         static var hiddenDescription: String {
-            NSLocalizedString("category.hiddenDescription", comment: "")
+            ls("category.hiddenDescription", comment: "")
         }
         static var addSubcategory: String {
-            NSLocalizedString("category.addSubcategory", comment: "")
+            ls("category.addSubcategory", comment: "")
         }
         static var subcategories: String {
-            NSLocalizedString("category.subcategories", comment: "")
+            ls("category.subcategories", comment: "")
         }
         static var noSubcategoriesYet: String {
-            NSLocalizedString("category.noSubcategoriesYet", comment: "")
+            ls("category.noSubcategoriesYet", comment: "")
         }
         static var requiresSubcategory: String {
-            NSLocalizedString("category.requiresSubcategory", comment: "")
+            ls("category.requiresSubcategory", comment: "")
         }
         static var addOneSubcategory: String {
-            NSLocalizedString("category.addOneSubcategory", comment: "")
+            ls("category.addOneSubcategory", comment: "")
         }
-        static var delete: String { NSLocalizedString("category.delete", comment: "") }
+        static var delete: String { ls("category.delete", comment: "") }
         static var deleteConfirmTitle: String {
-            NSLocalizedString("category.deleteConfirmTitle", comment: "")
+            ls("category.deleteConfirmTitle", comment: "")
         }
         static var deleteConfirmMessage: String {
-            NSLocalizedString("category.deleteConfirmMessage", comment: "")
+            ls("category.deleteConfirmMessage", comment: "")
         }
         static var cannotDeleteTitle: String {
-            NSLocalizedString("category.cannotDeleteTitle", comment: "")
+            ls("category.cannotDeleteTitle", comment: "")
         }
         static func cannotDeleteMessage(_ count: Int) -> String {
             String(
-                format: NSLocalizedString("category.cannotDeleteMessage", comment: ""),
+                format: ls("category.cannotDeleteMessage", comment: ""),
                 count
             )
         }
         static var newCategory: String {
-            NSLocalizedString("category.newCategory", comment: "")
+            ls("category.newCategory", comment: "")
         }
         static var namePlaceholder: String {
-            NSLocalizedString("category.namePlaceholder", comment: "")
+            ls("category.namePlaceholder", comment: "")
         }
         static var activeSubcategories: String {
-            NSLocalizedString("category.activeSubcategories", comment: "")
+            ls("category.activeSubcategories", comment: "")
         }
         static var hiddenSubcategories: String {
-            NSLocalizedString("category.hiddenSubcategories", comment: "")
+            ls("category.hiddenSubcategories", comment: "")
         }
         static var details: String {
-            NSLocalizedString("category.details", comment: "")
+            ls("category.details", comment: "")
         }
         static var others: String {
-            NSLocalizedString("category.others", comment: "")
+            ls("category.others", comment: "")
         }
     }
 
     // MARK: - Subcategory
 
     enum Subcategory {
-        static var newTitle: String { NSLocalizedString("subcategory.newTitle", comment: "") }
-        static var editTitle: String { NSLocalizedString("subcategory.editTitle", comment: "") }
-        static var delete: String { NSLocalizedString("subcategory.delete", comment: "") }
+        static var newTitle: String { ls("subcategory.newTitle", comment: "") }
+        static var editTitle: String { ls("subcategory.editTitle", comment: "") }
+        static var delete: String { ls("subcategory.delete", comment: "") }
         static var deleteConfirmTitle: String {
-            NSLocalizedString("subcategory.deleteConfirmTitle", comment: "")
+            ls("subcategory.deleteConfirmTitle", comment: "")
         }
         static var deleteConfirmMessage: String {
-            NSLocalizedString("subcategory.deleteConfirmMessage", comment: "")
+            ls("subcategory.deleteConfirmMessage", comment: "")
         }
         static var cannotDeleteTitle: String {
-            NSLocalizedString("subcategory.cannotDeleteTitle", comment: "")
+            ls("subcategory.cannotDeleteTitle", comment: "")
         }
         static func cannotDeleteMessage(_ count: Int) -> String {
             String(
-                format: NSLocalizedString("subcategory.cannotDeleteMessage", comment: ""),
+                format: ls("subcategory.cannotDeleteMessage", comment: ""),
                 count
             )
         }
 
         // Transfer sheet
         static var transferTitle: String {
-            NSLocalizedString("subcategory.transferTitle", comment: "")
+            ls("subcategory.transferTitle", comment: "")
         }
         static var transferHeader: String {
-            NSLocalizedString("subcategory.transferHeader", comment: "")
+            ls("subcategory.transferHeader", comment: "")
         }
         static func transferDescription(_ count: Int, _ name: String) -> String {
             String(
-                format: NSLocalizedString("subcategory.transferDescription", comment: ""),
+                format: ls("subcategory.transferDescription", comment: ""),
                 count,
                 name
             )
         }
         static var transferToSpecific: String {
-            NSLocalizedString("subcategory.transferToSpecific", comment: "")
+            ls("subcategory.transferToSpecific", comment: "")
         }
         static var transferToSpecificDesc: String {
-            NSLocalizedString("subcategory.transferToSpecificDesc", comment: "")
+            ls("subcategory.transferToSpecificDesc", comment: "")
         }
         static var transferToUnassigned: String {
-            NSLocalizedString("subcategory.transferToUnassigned", comment: "")
+            ls("subcategory.transferToUnassigned", comment: "")
         }
         static var transferToUnassignedDesc: String {
-            NSLocalizedString("subcategory.transferToUnassignedDesc", comment: "")
+            ls("subcategory.transferToUnassignedDesc", comment: "")
         }
         static var deleteTransactions: String {
-            NSLocalizedString("subcategory.deleteTransactions", comment: "")
+            ls("subcategory.deleteTransactions", comment: "")
         }
         static var deleteTransactionsDesc: String {
-            NSLocalizedString("subcategory.deleteTransactionsDesc", comment: "")
+            ls("subcategory.deleteTransactionsDesc", comment: "")
         }
         static var selectDestination: String {
-            NSLocalizedString("subcategory.selectDestination", comment: "")
+            ls("subcategory.selectDestination", comment: "")
         }
         static var deleteTransactionsConfirmTitle: String {
-            NSLocalizedString("subcategory.deleteTransactionsConfirmTitle", comment: "")
+            ls("subcategory.deleteTransactionsConfirmTitle", comment: "")
         }
         static var deleteTransactionsConfirm: String {
-            NSLocalizedString("subcategory.deleteTransactionsConfirm", comment: "")
+            ls("subcategory.deleteTransactionsConfirm", comment: "")
         }
         static func deleteTransactionsConfirmMessage(_ count: Int) -> String {
             String(
-                format: NSLocalizedString("subcategory.deleteTransactionsConfirmMessage", comment: ""),
+                format: ls("subcategory.deleteTransactionsConfirmMessage", comment: ""),
                 count
             )
         }
         static var details: String {
-            NSLocalizedString("subcategory.details", comment: "")
+            ls("subcategory.details", comment: "")
         }
         static var namePlaceholder: String {
-            NSLocalizedString("subcategory.namePlaceholder", comment: "")
+            ls("subcategory.namePlaceholder", comment: "")
         }
         static var unassigned: String {
-            NSLocalizedString("subcategory.unassigned", comment: "")
+            ls("subcategory.unassigned", comment: "")
         }
         static var noSubcategory: String {
-            NSLocalizedString("subcategories.noSubcategory", comment: "")
+            ls("subcategories.noSubcategory", comment: "")
         }
     }
 
     // MARK: - Tag
 
     enum Tag {
-        static var new: String { NSLocalizedString("tag.new", comment: "") }
-        static var edit: String { NSLocalizedString("tag.edit", comment: "") }
-        static var newTag: String { NSLocalizedString("tag.newTag", comment: "") }
-        static var editTag: String { NSLocalizedString("tag.editTag", comment: "") }
+        static var new: String { ls("tag.new", comment: "") }
+        static var edit: String { ls("tag.edit", comment: "") }
+        static var newTag: String { ls("tag.newTag", comment: "") }
+        static var editTag: String { ls("tag.editTag", comment: "") }
         static var createFirstDescription: String {
-            NSLocalizedString("tag.createFirstDescription", comment: "")
+            ls("tag.createFirstDescription", comment: "")
         }
-        static var delete: String { NSLocalizedString("tag.delete", comment: "") }
+        static var delete: String { ls("tag.delete", comment: "") }
         static var deleteConfirmation: String {
-            NSLocalizedString("tag.deleteConfirmation", comment: "")
+            ls("tag.deleteConfirmation", comment: "")
         }
         static var namePlaceholder: String {
-            NSLocalizedString("tag.namePlaceholder", comment: "")
+            ls("tag.namePlaceholder", comment: "")
         }
         static var color: String {
-            NSLocalizedString("tag.color", comment: "")
+            ls("tag.color", comment: "")
         }
         static func colorSelected(_ hex: String) -> String {
-            String(format: NSLocalizedString("tag.colorSelected", comment: ""), hex)
+            String(format: ls("tag.colorSelected", comment: ""), hex)
         }
     }
 
     // MARK: - Alert
 
     enum Alert {
-        static var unsavedChanges: String { NSLocalizedString("alert.unsavedChanges", comment: "") }
-        static var discardChanges: String { NSLocalizedString("alert.discardChanges", comment: "") }
-        static var keepEditing: String { NSLocalizedString("alert.keepEditing", comment: "") }
-        static var confirmDelete: String { NSLocalizedString("alert.confirmDelete", comment: "") }
-        static var deleteWarning: String { NSLocalizedString("alert.deleteWarning", comment: "") }
+        static var unsavedChanges: String { ls("alert.unsavedChanges", comment: "") }
+        static var discardChanges: String { ls("alert.discardChanges", comment: "") }
+        static var keepEditing: String { ls("alert.keepEditing", comment: "") }
+        static var confirmDelete: String { ls("alert.confirmDelete", comment: "") }
+        static var deleteWarning: String { ls("alert.deleteWarning", comment: "") }
     }
 
     // MARK: - Import
 
     enum Import {
-        static var title: String { NSLocalizedString("import.title", comment: "") }
-        static var selectFile: String { NSLocalizedString("import.selectFile", comment: "") }
-        static var importing: String { NSLocalizedString("import.importing", comment: "") }
+        static var title: String { ls("import.title", comment: "") }
+        static var selectFile: String { ls("import.selectFile", comment: "") }
+        static var importing: String { ls("import.importing", comment: "") }
         static var downloadTemplate: String {
-            NSLocalizedString("import.downloadTemplate", comment: "")
+            ls("import.downloadTemplate", comment: "")
         }
         static var createCategories: String {
-            NSLocalizedString("import.createCategories", comment: "")
+            ls("import.createCategories", comment: "")
         }
-        static var continueBtn: String { NSLocalizedString("import.continue", comment: "") }
+        static var continueBtn: String { ls("import.continue", comment: "") }
         static var noAccountsAvailable: String {
-            NSLocalizedString("import.noAccountsAvailable", comment: "")
+            ls("import.noAccountsAvailable", comment: "")
         }
         static var createAccountFirst: String {
-            NSLocalizedString("import.createAccountFirst", comment: "")
+            ls("import.createAccountFirst", comment: "")
         }
         static var completed: String {
-            NSLocalizedString("import.completed", comment: "")
+            ls("import.completed", comment: "")
         }
         static var importError: String {
-            NSLocalizedString("import.error", comment: "")
+            ls("import.error", comment: "")
         }
         static var templateGenerated: String {
-            NSLocalizedString("import.templateGenerated", comment: "")
+            ls("import.templateGenerated", comment: "")
         }
         static var templateGeneratedMessage: String {
-            NSLocalizedString("import.templateGeneratedMessage", comment: "")
+            ls("import.templateGeneratedMessage", comment: "")
         }
         static var introDescription: String {
-            NSLocalizedString("import.introDescription", comment: "")
+            ls("import.introDescription", comment: "")
         }
         static var templateDescription: String {
-            NSLocalizedString("import.templateDescription", comment: "")
+            ls("import.templateDescription", comment: "")
         }
         static var categoriesDescription: String {
-            NSLocalizedString("import.categoriesDescription", comment: "")
+            ls("import.categoriesDescription", comment: "")
         }
         static var selectAccount: String {
-            NSLocalizedString("import.selectAccount", comment: "")
+            ls("import.selectAccount", comment: "")
         }
         static var fileUrlError: String {
-            NSLocalizedString("import.fileUrlError", comment: "")
+            ls("import.fileUrlError", comment: "")
         }
         static var createAccountBeforeImport: String {
-            NSLocalizedString("import.createAccountBeforeImport", comment: "")
+            ls("import.createAccountBeforeImport", comment: "")
         }
 
         // Multi-currency import
         static var multiCurrencyDetected: String {
-            NSLocalizedString("import.multiCurrencyDetected", comment: "")
+            ls("import.multiCurrencyDetected", comment: "")
         }
         static var assignAccountPerCurrency: String {
-            NSLocalizedString("import.assignAccountPerCurrency", comment: "")
+            ls("import.assignAccountPerCurrency", comment: "")
         }
         static var selectAccountForCurrency: String {
-            NSLocalizedString("import.selectAccountForCurrency", comment: "")
+            ls("import.selectAccountForCurrency", comment: "")
         }
         static func currenciesDetected(_ count: Int) -> String {
-            String(format: NSLocalizedString("import.currenciesDetected", comment: ""), count)
+            String(format: ls("import.currenciesDetected", comment: ""), count)
         }
         static func recordsImportedMultiCurrency(_ count: Int, _ currencies: Int) -> String {
-            String(format: NSLocalizedString("import.recordsImportedMultiCurrency", comment: ""), count, currencies)
+            String(format: ls("import.recordsImportedMultiCurrency", comment: ""), count, currencies)
         }
         static func noAccountsForCurrency(_ currency: String) -> String {
-            String(format: NSLocalizedString("import.noAccountsForCurrency", comment: ""), currency)
+            String(format: ls("import.noAccountsForCurrency", comment: ""), currency)
         }
         static var noCurrenciesDetected: String {
-            NSLocalizedString("import.noCurrenciesDetected", comment: "")
+            ls("import.noCurrenciesDetected", comment: "")
         }
         static var importAction: String {
-            NSLocalizedString("import.importAction", comment: "")
+            ls("import.importAction", comment: "")
         }
     }
 
     // MARK: - Export
 
     enum Export {
-        static var title: String { NSLocalizedString("export.title", comment: "") }
-        static var filters: String { NSLocalizedString("export.filters", comment: "") }
-        static var columns: String { NSLocalizedString("export.columns", comment: "") }
-        static var summary: String { NSLocalizedString("export.summary", comment: "") }
-        static var format: String { NSLocalizedString("export.format", comment: "") }
-        static var period: String { NSLocalizedString("export.period", comment: "") }
-        static var selectAll: String { NSLocalizedString("export.selectAll", comment: "") }
-        static var deselectAll: String { NSLocalizedString("export.deselectAll", comment: "") }
-        static var customizeFile: String { NSLocalizedString("export.customizeFile", comment: "") }
+        static var title: String { ls("export.title", comment: "") }
+        static var filters: String { ls("export.filters", comment: "") }
+        static var columns: String { ls("export.columns", comment: "") }
+        static var summary: String { ls("export.summary", comment: "") }
+        static var format: String { ls("export.format", comment: "") }
+        static var period: String { ls("export.period", comment: "") }
+        static var selectAll: String { ls("export.selectAll", comment: "") }
+        static var deselectAll: String { ls("export.deselectAll", comment: "") }
+        static var customizeFile: String { ls("export.customizeFile", comment: "") }
         static var csvGeneratedSuccess: String {
-            NSLocalizedString("export.csvGeneratedSuccess", comment: "")
+            ls("export.csvGeneratedSuccess", comment: "")
         }
-        static var confirmExport: String { NSLocalizedString("export.confirmExport", comment: "") }
+        static var confirmExport: String { ls("export.confirmExport", comment: "") }
         static var selectColumns: String {
-            NSLocalizedString("export.selectColumns", comment: "")
+            ls("export.selectColumns", comment: "")
         }
         static var availableColumns: String {
-            NSLocalizedString("export.availableColumns", comment: "")
+            ls("export.availableColumns", comment: "")
         }
         static var columnsDescription: String {
-            NSLocalizedString("export.columnsDescription", comment: "")
+            ls("export.columnsDescription", comment: "")
         }
         static var summaryAndExport: String {
-            NSLocalizedString("export.summaryAndExport", comment: "")
+            ls("export.summaryAndExport", comment: "")
         }
         static var summaryDescription: String {
-            NSLocalizedString("export.summaryDescription", comment: "")
+            ls("export.summaryDescription", comment: "")
         }
         static var filtersSummary: String {
-            NSLocalizedString("export.filtersSummary", comment: "")
+            ls("export.filtersSummary", comment: "")
         }
         static var columnsToExport: String {
-            NSLocalizedString("export.columnsToExport", comment: "")
+            ls("export.columnsToExport", comment: "")
         }
         static var exportToCSV: String {
-            NSLocalizedString("export.exportToCSV", comment: "")
+            ls("export.exportToCSV", comment: "")
         }
         static var exportBtn: String {
-            NSLocalizedString("export.exportBtn", comment: "")
+            ls("export.exportBtn", comment: "")
         }
         static var exportError: String {
-            NSLocalizedString("export.exportError", comment: "")
+            ls("export.exportError", comment: "")
         }
         static var exportCompleted: String {
-            NSLocalizedString("export.exportCompleted", comment: "")
+            ls("export.exportCompleted", comment: "")
         }
         static var backToSettings: String {
-            NSLocalizedString("export.backToSettings", comment: "")
+            ls("export.backToSettings", comment: "")
         }
         static var exportData: String {
-            NSLocalizedString("export.exportData", comment: "")
+            ls("export.exportData", comment: "")
         }
         static var greaterThan: String {
-            NSLocalizedString("export.greaterThan", comment: "")
+            ls("export.greaterThan", comment: "")
         }
         static var lessThan: String {
-            NSLocalizedString("export.lessThan", comment: "")
+            ls("export.lessThan", comment: "")
         }
         static var selectSingleCurrency: String {
-            NSLocalizedString("export.selectSingleCurrency", comment: "")
+            ls("export.selectSingleCurrency", comment: "")
         }
         static var allAvailable: String {
-            NSLocalizedString("export.allAvailable", comment: "")
+            ls("export.allAvailable", comment: "")
         }
         static var noTagsSelected: String {
-            NSLocalizedString("export.noTagsSelected", comment: "")
+            ls("export.noTagsSelected", comment: "")
         }
         static var noSubcategorySelected: String {
-            NSLocalizedString("export.noSubcategorySelected", comment: "")
+            ls("export.noSubcategorySelected", comment: "")
         }
         static var any: String {
-            NSLocalizedString("export.any", comment: "")
+            ls("export.any", comment: "")
         }
         static var between: String {
-            NSLocalizedString("export.between", comment: "")
+            ls("export.between", comment: "")
         }
         static var condition: String {
-            NSLocalizedString("export.condition", comment: "")
+            ls("export.condition", comment: "")
         }
         static var noneSelected: String {
-            NSLocalizedString("export.noneSelected", comment: "")
+            ls("export.noneSelected", comment: "")
         }
         static func accountsSelected(_ count: Int) -> String {
-            String(format: NSLocalizedString("export.accountsSelected", comment: ""), count)
+            String(format: ls("export.accountsSelected", comment: ""), count)
         }
         static var allCategories: String {
-            NSLocalizedString("export.allCategories", comment: "")
+            ls("export.allCategories", comment: "")
         }
         static func subcategoriesSelected(_ count: Int) -> String {
-            String(format: NSLocalizedString("export.subcategoriesSelected", comment: ""), count)
+            String(format: ls("export.subcategoriesSelected", comment: ""), count)
         }
         static var allTags: String {
-            NSLocalizedString("export.allTags", comment: "")
+            ls("export.allTags", comment: "")
         }
         static var allCurrencies: String {
-            NSLocalizedString("export.allCurrencies", comment: "")
+            ls("export.allCurrencies", comment: "")
         }
 
         // Column display names
-        static var columnDate: String { NSLocalizedString("export.column.date", comment: "") }
-        static var columnAmount: String { NSLocalizedString("export.column.amount", comment: "") }
-        static var columnCurrency: String { NSLocalizedString("export.column.currency", comment: "") }
-        static var columnAccount: String { NSLocalizedString("export.column.account", comment: "") }
-        static var columnCategory: String { NSLocalizedString("export.column.category", comment: "") }
-        static var columnSubcategory: String { NSLocalizedString("export.column.subcategory", comment: "") }
-        static var columnTags: String { NSLocalizedString("export.column.tags", comment: "") }
-        static var columnNote: String { NSLocalizedString("export.column.note", comment: "") }
+        static var columnDate: String { ls("export.column.date", comment: "") }
+        static var columnAmount: String { ls("export.column.amount", comment: "") }
+        static var columnCurrency: String { ls("export.column.currency", comment: "") }
+        static var columnAccount: String { ls("export.column.account", comment: "") }
+        static var columnCategory: String { ls("export.column.category", comment: "") }
+        static var columnSubcategory: String { ls("export.column.subcategory", comment: "") }
+        static var columnTags: String { ls("export.column.tags", comment: "") }
+        static var columnNote: String { ls("export.column.note", comment: "") }
 
         // Column descriptions
-        static var columnDateDesc: String { NSLocalizedString("export.column.date.description", comment: "") }
-        static var columnAmountDesc: String { NSLocalizedString("export.column.amount.description", comment: "") }
-        static var columnCurrencyDesc: String { NSLocalizedString("export.column.currency.description", comment: "") }
-        static var columnAccountDesc: String { NSLocalizedString("export.column.account.description", comment: "") }
-        static var columnCategoryDesc: String { NSLocalizedString("export.column.category.description", comment: "") }
-        static var columnSubcategoryDesc: String { NSLocalizedString("export.column.subcategory.description", comment: "") }
-        static var columnTagsDesc: String { NSLocalizedString("export.column.tags.description", comment: "") }
-        static var columnNoteDesc: String { NSLocalizedString("export.column.note.description", comment: "") }
+        static var columnDateDesc: String { ls("export.column.date.description", comment: "") }
+        static var columnAmountDesc: String { ls("export.column.amount.description", comment: "") }
+        static var columnCurrencyDesc: String { ls("export.column.currency.description", comment: "") }
+        static var columnAccountDesc: String { ls("export.column.account.description", comment: "") }
+        static var columnCategoryDesc: String { ls("export.column.category.description", comment: "") }
+        static var columnSubcategoryDesc: String { ls("export.column.subcategory.description", comment: "") }
+        static var columnTagsDesc: String { ls("export.column.tags.description", comment: "") }
+        static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
     }
 
     // MARK: - Favorites
 
     enum Favorites {
-        static var title: String { NSLocalizedString("favorites.title", comment: "") }
-        static var new: String { NSLocalizedString("favorites.new", comment: "") }
-        static var edit: String { NSLocalizedString("favorites.edit", comment: "") }
-        static var noFavorites: String { NSLocalizedString("favorites.noFavorites", comment: "") }
+        static var title: String { ls("favorites.title", comment: "") }
+        static var new: String { ls("favorites.new", comment: "") }
+        static var edit: String { ls("favorites.edit", comment: "") }
+        static var noFavorites: String { ls("favorites.noFavorites", comment: "") }
         static var createTemplate: String {
-            NSLocalizedString("favorites.createTemplate", comment: "")
+            ls("favorites.createTemplate", comment: "")
         }
         static var newTitle: String {
-            NSLocalizedString("favorites.newTitle", comment: "")
+            ls("favorites.newTitle", comment: "")
         }
         static var editTitle: String {
-            NSLocalizedString("favorites.editTitle", comment: "")
+            ls("favorites.editTitle", comment: "")
         }
         static var namePlaceholder: String {
-            NSLocalizedString("favorites.namePlaceholder", comment: "")
+            ls("favorites.namePlaceholder", comment: "")
         }
         static var notConfigured: String {
-            NSLocalizedString("favorites.notConfigured", comment: "")
+            ls("favorites.notConfigured", comment: "")
         }
         static var descriptionPlaceholder: String {
-            NSLocalizedString("favorites.descriptionPlaceholder", comment: "")
+            ls("favorites.descriptionPlaceholder", comment: "")
         }
         static var saveDescription: String {
-            NSLocalizedString("favorites.saveDescription", comment: "")
+            ls("favorites.saveDescription", comment: "")
         }
     }
 
@@ -1111,487 +1157,487 @@ enum L10n {
 
     enum Scheduled {
         static var saveDescription: String {
-            NSLocalizedString("scheduled.saveDescription", comment: "")
+            ls("scheduled.saveDescription", comment: "")
         }
 
         static var paid: String {
-            NSLocalizedString("scheduled.paid", comment: "Paid badge for scheduled payments")
+            ls("scheduled.paid", comment: "Paid badge for scheduled payments")
         }
 
         static var draftCreatedTitle: String {
-            NSLocalizedString("scheduled.draftCreatedTitle", comment: "Alert title when drafts created")
+            ls("scheduled.draftCreatedTitle", comment: "Alert title when drafts created")
         }
 
         static func draftCreatedMessage(_ count: Int) -> String {
-            String(format: NSLocalizedString("scheduled.draftCreatedMessage", comment: "Alert message"), count)
+            String(format: ls("scheduled.draftCreatedMessage", comment: "Alert message"), count)
         }
 
         static var viewInbox: String {
-            NSLocalizedString("scheduled.viewInbox", comment: "Button to view inbox")
+            ls("scheduled.viewInbox", comment: "Button to view inbox")
         }
     }
 
     // MARK: - Settings
 
     enum Settings {
-        static var title: String { NSLocalizedString("settings.title", comment: "") }
-        static var theme: String { NSLocalizedString("settings.theme", comment: "") }
+        static var title: String { ls("settings.title", comment: "") }
+        static var theme: String { ls("settings.theme", comment: "") }
         static var themeDescription: String {
-            NSLocalizedString("settings.themeDescription", comment: "")
+            ls("settings.themeDescription", comment: "")
         }
-        static var currency: String { NSLocalizedString("settings.currency", comment: "") }
-        static var appIcon: String { NSLocalizedString("settings.appIcon", comment: "") }
+        static var currency: String { ls("settings.currency", comment: "") }
+        static var appIcon: String { ls("settings.appIcon", comment: "") }
         static var appIconDescription: String {
-            NSLocalizedString("settings.appIconDescription", comment: "")
+            ls("settings.appIconDescription", comment: "")
         }
         static var personalization: String {
-            NSLocalizedString("settings.personalization", comment: "")
+            ls("settings.personalization", comment: "")
         }
         static var personalizationDescription: String {
-            NSLocalizedString("settings.personalizationDescription", comment: "")
+            ls("settings.personalizationDescription", comment: "")
         }
-        static var sectionInterface: String { NSLocalizedString("settings.sectionInterface", comment: "") }
-        static var sectionCalendar: String { NSLocalizedString("settings.sectionCalendar", comment: "") }
-        static var sectionIndicators: String { NSLocalizedString("settings.sectionIndicators", comment: "") }
-        static var sectionFormat: String { NSLocalizedString("settings.sectionFormat", comment: "") }
-        static var accounts: String { NSLocalizedString("settings.accounts", comment: "") }
-        static var categories: String { NSLocalizedString("settings.categories", comment: "") }
-        static var tags: String { NSLocalizedString("settings.tags", comment: "") }
+        static var sectionInterface: String { ls("settings.sectionInterface", comment: "") }
+        static var sectionCalendar: String { ls("settings.sectionCalendar", comment: "") }
+        static var sectionIndicators: String { ls("settings.sectionIndicators", comment: "") }
+        static var sectionFormat: String { ls("settings.sectionFormat", comment: "") }
+        static var accounts: String { ls("settings.accounts", comment: "") }
+        static var categories: String { ls("settings.categories", comment: "") }
+        static var tags: String { ls("settings.tags", comment: "") }
         static var notifications: String {
-            NSLocalizedString("settings.notifications", comment: "")
+            ls("settings.notifications", comment: "")
         }
-        static var favorites: String { NSLocalizedString("settings.favorites", comment: "") }
+        static var favorites: String { ls("settings.favorites", comment: "") }
         static var budgetsFavorites: String {
-            NSLocalizedString("settings.budgetsFavorites", comment: "")
+            ls("settings.budgetsFavorites", comment: "")
         }
         static var budgetsFavoritesInfo: String {
-            NSLocalizedString("settings.budgetsFavoritesInfo", comment: "")
+            ls("settings.budgetsFavoritesInfo", comment: "")
         }
         static var budgetsFavoritesEmptyHint: String {
-            NSLocalizedString("settings.budgetsFavoritesEmptyHint", comment: "")
+            ls("settings.budgetsFavoritesEmptyHint", comment: "")
         }
         static var budgetsFavoritesReorder: String {
-            NSLocalizedString("settings.budgetsFavoritesReorder", comment: "")
+            ls("settings.budgetsFavoritesReorder", comment: "")
         }
         static var tabBarConfig: String {
-            NSLocalizedString("settings.tabBarConfig", comment: "")
+            ls("settings.tabBarConfig", comment: "")
         }
         static var tabBarConfigInfo: String {
-            NSLocalizedString("settings.tabBarConfigInfo", comment: "")
+            ls("settings.tabBarConfigInfo", comment: "")
         }
         static var tabBarConfigActive: String {
-            NSLocalizedString("settings.tabBarConfigActive", comment: "")
+            ls("settings.tabBarConfigActive", comment: "")
         }
         static var tabBarConfigAvailable: String {
-            NSLocalizedString("settings.tabBarConfigAvailable", comment: "")
+            ls("settings.tabBarConfigAvailable", comment: "")
         }
         static var tabBarConfigReorderHint: String {
-            NSLocalizedString("settings.tabBarConfigReorderHint", comment: "")
+            ls("settings.tabBarConfigReorderHint", comment: "")
         }
         static var tabBarConfigMinWarning: String {
-            NSLocalizedString("settings.tabBarConfigMinWarning", comment: "")
+            ls("settings.tabBarConfigMinWarning", comment: "")
         }
         static var tabBarConfigMaxWarning: String {
-            NSLocalizedString("settings.tabBarConfigMaxWarning", comment: "")
+            ls("settings.tabBarConfigMaxWarning", comment: "")
         }
         static var plannedPayments: String {
-            NSLocalizedString("settings.plannedPayments", comment: "")
+            ls("settings.plannedPayments", comment: "")
         }
         static var voiceInputEnabled: String {
-            NSLocalizedString("settings.voiceInputEnabled", comment: "")
+            ls("settings.voiceInputEnabled", comment: "")
         }
         static var voiceLanguage: String {
-            NSLocalizedString("settings.voiceLanguage", comment: "")
+            ls("settings.voiceLanguage", comment: "")
         }
         static var imageInputEnabled: String {
-            NSLocalizedString("settings.imageInputEnabled", comment: "")
+            ls("settings.imageInputEnabled", comment: "")
         }
-        static var resetData: String { NSLocalizedString("settings.resetData", comment: "") }
-        static var version: String { NSLocalizedString("settings.version", comment: "") }
-        static var light: String { NSLocalizedString("settings.light", comment: "") }
-        static var dark: String { NSLocalizedString("settings.dark", comment: "") }
-        static var system: String { NSLocalizedString("settings.system", comment: "") }
+        static var resetData: String { ls("settings.resetData", comment: "") }
+        static var version: String { ls("settings.version", comment: "") }
+        static var light: String { ls("settings.light", comment: "") }
+        static var dark: String { ls("settings.dark", comment: "") }
+        static var system: String { ls("settings.system", comment: "") }
         static var defaultCurrency: String {
-            NSLocalizedString("settings.defaultCurrency", comment: "")
+            ls("settings.defaultCurrency", comment: "")
         }
-        static var currentIcon: String { NSLocalizedString("settings.currentIcon", comment: "") }
-        static var resetAllData: String { NSLocalizedString("settings.resetAllData", comment: "") }
+        static var currentIcon: String { ls("settings.currentIcon", comment: "") }
+        static var resetAllData: String { ls("settings.resetAllData", comment: "") }
         static var deleteAllData: String {
-            NSLocalizedString("settings.deleteAllData", comment: "")
+            ls("settings.deleteAllData", comment: "")
         }
         static var currencyAndExchange: String {
-            NSLocalizedString("settings.currencyAndExchange", comment: "")
+            ls("settings.currencyAndExchange", comment: "")
         }
         static var currencyDescription: String {
-            NSLocalizedString("settings.currencyDescription", comment: "")
+            ls("settings.currencyDescription", comment: "")
         }
         static var preferredCurrency: String {
-            NSLocalizedString("settings.preferredCurrency", comment: "")
+            ls("settings.preferredCurrency", comment: "")
         }
-        static var exchangeRate: String { NSLocalizedString("settings.exchangeRate", comment: "") }
+        static var exchangeRate: String { ls("settings.exchangeRate", comment: "") }
         static var secondaryCurrencies: String {
-            NSLocalizedString("settings.secondaryCurrencies", comment: "")
+            ls("settings.secondaryCurrencies", comment: "")
         }
         static var secondaryCurrenciesHint: String {
-            NSLocalizedString("settings.secondaryCurrenciesHint", comment: "")
+            ls("settings.secondaryCurrenciesHint", comment: "")
         }
         static var showMoreCurrencies: String {
-            NSLocalizedString("settings.showMoreCurrencies", comment: "")
+            ls("settings.showMoreCurrencies", comment: "")
         }
         static var recommendedCurrencies: String {
-            NSLocalizedString("settings.recommendedCurrencies", comment: "")
+            ls("settings.recommendedCurrencies", comment: "")
         }
 
-        static var versionInfo: String { NSLocalizedString("settings.versionInfo", comment: "") }
+        static var versionInfo: String { ls("settings.versionInfo", comment: "") }
 
         // Sections
-        static var organization: String { NSLocalizedString("settings.organization", comment: "") }
-        static var preferences: String { NSLocalizedString("settings.preferences", comment: "") }
-        static var data: String { NSLocalizedString("settings.data", comment: "") }
-        static var security: String { NSLocalizedString("settings.security", comment: "") }
-        static var help: String { NSLocalizedString("settings.help", comment: "") }
-        static var legal: String { NSLocalizedString("settings.legal", comment: "") }
+        static var organization: String { ls("settings.organization", comment: "") }
+        static var preferences: String { ls("settings.preferences", comment: "") }
+        static var data: String { ls("settings.data", comment: "") }
+        static var security: String { ls("settings.security", comment: "") }
+        static var help: String { ls("settings.help", comment: "") }
+        static var legal: String { ls("settings.legal", comment: "") }
 
         // Rows
-        static var importData: String { NSLocalizedString("settings.importData", comment: "") }
-        static var exportData: String { NSLocalizedString("settings.exportData", comment: "") }
-        static var wipeData: String { NSLocalizedString("settings.wipeData", comment: "") }
-        static var faceId: String { NSLocalizedString("settings.faceId", comment: "") }
-        static var permissions: String { NSLocalizedString("settings.permissions", comment: "") }
+        static var importData: String { ls("settings.importData", comment: "") }
+        static var exportData: String { ls("settings.exportData", comment: "") }
+        static var wipeData: String { ls("settings.wipeData", comment: "") }
+        static var faceId: String { ls("settings.faceId", comment: "") }
+        static var permissions: String { ls("settings.permissions", comment: "") }
         static var subscriptions: String {
-            NSLocalizedString("settings.subscriptions", comment: "")
+            ls("settings.subscriptions", comment: "")
         }
-        static var rateApp: String { NSLocalizedString("settings.rateApp", comment: "") }
-        static var tips: String { NSLocalizedString("settings.tips", comment: "") }
-        static var faq: String { NSLocalizedString("settings.faq", comment: "") }
-        static var contact: String { NSLocalizedString("settings.contact", comment: "") }
-        static var privacy: String { NSLocalizedString("settings.privacy", comment: "") }
-        static var terms: String { NSLocalizedString("settings.terms", comment: "") }
+        static var rateApp: String { ls("settings.rateApp", comment: "") }
+        static var tips: String { ls("settings.tips", comment: "") }
+        static var faq: String { ls("settings.faq", comment: "") }
+        static var contact: String { ls("settings.contact", comment: "") }
+        static var privacy: String { ls("settings.privacy", comment: "") }
+        static var terms: String { ls("settings.terms", comment: "") }
 
         // system, light, dark removed (duplicates)
 
         static var defaultPeriod: String {
-            NSLocalizedString("settings.defaultPeriod", comment: "")
+            ls("settings.defaultPeriod", comment: "")
         }
         static var defaultPeriodDescription: String {
-            NSLocalizedString("settings.defaultPeriodDescription", comment: "")
+            ls("settings.defaultPeriodDescription", comment: "")
         }
         static var colorfulIcons: String {
-            NSLocalizedString("settings.colorfulIcons", comment: "")
+            ls("settings.colorfulIcons", comment: "")
         }
         static var colorfulIconsDescription: String {
-            NSLocalizedString("settings.colorfulIconsDescription", comment: "")
+            ls("settings.colorfulIconsDescription", comment: "")
         }
         static var firstWeekday: String {
-            NSLocalizedString("settings.firstWeekday", comment: "")
+            ls("settings.firstWeekday", comment: "")
         }
         static var firstWeekdayDescription: String {
-            NSLocalizedString("settings.firstWeekdayDescription", comment: "")
+            ls("settings.firstWeekdayDescription", comment: "")
         }
         static var sunday: String {
-            NSLocalizedString("settings.sunday", comment: "")
+            ls("settings.sunday", comment: "")
         }
         static var monday: String {
-            NSLocalizedString("settings.monday", comment: "")
+            ls("settings.monday", comment: "")
         }
         static var widgetHints: String {
-            NSLocalizedString("settings.widgetHints", comment: "")
+            ls("settings.widgetHints", comment: "")
         }
         static var widgetHintsDescription: String {
-            NSLocalizedString("settings.widgetHintsDescription", comment: "")
+            ls("settings.widgetHintsDescription", comment: "")
         }
         static var showVariations: String {
-            NSLocalizedString("settings.showVariations", comment: "")
+            ls("settings.showVariations", comment: "")
         }
         static var showVariationsDescription: String {
-            NSLocalizedString("settings.showVariationsDescription", comment: "")
+            ls("settings.showVariationsDescription", comment: "")
         }
         static var decimalPlaces: String {
-            NSLocalizedString("settings.decimalPlaces", comment: "")
+            ls("settings.decimalPlaces", comment: "")
         }
         static var decimalPlacesDescription: String {
-            NSLocalizedString("settings.decimalPlacesDescription", comment: "")
+            ls("settings.decimalPlacesDescription", comment: "")
         }
         static var decimalsNone: String {
-            NSLocalizedString("settings.decimalsNone", comment: "")
+            ls("settings.decimalsNone", comment: "")
         }
         static var decimalsOne: String {
-            NSLocalizedString("settings.decimalsOne", comment: "")
+            ls("settings.decimalsOne", comment: "")
         }
         static var decimalsTwo: String {
-            NSLocalizedString("settings.decimalsTwo", comment: "")
+            ls("settings.decimalsTwo", comment: "")
         }
         static var currencyFormat: String {
-            NSLocalizedString("settings.currencyFormat", comment: "")
+            ls("settings.currencyFormat", comment: "")
         }
         static var currencyFormatDescription: String {
-            NSLocalizedString("settings.currencyFormatDescription", comment: "")
+            ls("settings.currencyFormatDescription", comment: "")
         }
         static var currencyCode: String {
-            NSLocalizedString("settings.currencyCode", comment: "")
+            ls("settings.currencyCode", comment: "")
         }
         static var currencySymbol: String {
-            NSLocalizedString("settings.currencySymbol", comment: "")
+            ls("settings.currencySymbol", comment: "")
         }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
-            NSLocalizedString("settings.resetDataDescription", comment: "")
+            ls("settings.resetDataDescription", comment: "")
         }
         // deleteAllData removed (duplicate)
         static var deleteDataConfirmation: String {
-            NSLocalizedString("settings.deleteDataConfirmation", comment: "")
+            ls("settings.deleteDataConfirmation", comment: "")
         }
         static var deleteDataWarning: String {
-            NSLocalizedString("settings.deleteDataWarning", comment: "")
+            ls("settings.deleteDataWarning", comment: "")
         }
-        static var delete: String { NSLocalizedString("settings.delete", comment: "") }
-        static var cancel: String { NSLocalizedString("settings.cancel", comment: "") }
-        static var iconOriginal: String { NSLocalizedString("settings.iconOriginal", comment: "") }
-        static var iconDark: String { NSLocalizedString("settings.iconDark", comment: "") }
-        static var iconLight: String { NSLocalizedString("settings.iconLight", comment: "") }
-        static var iconNeon: String { NSLocalizedString("settings.iconNeon", comment: "") }
+        static var delete: String { ls("settings.delete", comment: "") }
+        static var cancel: String { ls("settings.cancel", comment: "") }
+        static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }
+        static var iconDark: String { ls("settings.iconDark", comment: "") }
+        static var iconLight: String { ls("settings.iconLight", comment: "") }
+        static var iconNeon: String { ls("settings.iconNeon", comment: "") }
         static var deleteAllDataAction: String {
-            NSLocalizedString("settings.deleteAllDataAction", comment: "")
+            ls("settings.deleteAllDataAction", comment: "")
         }
         static var deletingData: String {
-            NSLocalizedString("settings.deletingData", comment: "")
+            ls("settings.deletingData", comment: "")
         }
         static var appIconTitle: String {
-            NSLocalizedString("settings.appIconTitle", comment: "")
+            ls("settings.appIconTitle", comment: "")
         }
         static var iconNotSupported: String {
-            NSLocalizedString("settings.iconNotSupported", comment: "")
+            ls("settings.iconNotSupported", comment: "")
         }
         static func iconChangeFailed(_ error: String) -> String {
-            String(format: NSLocalizedString("settings.iconChangeFailed", comment: ""), error)
+            String(format: ls("settings.iconChangeFailed", comment: ""), error)
         }
         static var deleteDataError: String {
-            NSLocalizedString("settings.deleteDataError", comment: "")
+            ls("settings.deleteDataError", comment: "")
         }
         static var deleteDataUnknownError: String {
-            NSLocalizedString("settings.deleteDataUnknownError", comment: "")
+            ls("settings.deleteDataUnknownError", comment: "")
         }
     }
 
     // MARK: - Profile
 
     enum Profile {
-        static var title: String { NSLocalizedString("profile.title", comment: "") }
-        static var edit: String { NSLocalizedString("profile.edit", comment: "") }
-        static var importSuccess: String { NSLocalizedString("profile.importSuccess", comment: "") }
-        static var importError: String { NSLocalizedString("profile.importError", comment: "") }
-        static var appearance: String { NSLocalizedString("profile.appearance", comment: "") }
+        static var title: String { ls("profile.title", comment: "") }
+        static var edit: String { ls("profile.edit", comment: "") }
+        static var importSuccess: String { ls("profile.importSuccess", comment: "") }
+        static var importError: String { ls("profile.importError", comment: "") }
+        static var appearance: String { ls("profile.appearance", comment: "") }
         static var personalDetails: String {
-            NSLocalizedString("profile.personalDetails", comment: "")
+            ls("profile.personalDetails", comment: "")
         }
-        static var changePhoto: String { NSLocalizedString("profile.changePhoto", comment: "") }
-        static var addPhoto: String { NSLocalizedString("profile.addPhoto", comment: "") }
-        static var yourName: String { NSLocalizedString("profile.yourName", comment: "") }
+        static var changePhoto: String { ls("profile.changePhoto", comment: "") }
+        static var addPhoto: String { ls("profile.addPhoto", comment: "") }
+        static var yourName: String { ls("profile.yourName", comment: "") }
         static var aliasPlaceholder: String {
-            NSLocalizedString("profile.aliasPlaceholder", comment: "")
+            ls("profile.aliasPlaceholder", comment: "")
         }
-        static var characters: String { NSLocalizedString("profile.characters", comment: "") }
-        static var minChars: String { NSLocalizedString("profile.minChars", comment: "") }
-        static var maxChars: String { NSLocalizedString("profile.maxChars", comment: "") }
-        static var allowedChars: String { NSLocalizedString("profile.allowedChars", comment: "") }
+        static var characters: String { ls("profile.characters", comment: "") }
+        static var minChars: String { ls("profile.minChars", comment: "") }
+        static var maxChars: String { ls("profile.maxChars", comment: "") }
+        static var allowedChars: String { ls("profile.allowedChars", comment: "") }
         static var aliasAvailable: String {
-            NSLocalizedString("profile.aliasAvailable", comment: "")
+            ls("profile.aliasAvailable", comment: "")
         }
-        static var aliasHelper: String { NSLocalizedString("profile.aliasHelper", comment: "") }
-        static var privacyTitle: String { NSLocalizedString("profile.privacyTitle", comment: "") }
-        static var privacyDesc: String { NSLocalizedString("profile.privacyDesc", comment: "") }
+        static var aliasHelper: String { ls("profile.aliasHelper", comment: "") }
+        static var privacyTitle: String { ls("profile.privacyTitle", comment: "") }
+        static var privacyDesc: String { ls("profile.privacyDesc", comment: "") }
         static var aliasFutureNote: String {
-            NSLocalizedString("profile.aliasFutureNote", comment: "")
+            ls("profile.aliasFutureNote", comment: "")
         }
         static var proMember: String {
-            NSLocalizedString("profile.proMember", comment: "Pro member subtitle")
+            ls("profile.proMember", comment: "Pro member subtitle")
         }
-        static var choosePhoto: String { NSLocalizedString("profile.choosePhoto", comment: "") }
-        static var chooseIcon: String { NSLocalizedString("profile.chooseIcon", comment: "") }
-        static var removeAvatar: String { NSLocalizedString("profile.removeAvatar", comment: "") }
-        static var editAvatar: String { NSLocalizedString("profile.editAvatar", comment: "") }
+        static var choosePhoto: String { ls("profile.choosePhoto", comment: "") }
+        static var chooseIcon: String { ls("profile.chooseIcon", comment: "") }
+        static var removeAvatar: String { ls("profile.removeAvatar", comment: "") }
+        static var editAvatar: String { ls("profile.editAvatar", comment: "") }
     }
 
     // MARK: - Common
 
     enum Common {
-        static var accept: String { NSLocalizedString("common.accept", comment: "") }
-        static var name: String { NSLocalizedString("common.name", comment: "") }
-        static var alias: String { NSLocalizedString("common.alias", comment: "") }
-        static var color: String { NSLocalizedString("common.color", comment: "") }
-        static var icon: String { NSLocalizedString("common.icon", comment: "") }
-        static var changeIcon: String { NSLocalizedString("common.changeIcon", comment: "") }
-        static var search: String { NSLocalizedString("common.search", comment: "") }
-        static var loading: String { NSLocalizedString("common.loading", comment: "") }
-        static var error: String { NSLocalizedString("common.error", comment: "") }
-        static var success: String { NSLocalizedString("common.success", comment: "") }
-        static var unknownError: String { NSLocalizedString("common.unknownError", comment: "") }
-        static var saveError: String { NSLocalizedString("common.saveError", comment: "") }
-        static var deleteError: String { NSLocalizedString("common.deleteError", comment: "") }
-        static var dataPrivacy: String { NSLocalizedString("common.dataPrivacy", comment: "") }
-        static var active: String { NSLocalizedString("common.active", comment: "") }
-        static var inactive: String { NSLocalizedString("common.inactive", comment: "") }
-        static var hidden: String { NSLocalizedString("common.hidden", comment: "") }
-        static var archived: String { NSLocalizedString("common.archived", comment: "") }
-        static var recent: String { NSLocalizedString("common.recent", comment: "") }
+        static var accept: String { ls("common.accept", comment: "") }
+        static var name: String { ls("common.name", comment: "") }
+        static var alias: String { ls("common.alias", comment: "") }
+        static var color: String { ls("common.color", comment: "") }
+        static var icon: String { ls("common.icon", comment: "") }
+        static var changeIcon: String { ls("common.changeIcon", comment: "") }
+        static var search: String { ls("common.search", comment: "") }
+        static var loading: String { ls("common.loading", comment: "") }
+        static var error: String { ls("common.error", comment: "") }
+        static var success: String { ls("common.success", comment: "") }
+        static var unknownError: String { ls("common.unknownError", comment: "") }
+        static var saveError: String { ls("common.saveError", comment: "") }
+        static var deleteError: String { ls("common.deleteError", comment: "") }
+        static var dataPrivacy: String { ls("common.dataPrivacy", comment: "") }
+        static var active: String { ls("common.active", comment: "") }
+        static var inactive: String { ls("common.inactive", comment: "") }
+        static var hidden: String { ls("common.hidden", comment: "") }
+        static var archived: String { ls("common.archived", comment: "") }
+        static var recent: String { ls("common.recent", comment: "") }
         static var updatingRecords: String {
-            NSLocalizedString("common.updatingRecords", comment: "")
+            ls("common.updatingRecords", comment: "")
         }
         static var recalculatingConversions: String {
-            NSLocalizedString("common.recalculatingConversions", comment: "")
+            ls("common.recalculatingConversions", comment: "")
         }
-        static var next: String { NSLocalizedString("common.next", comment: "") }
-        static var moreOptions: String { NSLocalizedString("common.moreOptions", comment: "") }
-        static var comingSoon: String { NSLocalizedString("common.comingSoon", comment: "") }
-        static var all: String { NSLocalizedString("common.all", comment: "") }
-        static var others: String { NSLocalizedString("common.others", comment: "") }
-        static var remaining: String { NSLocalizedString("common.remaining", comment: "") }
-        static var uncategorized: String { NSLocalizedString("common.uncategorized", comment: "") }
-        static var date: String { NSLocalizedString("common.date", comment: "") }
-        static var amount: String { NSLocalizedString("common.amount", comment: "") }
-        static var base: String { NSLocalizedString("common.base", comment: "") }
-        static var selectedDate: String { NSLocalizedString("common.selectedDate", comment: "") }
-        static var selectedValue: String { NSLocalizedString("common.selectedValue", comment: "") }
-        static var selectColor: String { NSLocalizedString("common.selectColor", comment: "") }
-        static var useThisColor: String { NSLocalizedString("common.useThisColor", comment: "") }
-        static var newColor: String { NSLocalizedString("common.newColor", comment: "") }
-        static var understood: String { NSLocalizedString("common.understood", comment: "") }
-        static var cannotUndo: String { NSLocalizedString("common.cannotUndo", comment: "") }
-        static var general: String { NSLocalizedString("common.general", comment: "") }
-        static var status: String { NSLocalizedString("common.status", comment: "") }
-        static var actions: String { NSLocalizedString("common.actions", comment: "") }
-        static var lastUpdate: String { NSLocalizedString("common.lastUpdate", comment: "") }
-        static var cancel: String { NSLocalizedString("action.cancel", comment: "") }
-        static var apply: String { NSLocalizedString("common.apply", comment: "Apply action") }
-        static var selected: String { NSLocalizedString("common.selected", comment: "") }
-        static var details: String { NSLocalizedString("common.details", comment: "") }
-        static var select: String { NSLocalizedString("common.select", comment: "") }
-        static var seeAll: String { NSLocalizedString("common.seeAll", comment: "") }
-        static var none: String { NSLocalizedString("common.none", comment: "") }
+        static var next: String { ls("common.next", comment: "") }
+        static var moreOptions: String { ls("common.moreOptions", comment: "") }
+        static var comingSoon: String { ls("common.comingSoon", comment: "") }
+        static var all: String { ls("common.all", comment: "") }
+        static var others: String { ls("common.others", comment: "") }
+        static var remaining: String { ls("common.remaining", comment: "") }
+        static var uncategorized: String { ls("common.uncategorized", comment: "") }
+        static var date: String { ls("common.date", comment: "") }
+        static var amount: String { ls("common.amount", comment: "") }
+        static var base: String { ls("common.base", comment: "") }
+        static var selectedDate: String { ls("common.selectedDate", comment: "") }
+        static var selectedValue: String { ls("common.selectedValue", comment: "") }
+        static var selectColor: String { ls("common.selectColor", comment: "") }
+        static var useThisColor: String { ls("common.useThisColor", comment: "") }
+        static var newColor: String { ls("common.newColor", comment: "") }
+        static var understood: String { ls("common.understood", comment: "") }
+        static var cannotUndo: String { ls("common.cannotUndo", comment: "") }
+        static var general: String { ls("common.general", comment: "") }
+        static var status: String { ls("common.status", comment: "") }
+        static var actions: String { ls("common.actions", comment: "") }
+        static var lastUpdate: String { ls("common.lastUpdate", comment: "") }
+        static var cancel: String { ls("action.cancel", comment: "") }
+        static var apply: String { ls("common.apply", comment: "Apply action") }
+        static var selected: String { ls("common.selected", comment: "") }
+        static var details: String { ls("common.details", comment: "") }
+        static var select: String { ls("common.select", comment: "") }
+        static var seeAll: String { ls("common.seeAll", comment: "") }
+        static var none: String { ls("common.none", comment: "") }
     }
 
     // MARK: - Widgets
 
     enum Widget {
-        static var today: String { NSLocalizedString("widget.today", comment: "") }
-        static var noData: String { NSLocalizedString("widget.noData", comment: "") }
-        static var loading: String { NSLocalizedString("widget.loading", comment: "") }
-        static var preferences: String { NSLocalizedString("widget.preferences", comment: "") }
-        static var visible: String { NSLocalizedString("widget.visible", comment: "") }
-        static var size: String { NSLocalizedString("widget.size", comment: "") }
-        static var compact: String { NSLocalizedString("widget.compact", comment: "") }
-        static var expanded: String { NSLocalizedString("widget.expanded", comment: "") }
-        static var top3: String { NSLocalizedString("widget.top3", comment: "") }
-        static var top5: String { NSLocalizedString("widget.top5", comment: "") }
-        static var summary: String { NSLocalizedString("widget.summary", comment: "") }
-        static var list: String { NSLocalizedString("widget.list", comment: "") }
-        static var calendar: String { NSLocalizedString("widget.calendar", comment: "") }
+        static var today: String { ls("widget.today", comment: "") }
+        static var noData: String { ls("widget.noData", comment: "") }
+        static var loading: String { ls("widget.loading", comment: "") }
+        static var preferences: String { ls("widget.preferences", comment: "") }
+        static var visible: String { ls("widget.visible", comment: "") }
+        static var size: String { ls("widget.size", comment: "") }
+        static var compact: String { ls("widget.compact", comment: "") }
+        static var expanded: String { ls("widget.expanded", comment: "") }
+        static var top3: String { ls("widget.top3", comment: "") }
+        static var top5: String { ls("widget.top5", comment: "") }
+        static var summary: String { ls("widget.summary", comment: "") }
+        static var list: String { ls("widget.list", comment: "") }
+        static var calendar: String { ls("widget.calendar", comment: "") }
         static var preferencesDescription: String {
-            NSLocalizedString("widget.preferences.description", comment: "")
+            ls("widget.preferences.description", comment: "")
         }
-        static var resetLayout: String { NSLocalizedString("widget.resetLayout", comment: "") }
-        static var alwaysVisible: String { NSLocalizedString("widget.alwaysVisible", comment: "") }
-        static var fixedPosition: String { NSLocalizedString("widget.fixedPosition", comment: "") }
-        static var sizeLabel: String { NSLocalizedString("widget.sizeLabel", comment: "") }
-        static var main: String { NSLocalizedString("widget.main", comment: "") }
-        static var topCategories: String { NSLocalizedString("widget.topCategories", comment: "") }
+        static var resetLayout: String { ls("widget.resetLayout", comment: "") }
+        static var alwaysVisible: String { ls("widget.alwaysVisible", comment: "") }
+        static var fixedPosition: String { ls("widget.fixedPosition", comment: "") }
+        static var sizeLabel: String { ls("widget.sizeLabel", comment: "") }
+        static var main: String { ls("widget.main", comment: "") }
+        static var topCategories: String { ls("widget.topCategories", comment: "") }
         static var topSubcategories: String {
-            NSLocalizedString("widget.topSubcategories", comment: "")
+            ls("widget.topSubcategories", comment: "")
         }
 
-        static var subcategories: String { NSLocalizedString("widget.subcategories", comment: "") }
-        static var categories: String { NSLocalizedString("widget.categories", comment: "") }
+        static var subcategories: String { ls("widget.subcategories", comment: "") }
+        static var categories: String { ls("widget.categories", comment: "") }
         static var noExpensesPeriod: String {
-            NSLocalizedString("widget.noExpensesPeriod", comment: "")
+            ls("widget.noExpensesPeriod", comment: "")
         }
         static var noExpensesSubcategoriesPeriod: String {
-            NSLocalizedString("widget.noExpensesSubcategoriesPeriod", comment: "")
+            ls("widget.noExpensesSubcategoriesPeriod", comment: "")
         }
         static var noExpensesNaturePeriod: String {
-            NSLocalizedString("widget.noExpensesNaturePeriod", comment: "")
+            ls("widget.noExpensesNaturePeriod", comment: "")
         }
         static var noExpensesDescriptionCategories: String {
-            NSLocalizedString("widget.noExpensesDescriptionCategories", comment: "")
+            ls("widget.noExpensesDescriptionCategories", comment: "")
         }
         static var noExpensesDescriptionSubcategories: String {
-            NSLocalizedString("widget.noExpensesDescriptionSubcategories", comment: "")
+            ls("widget.noExpensesDescriptionSubcategories", comment: "")
         }
-        static var of: String { NSLocalizedString("widget.of", comment: "") }
-        static var ofTotal: String { NSLocalizedString("widget.ofTotal", comment: "") }
-        static var ofExpense: String { NSLocalizedString("widget.ofExpense", comment: "") }
-        static var categoryAbbr: String { NSLocalizedString("widget.categoryAbbr", comment: "") }
+        static var of: String { ls("widget.of", comment: "") }
+        static var ofTotal: String { ls("widget.ofTotal", comment: "") }
+        static var ofExpense: String { ls("widget.ofExpense", comment: "") }
+        static var categoryAbbr: String { ls("widget.categoryAbbr", comment: "") }
         static var distributionByCategory: String {
-            NSLocalizedString("widget.distributionByCategory", comment: "")
+            ls("widget.distributionByCategory", comment: "")
         }
         static var distributionBySubcategory: String {
-            NSLocalizedString("widget.distributionBySubcategory", comment: "")
+            ls("widget.distributionBySubcategory", comment: "")
         }
         static var distributionByNature: String {
-            NSLocalizedString("widget.distributionByNature", comment: "")
+            ls("widget.distributionByNature", comment: "")
         }
         static var distributionByTag: String {
-            NSLocalizedString("widget.distributionByTag", comment: "")
+            ls("widget.distributionByTag", comment: "")
         }
         static var noDataForPeriod: String {
-            NSLocalizedString("widget.noDataForPeriod", comment: "")
+            ls("widget.noDataForPeriod", comment: "")
         }
         static func selectCurrencies(_ currency: String) -> String {
-            String(format: NSLocalizedString("widget.selectCurrencies", comment: ""), currency)
+            String(format: ls("widget.selectCurrencies", comment: ""), currency)
         }
         static var currenciesToCompare: String {
-            NSLocalizedString("widget.currenciesToCompare", comment: "")
+            ls("widget.currenciesToCompare", comment: "")
         }
         static var noRecordsForFilters: String {
-            NSLocalizedString("widget.noRecordsForFilters", comment: "")
+            ls("widget.noRecordsForFilters", comment: "")
         }
         static var recordsWillAppear: String {
-            NSLocalizedString("widget.recordsWillAppear", comment: "")
+            ls("widget.recordsWillAppear", comment: "")
         }
-        static var total: String { NSLocalizedString("widget.total", comment: "") }
+        static var total: String { ls("widget.total", comment: "") }
 
         // Widget Hints
         enum Hint {
             static var trend: String {
-                NSLocalizedString("widget.hint.trend", comment: "")
+                ls("widget.hint.trend", comment: "")
             }
             static var topCategories: String {
-                NSLocalizedString("widget.hint.topCategories", comment: "")
+                ls("widget.hint.topCategories", comment: "")
             }
             static var topSubcategories: String {
-                NSLocalizedString("widget.hint.topSubcategories", comment: "")
+                ls("widget.hint.topSubcategories", comment: "")
             }
             static var categoriesPie: String {
-                NSLocalizedString("widget.hint.categoriesPie", comment: "")
+                ls("widget.hint.categoriesPie", comment: "")
             }
             static var subcategoriesPie: String {
-                NSLocalizedString("widget.hint.subcategoriesPie", comment: "")
+                ls("widget.hint.subcategoriesPie", comment: "")
             }
             static var tagsPie: String {
-                NSLocalizedString("widget.hint.tagsPie", comment: "")
+                ls("widget.hint.tagsPie", comment: "")
             }
             static var natureTrend: String {
-                NSLocalizedString("widget.hint.natureTrend", comment: "")
+                ls("widget.hint.natureTrend", comment: "")
             }
             static var cashFlow: String {
-                NSLocalizedString("widget.hint.cashFlow", comment: "")
+                ls("widget.hint.cashFlow", comment: "")
             }
             static var recentRecords: String {
-                NSLocalizedString("widget.hint.recentRecords", comment: "")
+                ls("widget.hint.recentRecords", comment: "")
             }
             static var budgets: String {
-                NSLocalizedString("widget.hint.budgets", comment: "")
+                ls("widget.hint.budgets", comment: "")
             }
             static var exchangeRate: String {
-                NSLocalizedString("widget.hint.exchangeRate", comment: "")
+                ls("widget.hint.exchangeRate", comment: "")
             }
             static var scheduledPayments: String {
-                NSLocalizedString("widget.hint.scheduledPayments", comment: "")
+                ls("widget.hint.scheduledPayments", comment: "")
             }
             static var spendingAnalysis: String {
-                NSLocalizedString("widget.hint.spendingAnalysis", comment: "")
+                ls("widget.hint.spendingAnalysis", comment: "")
             }
             static var incomeAnalysis: String {
-                NSLocalizedString("widget.hint.incomeAnalysis", comment: "")
+                ls("widget.hint.incomeAnalysis", comment: "")
             }
         }
     }
@@ -1599,32 +1645,32 @@ enum L10n {
     // MARK: - Widget Types
 
     enum WidgetType {
-        static var trend: String { NSLocalizedString("widgetType.trend", comment: "") }
-        static var topSpending: String { NSLocalizedString("widgetType.topSpending", comment: "") }
+        static var trend: String { ls("widgetType.trend", comment: "") }
+        static var topSpending: String { ls("widgetType.topSpending", comment: "") }
         static var topSubcategories: String {
-            NSLocalizedString("widgetType.topSubcategories", comment: "")
+            ls("widgetType.topSubcategories", comment: "")
         }
-        static var cashFlow: String { NSLocalizedString("widgetType.cashFlow", comment: "") }
+        static var cashFlow: String { ls("widgetType.cashFlow", comment: "") }
         static var categoriesPie: String {
-            NSLocalizedString("widgetType.categoriesPie", comment: "")
+            ls("widgetType.categoriesPie", comment: "")
         }
         static var subcategoriesPie: String {
-            NSLocalizedString("widgetType.subcategoriesPie", comment: "")
+            ls("widgetType.subcategoriesPie", comment: "")
         }
         static var latestRecords: String {
-            NSLocalizedString("widgetType.latestRecords", comment: "")
+            ls("widgetType.latestRecords", comment: "")
         }
         static var expensesByNature: String {
-            NSLocalizedString("widgetType.expensesByNature", comment: "")
+            ls("widgetType.expensesByNature", comment: "")
         }
         static var exchangeRate: String {
-            NSLocalizedString("widgetType.exchangeRate", comment: "")
+            ls("widgetType.exchangeRate", comment: "")
         }
         static var budgets: String {
-            NSLocalizedString("widgetType.budgets", comment: "")
+            ls("widgetType.budgets", comment: "")
         }
         static var scheduledPayments: String {
-            NSLocalizedString("widgetType.scheduledPayments", comment: "")
+            ls("widgetType.scheduledPayments", comment: "")
         }
     }
 
@@ -1633,53 +1679,53 @@ enum L10n {
     enum Budgets {
         enum Widget {
             static var selectFavorites: String {
-                NSLocalizedString("budgets.widget.selectFavorites", comment: "")
+                ls("budgets.widget.selectFavorites", comment: "")
             }
         }
 
         // Alert notifications
         static var alertsTitle: String {
-            NSLocalizedString("budgets.alerts.title", comment: "")
+            ls("budgets.alerts.title", comment: "")
         }
         static var alertsEnable: String {
-            NSLocalizedString("budgets.alerts.enable", comment: "")
+            ls("budgets.alerts.enable", comment: "")
         }
         static var alertsThresholds: String {
-            NSLocalizedString("budgets.alerts.thresholds", comment: "")
+            ls("budgets.alerts.thresholds", comment: "")
         }
         /// "Presupuesto \"%@\" al 50%% — %@ de %@ gastados" (name, spent, limit)
         static func alertMessage50(_ name: String, _ spent: String, _ limit: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.50", comment: ""), name, spent, limit)
+            String(format: ls("budgets.alerts.message.50", comment: ""), name, spent, limit)
         }
 
         /// "Presupuesto \"%@\" al 75%% — %@ de %@ gastados" (name, spent, limit)
         static func alertMessage75(_ name: String, _ spent: String, _ limit: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.75", comment: ""), name, spent, limit)
+            String(format: ls("budgets.alerts.message.75", comment: ""), name, spent, limit)
         }
 
         /// "Cuidado: \"%@\" casi agotado — %@ de %@" (name, spent, limit)
         static func alertMessage90(_ name: String, _ spent: String, _ limit: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.90", comment: ""), name, spent, limit)
+            String(format: ls("budgets.alerts.message.90", comment: ""), name, spent, limit)
         }
 
         /// "Presupuesto \"%@\" agotado — Gastaste %@ de %@" (name, spent, limit)
         static func alertMessage100(_ name: String, _ spent: String, _ limit: String) -> String {
-            String(format: NSLocalizedString("budgets.alerts.message.100", comment: ""), name, spent, limit)
+            String(format: ls("budgets.alerts.message.100", comment: ""), name, spent, limit)
         }
 
         /// Hint when budget alerts are globally disabled
-        static var alertsGlobalDisabledHint: String { NSLocalizedString("budgets.alerts.globalDisabledHint", comment: "") }
+        static var alertsGlobalDisabledHint: String { ls("budgets.alerts.globalDisabledHint", comment: "") }
     }
 
     // MARK: - Planning
 
     enum Planning {
-        static var title: String { NSLocalizedString("planning.title", comment: "") }
-        static var budgets: String { NSLocalizedString("planning.budgets", comment: "") }
-        static var goals: String { NSLocalizedString("planning.goals", comment: "") }
-        static var comingSoon: String { NSLocalizedString("planning.comingSoon", comment: "") }
+        static var title: String { ls("planning.title", comment: "") }
+        static var budgets: String { ls("planning.budgets", comment: "") }
+        static var goals: String { ls("planning.goals", comment: "") }
+        static var comingSoon: String { ls("planning.comingSoon", comment: "") }
         static var scheduledPayments: String {
-            NSLocalizedString("planning.scheduledPayments", comment: "")
+            ls("planning.scheduledPayments", comment: "")
         }
     }
 
@@ -1687,100 +1733,100 @@ enum L10n {
     // MARK: - Icon Picker
 
     enum IconPicker {
-        static var title: String { NSLocalizedString("iconPicker.title", comment: "") }
-        static var preview: String { NSLocalizedString("iconPicker.preview", comment: "") }
-        static var shopping: String { NSLocalizedString("iconPicker.shopping", comment: "") }
-        static var food: String { NSLocalizedString("iconPicker.food", comment: "") }
+        static var title: String { ls("iconPicker.title", comment: "") }
+        static var preview: String { ls("iconPicker.preview", comment: "") }
+        static var shopping: String { ls("iconPicker.shopping", comment: "") }
+        static var food: String { ls("iconPicker.food", comment: "") }
         static var transport: String {
-            NSLocalizedString("iconPicker.transport", comment: "")
+            ls("iconPicker.transport", comment: "")
         }
-        static var finance: String { NSLocalizedString("iconPicker.finance", comment: "") }
-        static var home: String { NSLocalizedString("iconPicker.home", comment: "") }
-        static var services: String { NSLocalizedString("iconPicker.services", comment: "") }
+        static var finance: String { ls("iconPicker.finance", comment: "") }
+        static var home: String { ls("iconPicker.home", comment: "") }
+        static var services: String { ls("iconPicker.services", comment: "") }
         static var entertainment: String {
-            NSLocalizedString("iconPicker.entertainment", comment: "")
+            ls("iconPicker.entertainment", comment: "")
         }
-        static var sports: String { NSLocalizedString("iconPicker.sports", comment: "") }
-        static var health: String { NSLocalizedString("iconPicker.health", comment: "") }
+        static var sports: String { ls("iconPicker.sports", comment: "") }
+        static var health: String { ls("iconPicker.health", comment: "") }
         static var personalCare: String {
-            NSLocalizedString("iconPicker.personalCare", comment: "")
+            ls("iconPicker.personalCare", comment: "")
         }
         static var education: String {
-            NSLocalizedString("iconPicker.education", comment: "")
+            ls("iconPicker.education", comment: "")
         }
-        static var work: String { NSLocalizedString("iconPicker.work", comment: "") }
-        static var pets: String { NSLocalizedString("iconPicker.pets", comment: "") }
-        static var nature: String { NSLocalizedString("iconPicker.nature", comment: "") }
-        static var tech: String { NSLocalizedString("iconPicker.tech", comment: "") }
-        static var travel: String { NSLocalizedString("iconPicker.travel", comment: "") }
+        static var work: String { ls("iconPicker.work", comment: "") }
+        static var pets: String { ls("iconPicker.pets", comment: "") }
+        static var nature: String { ls("iconPicker.nature", comment: "") }
+        static var tech: String { ls("iconPicker.tech", comment: "") }
+        static var travel: String { ls("iconPicker.travel", comment: "") }
         static var communication: String {
-            NSLocalizedString("iconPicker.communication", comment: "")
+            ls("iconPicker.communication", comment: "")
         }
-        static var tools: String { NSLocalizedString("iconPicker.tools", comment: "") }
-        static var security: String { NSLocalizedString("iconPicker.security", comment: "") }
-        static var symbols: String { NSLocalizedString("iconPicker.symbols", comment: "") }
+        static var tools: String { ls("iconPicker.tools", comment: "") }
+        static var security: String { ls("iconPicker.security", comment: "") }
+        static var symbols: String { ls("iconPicker.symbols", comment: "") }
         static var direction: String {
-            NSLocalizedString("iconPicker.direction", comment: "")
+            ls("iconPicker.direction", comment: "")
         }
-        static var other: String { NSLocalizedString("iconPicker.other", comment: "") }
+        static var other: String { ls("iconPicker.other", comment: "") }
     }
 
     // MARK: - CashFlow View Type
 
     enum CashFlowViewType {
-        static var total: String { NSLocalizedString("cashFlowViewType.total", comment: "") }
+        static var total: String { ls("cashFlowViewType.total", comment: "") }
         static var byAccount: String {
-            NSLocalizedString("cashFlowViewType.byAccount", comment: "")
+            ls("cashFlowViewType.byAccount", comment: "")
         }
         static var byCurrency: String {
-            NSLocalizedString("cashFlowViewType.byCurrency", comment: "")
+            ls("cashFlowViewType.byCurrency", comment: "")
         }
     }
 
     // MARK: - List View Type
 
     enum ListViewType {
-        static var categories: String { NSLocalizedString("listViewType.categories", comment: "") }
+        static var categories: String { ls("listViewType.categories", comment: "") }
         static var subcategories: String {
-            NSLocalizedString("listViewType.subcategories", comment: "")
+            ls("listViewType.subcategories", comment: "")
         }
     }
 
     // MARK: - Comparison Mode
 
     enum Comparison {
-        static var month: String { NSLocalizedString("comparison.month", comment: "Month comparison") }
-        static var year: String { NSLocalizedString("comparison.year", comment: "Year comparison") }
-        static var monthShort: String { NSLocalizedString("comparison.monthShort", comment: "Short for previous period") }
-        static var yearShort: String { NSLocalizedString("comparison.yearShort", comment: "Short for previous year") }
+        static var month: String { ls("comparison.month", comment: "Month comparison") }
+        static var year: String { ls("comparison.year", comment: "Year comparison") }
+        static var monthShort: String { ls("comparison.monthShort", comment: "Short for previous period") }
+        static var yearShort: String { ls("comparison.yearShort", comment: "Short for previous year") }
     }
 
     // MARK: - Validation
 
     enum Validation {
         static var enterAmountGreaterThanZero: String {
-            NSLocalizedString("validation.enterAmountGreaterThanZero", comment: "")
+            ls("validation.enterAmountGreaterThanZero", comment: "")
         }
         static var selectSourceAccount: String {
-            NSLocalizedString("validation.selectSourceAccount", comment: "")
+            ls("validation.selectSourceAccount", comment: "")
         }
         static var selectDestinationAccount: String {
-            NSLocalizedString("validation.selectDestinationAccount", comment: "")
+            ls("validation.selectDestinationAccount", comment: "")
         }
         static var accountsMustBeDifferent: String {
-            NSLocalizedString("validation.accountsMustBeDifferent", comment: "")
+            ls("validation.accountsMustBeDifferent", comment: "")
         }
         static var selectAccount: String {
-            NSLocalizedString("validation.selectAccount", comment: "")
+            ls("validation.selectAccount", comment: "")
         }
         static var selectSubcategory: String {
-            NSLocalizedString("validation.selectSubcategory", comment: "")
+            ls("validation.selectSubcategory", comment: "")
         }
         static var futureDateTitle: String {
-            NSLocalizedString("validation.futureDateTitle", comment: "")
+            ls("validation.futureDateTitle", comment: "")
         }
         static var futureDateMessage: String {
-            NSLocalizedString("validation.futureDateMessage", comment: "")
+            ls("validation.futureDateMessage", comment: "")
         }
     }
 
@@ -1788,19 +1834,19 @@ enum L10n {
 
     enum Transfer {
         static func transferTo(_ accountName: String) -> String {
-            String(format: NSLocalizedString("transfer.transferTo", comment: ""), accountName)
+            String(format: ls("transfer.transferTo", comment: ""), accountName)
         }
         static func transferFrom(_ accountName: String) -> String {
-            String(format: NSLocalizedString("transfer.transferFrom", comment: ""), accountName)
+            String(format: ls("transfer.transferFrom", comment: ""), accountName)
         }
         static var categoryName: String {
-            NSLocalizedString("transfer.categoryName", comment: "")
+            ls("transfer.categoryName", comment: "")
         }
     }
 
     enum More {
         static var sections: String {
-            NSLocalizedString("more.sections", comment: "")
+            ls("more.sections", comment: "")
         }
     }
 
@@ -1808,76 +1854,76 @@ enum L10n {
 
     enum Onboarding {
         static var welcomeTitle: String {
-            NSLocalizedString("onboarding.welcomeTitle", comment: "")
+            ls("onboarding.welcomeTitle", comment: "")
         }
         static var welcomeSubtitle: String {
-            NSLocalizedString("onboarding.welcomeSubtitle", comment: "")
+            ls("onboarding.welcomeSubtitle", comment: "")
         }
         static var nameLabel: String {
-            NSLocalizedString("onboarding.nameLabel", comment: "")
+            ls("onboarding.nameLabel", comment: "")
         }
         static var namePlaceholder: String {
-            NSLocalizedString("onboarding.namePlaceholder", comment: "")
+            ls("onboarding.namePlaceholder", comment: "")
         }
         static var currencyTitle: String {
-            NSLocalizedString("onboarding.currencyTitle", comment: "")
+            ls("onboarding.currencyTitle", comment: "")
         }
         static var currencySubtitle: String {
-            NSLocalizedString("onboarding.currencySubtitle", comment: "")
+            ls("onboarding.currencySubtitle", comment: "")
         }
         static var secondaryTitle: String {
-            NSLocalizedString("onboarding.secondaryTitle", comment: "")
+            ls("onboarding.secondaryTitle", comment: "")
         }
         static var secondarySubtitle: String {
-            NSLocalizedString("onboarding.secondarySubtitle", comment: "")
+            ls("onboarding.secondarySubtitle", comment: "")
         }
         static func secondaryHint(_ count: Int, _ max: Int) -> String {
-            String(format: NSLocalizedString("onboarding.secondaryHint", comment: ""), count, max)
+            String(format: ls("onboarding.secondaryHint", comment: ""), count, max)
         }
         static var periodTitle: String {
-            NSLocalizedString("onboarding.periodTitle", comment: "")
+            ls("onboarding.periodTitle", comment: "")
         }
         static var periodSubtitle: String {
-            NSLocalizedString("onboarding.periodSubtitle", comment: "")
+            ls("onboarding.periodSubtitle", comment: "")
         }
         static var finish: String {
-            NSLocalizedString("onboarding.finish", comment: "")
+            ls("onboarding.finish", comment: "")
         }
         static var categoriesTitle: String {
-            NSLocalizedString("onboarding.categoriesTitle", comment: "")
+            ls("onboarding.categoriesTitle", comment: "")
         }
         static var categoriesSubtitle: String {
-            NSLocalizedString("onboarding.categoriesSubtitle", comment: "")
+            ls("onboarding.categoriesSubtitle", comment: "")
         }
         static var categoriesYes: String {
-            NSLocalizedString("onboarding.categoriesYes", comment: "")
+            ls("onboarding.categoriesYes", comment: "")
         }
         static var categoriesNo: String {
-            NSLocalizedString("onboarding.categoriesNo", comment: "")
+            ls("onboarding.categoriesNo", comment: "")
         }
         static var categoriesRecommended: String {
-            NSLocalizedString("onboarding.categoriesRecommended", comment: "")
+            ls("onboarding.categoriesRecommended", comment: "")
         }
         static var categoriesInfo: String {
-            NSLocalizedString("onboarding.categoriesInfo", comment: "")
+            ls("onboarding.categoriesInfo", comment: "")
         }
         static var notificationsTitle: String {
-            NSLocalizedString("onboarding.notificationsTitle", comment: "")
+            ls("onboarding.notificationsTitle", comment: "")
         }
         static var notificationsSubtitle: String {
-            NSLocalizedString("onboarding.notificationsSubtitle", comment: "")
+            ls("onboarding.notificationsSubtitle", comment: "")
         }
         static var notificationsSkip: String {
-            NSLocalizedString("onboarding.notificationsSkip", comment: "")
+            ls("onboarding.notificationsSkip", comment: "")
         }
         static var notificationsSelectAll: String {
-            NSLocalizedString("onboarding.notificationsSelectAll", comment: "")
+            ls("onboarding.notificationsSelectAll", comment: "")
         }
         static var notificationsDeselectAll: String {
-            NSLocalizedString("onboarding.notificationsDeselectAll", comment: "")
+            ls("onboarding.notificationsDeselectAll", comment: "")
         }
         static var recommended: String {
-            NSLocalizedString("onboarding.recommended", comment: "")
+            ls("onboarding.recommended", comment: "")
         }
     }
 
@@ -1885,22 +1931,22 @@ enum L10n {
 
     enum BulkEdit {
         static var currencyWarning: String {
-            NSLocalizedString("bulkEdit.currencyWarning", comment: "")
+            ls("bulkEdit.currencyWarning", comment: "")
         }
         static func editCount(_ count: Int) -> String {
-            String(format: NSLocalizedString("bulkEdit.editCount", comment: ""), count)
+            String(format: ls("bulkEdit.editCount", comment: ""), count)
         }
         static var successMessage: String {
-            NSLocalizedString("bulkEdit.successMessage", comment: "")
+            ls("bulkEdit.successMessage", comment: "")
         }
         static var commonTags: String {
-            NSLocalizedString("bulkEdit.commonTags", comment: "")
+            ls("bulkEdit.commonTags", comment: "")
         }
         static var partialTags: String {
-            NSLocalizedString("bulkEdit.partialTags", comment: "")
+            ls("bulkEdit.partialTags", comment: "")
         }
         static var availableTags: String {
-            NSLocalizedString("bulkEdit.availableTags", comment: "")
+            ls("bulkEdit.availableTags", comment: "")
         }
     }
 
@@ -1908,13 +1954,13 @@ enum L10n {
 
     enum VoiceLanguage {
         static var system: String {
-            NSLocalizedString("voiceLanguage.system", comment: "")
+            ls("voiceLanguage.system", comment: "")
         }
         static var spanish: String {
-            NSLocalizedString("voiceLanguage.spanish", comment: "")
+            ls("voiceLanguage.spanish", comment: "")
         }
         static var english: String {
-            NSLocalizedString("voiceLanguage.english", comment: "")
+            ls("voiceLanguage.english", comment: "")
         }
     }
 
@@ -1922,157 +1968,157 @@ enum L10n {
 
     enum Inbox {
         static var title: String {
-            NSLocalizedString("inbox.title", comment: "")
+            ls("inbox.title", comment: "")
         }
         static var pending: String {
-            NSLocalizedString("inbox.pending", comment: "")
+            ls("inbox.pending", comment: "")
         }
         static var archived: String {
-            NSLocalizedString("inbox.archived", comment: "")
+            ls("inbox.archived", comment: "")
         }
         static var noDescription: String {
-            NSLocalizedString("inbox.noDescription", comment: "")
+            ls("inbox.noDescription", comment: "")
         }
         static var noAmount: String {
-            NSLocalizedString("inbox.noAmount", comment: "")
+            ls("inbox.noAmount", comment: "")
         }
         static var missingLabel: String {
-            NSLocalizedString("inbox.missingLabel", comment: "")
+            ls("inbox.missingLabel", comment: "")
         }
         static var needsAccount: String {
-            NSLocalizedString("inbox.needsAccount", comment: "")
+            ls("inbox.needsAccount", comment: "")
         }
         static var needsSubcategory: String {
-            NSLocalizedString("inbox.needsSubcategory", comment: "")
+            ls("inbox.needsSubcategory", comment: "")
         }
         static var approve: String {
-            NSLocalizedString("inbox.approve", comment: "")
+            ls("inbox.approve", comment: "")
         }
         static var delete: String {
-            NSLocalizedString("inbox.delete", comment: "")
+            ls("inbox.delete", comment: "")
         }
         static var noPending: String {
-            NSLocalizedString("inbox.noPending", comment: "")
+            ls("inbox.noPending", comment: "")
         }
         static var noPendingDescription: String {
-            NSLocalizedString("inbox.noPendingDescription", comment: "")
+            ls("inbox.noPendingDescription", comment: "")
         }
         static var bulkHint: String {
-            NSLocalizedString("inbox.bulkHint", comment: "")
+            ls("inbox.bulkHint", comment: "")
         }
         static var newTag: String {
-            NSLocalizedString("inbox.newTag", comment: "")
+            ls("inbox.newTag", comment: "")
         }
         static var noArchived: String {
-            NSLocalizedString("inbox.noArchived", comment: "")
+            ls("inbox.noArchived", comment: "")
         }
         static var noArchivedDescription: String {
-            NSLocalizedString("inbox.noArchivedDescription", comment: "")
+            ls("inbox.noArchivedDescription", comment: "")
         }
         static func selectedCount(_ count: Int) -> String {
-            String(format: NSLocalizedString("inbox.selectedCount", comment: ""), count)
+            String(format: ls("inbox.selectedCount", comment: ""), count)
         }
         static var editDraft: String {
-            NSLocalizedString("inbox.editDraft", comment: "")
+            ls("inbox.editDraft", comment: "")
         }
         static var cannotApprove: String {
-            NSLocalizedString("inbox.cannotApprove", comment: "")
+            ls("inbox.cannotApprove", comment: "")
         }
         static var sourceVoice: String {
-            NSLocalizedString("inbox.sourceVoice", comment: "")
+            ls("inbox.sourceVoice", comment: "")
         }
         static var sourceEmail: String {
-            NSLocalizedString("inbox.sourceEmail", comment: "")
+            ls("inbox.sourceEmail", comment: "")
         }
         static var sourceScreenshot: String {
-            NSLocalizedString("inbox.sourceScreenshot", comment: "")
+            ls("inbox.sourceScreenshot", comment: "")
         }
         static var sourceScreenshotList: String {
-            NSLocalizedString("inbox.sourceScreenshotList", comment: "")
+            ls("inbox.sourceScreenshotList", comment: "")
         }
         static var sourceReceipt: String {
-            NSLocalizedString("inbox.sourceReceipt", comment: "")
+            ls("inbox.sourceReceipt", comment: "")
         }
         static var sourceScheduledPayment: String {
-            NSLocalizedString("inbox.sourceScheduledPayment", comment: "")
+            ls("inbox.sourceScheduledPayment", comment: "")
         }
         static var sourceSubscription: String {
-            NSLocalizedString("inbox.sourceSubscription", comment: "")
+            ls("inbox.sourceSubscription", comment: "")
         }
         static var sourceApplePay: String {
-            NSLocalizedString("inbox.sourceApplePay", comment: "")
+            ls("inbox.sourceApplePay", comment: "")
         }
         static var sourceAutomation: String {
-            NSLocalizedString("inbox.sourceAutomation", comment: "")
+            ls("inbox.sourceAutomation", comment: "")
         }
         static var errorNoAccount: String {
-            NSLocalizedString("inbox.errorNoAccount", comment: "")
+            ls("inbox.errorNoAccount", comment: "")
         }
         static var errorNoAmount: String {
-            NSLocalizedString("inbox.errorNoAmount", comment: "")
+            ls("inbox.errorNoAmount", comment: "")
         }
         static var errorNoSubcategory: String {
-            NSLocalizedString("inbox.errorNoSubcategory", comment: "")
+            ls("inbox.errorNoSubcategory", comment: "")
         }
         static var duplicateWarningTitle: String {
-            NSLocalizedString("inbox.duplicateWarningTitle", comment: "")
+            ls("inbox.duplicateWarningTitle", comment: "")
         }
         static var duplicateWarningMessage: String {
-            NSLocalizedString("inbox.duplicateWarningMessage", comment: "")
+            ls("inbox.duplicateWarningMessage", comment: "")
         }
         static var createAnyway: String {
-            NSLocalizedString("inbox.createAnyway", comment: "")
+            ls("inbox.createAnyway", comment: "")
         }
         static func deleteConfirmMessage(_ count: Int) -> String {
-            String(format: NSLocalizedString("inbox.deleteConfirmMessage", comment: ""), count)
+            String(format: ls("inbox.deleteConfirmMessage", comment: ""), count)
         }
         static func approveableCount(_ count: Int, _ total: Int) -> String {
-            String(format: NSLocalizedString("inbox.approveableCount", comment: ""), count, total)
+            String(format: ls("inbox.approveableCount", comment: ""), count, total)
         }
         static var saveLater: String {
-            NSLocalizedString("inbox.saveLater", comment: "")
+            ls("inbox.saveLater", comment: "")
         }
         static var deleteTitle: String {
-            NSLocalizedString("inbox.deleteTitle", comment: "")
+            ls("inbox.deleteTitle", comment: "")
         }
         static var deleteMessage: String {
-            NSLocalizedString("inbox.deleteMessage", comment: "")
+            ls("inbox.deleteMessage", comment: "")
         }
         static var reject: String {
-            NSLocalizedString("inbox.reject", comment: "")
+            ls("inbox.reject", comment: "")
         }
         static var returnToPending: String {
-            NSLocalizedString("inbox.returnToPending", comment: "")
+            ls("inbox.returnToPending", comment: "")
         }
         static var discardChangesTitle: String {
-            NSLocalizedString("inbox.discardChangesTitle", comment: "")
+            ls("inbox.discardChangesTitle", comment: "")
         }
         static var discardChanges: String {
-            NSLocalizedString("inbox.discardChanges", comment: "")
+            ls("inbox.discardChanges", comment: "")
         }
         static var keepEditing: String {
-            NSLocalizedString("inbox.keepEditing", comment: "")
+            ls("inbox.keepEditing", comment: "")
         }
         static var discardChangesMessage: String {
-            NSLocalizedString("inbox.discardChangesMessage", comment: "")
+            ls("inbox.discardChangesMessage", comment: "")
         }
         static var approveSuccess: String {
-            NSLocalizedString("inbox.approveSuccess", comment: "")
+            ls("inbox.approveSuccess", comment: "")
         }
         static var approveNext: String {
-            NSLocalizedString("inbox.approveNext", comment: "")
+            ls("inbox.approveNext", comment: "")
         }
         static var transactionCreated: String {
-            NSLocalizedString("inbox.transactionCreated", comment: "")
+            ls("inbox.transactionCreated", comment: "")
         }
         static var transactionsCreated: String {
-            NSLocalizedString("inbox.transactionsCreated", comment: "")
+            ls("inbox.transactionsCreated", comment: "")
         }
         static var viewInRecords: String {
-            NSLocalizedString("inbox.viewInRecords", comment: "")
+            ls("inbox.viewInRecords", comment: "")
         }
         static var backToInbox: String {
-            NSLocalizedString("inbox.backToInbox", comment: "")
+            ls("inbox.backToInbox", comment: "")
         }
 
         // MARK: Alert Modal
@@ -2080,42 +2126,42 @@ enum L10n {
         enum Alert {
             enum Title {
                 static var scheduled: String {
-                    NSLocalizedString("inbox.alert.title.scheduled", comment: "")
+                    ls("inbox.alert.title.scheduled", comment: "")
                 }
                 static var subscriptions: String {
-                    NSLocalizedString("inbox.alert.title.subscriptions", comment: "")
+                    ls("inbox.alert.title.subscriptions", comment: "")
                 }
                 static var automations: String {
-                    NSLocalizedString("inbox.alert.title.automations", comment: "")
+                    ls("inbox.alert.title.automations", comment: "")
                 }
                 static var mixed: String {
-                    NSLocalizedString("inbox.alert.title.mixed", comment: "")
+                    ls("inbox.alert.title.mixed", comment: "")
                 }
             }
 
             enum Message {
                 static func scheduled(_ count: Int) -> String {
-                    String(format: NSLocalizedString("inbox.alert.message.scheduled", comment: ""), count)
+                    String(format: ls("inbox.alert.message.scheduled", comment: ""), count)
                 }
                 static func subscriptions(_ count: Int) -> String {
-                    String(format: NSLocalizedString("inbox.alert.message.subscriptions", comment: ""), count)
+                    String(format: ls("inbox.alert.message.subscriptions", comment: ""), count)
                 }
                 static func automations(_ count: Int) -> String {
-                    String(format: NSLocalizedString("inbox.alert.message.automations", comment: ""), count)
+                    String(format: ls("inbox.alert.message.automations", comment: ""), count)
                 }
 
                 enum Mixed {
                     static func scheduled(_ count: Int) -> String {
-                        String(format: NSLocalizedString("inbox.alert.message.mixed.scheduled", comment: ""), count)
+                        String(format: ls("inbox.alert.message.mixed.scheduled", comment: ""), count)
                     }
                     static func subscriptions(_ count: Int) -> String {
-                        String(format: NSLocalizedString("inbox.alert.message.mixed.subscriptions", comment: ""), count)
+                        String(format: ls("inbox.alert.message.mixed.subscriptions", comment: ""), count)
                     }
                     static func automations(_ count: Int) -> String {
-                        String(format: NSLocalizedString("inbox.alert.message.mixed.automations", comment: ""), count)
+                        String(format: ls("inbox.alert.message.mixed.automations", comment: ""), count)
                     }
                     static var connector: String {
-                        NSLocalizedString("inbox.alert.message.mixed.connector", comment: "")
+                        ls("inbox.alert.message.mixed.connector", comment: "")
                     }
                 }
             }
@@ -2126,85 +2172,85 @@ enum L10n {
 
     enum Voice {
         static var title: String {
-            NSLocalizedString("voice.title", comment: "")
+            ls("voice.title", comment: "")
         }
         static var recording: String {
-            NSLocalizedString("voice.recording", comment: "")
+            ls("voice.recording", comment: "")
         }
         static var recorded: String {
-            NSLocalizedString("voice.recorded", comment: "")
+            ls("voice.recorded", comment: "")
         }
         static var pleaseWait: String {
-            NSLocalizedString("voice.pleaseWait", comment: "")
+            ls("voice.pleaseWait", comment: "")
         }
         static var tapToRecord: String {
-            NSLocalizedString("voice.tapToRecord", comment: "")
+            ls("voice.tapToRecord", comment: "")
         }
         static var youCanSay: String {
-            NSLocalizedString("voice.youCanSay", comment: "")
+            ls("voice.youCanSay", comment: "")
         }
         static var hintTypeExample: String {
-            NSLocalizedString("voice.hintTypeExample", comment: "")
+            ls("voice.hintTypeExample", comment: "")
         }
         static var hintAmountExample: String {
-            NSLocalizedString("voice.hintAmountExample", comment: "")
+            ls("voice.hintAmountExample", comment: "")
         }
         static var hintSubcategoryExample: String {
-            NSLocalizedString("voice.hintSubcategoryExample", comment: "")
+            ls("voice.hintSubcategoryExample", comment: "")
         }
         static var hintMerchantExample: String {
-            NSLocalizedString("voice.hintMerchantExample", comment: "")
+            ls("voice.hintMerchantExample", comment: "")
         }
         static var hintTagExample: String {
-            NSLocalizedString("voice.hintTagExample", comment: "")
+            ls("voice.hintTagExample", comment: "")
         }
         static var hintDateExample: String {
-            NSLocalizedString("voice.hintDateExample", comment: "")
+            ls("voice.hintDateExample", comment: "")
         }
         static var exampleLabel: String {
-            NSLocalizedString("voice.exampleLabel", comment: "")
+            ls("voice.exampleLabel", comment: "")
         }
         static var example1: String {
-            NSLocalizedString("voice.example1", comment: "")
+            ls("voice.example1", comment: "")
         }
         static var example2: String {
-            NSLocalizedString("voice.example2", comment: "")
+            ls("voice.example2", comment: "")
         }
         static var example3: String {
-            NSLocalizedString("voice.example3", comment: "")
+            ls("voice.example3", comment: "")
         }
         static var processingAudio: String {
-            NSLocalizedString("voice.processingAudio", comment: "")
+            ls("voice.processingAudio", comment: "")
         }
         static var analyzing: String {
-            NSLocalizedString("voice.analyzing", comment: "")
+            ls("voice.analyzing", comment: "")
         }
         static var parsing: String {
-            NSLocalizedString("voice.parsing", comment: "")
+            ls("voice.parsing", comment: "")
         }
         static var saving: String {
-            NSLocalizedString("voice.saving", comment: "")
+            ls("voice.saving", comment: "")
         }
         static var errorNoAmount: String {
-            NSLocalizedString("voice.errorNoAmount", comment: "")
+            ls("voice.errorNoAmount", comment: "")
         }
         static var errorNoApiKey: String {
-            NSLocalizedString("voice.errorNoApiKey", comment: "")
+            ls("voice.errorNoApiKey", comment: "")
         }
         static var errorNoConnection: String {
-            NSLocalizedString("voice.errorNoConnection", comment: "")
+            ls("voice.errorNoConnection", comment: "")
         }
         static var errorMicPermission: String {
-            NSLocalizedString("voice.errorMicPermission", comment: "")
+            ls("voice.errorMicPermission", comment: "")
         }
         static var errorSaveFailed: String {
-            NSLocalizedString("voice.errorSaveFailed", comment: "")
+            ls("voice.errorSaveFailed", comment: "")
         }
         static var openSettings: String {
-            NSLocalizedString("voice.openSettings", comment: "")
+            ls("voice.openSettings", comment: "")
         }
         static var tryImage: String {
-            NSLocalizedString("voice.tryImage", comment: "")
+            ls("voice.tryImage", comment: "")
         }
     }
 
@@ -2212,326 +2258,326 @@ enum L10n {
 
     enum Image {
         static var title: String {
-            NSLocalizedString("image.title", comment: "")
+            ls("image.title", comment: "")
         }
         static var selectTitle: String {
-            NSLocalizedString("image.selectTitle", comment: "")
+            ls("image.selectTitle", comment: "")
         }
         static var selectSubtitle: String {
-            NSLocalizedString("image.selectSubtitle", comment: "")
+            ls("image.selectSubtitle", comment: "")
         }
         static var selectButton: String {
-            NSLocalizedString("image.selectButton", comment: "")
+            ls("image.selectButton", comment: "")
         }
         static var processing: String {
-            NSLocalizedString("image.processing", comment: "")
+            ls("image.processing", comment: "")
         }
         static var processingSubtitle: String {
-            NSLocalizedString("image.processingSubtitle", comment: "")
+            ls("image.processingSubtitle", comment: "")
         }
         static var errorTitle: String {
-            NSLocalizedString("image.errorTitle", comment: "")
+            ls("image.errorTitle", comment: "")
         }
         static var errorLoad: String {
-            NSLocalizedString("image.errorLoad", comment: "")
+            ls("image.errorLoad", comment: "")
         }
         static var errorNoData: String {
-            NSLocalizedString("image.errorNoData", comment: "")
+            ls("image.errorNoData", comment: "")
         }
         static var errorUnrecognized: String {
-            NSLocalizedString("image.errorUnrecognized", comment: "")
+            ls("image.errorUnrecognized", comment: "")
         }
         static var errorGeneric: String {
-            NSLocalizedString("image.errorGeneric", comment: "")
+            ls("image.errorGeneric", comment: "")
         }
         static var errorPhotoPermission: String {
-            NSLocalizedString("image.errorPhotoPermission", comment: "")
+            ls("image.errorPhotoPermission", comment: "")
         }
         static var errorCorrupted: String {
-            NSLocalizedString("image.errorCorrupted", comment: "")
+            ls("image.errorCorrupted", comment: "")
         }
         static var errorSaveFailed: String {
-            NSLocalizedString("image.errorSaveFailed", comment: "")
+            ls("image.errorSaveFailed", comment: "")
         }
         static var errorNoApiKey: String {
-            NSLocalizedString("image.errorNoApiKey", comment: "")
+            ls("image.errorNoApiKey", comment: "")
         }
         static var errorNoConnection: String {
-            NSLocalizedString("image.errorNoConnection", comment: "")
+            ls("image.errorNoConnection", comment: "")
         }
         static var openSettings: String {
-            NSLocalizedString("image.openSettings", comment: "")
+            ls("image.openSettings", comment: "")
         }
         static var transactionDetected: String {
-            NSLocalizedString("image.transactionDetected", comment: "")
+            ls("image.transactionDetected", comment: "")
         }
         static var transactionsDetectedCount: String {
-            NSLocalizedString("image.transactionsDetectedCount", comment: "")
+            ls("image.transactionsDetectedCount", comment: "")
         }
         static var reviewDraft: String {
-            NSLocalizedString("image.reviewDraft", comment: "")
+            ls("image.reviewDraft", comment: "")
         }
         static var transactionsDetected: String {
-            NSLocalizedString("image.transactionsDetected", comment: "")
+            ls("image.transactionsDetected", comment: "")
         }
         static var goToInbox: String {
-            NSLocalizedString("image.goToInbox", comment: "")
+            ls("image.goToInbox", comment: "")
         }
         static func transactionsDetectedMessage(_ count: Int) -> String {
-            String(format: NSLocalizedString("image.transactionsDetectedMessage", comment: ""), count)
+            String(format: ls("image.transactionsDetectedMessage", comment: ""), count)
         }
         static func analyzingIn(_ seconds: Int) -> String {
-            String(format: NSLocalizedString("image.analyzingIn", comment: ""), seconds)
+            String(format: ls("image.analyzingIn", comment: ""), seconds)
         }
         static func imagesSelected(_ count: Int) -> String {
-            String(format: NSLocalizedString("image.imagesSelected", comment: ""), count)
+            String(format: ls("image.imagesSelected", comment: ""), count)
         }
     }
 
     // MARK: - Biometric
 
     enum Biometric {
-        static var title: String { NSLocalizedString("biometric.title", comment: "") }
-        static var description: String { NSLocalizedString("biometric.description", comment: "") }
-        static var enableLock: String { NSLocalizedString("biometric.enableLock", comment: "") }
-        static var lockAfter: String { NSLocalizedString("biometric.lockAfter", comment: "") }
+        static var title: String { ls("biometric.title", comment: "") }
+        static var description: String { ls("biometric.description", comment: "") }
+        static var enableLock: String { ls("biometric.enableLock", comment: "") }
+        static var lockAfter: String { ls("biometric.lockAfter", comment: "") }
         static var timeoutImmediate: String {
-            NSLocalizedString("biometric.timeout.immediate", comment: "")
+            ls("biometric.timeout.immediate", comment: "")
         }
         static var timeoutOneMinute: String {
-            NSLocalizedString("biometric.timeout.oneMinute", comment: "")
+            ls("biometric.timeout.oneMinute", comment: "")
         }
         static var timeoutFiveMinutes: String {
-            NSLocalizedString("biometric.timeout.fiveMinutes", comment: "")
+            ls("biometric.timeout.fiveMinutes", comment: "")
         }
         static var timeoutFifteenMinutes: String {
-            NSLocalizedString("biometric.timeout.fifteenMinutes", comment: "")
+            ls("biometric.timeout.fifteenMinutes", comment: "")
         }
-        static var authReason: String { NSLocalizedString("biometric.authReason", comment: "") }
-        static var enableReason: String { NSLocalizedString("biometric.enableReason", comment: "") }
-        static var authFailed: String { NSLocalizedString("biometric.authFailed", comment: "") }
+        static var authReason: String { ls("biometric.authReason", comment: "") }
+        static var enableReason: String { ls("biometric.enableReason", comment: "") }
+        static var authFailed: String { ls("biometric.authFailed", comment: "") }
         static var authFailedMessage: String {
-            NSLocalizedString("biometric.authFailedMessage", comment: "")
+            ls("biometric.authFailedMessage", comment: "")
         }
-        static var locked: String { NSLocalizedString("biometric.locked", comment: "") }
-        static var unlockPrompt: String { NSLocalizedString("biometric.unlockPrompt", comment: "") }
-        static var unlock: String { NSLocalizedString("biometric.unlock", comment: "") }
-        static var passcode: String { NSLocalizedString("biometric.passcode", comment: "") }
+        static var locked: String { ls("biometric.locked", comment: "") }
+        static var unlockPrompt: String { ls("biometric.unlockPrompt", comment: "") }
+        static var unlock: String { ls("biometric.unlock", comment: "") }
+        static var passcode: String { ls("biometric.passcode", comment: "") }
         static var enableLockHint: String {
-            NSLocalizedString("biometric.enableLockHint", comment: "")
+            ls("biometric.enableLockHint", comment: "")
         }
         static var lockAfterHint: String {
-            NSLocalizedString("biometric.lockAfterHint", comment: "")
+            ls("biometric.lockAfterHint", comment: "")
         }
     }
 
     // MARK: - Subscription
     enum Subscription {
-        static var title: String { NSLocalizedString("subscription.title", comment: "") }
-        static var paywallTitle: String { NSLocalizedString("subscription.paywallTitle", comment: "") }
-        static var paywallSubtitle: String { NSLocalizedString("subscription.paywallSubtitle", comment: "") }
-        static var subscribe: String { NSLocalizedString("subscription.subscribe", comment: "") }
-        static var processing: String { NSLocalizedString("subscription.processing", comment: "") }
-        static var restore: String { NSLocalizedString("subscription.restore", comment: "") }
-        static var planMonthly: String { NSLocalizedString("subscription.planMonthly", comment: "") }
-        static var planYearly: String { NSLocalizedString("subscription.planYearly", comment: "") }
-        static var perYear: String { NSLocalizedString("subscription.perYear", comment: "") }
+        static var title: String { ls("subscription.title", comment: "") }
+        static var paywallTitle: String { ls("subscription.paywallTitle", comment: "") }
+        static var paywallSubtitle: String { ls("subscription.paywallSubtitle", comment: "") }
+        static var subscribe: String { ls("subscription.subscribe", comment: "") }
+        static var processing: String { ls("subscription.processing", comment: "") }
+        static var restore: String { ls("subscription.restore", comment: "") }
+        static var planMonthly: String { ls("subscription.planMonthly", comment: "") }
+        static var planYearly: String { ls("subscription.planYearly", comment: "") }
+        static var perYear: String { ls("subscription.perYear", comment: "") }
         static func perMonth(_ price: String) -> String {
-            String(format: NSLocalizedString("subscription.perMonth", comment: ""), price)
+            String(format: ls("subscription.perMonth", comment: ""), price)
         }
         static func saveBadge(_ percent: Int) -> String {
-            String(format: NSLocalizedString("subscription.saveBadge", comment: ""), percent)
+            String(format: ls("subscription.saveBadge", comment: ""), percent)
         }
-        static var featureVoice: String { NSLocalizedString("subscription.feature.voice", comment: "") }
-        static var featureImage: String { NSLocalizedString("subscription.feature.image", comment: "") }
-        static var featureReports: String { NSLocalizedString("subscription.feature.reports", comment: "") }
-        static var featureCurrencies: String { NSLocalizedString("subscription.feature.currencies", comment: "") }
-        static var featureThemes: String { NSLocalizedString("subscription.feature.themes", comment: "") }
-        static var featureExport: String { NSLocalizedString("subscription.feature.export", comment: "") }
-        static var legalFooter: String { NSLocalizedString("subscription.legalFooter", comment: "") }
-        static var errorTitle: String { NSLocalizedString("subscription.errorTitle", comment: "") }
-        static var activeTitle: String { NSLocalizedString("subscription.activeTitle", comment: "") }
-        static var activeSubtitle: String { NSLocalizedString("subscription.activeSubtitle", comment: "") }
-        static var currentPlan: String { NSLocalizedString("subscription.currentPlan", comment: "") }
-        static var renewsOn: String { NSLocalizedString("subscription.renewsOn", comment: "") }
-        static var manageInAppStore: String { NSLocalizedString("subscription.manageInAppStore", comment: "") }
+        static var featureVoice: String { ls("subscription.feature.voice", comment: "") }
+        static var featureImage: String { ls("subscription.feature.image", comment: "") }
+        static var featureReports: String { ls("subscription.feature.reports", comment: "") }
+        static var featureCurrencies: String { ls("subscription.feature.currencies", comment: "") }
+        static var featureThemes: String { ls("subscription.feature.themes", comment: "") }
+        static var featureExport: String { ls("subscription.feature.export", comment: "") }
+        static var legalFooter: String { ls("subscription.legalFooter", comment: "") }
+        static var errorTitle: String { ls("subscription.errorTitle", comment: "") }
+        static var activeTitle: String { ls("subscription.activeTitle", comment: "") }
+        static var activeSubtitle: String { ls("subscription.activeSubtitle", comment: "") }
+        static var currentPlan: String { ls("subscription.currentPlan", comment: "") }
+        static var renewsOn: String { ls("subscription.renewsOn", comment: "") }
+        static var manageInAppStore: String { ls("subscription.manageInAppStore", comment: "") }
     }
 
     enum Tips {
-        static var subtitle: String { NSLocalizedString("tips.subtitle", comment: "") }
-        static var sectionQuickEntry: String { NSLocalizedString("tips.section.quickEntry", comment: "") }
-        static var sectionOrganize: String { NSLocalizedString("tips.section.organize", comment: "") }
-        static var sectionAdvanced: String { NSLocalizedString("tips.section.advanced", comment: "") }
-        static var voiceTitle: String { NSLocalizedString("tips.voice.title", comment: "") }
-        static var voiceDetail: String { NSLocalizedString("tips.voice.detail", comment: "") }
-        static var cameraTitle: String { NSLocalizedString("tips.camera.title", comment: "") }
-        static var cameraDetail: String { NSLocalizedString("tips.camera.detail", comment: "") }
-        static var favoritesTitle: String { NSLocalizedString("tips.favorites.title", comment: "") }
-        static var favoritesDetail: String { NSLocalizedString("tips.favorites.detail", comment: "") }
-        static var budgetsTitle: String { NSLocalizedString("tips.budgets.title", comment: "") }
-        static var budgetsDetail: String { NSLocalizedString("tips.budgets.detail", comment: "") }
-        static var tagsTitle: String { NSLocalizedString("tips.tags.title", comment: "") }
-        static var tagsDetail: String { NSLocalizedString("tips.tags.detail", comment: "") }
-        static var filtersTitle: String { NSLocalizedString("tips.filters.title", comment: "") }
-        static var filtersDetail: String { NSLocalizedString("tips.filters.detail", comment: "") }
-        static var exportTitle: String { NSLocalizedString("tips.export.title", comment: "") }
-        static var exportDetail: String { NSLocalizedString("tips.export.detail", comment: "") }
-        static var faceIDTitle: String { NSLocalizedString("tips.faceID.title", comment: "") }
-        static var faceIDDetail: String { NSLocalizedString("tips.faceID.detail", comment: "") }
+        static var subtitle: String { ls("tips.subtitle", comment: "") }
+        static var sectionQuickEntry: String { ls("tips.section.quickEntry", comment: "") }
+        static var sectionOrganize: String { ls("tips.section.organize", comment: "") }
+        static var sectionAdvanced: String { ls("tips.section.advanced", comment: "") }
+        static var voiceTitle: String { ls("tips.voice.title", comment: "") }
+        static var voiceDetail: String { ls("tips.voice.detail", comment: "") }
+        static var cameraTitle: String { ls("tips.camera.title", comment: "") }
+        static var cameraDetail: String { ls("tips.camera.detail", comment: "") }
+        static var favoritesTitle: String { ls("tips.favorites.title", comment: "") }
+        static var favoritesDetail: String { ls("tips.favorites.detail", comment: "") }
+        static var budgetsTitle: String { ls("tips.budgets.title", comment: "") }
+        static var budgetsDetail: String { ls("tips.budgets.detail", comment: "") }
+        static var tagsTitle: String { ls("tips.tags.title", comment: "") }
+        static var tagsDetail: String { ls("tips.tags.detail", comment: "") }
+        static var filtersTitle: String { ls("tips.filters.title", comment: "") }
+        static var filtersDetail: String { ls("tips.filters.detail", comment: "") }
+        static var exportTitle: String { ls("tips.export.title", comment: "") }
+        static var exportDetail: String { ls("tips.export.detail", comment: "") }
+        static var faceIDTitle: String { ls("tips.faceID.title", comment: "") }
+        static var faceIDDetail: String { ls("tips.faceID.detail", comment: "") }
     }
 
     enum FAQ {
-        static var subtitle: String { NSLocalizedString("faq.subtitle", comment: "") }
-        static var sectionGeneral: String { NSLocalizedString("faq.section.general", comment: "") }
-        static var sectionData: String { NSLocalizedString("faq.section.data", comment: "") }
-        static var sectionPro: String { NSLocalizedString("faq.section.pro", comment: "") }
-        static var whatIsYalaQ: String { NSLocalizedString("faq.whatIsYala.q", comment: "") }
-        static var whatIsYalaA: String { NSLocalizedString("faq.whatIsYala.a", comment: "") }
-        static var howToRecordQ: String { NSLocalizedString("faq.howToRecord.q", comment: "") }
-        static var howToRecordA: String { NSLocalizedString("faq.howToRecord.a", comment: "") }
-        static var multiCurrencyQ: String { NSLocalizedString("faq.multiCurrency.q", comment: "") }
-        static var multiCurrencyA: String { NSLocalizedString("faq.multiCurrency.a", comment: "") }
-        static var changeCategoryQ: String { NSLocalizedString("faq.changeCategory.q", comment: "") }
-        static var changeCategoryA: String { NSLocalizedString("faq.changeCategory.a", comment: "") }
-        static var importDataQ: String { NSLocalizedString("faq.importData.q", comment: "") }
-        static var importDataA: String { NSLocalizedString("faq.importData.a", comment: "") }
-        static var exportDataQ: String { NSLocalizedString("faq.exportData.q", comment: "") }
-        static var exportDataA: String { NSLocalizedString("faq.exportData.a", comment: "") }
-        static var deleteDataQ: String { NSLocalizedString("faq.deleteData.q", comment: "") }
-        static var deleteDataA: String { NSLocalizedString("faq.deleteData.a", comment: "") }
-        static var whatIsProQ: String { NSLocalizedString("faq.whatIsPro.q", comment: "") }
-        static var whatIsProA: String { NSLocalizedString("faq.whatIsPro.a", comment: "") }
-        static var cancelSubQ: String { NSLocalizedString("faq.cancelSub.q", comment: "") }
-        static var cancelSubA: String { NSLocalizedString("faq.cancelSub.a", comment: "") }
+        static var subtitle: String { ls("faq.subtitle", comment: "") }
+        static var sectionGeneral: String { ls("faq.section.general", comment: "") }
+        static var sectionData: String { ls("faq.section.data", comment: "") }
+        static var sectionPro: String { ls("faq.section.pro", comment: "") }
+        static var whatIsYalaQ: String { ls("faq.whatIsYala.q", comment: "") }
+        static var whatIsYalaA: String { ls("faq.whatIsYala.a", comment: "") }
+        static var howToRecordQ: String { ls("faq.howToRecord.q", comment: "") }
+        static var howToRecordA: String { ls("faq.howToRecord.a", comment: "") }
+        static var multiCurrencyQ: String { ls("faq.multiCurrency.q", comment: "") }
+        static var multiCurrencyA: String { ls("faq.multiCurrency.a", comment: "") }
+        static var changeCategoryQ: String { ls("faq.changeCategory.q", comment: "") }
+        static var changeCategoryA: String { ls("faq.changeCategory.a", comment: "") }
+        static var importDataQ: String { ls("faq.importData.q", comment: "") }
+        static var importDataA: String { ls("faq.importData.a", comment: "") }
+        static var exportDataQ: String { ls("faq.exportData.q", comment: "") }
+        static var exportDataA: String { ls("faq.exportData.a", comment: "") }
+        static var deleteDataQ: String { ls("faq.deleteData.q", comment: "") }
+        static var deleteDataA: String { ls("faq.deleteData.a", comment: "") }
+        static var whatIsProQ: String { ls("faq.whatIsPro.q", comment: "") }
+        static var whatIsProA: String { ls("faq.whatIsPro.a", comment: "") }
+        static var cancelSubQ: String { ls("faq.cancelSub.q", comment: "") }
+        static var cancelSubA: String { ls("faq.cancelSub.a", comment: "") }
     }
 
     // MARK: - Notifications
 
     enum Notifications {
-        static var title: String { NSLocalizedString("notifications.title", comment: "") }
-        static var addNew: String { NSLocalizedString("notifications.addNew", comment: "") }
-        static var edit: String { NSLocalizedString("notifications.edit", comment: "") }
-        static var delete: String { NSLocalizedString("notifications.delete", comment: "") }
-        static var deleteConfirm: String { NSLocalizedString("notifications.deleteConfirm", comment: "") }
-        static var permissionRequired: String { NSLocalizedString("notifications.permissionRequired", comment: "") }
-        static var permissionMessage: String { NSLocalizedString("notifications.permissionMessage", comment: "") }
-        static var openSettings: String { NSLocalizedString("notifications.openSettings", comment: "") }
+        static var title: String { ls("notifications.title", comment: "") }
+        static var addNew: String { ls("notifications.addNew", comment: "") }
+        static var edit: String { ls("notifications.edit", comment: "") }
+        static var delete: String { ls("notifications.delete", comment: "") }
+        static var deleteConfirm: String { ls("notifications.deleteConfirm", comment: "") }
+        static var permissionRequired: String { ls("notifications.permissionRequired", comment: "") }
+        static var permissionMessage: String { ls("notifications.permissionMessage", comment: "") }
+        static var openSettings: String { ls("notifications.openSettings", comment: "") }
 
         // Form fields
-        static var name: String { NSLocalizedString("notifications.name", comment: "") }
-        static var namePlaceholder: String { NSLocalizedString("notifications.namePlaceholder", comment: "") }
-        static var text: String { NSLocalizedString("notifications.text", comment: "") }
-        static var textPlaceholder: String { NSLocalizedString("notifications.textPlaceholder", comment: "") }
-        static var time: String { NSLocalizedString("notifications.time", comment: "") }
-        static var active: String { NSLocalizedString("notifications.active", comment: "") }
+        static var name: String { ls("notifications.name", comment: "") }
+        static var namePlaceholder: String { ls("notifications.namePlaceholder", comment: "") }
+        static var text: String { ls("notifications.text", comment: "") }
+        static var textPlaceholder: String { ls("notifications.textPlaceholder", comment: "") }
+        static var time: String { ls("notifications.time", comment: "") }
+        static var active: String { ls("notifications.active", comment: "") }
 
         // Report data types
-        static var dataBalance: String { NSLocalizedString("notifications.data.balance", comment: "") }
-        static var dataExpenses: String { NSLocalizedString("notifications.data.expenses", comment: "") }
-        static var dataIncome: String { NSLocalizedString("notifications.data.income", comment: "") }
-        static var dataTopCategory: String { NSLocalizedString("notifications.data.topCategory", comment: "") }
-        static var selectData: String { NSLocalizedString("notifications.selectData", comment: "") }
+        static var dataBalance: String { ls("notifications.data.balance", comment: "") }
+        static var dataExpenses: String { ls("notifications.data.expenses", comment: "") }
+        static var dataIncome: String { ls("notifications.data.income", comment: "") }
+        static var dataTopCategory: String { ls("notifications.data.topCategory", comment: "") }
+        static var selectData: String { ls("notifications.selectData", comment: "") }
 
         // Day preferences
-        static var daySunday: String { NSLocalizedString("notifications.day.sunday", comment: "") }
-        static var dayMonday: String { NSLocalizedString("notifications.day.monday", comment: "") }
-        static var dayLastOfMonth: String { NSLocalizedString("notifications.day.lastOfMonth", comment: "") }
-        static var dayFirstOfMonth: String { NSLocalizedString("notifications.day.firstOfMonth", comment: "") }
-        static var selectDay: String { NSLocalizedString("notifications.selectDay", comment: "") }
-        static var allDays: String { NSLocalizedString("notifications.allDays", comment: "") }
-        static var selectWeekdays: String { NSLocalizedString("notifications.selectWeekdays", comment: "") }
+        static var daySunday: String { ls("notifications.day.sunday", comment: "") }
+        static var dayMonday: String { ls("notifications.day.monday", comment: "") }
+        static var dayLastOfMonth: String { ls("notifications.day.lastOfMonth", comment: "") }
+        static var dayFirstOfMonth: String { ls("notifications.day.firstOfMonth", comment: "") }
+        static var selectDay: String { ls("notifications.selectDay", comment: "") }
+        static var allDays: String { ls("notifications.allDays", comment: "") }
+        static var selectWeekdays: String { ls("notifications.selectWeekdays", comment: "") }
 
         // Default notification names (Brand Voice friendly)
-        static var endOfDayName: String { NSLocalizedString("notifications.endOfDay.name", comment: "") }
-        static var endOfDayText: String { NSLocalizedString("notifications.endOfDay.text", comment: "") }
-        static var lunchTimeName: String { NSLocalizedString("notifications.lunchTime.name", comment: "") }
-        static var lunchTimeText: String { NSLocalizedString("notifications.lunchTime.text", comment: "") }
+        static var endOfDayName: String { ls("notifications.endOfDay.name", comment: "") }
+        static var endOfDayText: String { ls("notifications.endOfDay.text", comment: "") }
+        static var lunchTimeName: String { ls("notifications.lunchTime.name", comment: "") }
+        static var lunchTimeText: String { ls("notifications.lunchTime.text", comment: "") }
 
         // Reports
-        static var dailyReportName: String { NSLocalizedString("notifications.dailyReport.name", comment: "") }
-        static var weeklyReportName: String { NSLocalizedString("notifications.weeklyReport.name", comment: "") }
-        static var monthlyReportName: String { NSLocalizedString("notifications.monthlyReport.name", comment: "") }
+        static var dailyReportName: String { ls("notifications.dailyReport.name", comment: "") }
+        static var weeklyReportName: String { ls("notifications.weeklyReport.name", comment: "") }
+        static var monthlyReportName: String { ls("notifications.monthlyReport.name", comment: "") }
 
         // Report hints (shown in list)
         static func dailyReportHint(_ time: String, _ data: String) -> String {
-            String(format: NSLocalizedString("notifications.dailyReport.hint", comment: ""), time, data)
+            String(format: ls("notifications.dailyReport.hint", comment: ""), time, data)
         }
         static func weeklyReportHint(_ data: String, _ day: String) -> String {
-            String(format: NSLocalizedString("notifications.weeklyReport.hint", comment: ""), data, day)
+            String(format: ls("notifications.weeklyReport.hint", comment: ""), data, day)
         }
         static func monthlyReportHint(_ data: String, _ day: String) -> String {
-            String(format: NSLocalizedString("notifications.monthlyReport.hint", comment: ""), data, day)
+            String(format: ls("notifications.monthlyReport.hint", comment: ""), data, day)
         }
 
         // System notifications
-        static var scheduledPaymentsName: String { NSLocalizedString("notifications.scheduledPayments.name", comment: "") }
-        static var scheduledPaymentsHint: String { NSLocalizedString("notifications.scheduledPayments.hint", comment: "") }
-        static var announcementsName: String { NSLocalizedString("notifications.announcements.name", comment: "") }
-        static var announcementsHint: String { NSLocalizedString("notifications.announcements.hint", comment: "") }
+        static var scheduledPaymentsName: String { ls("notifications.scheduledPayments.name", comment: "") }
+        static var scheduledPaymentsHint: String { ls("notifications.scheduledPayments.hint", comment: "") }
+        static var announcementsName: String { ls("notifications.announcements.name", comment: "") }
+        static var announcementsHint: String { ls("notifications.announcements.hint", comment: "") }
 
         // Empty state
-        static var emptyTitle: String { NSLocalizedString("notifications.empty.title", comment: "") }
-        static var emptyMessage: String { NSLocalizedString("notifications.empty.message", comment: "") }
+        static var emptyTitle: String { ls("notifications.empty.title", comment: "") }
+        static var emptyMessage: String { ls("notifications.empty.message", comment: "") }
 
         // Test notification
-        static var testNotification: String { NSLocalizedString("notifications.testNotification", comment: "") }
+        static var testNotification: String { ls("notifications.testNotification", comment: "") }
 
         // Test report samples (by period)
-        static var testBalanceDaily: String { NSLocalizedString("notifications.testReport.balance.daily", comment: "") }
-        static var testBalanceWeekly: String { NSLocalizedString("notifications.testReport.balance.weekly", comment: "") }
-        static var testBalanceMonthly: String { NSLocalizedString("notifications.testReport.balance.monthly", comment: "") }
-        static var testExpensesDaily: String { NSLocalizedString("notifications.testReport.expenses.daily", comment: "") }
-        static var testExpensesWeekly: String { NSLocalizedString("notifications.testReport.expenses.weekly", comment: "") }
-        static var testExpensesMonthly: String { NSLocalizedString("notifications.testReport.expenses.monthly", comment: "") }
-        static var testIncomeDaily: String { NSLocalizedString("notifications.testReport.income.daily", comment: "") }
-        static var testIncomeWeekly: String { NSLocalizedString("notifications.testReport.income.weekly", comment: "") }
-        static var testIncomeMonthly: String { NSLocalizedString("notifications.testReport.income.monthly", comment: "") }
-        static var testTopCategoryDaily: String { NSLocalizedString("notifications.testReport.topCategory.daily", comment: "") }
-        static var testTopCategoryWeekly: String { NSLocalizedString("notifications.testReport.topCategory.weekly", comment: "") }
-        static var testTopCategoryMonthly: String { NSLocalizedString("notifications.testReport.topCategory.monthly", comment: "") }
-        static var testScheduledPayment: String { NSLocalizedString("notifications.testReport.scheduledPayment", comment: "") }
+        static var testBalanceDaily: String { ls("notifications.testReport.balance.daily", comment: "") }
+        static var testBalanceWeekly: String { ls("notifications.testReport.balance.weekly", comment: "") }
+        static var testBalanceMonthly: String { ls("notifications.testReport.balance.monthly", comment: "") }
+        static var testExpensesDaily: String { ls("notifications.testReport.expenses.daily", comment: "") }
+        static var testExpensesWeekly: String { ls("notifications.testReport.expenses.weekly", comment: "") }
+        static var testExpensesMonthly: String { ls("notifications.testReport.expenses.monthly", comment: "") }
+        static var testIncomeDaily: String { ls("notifications.testReport.income.daily", comment: "") }
+        static var testIncomeWeekly: String { ls("notifications.testReport.income.weekly", comment: "") }
+        static var testIncomeMonthly: String { ls("notifications.testReport.income.monthly", comment: "") }
+        static var testTopCategoryDaily: String { ls("notifications.testReport.topCategory.daily", comment: "") }
+        static var testTopCategoryWeekly: String { ls("notifications.testReport.topCategory.weekly", comment: "") }
+        static var testTopCategoryMonthly: String { ls("notifications.testReport.topCategory.monthly", comment: "") }
+        static var testScheduledPayment: String { ls("notifications.testReport.scheduledPayment", comment: "") }
 
         // Section headers
-        static var sectionReminders: String { NSLocalizedString("notifications.section.reminders", comment: "") }
-        static var sectionReports: String { NSLocalizedString("notifications.section.reports", comment: "") }
-        static var sectionSystem: String { NSLocalizedString("notifications.section.system", comment: "") }
-        static var sectionCustom: String { NSLocalizedString("notifications.section.custom", comment: "") }
+        static var sectionReminders: String { ls("notifications.section.reminders", comment: "") }
+        static var sectionReports: String { ls("notifications.section.reports", comment: "") }
+        static var sectionSystem: String { ls("notifications.section.system", comment: "") }
+        static var sectionCustom: String { ls("notifications.section.custom", comment: "") }
 
         // Budget alerts
-        static var budgetAlertsTitle: String { NSLocalizedString("notifications.budgetAlerts.title", comment: "") }
-        static var budgetAlertsHint: String { NSLocalizedString("notifications.budgetAlerts.hint", comment: "") }
+        static var budgetAlertsTitle: String { ls("notifications.budgetAlerts.title", comment: "") }
+        static var budgetAlertsHint: String { ls("notifications.budgetAlerts.hint", comment: "") }
 
         // MARK: - Scheduled Payment Notifications (personalized)
 
         enum ScheduledPayment {
             /// "Hoy vence: %@ por %@" (name, amount)
             static func dueToday(_ name: String, _ amount: String) -> String {
-                String(format: NSLocalizedString("notifications.scheduledPayment.dueToday", comment: ""), name, amount)
+                String(format: ls("notifications.scheduledPayment.dueToday", comment: ""), name, amount)
             }
 
             /// "En %d día(s) vence: %@ por %@" (days, name, amount)
             static func dueSoon(_ days: Int, _ name: String, _ amount: String) -> String {
-                String(format: NSLocalizedString("notifications.scheduledPayment.dueSoon", comment: ""), days, name, amount)
+                String(format: ls("notifications.scheduledPayment.dueSoon", comment: ""), days, name, amount)
             }
 
             /// "Pago vencido: %@ por %@" (name, amount)
             static func overdue(_ name: String, _ amount: String) -> String {
-                String(format: NSLocalizedString("notifications.scheduledPayment.overdue", comment: ""), name, amount)
+                String(format: ls("notifications.scheduledPayment.overdue", comment: ""), name, amount)
             }
 
             /// "Hoy recibes: %@ de %@" (amount, name)
             static func dueTodayIncome(_ amount: String, _ name: String) -> String {
-                String(format: NSLocalizedString("notifications.scheduledPayment.dueToday.income", comment: ""), amount, name)
+                String(format: ls("notifications.scheduledPayment.dueToday.income", comment: ""), amount, name)
             }
 
             /// "En %d día(s) recibes: %@ de %@" (days, amount, name)
             static func dueSoonIncome(_ days: Int, _ amount: String, _ name: String) -> String {
-                String(format: NSLocalizedString("notifications.scheduledPayment.dueSoon.income", comment: ""), days, amount, name)
+                String(format: ls("notifications.scheduledPayment.dueSoon.income", comment: ""), days, amount, name)
             }
 
             /// "Ingreso pendiente: %@ de %@" (amount, name)
             static func overdueIncome(_ amount: String, _ name: String) -> String {
-                String(format: NSLocalizedString("notifications.scheduledPayment.overdue.income", comment: ""), amount, name)
+                String(format: ls("notifications.scheduledPayment.overdue.income", comment: ""), amount, name)
             }
         }
 
@@ -2539,60 +2585,60 @@ enum L10n {
 
         /// "Tu balance actual: %@" (amount)
         static func reportBalance(_ amount: String) -> String {
-            String(format: NSLocalizedString("notifications.report.balance", comment: ""), amount)
+            String(format: ls("notifications.report.balance", comment: ""), amount)
         }
 
         /// "Gastaste: %@" (amount)
         static func reportExpenses(_ amount: String) -> String {
-            String(format: NSLocalizedString("notifications.report.expenses", comment: ""), amount)
+            String(format: ls("notifications.report.expenses", comment: ""), amount)
         }
 
         /// "Recibiste: %@" (amount)
         static func reportIncome(_ amount: String) -> String {
-            String(format: NSLocalizedString("notifications.report.income", comment: ""), amount)
+            String(format: ls("notifications.report.income", comment: ""), amount)
         }
 
         /// "Tu mayor gasto: %@" (category)
         static func reportTopCategory(_ category: String) -> String {
-            String(format: NSLocalizedString("notifications.report.topCategory", comment: ""), category)
+            String(format: ls("notifications.report.topCategory", comment: ""), category)
         }
 
         // Empty state messages
-        static var emptyExpensesDaily: String { NSLocalizedString("notifications.report.empty.expenses.daily", comment: "") }
-        static var emptyExpensesWeekly: String { NSLocalizedString("notifications.report.empty.expenses.weekly", comment: "") }
-        static var emptyExpensesMonthly: String { NSLocalizedString("notifications.report.empty.expenses.monthly", comment: "") }
-        static var emptyIncome: String { NSLocalizedString("notifications.report.empty.income", comment: "") }
-        static var emptyTopCategory: String { NSLocalizedString("notifications.report.empty.topCategory", comment: "") }
+        static var emptyExpensesDaily: String { ls("notifications.report.empty.expenses.daily", comment: "") }
+        static var emptyExpensesWeekly: String { ls("notifications.report.empty.expenses.weekly", comment: "") }
+        static var emptyExpensesMonthly: String { ls("notifications.report.empty.expenses.monthly", comment: "") }
+        static var emptyIncome: String { ls("notifications.report.empty.income", comment: "") }
+        static var emptyTopCategory: String { ls("notifications.report.empty.topCategory", comment: "") }
     }
 
     // MARK: - Weekday
 
     enum Weekday {
-        static var shortSunday: String { NSLocalizedString("weekday.short.sunday", comment: "") }
-        static var shortMonday: String { NSLocalizedString("weekday.short.monday", comment: "") }
-        static var shortTuesday: String { NSLocalizedString("weekday.short.tuesday", comment: "") }
-        static var shortWednesday: String { NSLocalizedString("weekday.short.wednesday", comment: "") }
-        static var shortThursday: String { NSLocalizedString("weekday.short.thursday", comment: "") }
-        static var shortFriday: String { NSLocalizedString("weekday.short.friday", comment: "") }
-        static var shortSaturday: String { NSLocalizedString("weekday.short.saturday", comment: "") }
+        static var shortSunday: String { ls("weekday.short.sunday", comment: "") }
+        static var shortMonday: String { ls("weekday.short.monday", comment: "") }
+        static var shortTuesday: String { ls("weekday.short.tuesday", comment: "") }
+        static var shortWednesday: String { ls("weekday.short.wednesday", comment: "") }
+        static var shortThursday: String { ls("weekday.short.thursday", comment: "") }
+        static var shortFriday: String { ls("weekday.short.friday", comment: "") }
+        static var shortSaturday: String { ls("weekday.short.saturday", comment: "") }
     }
 
     // MARK: - iCloud Sync
 
     enum iCloud {
-        static var title: String { NSLocalizedString("icloud.title", comment: "") }
-        static var description: String { NSLocalizedString("icloud.description", comment: "") }
-        static var privacyNote: String { NSLocalizedString("icloud.privacyNote", comment: "") }
-        static var statusSynced: String { NSLocalizedString("icloud.statusSynced", comment: "") }
-        static var statusSyncing: String { NSLocalizedString("icloud.statusSyncing", comment: "") }
-        static var statusNoAccount: String { NSLocalizedString("icloud.statusNoAccount", comment: "") }
-        static var statusError: String { NSLocalizedString("icloud.statusError", comment: "") }
+        static var title: String { ls("icloud.title", comment: "") }
+        static var description: String { ls("icloud.description", comment: "") }
+        static var privacyNote: String { ls("icloud.privacyNote", comment: "") }
+        static var statusSynced: String { ls("icloud.statusSynced", comment: "") }
+        static var statusSyncing: String { ls("icloud.statusSyncing", comment: "") }
+        static var statusNoAccount: String { ls("icloud.statusNoAccount", comment: "") }
+        static var statusError: String { ls("icloud.statusError", comment: "") }
         static func lastSync(_ time: String) -> String {
-            String(format: NSLocalizedString("icloud.lastSync", comment: ""), time)
+            String(format: ls("icloud.lastSync", comment: ""), time)
         }
-        static var noAccountWarning: String { NSLocalizedString("icloud.noAccountWarning", comment: "") }
-        static var syncingData: String { NSLocalizedString("icloud.syncingData", comment: "") }
-        static var syncingDescription: String { NSLocalizedString("icloud.syncingDescription", comment: "") }
+        static var noAccountWarning: String { ls("icloud.noAccountWarning", comment: "") }
+        static var syncingData: String { ls("icloud.syncingData", comment: "") }
+        static var syncingDescription: String { ls("icloud.syncingDescription", comment: "") }
     }
 }
 
@@ -2605,8 +2651,13 @@ enum AppLocale {
     private static let supportedLanguages = ["es", "en", "de", "fr", "it", "pt"]
 
     /// The app's current locale for date formatting.
-    /// Uses the system locale if supported, otherwise defaults to English.
+    /// Respects language override if set, otherwise uses system locale.
     static var current: Locale {
+        // User override takes priority
+        if let override = LanguageManager.overrideLanguage {
+            return Locale(identifier: override)
+        }
+        // System locale
         let preferredLanguage = Locale.preferredLanguages.first ?? "en"
         let languageCode = String(preferredLanguage.prefix(2))
 
