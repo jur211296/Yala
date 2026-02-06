@@ -1283,6 +1283,8 @@
 "onboarding.notificationsTitle" = "Te avisamos?";
 "onboarding.notificationsSubtitle" = "Ative os lembretes que te ajudam. Você pode mudá-los quando quiser.";
 "onboarding.notificationsSkip" = "Agora não, obrigado";
+"onboarding.notificationsSelectAll" = "Ativar tudo";
+"onboarding.notificationsDeselectAll" = "Desativar tudo";
 "onboarding.recommended" = "Recomendada";
 
 // MARK: - Bulk Edit

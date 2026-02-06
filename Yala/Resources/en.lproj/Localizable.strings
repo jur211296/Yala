@@ -1283,6 +1283,8 @@
 "onboarding.notificationsTitle" = "Stay in the loop?";
 "onboarding.notificationsSubtitle" = "Turn on the reminders that help you. You can change them anytime.";
 "onboarding.notificationsSkip" = "Not now, thanks";
+"onboarding.notificationsSelectAll" = "Enable all";
+"onboarding.notificationsDeselectAll" = "Disable all";
 "onboarding.recommended" = "Recommended";
 
 // MARK: - Bulk Edit

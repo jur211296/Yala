@@ -1283,6 +1283,8 @@
 "onboarding.notificationsTitle" = "On vous prévient ?";
 "onboarding.notificationsSubtitle" = "Activez les rappels qui vous sont utiles. Vous pouvez les modifier à tout moment.";
 "onboarding.notificationsSkip" = "Pas maintenant, merci";
+"onboarding.notificationsSelectAll" = "Tout activer";
+"onboarding.notificationsDeselectAll" = "Tout désactiver";
 "onboarding.recommended" = "Recommandée";
 
 // MARK: - Bulk Edit

@@ -492,6 +492,31 @@ struct OnboardingView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.sm) {
+                    // Enable all / Disable all button
+                    Button {
+                        Task { await toggleAllNotifications() }
+                    } label: {
+                        HStack {
+                            Text(allNotificationsSelected
+                                 ? L10n.Onboarding.notificationsDeselectAll
+                                 : L10n.Onboarding.notificationsSelectAll)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(Color.electricIndigo)
+                            Spacer()
+                            Image(systemName: allNotificationsSelected ? "checkmark.circle.fill" : "circle")
+                                .font(.title3)
+                                .foregroundStyle(allNotificationsSelected ? Color.electricIndigo : .secondary)
+                        }
+                        .padding(DS.Spacing.md)
+                        .background(Color.yalaCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.md)
+                                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
                     // Reminders section
                     notificationGroupHeader(L10n.Notifications.sectionReminders)
                     notificationToggleRow(.endOfDay)
@@ -585,6 +610,32 @@ struct OnboardingView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var allNotificationsSelected: Bool {
+        let allTypes: Set<NotificationType> = [
+            .endOfDay, .lunchTime, .dailyReport, .weeklyReport,
+            .monthlyReport, .scheduledPayments, .announcements
+        ]
+        return selectedNotifications == allTypes && budgetAlertsEnabled
+    }
+
+    private func toggleAllNotifications() async {
+        if allNotificationsSelected {
+            selectedNotifications.removeAll()
+            budgetAlertsEnabled = false
+        } else {
+            if !hasRequestedPermission {
+                let granted = await NotificationService.shared.requestPermission()
+                hasRequestedPermission = true
+                if !granted { return }
+            }
+            selectedNotifications = [
+                .endOfDay, .lunchTime, .dailyReport, .weeklyReport,
+                .monthlyReport, .scheduledPayments, .announcements
+            ]
+            budgetAlertsEnabled = true
+        }
     }
 
     private func toggleNotification(_ type: NotificationType) async {

@@ -1283,6 +1283,8 @@
 "onboarding.notificationsTitle" = "Sollen wir Sie benachrichtigen?";
 "onboarding.notificationsSubtitle" = "Aktivieren Sie die Erinnerungen, die Ihnen helfen. Sie können sie jederzeit ändern.";
 "onboarding.notificationsSkip" = "Jetzt nicht, danke";
+"onboarding.notificationsSelectAll" = "Alle aktivieren";
+"onboarding.notificationsDeselectAll" = "Alle deaktivieren";
 "onboarding.recommended" = "Empfohlen";
 
 // MARK: - Bulk Edit

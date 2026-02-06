@@ -1283,6 +1283,8 @@
 "onboarding.notificationsTitle" = "Ti avvisiamo?";
 "onboarding.notificationsSubtitle" = "Attiva i promemoria che ti sono utili. Puoi cambiarli quando vuoi.";
 "onboarding.notificationsSkip" = "Non ora, grazie";
+"onboarding.notificationsSelectAll" = "Attiva tutto";
+"onboarding.notificationsDeselectAll" = "Disattiva tutto";
 "onboarding.recommended" = "Consigliata";
 
 // MARK: - Bulk Edit

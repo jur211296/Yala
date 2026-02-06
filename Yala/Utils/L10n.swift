@@ -1870,6 +1870,12 @@ enum L10n {
         static var notificationsSkip: String {
             NSLocalizedString("onboarding.notificationsSkip", comment: "")
         }
+        static var notificationsSelectAll: String {
+            NSLocalizedString("onboarding.notificationsSelectAll", comment: "")
+        }
+        static var notificationsDeselectAll: String {
+            NSLocalizedString("onboarding.notificationsDeselectAll", comment: "")
+        }
         static var recommended: String {
             NSLocalizedString("onboarding.recommended", comment: "")
         }
