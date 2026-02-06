@@ -20,7 +20,7 @@ struct ManualEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.manualEntry") {
             ControlWidgetButton(action: OpenManualEntryIntent()) {
-                Label("widget.control.newExpense", systemImage: "plus.circle.fill")
+                Label("widget.control.newExpense", systemImage: "sparkles")
             }
         }
         .displayName("widget.control.newExpense")
@@ -35,7 +35,7 @@ struct VoiceEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.voiceEntry") {
             ControlWidgetButton(action: OpenVoiceEntryIntent()) {
-                Label("widget.control.voiceLabel", systemImage: "mic.fill")
+                Label("widget.control.voiceLabel", systemImage: "mic.badge.plus")
             }
         }
         .displayName("widget.control.voiceExpense")
@@ -50,7 +50,7 @@ struct ImageEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.imageEntry") {
             ControlWidgetButton(action: OpenImageEntryIntent()) {
-                Label("widget.control.photoLabel", systemImage: "camera.fill")
+                Label("widget.control.photoLabel", systemImage: "photo.badge.plus")
             }
         }
         .displayName("widget.control.photoExpense")

@@ -98,8 +98,8 @@
 "widget.paymentCategory.subscription" = "Abbonamenti";
 
 // MARK: - Control Widgets
-"widget.control.newExpense" = "Nuova spesa";
-"widget.control.newExpense.desc" = "Apri Yala per registrare una spesa";
+"widget.control.newExpense" = "Registrazione rapida";
+"widget.control.newExpense.desc" = "Apri Yala per registrare rapidamente";
 "widget.control.voiceExpense" = "Registrazione vocale";
 "widget.control.voiceExpense.desc" = "Detta la tua registrazione a Yala";
 "widget.control.photoExpense" = "Registrazione immagine";

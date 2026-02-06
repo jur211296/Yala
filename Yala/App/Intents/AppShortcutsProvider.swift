@@ -7,7 +7,7 @@
 
 import AppIntents
 
-@available(iOS 16.0, *)
+@available(iOS 18.0, *)
 struct YalaShortcuts: AppShortcutsProvider {
 
     static var appShortcuts: [AppShortcut] {
@@ -26,7 +26,7 @@ struct YalaShortcuts: AppShortcutsProvider {
                 "Quick entry in \(.applicationName)"
             ],
             shortTitle: "shortcut.quickExpense.shortTitle",
-            systemImageName: "plus.circle.fill"
+            systemImageName: "sparkles"
         )
 
         AppShortcut(
@@ -42,7 +42,7 @@ struct YalaShortcuts: AppShortcutsProvider {
                 "Dictate expense in \(.applicationName)"
             ],
             shortTitle: "shortcut.voiceEntry.shortTitle",
-            systemImageName: "mic.fill"
+            systemImageName: "mic.badge.plus"
         )
 
         AppShortcut(
@@ -58,7 +58,7 @@ struct YalaShortcuts: AppShortcutsProvider {
                 "Scan expense in \(.applicationName)"
             ],
             shortTitle: "shortcut.imageEntry.shortTitle",
-            systemImageName: "photo.fill"
+            systemImageName: "photo.badge.plus"
         )
 
         AppShortcut(

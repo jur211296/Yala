@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-05] d3c74e9 feat(ui): unify registration types colors and toolbar icons
 - [2026-02-05] 77290b0 feat(widgets): add theme and selection customization for iOS widgets
 - [2026-02-05] dfdc277 refactor(ui): organize PersonalizationSettingsView into sections
 - [2026-02-05] 463cd47 fix(sync): reload data on transaction delete and trends update
@@ -377,8 +378,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Widget personalization committed (77290b0)
-Next step: Continuar con mejoras del ROADMAP (BUG-4 o nuevas features)
+Stopped at: UI consistency improvements committed (d3c74e9)
+Next step: Continuar con mejoras del ROADMAP
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults

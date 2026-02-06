@@ -122,8 +122,8 @@
 "widget.paymentCategory.subscription" = "Subscriptions";
 
 // MARK: - Control Widgets
-"widget.control.newExpense" = "New Expense";
-"widget.control.newExpense.desc" = "Open Yala to record an expense";
+"widget.control.newExpense" = "Quick Entry";
+"widget.control.newExpense.desc" = "Open Yala to quickly record";
 "widget.control.voiceExpense" = "Voice Entry";
 "widget.control.voiceExpense.desc" = "Dictate your entry to Yala";
 "widget.control.photoExpense" = "Image Entry";
