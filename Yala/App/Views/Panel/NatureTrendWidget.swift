@@ -715,7 +715,7 @@ struct LegendItem: View {
             }
             .padding(DS.Spacing.sm)
             .background(isSelected ? Color.yalaBackground : Color.clear)
-            .cornerRadius(DS.Radius.sm)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
             .opacity(isSelected ? 1.0 : 0.4)
         }
     }
@@ -761,7 +761,7 @@ struct CompactLegendChip: View {
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xs)
             .background(isSelected ? Color.yalaBackground.opacity(0.5) : Color.clear)
-            .cornerRadius(DS.Radius.md)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .opacity(isSelected ? 1.0 : 0.4)
         }
     }

@@ -298,7 +298,7 @@ struct NotificationsSettingsView: View {
         }
         .padding(DS.Spacing.lg)
         .background(Color.yalaCard)
-        .cornerRadius(DS.Radius.xl)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
                 .stroke(Color.primary.opacity(0.05), lineWidth: 1)
@@ -375,7 +375,7 @@ struct NotificationCard: View {
             }
             .padding(DS.Spacing.lg)
             .background(Color.yalaCard)
-            .cornerRadius(DS.Radius.xl)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl)
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)

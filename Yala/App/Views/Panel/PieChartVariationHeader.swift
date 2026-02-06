@@ -140,7 +140,7 @@ struct PieChartVariationHeader: View {
         )
         .padding()
         .background(Color.yalaCard)
-        .cornerRadius(DS.Radius.xl)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
 
         // Without previous data (N/A)
         PieChartVariationHeader(
@@ -154,7 +154,7 @@ struct PieChartVariationHeader: View {
         )
         .padding()
         .background(Color.yalaCard)
-        .cornerRadius(DS.Radius.xl)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
     }
     .padding()
     .background(Color.yalaBackground)

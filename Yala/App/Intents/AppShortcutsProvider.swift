@@ -7,7 +7,6 @@
 
 import AppIntents
 
-@available(iOS 18.0, *)
 struct YalaShortcuts: AppShortcutsProvider {
 
     static var appShortcuts: [AppShortcut] {

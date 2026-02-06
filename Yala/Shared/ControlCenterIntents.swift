@@ -9,7 +9,6 @@
 import AppIntents
 import Foundation
 
-@available(iOS 18.0, *)
 struct OpenManualEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "widget.control.newExpense"
     static var description = IntentDescription("widget.control.newExpense.desc")
@@ -37,7 +36,6 @@ struct OpenManualEntryIntent: AppIntent {
     }
 }
 
-@available(iOS 18.0, *)
 struct OpenVoiceEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "widget.control.voiceExpense"
     static var description = IntentDescription("widget.control.voiceExpense.desc")
@@ -65,7 +63,6 @@ struct OpenVoiceEntryIntent: AppIntent {
     }
 }
 
-@available(iOS 18.0, *)
 struct OpenImageEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "widget.control.photoExpense"
     static var description = IntentDescription("widget.control.photoExpense.desc")

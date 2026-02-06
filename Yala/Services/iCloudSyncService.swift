@@ -48,6 +48,10 @@ final class iCloudSyncService {
         checkAccountStatus()
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     // MARK: - Account Status
 
     func checkAccountStatus() {

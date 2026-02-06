@@ -200,7 +200,7 @@ struct BulkEditSheet: View {
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.1))
-        .cornerRadius(DS.Radius.md)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     // MARK: - Applied Changes Summary
@@ -217,7 +217,7 @@ struct BulkEditSheet: View {
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.green.opacity(0.1))
-        .cornerRadius(DS.Radius.md)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     // MARK: - Actions
