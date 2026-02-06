@@ -14,7 +14,7 @@ Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
 Status: **Fase 10.5 en progreso** — Notificaciones personalizadas implementadas
-Last activity: 2026-02-02 — Sistema de notificaciones personalizadas (pagos, presupuestos, reportes)
+Last activity: 2026-02-06 — Mejoras onboarding (idioma pre-onboarding, brand voice, iCloud flow)
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ██████████████░░ 90% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso)
@@ -24,21 +24,17 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-06] 5d25b56 refactor(onboarding): restructure language selection as pre-onboarding screen
+- [2026-02-05] bc5916f refactor: remove unnecessary @available checks and migrate deprecated APIs
+- [2026-02-05] aba270f fix(l10n): add missing translations and localize export columns
+- [2026-02-05] 9bc7bff fix: improve error diagnostics and code safety across codebase
+- [2026-02-05] dc12ae6 chore: add PrivacyInfo.xcprivacy for App Store compliance
 - [2026-02-05] fb7b75e fix(widgets): update Control Center labels and unify SF Symbol icons
 - [2026-02-05] d3c74e9 feat(ui): unify registration types colors and toolbar icons
 - [2026-02-05] 77290b0 feat(widgets): add theme and selection customization for iOS widgets
 - [2026-02-05] dfdc277 refactor(ui): organize PersonalizationSettingsView into sections
 - [2026-02-05] 463cd47 fix(sync): reload data on transaction delete and trends update
 - [2026-02-05] 3f0099f fix(notifications): add background task reliability and model support
-- [2026-02-05] 692c87f fix(notifications): add deep links, dynamic content, and duplicate prevention
-- [2026-02-05] 716d6bd fix(ui): improve ProfileView header with clickable avatar and cyan Pro badge
-- [2026-02-05] 911154c feat(ui): add avatar editor with photo/icon selection menu
-- [2026-02-05] 3d87a20 fix(ui): ProfileToolbarButton uses sharedBackgroundVisibility for toolbar integration
-- [2026-02-05] 207d012 feat(ui): add YalaSpark to ProBadge and upgrade buttons
-- [2026-02-05] b09474c feat(ui): add ProfileToolbarButton and golden YalaSpark
-- [2026-02-05] 897fcad fix(ux): voice/image rows now unlock correctly when simulating Pro
-- [2026-02-05] a5f41d0 fix(ux): add missing Pro gates in Statistics FAB and accounts carousel
-- [2026-02-05] 16c2d71 fix(ux): improve Pro/Free UI design and consistency
 - [2026-02-04] 562820c feat(ux): add haptic feedback and animations
 - [2026-02-04] 40b7925 feat(settings): add toggle to show/hide period variations
 - [2026-02-04] 9c7a3fa refactor(ui): unify scheduled payments text styles with Records
@@ -109,6 +105,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Sistema Pro/Free (10.5.L)** - FeatureGateService con enum ProFeature (accounts, budgets, voiceInput, imageInput, premiumIcons); límites Free (2 cuentas, 3 presupuestos); gates en AccountsSettingsListView, BudgetsListView, PanelView (FAB voz/imagen), ProfileView (toggles), AppIconSettingsView; ProBadge component; UpgradePromptSheet contextual (limitReached/proFeature/trialExpired); StoreKitManager extendido (trial detection, wasProUser, syncToAppGroup); localizaciones 6 idiomas; gates en DetailContainerView FAB y carrusel de cuentas; fix toggle Simular Pro (devSimulatePro como stored property para @Observable, eliminar .disabled() que causaba dimming)
 - **Fix Sistema Notificaciones (10.5.M)** - Deep links al tocar notificaciones (→statistics, →planning, →budgets); contenido dinámico para reportes (datos reales vs hints estáticos); prevención de duplicados por tipo (no count); background tasks con respaldo 1h después; ventana ampliada a mismo día para foreground check; requiresDynamicContent y lastNotifiedDate en NotificationItem; cancelDynamicNotifications en bootstrap
 - **Fix Sincronización de Datos (10.5.N)** - Lista de registros ahora actualiza inmediatamente al eliminar transacción (refreshRecordsData llama loadData primero); Cash Flow ya no muestra empty state falso (onChange de allTransactions.count en TrendsTabView)
+- **Auditoría Pre-Launch (10.5.O)** - Auditoría completa de 10 categorías: PrivacyInfo.xcprivacy para App Store compliance; 143+ prints envueltos en #if DEBUG; 26 try? convertidos a do/catch con diagnóstico en 14 archivos; force unwraps protegidos con guard; 40 traducciones faltantes añadidas a de/fr/it/pt; 16 claves L10n para columnas de exportación; foregroundColor→foregroundStyle (3 archivos); cornerRadius→clipShape (6 archivos); 19 @available innecesarios eliminados (target iOS 26+); deinit en iCloudSyncService; 4 commits (dc12ae6, 9bc7bff, aba270f, bc5916f)
+- **Mejoras Onboarding (10.5.P)** - Botón "Activar todo" en notificaciones; LanguageManager + ls() helper para override de idioma in-app; selección de idioma como pantalla pre-onboarding (no dentro del flujo); eliminada vista "Sincronizando datos" de iCloud; MainTabView no se renderiza hasta completar onboarding; alert si datos iCloud llegan durante onboarding; welcome copy actualizado al brand voice en 6 idiomas; DE/FR corregido de formal a informal
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -343,12 +341,9 @@ Ver ROADMAP.md para detalles de Fase 11:
 
 ### Ideas Capturadas
 
-- **2026-02-01 [Quality] [Low]: Limpiar try? en QuickExpenseIntent.swift**
-  Contexto: 14 instancias de `try?` que silencian errores en App Intents (Shortcuts/Siri)
-  Archivo: `Yala/App/Intents/QuickExpenseIntent.swift`
-  Líneas: 274, 281, 287, 365, 418, 481, 739, 1009 (fetches) + 6 ModelContainer creations
-  También: 1 force unwrap en línea 201 (simplificable)
-  Estado: Pendiente - código preexistente, no crítico pero mejora diagnóstico
+- **2026-02-01 [Quality] [Low]: Limpiar try? en QuickExpenseIntent.swift** ✅ COMPLETADO (2026-02-05)
+  Contexto: 14 instancias de `try?` convertidas a do/catch con diagnóstico
+  Estado: Resuelto como parte de auditoría pre-launch (commit 9bc7bff)
 
 - **2026-01-29 [Testing] [Quality] [Medium]: Unit Tests para ViewModels** ✅ COMPLETADO (2026-01-30)
   Contexto: ViewModels testeables después del refactoring D.8
@@ -379,8 +374,8 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Control Center labels and SF Symbols unified (fb7b75e)
-Next step: Continuar con mejoras del ROADMAP
+Stopped at: Auditoría pre-launch completada — 4 commits (dc12ae6, 9bc7bff, aba270f, bc5916f)
+Next step: Continuar con mejoras del ROADMAP (BUG-4 onboarding divisas recomendadas pendiente)
 Resume context:
 - **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
   - Eliminado `iCloudSyncEnabled` de UserDefaults
