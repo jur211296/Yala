@@ -1286,6 +1286,8 @@
 "onboarding.notificationsSelectAll" = "Tout activer";
 "onboarding.notificationsDeselectAll" = "Tout désactiver";
 "onboarding.recommended" = "Recommandée";
+"onboarding.languageTitle" = "Choisis ta langue";
+"onboarding.languageSubtitle" = "Yala est disponible dans ces langues. Choisis celle que tu préfères.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";

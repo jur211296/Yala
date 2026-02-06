@@ -33,6 +33,10 @@ struct OnboardingView: View {
     @State private var hasRequestedPermission: Bool = false
     @State private var budgetAlertsEnabled: Bool = false
 
+    // Language selection (for unsupported device languages)
+    @State private var selectedLanguage: String = "en"
+    @State private var tabViewId = UUID()
+
     // Callback when onboarding completes
     var onComplete: () -> Void
 
@@ -41,6 +45,18 @@ struct OnboardingView: View {
         .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth,
         .thisYear, .lastYear, .allTime
     ]
+
+    // MARK: - Dynamic Step Management
+
+    /// Whether to show the language selection step (device language not supported)
+    private var showsLanguageStep: Bool {
+        !LanguageManager.deviceLanguageIsSupported
+    }
+
+    private var totalSteps: Int { showsLanguageStep ? 7 : 6 }
+    private var lastStep: Int { totalSteps - 1 }
+    private var categoriesStepIndex: Int { showsLanguageStep ? 5 : 4 }
+    private var notificationsStepIndex: Int { showsLanguageStep ? 6 : 5 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,12 +68,16 @@ struct OnboardingView: View {
             // Content based on current step
             TabView(selection: $currentStep) {
                 welcomeStep.tag(0)
-                currencyStep.tag(1)
-                secondaryCurrenciesStep.tag(2)
-                periodStep.tag(3)
-                categoriesStep.tag(4)
-                notificationsStep.tag(5)
+                if showsLanguageStep {
+                    languageStep.tag(1)
+                }
+                currencyStep.tag(showsLanguageStep ? 2 : 1)
+                secondaryCurrenciesStep.tag(showsLanguageStep ? 3 : 2)
+                periodStep.tag(showsLanguageStep ? 4 : 3)
+                categoriesStep.tag(categoriesStepIndex)
+                notificationsStep.tag(notificationsStepIndex)
             }
+            .id(tabViewId)
             .tabViewStyle(.page(indexDisplayMode: .never))
             .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
 
@@ -74,9 +94,7 @@ struct OnboardingView: View {
     // MARK: - Progress Indicator
 
     private var progressIndicator: some View {
-        let totalSteps = 6
-
-        return HStack(spacing: DS.Spacing.sm) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(0..<totalSteps, id: \.self) { step in
                 Capsule()
                     .fill(step <= currentStep ? Color.electricIndigo : Color.yalaSecondaryText.opacity(0.2))
@@ -893,21 +911,19 @@ struct OnboardingView: View {
                 // Dismiss keyboard (especially important on step 1)
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-                let lastStep = 5
-
                 if currentStep < lastStep {
                     dsWithAnimation(reduceMotion) {
                         currentStep += 1
                     }
-                    // Trigger category icons animation when entering step 4
-                    if currentStep == 4 {
+                    // Trigger category icons animation when entering categories step
+                    if currentStep == categoriesStepIndex {
                         triggerCategoryAnimation()
                     }
                 } else {
                     completeOnboarding()
                 }
             } label: {
-                let isLastStep = currentStep >= 5
+                let isLastStep = currentStep >= notificationsStepIndex
 
                 Text(isLastStep ? L10n.Onboarding.finish : L10n.Action.next)
                     .font(.body.weight(.semibold))
@@ -928,6 +944,81 @@ struct OnboardingView: View {
 
     private func currencyName(_ currency: CurrencyCode) -> String {
         currency.localizedName
+    }
+
+    // MARK: - Language Step
+
+    private var languageStep: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            VStack(spacing: DS.Spacing.md) {
+                Image(systemName: "globe")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color.electricIndigo)
+
+                Text(L10n.Onboarding.languageTitle)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+
+                Text(L10n.Onboarding.languageSubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+            }
+            .padding(.top, DS.Spacing.md)
+
+            ScrollView {
+                VStack(spacing: DS.Spacing.sm) {
+                    ForEach(LanguageManager.supportedLanguages, id: \.code) { lang in
+                        languageRow(code: lang.code, name: lang.nativeName, flag: lang.flag)
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+            }
+        }
+    }
+
+    private func languageRow(code: String, name: String, flag: String) -> some View {
+        let isSelected = selectedLanguage == code
+
+        return Button {
+            selectLanguage(code)
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Text(flag)
+                    .font(.title2)
+
+                Text(name)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
+            }
+            .padding(DS.Spacing.md)
+            .background(isSelected ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.md)
+                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func selectLanguage(_ code: String) {
+        selectedLanguage = code
+        LanguageManager.overrideLanguage = code
+        // Force TabView re-render so future steps use new language
+        let savedStep = currentStep
+        tabViewId = UUID()
+        DispatchQueue.main.async {
+            currentStep = savedStep
+        }
     }
 
     private func completeOnboarding() {
@@ -953,6 +1044,11 @@ struct OnboardingView: View {
 
         // Budget alerts preference
         defaults.set(budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
+
+        // Language override (only if language step was shown)
+        if showsLanguageStep {
+            LanguageManager.overrideLanguage = selectedLanguage
+        }
 
         defaults.synchronize()
 

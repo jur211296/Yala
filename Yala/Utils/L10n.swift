@@ -1925,6 +1925,12 @@ enum L10n {
         static var recommended: String {
             ls("onboarding.recommended", comment: "")
         }
+        static var languageTitle: String {
+            ls("onboarding.languageTitle", comment: "")
+        }
+        static var languageSubtitle: String {
+            ls("onboarding.languageSubtitle", comment: "")
+        }
     }
 
     // MARK: - Bulk Edit
