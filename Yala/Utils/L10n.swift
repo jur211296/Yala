@@ -1249,6 +1249,12 @@ enum L10n {
         static var voiceLanguage: String {
             ls("settings.voiceLanguage", comment: "")
         }
+        static var appLanguage: String {
+            ls("settings.appLanguage", comment: "")
+        }
+        static var appLanguageRestart: String {
+            ls("settings.appLanguageRestart", comment: "")
+        }
         static var imageInputEnabled: String {
             ls("settings.imageInputEnabled", comment: "")
         }

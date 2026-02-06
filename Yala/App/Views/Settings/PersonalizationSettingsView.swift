@@ -27,6 +27,7 @@ struct PersonalizationSettingsView: View {
     @State private var showingCurrencyFormatPicker = false
     @State private var showingTabBarConfig = false
     @State private var showingWeekdayPicker = false
+    @State private var showingLanguagePicker = false
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
@@ -46,6 +47,11 @@ struct PersonalizationSettingsView: View {
 
     private var currencyFormatDisplayName: String {
         currencyDisplayFormat == "symbol" ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
+    }
+
+    private var currentLanguageDisplayName: String {
+        guard let code = LanguageManager.overrideLanguage else { return "" }
+        return LanguageManager.supportedLanguages.first { $0.code == code }?.nativeName ?? code
     }
 
     var body: some View {
@@ -75,6 +81,45 @@ struct PersonalizationSettingsView: View {
                     // MARK: - Interfaz Section
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         YalaSectionHeader(L10n.Settings.sectionInterface)
+
+                        // App Language (only visible if override is active)
+                        if LanguageManager.overrideLanguage != nil {
+                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                                Button {
+                                    showingLanguagePicker = true
+                                } label: {
+                                    HStack {
+                                        Text(L10n.Settings.appLanguage)
+                                            .font(.body)
+                                            .foregroundStyle(Color.yalaPrimaryText)
+
+                                        Spacer()
+
+                                        Text(currentLanguageDisplayName)
+                                            .font(.body)
+                                            .foregroundStyle(.secondary)
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .padding(.horizontal, DS.FormRow.paddingH)
+                                    .padding(.vertical, DS.FormRow.paddingV)
+                                    .background(Color.yalaCard)
+                                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
+                                Text(L10n.Settings.appLanguageRestart)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, DS.Spacing.xxs)
+                            }
+                        }
 
                         // Tab Bar Configuration
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -430,6 +475,16 @@ struct PersonalizationSettingsView: View {
             )
             .presentationDetents([.height(280)])
         }
+        .sheet(isPresented: $showingLanguagePicker) {
+            LanguagePickerSheet(
+                selectedLanguage: LanguageManager.overrideLanguage ?? "en",
+                onSelect: { code in
+                    LanguageManager.overrideLanguage = code
+                    showingLanguagePicker = false
+                }
+            )
+            .presentationDetents([.medium])
+        }
     }
 }
 
@@ -749,6 +804,81 @@ private struct CurrencyFormatPickerSheet: View {
         if option.value != "symbol" {
             Divider()
                 .padding(.leading, DS.Spacing.lg)
+        }
+    }
+}
+
+// MARK: - Language Picker Sheet
+
+private struct LanguagePickerSheet: View {
+    let selectedLanguage: String
+    let onSelect: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(LanguageManager.supportedLanguages, id: \.code) { lang in
+                            languageRow(lang: lang)
+                        }
+                    }
+                    .background(Color.yalaCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                    .padding(DS.Spacing.lg)
+                }
+            }
+            .navigationTitle(L10n.Settings.appLanguage)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.Action.cancel) { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func languageRow(lang: (code: String, nativeName: String, flag: String)) -> some View {
+        let isSelected = selectedLanguage == lang.code
+
+        return VStack(spacing: 0) {
+            Button {
+                onSelect(lang.code)
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    Text(lang.flag)
+                        .font(.title2)
+
+                    Text(lang.nativeName)
+                        .font(.body)
+                        .foregroundStyle(Color.yalaPrimaryText)
+
+                    Spacer()
+
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(Color.brandPrimary)
+                            .font(.body.weight(.semibold))
+                    }
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if lang.code != LanguageManager.supportedLanguages.last?.code {
+                Divider()
+                    .padding(.leading, DS.Spacing.lg)
+            }
         }
     }
 }

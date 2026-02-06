@@ -336,6 +336,8 @@
 "settings.plannedPayments" = "Planned Payments";
 "settings.voiceInputEnabled" = "Voice Input";
 "settings.voiceLanguage" = "Voice Language";
+"settings.appLanguage" = "App Language";
+"settings.appLanguageRestart" = "Restart the app to apply the change.";
 "settings.imageInputEnabled" = "Image Input";
 "settings.resetData" = "Reset Data";
 "settings.version" = "Version";

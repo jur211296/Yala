@@ -334,6 +334,8 @@
 "settings.plannedPayments" = "Geplante Zahlungen";
 "settings.voiceInputEnabled" = "Spracheingabe";
 "settings.voiceLanguage" = "Sprachsprache";
+"settings.appLanguage" = "App-Sprache";
+"settings.appLanguageRestart" = "Starte die App neu, um die Änderung anzuwenden.";
 "settings.imageInputEnabled" = "Bildeingabe";
 "settings.resetData" = "Daten löschen";
 "settings.version" = "Version";

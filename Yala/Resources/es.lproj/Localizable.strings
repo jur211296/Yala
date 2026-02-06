@@ -336,6 +336,8 @@
 "settings.plannedPayments" = "Pagos planificados";
 "settings.voiceInputEnabled" = "Entrada con voz";
 "settings.voiceLanguage" = "Idioma de voz";
+"settings.appLanguage" = "Idioma de la app";
+"settings.appLanguageRestart" = "Reinicia la app para aplicar el cambio.";
 "settings.imageInputEnabled" = "Entrada con imágenes";
 "settings.resetData" = "Borrar datos";
 "settings.version" = "Versión";
