@@ -13,8 +13,8 @@ Version: 1.1 (en desarrollo)
 Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **Fase 10.5 en progreso** — Notificaciones personalizadas implementadas
-Last activity: 2026-02-06 — Mejoras onboarding (idioma pre-onboarding, brand voice, iCloud flow)
+Status: **Fase 10.5 en progreso** — Documentación y web actualizadas
+Last activity: 2026-02-06 — Auditoría documental, privacy/terms rewrite, web update
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ██████████████░░ 90% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso)
@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-06] eb8f3f3 feat(web): update privacy and terms pages across 6 languages
+- [2026-02-06] 1dc78a4 docs: rewrite privacy policy and terms with accurate app data
+- [2026-02-06] fc7a6ac docs: cleanup obsolete docs, rename Neto→Yala, sync phase 10.5
 - [2026-02-06] d8ee1c7 fix(ui): migrate List views to ScrollView+SectionBox for dark mode support
 - [2026-02-06] 5d25b56 refactor(onboarding): restructure language selection as pre-onboarding screen
 - [2026-02-05] bc5916f refactor: remove unnecessary @available checks and migrate deprecated APIs
@@ -31,9 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-05] 9bc7bff fix: improve error diagnostics and code safety across codebase
 - [2026-02-05] dc12ae6 chore: add PrivacyInfo.xcprivacy for App Store compliance
 - [2026-02-05] fb7b75e fix(widgets): update Control Center labels and unify SF Symbol icons
-- [2026-02-05] d3c74e9 feat(ui): unify registration types colors and toolbar icons
-- [2026-02-05] 77290b0 feat(widgets): add theme and selection customization for iOS widgets
-- [2026-02-05] dfdc277 refactor(ui): organize PersonalizationSettingsView into sections
 - [2026-02-05] 463cd47 fix(sync): reload data on transaction delete and trends update
 - [2026-02-05] 3f0099f fix(notifications): add background task reliability and model support
 - [2026-02-04] 562820c feat(ux): add haptic feedback and animations
@@ -108,6 +108,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Fix Sincronización de Datos (10.5.N)** - Lista de registros ahora actualiza inmediatamente al eliminar transacción (refreshRecordsData llama loadData primero); Cash Flow ya no muestra empty state falso (onChange de allTransactions.count en TrendsTabView)
 - **Auditoría Pre-Launch (10.5.O)** - Auditoría completa de 10 categorías: PrivacyInfo.xcprivacy para App Store compliance; 143+ prints envueltos en #if DEBUG; 26 try? convertidos a do/catch con diagnóstico en 14 archivos; force unwraps protegidos con guard; 40 traducciones faltantes añadidas a de/fr/it/pt; 16 claves L10n para columnas de exportación; foregroundColor→foregroundStyle (3 archivos); cornerRadius→clipShape (6 archivos); 19 @available innecesarios eliminados (target iOS 26+); deinit en iCloudSyncService; 4 commits (dc12ae6, 9bc7bff, aba270f, bc5916f)
 - **Mejoras Onboarding (10.5.P)** - Botón "Activar todo" en notificaciones; LanguageManager + ls() helper para override de idioma in-app; selección de idioma como pantalla pre-onboarding (no dentro del flujo); eliminada vista "Sincronizando datos" de iCloud; MainTabView no se renderiza hasta completar onboarding; alert si datos iCloud llegan durante onboarding; welcome copy actualizado al brand voice en 6 idiomas; DE/FR corregido de formal a informal
+- **Auditoría Documental y Web (10.5.R)** - Auditoría completa de toda la documentación del proyecto; 19 archivos obsoletos eliminados; rename Neto→Yala propagado a todos los docs activos (UI-PATTERNS, APPSTORE-CHECKLIST, QA-SCENARIOS, PROJECT, ROADMAP, AUDIT-REPORT); ROADMAP sincronizado con progreso real de fase 10.5; CLAUDE.md corregido (12 entidades SwiftData, tests actualizados, ref EXECUTION-RULES eliminada); PRIVACY-POLICY.md reescrita con datos reales (iCloud sync, OpenAI API, exchangerate.host, permisos); TERMS-CONDITIONS.md creado (suscripciones Free/Pro, servicios terceros, ley peruana); web actualizada: PrivacyPage y TermsPage reescritas en 6 idiomas (ES/EN/DE/FR/IT/PT), trust badges corregidos ("100% Local"→"Privacidad primero", "Sin servidores"→"Sin rastreo"); 3 commits (fc7a6ac, 1dc78a4, eb8f3f3)
 - **Fix Dark Mode Cards (10.5.Q)** - Migración de List→ScrollView+SectionBox en 4 vistas (AdjustmentModeSelectorView, AccountTypeSelectorView, RecordsFiltersView accounts/tags sheets, MultiSelectionList); DatePickers mantienen List con `.listRowBackground(Color.yalaCard)`; fix crash PeriodSelector (safe DatePicker ranges con min/max); 5 keys L10n nuevas (filters.categories/type/nature/currency, action.apply); magic numbers→DS tokens; 6 idiomas
 
 ### Fase 6 (archivado)
