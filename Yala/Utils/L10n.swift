@@ -366,6 +366,12 @@ enum L10n {
         static var title: String { NSLocalizedString("exchangeRate.title", comment: "") }
         static var updated: String { NSLocalizedString("exchangeRate.updated", comment: "") }
         static var loadError: String { NSLocalizedString("exchangeRate.loadError", comment: "") }
+        static var noSecondaryCurrenciesHint: String {
+            NSLocalizedString("exchangeRate.noSecondaryCurrenciesHint", comment: "")
+        }
+        static var noSecondaryCurrenciesPath: String {
+            NSLocalizedString("exchangeRate.noSecondaryCurrenciesPath", comment: "")
+        }
     }
 
     // MARK: - Currency Names
@@ -1049,6 +1055,26 @@ enum L10n {
         static var allCurrencies: String {
             NSLocalizedString("export.allCurrencies", comment: "")
         }
+
+        // Column display names
+        static var columnDate: String { NSLocalizedString("export.column.date", comment: "") }
+        static var columnAmount: String { NSLocalizedString("export.column.amount", comment: "") }
+        static var columnCurrency: String { NSLocalizedString("export.column.currency", comment: "") }
+        static var columnAccount: String { NSLocalizedString("export.column.account", comment: "") }
+        static var columnCategory: String { NSLocalizedString("export.column.category", comment: "") }
+        static var columnSubcategory: String { NSLocalizedString("export.column.subcategory", comment: "") }
+        static var columnTags: String { NSLocalizedString("export.column.tags", comment: "") }
+        static var columnNote: String { NSLocalizedString("export.column.note", comment: "") }
+
+        // Column descriptions
+        static var columnDateDesc: String { NSLocalizedString("export.column.date.description", comment: "") }
+        static var columnAmountDesc: String { NSLocalizedString("export.column.amount.description", comment: "") }
+        static var columnCurrencyDesc: String { NSLocalizedString("export.column.currency.description", comment: "") }
+        static var columnAccountDesc: String { NSLocalizedString("export.column.account.description", comment: "") }
+        static var columnCategoryDesc: String { NSLocalizedString("export.column.category.description", comment: "") }
+        static var columnSubcategoryDesc: String { NSLocalizedString("export.column.subcategory.description", comment: "") }
+        static var columnTagsDesc: String { NSLocalizedString("export.column.tags.description", comment: "") }
+        static var columnNoteDesc: String { NSLocalizedString("export.column.note.description", comment: "") }
     }
 
     // MARK: - Favorites
@@ -1749,6 +1775,12 @@ enum L10n {
         }
         static var selectSubcategory: String {
             NSLocalizedString("validation.selectSubcategory", comment: "")
+        }
+        static var futureDateTitle: String {
+            NSLocalizedString("validation.futureDateTitle", comment: "")
+        }
+        static var futureDateMessage: String {
+            NSLocalizedString("validation.futureDateMessage", comment: "")
         }
     }
 

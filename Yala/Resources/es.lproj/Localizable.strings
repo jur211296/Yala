@@ -149,6 +149,8 @@
 "exchangeRate.title" = "Tipo de Cambio";
 "exchangeRate.updated" = "Actualizado";
 "exchangeRate.loadError" = "No pudimos obtener el tipo de cambio. Intenta de nuevo en un momento.";
+"exchangeRate.noSecondaryCurrenciesHint" = "Puedes seleccionar divisas secundarias en";
+"exchangeRate.noSecondaryCurrenciesPath" = "Perfil > Divisa y cambio";
 
 // MARK: - Empty States
 
@@ -486,6 +488,22 @@
 "export.subcategoriesSelected" = "%d subcategorías seleccionadas";
 "export.allTags" = "Todas las etiquetas";
 "export.allCurrencies" = "Todas";
+"export.column.date" = "Fecha";
+"export.column.amount" = "Monto";
+"export.column.currency" = "Moneda";
+"export.column.account" = "Cuenta";
+"export.column.category" = "Categoría";
+"export.column.subcategory" = "Subcategoría";
+"export.column.tags" = "Etiquetas";
+"export.column.note" = "Nota";
+"export.column.date.description" = "Fecha en formato yyyy-MM-dd.";
+"export.column.amount.description" = "Monto de la transacción con 2 decimales.";
+"export.column.currency.description" = "Código de moneda (PEN, USD, EUR).";
+"export.column.account.description" = "Nombre de la cuenta asociada.";
+"export.column.category.description" = "Categoría principal de la transacción.";
+"export.column.subcategory.description" = "Subcategoría específica.";
+"export.column.tags.description" = "Etiquetas asociadas, separadas por ';'.";
+"export.column.note.description" = "Nota libre asociada a la transacción.";
 "common.next" = "Siguiente";
 "settings.versionInfo" = "Versión 1.0.0 (Build 1)";
 "tab.panel" = "Panel";
@@ -1067,6 +1085,8 @@
 "validation.accountsMustBeDifferent" = "Las cuentas deben ser diferentes";
 "validation.selectAccount" = "Selecciona una cuenta";
 "validation.selectSubcategory" = "Selecciona una subcategoría";
+"validation.futureDateTitle" = "Fecha futura no permitida";
+"validation.futureDateMessage" = "No puedes registrar transacciones con fecha futura. Usa Pagos Planificados para gastos recurrentes.";
 
 // MARK: - Transfer
 

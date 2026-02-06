@@ -147,6 +147,8 @@
 "exchangeRate.title" = "Taxa de Cambio";
 "exchangeRate.updated" = "Atualizado";
 "exchangeRate.loadError" = "Nao foi possivel carregar a taxa de cambio para este periodo. Tente novamente mais tarde.";
+"exchangeRate.noSecondaryCurrenciesHint" = "Podes selecionar moedas secundárias em";
+"exchangeRate.noSecondaryCurrenciesPath" = "Perfil > Moeda e câmbio";
 
 // MARK: - Empty States
 
@@ -484,6 +486,22 @@
 "export.subcategoriesSelected" = "%d subcategorias selecionadas";
 "export.allTags" = "Todas as etiquetas";
 "export.allCurrencies" = "Todas";
+"export.column.date" = "Data";
+"export.column.amount" = "Valor";
+"export.column.currency" = "Moeda";
+"export.column.account" = "Conta";
+"export.column.category" = "Categoria";
+"export.column.subcategory" = "Subcategoria";
+"export.column.tags" = "Etiquetas";
+"export.column.note" = "Nota";
+"export.column.date.description" = "Data no formato yyyy-MM-dd.";
+"export.column.amount.description" = "Valor da transação com 2 casas decimais.";
+"export.column.currency.description" = "Código da moeda (PEN, USD, EUR).";
+"export.column.account.description" = "Nome da conta associada.";
+"export.column.category.description" = "Categoria principal da transação.";
+"export.column.subcategory.description" = "Subcategoria específica.";
+"export.column.tags.description" = "Etiquetas associadas, separadas por ';'.";
+"export.column.note.description" = "Nota livre associada à transação.";
 "common.next" = "Próximo";
 "settings.versionInfo" = "Versao 1.0.0 (Build 1)";
 "tab.panel" = "Inicio";
@@ -724,6 +742,10 @@
 "profile.privacyDesc" = "Yala armazena seus dados pessoais apenas no seu dispositivo. Nao temos acesso a eles nem os compartilhamos com terceiros. Se voce excluir o app, todos os seus dados serao apagados.";
 "profile.aliasFutureNote" = "Nota: A validacao de unicidade do alias estara disponivel quando a funcionalidade de despesas compartilhadas for implementada.";
 "profile.proMember" = "Membro PRO";
+"profile.choosePhoto" = "Escolher foto";
+"profile.chooseIcon" = "Escolher ícone";
+"profile.removeAvatar" = "Remover";
+"profile.editAvatar" = "Editar avatar";
 
 "settings.currencyDescription" = "Escolha sua moeda principal e consulte as taxas de cambio atualizadas.";
 "settings.preferredCurrency" = "Moeda preferida";
@@ -926,6 +948,18 @@
 // América do Norte
 "currency.plural.cad" = "dólares";
 
+// MARK: - Continents
+"continent.latinAmerica" = "América Latina";
+"continent.europe" = "Europa";
+"continent.asia" = "Ásia";
+"continent.oceania" = "Oceania";
+"continent.middleEast" = "Oriente Médio";
+"continent.africa" = "África";
+"continent.northAmerica" = "América do Norte";
+
+"common.seeAll" = "Ver tudo";
+"common.none" = "Nenhum";
+
 "common.selectColor" = "Selecione uma cor";
 "common.useThisColor" = "Usar esta cor";
 "common.newColor" = "Nova cor";
@@ -1051,6 +1085,8 @@
 "validation.accountsMustBeDifferent" = "As contas devem ser diferentes";
 "validation.selectAccount" = "Selecione uma conta";
 "validation.selectSubcategory" = "Selecione uma subcategoria";
+"validation.futureDateTitle" = "Data futura não permitida";
+"validation.futureDateMessage" = "Não podes registar transações com uma data futura. Usa os pagamentos agendados para despesas recorrentes.";
 
 // MARK: - Transfer
 
@@ -1319,6 +1355,7 @@
 "inbox.sourceScheduledPayment" = "Pagamento agendado";
 "inbox.sourceSubscription" = "Assinatura";
 "inbox.sourceApplePay" = "Apple Pay";
+"inbox.sourceAutomation" = "Automação";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
@@ -1517,6 +1554,19 @@
 "shortcut.applePay.error.noAmount" = "O valor é obrigatório. Atribua o valor da transação do Wallet.";
 "shortcut.applePay.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
 
+// Automation Shortcut
+"shortcut.automation.title" = "Entrada por automação";
+"shortcut.automation.description" = "Cria um rascunho a partir de dados JSON de automação externa";
+"shortcut.automation.shortTitle" = "Automação";
+"shortcut.automation.summaryTitle" = "Registrar por automação";
+"shortcut.automation.param.json" = "Dados JSON";
+"shortcut.automation.param.json.description" = "JSON com amount, currency, merchant (opcional), date (opcional)";
+"shortcut.automation.error.invalidJSON" = "Formato JSON inválido. Esperado: {\"amount\": 100, \"currency\": \"USD\"}";
+"shortcut.automation.error.noAmount" = "É necessário um valor maior que zero.";
+"shortcut.automation.error.noCurrency" = "Uma moeda é necessária (ex: USD, PEN, EUR).";
+"shortcut.automation.error.noJSON" = "Os dados JSON da transação são necessários.";
+"shortcut.automation.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
+
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)
 "control.quickExpense.label" = "Gasto rápido";
@@ -1595,6 +1645,8 @@
 "notifications.day.lastOfMonth" = "último dia do mês";
 "notifications.day.firstOfMonth" = "primeiro dia do mês";
 "notifications.selectDay" = "Quando receber?";
+"notifications.allDays" = "Todos os dias";
+"notifications.selectWeekdays" = "Quais dias?";
 
 // Reports
 "notifications.dailyReport.name" = "Resumo do dia";
@@ -1641,6 +1693,19 @@
 "notifications.testReport.expenses" = "Você gastou R$ 350,00 neste período";
 "notifications.testReport.income" = "Você recebeu R$ 2.500,00 neste período";
 "notifications.testReport.topCategory" = "Seu maior gasto: Alimentação (R$ 180,00)";
+"notifications.testReport.balance.daily" = "Seu saldo hoje: $1.250,00";
+"notifications.testReport.balance.weekly" = "Seu saldo esta semana: $1.250,00";
+"notifications.testReport.balance.monthly" = "Seu saldo este mês: $1.250,00";
+"notifications.testReport.expenses.daily" = "Você gastou $85,00 hoje";
+"notifications.testReport.expenses.weekly" = "Você gastou $350,00 esta semana";
+"notifications.testReport.expenses.monthly" = "Você gastou $1.200,00 este mês";
+"notifications.testReport.income.daily" = "Você recebeu $500,00 hoje";
+"notifications.testReport.income.weekly" = "Você recebeu $2.500,00 esta semana";
+"notifications.testReport.income.monthly" = "Você recebeu $8.500,00 este mês";
+"notifications.testReport.topCategory.daily" = "Sua maior despesa hoje: Alimentação ($45,00)";
+"notifications.testReport.topCategory.weekly" = "Sua maior despesa da semana: Alimentação ($180,00)";
+"notifications.testReport.topCategory.monthly" = "Sua maior despesa do mês: Alimentação ($650,00)";
+"notifications.testReport.scheduledPayment" = "Você tem um pagamento em 3 dias: \"Netflix\" por USD 14,99";
 
 // MARK: - iCloud
 

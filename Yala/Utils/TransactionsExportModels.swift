@@ -104,36 +104,28 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
     /// Nombre legible para la UI del wizard.
     var displayName: String {
         switch self {
-        case .date: return "Fecha"
-        case .amount: return "Monto"
-        case .currency: return "Moneda"
-        case .account: return "Cuenta"
-        case .category: return "Categoría"
-        case .subcategory: return "Subcategoría"
-        case .tags: return "Etiquetas"
-        case .note: return "Nota"
+        case .date: return L10n.Export.columnDate
+        case .amount: return L10n.Export.columnAmount
+        case .currency: return L10n.Export.columnCurrency
+        case .account: return L10n.Export.columnAccount
+        case .category: return L10n.Export.columnCategory
+        case .subcategory: return L10n.Export.columnSubcategory
+        case .tags: return L10n.Export.columnTags
+        case .note: return L10n.Export.columnNote
         }
     }
 
     /// Descripción opcional de la columna para mostrar en la UI.
     var description: String {
         switch self {
-        case .date:
-            return "Fecha en formato yyyy-MM-dd."
-        case .amount:
-            return "Monto de la transacción con 2 decimales."
-        case .currency:
-            return "Código de moneda (PEN, USD, EUR)."
-        case .account:
-            return "Nombre de la cuenta asociada."
-        case .category:
-            return "Categoría principal de la transacción."
-        case .subcategory:
-            return "Subcategoría específica."
-        case .tags:
-            return "Etiquetas asociadas, separadas por ';'."
-        case .note:
-            return "Nota libre asociada a la transacción."
+        case .date: return L10n.Export.columnDateDesc
+        case .amount: return L10n.Export.columnAmountDesc
+        case .currency: return L10n.Export.columnCurrencyDesc
+        case .account: return L10n.Export.columnAccountDesc
+        case .category: return L10n.Export.columnCategoryDesc
+        case .subcategory: return L10n.Export.columnSubcategoryDesc
+        case .tags: return L10n.Export.columnTagsDesc
+        case .note: return L10n.Export.columnNoteDesc
         }
     }
 }

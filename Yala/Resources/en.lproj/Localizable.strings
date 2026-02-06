@@ -149,6 +149,8 @@
 "exchangeRate.title" = "Exchange Rate";
 "exchangeRate.updated" = "Updated";
 "exchangeRate.loadError" = "We couldn't get the exchange rate. Try again in a moment.";
+"exchangeRate.noSecondaryCurrenciesHint" = "You can select secondary currencies in";
+"exchangeRate.noSecondaryCurrenciesPath" = "Profile > Currency & exchange";
 
 // MARK: - Empty States
 
@@ -486,6 +488,22 @@
 "export.subcategoriesSelected" = "%d subcategories selected";
 "export.allTags" = "All tags";
 "export.allCurrencies" = "All";
+"export.column.date" = "Date";
+"export.column.amount" = "Amount";
+"export.column.currency" = "Currency";
+"export.column.account" = "Account";
+"export.column.category" = "Category";
+"export.column.subcategory" = "Subcategory";
+"export.column.tags" = "Tags";
+"export.column.note" = "Note";
+"export.column.date.description" = "Date in yyyy-MM-dd format.";
+"export.column.amount.description" = "Transaction amount with 2 decimals.";
+"export.column.currency.description" = "Currency code (PEN, USD, EUR).";
+"export.column.account.description" = "Associated account name.";
+"export.column.category.description" = "Main transaction category.";
+"export.column.subcategory.description" = "Specific subcategory.";
+"export.column.tags.description" = "Associated tags, separated by ';'.";
+"export.column.note.description" = "Free-form note for the transaction.";
 "common.next" = "Next";
 "settings.versionInfo" = "Version 1.0.0 (Build 1)";
 "tab.panel" = "Home";
@@ -1067,6 +1085,8 @@
 "validation.accountsMustBeDifferent" = "Accounts must be different";
 "validation.selectAccount" = "Select an account";
 "validation.selectSubcategory" = "Select a subcategory";
+"validation.futureDateTitle" = "Future date not allowed";
+"validation.futureDateMessage" = "You can't record transactions with a future date. Use Scheduled Payments for recurring expenses.";
 
 // MARK: - Transfer
 
