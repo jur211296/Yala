@@ -401,6 +401,17 @@ enum L10n {
     enum Search {
         static var noResults: String { ls("search.noResults", comment: "") }
         static var tryAnotherTerm: String { ls("search.tryAnotherTerm", comment: "") }
+        static func resultsCount(_ count: Int) -> String { String(format: ls("search.resultsCount", comment: ""), count) }
+
+        enum Filter {
+            static var all: String { ls("search.filter.all", comment: "") }
+            static var note: String { ls("search.filter.note", comment: "") }
+            static var category: String { ls("search.filter.category", comment: "") }
+            static var subcategory: String { ls("search.filter.subcategory", comment: "") }
+            static var account: String { ls("search.filter.account", comment: "") }
+            static var nature: String { ls("search.filter.nature", comment: "") }
+            static var tag: String { ls("search.filter.tag", comment: "") }
+        }
     }
 
     // MARK: - Date Helpers

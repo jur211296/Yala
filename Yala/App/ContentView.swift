@@ -309,7 +309,7 @@ struct MainTabView: View {
             Color(.systemBackground)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: DS.Spacing.xl) {
                 ProgressView()
                     .scaleEffect(1.5)
 
@@ -348,7 +348,7 @@ struct MorePlaceholderView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: DS.Spacing.lg) {
                         // Hidden tabs section
                         if !tabConfig.inactiveTabs.isEmpty {
                             hiddenTabsSection
@@ -357,8 +357,8 @@ struct MorePlaceholderView: View {
                         // Profile button
                         profileButton
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Tab.more)
@@ -373,11 +373,11 @@ struct MorePlaceholderView: View {
     // MARK: - Hidden Tabs Section
 
     private var hiddenTabsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.More.sections)
                 .font(.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Spacing.xs)
 
             VStack(spacing: 0) {
                 ForEach(Array(tabConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
@@ -385,20 +385,20 @@ struct MorePlaceholderView: View {
 
                     if index < tabConfig.inactiveTabs.count - 1 {
                         Divider()
-                            .padding(.leading, 52)
+                            .padding(.leading, DS.FormRow.iconWidth + DS.FormRow.iconSpacing + DS.FormRow.paddingH)
                     }
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .shadow(color: Color.black.opacity(0.04), radius: DS.Radius.md, x: 0, y: 6)
         }
     }
 
@@ -411,11 +411,11 @@ struct MorePlaceholderView: View {
                 SessionState.shared.selectedMainTab = tab.appTab
             }
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: tab.iconName)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
+                    .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .fill(Color.electricIndigo)
@@ -428,11 +428,11 @@ struct MorePlaceholderView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -445,11 +445,11 @@ struct MorePlaceholderView: View {
             Button {
                 showProfile = true
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.FormRow.iconSpacing) {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
+                        .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(Color.gray)
@@ -462,25 +462,25 @@ struct MorePlaceholderView: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
                         .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .fill(Color.yalaCard)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+        .shadow(color: Color.black.opacity(0.04), radius: DS.Radius.md, x: 0, y: 6)
     }
 }
 
@@ -686,13 +686,13 @@ struct SearchContentView: View {
 
     private var filterChipsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 ForEach(SearchFilter.allCases) { filter in
                     filterChip(for: filter)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
         }
     }
 
@@ -704,11 +704,11 @@ struct SearchContentView: View {
                 selectedFilter = filter
             }
         } label: {
-            Text(filter.rawValue)
+            Text(filter.displayName)
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(isSelected ? Color.electricIndigo : Color.clear)
@@ -729,7 +729,7 @@ struct SearchContentView: View {
                 // Header with count and Ver todo
                 if !filteredResults.isEmpty && !searchText.isEmpty {
                     HStack {
-                        Text("\(totalMatchingCount) resultados")
+                        Text(L10n.Search.resultsCount(totalMatchingCount))
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -743,7 +743,7 @@ struct SearchContentView: View {
                             // Clear local state - SessionState is now the source of truth
                             searchText = ""
                         } label: {
-                            HStack(spacing: 4) {
+                            HStack(spacing: DS.Spacing.xs) {
                                 Text(L10n.Action.viewAll)
                                 Image(systemName: "arrow.right")
                             }
@@ -751,9 +751,9 @@ struct SearchContentView: View {
                             .foregroundStyle(Color.electricIndigo)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.top, DS.Spacing.sm)
+                    .padding(.bottom, DS.Spacing.md)
                 }
 
                 // Grouped results by date
@@ -763,8 +763,8 @@ struct SearchContentView: View {
                             SearchResultRow(record: record, currencyCode: defaultCurrencyCode) {
                                 editingTransaction = record
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.Spacing.xs)
                         }
                     } header: {
                         SearchDateSectionHeader(date: group.date)
@@ -790,7 +790,7 @@ struct SearchContentView: View {
                     .padding(.top, 60)
                 }
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, DS.Spacing.xl)
         }
         .scrollDismissesKeyboard(.immediately)
     }
@@ -825,23 +825,35 @@ struct SearchDateSectionHeader: View {
 
             Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.vertical, DS.Spacing.sm)
     }
 }
 
 // MARK: - Search Filter Enum
 
 enum SearchFilter: String, CaseIterable, Identifiable {
-    case all = "Todo"
-    case note = "Nota"
-    case category = "Categoría"
-    case subcategory = "Subcategoría"
-    case account = "Cuenta"
-    case nature = "Naturaleza"
-    case tag = "Etiqueta"
+    case all
+    case note
+    case category
+    case subcategory
+    case account
+    case nature
+    case tag
 
     var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .all: return L10n.Search.Filter.all
+        case .note: return L10n.Search.Filter.note
+        case .category: return L10n.Search.Filter.category
+        case .subcategory: return L10n.Search.Filter.subcategory
+        case .account: return L10n.Search.Filter.account
+        case .nature: return L10n.Search.Filter.nature
+        case .tag: return L10n.Search.Filter.tag
+        }
+    }
 }
 
 // MARK: - Search Result Row
@@ -892,7 +904,7 @@ struct SearchResultRow: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 14)
             .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         }
         .buttonStyle(.plain)
     }

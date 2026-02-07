@@ -87,8 +87,8 @@ struct ThemeSettingsView: View {
                     Text("PRO")
                         .font(.caption2.bold())
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.xxs)
                         .background(Color.electricIndigo)
                         .clipShape(Capsule())
                 }

@@ -146,6 +146,14 @@
 
 "search.noResults" = "Sem resultados";
 "search.tryAnotherTerm" = "Tente outro termo de busca";
+"search.resultsCount" = "%d resultados";
+"search.filter.all" = "Tudo";
+"search.filter.note" = "Nota";
+"search.filter.category" = "Categoria";
+"search.filter.subcategory" = "Subcategoria";
+"search.filter.account" = "Conta";
+"search.filter.nature" = "Natureza";
+"search.filter.tag" = "Etiqueta";
 
 // MARK: - Exchange Rate
 

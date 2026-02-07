@@ -201,8 +201,10 @@ struct ImageSelectionView: View {
                 await processAllImages()
             }
         } catch {
-            // Clean up on error
             SharedContainerService.removePendingImage(at: url)
+            #if DEBUG
+            print("ImageSelectionView: Error loading shared image: \(error)")
+            #endif
         }
     }
 

@@ -652,7 +652,7 @@ struct BidirectionalCashFlowChart: View {
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.caption2.bold())
+                            .font(WDS.Typography.axis)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -665,7 +665,7 @@ struct BidirectionalCashFlowChart: View {
                 if let doubleValue = value.as(Double.self) {
                     AxisValueLabel {
                         Text(formatK(doubleValue))
-                            .font(.caption2)
+                            .font(WDS.Typography.axisRegular)
                             .foregroundStyle(.secondary)
                     }
                 }

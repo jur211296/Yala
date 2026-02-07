@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-07] 4976add refactor: apply code review fixes — DS tokens, search localization, error logging
+- [2026-02-07] a5c87ef fix(widgets): restore native iOS background with .fill.tertiary
 - [2026-02-07] 75b5780 docs: add theme refactor plan and update roadmap for V1.2
 - [2026-02-07] d88a5fc feat: localize category seed names via L10n
 - [2026-02-07] 6f6faaa feat: add black PRO theme with paywall gate
@@ -266,10 +268,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Fase 10.5 bugs/mejoras finales + plan de temas para V1.2 (75b5780)
-Next step: QA manual de los 8 cambios de fase 10.5 → comenzar Fase 11 (temas)
+Stopped at: Code review fixes aplicados (4976add) + widget backgrounds restaurados (a5c87ef)
+Next step: QA manual de todos los cambios recientes → comenzar Fase 11 (temas)
 Resume context:
-- 8 commits de fase 10.5: BUG-8/BUG-2 fix, widget defaults, localization, push notifications, voice/image redesign, black PRO theme, localized seeds
+- Widget backgrounds: restaurado .fill.tertiary nativo de Apple (a5c87ef), QuickEntry migrado a AppIntentConfiguration
+- Code review: ~30 hardcoded values → DS tokens en ContentView, SearchFilter localizado (6 idiomas), error logging en ImageSelectionView
 - Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md
 - ROADMAP actualizado: Fase 11=Temas, Fase 12=Plataforma, Fase 13=Avanzadas
-- Nota: tema negro actual usa hack `.id(userThemeRaw)` que reinicia la app — se corrige en Fase 11
