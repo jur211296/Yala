@@ -1807,3 +1807,93 @@
 "subscription.downgrade.selectBudgets" = "Wähle %d Budgets zum Behalten";
 "subscription.downgrade.confirm" = "Auswahl bestätigen";
 "subscription.downgrade.reactivate" = "Pro reaktivieren";
+
+// MARK: - Shortcut Notifications
+
+"shortcut.notification.title" = "Neuer automatischer Eintrag";
+"shortcut.notification.expense" = "Ausgabe";
+"shortcut.notification.income" = "Einnahme";
+"shortcut.notification.body" = "Eine %@ von %@%@ wurde erfasst. Öffne die App, um sie zu bestätigen.";
+
+// MARK: - Theme Negro
+
+"settings.negro" = "Schwarz";
+
+// MARK: - Category Seeds
+
+"category.food" = "Ernährung";
+"category.shopping" = "Einkäufe";
+"category.transport" = "Transport";
+"category.finance" = "Finanzen";
+"category.housing" = "Wohnen";
+"category.entertainment" = "Unterhaltung";
+"category.personal" = "Persönlich";
+"category.pets" = "Haustiere";
+"category.vehicle" = "Fahrzeug";
+"category.income" = "Einnahmen";
+"category.other" = "Sonstiges";
+
+// MARK: - Subcategory Seeds
+
+"subcategory.delivery" = "Lieferung";
+"subcategory.restaurants" = "Restaurants";
+"subcategory.supplements" = "Nahrungsergänzung";
+"subcategory.supermarkets" = "Supermärkte & Lebensmittel";
+"subcategory.personalCare" = "Körperpflege & Schönheit";
+"subcategory.pharmacy" = "Apotheke & Erste Hilfe";
+"subcategory.homeDecor" = "Wohnen & Deko";
+"subcategory.otherShopping" = "Sonstiges";
+"subcategory.gifts" = "Geschenke";
+"subcategory.clothing" = "Kleidung & Schuhe";
+"subcategory.tech" = "Technik & Zubehör";
+"subcategory.occasionalMobility" = "Gelegentliche Mobilität";
+"subcategory.rideshare" = "Taxis & Fahrten";
+"subcategory.publicTransport" = "Öffentlicher Nahverkehr";
+"subcategory.fees" = "Gebühren & Abgaben";
+"subcategory.taxes" = "Steuern";
+"subcategory.pensions" = "Renten & Beiträge";
+"subcategory.loans" = "Darlehen & Kredite";
+"subcategory.insurance" = "Versicherungen";
+"subcategory.rent" = "Miete oder Hypothek";
+"subcategory.maintenance" = "Wartung & Reparaturen";
+"subcategory.otherHousing" = "Sonstiges";
+"subcategory.supportStaff" = "Haushaltshilfe";
+"subcategory.homeInsurance" = "Hausratversicherung";
+"subcategory.utilities" = "Nebenkosten";
+"subcategory.bars" = "Bars & Ausgehen";
+"subcategory.sports" = "Sport & Freizeit";
+"subcategory.shows" = "Shows & Veranstaltungen";
+"subcategory.nightlife" = "Nachtleben & Partys";
+"subcategory.hobbies" = "Hobbys & Gaming";
+"subcategory.coupleDates" = "Paarabende";
+"subcategory.streaming" = "Streaming & Plattformen";
+"subcategory.travel" = "Reisen & Urlaub";
+"subcategory.consulting" = "Beratung & Formalitäten";
+"subcategory.beauty" = "Schönheit & Ästhetik";
+"subcategory.education" = "Bildung & Entwicklung";
+"subcategory.fitness" = "Fitness & Sport";
+"subcategory.health" = "Gesundheit & Medizin";
+"subcategory.leisureSubs" = "Freizeit-Abos";
+"subcategory.utilitySubs" = "Dienst-Abos";
+"subcategory.phone" = "Telefon & Kommunikation";
+"subcategory.petAccessories" = "Zubehör & Spielzeug";
+"subcategory.petFood" = "Tierfutter";
+"subcategory.vet" = "Tierarzt";
+"subcategory.petServices" = "Tierpflege & Dienste";
+"subcategory.fuel" = "Kraftstoff";
+"subcategory.parking" = "Parken";
+"subcategory.leasing" = "Leasing";
+"subcategory.vehicleMaintenance" = "Fahrzeugwartung";
+"subcategory.vehicleLoan" = "Fahrzeugkredit";
+"subcategory.vehicleInsurance" = "Kfz-Versicherung";
+"subcategory.rentalIncome" = "Mieteinnahmen";
+"subcategory.subsidies" = "Zuschüsse & Subventionen";
+"subcategory.freelance" = "Freiberuflich & Rechnungen";
+"subcategory.dividends" = "Zinsen & Dividenden";
+"subcategory.refunds" = "Rückerstattungen";
+"subcategory.giftIncome" = "Geschenke & andere Einnahmen";
+"subcategory.salary" = "Gehalt";
+"subcategory.sales" = "Verkäufe";
+"subcategory.accountTransfer" = "Kontoüberweisung";
+"subcategory.balanceAdjustment" = "Saldoanpassung";
+"subcategory.accountTransferOther" = "Kontoüberweisung";

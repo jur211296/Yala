@@ -1790,3 +1790,93 @@
 "subscription.downgrade.selectBudgets" = "Selecciona %d presupuestos para conservar";
 "subscription.downgrade.confirm" = "Confirmar selección";
 "subscription.downgrade.reactivate" = "Reactivar Pro";
+
+// MARK: - Shortcut Notifications
+
+"shortcut.notification.title" = "Nuevo registro automático";
+"shortcut.notification.expense" = "gasto";
+"shortcut.notification.income" = "ingreso";
+"shortcut.notification.body" = "Se ha registrado un %@ por %@%@. Entra a la app para aprobarlo.";
+
+// MARK: - Theme Negro
+
+"settings.negro" = "Negro";
+
+// MARK: - Category Seeds
+
+"category.food" = "Alimentación";
+"category.shopping" = "Compras";
+"category.transport" = "Transporte";
+"category.finance" = "Finanzas";
+"category.housing" = "Hogar";
+"category.entertainment" = "Entretenimiento";
+"category.personal" = "Personal";
+"category.pets" = "Mascotas y animales";
+"category.vehicle" = "Vehículo";
+"category.income" = "Ingresos";
+"category.other" = "Otros";
+
+// MARK: - Subcategory Seeds
+
+"subcategory.delivery" = "Delivery";
+"subcategory.restaurants" = "Restaurantes";
+"subcategory.supplements" = "Suplementos alimenticios";
+"subcategory.supermarkets" = "Supermercados y bodegas";
+"subcategory.personalCare" = "Cuidado personal y belleza";
+"subcategory.pharmacy" = "Farmacia y botiquín";
+"subcategory.homeDecor" = "Hogar y decoración";
+"subcategory.otherShopping" = "Otros";
+"subcategory.gifts" = "Regalos y detalles";
+"subcategory.clothing" = "Ropa y calzado";
+"subcategory.tech" = "Tecnología y accesorios";
+"subcategory.occasionalMobility" = "Movilidad ocasional";
+"subcategory.rideshare" = "Taxis y apps";
+"subcategory.publicTransport" = "Transporte público";
+"subcategory.fees" = "Comisiones y cargos";
+"subcategory.taxes" = "Impuestos";
+"subcategory.pensions" = "Pensiones y aportes";
+"subcategory.loans" = "Préstamos y créditos";
+"subcategory.insurance" = "Seguros";
+"subcategory.rent" = "Alquiler o hipoteca";
+"subcategory.maintenance" = "Mantenimiento y reparaciones";
+"subcategory.otherHousing" = "Otros";
+"subcategory.supportStaff" = "Personal de apoyo";
+"subcategory.homeInsurance" = "Seguro del hogar";
+"subcategory.utilities" = "Servicios del hogar";
+"subcategory.bars" = "Bares y salidas sociales";
+"subcategory.sports" = "Deportes y recreación";
+"subcategory.shows" = "Espectáculos y eventos";
+"subcategory.nightlife" = "Fiestas y vida nocturna";
+"subcategory.hobbies" = "Hobbies y gaming";
+"subcategory.coupleDates" = "Salidas en pareja";
+"subcategory.streaming" = "Streaming y plataformas";
+"subcategory.travel" = "Viajes y vacaciones";
+"subcategory.consulting" = "Asesorías y trámites";
+"subcategory.beauty" = "Belleza y estética";
+"subcategory.education" = "Educación y desarrollo";
+"subcategory.fitness" = "Fitness y actividad física";
+"subcategory.health" = "Salud y atención médica";
+"subcategory.leisureSubs" = "Suscripciones de ocio";
+"subcategory.utilitySubs" = "Suscripciones de utilidad";
+"subcategory.phone" = "Telefonía y comunicaciones";
+"subcategory.petAccessories" = "Accesorios y juguetes";
+"subcategory.petFood" = "Alimentación de mascotas";
+"subcategory.vet" = "Salud veterinaria";
+"subcategory.petServices" = "Servicios y cuidados";
+"subcategory.fuel" = "Combustible";
+"subcategory.parking" = "Estacionamientos";
+"subcategory.leasing" = "Leasing";
+"subcategory.vehicleMaintenance" = "Mantenimiento del vehículo";
+"subcategory.vehicleLoan" = "Préstamo vehicular";
+"subcategory.vehicleInsurance" = "Seguro vehicular";
+"subcategory.rentalIncome" = "Alquileres recibidos";
+"subcategory.subsidies" = "Ayudas y subvenciones";
+"subcategory.freelance" = "Facturación y freelance";
+"subcategory.dividends" = "Intereses y dividendos";
+"subcategory.refunds" = "Reembolsos";
+"subcategory.giftIncome" = "Regalos y otros ingresos";
+"subcategory.salary" = "Salario";
+"subcategory.sales" = "Ventas";
+"subcategory.accountTransfer" = "Transferencia entre cuentas";
+"subcategory.balanceAdjustment" = "Ajustes de saldo";
+"subcategory.accountTransferOther" = "Transferencia entre cuentas";

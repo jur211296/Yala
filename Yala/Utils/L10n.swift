@@ -812,6 +812,18 @@ enum L10n {
         static var others: String {
             ls("category.others", comment: "")
         }
+        // Seed names
+        static var food: String { ls("category.food", comment: "") }
+        static var shopping: String { ls("category.shopping", comment: "") }
+        static var transport: String { ls("category.transport", comment: "") }
+        static var finance: String { ls("category.finance", comment: "") }
+        static var housing: String { ls("category.housing", comment: "") }
+        static var entertainment: String { ls("category.entertainment", comment: "") }
+        static var personal: String { ls("category.personal", comment: "") }
+        static var pets: String { ls("category.pets", comment: "") }
+        static var vehicle: String { ls("category.vehicle", comment: "") }
+        static var incomeCategory: String { ls("category.income", comment: "") }
+        static var other: String { ls("category.other", comment: "") }
     }
 
     // MARK: - Subcategory
@@ -895,6 +907,79 @@ enum L10n {
         static var noSubcategory: String {
             ls("subcategories.noSubcategory", comment: "")
         }
+        // Seed names - Alimentación
+        static var delivery: String { ls("subcategory.delivery", comment: "") }
+        static var restaurants: String { ls("subcategory.restaurants", comment: "") }
+        static var supplements: String { ls("subcategory.supplements", comment: "") }
+        static var supermarkets: String { ls("subcategory.supermarkets", comment: "") }
+        // Seed names - Compras
+        static var personalCare: String { ls("subcategory.personalCare", comment: "") }
+        static var pharmacy: String { ls("subcategory.pharmacy", comment: "") }
+        static var homeDecor: String { ls("subcategory.homeDecor", comment: "") }
+        static var otherShopping: String { ls("subcategory.otherShopping", comment: "") }
+        static var gifts: String { ls("subcategory.gifts", comment: "") }
+        static var clothing: String { ls("subcategory.clothing", comment: "") }
+        static var tech: String { ls("subcategory.tech", comment: "") }
+        // Seed names - Transporte
+        static var occasionalMobility: String { ls("subcategory.occasionalMobility", comment: "") }
+        static var rideshare: String { ls("subcategory.rideshare", comment: "") }
+        static var publicTransport: String { ls("subcategory.publicTransport", comment: "") }
+        // Seed names - Finanzas
+        static var fees: String { ls("subcategory.fees", comment: "") }
+        static var taxes: String { ls("subcategory.taxes", comment: "") }
+        static var pensions: String { ls("subcategory.pensions", comment: "") }
+        static var loans: String { ls("subcategory.loans", comment: "") }
+        static var insurance: String { ls("subcategory.insurance", comment: "") }
+        // Seed names - Hogar
+        static var rent: String { ls("subcategory.rent", comment: "") }
+        static var maintenance: String { ls("subcategory.maintenance", comment: "") }
+        static var otherHousing: String { ls("subcategory.otherHousing", comment: "") }
+        static var supportStaff: String { ls("subcategory.supportStaff", comment: "") }
+        static var homeInsurance: String { ls("subcategory.homeInsurance", comment: "") }
+        static var utilities: String { ls("subcategory.utilities", comment: "") }
+        // Seed names - Entretenimiento
+        static var bars: String { ls("subcategory.bars", comment: "") }
+        static var sports: String { ls("subcategory.sports", comment: "") }
+        static var shows: String { ls("subcategory.shows", comment: "") }
+        static var nightlife: String { ls("subcategory.nightlife", comment: "") }
+        static var hobbies: String { ls("subcategory.hobbies", comment: "") }
+        static var coupleDates: String { ls("subcategory.coupleDates", comment: "") }
+        static var streaming: String { ls("subcategory.streaming", comment: "") }
+        static var travel: String { ls("subcategory.travel", comment: "") }
+        // Seed names - Personal
+        static var consulting: String { ls("subcategory.consulting", comment: "") }
+        static var beauty: String { ls("subcategory.beauty", comment: "") }
+        static var education: String { ls("subcategory.education", comment: "") }
+        static var fitness: String { ls("subcategory.fitness", comment: "") }
+        static var health: String { ls("subcategory.health", comment: "") }
+        static var leisureSubs: String { ls("subcategory.leisureSubs", comment: "") }
+        static var utilitySubs: String { ls("subcategory.utilitySubs", comment: "") }
+        static var phone: String { ls("subcategory.phone", comment: "") }
+        // Seed names - Mascotas
+        static var petAccessories: String { ls("subcategory.petAccessories", comment: "") }
+        static var petFood: String { ls("subcategory.petFood", comment: "") }
+        static var vet: String { ls("subcategory.vet", comment: "") }
+        static var petServices: String { ls("subcategory.petServices", comment: "") }
+        // Seed names - Vehículo
+        static var fuel: String { ls("subcategory.fuel", comment: "") }
+        static var parking: String { ls("subcategory.parking", comment: "") }
+        static var leasing: String { ls("subcategory.leasing", comment: "") }
+        static var vehicleMaintenance: String { ls("subcategory.vehicleMaintenance", comment: "") }
+        static var vehicleLoan: String { ls("subcategory.vehicleLoan", comment: "") }
+        static var vehicleInsurance: String { ls("subcategory.vehicleInsurance", comment: "") }
+        // Seed names - Ingresos
+        static var rentalIncome: String { ls("subcategory.rentalIncome", comment: "") }
+        static var subsidies: String { ls("subcategory.subsidies", comment: "") }
+        static var freelance: String { ls("subcategory.freelance", comment: "") }
+        static var dividends: String { ls("subcategory.dividends", comment: "") }
+        static var refunds: String { ls("subcategory.refunds", comment: "") }
+        static var giftIncome: String { ls("subcategory.giftIncome", comment: "") }
+        static var salary: String { ls("subcategory.salary", comment: "") }
+        static var sales: String { ls("subcategory.sales", comment: "") }
+        static var accountTransfer: String { ls("subcategory.accountTransfer", comment: "") }
+        // Seed names - Otros
+        static var balanceAdjustment: String { ls("subcategory.balanceAdjustment", comment: "") }
+        static var accountTransferOther: String { ls("subcategory.accountTransferOther", comment: "") }
     }
 
     // MARK: - Tag
@@ -1271,6 +1356,7 @@ enum L10n {
         static var light: String { ls("settings.light", comment: "") }
         static var dark: String { ls("settings.dark", comment: "") }
         static var system: String { ls("settings.system", comment: "") }
+        static var negro: String { ls("settings.negro", comment: "") }
         static var defaultCurrency: String {
             ls("settings.defaultCurrency", comment: "")
         }
@@ -2689,6 +2775,20 @@ enum L10n {
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }
     }
+
+    // MARK: - Shortcut Notifications
+
+    enum Shortcut {
+        enum Notification {
+            static var title: String { ls("shortcut.notification.title", comment: "") }
+            static var expense: String { ls("shortcut.notification.expense", comment: "") }
+            static var income: String { ls("shortcut.notification.income", comment: "") }
+            static func body(_ type: String, _ amount: String, _ note: String) -> String {
+                String(format: ls("shortcut.notification.body", comment: ""), type, amount, note)
+            }
+        }
+    }
+
 }
 
 // MARK: - App Locale
