@@ -49,7 +49,7 @@ struct CashFlowEntry: TimelineEntry {
             cashFlowPoints: [],
             isPlaceholder: true,
             period: .thisMonth,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -686,10 +686,13 @@ struct CashFlowWidget: Widget {
             provider: CashFlowWidgetProvider()
         ) { entry in
             CashFlowWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.cashFlow")
         .description("widget.gallery.cashFlow.desc")
@@ -712,7 +715,7 @@ struct CashFlowWidget: Widget {
         cashFlowPoints: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }
 
@@ -729,7 +732,7 @@ struct CashFlowWidget: Widget {
         cashFlowPoints: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }
 
@@ -746,7 +749,7 @@ struct CashFlowWidget: Widget {
         cashFlowPoints: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }
 
@@ -771,6 +774,6 @@ struct CashFlowWidget: Widget {
         ],
         isPlaceholder: false,
         period: .thisWeek,
-        theme: .yala
+        theme: .system
     )
 }

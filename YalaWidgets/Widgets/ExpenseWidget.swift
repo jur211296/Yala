@@ -45,7 +45,7 @@ struct ExpenseEntry: TimelineEntry {
             trendData: [],
             isPlaceholder: true,
             period: .thisMonth,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -327,10 +327,13 @@ struct ExpenseWidget: Widget {
             provider: ExpenseWidgetProvider()
         ) { entry in
             ExpenseWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.expense")
         .description("widget.gallery.expense.desc")
@@ -351,7 +354,7 @@ struct ExpenseWidget: Widget {
         trendData: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }
 
@@ -374,6 +377,6 @@ struct ExpenseWidget: Widget {
         ],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }

@@ -92,7 +92,7 @@ struct BalanceEntry: TimelineEntry {
             trendData: [],
             isPlaceholder: true,
             period: .thisMonth,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -366,10 +366,13 @@ struct BalanceWidget: Widget {
             provider: BalanceWidgetProvider()
         ) { entry in
             BalanceWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.balance")
         .description("widget.gallery.balance.desc")
@@ -390,7 +393,7 @@ struct BalanceWidget: Widget {
         trendData: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }
 
@@ -413,7 +416,7 @@ struct BalanceWidget: Widget {
         ],
         isPlaceholder: false,
         period: .thisWeek,
-        theme: .yala
+        theme: .system
     )
 }
 
@@ -428,6 +431,6 @@ struct BalanceWidget: Widget {
         trendData: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }

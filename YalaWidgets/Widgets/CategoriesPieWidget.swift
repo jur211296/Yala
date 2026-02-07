@@ -54,7 +54,7 @@ struct CategoriesPieEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
             period: .thisMonth,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -217,10 +217,13 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.categoriesPie")
         .description("widget.gallery.categoriesPie.desc")
@@ -247,6 +250,6 @@ struct CategoriesPieWidget: Widget {
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }

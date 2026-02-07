@@ -48,7 +48,7 @@ struct TopSubcategoriesEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
             period: .thisMonth,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -243,10 +243,13 @@ struct TopSubcategoriesWidget: Widget {
             provider: TopSubcategoriesWidgetProvider()
         ) { entry in
             TopSubcategoriesWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.topSubcategories")
         .description("widget.gallery.topSubcategories.desc")
@@ -273,6 +276,6 @@ struct TopSubcategoriesWidget: Widget {
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }

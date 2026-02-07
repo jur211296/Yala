@@ -76,7 +76,7 @@ struct LatestRecordsEntry: TimelineEntry {
             ],
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -247,10 +247,13 @@ struct LatestRecordsWidget: Widget {
             provider: LatestRecordsProvider()
         ) { entry in
             LatestRecordsWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.latestRecords")
         .description("widget.gallery.latestRecords.desc")
@@ -274,7 +277,7 @@ struct LatestRecordsWidget: Widget {
         transactions: [],
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        theme: .yala
+        theme: .system
     )
 }
 

@@ -24,16 +24,16 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-07] 75b5780 docs: add theme refactor plan and update roadmap for V1.2
+- [2026-02-07] d88a5fc feat: localize category seed names via L10n
+- [2026-02-07] 6f6faaa feat: add black PRO theme with paywall gate
+- [2026-02-07] 7151ee7 feat: redesign voice/image counters with glass effects and rings
+- [2026-02-07] 19ba584 feat: add push notifications for automatic records
+- [2026-02-07] 74a0276 feat: add localization keys for notifications, theme, and seeds
+- [2026-02-07] d14b299 chore: default widget theme to system instead of yala
+- [2026-02-07] 871096a fix: resolve BUG-8 currency format and BUG-2 missing icon
 - [2026-02-06] 9f36107 feat: add expenses-only mode across entire app
 - [2026-02-06] b90443c fix: resolve BUG-5, BUG-6, BUG-7 for phase 10.5 closure
-- [2026-02-06] eb8f3f3 feat(web): update privacy and terms pages across 6 languages
-- [2026-02-06] 1dc78a4 docs: rewrite privacy policy and terms with accurate app data
-- [2026-02-06] fc7a6ac docs: cleanup obsolete docs, rename Neto→Yala, sync phase 10.5
-- [2026-02-06] d8ee1c7 fix(ui): migrate List views to ScrollView+SectionBox for dark mode support
-- [2026-02-06] 5d25b56 refactor(onboarding): restructure language selection as pre-onboarding screen
-- [2026-02-05] bc5916f refactor: remove unnecessary @available checks and migrate deprecated APIs
-- [2026-02-05] aba270f fix(l10n): add missing translations and localize export columns
-- [2026-02-05] 9bc7bff fix: improve error diagnostics and code safety across codebase
 - [2026-02-05] fb7b75e fix(widgets): update Control Center labels and unify SF Symbol icons
 - [2026-02-05] 463cd47 fix(sync): reload data on transaction delete and trends update
 - [2026-02-05] 3f0099f fix(notifications): add background task reliability and model support
@@ -265,11 +265,11 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-06
-Stopped at: Modo Solo Gastos implementado completo (9f36107)
-Next step: QA manual del modo solo gastos → siguiente feature de V1.2
+Last session: 2026-02-07
+Stopped at: Fase 10.5 bugs/mejoras finales + plan de temas para V1.2 (75b5780)
+Next step: QA manual de los 8 cambios de fase 10.5 → comenzar Fase 11 (temas)
 Resume context:
-- Modo Solo Gastos (INC-1 a INC-11) implementado y build verified
-- 42 archivos modificados, 50+ escenarios QA documentados
-- Fixes post-review aplicados: Records filtering, TrendWidget metric, AccountCard design reverted, toggle "Activo" removido
-- Siguiente: Verificar en simulador, luego continuar con Fase 11
+- 8 commits de fase 10.5: BUG-8/BUG-2 fix, widget defaults, localization, push notifications, voice/image redesign, black PRO theme, localized seeds
+- Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md
+- ROADMAP actualizado: Fase 11=Temas, Fase 12=Plataforma, Fase 13=Avanzadas
+- Nota: tema negro actual usa hack `.id(userThemeRaw)` que reinicia la app — se corrige en Fase 11

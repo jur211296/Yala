@@ -91,7 +91,7 @@ struct BudgetsEntry: TimelineEntry {
             ],
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -287,10 +287,13 @@ struct BudgetsWidget: Widget {
             provider: BudgetsWidgetProvider()
         ) { entry in
             BudgetsWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.budgets")
         .description("widget.gallery.budgets.desc")
@@ -314,7 +317,7 @@ struct BudgetsWidget: Widget {
         budgets: [],
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        theme: .yala
+        theme: .system
     )
 }
 
@@ -360,7 +363,7 @@ struct BudgetsWidget: Widget {
         ],
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        theme: .yala
+        theme: .system
     )
 }
 

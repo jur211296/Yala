@@ -8,30 +8,51 @@
 
 import WidgetKit
 import SwiftUI
+import AppIntents
 
-// MARK: - Common Entry
+// MARK: - Configuration Intent
+
+struct QuickEntryWidgetIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource { "widget.intent.quickEntry.title" }
+    static var description: IntentDescription { "widget.intent.quickEntry.desc" }
+
+    @Parameter(title: "widget.theme.type", default: .system)
+    var theme: WidgetThemeOption
+}
+
+// MARK: - Timeline Entry
 
 struct QuickEntryEntry: TimelineEntry {
     let date: Date
+    let theme: WidgetThemeOption
+
+    static var placeholder: QuickEntryEntry {
+        QuickEntryEntry(date: Date(), theme: .system)
+    }
 }
 
 // MARK: - Common Provider
 
-struct QuickEntryProvider: TimelineProvider {
+struct QuickEntryProvider: AppIntentTimelineProvider {
+    typealias Entry = QuickEntryEntry
+    typealias Intent = QuickEntryWidgetIntent
+
     func placeholder(in context: Context) -> QuickEntryEntry {
-        QuickEntryEntry(date: Date())
+        .placeholder
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (QuickEntryEntry) -> Void) {
-        completion(QuickEntryEntry(date: Date()))
+    func snapshot(for configuration: QuickEntryWidgetIntent, in context: Context) async -> QuickEntryEntry {
+        if context.isPreview {
+            return .placeholder
+        }
+        return QuickEntryEntry(date: Date(), theme: configuration.theme)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<QuickEntryEntry>) -> Void) {
-        let entry = QuickEntryEntry(date: Date())
+    func timeline(for configuration: QuickEntryWidgetIntent, in context: Context) async -> Timeline<QuickEntryEntry> {
+        let entry = QuickEntryEntry(date: Date(), theme: configuration.theme)
         // These widgets don't need frequent updates
         let nextUpdate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-        completion(timeline)
+        return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 }
 
@@ -69,12 +90,19 @@ struct QuickManualEntryWidget: Widget {
     let kind: String = "QuickManualEntryWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(
+        AppIntentConfiguration(
             kind: kind,
+            intent: QuickEntryWidgetIntent.self,
             provider: QuickEntryProvider()
-        ) { _ in
+        ) { entry in
             QuickManualEntryWidgetView()
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.quickManual")
         .description("widget.gallery.quickManual.desc")
@@ -116,12 +144,19 @@ struct QuickVoiceEntryWidget: Widget {
     let kind: String = "QuickVoiceEntryWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(
+        AppIntentConfiguration(
             kind: kind,
+            intent: QuickEntryWidgetIntent.self,
             provider: QuickEntryProvider()
-        ) { _ in
+        ) { entry in
             QuickVoiceEntryWidgetView()
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.quickVoice")
         .description("widget.gallery.quickVoice.desc")
@@ -163,12 +198,19 @@ struct QuickImageEntryWidget: Widget {
     let kind: String = "QuickImageEntryWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(
+        AppIntentConfiguration(
             kind: kind,
+            intent: QuickEntryWidgetIntent.self,
             provider: QuickEntryProvider()
-        ) { _ in
+        ) { entry in
             QuickImageEntryWidgetView()
-                .containerBackground(WidgetColors.yalaCard, for: .widget)
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.quickImage")
         .description("widget.gallery.quickImage.desc")
@@ -181,17 +223,17 @@ struct QuickImageEntryWidget: Widget {
 #Preview("Manual Entry", as: .systemSmall) {
     QuickManualEntryWidget()
 } timeline: {
-    QuickEntryEntry(date: Date())
+    QuickEntryEntry(date: Date(), theme: .system)
 }
 
 #Preview("Voice Entry", as: .systemSmall) {
     QuickVoiceEntryWidget()
 } timeline: {
-    QuickEntryEntry(date: Date())
+    QuickEntryEntry(date: Date(), theme: .system)
 }
 
 #Preview("Image Entry", as: .systemSmall) {
     QuickImageEntryWidget()
 } timeline: {
-    QuickEntryEntry(date: Date())
+    QuickEntryEntry(date: Date(), theme: .system)
 }

@@ -54,7 +54,7 @@ struct SubcategoriesPieEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
             period: .thisMonth,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -218,10 +218,13 @@ struct SubcategoriesPieWidget: Widget {
             provider: SubcategoriesPieWidgetProvider()
         ) { entry in
             SubcategoriesPieWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.subcategoriesPie")
         .description("widget.gallery.subcategoriesPie.desc")
@@ -248,6 +251,6 @@ struct SubcategoriesPieWidget: Widget {
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .yala
+        theme: .system
     )
 }

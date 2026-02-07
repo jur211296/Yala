@@ -94,7 +94,7 @@ struct ScheduledPaymentsEntry: TimelineEntry {
             ],
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            theme: .yala
+            theme: .system
         )
     }
 }
@@ -320,10 +320,13 @@ struct ScheduledPaymentsWidget: Widget {
             provider: ScheduledPaymentsProvider()
         ) { entry in
             ScheduledPaymentsWidgetView(entry: entry)
-                .containerBackground(
-                    entry.theme == .system ? Color.clear : WidgetColors.yalaCard,
-                    for: .widget
-                )
+                .containerBackground(for: .widget) {
+                    if entry.theme == .system {
+                        ContainerRelativeShape().fill(.tertiary)
+                    } else {
+                        WidgetColors.yalaCard
+                    }
+                }
         }
         .configurationDisplayName("widget.gallery.scheduledPayments")
         .description("widget.gallery.scheduledPayments.desc")
@@ -347,7 +350,7 @@ struct ScheduledPaymentsWidget: Widget {
         payments: [],
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        theme: .yala
+        theme: .system
     )
 }
 
