@@ -43,16 +43,13 @@ struct CategoriesTabView: View {
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var tagSpending: [TagSpendingSummary] = []
     @State private var natureTrendPoints: [NatureTrendPoint] = []
-    @State private var selectedCategoryID: PersistentIdentifier?
-    @State private var selectedSubcategoryID: PersistentIdentifier?
-    @State private var selectedTagID: PersistentIdentifier?
     @State private var selectedNature: SubcategoryNature?
     @State private var chartsCarouselPosition: String? = "category"
     @State private var listViewType: ListViewType = .categories
     @State private var isListExpanded: Bool = false
     @State private var isSubcategoriesAutomatic: Bool = false  // Track if switch was automatic
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
-    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for sync functions
+    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for Nature sync functions only
     @Namespace private var listSelectorNamespace
     @Namespace private var comparisonSelectorNamespace
 
@@ -66,9 +63,9 @@ struct CategoriesTabView: View {
     // Nature Carousel State
     @State private var natureCarouselIndex: Int? = 0
 
-    /// Effective category ID combining local selection and SessionState sync
+    /// Effective category ID for subcategory filtering (uses first selected category)
     private var effectiveCategoryID: PersistentIdentifier? {
-        selectedCategoryID ?? viewModel.selectedCategories.first
+        viewModel.selectedCategories.first
     }
 
     // MARK: - List View Type
@@ -119,9 +116,6 @@ struct CategoriesTabView: View {
             .yalaSafeBottomPadding()
         }
         .onAppear {
-            // Sync local selection state from viewModel filters (may come from SessionState)
-            syncCategoryFilterToSelection()
-            syncSubcategoryFilterToSelection()
             calculateData()
         }
         .onChange(of: viewModel.detailPeriod) {
@@ -132,14 +126,11 @@ struct CategoriesTabView: View {
         }
         .onChange(of: viewModel.selectedCategories) {
             calculateData()
-            syncCategoryFilterToSelection()
         }
         .onChange(of: viewModel.selectedSubcategories) {
             calculateData()
-            syncSubcategoryFilterToSelection()
         }
         .onChange(of: viewModel.selectedTags) {
-            syncTagFilterToSelection()
             calculateData()
         }
         .onChange(of: viewModel.selectedNatures) {
@@ -150,19 +141,6 @@ struct CategoriesTabView: View {
             calculateData()
         }
         .onChange(of: allSubcategories) {
-            // Recalculate when subcategories change (nature edited, etc.)
-            calculateData()
-        }
-        .onChange(of: selectedCategoryID) {
-            syncSelectionToCategoryFilter()
-            calculateData()
-        }
-        .onChange(of: selectedSubcategoryID) {
-            syncSelectionToSubcategoryFilter()
-            calculateData()
-        }
-        .onChange(of: selectedTagID) {
-            syncSelectionToTagFilter()
             calculateData()
         }
         .onChange(of: selectedNature) {
@@ -237,24 +215,10 @@ struct CategoriesTabView: View {
                                 onClear: {
                                     viewModel.selectedCategories.removeAll()
                                     viewModel.selectedSubcategories.removeAll()
-                                    selectedCategoryID = nil
-                                }
-                            )
-                        } else if let categoryID = selectedCategoryID,
-                                  let category = categories.first(where: { $0.persistentModelID == categoryID }) {
-                            // Chip from direct category selection (pie chart)
-                            FilterChipView(
-                                categoryName: category.name,
-                                iconName: category.iconName,
-                                colorHex: category.colorHex,
-                                count: 1,
-                                onClear: {
-                                    viewModel.selectedCategories.removeAll()
-                                    selectedCategoryID = nil
                                 }
                             )
                         } else if !viewModel.selectedCategories.isEmpty {
-                            // Chip from external filter (SessionState sync)
+                            // Chip from category selection (pie chart or SessionState)
                             let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
                             if let firstCat = selectedCats.first {
                                 FilterChipView(
@@ -264,7 +228,6 @@ struct CategoriesTabView: View {
                                     count: selectedCats.count,
                                     onClear: {
                                         viewModel.selectedCategories.removeAll()
-                                        selectedCategoryID = nil
                                     }
                                 )
                             }
@@ -283,20 +246,6 @@ struct CategoriesTabView: View {
                                 count: subChip.count,
                                 onClear: {
                                     viewModel.selectedSubcategories.removeAll()
-                                    selectedSubcategoryID = nil
-                                }
-                            )
-                        } else if let subcategoryID = selectedSubcategoryID,
-                                  let subcategory = subcategorySpending.first(where: { $0.persistentID == subcategoryID })?.subcategory {
-                            // Chip from direct subcategory selection (pie chart)
-                            FilterChipView(
-                                subcategoryName: subcategory.name,
-                                iconName: subcategory.iconName,
-                                colorHex: subcategory.colorHex,
-                                count: 1,
-                                onClear: {
-                                    viewModel.selectedSubcategories.removeAll()
-                                    selectedSubcategoryID = nil
                                 }
                             )
                         }
@@ -551,15 +500,14 @@ struct CategoriesTabView: View {
                 CategoriesPieWidget(
                     categories: categorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryID: effectiveCategoryID,
+                    selectedCategoryIDs: viewModel.selectedCategories,
                     onSelectCategory: { categoryID in
-                        if effectiveCategoryID == categoryID {
-                            selectedCategoryID = nil
-                            viewModel.selectedCategories.removeAll()
+                        if viewModel.selectedCategories.contains(categoryID) {
+                            viewModel.selectedCategories.remove(categoryID)
                         } else {
-                            selectedCategoryID = categoryID
                             viewModel.selectedCategories = [categoryID]
                         }
+                        viewModel.selectedSubcategories.removeAll()
                     },
                     size: .large,
                     period: viewModel.detailPeriod,
@@ -595,12 +543,12 @@ struct CategoriesTabView: View {
                     subcategories: subcategorySpending,
                     currencyCode: defaultCurrencyCode,
                     selectedCategoryID: effectiveCategoryID,
-                    selectedSubcategoryIDs: selectedSubcategoryID.map { Set([$0]) } ?? [],
+                    selectedSubcategoryIDs: viewModel.selectedSubcategories,
                     onSelectSubcategory: { subcategoryID in
-                        if selectedSubcategoryID == subcategoryID {
-                            selectedSubcategoryID = nil
+                        if viewModel.selectedSubcategories.contains(subcategoryID) {
+                            viewModel.selectedSubcategories.remove(subcategoryID)
                         } else {
-                            selectedSubcategoryID = subcategoryID
+                            viewModel.selectedSubcategories = [subcategoryID]
                         }
                     },
                     size: .large,
@@ -636,12 +584,12 @@ struct CategoriesTabView: View {
                 TagsPieWidget(
                     tags: tagSpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedTagID: selectedTagID,
+                    selectedTagIDs: viewModel.selectedTags,
                     onSelectTag: { tagID in
-                        if selectedTagID == tagID {
-                            selectedTagID = nil
+                        if viewModel.selectedTags.contains(tagID) {
+                            viewModel.selectedTags.remove(tagID)
                         } else {
-                            selectedTagID = tagID
+                            viewModel.selectedTags = [tagID]
                         }
                     },
                     size: .large,
@@ -838,18 +786,17 @@ struct CategoriesTabView: View {
                     AllCategoriesListContent(
                         categories: categorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryID: effectiveCategoryID,
+                        selectedCategoryIDs: viewModel.selectedCategories,
                         isExpanded: isListExpanded,
                         showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectCategory: { categoryID in
-                            if effectiveCategoryID == categoryID {
-                                selectedCategoryID = nil
-                                viewModel.selectedCategories.removeAll()
+                            if viewModel.selectedCategories.contains(categoryID) {
+                                viewModel.selectedCategories.remove(categoryID)
                             } else {
-                                selectedCategoryID = categoryID
                                 viewModel.selectedCategories = [categoryID]
                             }
+                            viewModel.selectedSubcategories.removeAll()
                         }
                     )
                 }
@@ -865,16 +812,16 @@ struct CategoriesTabView: View {
                     AllSubcategoriesListContent(
                         subcategories: subcategorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryID: effectiveCategoryID,
-                        selectedSubcategoryID: selectedSubcategoryID,
+                        selectedCategoryIDs: viewModel.selectedCategories,
+                        selectedSubcategoryIDs: viewModel.selectedSubcategories,
                         isExpanded: isListExpanded,
                         showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectSubcategory: { subcategoryID in
-                            if selectedSubcategoryID == subcategoryID {
-                                selectedSubcategoryID = nil
+                            if viewModel.selectedSubcategories.contains(subcategoryID) {
+                                viewModel.selectedSubcategories.remove(subcategoryID)
                             } else {
-                                selectedSubcategoryID = subcategoryID
+                                viewModel.selectedSubcategories = [subcategoryID]
                             }
                         }
                     )
@@ -1258,105 +1205,6 @@ struct CategoriesTabView: View {
 
     // MARK: - Filter Synchronization
 
-    /// Sync chart selection to ViewModel filters (chart -> top filters)
-    private func syncSelectionToCategoryFilter() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if let categoryID = selectedCategoryID {
-            // Add to ViewModel's selected categories if not already there
-            if !viewModel.selectedCategories.contains(categoryID) {
-                viewModel.selectedCategories.insert(categoryID)
-            }
-            // Clear subcategory selection when category changes
-            selectedSubcategoryID = nil
-            viewModel.selectedSubcategories.removeAll()
-        } else {
-            // If deselected, remove from ViewModel
-            // But only if it was the only one selected
-            if viewModel.selectedCategories.count == 1 {
-                viewModel.selectedCategories.removeAll()
-            }
-        }
-    }
-
-    private func syncSelectionToSubcategoryFilter() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if let subcategoryID = selectedSubcategoryID {
-            // Find the subcategory by persistentID
-            if let subcategory = subcategorySpending.first(where: { $0.persistentID == subcategoryID })?
-                .subcategory
-            {
-                if !viewModel.selectedSubcategories.contains(subcategory.persistentModelID) {
-                    viewModel.selectedSubcategories.insert(subcategory.persistentModelID)
-                }
-                // Also ensure parent category is selected
-                let parentCategory = subcategory.safeCategory
-                if !viewModel.selectedCategories.contains(parentCategory.persistentModelID) {
-                    viewModel.selectedCategories.insert(parentCategory.persistentModelID)
-                }
-                selectedCategoryID = parentCategory.persistentModelID
-            }
-        } else {
-            // If deselected subcategory, remove from ViewModel
-            if viewModel.selectedSubcategories.count == 1 {
-                viewModel.selectedSubcategories.removeAll()
-            }
-        }
-    }
-
-    private func syncSelectionToTagFilter() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if let tagID = selectedTagID {
-            if !viewModel.selectedTags.contains(tagID) {
-                viewModel.selectedTags.insert(tagID)
-            }
-        } else {
-            if viewModel.selectedTags.count == 1 {
-                viewModel.selectedTags.removeAll()
-            }
-        }
-    }
-
-    /// Sync ViewModel filters to chart selection (top filters -> chart)
-    private func syncCategoryFilterToSelection() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if viewModel.selectedCategories.count == 1 {
-            selectedCategoryID = viewModel.selectedCategories.first
-        } else if viewModel.selectedCategories.isEmpty {
-            selectedCategoryID = nil
-        }
-    }
-
-    private func syncSubcategoryFilterToSelection() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if viewModel.selectedSubcategories.count == 1 {
-            // Find the subcategory name from the ID
-            if let subcategoryID = viewModel.selectedSubcategories.first,
-                let subcategory = subcategorySpending.first(where: {
-                    $0.subcategory?.persistentModelID == subcategoryID
-                })
-            {
-                selectedSubcategoryID = subcategory.persistentID
-            }
-        } else if viewModel.selectedSubcategories.isEmpty {
-            selectedSubcategoryID = nil
-        }
-    }
-
     private func syncSelectionToNatureFilter() {
         guard !isSyncingFilters else { return }
         isSyncingFilters = true
@@ -1380,18 +1228,6 @@ struct CategoriesTabView: View {
             selectedNature = viewModel.selectedNatures.first
         } else if viewModel.selectedNatures.isEmpty {
             selectedNature = nil
-        }
-    }
-
-    private func syncTagFilterToSelection() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if viewModel.selectedTags.count == 1 {
-            selectedTagID = viewModel.selectedTags.first
-        } else if viewModel.selectedTags.isEmpty {
-            selectedTagID = nil
         }
     }
 
@@ -1454,8 +1290,6 @@ struct CategoriesTabView: View {
 
     private func clearAllFilters() {
         viewModel.clearFilters()
-        selectedCategoryID = nil
-        selectedSubcategoryID = nil
         selectedNature = nil
     }
 
@@ -1475,60 +1309,24 @@ struct CategoriesTabView: View {
     }
 
     private var selectedCategoryChips: [CategoryChip] {
-        var chips: [CategoryChip] = []
-
-        // From ViewModel
-        for categoryID in viewModel.selectedCategories {
-            chips.append(CategoryChip(categoryID: categoryID))
-        }
-
-        // From local selection (if not already in ViewModel)
-        if let localCategoryID = selectedCategoryID,
-            !viewModel.selectedCategories.contains(localCategoryID)
-        {
-            chips.append(CategoryChip(categoryID: localCategoryID))
-        }
-
-        return chips
+        viewModel.selectedCategories.map { CategoryChip(categoryID: $0) }
     }
 
     private var selectedSubcategoryChips: [SubcategoryChip] {
-        var chips: [SubcategoryChip] = []
-
-        // From ViewModel - use allSubcategories Query to find details
-        for subcategoryID in viewModel.selectedSubcategories {
-            if let subcategory = allSubcategories.first(where: {
+        viewModel.selectedSubcategories.compactMap { subcategoryID in
+            guard let subcategory = allSubcategories.first(where: {
                 $0.persistentModelID == subcategoryID
-            }) {
-                let categoryColor = subcategory.safeCategory.colorHex
-                chips.append(
-                    SubcategoryChip(
-                        id: subcategory.name,
-                        name: subcategory.name,
-                        iconName: subcategory.iconName,
-                        colorHex: (subcategory.colorHex?.isEmpty == false
-                            ? subcategory.colorHex : nil) ?? categoryColor,
-                        subcategoryID: subcategoryID
-                    ))
-            }
+            }) else { return nil }
+            let categoryColor = subcategory.safeCategory.colorHex
+            return SubcategoryChip(
+                id: subcategory.name,
+                name: subcategory.name,
+                iconName: subcategory.iconName,
+                colorHex: (subcategory.colorHex?.isEmpty == false
+                    ? subcategory.colorHex : nil) ?? categoryColor,
+                subcategoryID: subcategoryID
+            )
         }
-
-        // From local selection (if not already added via ViewModel)
-        if let localSubcategoryID = selectedSubcategoryID,
-            !viewModel.selectedSubcategories.contains(localSubcategoryID),
-            let summary = subcategorySpending.first(where: { $0.persistentID == localSubcategoryID })
-        {
-            chips.append(
-                SubcategoryChip(
-                    id: summary.id,
-                    name: summary.subcategoryName,
-                    iconName: summary.subcategory?.iconName,
-                    colorHex: summary.colorHex,
-                    subcategoryID: summary.subcategory?.persistentModelID
-                ))
-        }
-
-        return chips
     }
 
     // MARK: - Tag Chip Data
@@ -1557,14 +1355,14 @@ struct CategoriesTabView: View {
     // MARK: - Filter Helpers
 
     private var hasActiveFilters: Bool {
-        viewModel.hasActiveFilters || selectedCategoryID != nil || selectedSubcategoryID != nil
+        viewModel.hasActiveFilters
     }
 
     private var activeFilterCount: Int {
         var count = 0
         if !viewModel.selectedAccounts.isEmpty { count += 1 }
-        if !viewModel.selectedCategories.isEmpty || selectedCategoryID != nil { count += 1 }
-        if !viewModel.selectedSubcategories.isEmpty || selectedSubcategoryID != nil { count += 1 }
+        if !viewModel.selectedCategories.isEmpty { count += 1 }
+        if !viewModel.selectedSubcategories.isEmpty { count += 1 }
         if !viewModel.selectedTags.isEmpty { count += 1 }
         if !viewModel.selectedNatures.isEmpty { count += 1 }
         return count
@@ -1614,7 +1412,7 @@ struct CategoriesTabView: View {
 private struct AllCategoriesListContent: View {
     let categories: [CategorySpendingSummary]
     let currencyCode: String
-    var selectedCategoryID: PersistentIdentifier?
+    var selectedCategoryIDs: Set<PersistentIdentifier> = []
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
@@ -1632,8 +1430,8 @@ private struct AllCategoriesListContent: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if let maxAmount = categories.first?.amount {
                 ForEach(displayedCategories) { summary in
-                    let isSelected = selectedCategoryID == summary.category.persistentModelID
-                    let isAnySelected = selectedCategoryID != nil
+                    let isSelected = selectedCategoryIDs.contains(summary.category.persistentModelID)
+                    let isAnySelected = !selectedCategoryIDs.isEmpty
                     let shouldDim = isAnySelected && !isSelected
 
                     CategoryRowView(
@@ -1682,8 +1480,8 @@ private struct AllCategoriesListContent: View {
 private struct AllSubcategoriesListContent: View {
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
-    var selectedCategoryID: PersistentIdentifier?
-    var selectedSubcategoryID: PersistentIdentifier?
+    var selectedCategoryIDs: Set<PersistentIdentifier> = []
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
@@ -1701,13 +1499,13 @@ private struct AllSubcategoriesListContent: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if let maxAmount = subcategories.first?.amount {
                 ForEach(displayedSubcategories) { summary in
-                    let isSelected = selectedSubcategoryID == summary.persistentID
-                    let isAnySelected = selectedSubcategoryID != nil
+                    let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
+                    let isAnySelected = !selectedSubcategoryIDs.isEmpty
 
-                    // Check if this subcategory belongs to the selected category
+                    // Check if this subcategory belongs to a selected category
                     let belongsToSelectedCategory =
-                        selectedCategoryID == nil
-                        || summary.category?.persistentModelID == selectedCategoryID
+                        selectedCategoryIDs.isEmpty
+                        || (summary.category?.persistentModelID).map { selectedCategoryIDs.contains($0) } ?? false
 
                     // Dim if:
                     // 1. There's a subcategory selected and this isn't it, OR

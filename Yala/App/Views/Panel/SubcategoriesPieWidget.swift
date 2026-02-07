@@ -18,9 +18,6 @@ struct SubcategoriesPieWidget: View {
     // Filter State
     var selectedCategoryID: PersistentIdentifier?
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
-
-    // Convenience for single-selection logic (pie chart needs one item)
-    private var selectedSubcategoryID: PersistentIdentifier? { selectedSubcategoryIDs.first }
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
 
@@ -43,14 +40,12 @@ struct SubcategoriesPieWidget: View {
         subcategories.reduce(0) { $0 + $1.amount }
     }
 
-    // Filtered total based on selected subcategory
+    // Filtered total based on selected subcategories
     private var filteredTotalExpense: Double {
-        if let selectedID = selectedSubcategoryID,
-            let selectedSubcategory = subcategories.first(where: { $0.persistentID == selectedID })
-        {
-            return selectedSubcategory.amount
-        }
-        return totalExpense
+        guard !selectedSubcategoryIDs.isEmpty else { return totalExpense }
+        return subcategories
+            .filter { guard let id = $0.persistentID else { return false }; return selectedSubcategoryIDs.contains(id) }
+            .reduce(0) { $0 + $1.amount }
     }
 
     private var chartData: [PieChartData] {
@@ -94,7 +89,7 @@ struct SubcategoriesPieWidget: View {
             // Header (same as content)
             HStack {
                 Text(L10n.Widget.subcategories)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -115,7 +110,7 @@ struct SubcategoriesPieWidget: View {
                     .font(.system(size: 32))
                     .foregroundStyle(.secondary)
                 Text(L10n.Empty.noExpenses)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
             }
@@ -140,7 +135,7 @@ struct SubcategoriesPieWidget: View {
     private var headerSection: some View {
         HStack {
             Text(L10n.Widget.subcategories)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
@@ -151,8 +146,8 @@ struct SubcategoriesPieWidget: View {
 
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.headline)
-                .foregroundStyle(Color.gray.opacity(0.7))
+                .font(DS.Typography.headline)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -162,7 +157,6 @@ struct SubcategoriesPieWidget: View {
         VStack(spacing: DS.Spacing.sm) {
             // Header
             headerView
-                .padding(.horizontal, 0)
 
             // Chart (2/3) on left, Legend (1/3) on right
             HStack(alignment: .center, spacing: DS.Spacing.lg) {
@@ -224,7 +218,7 @@ struct SubcategoriesPieWidget: View {
                 // Color dot
                 Circle()
                     .fill(Color(hex: item.colorHex))
-                    .frame(width: 8, height: 8)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
 
                 // Subcategory name
                 Text(item.name)
@@ -338,8 +332,9 @@ struct SubcategoriesPieWidget: View {
 
     // Logic: If selection exists, ONLY show selected. Else, show all > threshold.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if let selectedID = selectedSubcategoryID {
-            return item.persistentID == selectedID
+        if !selectedSubcategoryIDs.isEmpty {
+            guard let id = item.persistentID else { return false }
+            return selectedSubcategoryIDs.contains(id)
         } else {
             return item.percentage > 4.0
         }
@@ -353,8 +348,8 @@ struct SubcategoriesPieWidget: View {
 
             // 1. Subcategory Labels
             HStack(alignment: .top, spacing: 0) {
-                if let selectedID = selectedSubcategoryID,
-                    let selectedItem = chartData.first(where: { $0.persistentID == selectedID })
+                if !selectedSubcategoryIDs.isEmpty,
+                    let selectedItem = chartData.first(where: { guard let id = $0.persistentID else { return false }; return selectedSubcategoryIDs.contains(id) })
                 {
                     // Filtered: Show only selected subcategory (centered)
                     Spacer()
@@ -373,11 +368,11 @@ struct SubcategoriesPieWidget: View {
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(Color(hex: selectedItem.colorHex))
                         }
-                        .frame(width: 32, height: 32)
+                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
                         // Percentage + Amount (on same line)
                         Text(
-                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedAmountCompact(selectedItem.amount)))"
+                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
                         )
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
@@ -408,7 +403,7 @@ struct SubcategoriesPieWidget: View {
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundStyle(Color(hex: item.colorHex))
                             }
-                            .frame(width: 24, height: 24)
+                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
                             // Percentage
                             Text(formattedPercentage(item.percentage))
@@ -428,7 +423,7 @@ struct SubcategoriesPieWidget: View {
 
             // 2. Stacked Bar (with segment separation)
             GeometryReader { geo in
-                let segmentSpacing: CGFloat = 2
+                let segmentSpacing: CGFloat = DS.Spacing.xxs
                 let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
                 let availableWidth = geo.size.width - totalSpacing
 
@@ -472,7 +467,7 @@ struct SubcategoriesPieWidget: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         HStack(spacing: DS.Spacing.xxs) {
                             Text(L10n.Widget.distributionBySubcategory)
-                                .font(.headline)
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
 
@@ -481,7 +476,7 @@ struct SubcategoriesPieWidget: View {
                                 message: L10n.Widget.Hint.subcategoriesPie
                             )
                         }
-                        .padding(.bottom, 2)
+                        .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
                             .font(.callout.weight(.bold))
@@ -495,8 +490,8 @@ struct SubcategoriesPieWidget: View {
                             onShowDetail?()
                         } label: {
                             Image(systemName: "chevron.right")
-                                .font(.headline)
-                                .foregroundStyle(Color.gray.opacity(0.7))
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                     }
@@ -528,7 +523,7 @@ struct SubcategoriesPieWidget: View {
 
                             // Icon
                             Image(systemName: centerItem.iconName)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color(hex: centerItem.colorHex))
 
                             // Percentage
@@ -537,7 +532,7 @@ struct SubcategoriesPieWidget: View {
                                 .foregroundStyle(.primary)
 
                             // Amount - truncated to fit
-                            Text(formattedAmountCompact(centerItem.amount))
+                            Text(formattedCurrency(centerItem.amount))
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -592,10 +587,6 @@ struct SubcategoriesPieWidget: View {
 
     // MARK: - Helpers
 
-    private func formattedAmountCompact(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
-    }
-
     private func formattedCurrency(_ value: Double) -> String {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
@@ -627,20 +618,15 @@ struct SubcategoriesPieWidget: View {
         }
     }
 
-    private func isSelected(_ item: PieChartData) -> Bool {
-        guard let itemPersistentID = item.persistentID else { return false }
-        return selectedSubcategoryID == itemPersistentID
-    }
-
     private func isDimmed(_ item: PieChartData) -> Bool {
-        guard let selected = selectedSubcategoryID else { return false }
+        guard !selectedSubcategoryIDs.isEmpty else { return false }
         guard let itemPersistentID = item.persistentID else { return true }  // Dim "Restante" when something is selected
-        return itemPersistentID != selected
+        return !selectedSubcategoryIDs.contains(itemPersistentID)
     }
 
     private func currentCenterItem() -> PieChartData? {
-        if let persistentID = selectedSubcategoryID {
-            return chartData.first { $0.persistentID == persistentID }
+        if let firstID = selectedSubcategoryIDs.first {
+            return chartData.first { $0.persistentID == firstID }
         }
         return chartData.first
     }

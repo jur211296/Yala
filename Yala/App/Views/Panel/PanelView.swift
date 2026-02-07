@@ -892,7 +892,7 @@ struct PanelView: View {
             CategoriesPieWidget(
                 categories: viewModel.topSpendingCategories,
                 currencyCode: preferredCurrency.rawValue,
-                selectedCategoryID: viewModel.selectedCategoryID,
+                selectedCategoryIDs: viewModel.selectedCategoryID.map { Set([$0]) } ?? [],
                 onSelectCategory: { id in
                     withAnimation {
                         viewModel.toggleCategoryFilter(id)
