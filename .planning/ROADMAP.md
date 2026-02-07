@@ -11,7 +11,7 @@ Features completas + preparación para beta pública en TestFlight.
 Registro inteligente con IA, iCloud Sync, Widgets iOS, modo Solo Gastos, modelo Pro/Free.
 
 ### V1.2 (App Store Release)
-Watch, iPad/Mac, Smart Insights y reportes financieros.
+Sistema de temas PRO, Watch, iPad/Mac, Smart Insights y reportes financieros.
 
 ### V2.0 (Futuro)
 Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
@@ -40,10 +40,11 @@ Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 - [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría (2 bugs pendientes)
 
 ### V1.2 (App Store Release)
-- [ ] **Fase 11: Plataforma Extendida** - Watch, iPad/Mac, Smart Insights, reportes
+- [ ] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (negro, rosa, cyan)
+- [ ] **Fase 12: Plataforma Extendida** - Watch, iPad/Mac, Smart Insights, reportes
 
 ### V2.0
-- [ ] **Fase 12: Features Avanzadas** - Splitwise, predicciones, perfiles, metas de ahorro
+- [ ] **Fase 13: Features Avanzadas** - Splitwise, predicciones, perfiles, metas de ahorro
 
 ### Futuro
 - [ ] **Multiplataforma** - Integración opcional Android/Web
@@ -456,9 +457,47 @@ DoD: ✅
 
 ---
 
-### Fase 11: Plataforma Extendida (V1.2 - App Store)
-**Goal**: Watch, iPad/Mac, Smart Insights y reportes
+### Fase 11: Sistema de Temas Independientes (V1.2)
+**Goal**: Refactorizar el sistema de colores para soportar temas completamente independientes (no solo light/dark)
 **Depends on**: Fase 10.5
+**Research**: Done (ShapeStyle.resolve(in:), @Observable ThemeManager, Environment injection)
+**Plans**: `.planning/THEME-REFACTOR-PLAN.md`
+
+**Problema actual:**
+- Solo existen 2 ColorScheme en SwiftUI (.light/.dark)
+- El tema "Negro" es un hack: dark + UserDefaults check dentro de UIColor closures
+- `.id(userThemeRaw)` destruye toda la jerarquía de vistas (reinicio visual)
+- No escala para nuevos temas PRO (rosa, cyan, etc.)
+
+**Arquitectura nueva:**
+- `YalaTheme` struct con paleta completa por tema
+- `ThemeColor: ShapeStyle` con `resolve(in:)` — colores se resuelven del Environment
+- `@Observable ThemeManager` — sin `.id()`, sin destrucción de vistas
+- Las vistas usan `.foregroundStyle(.thBackground)` en vez de `Color.yalaBackground`
+
+Incluye:
+- [ ] Infraestructura: YalaTheme, ThemeColor, ThemeManager (3 archivos nuevos)
+- [ ] Integración en YalaApp (eliminar `.id(userThemeRaw)`)
+- [ ] Migrar PanelBackgroundView y componentes compartidos
+- [ ] Migrar vistas: Panel, Statistics, Settings, Transactions, Planning (~60 archivos)
+- [ ] Rediseño ThemeSettingsView para mostrar todos los temas
+- [ ] Limpieza: eliminar colores legacy de UIHelpers.swift
+- [ ] Definir paletas para temas PRO futuros (rosa, cyan)
+- [ ] Localizaciones y escenarios QA
+
+DoD:
+- Cambiar de tema NO reinicia la app (sin `.id()`, sin splash)
+- Cada tema define paleta completa independiente
+- Añadir un tema nuevo = 1 static let + 1 case en enum (0 cambios en vistas)
+- Tema Negro funciona como tema propio, no como hack de Dark
+- Widgets iOS no se afectan (mantienen sistema propio)
+- 0 usos de colores legacy (yalaBackground, yalaCard, etc.)
+
+---
+
+### Fase 12: Plataforma Extendida (V1.2 - App Store)
+**Goal**: Watch, iPad/Mac, Smart Insights y reportes
+**Depends on**: Fase 11
 **Research**: Likely (WatchKit, iPadOS/macOS adaptations, ML/heurísticas)
 **Plans**: TBD
 
@@ -479,9 +518,9 @@ DoD:
 
 ---
 
-### Fase 12: Features Avanzadas (V2.0)
+### Fase 13: Features Avanzadas (V2.0)
 **Goal**: Splitwise, predicciones y perfiles de usuario
-**Depends on**: Fase 11
+**Depends on**: Fase 12
 **Research**: Likely (APIs Splitwise, ML para predicciones)
 **Plans**: TBD
 
@@ -532,12 +571,13 @@ Ideas capturadas para evaluación posterior:
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 11 | Plataforma Extendida | Not started | - |
+| 11 | Sistema de Temas Independientes | Not started | - |
+| 12 | Plataforma Extendida | Not started | - |
 
 ### V2.0
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 12 | Features Avanzadas | Not started | - |
+| 13 | Features Avanzadas | Not started | - |
 
 ### Futuro
 | Tema | Status |

@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-06] 9f36107 feat: add expenses-only mode across entire app
 - [2026-02-06] b90443c fix: resolve BUG-5, BUG-6, BUG-7 for phase 10.5 closure
 - [2026-02-06] eb8f3f3 feat(web): update privacy and terms pages across 6 languages
 - [2026-02-06] 1dc78a4 docs: rewrite privacy policy and terms with accurate app data
@@ -33,7 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-05] bc5916f refactor: remove unnecessary @available checks and migrate deprecated APIs
 - [2026-02-05] aba270f fix(l10n): add missing translations and localize export columns
 - [2026-02-05] 9bc7bff fix: improve error diagnostics and code safety across codebase
-- [2026-02-05] dc12ae6 chore: add PrivacyInfo.xcprivacy for App Store compliance
 - [2026-02-05] fb7b75e fix(widgets): update Control Center labels and unify SF Symbol icons
 - [2026-02-05] 463cd47 fix(sync): reload data on transaction delete and trends update
 - [2026-02-05] 3f0099f fix(notifications): add background task reliability and model support
@@ -112,6 +112,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Auditoría Documental y Web (10.5.R)** - Auditoría completa de toda la documentación del proyecto; 19 archivos obsoletos eliminados; rename Neto→Yala propagado a todos los docs activos (UI-PATTERNS, APPSTORE-CHECKLIST, QA-SCENARIOS, PROJECT, ROADMAP, AUDIT-REPORT); ROADMAP sincronizado con progreso real de fase 10.5; CLAUDE.md corregido (12 entidades SwiftData, tests actualizados, ref EXECUTION-RULES eliminada); PRIVACY-POLICY.md reescrita con datos reales (iCloud sync, OpenAI API, exchangerate.host, permisos); TERMS-CONDITIONS.md creado (suscripciones Free/Pro, servicios terceros, ley peruana); web actualizada: PrivacyPage y TermsPage reescritas en 6 idiomas (ES/EN/DE/FR/IT/PT), trust badges corregidos ("100% Local"→"Privacidad primero", "Sin servidores"→"Sin rastreo"); 3 commits (fc7a6ac, 1dc78a4, eb8f3f3)
 - **Fix Dark Mode Cards (10.5.Q)** - Migración de List→ScrollView+SectionBox en 4 vistas (AdjustmentModeSelectorView, AccountTypeSelectorView, RecordsFiltersView accounts/tags sheets, MultiSelectionList); DatePickers mantienen List con `.listRowBackground(Color.yalaCard)`; fix crash PeriodSelector (safe DatePicker ranges con min/max); 5 keys L10n nuevas (filters.categories/type/nature/currency, action.apply); magic numbers→DS tokens; 6 idiomas
 - **Bugs finales fase 10.5 (BUG-5/6/7)** - BUG-7: nextDueDate default mañana en SaveAsRecurringSheet y ScheduledPaymentEditorView, DatePickers restringidos a futuro; BUG-6: subcategorías filtradas por tipo en edición masiva, opción deshabilitada si selección mixta; BUG-5: conversión de divisas en resumen de pagos planificados (ViewModel y Widget) con CurrencyConverter; fixes de review: force unwrap eliminado en Widget calendar, @MainActor en RecordsViewModel, guard nil subcategory
+- **Modo Solo Gastos (Fase 11.A)** - Toggle reversible en Personalización con doble confirmación; oculta income/transfers/balance en toda la app; SessionState.isExpensesOnlyMode como SSOT (stored property con didSet → UserDefaults + App Group + widgets); 42 archivos: creación de transacciones (solo gasto), panel (gasto por periodo en cuentas, CashFlow solo gastos, Trends forzado a expense), estadísticas (métricas/filtros/records sin income), settings (saldos ocultos, categorías income dimeadas), widgets iOS (filtrado income), búsqueda/records (FilterService forzado a expense), favoritos/planificados/notificaciones (filtrado income), onboarding (nuevo paso), Siri shortcuts (AppIntent forzado); localizaciones 6 idiomas; 50+ escenarios QA; DS spacing tokens corregidos en 9 archivos; @MainActor en StatisticsViewModel/SessionState; try?→do/catch en ContentView
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -163,7 +164,16 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ---
 
-### Después de 10.5: Fase 11 — Plataforma Extendida (V1.2)
+### Después de 10.5: Fase 11 — Sistema de Temas Independientes (V1.2)
+
+**Plan completo:** `.planning/THEME-REFACTOR-PLAN.md`
+
+Refactorizar el sistema de colores para soportar temas completamente independientes.
+Arquitectura: YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager.
+Elimina el hack de `.id(userThemeRaw)` que reinicia la app al cambiar tema.
+~60-70 archivos a migrar, cambio mecánico (`Color.yalaBackground` → `.thBackground`).
+
+### Después de Fase 11: Fase 12 — Plataforma Extendida (V1.2)
 
 Ver ROADMAP.md para detalles.
 
@@ -256,9 +266,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: BUG-5/6/7 resueltos, fase 10.5 cerrada, V1.1 completa
-Next step: Cerrar milestone V1.1 → preparar Fase 11 (V1.2)
+Stopped at: Modo Solo Gastos implementado completo (9f36107)
+Next step: QA manual del modo solo gastos → siguiente feature de V1.2
 Resume context:
-- Fase 10.5 completada al 100% con todos los bugs resueltos (b90443c)
-- V1.1 lista para release
-- Siguiente: Fase 11 — Plataforma Extendida (V1.2)
+- Modo Solo Gastos (INC-1 a INC-11) implementado y build verified
+- 42 archivos modificados, 50+ escenarios QA documentados
+- Fixes post-review aplicados: Records filtering, TrendWidget metric, AccountCard design reverted, toggle "Activo" removido
+- Siguiente: Verificar en simulador, luego continuar con Fase 11
