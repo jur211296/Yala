@@ -526,6 +526,7 @@
 "panel.fabVoice" = "Voice";
 "panel.fabImage" = "Image";
 "panel.fabManual" = "Manual";
+"panel.spent" = "Spent";
 
 "widget.today" = "Today";
 
@@ -1252,6 +1253,19 @@
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbol (S/, $)";
 
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Usage mode";
+"settings.expensesOnlyMode" = "Expenses only";
+"settings.expensesOnlyModeDescription" = "Hides income, transfers and balances. Your data is not deleted, only hidden.";
+"settings.expensesOnlyActivateTitle" = "Enable expenses only mode?";
+"settings.expensesOnlyActivateMessage" = "Income, transfers and balances will be hidden throughout the app. You can revert this at any time.";
+"settings.expensesOnlyActivateConfirm" = "Yes, enable";
+"settings.expensesOnlyDeactivateTitle" = "Disable expenses only mode?";
+"settings.expensesOnlyDeactivateMessage" = "Income, transfers and balances will be shown again.";
+"settings.expensesOnlyDeactivateConfirm" = "Yes, disable";
+"settings.expensesOnlyActive" = "Active";
+"settings.categoryHidden" = "(hidden)";
+
 "widget.hint.trend" = "Shows the evolution of your balance, income, or expenses in the selected period.";
 "widget.hint.topCategories" = "The categories where you spent the most this period.";
 "widget.hint.topSubcategories" = "The subcategories with highest spending, filtered by category.";
@@ -1295,6 +1309,12 @@
 "onboarding.recommended" = "Recommended";
 "onboarding.languageTitle" = "Choose your language";
 "onboarding.languageSubtitle" = "We noticed your language isn't supported yet. Don't worry, pick one of these options!";
+
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "What do you want to track?";
+"onboarding.expensesOnlySubtitle" = "You can change this anytime in Settings.";
+"onboarding.expensesOnlyOptionAll" = "I want to track everything";
+"onboarding.expensesOnlyOptionExpenses" = "I only want to track expenses";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";

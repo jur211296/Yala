@@ -84,6 +84,9 @@ enum L10n {
         static var fabManual: String {
             ls("panel.fabManual", comment: "")
         }
+        static var spent: String {
+            ls("panel.spent", comment: "Spent label for expenses-only mode account cards")
+        }
     }
 
     // MARK: - Trend
@@ -1428,6 +1431,19 @@ enum L10n {
         static var deleteDataUnknownError: String {
             ls("settings.deleteDataUnknownError", comment: "")
         }
+
+        // Expenses Only Mode
+        static var sectionUsageMode: String { ls("settings.sectionUsageMode", comment: "") }
+        static var expensesOnlyMode: String { ls("settings.expensesOnlyMode", comment: "") }
+        static var expensesOnlyModeDescription: String { ls("settings.expensesOnlyModeDescription", comment: "") }
+        static var expensesOnlyActivateTitle: String { ls("settings.expensesOnlyActivateTitle", comment: "") }
+        static var expensesOnlyActivateMessage: String { ls("settings.expensesOnlyActivateMessage", comment: "") }
+        static var expensesOnlyActivateConfirm: String { ls("settings.expensesOnlyActivateConfirm", comment: "") }
+        static var expensesOnlyDeactivateTitle: String { ls("settings.expensesOnlyDeactivateTitle", comment: "") }
+        static var expensesOnlyDeactivateMessage: String { ls("settings.expensesOnlyDeactivateMessage", comment: "") }
+        static var expensesOnlyDeactivateConfirm: String { ls("settings.expensesOnlyDeactivateConfirm", comment: "") }
+        static var expensesOnlyActive: String { ls("settings.expensesOnlyActive", comment: "") }
+        static var categoryHidden: String { ls("settings.categoryHidden", comment: "") }
     }
 
     // MARK: - Profile
@@ -1941,6 +1957,19 @@ enum L10n {
         }
         static var languageSubtitle: String {
             ls("onboarding.languageSubtitle", comment: "")
+        }
+        // Expenses Only Mode step
+        static var expensesOnlyTitle: String {
+            ls("onboarding.expensesOnlyTitle", comment: "")
+        }
+        static var expensesOnlySubtitle: String {
+            ls("onboarding.expensesOnlySubtitle", comment: "")
+        }
+        static var expensesOnlyOptionAll: String {
+            ls("onboarding.expensesOnlyOptionAll", comment: "")
+        }
+        static var expensesOnlyOptionExpenses: String {
+            ls("onboarding.expensesOnlyOptionExpenses", comment: "")
         }
     }
 

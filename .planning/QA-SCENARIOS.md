@@ -4207,6 +4207,88 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ---
 
-*Última actualización: 2026-02-02 - Secciones 28, 29, 30 (Fase 10.5.G)*
-*Total escenarios: ~430*
-*Total verificaciones: ~820+*
+## Sección 31: Modo Solo Gastos (Expenses Only Mode)
+
+### 31.1 Activación / Desactivación
+- [ ] 31.1.1 Settings > Personalización: toggle "Modo solo gastos" visible
+- [ ] 31.1.2 Activar: muestra diálogo de confirmación antes de cambiar
+- [ ] 31.1.3 Desactivar: muestra diálogo de confirmación antes de cambiar
+- [ ] 31.1.4 Preferencia persiste entre relanzamientos de la app
+- [ ] 31.1.5 Activar limpia estado incompatible (selectedTrendMetric forzado a .expense)
+
+### 31.2 Creación de Transacciones
+- [ ] 31.2.1 NewTransactionView: selector de tipo muestra solo "Gasto" (oculta income/transfer)
+- [ ] 31.2.2 Si solo 1 tipo disponible, selector completo se oculta
+- [ ] 31.2.3 FavoriteEditorView: tipos income/transfer ocultos
+- [ ] 31.2.4 ScheduledPaymentEditorView: tipo income oculto
+- [ ] 31.2.5 InboxDraftEditSheet: forzado a expense
+
+### 31.3 Panel
+- [ ] 31.3.1 Cuentas muestran "Gastado" (gasto del periodo) en vez de saldo
+- [ ] 31.3.2 Cambiar periodo actualiza montos de gasto por cuenta
+- [ ] 31.3.3 Saldo total del header se oculta
+- [ ] 31.3.4 CashFlowWidget: solo muestra barras de gasto (sin income)
+- [ ] 31.3.5 TrendWidget: forzado a métrica "Gastos", selector oculto
+- [ ] 31.3.6 RecentRecordsWidget: no muestra transacciones de ingreso
+- [ ] 31.3.7 BalanceStatusIndicator: oculto
+
+### 31.4 Estadísticas
+- [ ] 31.4.1 TrendsTab: solo métrica "Gastos", botones balance/income ocultos
+- [ ] 31.4.2 CategoriesTab: sin categorías de ingreso
+- [ ] 31.4.3 RecordsTab: sin transacciones income, balance summary oculto
+- [ ] 31.4.4 DetailContainerView: métrica inicial es .expense (no .balance)
+- [ ] 31.4.5 Chips de nature ocultos (siempre expense, no clearable)
+- [ ] 31.4.6 RecordsFiltersView: sección "Naturaleza" (income/expense) oculta
+
+### 31.5 Settings
+- [ ] 31.5.1 Cuentas: saldos ocultos en lista de cuentas activas
+- [ ] 31.5.2 Cuentas: saldos ocultos en lista de cuentas archivadas
+- [ ] 31.5.3 Editar cuenta: preview de saldo actual oculto
+- [ ] 31.5.4 Categorías: categorías income dimmed (opacidad 0.5) con badge "(oculta)"
+- [ ] 31.5.5 Categorías income siguen siendo editables (no se bloquean)
+
+### 31.6 Búsqueda y Records
+- [ ] 31.6.1 Búsqueda global: no encuentra transacciones income
+- [ ] 31.6.2 RecordsStandaloneView: solo muestra gastos
+
+### 31.7 Favoritos y Planificación
+- [ ] 31.7.1 FavoritesListView: favoritos income ocultos
+- [ ] 31.7.2 Empty state si solo hay favoritos income
+- [ ] 31.7.3 ScheduledPayments lista: pagos income filtrados
+- [ ] 31.7.4 ScheduledPayments subscriptions: income filtrados
+- [ ] 31.7.5 ScheduledPayments recurring: income filtrados
+
+### 31.8 Notificaciones
+- [ ] 31.8.1 NotificationEditorSheet: tipos "Ingresos" y "Balance" ocultos
+- [ ] 31.8.2 Editar notificación existente con tipo income: se fuerza a "Gastos"
+- [ ] 31.8.3 Reporte diario/semanal/mensual solo muestra gastos (sin income)
+
+### 31.9 Widgets iOS
+- [ ] 31.9.1 CashFlowWidget small: solo muestra gastos
+- [ ] 31.9.2 CashFlowWidget medium: barra income oculta
+- [ ] 31.9.3 CashFlowWidget large: income legend oculto, chart solo expense
+- [ ] 31.9.4 LatestRecordsWidget: sin transacciones income
+- [ ] 31.9.5 ScheduledPaymentsWidget: sin pagos income
+- [ ] 31.9.6 Desactivar modo: widgets se refrescan mostrando todo
+
+### 31.10 Siri / Shortcuts
+- [ ] 31.10.1 QuickExpenseIntent: forzado a tipo expense (no pregunta tipo)
+- [ ] 31.10.2 Desactivar modo: QuickExpenseIntent permite elegir tipo again
+
+### 31.11 Onboarding
+- [ ] 31.11.1 Nuevo paso "¿Qué quieres registrar?" aparece después de periodo
+- [ ] 31.11.2 Opción "Todo" seleccionada por defecto
+- [ ] 31.11.3 Seleccionar "Solo gastos" y completar onboarding: app abre en modo solo gastos
+- [ ] 31.11.4 Seleccionar "Todo": app abre en modo normal
+
+### 31.12 Reversibilidad
+- [ ] 31.12.1 Activar modo: datos income siguen en base de datos (no se eliminan)
+- [ ] 31.12.2 Desactivar modo: todos los income/saldos reaparecen inmediatamente
+- [ ] 31.12.3 Crear gastos en modo activo, desactivar: gastos siguen visibles con income
+- [ ] 31.12.4 Importar CSV con income en modo activo: income queda oculto pero existe
+
+---
+
+*Última actualización: 2026-02-06 - Sección 31 (Modo Solo Gastos)*
+*Total escenarios: ~480*
+*Total verificaciones: ~900+*

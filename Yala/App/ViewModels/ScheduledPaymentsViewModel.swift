@@ -131,6 +131,11 @@ final class ScheduledPaymentsViewModel {
             filtered = filtered.filter { $0.paymentCategory == categoryFilter }
         }
 
+        // Filter income payments in expenses-only mode
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.transactionType != "income" }
+        }
+
         // Filter by active status
         if hideInactive {
             filtered = filtered.filter { $0.isActive }
@@ -264,6 +269,11 @@ final class ScheduledPaymentsViewModel {
     func getSubscriptions(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
         var filtered = payments.filter { $0.paymentCategory == PaymentCategory.subscription.rawValue }
 
+        // Filter income payments in expenses-only mode
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.transactionType != "income" }
+        }
+
         // Apply filters
         if hideInactive {
             filtered = filtered.filter { $0.isActive }
@@ -299,6 +309,11 @@ final class ScheduledPaymentsViewModel {
     /// Get all recurring payments (non-subscription, filtered)
     func getRecurringPayments(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
         var filtered = payments.filter { $0.paymentCategory == PaymentCategory.recurring.rawValue }
+
+        // Filter income payments in expenses-only mode
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.transactionType != "income" }
+        }
 
         // Apply same filters as subscriptions
         if hideInactive {

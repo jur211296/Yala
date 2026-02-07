@@ -524,6 +524,7 @@
 "panel.fabVoice" = "Voce";
 "panel.fabImage" = "Immagine";
 "panel.fabManual" = "Manuale";
+"panel.spent" = "Speso";
 
 "widget.today" = "Oggi";
 
@@ -1252,6 +1253,19 @@
 "settings.currencyCode" = "Codice (PEN, USD)";
 "settings.currencySymbol" = "Simbolo (S/, $)";
 
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Modalità di utilizzo";
+"settings.expensesOnlyMode" = "Solo spese";
+"settings.expensesOnlyModeDescription" = "Nasconde entrate, trasferimenti e saldi. I tuoi dati non vengono eliminati, solo nascosti.";
+"settings.expensesOnlyActivateTitle" = "Attivare la modalità solo spese?";
+"settings.expensesOnlyActivateMessage" = "Entrate, trasferimenti e saldi saranno nascosti in tutta l'app. Puoi annullare in qualsiasi momento.";
+"settings.expensesOnlyActivateConfirm" = "Sì, attiva";
+"settings.expensesOnlyDeactivateTitle" = "Disattivare la modalità solo spese?";
+"settings.expensesOnlyDeactivateMessage" = "Entrate, trasferimenti e saldi saranno nuovamente visibili.";
+"settings.expensesOnlyDeactivateConfirm" = "Sì, disattiva";
+"settings.expensesOnlyActive" = "Attivo";
+"settings.categoryHidden" = "(nascosta)";
+
 "widget.hint.trend" = "Mostra l'evoluzione del tuo saldo, entrate o spese nel periodo selezionato.";
 "widget.hint.topCategories" = "Le categorie in cui hai speso di piu in questo periodo.";
 "widget.hint.topSubcategories" = "Le sottocategorie con la spesa piu alta, filtrate per categoria.";
@@ -1295,6 +1309,12 @@
 "onboarding.recommended" = "Consigliata";
 "onboarding.languageTitle" = "Scegli la tua lingua";
 "onboarding.languageSubtitle" = "Abbiamo rilevato che la tua lingua non è ancora supportata. Non preoccuparti, scegli tra queste opzioni!";
+
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "Cosa vuoi registrare?";
+"onboarding.expensesOnlySubtitle" = "Puoi cambiare questa impostazione in qualsiasi momento nelle Impostazioni.";
+"onboarding.expensesOnlyOptionAll" = "Voglio registrare tutto";
+"onboarding.expensesOnlyOptionExpenses" = "Voglio registrare solo le spese";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";

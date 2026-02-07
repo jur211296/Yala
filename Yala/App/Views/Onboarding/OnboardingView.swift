@@ -28,6 +28,9 @@ struct OnboardingView: View {
     // Animation state for category grid
     @State private var showCategoryIcons: Bool = false
 
+    // Expenses-only mode preference
+    @State private var expensesOnlyMode: Bool = false
+
     // Notification preferences
     @State private var selectedNotifications: Set<NotificationType> = []
     @State private var hasRequestedPermission: Bool = false
@@ -42,7 +45,7 @@ struct OnboardingView: View {
         .thisYear, .lastYear, .allTime
     ]
 
-    private let totalSteps = 6
+    private let totalSteps = 7
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,8 +60,9 @@ struct OnboardingView: View {
                 currencyStep.tag(1)
                 secondaryCurrenciesStep.tag(2)
                 periodStep.tag(3)
-                categoriesStep.tag(4)
-                notificationsStep.tag(5)
+                expensesOnlyStep.tag(4)
+                categoriesStep.tag(5)
+                notificationsStep.tag(6)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
@@ -369,7 +373,92 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 5: Seed Categories
+    // MARK: - Step 5: Expenses Only Mode
+
+    private var expensesOnlyStep: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            VStack(spacing: DS.Spacing.md) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color.electricIndigo)
+
+                Text(L10n.Onboarding.expensesOnlyTitle)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+
+                Text(L10n.Onboarding.expensesOnlySubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+            }
+            .padding(.top, DS.Spacing.xl)
+
+            VStack(spacing: DS.Spacing.sm) {
+                // Option 1: Track everything (default)
+                Button {
+                    expensesOnlyMode = false
+                } label: {
+                    HStack {
+                        Image(systemName: expensesOnlyMode ? "circle" : "checkmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(expensesOnlyMode ? .secondary : Color.electricIndigo)
+
+                        Text(L10n.Onboarding.expensesOnlyOptionAll)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        if !expensesOnlyMode {
+                            Text(L10n.Onboarding.categoriesRecommended)
+                                .font(.caption)
+                                .foregroundStyle(Color.electricIndigo)
+                        }
+                    }
+                    .padding(DS.Spacing.md)
+                    .background(!expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.md)
+                            .stroke(!expensesOnlyMode ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                // Option 2: Only expenses
+                Button {
+                    expensesOnlyMode = true
+                } label: {
+                    HStack {
+                        Image(systemName: expensesOnlyMode ? "checkmark.circle.fill" : "circle")
+                            .font(.title3)
+                            .foregroundStyle(expensesOnlyMode ? Color.electricIndigo : .secondary)
+
+                        Text(L10n.Onboarding.expensesOnlyOptionExpenses)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+                    }
+                    .padding(DS.Spacing.md)
+                    .background(expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.md)
+                            .stroke(expensesOnlyMode ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Step 6: Seed Categories
 
     private var categoriesStep: some View {
         VStack(spacing: DS.Spacing.lg) {
@@ -468,7 +557,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 5: Notifications
+    // MARK: - Step 7: Notifications
 
     private var notificationsStep: some View {
         VStack(spacing: DS.Spacing.lg) {
@@ -573,7 +662,7 @@ struct OnboardingView: View {
                 }
 
                 // Name and description
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(notificationName(for: type))
                         .font(.body)
                         .foregroundStyle(.primary)
@@ -889,14 +978,14 @@ struct OnboardingView: View {
                         currentStep += 1
                     }
                     // Trigger category icons animation when entering categories step
-                    if currentStep == 4 {
+                    if currentStep == 5 {
                         triggerCategoryAnimation()
                     }
                 } else {
                     completeOnboarding()
                 }
             } label: {
-                let isLastStep = currentStep >= 5
+                let isLastStep = currentStep >= 6
 
                 Text(isLastStep ? L10n.Onboarding.finish : L10n.Action.next)
                     .font(.body.weight(.semibold))
@@ -937,13 +1026,14 @@ struct OnboardingView: View {
         // Default period
         defaults.set(selectedPeriod.rawValue, forKey: "defaultPeriod")
 
+        // Expenses-only mode
+        sessionState.isExpensesOnlyMode = expensesOnlyMode
+
         // Mark onboarding as complete
         defaults.set(true, forKey: "hasCompletedOnboarding")
 
         // Budget alerts preference
         defaults.set(budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
-
-        defaults.synchronize()
 
         // Apply period to SessionState immediately (since it was created before onboarding)
         sessionState.selectedPeriod = selectedPeriod

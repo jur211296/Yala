@@ -12,12 +12,13 @@ import SwiftUI
 /// Selector tipo cápsula iOS para Gasto/Ingreso/Transferencia
 struct TransactionTypeSegmentedView: View {
     @Binding var selectedType: TransactionType
+    var availableTypes: [TransactionType] = TransactionType.allCases
 
     @Namespace private var animation
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(TransactionType.allCases) { type in
+            ForEach(availableTypes) { type in
                 TransactionTypeButton(
                     type: type,
                     isSelected: selectedType == type,
@@ -55,7 +56,7 @@ struct TransactionTypeButton: View {
             Text(type.displayName)
                 .font(.subheadline.weight(isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
                 .background {

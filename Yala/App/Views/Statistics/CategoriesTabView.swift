@@ -324,8 +324,9 @@ struct CategoriesTabView: View {
                         }
 
                         // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected
-                        if viewModel.selectedTransactionNatures.count == 1,
+                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
+                        if !sessionState.isExpensesOnlyMode,
+                            viewModel.selectedTransactionNatures.count == 1,
                             let nature = viewModel.selectedTransactionNatures.first
                         {
                             FilterChipView(

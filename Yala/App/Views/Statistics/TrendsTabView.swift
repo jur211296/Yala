@@ -307,8 +307,9 @@ struct TrendsTabView: View {
                         }
 
                         // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected
-                        if trendsViewModel.selectedTransactionNatures.count == 1,
+                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
+                        if !sessionState.isExpensesOnlyMode,
+                            trendsViewModel.selectedTransactionNatures.count == 1,
                             let nature = trendsViewModel.selectedTransactionNatures.first
                         {
                             FilterChipView(
@@ -401,7 +402,10 @@ struct TrendsTabView: View {
 
             Spacer()
 
-            metricSelector
+            // Metric selector (hidden in expenses-only mode)
+            if !sessionState.isExpensesOnlyMode {
+                metricSelector
+            }
 
             // Comparison mode selector (hidden when showVariations is OFF or for periods where only one mode makes sense)
             if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
@@ -1167,7 +1171,7 @@ struct TrendsTabView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, DS.Spacing.xl)
     }
 
     // MARK: - Helpers

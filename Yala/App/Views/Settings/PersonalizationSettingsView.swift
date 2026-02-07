@@ -28,6 +28,7 @@ struct PersonalizationSettingsView: View {
     @State private var showingTabBarConfig = false
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
+    @State private var showingExpensesOnlyConfirmation = false
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
@@ -77,6 +78,41 @@ struct PersonalizationSettingsView: View {
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xxxl)
+
+                    // MARK: - Modo de uso Section
+                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        YalaSectionHeader(L10n.Settings.sectionUsageMode)
+
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            HStack {
+                                Text(L10n.Settings.expensesOnlyMode)
+                                    .font(.body)
+                                    .foregroundStyle(Color.yalaPrimaryText)
+
+                                Spacer()
+
+                                Toggle("", isOn: Binding(
+                                    get: { sessionState.isExpensesOnlyMode },
+                                    set: { _ in showingExpensesOnlyConfirmation = true }
+                                ))
+                                .labelsHidden()
+                                .tint(Color.brandPrimary)
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .background(Color.yalaCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
+
+                            Text(L10n.Settings.expensesOnlyModeDescription)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, DS.Spacing.xxs)
+                        }
+                    }
 
                     // MARK: - Interfaz Section
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
@@ -484,6 +520,29 @@ struct PersonalizationSettingsView: View {
                 }
             )
             .presentationDetents([.medium])
+        }
+        .confirmationDialog(
+            sessionState.isExpensesOnlyMode
+                ? L10n.Settings.expensesOnlyDeactivateTitle
+                : L10n.Settings.expensesOnlyActivateTitle,
+            isPresented: $showingExpensesOnlyConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(
+                sessionState.isExpensesOnlyMode
+                    ? L10n.Settings.expensesOnlyDeactivateConfirm
+                    : L10n.Settings.expensesOnlyActivateConfirm,
+                role: sessionState.isExpensesOnlyMode ? nil : .destructive
+            ) {
+                sessionState.isExpensesOnlyMode.toggle()
+            }
+            Button(L10n.Settings.cancel, role: .cancel) {}
+        } message: {
+            Text(
+                sessionState.isExpensesOnlyMode
+                    ? L10n.Settings.expensesOnlyDeactivateMessage
+                    : L10n.Settings.expensesOnlyActivateMessage
+            )
         }
     }
 }

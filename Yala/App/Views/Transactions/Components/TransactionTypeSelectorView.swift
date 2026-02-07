@@ -11,11 +11,21 @@ import SwiftUI
 
 struct TransactionTypeSelectorView: View {
     @Binding var selectedType: TransactionType
+    var availableTypes: [TransactionType] = TransactionType.allCases
     var onTypeChange: ((TransactionType) -> Void)?
 
     var body: some View {
+        // Hide selector completely when only one type available
+        if availableTypes.count <= 1 {
+            EmptyView()
+        } else {
+            selectorContent
+        }
+    }
+
+    private var selectorContent: some View {
         HStack(spacing: 0) {
-            ForEach(TransactionType.allCases) { type in
+            ForEach(availableTypes) { type in
                 Button {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         selectedType = type

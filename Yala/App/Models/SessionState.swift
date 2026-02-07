@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 // MARK: - Inbox Notification Types
 
@@ -66,6 +67,7 @@ enum DeepLinkDestination {
 }
 
 /// Global session state to manage synchronization between views
+@MainActor
 @Observable
 class SessionState {
 
@@ -112,6 +114,28 @@ class SessionState {
     /// Tracks whether the current Expense selection was automatic (due to filters) or manual (user click)
     /// Used to determine if we should auto-reset to Balance when filters are cleared
     var isExpenseAutomatic: Bool = false
+
+    // MARK: - Expenses Only Mode
+
+    /// When true, hides income/transfer UI throughout the app. Data is NOT deleted, only hidden.
+    /// Uses stored property (NOT computed) so @Observable tracks changes.
+    var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: "expensesOnlyMode") {
+        didSet {
+            UserDefaults.standard.set(isExpensesOnlyMode, forKey: "expensesOnlyMode")
+            if let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
+                appGroup.set(isExpensesOnlyMode, forKey: "expensesOnlyMode")
+            }
+            WidgetCenter.shared.reloadAllTimelines()
+            // Clean incompatible state when toggling
+            if isExpensesOnlyMode {
+                if selectedTrendMetric != .expense { selectedTrendMetric = .expense }
+                selectedTransactionNatures = [.expense]
+            } else {
+                // Deactivating: clear the forced expense filter
+                selectedTransactionNatures = []
+            }
+        }
+    }
 
     // MARK: - Comparison Mode State
 

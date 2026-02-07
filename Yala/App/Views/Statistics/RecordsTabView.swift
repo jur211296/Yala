@@ -155,8 +155,9 @@ struct RecordsTabView: View {
                         }
 
                         // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected
-                        if viewModel.selectedTransactionNatures.count == 1,
+                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
+                        if !sessionState.isExpensesOnlyMode,
+                            viewModel.selectedTransactionNatures.count == 1,
                             let nature = viewModel.selectedTransactionNatures.first
                         {
                             FilterChipView(
@@ -261,49 +262,56 @@ struct RecordsTabView: View {
         let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
 
         return VStack(alignment: .center, spacing: DS.Spacing.xs) {
-            // Balance (Saldo) - Large and centered
-            Text(
-                YalaFormatter.currency(
-                    value: recordsSummary.balance, currencyCode: defaultCurrencyCode)
-            )
-            .font(.title.weight(.bold))
-            .foregroundStyle(.primary)
+            // Balance (Saldo) - Large and centered (hidden in expenses-only mode)
+            if !sessionState.isExpensesOnlyMode {
+                Text(
+                    YalaFormatter.currency(
+                        value: recordsSummary.balance, currencyCode: defaultCurrencyCode)
+                )
+                .font(.title.weight(.bold))
+                .foregroundStyle(.primary)
+            }
 
             // Income and Expense indicators below (tappable to filter)
             HStack(spacing: DS.Spacing.md) {
-                // Income button
-                Button {
-                    withAnimation {
-                        // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
-                        if isIncomeFiltered {
-                            viewModel.selectedTransactionNatures.removeAll()
-                        } else {
-                            viewModel.selectedTransactionNatures = [.income]
+                // Income button (hidden in expenses-only mode)
+                if !sessionState.isExpensesOnlyMode {
+                    Button {
+                        withAnimation {
+                            // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
+                            if isIncomeFiltered {
+                                viewModel.selectedTransactionNatures.removeAll()
+                            } else {
+                                viewModel.selectedTransactionNatures = [.income]
+                            }
+                            onFilterChange()
                         }
-                        onFilterChange()
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.incomeGraph)
+                            Text(
+                                YalaFormatter.currency(
+                                    value: recordsSummary.income, currencyCode: defaultCurrencyCode)
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
+                        .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
                     }
-                } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.incomeGraph)
-                        Text(
-                            YalaFormatter.currency(
-                                value: recordsSummary.income, currencyCode: defaultCurrencyCode)
-                        )
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
-                    .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 // Expense button
                 Button {
                     withAnimation {
                         // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
                         if isExpenseFiltered {
-                            viewModel.selectedTransactionNatures.removeAll()
+                            // In expenses-only mode, don't allow clearing the expense filter
+                            if !sessionState.isExpensesOnlyMode {
+                                viewModel.selectedTransactionNatures.removeAll()
+                            }
                         } else {
                             viewModel.selectedTransactionNatures = [.expense]
                         }

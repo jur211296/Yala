@@ -15,6 +15,7 @@ struct AccountFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(EntityDeletionService.self) private var deletionService
+    @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel: AccountFormViewModel
     @FocusState private var focusedField: Field?
@@ -254,8 +255,8 @@ struct AccountFormView: View {
                     ? L10n.Account.initialBalance : L10n.Account.newBalance) : L10n.Account.initialBalance
         ) {
             VStack(spacing: 0) {
-                // Show current balance (read-only) when editing
-                if viewModel.isEditing {
+                // Show current balance (read-only) when editing (hidden in expenses-only mode)
+                if viewModel.isEditing && !sessionState.isExpensesOnlyMode {
                     HStack {
                         Text(L10n.Account.currentBalance)
                             .foregroundStyle(.secondary)

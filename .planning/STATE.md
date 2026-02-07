@@ -13,17 +13,18 @@ Version: 1.1 (en desarrollo)
 Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **Fase 10.5 en progreso** — Documentación y web actualizadas
-Last activity: 2026-02-06 — Auditoría documental, privacy/terms rewrite, web update
+Status: **Fase 10.5 completa** — Todos los bugs resueltos
+Last activity: 2026-02-06 — BUG-5, BUG-6, BUG-7 resueltos, fase 10.5 cerrada
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██████████████░░ 90% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso)
+Progress: V1.1 ████████████████ 100% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 ✅)
 Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-06] b90443c fix: resolve BUG-5, BUG-6, BUG-7 for phase 10.5 closure
 - [2026-02-06] eb8f3f3 feat(web): update privacy and terms pages across 6 languages
 - [2026-02-06] 1dc78a4 docs: rewrite privacy policy and terms with accurate app data
 - [2026-02-06] fc7a6ac docs: cleanup obsolete docs, rename Neto→Yala, sync phase 10.5
@@ -110,6 +111,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Mejoras Onboarding (10.5.P)** - Botón "Activar todo" en notificaciones; LanguageManager + ls() helper para override de idioma in-app; selección de idioma como pantalla pre-onboarding (no dentro del flujo); eliminada vista "Sincronizando datos" de iCloud; MainTabView no se renderiza hasta completar onboarding; alert si datos iCloud llegan durante onboarding; welcome copy actualizado al brand voice en 6 idiomas; DE/FR corregido de formal a informal
 - **Auditoría Documental y Web (10.5.R)** - Auditoría completa de toda la documentación del proyecto; 19 archivos obsoletos eliminados; rename Neto→Yala propagado a todos los docs activos (UI-PATTERNS, APPSTORE-CHECKLIST, QA-SCENARIOS, PROJECT, ROADMAP, AUDIT-REPORT); ROADMAP sincronizado con progreso real de fase 10.5; CLAUDE.md corregido (12 entidades SwiftData, tests actualizados, ref EXECUTION-RULES eliminada); PRIVACY-POLICY.md reescrita con datos reales (iCloud sync, OpenAI API, exchangerate.host, permisos); TERMS-CONDITIONS.md creado (suscripciones Free/Pro, servicios terceros, ley peruana); web actualizada: PrivacyPage y TermsPage reescritas en 6 idiomas (ES/EN/DE/FR/IT/PT), trust badges corregidos ("100% Local"→"Privacidad primero", "Sin servidores"→"Sin rastreo"); 3 commits (fc7a6ac, 1dc78a4, eb8f3f3)
 - **Fix Dark Mode Cards (10.5.Q)** - Migración de List→ScrollView+SectionBox en 4 vistas (AdjustmentModeSelectorView, AccountTypeSelectorView, RecordsFiltersView accounts/tags sheets, MultiSelectionList); DatePickers mantienen List con `.listRowBackground(Color.yalaCard)`; fix crash PeriodSelector (safe DatePicker ranges con min/max); 5 keys L10n nuevas (filters.categories/type/nature/currency, action.apply); magic numbers→DS tokens; 6 idiomas
+- **Bugs finales fase 10.5 (BUG-5/6/7)** - BUG-7: nextDueDate default mañana en SaveAsRecurringSheet y ScheduledPaymentEditorView, DatePickers restringidos a futuro; BUG-6: subcategorías filtradas por tipo en edición masiva, opción deshabilitada si selección mixta; BUG-5: conversión de divisas en resumen de pagos planificados (ViewModel y Widget) con CurrencyConverter; fixes de review: force unwrap eliminado en Widget calendar, @MainActor en RecordsViewModel, guard nil subcategory
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -150,143 +152,20 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Next Steps
 
-### Fase 10.5: Mejoras Pre-Release (V1.1) — EN PROGRESO
+### Fase 10.5: Mejoras Pre-Release (V1.1) — ✅ COMPLETADA
+
+**Subfases A-R completadas ✅** (ver Completed in Current Phase)
+
+**Bugs finales resueltos ✅ (b90443c):**
+- ✅ BUG-5: Conversión de divisas en resumen de pagos planificados
+- ✅ BUG-6: Filtrado de subcategorías por tipo en edición masiva
+- ✅ BUG-7: nextDueDate default mañana al crear pagos planificados
 
 ---
 
-## 🔴 PRIORIDAD ABSOLUTA: Bugs Urgentes (resolver primero)
+### Después de 10.5: Fase 11 — Plataforma Extendida (V1.2)
 
-**BUG-1: Orden notificaciones de presupuesto** ✅ COMPLETADO
-- ~~Ubicación actual incorrecta en Onboarding (al final) y Settings (al inicio)~~
-- Orden correcto implementado: Pagos planificados → **Alertas de presupuesto** → Novedades de Yala
-- Fix en `OnboardingView.swift:441-445` y `NotificationsSettingsView.swift:125-147`
-- También corregido bug de duplicación de notificaciones en onboarding
-
-**BUG-2: Control Center - widgets no funcionan** ✅ COMPLETADO
-- Causa raíz: Intent file solo en widget extension target, no en main app
-- Fix: Crear `Shared/ControlCenterIntents.swift` con target membership dual (Yala + YalaWidgetsExtension)
-- También corregido: UserDefaults keys incorrectas (`enableVoiceInput` → `voiceInputEnabled`)
-- Agregado case "new-transaction" faltante en AppBootstrapper
-- Commit: 9e86af6
-
-**BUG-3: WidgetKit - rediseño completo** ✅ COMPLETADO
-- ✅ Fases 1-5 completadas (infraestructura, 13 widgets implementados)
-- ✅ Fase 6.1: Cálculos críticos corregidos (divisa, balance, gastos, ingresos, top subcategorías)
-- ✅ Fase 6.2: UI Global (padding 4pt, header inline, sin decimales, G.2 aceptado como limitación de fuente)
-- ✅ Fase 6.3: UI por widget (CashFlow Large con Swift Charts igual a PanelView)
-- ✅ Fase 6.4: Deeplinks dinámicos (WidgetURLHelper lee URL_SCHEME del bundle)
-- ✅ Fase 6.5: Widgets Medium rediseñados (Balance, Expense, CashFlow) con Swift Charts idéntico a PanelView
-- ✅ Fase 6.6: Pie Charts Large rediseñados (CategoriesPie, SubcategoriesPie) con Swift Charts SectorMark, bubbles con iconos, porcentajes > 10%
-- ✅ Fase 6.9: TopCategories/TopSubcategories Medium rediseñados con layout compacto de una línea, iconos para ambos
-- **Documentación completa:** [`.planning/BUG-3-WIDGETS.md`](.planning/BUG-3-WIDGETS.md)
-- **Issues QA:** 15/15 ✅ resueltos
-- Archivos: `YalaWidgets/Widgets/*.swift`, `Yala/Services/WidgetDataCache.swift`
-
-**BUG-4: Divisas recomendadas en Onboarding**
-- La sección existe en Settings > Currency > Secondary Currencies
-- Falta añadirla al paso de onboarding de divisas secundarias
-- Referencia: `SecondaryCurrencyPickerSheet.swift` (commit cb01b06)
-
-**REVIEW-1: iCloud Sync** ✅ COMPLETADO
-- Simplificado: sync siempre activo si hay cuenta iCloud
-- Eliminado toggle opt-in (causaba confusión entre dispositivos)
-- Vista de Settings ahora solo muestra estado de sincronización
-- Comportamiento consistente: si tienes cuenta iCloud, tus datos se sincronizan
-
----
-
-**10.5.A: Bugs Críticos (4)** ✅ COMPLETADO
-- [x] A.1: Share Sheet envía imagen a app incorrecta → App Group y URL Scheme dinámicos
-- [x] A.2: Atajo de automatización no lee JSON de texto → DecodingError detallado
-- [x] A.3: Notificación in-app no aparece si hay sheet abierta → fullScreenCover
-- [x] A.4: Cambio de tema no se aplica inmediatamente → themeRefreshKey con UUID
-
-**10.5.E: Aislamiento Yala vs Yala Dev** ✅ COMPLETADO
-- [x] E.1: Onboarding aislado → SwiftDataConfiguration usa DB name dinámico
-- [x] E.2: Inbox/transacciones aislados → YalaModel vs YalaModel-Dev
-- [x] E.3: Permisos separados → son por bundle ID automáticamente
-- [x] E.4: Análisis completo:
-  - SwiftData: CORREGIDO (SwiftDataConfiguration.swift)
-  - UserDefaults: Ya aislado por bundle ID
-  - App Group: Ya dinámico (APP_GROUP_IDENTIFIER)
-  - Keychain: Sin access group = aislado por app
-
-**10.5.F: Modal Unificado para Nuevos Items en Bandeja** ✅ COMPLETADO
-- [x] F.1: Modal unificado para pagos planificados, suscripciones y automatizaciones
-  - PendingInboxNotification struct con conteo por tipo
-  - checkForPendingInboxDrafts detecta drafts nuevos desde lastCheck (UserDefaults)
-  - InboxAlertModal muestra mensaje adaptado según tipo (scheduled/subscription/automation/mixed)
-  - Desglose en mensaje mixto: "2 pagos y 3 registros automáticos"
-  - Notifica al abrir app y al volver de background
-  - Excluye voz/imagen (usuario los ejecuta en la app)
-
-**10.5.B: Consistencia Visual (1)** ✅ COMPLETADO
-- [x] B.1: UI de Pagos Planificados (alinear con Presupuestos)
-
-**10.5.C: UX y Personalización (3)** ✅ COMPLETADO
-- [x] C.1: Ejemplo voz "pesos" hardcodeado → moneda preferida (shortPluralName)
-- [x] C.2: Filtro monedas solo con transacciones existentes
-- [x] C.3: Onboarding divisas: recomendada + continentes
-
-**10.5.D: Features (2)** ✅ COMPLETADO
-- [x] D.1: Notificaciones de presupuestos (porcentaje + límite) — código completo, QA pendiente (Sección 27)
-- [x] D.2: Toggle global en Notificaciones para alertas de presupuestos — default OFF, configurable en onboarding
-
-**10.5.G: Sincronización y Widgets** ✅ COMPLETADO
-- [x] G.1: iCloud Sync (CloudKit)
-  - Integración nativa SwiftData+CloudKit
-  - Toggle opt-in en SyncSettingsView
-  - Containers: iCloud.com.jurgenschmidt.yala / .dev
-  - Paso opcional en onboarding
-  - Privacy Policy actualizada
-  - 20 escenarios QA (Sección 30)
-- [x] G.2: Widgets iOS (WidgetKit)
-  - 4 widgets: Balance (S/M), Últimos Registros, Pagos, Presupuestos
-  - WidgetDataCache + WidgetDataService
-  - Deep links desde widgets
-  - Background App Refresh cada 4h
-  - 30 escenarios QA (Sección 28)
-- [x] G.3: Control Center (iOS 18+)
-  - 3 ControlWidgets: QuickExpense, Voice, Image
-  - @available(iOS 18.0, *) para compatibilidad
-  - Localizaciones 6 idiomas
-  - 15 escenarios QA (Sección 29)
-
-### Fase 10: Refinamiento & Notificaciones (V1.1) ✅ COMPLETADA
-
-**Resumen:** 21/21 items UAT completados (2026-01-30)
-
-- [x] Pagos planificados → transacción en bandeja de entrada ✅
-- [x] Integración Share Sheet ✅
-- [x] Permisos micrófono/fotos al activar toggles ✅
-- [x] Onboarding seed de categorías ✅
-- [x] Sistema de notificaciones configurables ✅
-- [x] Atajos Siri/Shortcuts (Registro rápido, Voz, Imagen) ✅
-- [x] Automatización Apple Pay ✅
-- [x] Automatización externa (JSON) ✅
-- [x] 10.A: Bugs críticos (4/4 items) ✅
-- [x] 10.B: Lógica de negocio (3/3 items) ✅
-- [x] 10.C: Widgets (4/4 items) ✅
-- [x] 10.D: Consistencia visual (5/5 items) ✅
-- [x] 10.E: Settings y preferencias (4/4 items) ✅
-- [x] 10.F: Desarrollo - Seed Dev (ELIMINADO - causaba errores)
-
-**Decisiones importantes de la fase:**
-- B.1: Bloquear transacciones con fecha futura (previene inconsistencias balance/registros)
-- B.2: Campo `createdAt` para ordenar registros del mismo día por hora de creación
-- F.1: ~~Seed Dev solo visible en scheme "Yala Dev"~~ **ELIMINADO** (340ef29)
-
-### Después de 10.5: Fase 11 — Plataforma Avanzada (V1.2)
-
-Ver ROADMAP.md para detalles de Fase 11:
-- Modo "Solo gastos"
-- Widgets iOS (WidgetKit)
-- Integración Apple Watch
-- Smart Insights
-- Refinamiento iPad
-- Vista de reportes
-
----
+Ver ROADMAP.md para detalles.
 
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
@@ -377,84 +256,9 @@ Ver ROADMAP.md para detalles de Fase 11:
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Fix dark mode cards completado — commit d8ee1c7
-Next step: Continuar con mejoras del ROADMAP
+Stopped at: BUG-5/6/7 resueltos, fase 10.5 cerrada, V1.1 completa
+Next step: Cerrar milestone V1.1 → preparar Fase 11 (V1.2)
 Resume context:
-- **REVIEW-1 ✅ RESUELTO:** iCloud Sync simplificado - siempre activo si hay cuenta iCloud, sin toggle opt-in
-  - Eliminado `iCloudSyncEnabled` de UserDefaults
-  - Eliminado estado `.disabled` de `iCloudSyncService`
-  - `iCloudSyncSettingsView` ahora solo muestra estado (sin toggle ni reinicio)
-  - Eliminadas 6 claves de localización innecesarias
-- **BUG-3 Fase 1 ✅:** Fix balance (todas las transacciones), trend multi-granularidad (daily/weekly/monthly)
-- **BUG-3 Fase 2 ✅:** DTOs expandidos (WidgetAccountBalance, WidgetCategory, WidgetSubcategory, WidgetCashFlowPoint, WidgetPeriodSummary), currencyDisplayFormat, thisMonthSummary precalculado
-- **BUG-3 Fase 3 ✅:** Infraestructura de widgets (WidgetColors DS, WDS tokens, WidgetHeader, WidgetKPI, WidgetProgressBar, CurrencySymbols, MiniDonutChart, Color+Hex compartido)
-- **BUG-3 Fase 4 ✅:** 13 widgets implementados (Balance, Expense, CashFlow, TopCategories, TopSubcategories, CategoriesPie, SubcategoriesPie, LatestRecords, ScheduledPayments, Budgets, QuickManual, QuickVoice, QuickImage)
-- **BUG-3 Fase 5 ✅:** Archivos en target verificados (folder references = inclusión automática), BUILD SUCCEEDED, code review pasado (12 archivos, 0 críticos)
-- **BUG-3 Fase 6.1 ✅:** Cálculos críticos corregidos (G.4 divisa, BW.1 balance, EW.1 gastos, CF.3/CF.4 flujo, TS.2 subcategorías)
-- **BUG-3 Fase 6.2 parcial:** G.1 padding 16pt→4pt, G.3 header inline para Medium, sin decimales en montos; G.2 KPIs sin cambio (limitación fuente)
-- **BUG-3 Fase 6.3 ✅:** CashFlow Large igual a PanelView (Swift Charts, agrupamiento día/semana/mes, línea+puntos net flow, SmartAxisHelper copiado al target, backgrounds yalaCard, KPIs en .primary)
-- **BUG-3 Fase 6.4 ✅:** Deeplinks dinámicos con WidgetURLHelper (lee URL_SCHEME del bundle), ExpenseWidget corregido
-- **BUG-3 Fase 6.5 ✅:** Widgets Medium rediseñados:
-  - CashFlow Medium: header (título+subtítulo izq, KPI der), barras horizontales full-width idénticas a PanelView compacto
-  - Balance Medium: Swift Charts con AreaMark+LineMark, color electricIndigo, ejes 8pt
-  - Expense Medium: Swift Charts con AreaMark+LineMark, color expense, ejes 8pt
-  - Parámetros idénticos a PanelView: gradient 0.1→0.05, gridlines secondary.opacity(0.1), lineWidth 2, .monotone
-- **Aprendizaje clave:** Siempre usar Swift Charts para widgets que replican PanelView (grouping, calendarUnit, SmartAxisHelper, mismos tokens)
-- **BUG-3 Fase 6.7 ✅:** Widget cache sync en todas las acciones de transacciones:
-  - NewTransactionViewModel: crear/editar manuales
-  - ImportIntroSheet: CSV/XLSX mono y multi-moneda
-  - AccountFormViewModel: saldo inicial
-  - TransactionService: bulk updates (cuenta, subcategoría, monto)
-  - DataWipeService: clearCache al borrar datos
-- **BUG-3 Fase 6.9 ✅:** TopCategories/TopSubcategories Medium rediseñados:
-  - Layout compacto de una línea: [Icon 24pt] Nombre ... Monto XX%
-  - SubcategoryRow ahora usa icono (igual que categorías) en vez de dot de 12pt
-  - Barra de progreso alineada con texto (padding left = icon + spacing)
-  - Spacing reducido de 8pt a 6pt, header inline
-  - G.2 (KPIs poco llamativos) aceptado como limitación de fuente SF
-  - TC.1 resuelto (contenido ya no se corta)
-- **BUG-3 ✅ COMPLETADO:** 15/15 issues resueltos
-- **BUG-1 ✅ COMPLETADO:** Orden de notificaciones corregido en Onboarding y Settings
-- **BUG-4 ✅ COMPLETADO:** Sección de divisas recomendadas añadida en onboarding
-- **BUG-2 🔴 BLOQUEADO:** Control Center widgets no funcionan (ver `.planning/BUG-2-CONTROL-CENTER.md`)
-- **Sección G completa:**
-  - G.1: iCloud Sync con SwiftData nativo (44 archivos)
-  - G.2: 4 WidgetKit widgets (26 archivos)
-  - G.3: 3 ControlWidgets iOS 18+ (11 archivos)
-- **QA Completado:**
-  - Sección 25: Fase 10.5.B y 10.5.C ✅
-  - Sección 26: Modal Unificado Inbox (10.5.F) ✅
-  - Sección 27: Alertas de Presupuestos (10.5.D.1) ✅
-  - Sección 28: Widgets iOS (10.5.G.2) ✅
-- **QA Pendiente:**
-  - Sección 29: Control Center (10.5.G.3) — bloqueado por BUG-2
-  - Sección 30: iCloud Sync (10.5.G.1) — pendiente REVIEW-1
-- V1.0 completa ✅ (Fases 1-9)
-- V1.1 completa ✅ (Fase 8 y Fase 10)
-- Auditoría de código: CERRADA ✅
-  - 24 issues críticos resueltos
-  - 42+ issues altos resueltos (incluyendo ARCH-001 a ARCH-006)
-  - Refactoring arquitectural completo (Fases A, B, C, D)
-  - 37+ views migradas a ViewModels
-  - Tests de ViewModels: 56 tests (NewTransactionViewModel: 35, BudgetsViewModel: 11, InboxViewModel: 10)
-- Fase 10: 21/21 items UAT completados
-  - Sección A: 4/4 bugs críticos ✅
-  - Sección B: 3/3 lógica de negocio ✅
-  - Sección C: 4/4 widgets ✅
-  - Sección D: 5/5 consistencia visual ✅
-  - Sección E: 4/4 settings ✅
-  - Sección F: Seed Dev **ELIMINADO** (causaba errores)
-- Decisiones clave Fase 10:
-  - Bloqueo de transacciones futuras (previene inconsistencias)
-  - Campo createdAt para orden por hora en mismo día
-
-## V1.2 (Next - App Store Release)
-
-Ver ROADMAP.md para Fase 11 — Plataforma Avanzada:
-- Modo "Solo gastos" (ocultar ingresos/saldos globalmente)
-- Widgets iOS (WidgetKit para pantalla de inicio)
-- Acciones rápidas (centro de control/pantalla de bloqueo)
-- Smart Insights (predicciones, vista insights)
-- Integración Apple Watch
-- Refinamiento iPad
-- Vista de reportes financieros
+- Fase 10.5 completada al 100% con todos los bugs resueltos (b90443c)
+- V1.1 lista para release
+- Siguiente: Fase 11 — Plataforma Extendida (V1.2)

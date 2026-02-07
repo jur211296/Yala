@@ -11,6 +11,7 @@ import SwiftUI
 
 /// ViewModel for the Trends Detail View
 /// Manages filter state, metric selection, and data calculations
+@MainActor
 @Observable
 final class StatisticsViewModel: Filterable {
 
@@ -47,6 +48,12 @@ final class StatisticsViewModel: Filterable {
     /// Enforce metric logic based on filters
     /// Simple rule: chip is source of truth, category/nature filters auto-create expense chip
     private func enforceMetricLock() {
+        // In expenses-only mode, always force expense metric
+        if SessionState.shared.isExpensesOnlyMode {
+            selectedMetric = .expense
+            return
+        }
+
         // Derive selectedMetric from selectedTransactionNatures (single source of truth)
         if selectedTransactionNatures.count == 1 {
             if selectedTransactionNatures.contains(.income) {

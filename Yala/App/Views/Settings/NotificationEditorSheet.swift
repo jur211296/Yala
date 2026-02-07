@@ -332,11 +332,18 @@ struct NotificationEditorSheet: View {
 
     // MARK: - Report Config Section
 
+    private var availableDataTypes: [ReportDataType] {
+        if SessionState.shared.isExpensesOnlyMode {
+            return ReportDataType.allCases.filter { $0 != .income && $0 != .balance }
+        }
+        return ReportDataType.allCases
+    }
+
     private var reportConfigSection: some View {
         SectionBox(title: L10n.Notifications.selectData) {
             VStack(spacing: 0) {
                 // Data type selection
-                ForEach(Array(ReportDataType.allCases.enumerated()), id: \.element) { index, dataType in
+                ForEach(Array(availableDataTypes.enumerated()), id: \.element) { index, dataType in
                     Button {
                         selectedDataType = dataType
                     } label: {
@@ -364,7 +371,7 @@ struct NotificationEditorSheet: View {
                     }
                     .buttonStyle(.plain)
 
-                    if index < ReportDataType.allCases.count - 1 {
+                    if index < availableDataTypes.count - 1 {
                         SubsectionDivider()
                     }
                 }
@@ -607,6 +614,12 @@ struct NotificationEditorSheet: View {
             let config = notification.reportConfig
             selectedDataType = config.dataType
             selectedDayPreference = config.dayPreference
+
+            // In expenses-only mode, force incompatible data types to expenses
+            if SessionState.shared.isExpensesOnlyMode &&
+                (selectedDataType == .income || selectedDataType == .balance) {
+                selectedDataType = .expenses
+            }
         }
     }
 

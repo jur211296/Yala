@@ -92,8 +92,10 @@ struct TrendWidget: View {
 
             Spacer()
 
-            // Metric selector
-            metricSelector
+            // Metric selector (hidden in expenses-only mode)
+            if !sessionState.isExpensesOnlyMode {
+                metricSelector
+            }
         }
     }
 

@@ -84,15 +84,16 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
         let currency = WidgetDataService.getPreferredCurrency()
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
         let period = configuration.period.toWidgetPeriod
+        let isExpensesOnly = WidgetDataService.isExpensesOnlyMode
 
         // Get summary for the period
         let summary = WidgetDataService.calculateSummary(for: period)
 
         return CashFlowEntry(
             date: Date(),
-            totalIncome: summary?.totalIncome ?? 0,
+            totalIncome: isExpensesOnly ? 0 : (summary?.totalIncome ?? 0),
             totalExpense: summary?.totalExpense ?? 0,
-            netCashFlow: summary?.netCashFlow ?? 0,
+            netCashFlow: isExpensesOnly ? -(summary?.totalExpense ?? 0) : (summary?.netCashFlow ?? 0),
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             cashFlowPoints: summary?.cashFlowPoints ?? [],
@@ -148,15 +149,17 @@ struct SmallCashFlowView: View {
 
             // Small income/expense summary (vertical layout to avoid truncation)
             VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                Label {
-                    Text(formatAmount(entry.totalIncome))
-                        .font(WDS.Typography.tiny)
-                } icon: {
-                    Image(systemName: "arrow.up")
-                        .font(WDS.Typography.barValue)
+                if entry.totalIncome > 0 {
+                    Label {
+                        Text(formatAmount(entry.totalIncome))
+                            .font(WDS.Typography.tiny)
+                    } icon: {
+                        Image(systemName: "arrow.up")
+                            .font(WDS.Typography.barValue)
+                    }
+                    .foregroundColor(WidgetColors.income)
+                    .widgetAccentable()
                 }
-                .foregroundColor(WidgetColors.income)
-                .widgetAccentable()
 
                 Label {
                     Text(formatAmount(entry.totalExpense))
@@ -223,31 +226,33 @@ struct MediumCashFlowView: View {
 
             // Bars section - identical to PanelView compact
             VStack(spacing: WDS.Spacing.md) {
-                // Income bar
-                VStack(spacing: WDS.Spacing.xxs) {
-                    HStack {
-                        Text("widget.ui.income", bundle: .main)
-                            .font(WDS.Typography.label)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(formatCurrency(entry.totalIncome))
-                            .font(WDS.Typography.value)
-                            .foregroundStyle(.primary)
-                    }
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            // Track
-                            Capsule()
-                                .fill(Color.primary.opacity(0.05))
-                                .frame(height: 8)
-                            // Fill
-                            Capsule()
-                                .fill(WidgetColors.income)
-                                .frame(width: max(geo.size.width * CGFloat(entry.totalIncome / maxValue), 6), height: 8)
-                                .widgetAccentable()
+                // Income bar (hidden in expenses-only mode)
+                if entry.totalIncome > 0 {
+                    VStack(spacing: WDS.Spacing.xxs) {
+                        HStack {
+                            Text("widget.ui.income", bundle: .main)
+                                .font(WDS.Typography.label)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(formatCurrency(entry.totalIncome))
+                                .font(WDS.Typography.value)
+                                .foregroundStyle(.primary)
                         }
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                // Track
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.05))
+                                    .frame(height: 8)
+                                // Fill
+                                Capsule()
+                                    .fill(WidgetColors.income)
+                                    .frame(width: max(geo.size.width * CGFloat(entry.totalIncome / maxValue), 6), height: 8)
+                                    .widgetAccentable()
+                            }
+                        }
+                        .frame(height: 8)
                     }
-                    .frame(height: 8)
                 }
 
                 // Expense bar
@@ -322,14 +327,16 @@ struct LargeCashFlowView: View {
 
             // Summary row
             HStack(spacing: WDS.Spacing.xl) {
-                HStack(spacing: WDS.Spacing.xs) {
-                    Circle()
-                        .fill(WidgetColors.income)
-                        .frame(width: 8, height: 8)
-                        .widgetAccentable()
-                    Text("\(String(localized: "widget.ui.income", bundle: .main)): \(formatAmount(entry.totalIncome))")
-                        .font(WDS.Typography.label)
-                        .foregroundStyle(.secondary)
+                if entry.totalIncome > 0 {
+                    HStack(spacing: WDS.Spacing.xs) {
+                        Circle()
+                            .fill(WidgetColors.income)
+                            .frame(width: 8, height: 8)
+                            .widgetAccentable()
+                        Text("\(String(localized: "widget.ui.income", bundle: .main)): \(formatAmount(entry.totalIncome))")
+                            .font(WDS.Typography.label)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 HStack(spacing: WDS.Spacing.xs) {
@@ -350,7 +357,8 @@ struct LargeCashFlowView: View {
                 BidirectionalCashFlowChart(
                     points: entry.cashFlowPoints,
                     period: entry.period,
-                    resolvedPeriod: entry.period.toWidgetPeriod
+                    resolvedPeriod: entry.period.toWidgetPeriod,
+                    expensesOnly: entry.totalIncome == 0
                 )
             } else {
                 VStack {
@@ -450,6 +458,7 @@ struct BidirectionalCashFlowChart: View {
     let points: [WidgetCashFlowPoint]
     let period: WidgetPeriodOption
     let resolvedPeriod: WidgetPeriod
+    var expensesOnly: Bool = false
 
     /// Grouping type based on period (day or month only, matches PanelView)
     private enum Grouping {
@@ -518,10 +527,13 @@ struct BidirectionalCashFlowChart: View {
             .sorted { $0.date < $1.date }
     }
 
-    /// Y-axis domain with bidirectional scale
+    /// Y-axis domain with bidirectional scale (or positive-only in expenses-only mode)
     private var yDomain: ClosedRange<Double> {
-        let maxIncome = groupedPoints.map(\.income).max() ?? 0
         let maxExpense = groupedPoints.map(\.expense).max() ?? 0
+        if expensesOnly {
+            return 0...(maxExpense * 1.1)
+        }
+        let maxIncome = groupedPoints.map(\.income).max() ?? 0
         let incomeTop = maxIncome * 1.1
         let expenseBottom = -maxExpense * 1.1
         return expenseBottom...incomeTop
@@ -577,44 +589,50 @@ struct BidirectionalCashFlowChart: View {
 
     var body: some View {
         Chart {
-            // Zero baseline (dashed line)
-            RuleMark(y: .value("Zero", 0))
-                .foregroundStyle(Color.gray.opacity(0.4))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
+            // Zero baseline (dashed line) - only for bidirectional chart
+            if !expensesOnly {
+                RuleMark(y: .value("Zero", 0))
+                    .foregroundStyle(Color.gray.opacity(0.4))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
+            }
 
             ForEach(Array(groupedPoints.enumerated()), id: \.offset) { _, point in
-                // Income bars (upward - teal)
-                BarMark(
-                    x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Income", point.income)
-                )
-                .foregroundStyle(WidgetColors.income.gradient)
-                .cornerRadius(WDS.Radius.xs)
+                if !expensesOnly {
+                    // Income bars (upward - teal)
+                    BarMark(
+                        x: .value("Date", point.date, unit: grouping.calendarUnit),
+                        y: .value("Income", point.income)
+                    )
+                    .foregroundStyle(WidgetColors.income.gradient)
+                    .cornerRadius(WDS.Radius.xs)
+                }
 
-                // Expense bars (downward - pink)
+                // Expense bars (downward when bidirectional, upward when expenses-only)
                 BarMark(
                     x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Expense", -point.expense)
+                    y: .value("Expense", expensesOnly ? point.expense : -point.expense)
                 )
                 .foregroundStyle(WidgetColors.expense.gradient)
                 .cornerRadius(WDS.Radius.xs)
 
-                // Net flow line (purple)
-                LineMark(
-                    x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Net", point.net)
-                )
-                .foregroundStyle(WidgetColors.electricIndigo)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-                .interpolationMethod(.monotone)
+                if !expensesOnly {
+                    // Net flow line (purple)
+                    LineMark(
+                        x: .value("Date", point.date, unit: grouping.calendarUnit),
+                        y: .value("Net", point.net)
+                    )
+                    .foregroundStyle(WidgetColors.electricIndigo)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .interpolationMethod(.monotone)
 
-                // Net flow points (purple dots)
-                PointMark(
-                    x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Net", point.net)
-                )
-                .foregroundStyle(WidgetColors.electricIndigo)
-                .symbolSize(20)
+                    // Net flow points (purple dots)
+                    PointMark(
+                        x: .value("Date", point.date, unit: grouping.calendarUnit),
+                        y: .value("Net", point.net)
+                    )
+                    .foregroundStyle(WidgetColors.electricIndigo)
+                    .symbolSize(20)
+                }
             }
         }
         .widgetAccentable()

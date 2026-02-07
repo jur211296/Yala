@@ -15,6 +15,7 @@ struct InboxDraftEditSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
+    @Environment(SessionState.self) private var sessionState
 
     @Bindable var draft: InboxDraft
 
@@ -245,8 +246,10 @@ struct InboxDraftEditSheet: View {
 
             VStack(spacing: 0) {
                 // Transaction type selector (full width, at top)
-                transactionTypeSelector
-                    .padding(.top, DS.Spacing.sm)
+                if !sessionState.isExpensesOnlyMode {
+                    transactionTypeSelector
+                        .padding(.top, DS.Spacing.sm)
+                }
 
                 Spacer()
                 centralContent
@@ -609,8 +612,8 @@ struct InboxDraftEditSheet: View {
                         Text(L10n.Inbox.newTag)
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, DS.Spacing.xs)
+                            .padding(.vertical, DS.Spacing.xxs)
                             .background(Capsule().fill(Color.electricIndigo))
                     }
                 }
@@ -776,6 +779,11 @@ struct InboxDraftEditSheet: View {
         } else {
             amountString = "0.00"
             isExpense = true // Default to expense
+        }
+
+        // Force expense in expenses-only mode
+        if sessionState.isExpensesOnlyMode {
+            isExpense = true
         }
 
         // Merchant Memory: suggest subcategory if not already set

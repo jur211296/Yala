@@ -524,6 +524,7 @@
 "panel.fabVoice" = "Sprache";
 "panel.fabImage" = "Bild";
 "panel.fabManual" = "Manuell";
+"panel.spent" = "Ausgegeben";
 
 "widget.today" = "Heute";
 
@@ -1251,6 +1252,18 @@
 "settings.currencyFormatDescription" = "Wählen Sie, ob der Währungscode (EUR) oder das Symbol (€) angezeigt wird.";
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbol (S/, $)";
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Nutzungsmodus";
+"settings.expensesOnlyMode" = "Nur Ausgaben";
+"settings.expensesOnlyModeDescription" = "Blendet Einnahmen, Überweisungen und Salden aus. Deine Daten werden nicht gelöscht, nur ausgeblendet.";
+"settings.expensesOnlyActivateTitle" = "Nur-Ausgaben-Modus aktivieren?";
+"settings.expensesOnlyActivateMessage" = "Einnahmen, Überweisungen und Salden werden in der gesamten App ausgeblendet. Du kannst dies jederzeit rückgängig machen.";
+"settings.expensesOnlyActivateConfirm" = "Ja, aktivieren";
+"settings.expensesOnlyDeactivateTitle" = "Nur-Ausgaben-Modus deaktivieren?";
+"settings.expensesOnlyDeactivateMessage" = "Einnahmen, Überweisungen und Salden werden wieder angezeigt.";
+"settings.expensesOnlyDeactivateConfirm" = "Ja, deaktivieren";
+"settings.expensesOnlyActive" = "Aktiv";
+"settings.categoryHidden" = "(ausgeblendet)";
 
 "widget.hint.trend" = "Zeigt die Entwicklung Ihres Saldos, Einkommens oder Ihrer Ausgaben im ausgewählten Zeitraum.";
 "widget.hint.topCategories" = "Die Kategorien, in denen Sie in diesem Zeitraum am meisten ausgegeben haben.";
@@ -1295,6 +1308,11 @@
 "onboarding.recommended" = "Empfohlen";
 "onboarding.languageTitle" = "Wähle deine Sprache";
 "onboarding.languageSubtitle" = "Wir haben festgestellt, dass deine Sprache noch nicht unterstützt wird. Keine Sorge, wähle eine dieser Optionen!";
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "Was möchtest du erfassen?";
+"onboarding.expensesOnlySubtitle" = "Du kannst dies jederzeit in den Einstellungen ändern.";
+"onboarding.expensesOnlyOptionAll" = "Ich möchte alles erfassen";
+"onboarding.expensesOnlyOptionExpenses" = "Ich möchte nur Ausgaben erfassen";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";

@@ -14,6 +14,7 @@ import SwiftUI
 struct CategoriesSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionState.self) private var sessionState
     @State private var viewModel = CategoriesSettingsListViewModel()
 
     var body: some View {
@@ -89,7 +90,7 @@ struct CategoriesSettingsListView: View {
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, DS.Spacing.xxxl)
         }
         .padding(.top, 64)
     }
@@ -124,8 +125,8 @@ struct CategoriesSettingsListView: View {
                                     .font(.title2)
                                     .foregroundStyle(.red)
                             }
-                            .padding(.leading, 16)
-                            .padding(.trailing, 8)
+                            .padding(.leading, DS.Spacing.lg)
+                            .padding(.trailing, DS.Spacing.sm)
                         }
 
                         NavigationLink {
@@ -139,8 +140,8 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, viewModel.isEditing ? 8 : 16)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, viewModel.isEditing ? DS.Spacing.sm : DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
                     }
 
                     if index < viewModel.activeCategories.count - 1 {
@@ -183,8 +184,8 @@ struct CategoriesSettingsListView: View {
                                     .font(.title2)
                                     .foregroundStyle(.red)
                             }
-                            .padding(.leading, 16)
-                            .padding(.trailing, 8)
+                            .padding(.leading, DS.Spacing.lg)
+                            .padding(.trailing, DS.Spacing.sm)
                         }
 
                         NavigationLink {
@@ -198,8 +199,8 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, viewModel.isEditing ? 8 : 16)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, viewModel.isEditing ? DS.Spacing.sm : DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
                     }
 
                     if index < viewModel.hiddenCategories.count - 1 {
@@ -226,6 +227,8 @@ struct CategoriesSettingsListView: View {
 
     @ViewBuilder
     private func categoryRow(_ category: Category) -> some View {
+        let isDimmed = sessionState.isExpensesOnlyMode && category.isIncome
+
         HStack(spacing: DS.Spacing.md) {
             // Círculo con color e icono estándar de etiqueta
             Circle()
@@ -241,8 +244,19 @@ struct CategoriesSettingsListView: View {
                 .font(.body)
                 .foregroundStyle(.primary)
 
+            if isDimmed {
+                Text(L10n.Settings.categoryHidden)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(Color.yalaSecondaryText.opacity(0.1))
+                    .clipShape(Capsule())
+            }
+
             Spacer()
         }
         .contentShape(Rectangle())
+        .opacity(isDimmed ? 0.5 : 1.0)
     }
 }

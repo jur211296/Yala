@@ -28,6 +28,9 @@ struct CashFlowWidget: View {
     // Control whether to show InfoHintButton (false when shown in parent header)
     let showInfoHint: Bool
 
+    // When true, hides income bars and KPIs in compact layout
+    let isExpensesOnlyMode: Bool
+
     init(
         summary: CashFlowSummary,
         size: WidgetSize,
@@ -40,7 +43,8 @@ struct CashFlowWidget: View {
         previousAmount: Double? = nil,
         comparisonPeriodText: String? = nil,
         selectedTransactionNatures: Set<TransactionNature> = [],
-        showInfoHint: Bool = true
+        showInfoHint: Bool = true,
+        isExpensesOnlyMode: Bool = false
     ) {
         self.summary = summary
         self.size = size
@@ -54,6 +58,7 @@ struct CashFlowWidget: View {
         self.comparisonPeriodText = comparisonPeriodText
         self.selectedTransactionNatures = selectedTransactionNatures
         self.showInfoHint = showInfoHint
+        self.isExpensesOnlyMode = isExpensesOnlyMode
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -519,39 +524,41 @@ struct CashFlowWidget: View {
                 let maxVal = max(summary.totalIncome, summary.totalExpense)
 
                 VStack(spacing: DS.Spacing.md) {
-                    // Income Group
-                    VStack(spacing: DS.Spacing.xs) {
-                        HStack {
-                            Text(L10n.CashFlow.income)
-                                .font(.subheadline)
-                                .foregroundStyle(Color.yalaSecondaryText)
-                            Spacer()
-                            Text(
-                                YalaFormatter.currency(
-                                    value: summary.totalIncome, currencyCode: summary.currencyCode)
-                            )
-                            .font(DS.Typography.amountSmall)
-                            .foregroundStyle(Color.yalaPrimaryText)
-                        }
-                        // Bar
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                // Track
-                                Capsule()
-                                    .fill(Color.yalaPrimaryText.opacity(0.05))
-                                    .frame(height: 8)
-
-                                // Fill - teal color for income
-                                let width =
-                                    maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
-                                Capsule()
-                                    .fill(Color.incomeGraph)
-                                    .frame(width: max(width, 6), height: 8)
+                    // Income Group (hidden in expenses-only mode)
+                    if !isExpensesOnlyMode {
+                        VStack(spacing: DS.Spacing.xs) {
+                            HStack {
+                                Text(L10n.CashFlow.income)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.yalaSecondaryText)
+                                Spacer()
+                                Text(
+                                    YalaFormatter.currency(
+                                        value: summary.totalIncome, currencyCode: summary.currencyCode)
+                                )
+                                .font(DS.Typography.amountSmall)
+                                .foregroundStyle(Color.yalaPrimaryText)
                             }
+                            // Bar
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    // Track
+                                    Capsule()
+                                        .fill(Color.yalaPrimaryText.opacity(0.05))
+                                        .frame(height: 8)
+
+                                    // Fill - teal color for income
+                                    let width =
+                                        maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
+                                    Capsule()
+                                        .fill(Color.incomeGraph)
+                                        .frame(width: max(width, 6), height: 8)
+                                }
+                            }
+                            .frame(height: 8)
                         }
-                        .frame(height: 8)
+                        .opacity(isIncomeDimmed ? 0.4 : 1.0)
                     }
-                    .opacity(isIncomeDimmed ? 0.4 : 1.0)
 
                     // Expense Group
                     VStack(spacing: DS.Spacing.xs) {

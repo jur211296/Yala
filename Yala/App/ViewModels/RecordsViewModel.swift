@@ -191,6 +191,10 @@ final class RecordsViewModel: Filterable {
         categories: [Category],
         tags: [Tag]
     ) {
+        // In expenses-only mode, force expense transaction nature filter
+        let effectiveTransactionNatures: Set<TransactionNature> =
+            SessionState.shared.isExpensesOnlyMode ? [.expense] : selectedTransactionNatures
+
         // Build FilterCriteria from current state
         let criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
@@ -198,7 +202,7 @@ final class RecordsViewModel: Filterable {
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
             selectedNatures: selectedNatures,
-            selectedTransactionNatures: selectedTransactionNatures,
+            selectedTransactionNatures: effectiveTransactionNatures,
             selectedCurrencies: selectedCurrencies,
             transactionTypeFilter: transactionTypeFilter,
             amountCondition: amountCondition,
@@ -325,7 +329,12 @@ final class RecordsViewModel: Filterable {
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
         selectedNatures.removeAll()
-        selectedTransactionNatures.removeAll()
+        // In expenses-only mode, keep expense filter forced
+        if SessionState.shared.isExpensesOnlyMode {
+            selectedTransactionNatures = [.expense]
+        } else {
+            selectedTransactionNatures.removeAll()
+        }
         selectedTags.removeAll()
         transactionTypeFilter = .all
         amountCondition = .any

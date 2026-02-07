@@ -140,7 +140,7 @@ struct FavoritesListView: View {
 
     private var favoritesList: some View {
         List {
-            ForEach(viewModel.favorites, id: \.persistentModelID) { favorite in
+            ForEach(viewModel.displayedFavorites, id: \.persistentModelID) { favorite in
                 FavoriteRowView(favorite: favorite) {
                     handleFavoriteTap(favorite)
                 }

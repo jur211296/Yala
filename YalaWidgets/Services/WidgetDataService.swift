@@ -192,6 +192,13 @@ enum WidgetDataService {
         return period
     }
 
+    // MARK: - Expenses Only Mode
+
+    /// Whether the app is in expenses-only mode (synced via App Group UserDefaults)
+    static var isExpensesOnlyMode: Bool {
+        sharedDefaults?.bool(forKey: "expensesOnlyMode") ?? false
+    }
+
     // MARK: - Public API
 
     /// Loads the cached widget data snapshot
@@ -253,7 +260,11 @@ enum WidgetDataService {
     /// Returns recent transactions (up to limit)
     static func getRecentTransactions(limit: Int = 5) -> [WidgetTransaction] {
         guard let snapshot = loadSnapshot() else { return [] }
-        return Array(snapshot.transactions.prefix(limit))
+        var transactions = snapshot.transactions
+        if isExpensesOnlyMode {
+            transactions = transactions.filter { !$0.isIncome }
+        }
+        return Array(transactions.prefix(limit))
     }
 
     /// Returns active budgets sorted by percent used (most critical first)
@@ -274,6 +285,11 @@ enum WidgetDataService {
         guard let snapshot = loadSnapshot() else { return [] }
 
         var payments = snapshot.scheduledPayments
+
+        // Filter income payments in expenses-only mode
+        if isExpensesOnlyMode {
+            payments = payments.filter { !$0.isIncome }
+        }
 
         // Apply filter
         switch filter {

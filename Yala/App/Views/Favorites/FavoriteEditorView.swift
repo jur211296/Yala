@@ -14,6 +14,7 @@ import SwiftUI
 struct FavoriteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel = FavoriteEditorViewModel()
 
@@ -63,7 +64,7 @@ struct FavoriteEditorView: View {
                 VStack(spacing: 0) {
                     // Transaction type selector (without transfer)
                     transactionTypeSelector
-                        .padding(.top, 8)
+                        .padding(.top, DS.Spacing.sm)
 
                     Spacer()
 
@@ -74,7 +75,7 @@ struct FavoriteEditorView: View {
 
                     // Bottom selection chips
                     bottomChips
-                        .padding(.bottom, 16)
+                        .padding(.bottom, DS.Spacing.lg)
                 }
             }
             .navigationTitle(favorite != nil ? L10n.Favorites.editTitle : L10n.Favorites.newTitle)
@@ -177,9 +178,13 @@ struct FavoriteEditorView: View {
 
     // MARK: - Transaction Type Selector (No Transfer)
 
+    private var availableTransactionTypes: [TransactionType] {
+        sessionState.isExpensesOnlyMode ? [.expense] : [.expense, .income]
+    }
+
     private var transactionTypeSelector: some View {
         HStack(spacing: 0) {
-            ForEach([TransactionType.expense, TransactionType.income], id: \.self) { type in
+            ForEach(availableTransactionTypes, id: \.self) { type in
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         transactionType = type
@@ -240,13 +245,13 @@ struct FavoriteEditorView: View {
                 ) {
                     showNatureSelector = true
                 }
-                .padding(.top, 8)
+                .padding(.top, DS.Spacing.sm)
             }
         }
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             Text(currencySymbol)
                 .font(.system(size: 28, weight: .medium, design: .rounded))
                 .foregroundStyle(amountColor.opacity(0.7))
@@ -335,7 +340,7 @@ struct FavoriteEditorView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, DS.Spacing.xl)
         }
     }
 

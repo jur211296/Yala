@@ -149,7 +149,11 @@ struct ContentView: View {
     /// Runs during splash so the wait is invisible to the user.
     private func checkInitialSyncState() async {
         // Wait during splash to give iCloud time to deliver data
-        try? await Task.sleep(for: .seconds(2))
+        do {
+            try await Task.sleep(for: .seconds(2))
+        } catch {
+            // Task cancelled, continue with state check
+        }
 
         if hasCompletedOnboarding || hasExistingData {
             // Returning user (data from iCloud or previous install)
@@ -548,14 +552,22 @@ struct SearchContentView: View {
     // MARK: - Filtered Results
 
     private var filteredResults: [TransactionItem] {
+        // Pre-filter: exclude income transactions in expenses-only mode
+        let baseTransactions: [TransactionItem]
+        if sessionState.isExpensesOnlyMode {
+            baseTransactions = transactions.filter { $0.category?.isIncome != true }
+        } else {
+            baseTransactions = transactions
+        }
+
         // If no search text, show all (limited to 20)
         guard !searchText.isEmpty else {
-            return Array(transactions.prefix(20))
+            return Array(baseTransactions.prefix(20))
         }
 
         let lowercasedSearch = searchText.lowercased()
 
-        return transactions.filter { transaction in
+        return baseTransactions.filter { transaction in
             switch selectedFilter {
             case .all:
                 // Search in all fields
@@ -592,11 +604,19 @@ struct SearchContentView: View {
 
     // Total count for "Ver todo" (without limit)
     private var totalMatchingCount: Int {
-        guard !searchText.isEmpty else { return transactions.count }
+        // Pre-filter: exclude income transactions in expenses-only mode
+        let baseTransactions: [TransactionItem]
+        if sessionState.isExpensesOnlyMode {
+            baseTransactions = transactions.filter { $0.category?.isIncome != true }
+        } else {
+            baseTransactions = transactions
+        }
+
+        guard !searchText.isEmpty else { return baseTransactions.count }
 
         let lowercasedSearch = searchText.lowercased()
 
-        return transactions.filter { transaction in
+        return baseTransactions.filter { transaction in
             switch selectedFilter {
             case .all:
                 let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false

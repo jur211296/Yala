@@ -15,6 +15,7 @@ struct NewTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SessionState.self) private var sessionState
 
     @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = CurrencyCode.pen.rawValue
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
@@ -294,6 +295,10 @@ struct NewTransactionView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             prefillFromContext()
+            // Force expense type in expenses-only mode
+            if sessionState.isExpensesOnlyMode {
+                viewModel.transactionType = .expense
+            }
             // Auto-focus amount field only for new transactions (not editing)
             if transactionToEdit == nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -318,6 +323,7 @@ struct NewTransactionView: View {
     private var transactionTypeSelector: some View {
         TransactionTypeSelectorView(
             selectedType: $viewModel.transactionType,
+            availableTypes: sessionState.isExpensesOnlyMode ? [.expense] : TransactionType.allCases,
             onTypeChange: { type in
                 viewModel.selectedSubcategory = nil
                 if type == .transfer {

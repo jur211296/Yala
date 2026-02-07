@@ -12,6 +12,7 @@ struct ScheduledPaymentEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(EntityDeletionService.self) private var deletionService
+    @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel = ScheduledPaymentEditorViewModel()
 
@@ -144,6 +145,9 @@ struct ScheduledPaymentEditorView: View {
             .onAppear {
                 viewModel.setContext(modelContext, deletionService: deletionService)
                 loadPaymentData()
+                if sessionState.isExpensesOnlyMode {
+                    transactionType = "expense"
+                }
                 // Auto-focus name field for new payments
                 if payment == nil {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -173,12 +177,14 @@ struct ScheduledPaymentEditorView: View {
         SectionBox(title: NSLocalizedString("scheduled.editor.basic.info", comment: "")) {
             VStack(spacing: 0) {
                 // Transaction Type (Income/Expense)
-                Picker("", selection: $transactionType) {
-                    Text(NSLocalizedString("transaction.type.expense", comment: "")).tag("expense")
-                    Text(NSLocalizedString("transaction.type.income", comment: "")).tag("income")
+                if !sessionState.isExpensesOnlyMode {
+                    Picker("", selection: $transactionType) {
+                        Text(NSLocalizedString("transaction.type.expense", comment: "")).tag("expense")
+                        Text(NSLocalizedString("transaction.type.income", comment: "")).tag("income")
+                    }
+                    .pickerStyle(.segmented)
+                    .padding()
                 }
-                .pickerStyle(.segmented)
-                .padding()
 
                 SubsectionDivider()
 
@@ -812,7 +818,7 @@ struct ScheduledPaymentEditorView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.red)
-        .padding(.top, 16)
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Validation

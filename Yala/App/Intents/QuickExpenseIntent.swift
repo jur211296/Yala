@@ -214,6 +214,12 @@ struct QuickExpenseIntent: AppIntent {
     // MARK: - Parameter Resolution
 
     private func getTransactionType() async throws -> TransactionTypeAppEnum {
+        // In expenses-only mode, always use expense
+        let appGroupID = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String
+            ?? "group.com.jurgenschmidt.yala"
+        if UserDefaults(suiteName: appGroupID)?.bool(forKey: "expensesOnlyMode") == true {
+            return .expense
+        }
         if let existingType = transactionType {
             return existingType
         }

@@ -84,8 +84,9 @@ struct DetailContainerView: View {
         }
         _recordsViewModel = State(initialValue: RecordsViewModel(context: cleanContext))
 
+        let initialMetric: TrendMetric = SessionState.shared.isExpensesOnlyMode ? .expense : .balance
         let trendsContext = StatisticsContext(
-            initialMetric: .balance,
+            initialMetric: initialMetric,
             period: .thisMonth,
             accountID: nil,
             categoryID: nil,

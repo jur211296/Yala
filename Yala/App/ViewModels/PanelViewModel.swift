@@ -296,6 +296,11 @@ final class PanelViewModel {
     /// Note: Auto-expense logic for category/subcategory filters is handled in PanelView onChange handlers
     /// which properly check if categories are expense-only before setting the filter.
     private func enforceTrendLock(sessionState: SessionState) {
+        // In expenses-only mode, always force expense
+        if sessionState.isExpensesOnlyMode {
+            trendType = .expense
+            return
+        }
         // Derive trendType from chip (single source of truth)
         if sessionState.selectedTransactionNatures.count == 1 {
             if sessionState.selectedTransactionNatures.contains(.income) {
@@ -476,6 +481,25 @@ final class PanelViewModel {
         // We can just sum the 'expense' property of chartTransactions.
 
         return chartTransactions.reduce(0) { $0 + $1.expense }
+    }
+
+    /// Calculates total expenses for a specific account in the current period.
+    /// Used in expenses-only mode to show "Spent" instead of balance.
+    func expenseForPeriod(
+        for account: Account,
+        allTransactions: [TransactionItem]
+    ) -> Double {
+        let interval = panelDateInterval
+        let total = allTransactions
+            .filter { transaction in
+                guard transaction.account?.persistentModelID == account.persistentModelID else { return false }
+                guard interval.contains(transaction.date) else { return false }
+                guard transaction.balanceAdjustmentType == nil else { return false }
+                guard transaction.category?.isIncome == false else { return false }
+                return true
+            }
+            .reduce(0.0) { $0 + abs($1.amount) }
+        return total
     }
 
     /// Returns transactions filtered by the focused date, or all transactions if no focus.
@@ -1240,11 +1264,19 @@ final class PanelViewModel {
     }
 
     /// Calculate latest records (excludes adjustments/initial balances)
+    /// In expenses-only mode, also excludes income transactions.
     private func calculateLatestRecordsWidget(context: PanelCalculationContext) -> [TransactionItem]
     {
+        var filtered = context.expenseFilteredTransactions
+            .filter { context.effectiveInterval.contains($0.date) }
+
+        // In expenses-only mode, exclude income transactions
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.category?.isIncome != true }
+        }
+
         return Array(
-            context.expenseFilteredTransactions
-                .filter { context.effectiveInterval.contains($0.date) }
+            filtered
                 .sorted { $0.date > $1.date }
                 .prefix(5)
         )

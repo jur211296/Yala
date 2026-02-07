@@ -30,8 +30,16 @@ final class FavoritesListViewModel {
 
     // MARK: - Computed Properties
 
+    /// Favorites filtered for expenses-only mode (hides income favorites)
+    var displayedFavorites: [FavoritePayment] {
+        if SessionState.shared.isExpensesOnlyMode {
+            return favorites.filter { $0.transactionType != "income" }
+        }
+        return favorites
+    }
+
     var isEmpty: Bool {
-        favorites.isEmpty
+        displayedFavorites.isEmpty
     }
 
     // MARK: - Context Injection

@@ -524,6 +524,7 @@
 "panel.fabVoice" = "Voz";
 "panel.fabImage" = "Imagem";
 "panel.fabManual" = "Manual";
+"panel.spent" = "Gasto";
 
 "widget.today" = "Hoje";
 
@@ -1251,6 +1252,18 @@
 "settings.currencyFormatDescription" = "Escolha se mostra o código da moeda (BRL) ou o símbolo (R$).";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencySymbol" = "Símbolo (S/, $)";
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Modo de uso";
+"settings.expensesOnlyMode" = "Apenas despesas";
+"settings.expensesOnlyModeDescription" = "Oculta receitas, transferências e saldos. Seus dados não são apagados, apenas ocultados.";
+"settings.expensesOnlyActivateTitle" = "Ativar modo apenas despesas?";
+"settings.expensesOnlyActivateMessage" = "Receitas, transferências e saldos serão ocultados em todo o app. Você pode reverter isso a qualquer momento.";
+"settings.expensesOnlyActivateConfirm" = "Sim, ativar";
+"settings.expensesOnlyDeactivateTitle" = "Desativar modo apenas despesas?";
+"settings.expensesOnlyDeactivateMessage" = "Receitas, transferências e saldos serão exibidos novamente.";
+"settings.expensesOnlyDeactivateConfirm" = "Sim, desativar";
+"settings.expensesOnlyActive" = "Ativo";
+"settings.categoryHidden" = "(oculta)";
 
 "widget.hint.trend" = "Mostra a evolução do seu saldo, receitas ou despesas no período selecionado.";
 "widget.hint.topCategories" = "As categorias onde mais gastou neste periodo.";
@@ -1295,6 +1308,11 @@
 "onboarding.recommended" = "Recomendada";
 "onboarding.languageTitle" = "Escolha seu idioma";
 "onboarding.languageSubtitle" = "Detectamos que seu idioma ainda não é suportado. Não se preocupe, escolha entre estas opções!";
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "O que você quer registrar?";
+"onboarding.expensesOnlySubtitle" = "Você pode mudar isso a qualquer momento em Configurações.";
+"onboarding.expensesOnlyOptionAll" = "Quero registrar tudo";
+"onboarding.expensesOnlyOptionExpenses" = "Quero registrar apenas despesas";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";

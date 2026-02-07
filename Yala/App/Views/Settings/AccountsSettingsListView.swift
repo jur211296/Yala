@@ -13,6 +13,7 @@ import SwiftUI
 struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel = AccountsSettingsListViewModel()
     @State private var showUpgradeSheet = false
@@ -126,7 +127,7 @@ struct AccountsSettingsListView: View {
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, DS.Spacing.xxxl)
         }
         .padding(.top, 64)
     }
@@ -249,9 +250,11 @@ struct AccountsSettingsListView: View {
             Spacer()
 
             HStack(spacing: DS.Spacing.xs) {
-                Text(viewModel.formattedBalance(for: account))
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                if !sessionState.isExpensesOnlyMode {
+                    Text(viewModel.formattedBalance(for: account))
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
 
                 if !viewModel.isEditMode {
                     Image(systemName: "chevron.right")
@@ -314,9 +317,11 @@ struct AccountsSettingsListView: View {
             Spacer()
 
             HStack(spacing: DS.Spacing.xs) {
-                Text(viewModel.formattedBalance(for: account))
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                if !sessionState.isExpensesOnlyMode {
+                    Text(viewModel.formattedBalance(for: account))
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
 
                 Image(systemName: "chevron.right")
                     .font(.footnote)

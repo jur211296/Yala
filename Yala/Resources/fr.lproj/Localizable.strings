@@ -524,6 +524,7 @@
 "panel.fabVoice" = "Voix";
 "panel.fabImage" = "Image";
 "panel.fabManual" = "Manuel";
+"panel.spent" = "Dépensé";
 
 "widget.today" = "Aujourd'hui";
 
@@ -1252,6 +1253,19 @@
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbole (S/, $)";
 
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Mode d'utilisation";
+"settings.expensesOnlyMode" = "Dépenses uniquement";
+"settings.expensesOnlyModeDescription" = "Masque les revenus, transferts et soldes. Vos données ne sont pas supprimées, juste masquées.";
+"settings.expensesOnlyActivateTitle" = "Activer le mode dépenses uniquement ?";
+"settings.expensesOnlyActivateMessage" = "Les revenus, transferts et soldes seront masqués dans toute l'app. Vous pouvez revenir en arrière à tout moment.";
+"settings.expensesOnlyActivateConfirm" = "Oui, activer";
+"settings.expensesOnlyDeactivateTitle" = "Désactiver le mode dépenses uniquement ?";
+"settings.expensesOnlyDeactivateMessage" = "Les revenus, transferts et soldes seront à nouveau affichés.";
+"settings.expensesOnlyDeactivateConfirm" = "Oui, désactiver";
+"settings.expensesOnlyActive" = "Actif";
+"settings.categoryHidden" = "(masquée)";
+
 "widget.hint.trend" = "Affiche l'évolution de votre solde, revenus ou dépenses sur la période sélectionnée.";
 "widget.hint.topCategories" = "Les categories ou vous avez le plus depense cette periode.";
 "widget.hint.topSubcategories" = "Les sous-categories avec les depenses les plus elevees, filtrees par categorie.";
@@ -1295,6 +1309,12 @@
 "onboarding.recommended" = "Recommandée";
 "onboarding.languageTitle" = "Choisis ta langue";
 "onboarding.languageSubtitle" = "Nous avons détecté que ta langue n'est pas encore supportée. Pas de souci, choisis parmi ces options !";
+
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "Que souhaitez-vous enregistrer ?";
+"onboarding.expensesOnlySubtitle" = "Vous pouvez modifier cela à tout moment dans les Réglages.";
+"onboarding.expensesOnlyOptionAll" = "Je veux tout enregistrer";
+"onboarding.expensesOnlyOptionExpenses" = "Je veux uniquement enregistrer les dépenses";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";

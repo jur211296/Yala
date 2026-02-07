@@ -526,6 +526,7 @@
 "panel.fabVoice" = "Voz";
 "panel.fabImage" = "Imagen";
 "panel.fabManual" = "Manual";
+"panel.spent" = "Gastado";
 
 "widget.today" = "Hoy";
 
@@ -1251,6 +1252,18 @@
 "settings.currencyFormatDescription" = "Elige si mostrar el código de moneda (PEN) o el símbolo (S/).";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencySymbol" = "Símbolo (S/, $)";
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Modo de uso";
+"settings.expensesOnlyMode" = "Solo gastos";
+"settings.expensesOnlyModeDescription" = "Oculta ingresos, transferencias y saldos. Tus datos no se eliminan, solo se ocultan.";
+"settings.expensesOnlyActivateTitle" = "¿Activar modo solo gastos?";
+"settings.expensesOnlyActivateMessage" = "Se ocultarán los ingresos, transferencias y saldos en toda la app. Puedes revertirlo en cualquier momento.";
+"settings.expensesOnlyActivateConfirm" = "Sí, activar";
+"settings.expensesOnlyDeactivateTitle" = "¿Desactivar modo solo gastos?";
+"settings.expensesOnlyDeactivateMessage" = "Se volverán a mostrar los ingresos, transferencias y saldos.";
+"settings.expensesOnlyDeactivateConfirm" = "Sí, desactivar";
+"settings.expensesOnlyActive" = "Activo";
+"settings.categoryHidden" = "(oculta)";
 
 "widget.hint.trend" = "Muestra la evolución de tu balance, ingresos o gastos en el período seleccionado.";
 "widget.hint.topCategories" = "Las categorías donde más has gastado en este período.";
@@ -1295,6 +1308,11 @@
 "onboarding.recommended" = "Recomendada";
 "onboarding.languageTitle" = "Elige tu idioma";
 "onboarding.languageSubtitle" = "Hemos detectado que tu idioma no está soportado aún. No te preocupes, elige entre estas opciones.";
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "¿Qué quieres registrar?";
+"onboarding.expensesOnlySubtitle" = "Puedes cambiar esto cuando quieras en Ajustes.";
+"onboarding.expensesOnlyOptionAll" = "Quiero registrar todo";
+"onboarding.expensesOnlyOptionExpenses" = "Solo quiero registrar gastos";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Al cambiar de cuenta, se actualizará la divisa de las transacciones seleccionadas.";

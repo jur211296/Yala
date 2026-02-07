@@ -11,6 +11,7 @@ import SwiftUI
 struct RecordsFiltersView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
 
     @State private var filtersViewModel = RecordsFiltersViewModel()
 
@@ -62,8 +63,11 @@ struct RecordsFiltersView: View {
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: 0) {
                                 accountsContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                transactionNaturesContent
+                                // Transaction natures (Income/Expense) - hidden in expenses-only mode
+                                if !sessionState.isExpensesOnlyMode {
+                                    Divider().padding(.leading, DS.Spacing.lg)
+                                    transactionNaturesContent
+                                }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
                                 Divider().padding(.leading, DS.Spacing.lg)

@@ -457,6 +457,7 @@ struct PanelView: View {
                     sortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
                 ),
                 transactions: transactions,
+                isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
                 onAddAccount: {
                     if isAccountsLimitReached {
                         showUpgradeForAccounts = true
@@ -937,7 +938,8 @@ struct PanelView: View {
                     interval: viewModel.currentInterval,
                     onShowDetail: { navigateToStatistics(.trends) },
                     displayMode: viewModel.trendType,
-                    selectedTransactionNatures: viewModel.selectedTransactionNatures
+                    selectedTransactionNatures: viewModel.selectedTransactionNatures,
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode
                 )
             } else {
                 EmptyView()
