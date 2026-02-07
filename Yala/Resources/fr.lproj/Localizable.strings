@@ -1825,10 +1825,6 @@
 "shortcut.notification.income" = "revenu";
 "shortcut.notification.body" = "Un(e) %@ de %@%@ a été enregistré(e). Ouvre l'app pour l'approuver.";
 
-// MARK: - Theme Negro
-
-"settings.negro" = "Noir";
-
 // MARK: - Category Seeds
 
 "category.food" = "Alimentation";

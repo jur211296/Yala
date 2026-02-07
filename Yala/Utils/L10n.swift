@@ -1367,7 +1367,6 @@ enum L10n {
         static var light: String { ls("settings.light", comment: "") }
         static var dark: String { ls("settings.dark", comment: "") }
         static var system: String { ls("settings.system", comment: "") }
-        static var negro: String { ls("settings.negro", comment: "") }
         static var defaultCurrency: String {
             ls("settings.defaultCurrency", comment: "")
         }

@@ -1823,10 +1823,6 @@
 "shortcut.notification.income" = "Einnahme";
 "shortcut.notification.body" = "Eine %@ von %@%@ wurde erfasst. Öffne die App, um sie zu bestätigen.";
 
-// MARK: - Theme Negro
-
-"settings.negro" = "Schwarz";
-
 // MARK: - Category Seeds
 
 "category.food" = "Ernährung";

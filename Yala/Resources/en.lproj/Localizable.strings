@@ -1808,10 +1808,6 @@
 "shortcut.notification.income" = "income";
 "shortcut.notification.body" = "A %@ of %@%@ has been recorded. Open the app to approve it.";
 
-// MARK: - Theme Negro
-
-"settings.negro" = "Black";
-
 // MARK: - Category Seeds
 
 "category.food" = "Food";

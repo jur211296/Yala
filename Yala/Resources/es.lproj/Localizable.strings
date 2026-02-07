@@ -1806,10 +1806,6 @@
 "shortcut.notification.income" = "ingreso";
 "shortcut.notification.body" = "Se ha registrado un %@ por %@%@. Entra a la app para aprobarlo.";
 
-// MARK: - Theme Negro
-
-"settings.negro" = "Negro";
-
 // MARK: - Category Seeds
 
 "category.food" = "Alimentación";

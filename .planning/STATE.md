@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-07] 085936d fix: correct report notification calculations — currency, interval, and account filtering
 - [2026-02-07] 4976add refactor: apply code review fixes — DS tokens, search localization, error logging
 - [2026-02-07] a5c87ef fix(widgets): restore native iOS background with .fill.tertiary
 - [2026-02-07] 75b5780 docs: add theme refactor plan and update roadmap for V1.2
@@ -268,10 +269,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Code review fixes aplicados (4976add) + widget backgrounds restaurados (a5c87ef)
+Stopped at: Fix notificaciones de reporte (085936d) — 3 bugs + 5 riesgos corregidos
 Next step: QA manual de todos los cambios recientes → comenzar Fase 11 (temas)
 Resume context:
-- Widget backgrounds: restaurado .fill.tertiary nativo de Apple (a5c87ef), QuickEntry migrado a AppIntentConfiguration
-- Code review: ~30 hardcoded values → DS tokens en ContentView, SearchFilter localizado (6 idiomas), error logging en ImageSelectionView
+- ReportNotificationService: key divisa corregida, intervalo diario separado del semanal, cálculo directo con Decimal + normalizeCurrencyCode, filtro cuentas excluidas, filtro transacciones por cuentas elegibles, intervalo mensual firstDay reporta mes anterior
 - Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md
 - ROADMAP actualizado: Fase 11=Temas, Fase 12=Plataforma, Fase 13=Avanzadas
