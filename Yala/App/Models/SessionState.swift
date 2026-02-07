@@ -64,6 +64,7 @@ enum DeepLinkDestination {
     case categories
     case planning
     case budgets
+    case inbox
 }
 
 /// Global session state to manage synchronization between views

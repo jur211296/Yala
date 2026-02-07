@@ -258,6 +258,9 @@ struct MainTabView: View {
                 case .budgets:
                     sessionState.selectedPlanningTab = .budgets
                     sessionState.selectedMainTab = .planning
+                case .inbox:
+                    sessionState.selectedMainTab = .panel
+                    sessionState.shouldShowInbox = true
                 }
 
                 // Clear after handling

@@ -55,6 +55,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                     SessionState.shared.deepLinkDestination = .records
                 case "categories":
                     SessionState.shared.deepLinkDestination = .categories
+                case "inbox":
+                    SessionState.shared.deepLinkDestination = .inbox
                 default:
                     #if DEBUG
                     print("NotificationService: Unknown deep link destination: \(destination)")

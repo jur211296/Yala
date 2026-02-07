@@ -789,6 +789,16 @@ struct ApplePayTransactionIntent: AppIntent {
             return .result(dialog: "shortcut.error.save")
         }
 
+        // Send push notification for automatic record (Apple Pay is always expense)
+        let notifAmount = YalaFormatter.currency(value: finalAmount, currencyCode: detectedCurrency ?? "USD", forceFullPrecision: true)
+        let noteText = finalNote.isEmpty ? "" : " — \(finalNote)"
+        let notifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, notifAmount, noteText)
+        await NotificationService.shared.sendNotification(
+            title: L10n.Shortcut.Notification.title,
+            body: notifBody,
+            deepLink: "inbox"
+        )
+
         // Format success message
         let formattedAmount = formatCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
         let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
@@ -1069,6 +1079,16 @@ struct AutomationEntryIntent: AppIntent {
         } catch {
             return .result(dialog: "shortcut.error.save")
         }
+
+        // Send push notification for automatic record (guard above ensures amount > 0, always expense)
+        let automNotifAmount = YalaFormatter.currency(value: transaction.amount, currencyCode: normalizedCurrency, forceFullPrecision: true)
+        let automNoteText = finalNote.isEmpty ? "" : " — \(finalNote)"
+        let automNotifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, automNotifAmount, automNoteText)
+        await NotificationService.shared.sendNotification(
+            title: L10n.Shortcut.Notification.title,
+            body: automNotifBody,
+            deepLink: "inbox"
+        )
 
         // Format success message
         let formattedAmount = formatCurrency(amount: transaction.amount, currencyCode: normalizedCurrency)
