@@ -186,11 +186,10 @@ final class ReportNotificationService {
 
     private func formatReportBody(_ config: ReportConfig, reportType: NotificationType, data: ReportData) -> String {
         let currencyCode = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
-        let symbol = CurrencyUtils.symbol(for: currencyCode)
 
         switch config.dataType {
         case .balance:
-            return L10n.Notifications.reportBalance("\(symbol)\(data.balance.formatted())")
+            return L10n.Notifications.reportBalance(YalaFormatter.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true))
         case .expenses:
             // Empty state check
             if data.totalExpense == 0 {
@@ -201,19 +200,18 @@ final class ReportNotificationService {
                 default: return L10n.Notifications.emptyExpensesDaily
                 }
             }
-            return L10n.Notifications.reportExpenses("\(symbol)\(data.totalExpense.formatted())")
+            return L10n.Notifications.reportExpenses(YalaFormatter.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true))
         case .income:
             // Empty state check
             if data.totalIncome == 0 {
                 return L10n.Notifications.emptyIncome
             }
-            return L10n.Notifications.reportIncome("\(symbol)\(data.totalIncome.formatted())")
+            return L10n.Notifications.reportIncome(YalaFormatter.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true))
         case .topCategory:
-            // Empty state check
-            if data.topCategory == nil {
+            guard let topCategory = data.topCategory else {
                 return L10n.Notifications.emptyTopCategory
             }
-            return L10n.Notifications.reportTopCategory(data.topCategory!)
+            return L10n.Notifications.reportTopCategory(topCategory)
         }
     }
 

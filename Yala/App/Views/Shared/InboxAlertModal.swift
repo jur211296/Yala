@@ -42,7 +42,7 @@ struct InboxAlertModal: View {
         switch notification.notificationType {
         case .scheduledPayments: return "bell.badge.fill"
         case .subscriptions: return "creditcard.and.123"
-        case .automations: return "gearshape.badge.checkmark"
+        case .automations: return "gear.badge.checkmark"
         case .mixed: return "tray.full.fill"
         }
     }
