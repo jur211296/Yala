@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Service for sending report notifications with real calculated data.
-//  Uses existing calculators: BalanceHelper, TrendDataProcessor, TopSpendingCategoriesCalculator.
+//  Uses existing calculators: BalanceHelper, TopSpendingCategoriesCalculator.
 //
 
 import Foundation
@@ -36,7 +36,7 @@ final class ReportNotificationService {
         for report in reports {
             guard shouldSendNow(report) else { continue }
 
-            let data = calculateReportData(config: report.reportConfig, context: context)
+            let data = calculateReportData(config: report.reportConfig, type: report.notificationType, context: context)
 
             await NotificationService.shared.sendNotification(
                 title: report.name,
@@ -124,11 +124,11 @@ final class ReportNotificationService {
 
     // MARK: - Data Calculation
 
-    private func calculateReportData(config: ReportConfig, context: ModelContext) -> ReportData {
-        let interval = getIntervalForReportType(config)
+    private func calculateReportData(config: ReportConfig, type: NotificationType, context: ModelContext) -> ReportData {
+        let interval = getIntervalForReportType(config, type: type)
         let transactions = fetchTransactions(in: interval, context: context)
         let accounts = fetchAccounts(context: context)
-        let currencyCode = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
+        let currencyCode = CurrencyDefaults.currentPreferred
 
         // Calculate balance using BalanceHelper
         let balance = BalanceHelper.totalBalance(
@@ -138,17 +138,41 @@ final class ReportNotificationService {
             context: context
         )
 
-        // Calculate income/expense using TrendDataProcessor
-        let trendResult = TrendDataProcessor.processTrendData(
-            transactions: transactions,
-            accounts: accounts,
-            metric: .expense,
-            period: .thisMonth,
-            grouping: .day,
-            interval: interval,
-            currencyCode: currencyCode,
-            context: context
-        )
+        // Calculate income/expense with proper currency conversion (R2, R4, R5)
+        var totalIncome: Decimal = 0
+        var totalExpense: Decimal = 0
+        let eligibleAccountIDs = Set(accounts.map { $0.persistentModelID })
+
+        for tx in transactions {
+            // Exclude balance adjustments (same as TrendDataProcessor)
+            guard tx.balanceAdjustmentType == nil else { continue }
+            // Filter by eligible accounts (consistent with BalanceHelper)
+            guard let account = tx.account,
+                  eligibleAccountIDs.contains(account.persistentModelID) else { continue }
+
+            let amount: Decimal
+            // R2: Check currency and convert if needed (BalanceHelper pattern)
+            if tx.preferredCurrencyCode == currencyCode {
+                amount = Decimal(tx.amountInPreferredCurrency)
+            } else {
+                let sourceCurrency = CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
+                    ?? (CurrencyCode(rawValue: currencyCode) ?? .usd)
+                amount = CurrencyConverter.shared.convert(
+                    Decimal(tx.amount),
+                    from: sourceCurrency.rawValue,
+                    to: currencyCode,
+                    on: tx.date,
+                    context: context
+                )
+            }
+
+            // R4: Same sign convention as TrendDataProcessor (income > 0, expense < 0)
+            if amount > 0 {
+                totalIncome += amount
+            } else {
+                totalExpense += abs(amount)
+            }
+        }
 
         // Get top category using TopSpendingCategoriesCalculator
         let topCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
@@ -160,23 +184,42 @@ final class ReportNotificationService {
 
         return ReportData(
             balance: balance,
-            totalExpense: trendResult.totalExpense,
-            totalIncome: trendResult.totalIncome,
+            totalExpense: NSDecimalNumber(decimal: totalExpense).doubleValue,
+            totalIncome: NSDecimalNumber(decimal: totalIncome).doubleValue,
             topCategory: topCategories.first?.category.name
         )
     }
 
-    private func getIntervalForReportType(_ config: ReportConfig) -> DateInterval {
+    private func getIntervalForReportType(_ config: ReportConfig, type: NotificationType) -> DateInterval {
         let calendar = Calendar.current
         let now = Date()
 
+        // Daily: today only
+        if type == .dailyReport {
+            let todayStart = calendar.startOfDay(for: now)
+            // R1: If now == startOfDay (exact midnight), use previous full day
+            if now <= todayStart {
+                let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart
+                return DateInterval(start: yesterdayStart, end: todayStart)
+            }
+            return DateInterval(start: todayStart, end: now)
+        }
+
+        // Weekly/Monthly: use config.dayPreference
         switch config.dayPreference {
         case .sunday, .monday:
             // Weekly: last 7 days
             let weekStart = calendar.date(byAdding: .day, value: -7, to: now) ?? now
             return DateInterval(start: weekStart, end: now)
-        case .firstDay, .lastDay:
-            // Monthly: current month
+        case .firstDay:
+            // First day of month: report previous month
+            let currentMonthStart = calendar.date(
+                from: calendar.dateComponents([.year, .month], from: now)
+            ) ?? now
+            let previousMonthStart = calendar.date(byAdding: .month, value: -1, to: currentMonthStart) ?? currentMonthStart
+            return DateInterval(start: previousMonthStart, end: currentMonthStart)
+        case .lastDay:
+            // Last day of month: report current month up to now
             let monthStart = calendar.date(
                 from: calendar.dateComponents([.year, .month], from: now)
             ) ?? now
@@ -185,7 +228,7 @@ final class ReportNotificationService {
     }
 
     private func formatReportBody(_ config: ReportConfig, reportType: NotificationType, data: ReportData) -> String {
-        let currencyCode = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
+        let currencyCode = CurrencyDefaults.currentPreferred
 
         switch config.dataType {
         case .balance:
@@ -257,7 +300,7 @@ final class ReportNotificationService {
 
     private func fetchAccounts(context: ModelContext) -> [Account] {
         let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { !$0.isArchived }
+            predicate: #Predicate { !$0.isArchived && !$0.excludeFromStatistics }
         )
 
         do {
