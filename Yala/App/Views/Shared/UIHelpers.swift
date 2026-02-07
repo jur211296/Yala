@@ -68,6 +68,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
     case system = 0
     case light = 1
     case dark = 2
+    case negro = 3
 
     var id: Int { rawValue }
 
@@ -76,6 +77,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .system: return L10n.Settings.system
         case .light: return L10n.Settings.light
         case .dark: return L10n.Settings.dark
+        case .negro: return L10n.Settings.negro
         }
     }
 
@@ -84,7 +86,12 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .system: return nil
         case .light: return .light
         case .dark: return .dark
+        case .negro: return .dark
         }
+    }
+
+    var isProOnly: Bool {
+        self == .negro
     }
 }
 
@@ -196,15 +203,27 @@ extension Color {
 
     // MARK: - Semantic Colors (Adaptive)
 
+    // MARK: - Negro Theme Colors
+
+    /// Pure black background for Negro theme
+    static let negroBackground = Color.black
+
+    /// Dark gray card for Negro theme (Apple systemGray6 dark)
+    static let negroCard = Color(UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0))
+
     /// Color de fondo principal de la aplicación.
-    /// Light: Blanco muy suave / Dark: Deep Slate.
+    /// Light: Blanco muy suave / Dark: Deep Slate / Negro: Pure Black.
     static var yalaBackground: Color {
         #if canImport(UIKit)
             return Color(
                 UIColor { traitCollection in
-                    return traitCollection.userInterfaceStyle == .dark
-                        ? UIColor(Color.deepSlate)
-                        : UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1.0)
+                    if traitCollection.userInterfaceStyle == .dark {
+                        let themeRaw = UserDefaults.standard.integer(forKey: "userTheme")
+                        return themeRaw == 3
+                            ? UIColor(Color.negroBackground)
+                            : UIColor(Color.deepSlate)
+                    }
+                    return UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1.0)
                 })
         #else
             return Color.gray.opacity(0.1)  // Fallback
@@ -212,13 +231,18 @@ extension Color {
     }
 
     /// Color secundario de fondo (para tarjetas o modales).
-    /// Light: Blanco / Dark: Slate muy oscuro + ligero tinte.
+    /// Light: Blanco / Dark: Slate muy oscuro + ligero tinte / Negro: Dark gray.
     static var yalaCard: Color {
         #if canImport(UIKit)
             return Color(
                 UIColor { traitCollection in
-                    return traitCollection.userInterfaceStyle == .dark
-                        ? UIColor(red: 0.11, green: 0.16, blue: 0.28, alpha: 1.0) : UIColor.white
+                    if traitCollection.userInterfaceStyle == .dark {
+                        let themeRaw = UserDefaults.standard.integer(forKey: "userTheme")
+                        return themeRaw == 3
+                            ? UIColor(Color.negroCard)
+                            : UIColor(red: 0.11, green: 0.16, blue: 0.28, alpha: 1.0)
+                    }
+                    return UIColor.white
                 })
         #else
             return Color.white  // Fallback

@@ -35,6 +35,7 @@ struct YalaApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
+                .id(userThemeRaw)
                 .task {
                     await bootstrapper.bootstrap(container: sharedModelContainer)
                 }

@@ -11,6 +11,8 @@ struct ThemeSettingsView: View {
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showPaywall = false
+
     var body: some View {
         ZStack {
             PanelBackgroundView()
@@ -40,7 +42,7 @@ struct ThemeSettingsView: View {
                         themeRow(for: theme)
                     }
                 }
-                .padding()
+                .padding(DS.Spacing.lg)
                 .background(Color.yalaCard)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .overlay(
@@ -50,7 +52,7 @@ struct ThemeSettingsView: View {
 
                 Spacer()
             }
-            .padding()
+            .padding(DS.Spacing.lg)
         }
         .navigationTitle(L10n.Settings.theme)
         .navigationBarTitleDisplayMode(.inline)
@@ -62,22 +64,42 @@ struct ThemeSettingsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showPaywall) {
+            SubscriptionView()
+        }
     }
 
     @ViewBuilder
     private func themeRow(for theme: AppTheme) -> some View {
         Button {
-            userThemeRaw = theme.rawValue
-            // Don't dismiss - ProfileView will handle navigation cleanup on theme change
+            if theme.isProOnly && !FeatureGateService.shared.isProUser {
+                showPaywall = true
+            } else {
+                userThemeRaw = theme.rawValue
+            }
         } label: {
             HStack {
                 Text(theme.label)
                     .font(.body.weight(.medium))
                     .foregroundStyle(Color.yalaPrimaryText)
 
+                if theme.isProOnly {
+                    Text("PRO")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.electricIndigo)
+                        .clipShape(Capsule())
+                }
+
                 Spacer()
 
-                if userThemeRaw == theme.rawValue {
+                if theme.isProOnly && !FeatureGateService.shared.isProUser {
+                    Image(systemName: "lock.fill")
+                        .foregroundStyle(Color.yalaSecondaryText.opacity(0.5))
+                        .font(.body)
+                } else if userThemeRaw == theme.rawValue {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.brandPrimary)
                         .font(.title3)
