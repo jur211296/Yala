@@ -186,7 +186,11 @@ struct ImageSelectionView: View {
                         countdownValue = i
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     }
-                    try? await Task.sleep(for: .seconds(1))
+                    do {
+                        try await Task.sleep(for: .seconds(1))
+                    } catch {
+                        return
+                    }
 
                     if Task.isCancelled { return }
                 }
@@ -286,15 +290,19 @@ struct ImageSelectionView: View {
 
             // Image preview(s) with subtle styling
             if selectedImages.count == 1, let image = selectedImages.first {
-                // Single image: show large preview
+                // Single image: show large preview with material border
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
                     .frame(maxHeight: 280)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(.ultraThinMaterial, lineWidth: 2)
+                    )
                     .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
             } else if selectedImages.count > 1 {
-                // Multiple images: show grid preview
+                // Multiple images: show grid preview with shadows
                 VStack(spacing: DS.Spacing.sm) {
                     LazyVGrid(columns: [
                         GridItem(.flexible()),
@@ -307,6 +315,7 @@ struct ImageSelectionView: View {
                                 .scaledToFill()
                                 .frame(width: 80, height: 80)
                                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                         }
                         if selectedImages.count > 6 {
                             ZStack {
@@ -325,16 +334,37 @@ struct ImageSelectionView: View {
                 }
             }
 
-            // Countdown display
+            // Countdown display with ring
             VStack(spacing: DS.Spacing.sm) {
-                Text("\(countdownValue)")
-                    .font(.system(size: 48, weight: .light, design: .rounded))
-                    .foregroundStyle(Color.teal)
-                    .contentTransition(.numericText())
+                ZStack {
+                    // Background ring
+                    Circle()
+                        .stroke(Color.teal.opacity(0.2), lineWidth: 4)
+                        .frame(width: 80, height: 80)
 
+                    // Depleting ring
+                    Circle()
+                        .trim(from: 0, to: CGFloat(countdownValue) / 3.0)
+                        .stroke(Color.teal, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 80, height: 80)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeInOut(duration: 1.0), value: countdownValue)
+
+                    Text("\(countdownValue)")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.teal)
+                        .contentTransition(.numericText())
+                }
+
+                // Glass label
                 Text(L10n.Image.analyzingIn(countdownValue))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .glassEffect()
             }
 
             Spacer()
@@ -470,7 +500,11 @@ struct ImageSelectionView: View {
                     // Haptic feedback on each tick
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                 }
-                try? await Task.sleep(for: .seconds(1))
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    return
+                }
 
                 // Check if cancelled
                 if Task.isCancelled { return }

@@ -181,6 +181,15 @@ struct VoiceRecordingView: View {
                     .blur(radius: 10)
             }
 
+            // Progress ring when recording
+            if recorder.state == .recording {
+                Circle()
+                    .trim(from: 0, to: CGFloat(fmod(recorder.recordingDuration / 60.0, 1.0)))
+                    .stroke(Color.hotPink.opacity(0.6), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 148, height: 148)
+                    .rotationEffect(.degrees(-90))
+            }
+
             // Main circle with gradient
             Circle()
                 .fill(circleGradient)
@@ -246,29 +255,49 @@ struct VoiceRecordingView: View {
     private var statusText: some View {
         VStack(spacing: DS.Spacing.sm) {
             if recorder.state == .recording {
+                // Glass capsule timer
                 Text(formatDuration(recorder.recordingDuration))
-                    .font(.system(size: 48, weight: .light, design: .monospaced))
+                    .font(.system(size: 40, weight: .light, design: .monospaced))
                     .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .glassEffect()
 
                 Text(L10n.Voice.recording)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else if isPreviewMode {
-                // Preview mode: show recorded duration and countdown
-                Text(formatDuration(previewDuration))
-                    .font(.system(size: 48, weight: .light, design: .monospaced))
-                    .foregroundStyle(.primary)
+                // Preview mode: countdown ring inside main circle area
+                ZStack {
+                    // Depleting ring
+                    Circle()
+                        .stroke(Color.hotPink.opacity(0.2), lineWidth: 4)
+                        .frame(width: 80, height: 80)
 
+                    Circle()
+                        .trim(from: 0, to: CGFloat(countdownValue) / 3.0)
+                        .stroke(Color.hotPink, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 80, height: 80)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeInOut(duration: 1.0), value: countdownValue)
+
+                    Text("\(countdownValue)")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.hotPink)
+                        .contentTransition(.numericText())
+                }
+
+                // Glass recorded label
                 Text(L10n.Voice.recorded)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-
-                // Countdown indicator
-                Text("\(countdownValue)")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.hotPink)
-                    .contentTransition(.numericText())
-                    .padding(.top, DS.Spacing.md)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .glassEffect()
             } else {
                 instructionsView
             }
