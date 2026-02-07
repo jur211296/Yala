@@ -20,7 +20,7 @@ struct SubcategoriesPieWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 
-    @Parameter(title: "widget.theme.type", default: .yala)
+    @Parameter(title: "widget.theme.type", default: .system)
     var theme: WidgetThemeOption
 }
 

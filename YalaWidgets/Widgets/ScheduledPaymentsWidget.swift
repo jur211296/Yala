@@ -23,7 +23,7 @@ struct ScheduledPaymentsWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.select.payments")
     var selectedPayments: [ScheduledPaymentAppEntity]?
 
-    @Parameter(title: "widget.theme.type", default: .yala)
+    @Parameter(title: "widget.theme.type", default: .system)
     var theme: WidgetThemeOption
 
     static var parameterSummary: some ParameterSummary {

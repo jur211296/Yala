@@ -23,7 +23,7 @@ struct BudgetsWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.select.budgets")
     var selectedBudgets: [BudgetAppEntity]?
 
-    @Parameter(title: "widget.theme.type", default: .yala)
+    @Parameter(title: "widget.theme.type", default: .system)
     var theme: WidgetThemeOption
 
     static var parameterSummary: some ParameterSummary {

@@ -17,7 +17,7 @@ struct LatestRecordsWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.latestRecords.title" }
     static var description: IntentDescription { "widget.intent.latestRecords.desc" }
 
-    @Parameter(title: "widget.theme.type", default: .yala)
+    @Parameter(title: "widget.theme.type", default: .system)
     var theme: WidgetThemeOption
 }
 
