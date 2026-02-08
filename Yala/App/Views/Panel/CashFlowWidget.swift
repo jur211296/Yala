@@ -61,8 +61,6 @@ struct CashFlowWidget: View {
         self.isExpensesOnlyMode = isExpensesOnlyMode
     }
 
-    @Environment(\.colorScheme) var colorScheme
-
     /// Check if we have no data to display
     private var hasNoData: Bool {
         summary.totalIncome == 0 && summary.totalExpense == 0
@@ -137,6 +135,32 @@ struct CashFlowWidget: View {
         return totalExpense == 0 && totalIncome > 0
     }
 
+    /// Waterfall mode: daily grouping + bidirectional data (not expenses-only or income-only)
+    private var isWaterfallMode: Bool {
+        grouping == .day && !hasOnlyExpenses && !hasOnlyIncome
+    }
+
+    /// Chart data for waterfall mode: exclude days where net is exactly zero
+    /// (income == expense produces invisible bars that still occupy axis space)
+    private var waterfallChartData: [CashFlowData] {
+        nonEmptyChartData.filter { $0.net != 0 }
+    }
+
+    /// Active chart data: waterfall-filtered in waterfall mode, otherwise standard nonEmpty
+    private var activeChartData: [CashFlowData] {
+        isWaterfallMode ? waterfallChartData : nonEmptyChartData
+    }
+
+    /// Cumulative waterfall bars: each bar starts where the previous ended
+    private var waterfallBars: [(date: Date, net: Double, yStart: Double, yEnd: Double)] {
+        var cumulative = 0.0
+        return waterfallChartData.map { point in
+            let start = cumulative
+            cumulative += point.net
+            return (date: point.date, net: point.net, yStart: start, yEnd: cumulative)
+        }
+    }
+
     // MARK: - Compact Bar Dimming Logic
 
     /// Whether income bar should be dimmed (expense filter is active)
@@ -152,7 +176,7 @@ struct CashFlowWidget: View {
     /// Calculate smart axis dates for chart X-axis
     /// Uses actual data dates to prevent duplicate labels (e.g., "ene", "ene", "feb")
     private var smartAxisDates: [Date] {
-        guard !nonEmptyChartData.isEmpty else { return [] }
+        guard !activeChartData.isEmpty else { return [] }
 
         let calendarUnit: Calendar.Component = {
             switch grouping {
@@ -163,15 +187,15 @@ struct CashFlowWidget: View {
         }()
 
         return SmartAxisHelper.calculateSmartAxisDates(
-            forDataDates: nonEmptyChartData.map(\.date),
+            forDataDates: activeChartData.map(\.date),
             grouping: calendarUnit
         )
     }
 
     /// Format axis label based on data span and grouping
     private func smartAxisLabel(for date: Date) -> String {
-        guard let firstDate = nonEmptyChartData.first?.date,
-            let lastDate = nonEmptyChartData.last?.date
+        guard let firstDate = activeChartData.first?.date,
+            let lastDate = activeChartData.last?.date
         else { return "" }
 
         // Determine calendar unit for forceGrouping
@@ -194,8 +218,8 @@ struct CashFlowWidget: View {
     /// X-axis domain based on actual data range (not period range)
     /// Uses SmartAxisHelper to extend domain when few data points to prevent overly wide bars
     private var dataXDomain: ClosedRange<Date> {
-        guard let firstDate = nonEmptyChartData.first?.date,
-            let lastDate = nonEmptyChartData.last?.date
+        guard let firstDate = activeChartData.first?.date,
+            let lastDate = activeChartData.last?.date
         else { return interval.start...interval.end }
 
         let calendarUnit: Calendar.Component = {
@@ -207,7 +231,7 @@ struct CashFlowWidget: View {
         }()
 
         return SmartAxisHelper.extendedXDomain(
-            dataPoints: nonEmptyChartData.count,
+            dataPoints: activeChartData.count,
             firstDate: firstDate,
             lastDate: lastDate,
             grouping: calendarUnit
@@ -216,18 +240,32 @@ struct CashFlowWidget: View {
 
     /// Y-axis domain with independent scales for income and expense
     private var dataYDomain: ClosedRange<Double> {
+        // Waterfall: domain based on cumulative yStart/yEnd values
+        if isWaterfallMode {
+            let bars = waterfallBars
+            let allValues = bars.flatMap { [$0.yStart, $0.yEnd] }
+            let maxVal = allValues.max() ?? 0
+            let minVal = allValues.min() ?? 0
+            let top = max(maxVal * 1.1, 0)
+            let bottom = min(minVal * 1.1, 0)
+            if top == bottom { return -1...1 }
+            return bottom...top
+        }
+
         let maxIncome = nonEmptyChartData.map { $0.income }.max() ?? 0
         let maxExpense = nonEmptyChartData.map { $0.expense }.max() ?? 0
 
         // If only expenses: show expenses as positive bars (0 to max)
         if hasOnlyExpenses {
             let maxValue = maxExpense * 1.1
+            if maxValue == 0 { return 0...1 }
             return 0...maxValue
         }
 
         // If only income: show income bars (0 to max)
         if hasOnlyIncome {
             let maxValue = maxIncome * 1.1
+            if maxValue == 0 { return 0...1 }
             return 0...maxValue
         }
 
@@ -241,11 +279,11 @@ struct CashFlowWidget: View {
         VStack(spacing: 0) {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(kpiLabel)
                         .font(.headline)
                         .foregroundStyle(.primary)
-                        .padding(.bottom, 2)
+                        .padding(.bottom, DS.Spacing.xxs)
 
                     // KPI with "vs previous amount" - only show when we have data
                     if !hasNoData {
@@ -340,62 +378,74 @@ struct CashFlowWidget: View {
                     // Zero Baseline (only show for bidirectional charts)
                     if !hasOnlyExpenses && !hasOnlyIncome {
                         RuleMark(y: .value("Zero", 0))
-                            .foregroundStyle(Color.yalaSecondaryText.opacity(0.3))
+                            .foregroundStyle(Color.yalaSecondaryText.opacity(0.2))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
                     }
 
-                    ForEach(nonEmptyChartData) { data in
-                        if hasOnlyExpenses {
-                            // Only expenses mode: show expenses as positive bars upward
+                    if isWaterfallMode {
+                        // WATERFALL: cumulative bars — each starts where previous ended
+                        ForEach(Array(waterfallBars.enumerated()), id: \.offset) { _, bar in
                             BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Expense", data.expense)
+                                x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
+                                yStart: .value("Start", bar.yStart),
+                                yEnd: .value("End", bar.yEnd)
                             )
-                            .foregroundStyle(Color.expenseGraph.gradient)
-                            .cornerRadius(DS.Radius.xs)
-                        } else if hasOnlyIncome {
-                            // Only income mode: show income bars upward (teal)
-                            BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Income", data.income)
+                            .foregroundStyle(
+                                bar.net >= 0 ? Color.incomeGraph.gradient : Color.expenseGraph.gradient
                             )
-                            .foregroundStyle(Color.incomeGraph.gradient)
                             .cornerRadius(DS.Radius.xs)
-                        } else {
-                            // Default bidirectional mode
-                            // Income (Up) - Teal bars
-                            BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Income", data.income)
-                            )
-                            .foregroundStyle(Color.incomeGraph.gradient)
-                            .cornerRadius(DS.Radius.xs)
-
-                            // Expense (Down)
-                            BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Expense", -data.expense)
-                            )
-                            .foregroundStyle(Color.expenseGraph.gradient)
-                            .cornerRadius(DS.Radius.xs)
-
-                            // Net Flow Line - Purple line
-                            if grouping == .month {
-                                LineMark(
+                        }
+                    } else {
+                        ForEach(activeChartData) { data in
+                            if hasOnlyExpenses {
+                                // Only expenses mode: show expenses as positive bars upward
+                                BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Net", data.net)
+                                    y: .value("Expense", data.expense)
                                 )
-                                .foregroundStyle(Color.brandPrimary)
-                                .lineStyle(StrokeStyle(lineWidth: 2))
-                                .interpolationMethod(.monotone)
-
-                                // Points on Line
-                                PointMark(
+                                .foregroundStyle(Color.expenseGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+                            } else if hasOnlyIncome {
+                                // Only income mode: show income bars upward (teal)
+                                BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Net", data.net)
+                                    y: .value("Income", data.income)
                                 )
-                                .foregroundStyle(Color.brandPrimary)
-                                .symbolSize(20)
+                                .foregroundStyle(Color.incomeGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+                            } else {
+                                // Default bidirectional mode (monthly)
+                                BarMark(
+                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                    y: .value("Income", data.income)
+                                )
+                                .foregroundStyle(Color.incomeGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+
+                                BarMark(
+                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                    y: .value("Expense", -data.expense)
+                                )
+                                .foregroundStyle(Color.expenseGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+
+                                // Net Flow Line - Purple line
+                                if grouping == .month {
+                                    LineMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Net", data.net)
+                                    )
+                                    .foregroundStyle(Color.brandPrimary)
+                                    .lineStyle(StrokeStyle(lineWidth: 2))
+                                    .interpolationMethod(.monotone)
+
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Net", data.net)
+                                    )
+                                    .foregroundStyle(Color.brandPrimary)
+                                    .symbolSize(20)
+                                }
                             }
                         }
                     }
@@ -413,7 +463,7 @@ struct CashFlowWidget: View {
                             let anchor = SmartAxisHelper.axisLabelAnchor(
                                 for: date,
                                 in: smartAxisDates,
-                                dataPointCount: nonEmptyChartData.count
+                                dataPointCount: activeChartData.count
                             )
 
                             AxisValueLabel(anchor: anchor) {
@@ -443,8 +493,9 @@ struct CashFlowWidget: View {
                         let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
 
                         // Tooltip only (no gesture - chartXSelection handles it)
+                        // Use activeChartData so waterfall mode only matches rendered bars
                         if let activeDate = selectedDate,
-                            let selectedData = summary.chartData.first(where: {
+                            let selectedData = activeChartData.first(where: {
                                 Calendar.current.isDate(
                                     $0.date, equalTo: activeDate,
                                     toGranularity: grouping == .month
@@ -457,30 +508,12 @@ struct CashFlowWidget: View {
                                     .font(.caption2)
                                     .foregroundStyle(Color.yalaSecondaryText)
 
-                                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                                if isWaterfallMode {
+                                    // Waterfall: show net with color matching bar sign
                                     HStack(spacing: DS.Spacing.xs) {
-                                        Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
-                                        Text(
-                                            YalaFormatter.currency(
-                                                value: selectedData.income,
-                                                currencyCode: summary.currencyCode, forceSign: true)
-                                        )
-                                        .font(.caption2.bold())
-                                        .foregroundStyle(.primary)
-                                    }
-                                    HStack(spacing: DS.Spacing.xs) {
-                                        Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
-                                        Text(
-                                            YalaFormatter.currency(
-                                                value: -selectedData.expense,
-                                                currencyCode: summary.currencyCode)
-                                        )
-                                        .font(.caption2.bold())
-                                        .foregroundStyle(.primary)
-                                    }
-                                    Divider()
-                                    HStack(spacing: DS.Spacing.xs) {
-                                        Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
+                                        Circle()
+                                            .fill(selectedData.net >= 0 ? Color.incomeGraph : Color.expenseGraph)
+                                            .frame(width: 6, height: 6)
                                         Text(
                                             YalaFormatter.currency(
                                                 value: selectedData.net,
@@ -488,6 +521,40 @@ struct CashFlowWidget: View {
                                         )
                                         .font(.caption2.bold())
                                         .foregroundStyle(.primary)
+                                    }
+                                } else {
+                                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                                        HStack(spacing: DS.Spacing.xs) {
+                                            Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
+                                            Text(
+                                                YalaFormatter.currency(
+                                                    value: selectedData.income,
+                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            )
+                                            .font(.caption2.bold())
+                                            .foregroundStyle(.primary)
+                                        }
+                                        HStack(spacing: DS.Spacing.xs) {
+                                            Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
+                                            Text(
+                                                YalaFormatter.currency(
+                                                    value: -selectedData.expense,
+                                                    currencyCode: summary.currencyCode)
+                                            )
+                                            .font(.caption2.bold())
+                                            .foregroundStyle(.primary)
+                                        }
+                                        Divider()
+                                        HStack(spacing: DS.Spacing.xs) {
+                                            Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
+                                            Text(
+                                                YalaFormatter.currency(
+                                                    value: selectedData.net,
+                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            )
+                                            .font(.caption2.bold())
+                                            .foregroundStyle(.primary)
+                                        }
                                     }
                                 }
                             }
@@ -507,8 +574,8 @@ struct CashFlowWidget: View {
                     }
                 }
 
-                // Legend (only for bidirectional mode)
-                if !hasOnlyExpenses && !hasOnlyIncome {
+                // Legend (only for bidirectional mode, hidden in waterfall — colors are self-evident)
+                if !isWaterfallMode && !hasOnlyExpenses && !hasOnlyIncome {
                     CashFlowLegendView(showNet: grouping == .month)
                         .frame(maxWidth: .infinity)
                 }
@@ -615,15 +682,6 @@ struct CashFlowWidget: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.xl)
-    }
-
-    // Consistent Widget Background Logic
-    private var cardBackgroundColor: Color {
-        if colorScheme == .dark {
-            return Color.deepSlate.opacity(0.6)
-        } else {
-            return Color.white.opacity(0.7)
-        }
     }
 
     // Helpers

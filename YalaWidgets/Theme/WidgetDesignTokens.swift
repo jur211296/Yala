@@ -105,6 +105,9 @@ enum WDS {
 
         /// Bar chart value labels (8pt bold)
         static let barValue = Font.system(size: 8, weight: .bold)
+
+        /// Bar chart label icons (10pt bold)
+        static let barLabel = Font.system(size: 10, weight: .bold)
     }
 
     // MARK: - Icon Sizes

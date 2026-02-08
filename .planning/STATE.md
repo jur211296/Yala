@@ -204,6 +204,34 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 Semántica de isArchived/excludeFromStatistics corregida en toda la app. Cálculos/estadísticas filtran solo por excludeFromStatistics (cuentas archivadas siguen contando). Selección de cuentas para nuevas tx filtra solo por isArchived. Validación de cuenta archivada añadida en aprobación de inbox. 11 archivos de lógica + L10n en 6 idiomas.
 
+### EXP-1: Waterfall chart en CashFlow para vista diaria
+
+**Reportado:** 2026-02-07
+**Tipo:** Experimento / Mejora visual
+**Severidad:** Baja — Cambio visual, no afecta lógica de datos
+
+**Descripción:**
+Cuando el eje X del CashFlow muestra **días** (no meses), reemplazar la gráfica actual (línea con ingreso arriba / gasto abajo) por un **gráfico waterfall** del flujo neto de cada día:
+- Barra **teal** si el flujo neto del día es positivo
+- Barra **hot pink** si el flujo neto del día es negativo
+
+**Qué cambia:**
+- Solo la representación visual de la gráfica (barras waterfall en vez de líneas)
+- Solo cuando la granularidad es días (thisWeek, last7Days, thisMonth, lastMonth)
+
+**Qué NO cambia:**
+- Hover/tooltip: se mantiene tal cual
+- Ejes X/Y: se mantienen tal cual
+- Cálculos, datos, filtros: sin cambios
+- Vista mensual (thisYear, lastYear, allTime, custom): sigue usando la gráfica actual
+
+**Archivos afectados:**
+- `Yala/App/Views/Statistics/TrendsTabView.swift` — CashFlow chart
+- `Yala/App/Views/Panel/Widgets/CashFlowWidget.swift` — Panel widget
+- `YalaWidgets/` — Widget iOS (si aplica)
+
+**Estado:** Pendiente — Evaluar en próxima sesión
+
 ---
 
 ### Después de 10.5: Fase 11 — Sistema de Temas Independientes (V1.2)

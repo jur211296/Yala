@@ -4289,6 +4289,55 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ---
 
-*Última actualización: 2026-02-06 - Sección 31 (Modo Solo Gastos)*
-*Total escenarios: ~480*
-*Total verificaciones: ~900+*
+---
+
+## Sección 32: Waterfall Chart en CashFlow (EXP-1)
+
+### 32.1 Waterfall con días mixtos (EXP-1.1)
+- [ ] 32.1.1 Statistics > periodo "Esta semana" o "Este mes" con datos mixtos (ingreso y gasto)
+- [ ] 32.1.2 Barras individuales por día: teal (neto positivo), pink (neto negativo)
+- [ ] 32.1.3 Línea cero dashed visible como referencia
+- [ ] 32.1.4 NO aparece legend (colores auto-evidentes con línea cero)
+
+### 32.2 Solo gastos + eje diario (EXP-1.2)
+- [ ] 32.2.1 Seleccionar métrica "Gastos" con periodo diario
+- [ ] 32.2.2 Barras normales pink hacia ARRIBA (NO waterfall)
+- [ ] 32.2.3 Sin línea cero (solo barras positivas)
+
+### 32.3 Solo ingresos + eje diario (EXP-1.3)
+- [ ] 32.3.1 Seleccionar métrica "Ingresos" con periodo diario
+- [ ] 32.3.2 Barras normales teal hacia ARRIBA (NO waterfall)
+- [ ] 32.3.3 Sin línea cero (solo barras positivas)
+
+### 32.4 Vista mensual sin cambios (EXP-1.4)
+- [ ] 32.4.1 Seleccionar "Este año" — barras bidireccionales (income arriba, expense abajo)
+- [ ] 32.4.2 Línea neta morada visible con puntos
+- [ ] 32.4.3 Legend visible con Income, Expense, Net
+
+### 32.5 Cambio de periodo (EXP-1.5)
+- [ ] 32.5.1 Cambiar de periodo semanal → anual: chart cambia de waterfall a bidireccional
+- [ ] 32.5.2 Cambiar de periodo anual → mensual: chart cambia de bidireccional a waterfall
+- [ ] 32.5.3 Legend aparece/desaparece correctamente al cambiar modo
+
+### 32.6 Tooltip en waterfall (EXP-1.6)
+- [ ] 32.6.1 Tocar barra en waterfall: tooltip muestra desglose ingreso/gasto/neto
+- [ ] 32.6.2 Tooltip formateado correctamente con colores indicativos
+
+### 32.7 Widget iOS large con periodo diario (EXP-1.7)
+- [ ] 32.7.1 Widget large con periodo thisWeek/thisMonth: muestra waterfall (si hay ingreso y gasto)
+- [ ] 32.7.2 Barras teal (neto positivo) y pink (neto negativo)
+- [ ] 32.7.3 Línea cero dashed visible
+
+### 32.8 Widget iOS large con periodo mensual (EXP-1.8)
+- [ ] 32.8.1 Widget large con periodo thisYear/allTime: muestra bidireccional
+- [ ] 32.8.2 Barras income arriba, expense abajo, línea neta morada
+
+### 32.9 Día con neto exactamente 0 (EXP-1.9)
+- [ ] 32.9.1 Día donde ingreso == gasto exacto: NO muestra barra fantasma en waterfall
+- [ ] 32.9.2 Eje X no desperdicia espacio en barras invisibles
+
+---
+
+*Última actualización: 2026-02-08 - Sección 32 (Waterfall Chart CashFlow)*
+*Total escenarios: ~495*
+*Total verificaciones: ~920+*
