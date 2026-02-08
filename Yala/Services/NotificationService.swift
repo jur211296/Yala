@@ -109,6 +109,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Dynamic content types are handled by background tasks, not iOS scheduling
         if item.notificationType.requiresDynamicContent {
+            // Cancel any previously scheduled static notifications for this type
+            await cancelNotification(for: item)
             #if DEBUG
             print("NotificationService: Skipping iOS scheduling for dynamic type: \(item.notificationType.rawValue)")
             #endif

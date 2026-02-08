@@ -117,7 +117,8 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
     /// tasks and foreground checks to send notifications with real data.
     var requiresDynamicContent: Bool {
         switch self {
-        case .dailyReport, .weeklyReport, .monthlyReport:
+        case .dailyReport, .weeklyReport, .monthlyReport,
+             .scheduledPayments, .announcements:
             return true
         default:
             return false
