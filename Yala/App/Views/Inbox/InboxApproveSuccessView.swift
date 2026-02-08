@@ -121,7 +121,7 @@ struct InboxApproveSuccessView: View {
 
             Spacer()
 
-            Text(YalaFormatter.currency(value: data.amount, currencyCode: data.currencyCode))
+            Text(YalaFormatter.currency(value: data.amount, currencyCode: data.currencyCode, forceFullPrecision: true))
                 .font(.title.weight(.bold))
                 .foregroundStyle(data.isExpense ? Color.hotPink : Color.electricIndigo)
         }

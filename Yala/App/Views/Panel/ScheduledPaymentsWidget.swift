@@ -300,7 +300,7 @@ struct ScheduledPaymentsWidget: View {
             Spacer()
 
             // Amount
-            Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode))
+            Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
         }

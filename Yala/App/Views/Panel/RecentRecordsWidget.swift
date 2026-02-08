@@ -228,7 +228,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        YalaFormatter.currency(value: value, currencyCode: currencyCode, forceFullPrecision: true)
     }
 
     // MARK: - Empty State

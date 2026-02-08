@@ -295,7 +295,7 @@ struct SaveAsFavoriteSheet: View {
             Spacer()
 
             if includeAmount && amount > 0 {
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode, forceFullPrecision: true))
                     .foregroundStyle(.secondary)
 
                 Button { includeAmount = false } label: {

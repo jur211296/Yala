@@ -1777,6 +1777,6 @@ struct CompactRecordRow: View {
     }
 
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode)
+        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 }

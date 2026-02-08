@@ -507,7 +507,7 @@ struct ScheduledPaymentsListView: View {
 
                 Spacer()
 
-                Text(YalaFormatter.currency(value: payment.amount, currencyCode: currencyCode))
+                Text(YalaFormatter.currency(value: payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
 

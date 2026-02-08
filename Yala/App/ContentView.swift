@@ -925,7 +925,7 @@ struct SearchResultRow: View {
     }
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 14)
+        RoundedRectangle(cornerRadius: DS.Radius.card)
             .fill(Color.yalaCard)
             .shadow(
                 color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.06),
@@ -936,7 +936,7 @@ struct SearchResultRow: View {
     }
 
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode)
+        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

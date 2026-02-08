@@ -322,11 +322,7 @@ struct ScheduledPaymentDetailView: View {
     }
 
     private func formatAmount(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = payment.currencyCode
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount)
+        YalaFormatter.currency(value: amount, currencyCode: payment.currencyCode, forceFullPrecision: true)
     }
 
     private func formatDate(_ date: Date) -> String {

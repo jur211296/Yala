@@ -158,7 +158,7 @@ struct FavoriteRowView: View {
     private var formattedAmount: String {
         guard let amount = favorite.amount else { return "" }
         let code = favorite.currencyCode ?? CurrencyDefaults.defaultCode
-        return YalaFormatter.currency(value: amount, currencyCode: code)
+        return YalaFormatter.currency(value: amount, currencyCode: code, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

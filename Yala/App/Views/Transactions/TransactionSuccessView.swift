@@ -203,8 +203,9 @@ struct TransactionSuccessView: View {
 
             Text(
                 YalaFormatter.currency(
-                    value: NSDecimalNumber(decimal: data.amount).doubleValue,
-                    currencyCode: data.currencyCode)
+                    value: Double(truncating: data.amount as NSDecimalNumber),
+                    currencyCode: data.currencyCode,
+                    forceFullPrecision: true)
             )
             .font(.title.weight(.bold))
             .foregroundStyle(data.transactionType.color)
@@ -345,7 +346,7 @@ struct TransactionSuccessView: View {
                             destCurrency != data.currencyCode
                         {
                             Text(
-                                "(\(YalaFormatter.currency(value: NSDecimalNumber(decimal: destAmount).doubleValue, currencyCode: destCurrency)))"
+                                "(\(YalaFormatter.currency(value: Double(truncating: destAmount as NSDecimalNumber), currencyCode: destCurrency, forceFullPrecision: true)))"
                             )
                             .font(.caption)
                             .foregroundStyle(.secondary)
