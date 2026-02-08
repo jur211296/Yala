@@ -4,7 +4,7 @@
 //
 //  Widget showing the latest transactions.
 //  Supports Medium size with 3 records.
-//  Configurable: theme (yala/system).
+//
 //
 
 import WidgetKit
@@ -17,8 +17,6 @@ struct LatestRecordsWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.latestRecords.title" }
     static var description: IntentDescription { "widget.intent.latestRecords.desc" }
 
-    @Parameter(title: "widget.theme.type", default: .system)
-    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -28,7 +26,6 @@ struct LatestRecordsEntry: TimelineEntry {
     let transactions: [WidgetTransaction]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
-    let theme: WidgetThemeOption
 
     static var placeholder: LatestRecordsEntry {
         LatestRecordsEntry(
@@ -75,8 +72,7 @@ struct LatestRecordsEntry: TimelineEntry {
                 )
             ],
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true,
-            theme: .system
+            isPlaceholder: true
         )
     }
 }
@@ -112,8 +108,7 @@ struct LatestRecordsProvider: AppIntentTimelineProvider {
             date: Date(),
             transactions: transactions,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false,
-            theme: configuration.theme
+            isPlaceholder: false
         )
     }
 }
@@ -247,13 +242,7 @@ struct LatestRecordsWidget: Widget {
             provider: LatestRecordsProvider()
         ) { entry in
             LatestRecordsWidgetView(entry: entry)
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.latestRecords")
         .description("widget.gallery.latestRecords.desc")
@@ -276,33 +265,6 @@ struct LatestRecordsWidget: Widget {
         date: Date(),
         transactions: [],
         currencyDisplayFormat: "symbol",
-        isPlaceholder: false,
-        theme: .system
-    )
-}
-
-#Preview("System Theme", as: .systemMedium) {
-    LatestRecordsWidget()
-} timeline: {
-    LatestRecordsEntry(
-        date: Date(),
-        transactions: [
-            WidgetTransaction(
-                id: "1",
-                date: Date(),
-                amount: 45.50,
-                currencyCode: "PEN",
-                note: "Almuerzo",
-                categoryName: "Alimentación",
-                categoryColor: "#FF6B6B",
-                categoryIcon: "fork.knife",
-                subcategoryName: "Restaurantes",
-                isIncome: false,
-                amountInPreferredCurrency: 45.50
-            )
-        ],
-        currencyDisplayFormat: "symbol",
-        isPlaceholder: false,
-        theme: .system
+        isPlaceholder: false
     )
 }

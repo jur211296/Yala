@@ -55,11 +55,6 @@
 "widget.intent.latestRecords.title" = "Últimos registros";
 "widget.intent.latestRecords.desc" = "Muestra tus transacciones más recientes";
 
-// MARK: - Theme
-"widget.theme.type" = "Tema";
-"widget.theme.yala" = "Yala";
-"widget.theme.system" = "iOS";
-
 // MARK: - Selection Mode
 "widget.selection.mode.type" = "Mostrar";
 "widget.selection.automatic" = "Automático";

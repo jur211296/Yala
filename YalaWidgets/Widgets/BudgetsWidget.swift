@@ -4,7 +4,7 @@
 //
 //  Widget showing budget progress.
 //  Supports Medium size with top 3 budgets sorted by usage.
-//  Configurable: selection mode (auto/custom) and theme (yala/system).
+//  Configurable: selection mode (auto/custom).
 //
 
 import WidgetKit
@@ -23,20 +23,15 @@ struct BudgetsWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.select.budgets")
     var selectedBudgets: [BudgetAppEntity]?
 
-    @Parameter(title: "widget.theme.type", default: .system)
-    var theme: WidgetThemeOption
-
     static var parameterSummary: some ParameterSummary {
         When(\BudgetsWidgetIntent.$selectionMode, .equalTo, .custom) {
             Summary {
                 \BudgetsWidgetIntent.$selectionMode
                 \BudgetsWidgetIntent.$selectedBudgets
-                \BudgetsWidgetIntent.$theme
             }
         } otherwise: {
             Summary {
                 \BudgetsWidgetIntent.$selectionMode
-                \BudgetsWidgetIntent.$theme
             }
         }
     }
@@ -49,7 +44,6 @@ struct BudgetsEntry: TimelineEntry {
     let budgets: [WidgetBudget]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
-    let theme: WidgetThemeOption
 
     static var placeholder: BudgetsEntry {
         BudgetsEntry(
@@ -90,8 +84,7 @@ struct BudgetsEntry: TimelineEntry {
                 )
             ],
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true,
-            theme: .system
+            isPlaceholder: true
         )
     }
 }
@@ -149,8 +142,7 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
             date: Date(),
             budgets: budgets,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false,
-            theme: configuration.theme
+            isPlaceholder: false
         )
     }
 }
@@ -287,13 +279,7 @@ struct BudgetsWidget: Widget {
             provider: BudgetsWidgetProvider()
         ) { entry in
             BudgetsWidgetView(entry: entry)
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.budgets")
         .description("widget.gallery.budgets.desc")
@@ -316,8 +302,7 @@ struct BudgetsWidget: Widget {
         date: Date(),
         budgets: [],
         currencyDisplayFormat: "symbol",
-        isPlaceholder: false,
-        theme: .system
+        isPlaceholder: false
     )
 }
 
@@ -362,31 +347,6 @@ struct BudgetsWidget: Widget {
             )
         ],
         currencyDisplayFormat: "symbol",
-        isPlaceholder: false,
-        theme: .system
-    )
-}
-
-#Preview("System Theme", as: .systemMedium) {
-    BudgetsWidget()
-} timeline: {
-    BudgetsEntry(
-        date: Date(),
-        budgets: [
-            WidgetBudget(
-                id: "1",
-                name: "Alimentación",
-                limitAmount: 800,
-                spentAmount: 720,
-                currencyCode: "PEN",
-                periodType: "monthly",
-                percentUsed: 90,
-                iconName: "fork.knife",
-                colorHex: "#FF6B6B"
-            )
-        ],
-        currencyDisplayFormat: "symbol",
-        isPlaceholder: false,
-        theme: .system
+        isPlaceholder: false
     )
 }

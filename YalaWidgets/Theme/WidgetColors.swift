@@ -53,20 +53,6 @@ enum WidgetColors {
     /// Overdue/error state (red)
     static let overdue = negative
 
-    // MARK: - Background Colors
-
-    /// Card background (adapts to light/dark mode)
-    /// Light: white, Dark: dark slate (#1C2847)
-    static var yalaCard: Color {
-        Color(
-            UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.11, green: 0.16, blue: 0.28, alpha: 1.0)
-                    : UIColor.white
-            }
-        )
-    }
-
     // MARK: - Helpers
 
     /// Color for balance based on sign

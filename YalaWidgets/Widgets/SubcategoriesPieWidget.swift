@@ -20,8 +20,6 @@ struct SubcategoriesPieWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 
-    @Parameter(title: "widget.theme.type", default: .system)
-    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -34,7 +32,6 @@ struct SubcategoriesPieEntry: TimelineEntry {
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
-    let theme: WidgetThemeOption
 
     static var placeholder: SubcategoriesPieEntry {
         SubcategoriesPieEntry(
@@ -53,8 +50,7 @@ struct SubcategoriesPieEntry: TimelineEntry {
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            period: .thisMonth,
-            theme: .system
+            period: .thisMonth
         )
     }
 }
@@ -121,8 +117,7 @@ struct SubcategoriesPieWidgetProvider: AppIntentTimelineProvider {
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            period: configuration.period,
-            theme: configuration.theme
+            period: configuration.period
         )
     }
 }
@@ -218,13 +213,7 @@ struct SubcategoriesPieWidget: Widget {
             provider: SubcategoriesPieWidgetProvider()
         ) { entry in
             SubcategoriesPieWidgetView(entry: entry)
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.subcategoriesPie")
         .description("widget.gallery.subcategoriesPie.desc")
@@ -251,6 +240,6 @@ struct SubcategoriesPieWidget: Widget {
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .system
+
     )
 }

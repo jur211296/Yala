@@ -3,29 +3,10 @@
 //  YalaWidgets
 //
 //  Shared configuration options for widget customization.
-//  Includes theme selection and display mode options.
+//  Includes display mode options.
 //
 
 import AppIntents
-
-// MARK: - Theme Option
-
-/// Theme option for widget background
-enum WidgetThemeOption: String, AppEnum {
-    case yala      // yalaCard background (current default)
-    case system    // Transparent background (adopts wallpaper)
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        TypeDisplayRepresentation(name: "widget.theme.type")
-    }
-
-    static var caseDisplayRepresentations: [WidgetThemeOption: DisplayRepresentation] {
-        [
-            .yala: DisplayRepresentation(title: "widget.theme.yala"),
-            .system: DisplayRepresentation(title: "widget.theme.system")
-        ]
-    }
-}
 
 // MARK: - Selection Mode Option
 

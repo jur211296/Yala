@@ -20,8 +20,6 @@ struct CategoriesPieWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 
-    @Parameter(title: "widget.theme.type", default: .system)
-    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -34,7 +32,6 @@ struct CategoriesPieEntry: TimelineEntry {
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
-    let theme: WidgetThemeOption
 
     static var placeholder: CategoriesPieEntry {
         CategoriesPieEntry(
@@ -53,8 +50,7 @@ struct CategoriesPieEntry: TimelineEntry {
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
             isPlaceholder: true,
-            period: .thisMonth,
-            theme: .system
+            period: .thisMonth
         )
     }
 }
@@ -120,8 +116,7 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            period: configuration.period,
-            theme: configuration.theme
+            period: configuration.period
         )
     }
 }
@@ -217,13 +212,7 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.categoriesPie")
         .description("widget.gallery.categoriesPie.desc")
@@ -250,6 +239,6 @@ struct CategoriesPieWidget: Widget {
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .system
+
     )
 }

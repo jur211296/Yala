@@ -20,8 +20,6 @@ struct CashFlowWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 
-    @Parameter(title: "widget.theme.type", default: .system)
-    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -36,7 +34,6 @@ struct CashFlowEntry: TimelineEntry {
     let cashFlowPoints: [WidgetCashFlowPoint]
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
-    let theme: WidgetThemeOption
 
     static var placeholder: CashFlowEntry {
         CashFlowEntry(
@@ -48,8 +45,7 @@ struct CashFlowEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             cashFlowPoints: [],
             isPlaceholder: true,
-            period: .thisMonth,
-            theme: .system
+            period: .thisMonth
         )
     }
 }
@@ -98,8 +94,7 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
             currencyDisplayFormat: displayFormat,
             cashFlowPoints: summary?.cashFlowPoints ?? [],
             isPlaceholder: false,
-            period: configuration.period,
-            theme: configuration.theme
+            period: configuration.period
         )
     }
 }
@@ -754,13 +749,7 @@ struct CashFlowWidget: Widget {
             provider: CashFlowWidgetProvider()
         ) { entry in
             CashFlowWidgetView(entry: entry)
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.cashFlow")
         .description("widget.gallery.cashFlow.desc")
@@ -783,7 +772,7 @@ struct CashFlowWidget: Widget {
         cashFlowPoints: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .system
+
     )
 }
 
@@ -800,7 +789,7 @@ struct CashFlowWidget: Widget {
         cashFlowPoints: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .system
+
     )
 }
 
@@ -817,7 +806,7 @@ struct CashFlowWidget: Widget {
         cashFlowPoints: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .system
+
     )
 }
 
@@ -842,6 +831,6 @@ struct CashFlowWidget: Widget {
         ],
         isPlaceholder: false,
         period: .thisWeek,
-        theme: .system
+
     )
 }

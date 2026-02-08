@@ -16,18 +16,15 @@ struct QuickEntryWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "widget.intent.quickEntry.title" }
     static var description: IntentDescription { "widget.intent.quickEntry.desc" }
 
-    @Parameter(title: "widget.theme.type", default: .system)
-    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
 
 struct QuickEntryEntry: TimelineEntry {
     let date: Date
-    let theme: WidgetThemeOption
 
     static var placeholder: QuickEntryEntry {
-        QuickEntryEntry(date: Date(), theme: .system)
+        QuickEntryEntry(date: Date())
     }
 }
 
@@ -45,11 +42,11 @@ struct QuickEntryProvider: AppIntentTimelineProvider {
         if context.isPreview {
             return .placeholder
         }
-        return QuickEntryEntry(date: Date(), theme: configuration.theme)
+        return QuickEntryEntry(date: Date())
     }
 
     func timeline(for configuration: QuickEntryWidgetIntent, in context: Context) async -> Timeline<QuickEntryEntry> {
-        let entry = QuickEntryEntry(date: Date(), theme: configuration.theme)
+        let entry = QuickEntryEntry(date: Date())
         // These widgets don't need frequent updates
         let nextUpdate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
         return Timeline(entries: [entry], policy: .after(nextUpdate))
@@ -96,13 +93,7 @@ struct QuickManualEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { entry in
             QuickManualEntryWidgetView()
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.quickManual")
         .description("widget.gallery.quickManual.desc")
@@ -150,13 +141,7 @@ struct QuickVoiceEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { entry in
             QuickVoiceEntryWidgetView()
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.quickVoice")
         .description("widget.gallery.quickVoice.desc")
@@ -204,13 +189,7 @@ struct QuickImageEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { entry in
             QuickImageEntryWidgetView()
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.quickImage")
         .description("widget.gallery.quickImage.desc")
@@ -223,17 +202,17 @@ struct QuickImageEntryWidget: Widget {
 #Preview("Manual Entry", as: .systemSmall) {
     QuickManualEntryWidget()
 } timeline: {
-    QuickEntryEntry(date: Date(), theme: .system)
+    QuickEntryEntry(date: Date())
 }
 
 #Preview("Voice Entry", as: .systemSmall) {
     QuickVoiceEntryWidget()
 } timeline: {
-    QuickEntryEntry(date: Date(), theme: .system)
+    QuickEntryEntry(date: Date())
 }
 
 #Preview("Image Entry", as: .systemSmall) {
     QuickImageEntryWidget()
 } timeline: {
-    QuickEntryEntry(date: Date(), theme: .system)
+    QuickEntryEntry(date: Date())
 }

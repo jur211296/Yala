@@ -20,8 +20,6 @@ struct ExpenseWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 
-    @Parameter(title: "widget.theme.type", default: .system)
-    var theme: WidgetThemeOption
 }
 
 // MARK: - Timeline Entry
@@ -34,7 +32,6 @@ struct ExpenseEntry: TimelineEntry {
     let trendData: [WidgetTrendPoint]
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
-    let theme: WidgetThemeOption
 
     static var placeholder: ExpenseEntry {
         ExpenseEntry(
@@ -44,8 +41,7 @@ struct ExpenseEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             trendData: [],
             isPlaceholder: true,
-            period: .thisMonth,
-            theme: .system
+            period: .thisMonth
         )
     }
 }
@@ -100,8 +96,7 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
             currencyDisplayFormat: displayFormat,
             trendData: expenseTrendData,
             isPlaceholder: false,
-            period: configuration.period,
-            theme: configuration.theme
+            period: configuration.period
         )
     }
 }
@@ -327,13 +322,7 @@ struct ExpenseWidget: Widget {
             provider: ExpenseWidgetProvider()
         ) { entry in
             ExpenseWidgetView(entry: entry)
-                .containerBackground(for: .widget) {
-                    if entry.theme == .system {
-                        ContainerRelativeShape().fill(.tertiary)
-                    } else {
-                        WidgetColors.yalaCard
-                    }
-                }
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("widget.gallery.expense")
         .description("widget.gallery.expense.desc")
@@ -354,7 +343,7 @@ struct ExpenseWidget: Widget {
         trendData: [],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .system
+
     )
 }
 
@@ -377,6 +366,6 @@ struct ExpenseWidget: Widget {
         ],
         isPlaceholder: false,
         period: .thisMonth,
-        theme: .system
+
     )
 }
