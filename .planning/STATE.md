@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-08] 0fdf436 feat: comprehensive accessibility — VoiceOver, Dynamic Type, Reduce Motion
 - [2026-02-08] 4577ddf fix: invalidar cache de widgets al eliminar transacciones (BUG-14)
 - [2026-02-08] 15565d1 style: dark mode backgrounds from deep slate blue to pure black
 - [2026-02-08] f4752c8 style: remove trailing commas in widget preview entries
@@ -33,7 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-07] 6808209 fix: correct archive/exclude account behavior across entire app (BUG-12)
 - [2026-02-07] 57bd488 fix: force full decimal precision on individual transaction amounts
 - [2026-02-07] c64d2a0 fix: prevent empty notifications for scheduled payments and announcements
-- [2026-02-07] 69b8002 fix: support multi-select highlighting in pie chart widgets
 - [2026-02-07] 085936d fix: correct report notification calculations — currency, interval, and account filtering
 - [2026-02-07] 4976add refactor: apply code review fixes — DS tokens, search localization, error logging
 - [2026-02-07] a5c87ef fix(widgets): restore native iOS background with .fill.tertiary
@@ -134,6 +134,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Waterfall Chart CashFlow diario (EXP-1)** - Vista diaria de CashFlow ahora muestra gráfico waterfall cumulative (cada barra parte donde terminó la anterior); teal=neto positivo, hot pink=neto negativo; vista mensual sin cambios (bidireccional + línea neta); implementado en app (CashFlowWidget) y widget iOS (BidirectionalCashFlowChart); días con neto=0 filtrados; valores hardcodeados tokenizados a WDS/DS; guard explícito para LineMark/PointMark en widget; 9 escenarios QA (Sección 32); commit c931b9f
 - **Skills cleanup (tooling)** - Removidos 24 GSD skills + 13 redundantes (57→19); añadidos swift-audit, swiftdata-check, swift-modernize, ds-compliance, deep-scan, test-coverage, a11y-audit, pre-launch; CLAUDE.md optimizado (336→204 líneas) con Quick Reference tables; WORKFLOW.md simplificado; commit 6f92bb5
 - **Restauración background nativo widgets (10.5)** - Eliminado sistema de temas custom (WidgetThemeOption enum, @Parameter theme en 11 widgets); restaurado `.containerBackground(.fill.tertiary, for: .widget)` original de Apple en los 11 widgets; eliminado WidgetColors.yalaCard (código muerto); eliminadas 3 claves L10n de tema en es/en; eliminados 3 preview blocks "System Theme"; 15 archivos, +60/-319; commits a1aae5b + f4752c8
+- **Accesibilidad completa (A11Y)** - VoiceOver: label requerido en YalaToolbarButton + 83 call sites, labels en componentes shared e icon-only buttons, traits .isHeader, decorative icons hidden, disabled hints en 18 vistas, alternativas color-only (BudgetRow excedido icon, ScheduledPaymentRow "Vencido" text, VariationChip labels, BudgetProgressBar .accessibilityValue); Dynamic Type: @ScaledMetric para hero sizes (48pt+) con cap accessibility1, DS.Typography tokens en ~90 vistas; Reduce Motion: withAnimation→dsWithAnimation en 9 archivos, skeleton shimmer y confetti skip; L10n scheduled.overdue en 6 locales; 131 archivos, +782/-951; commit 0fdf436
 - **Fix archive/exclude account behavior (BUG-12)** - Corregida semántica invertida de isArchived/excludeFromStatistics en toda la app: cálculos/estadísticas ahora filtran solo por excludeFromStatistics (no isArchived), selección de cuentas para nuevas tx filtra solo por isArchived (no excludeFromStatistics); 11 archivos de lógica corregidos (FilterService, StatisticsVM, TrendsTabView, PanelVM, BalanceHelper, RecordsVM, ReportNotificationService, WidgetDataCache, NewTransactionVM, InboxView, InboxDraftEditSheet); validación de cuenta archivada en aprobación de inbox; pre-filtro de cuentas excluidas en Records; L10n errorArchivedAccount en 6 idiomas; commit 6808209
 
 ### Fase 6 (archivado)
@@ -207,6 +208,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 **Bugs pendientes:**
 - 🔴 **BUG-13: Archivar/desarchivar cuenta fuerza ajuste de saldo** — Al desarchivar una cuenta se está forzando un nuevo saldo inicial o ajuste, no debería pasar. Archivar e inarchivar no debe afectar de ninguna manera el balance de una cuenta. Lo mismo para Excluir o no excluir de estadísticas: el toggle no debe provocar ningún cambio en el saldo.
 - ✅ **BUG-14: Eliminar transacción no actualiza cache de widgets** — Resuelto (4577ddf)
+- ✅ **A11Y: Accesibilidad completa** — VoiceOver, Dynamic Type, Reduce Motion (0fdf436)
 - 🔴 **BUG-15: Eliminar transacción aprobada desde Inbox no funciona** — La eliminación de una transacción desde el Inbox no está funcionando correctamente.
 
 ---
@@ -344,9 +346,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: BUG-14 resuelto — widget cache invalidation al eliminar transacciones
-Next step: Investigar y resolver BUG-13 (archive/unarchive fuerza ajuste de saldo)
+Stopped at: Accesibilidad completa implementada (VoiceOver + Dynamic Type + Reduce Motion) — 0fdf436
+Next step: Investigar y resolver BUG-13 (archive/unarchive fuerza ajuste de saldo) o BUG-15 (eliminar tx aprobada desde Inbox)
 Resume context:
-- BUG-14 resuelto: 2 líneas añadidas (NewTransactionView + RecordsViewModel) — 4577ddf
+- A11Y completo: 131 archivos, 8 áreas (VoiceOver labels, shared components, icon-only buttons, DT transactions, DT panel/stats, DT remaining, disabled hints + color indicators, reduce motion)
 - BUG-13 pendiente: archivar/desarchivar y excluir/incluir de estadísticas fuerzan ajuste de saldo
+- BUG-15 pendiente: eliminar transacción aprobada desde Inbox no funciona
 - Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md para Fase 11
