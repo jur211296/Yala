@@ -318,6 +318,7 @@ final class RecordsViewModel: Filterable {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
         } catch {
             #if DEBUG
             print("Error deleting records: \(error)")

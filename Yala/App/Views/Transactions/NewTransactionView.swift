@@ -1181,6 +1181,7 @@ struct NewTransactionView: View {
         do {
             modelContext.delete(transaction)
             try modelContext.save()
+            WidgetDataCache.updateCache(context: modelContext)
             dismiss()
         } catch {
             #if DEBUG
