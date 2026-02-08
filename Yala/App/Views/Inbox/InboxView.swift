@@ -470,6 +470,7 @@ struct InboxView: View {
             draftService.setContext(modelContext)
             do {
                 try draftService.deleteDraft(draft)
+                viewModel.loadData()
             } catch {
                 #if DEBUG
                 print("InboxView: Error deleting draft: \(error)")
