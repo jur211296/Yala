@@ -264,7 +264,6 @@ struct TopCategoriesWidget: Widget {
         currencyCode: "PEN",
         currencyDisplayFormat: "symbol",
         isPlaceholder: false,
-        period: .thisMonth,
-
+        period: .thisMonth
     )
 }

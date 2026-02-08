@@ -381,8 +381,7 @@ struct BalanceWidget: Widget {
         currencyDisplayFormat: "symbol",
         trendData: [],
         isPlaceholder: false,
-        period: .thisMonth,
-
+        period: .thisMonth
     )
 }
 
@@ -404,8 +403,7 @@ struct BalanceWidget: Widget {
             WidgetTrendPoint(date: Date(), balance: 15420),
         ],
         isPlaceholder: false,
-        period: .thisWeek,
-
+        period: .thisWeek
     )
 }
 
@@ -419,7 +417,6 @@ struct BalanceWidget: Widget {
         currencyDisplayFormat: "symbol",
         trendData: [],
         isPlaceholder: false,
-        period: .thisMonth,
-
+        period: .thisMonth
     )
 }

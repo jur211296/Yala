@@ -771,8 +771,7 @@ struct CashFlowWidget: Widget {
         currencyDisplayFormat: "symbol",
         cashFlowPoints: [],
         isPlaceholder: false,
-        period: .thisMonth,
-
+        period: .thisMonth
     )
 }
 
@@ -788,8 +787,7 @@ struct CashFlowWidget: Widget {
         currencyDisplayFormat: "symbol",
         cashFlowPoints: [],
         isPlaceholder: false,
-        period: .thisMonth,
-
+        period: .thisMonth
     )
 }
 
@@ -805,8 +803,7 @@ struct CashFlowWidget: Widget {
         currencyDisplayFormat: "symbol",
         cashFlowPoints: [],
         isPlaceholder: false,
-        period: .thisMonth,
-
+        period: .thisMonth
     )
 }
 
@@ -830,7 +827,6 @@ struct CashFlowWidget: Widget {
             WidgetCashFlowPoint(date: Date(), income: 0, expense: 200, net: -200),
         ],
         isPlaceholder: false,
-        period: .thisWeek,
-
+        period: .thisWeek
     )
 }
