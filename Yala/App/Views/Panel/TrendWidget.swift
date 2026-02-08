@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct TrendWidget: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     @Bindable var viewModel: PanelViewModel
     @Bindable var sessionState: SessionState
     var currencyCode: String
@@ -103,7 +105,8 @@ struct TrendWidget: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
                 .font(.subheadline)

@@ -10,6 +10,7 @@ import SwiftUI
 
 struct TabBarConfigView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
     @State private var localConfig: TabBarConfiguration = .default
@@ -235,6 +236,7 @@ struct TabBarConfigView: View {
             }
             .buttonStyle(.plain)
             .disabled(!canActivate)
+            .accessibilityHint(!canActivate ? "Límite de pestañas alcanzado" : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -263,19 +265,19 @@ struct TabBarConfigView: View {
         // Prevent moving other tabs to first position (before panel)
         if destination == 0 { return }
 
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
             localConfig.activeTabs.move(fromOffsets: source, toOffset: destination)
         }
     }
 
     private func addTab(_ tab: ConfigurableTab) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
             _ = localConfig.activate(tab)
         }
     }
 
     private func removeTab(_ tab: ConfigurableTab) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
             _ = localConfig.deactivate(tab)
         }
     }

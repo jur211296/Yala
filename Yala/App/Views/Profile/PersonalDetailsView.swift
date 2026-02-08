@@ -12,6 +12,8 @@ import SwiftUI
 struct PersonalDetailsView: View {
     @Environment(\.dismiss) private var dismiss
 
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 44
+
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("userAlias") private var userAlias: String = ""
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
@@ -66,7 +68,7 @@ struct PersonalDetailsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                         saveAndDismiss()
                     }
                 }
@@ -163,8 +165,9 @@ struct PersonalDetailsView: View {
                     .frame(width: 100, height: 100)
 
                 Image(systemName: selectedIcon)
-                    .font(.system(size: 44))
+                    .font(.system(size: avatarSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             } else {
                 // Default
                 Circle()
@@ -172,8 +175,9 @@ struct PersonalDetailsView: View {
                     .frame(width: 100, height: 100)
 
                 Image(systemName: "person.fill")
-                    .font(.system(size: 44))
+                    .font(.system(size: avatarSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
 
             // Edit badge overlay

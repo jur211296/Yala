@@ -97,6 +97,11 @@ struct ScheduledPaymentRowView: View {
                     Circle()
                         .fill(Color.hotPink)
                         .frame(width: 6, height: 6)
+                        .accessibilityHidden(true)
+
+                    Text(NSLocalizedString("scheduled.overdue", comment: "Overdue label"))
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.hotPink)
                 }
 
                 Text(dueText)

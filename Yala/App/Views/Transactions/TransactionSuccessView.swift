@@ -36,6 +36,8 @@ struct TransactionSuccessData {
 // MARK: - Transaction Success View
 
 struct TransactionSuccessView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36
+
     let data: TransactionSuccessData
     let onAccept: () -> Void
     let onCreateAnother: () -> Void
@@ -71,8 +73,9 @@ struct TransactionSuccessView: View {
                             .opacity(showCheckmark ? 1.0 : 0.0)
 
                         Image(systemName: "checkmark")
-                            .font(.system(size: 36, weight: .semibold))
+                            .font(.system(size: heroIconSize, weight: .semibold))
                             .foregroundStyle(data.transactionType.color)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .scaleEffect(showCheckmark ? 1.0 : 0.0)
                             .opacity(showCheckmark ? 1.0 : 0.0)
                     }

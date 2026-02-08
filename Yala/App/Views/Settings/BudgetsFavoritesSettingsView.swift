@@ -12,6 +12,7 @@ import SwiftUI
 struct BudgetsFavoritesSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel = BudgetsFavoritesSettingsViewModel()
@@ -46,14 +47,14 @@ struct BudgetsFavoritesSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if viewModel.hasFavorites {
-                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down") {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar") {
+                        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
                             viewModel.isEditMode.toggle()
                         }
                     }
@@ -154,7 +155,7 @@ struct BudgetsFavoritesSettingsView: View {
         HStack(spacing: DS.Spacing.md) {
             // Favorite toggle
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
                     viewModel.toggleFavorite(budget)
                 }
             } label: {

@@ -11,6 +11,7 @@ import SwiftUI
 
 struct TagsPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
     let tags: [TagSpendingSummary]
     let currencyCode: String
@@ -80,7 +81,8 @@ struct TagsPieWidget: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag.fill")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
                 .font(DS.Typography.subheadline)
@@ -291,7 +293,7 @@ struct TagsPieWidget: View {
                             Circle()
                                 .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
                             Image(systemName: selectedItem.iconName)
-                                .font(.system(size: 12, weight: .bold))
+                                .font(DS.Typography.labelTiny).fontWeight(.bold)
                                 .foregroundStyle(Color(hex: selectedItem.colorHex))
                         }
                         .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
@@ -322,7 +324,7 @@ struct TagsPieWidget: View {
                                 Circle()
                                     .fill(Color(hex: item.colorHex).opacity(0.15))
                                 Image(systemName: item.iconName)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(DS.Typography.captionSmall).fontWeight(.bold)
                                     .foregroundStyle(Color(hex: item.colorHex))
                             }
                             .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)

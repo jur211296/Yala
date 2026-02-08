@@ -23,6 +23,8 @@ struct InboxApproveSuccessData {
 }
 
 struct InboxApproveSuccessView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36
+
     let data: InboxApproveSuccessData
     let hasNextDraft: Bool
     let onEdit: () -> Void
@@ -53,8 +55,9 @@ struct InboxApproveSuccessView: View {
                             .frame(width: 80, height: 80)
 
                         Image(systemName: "checkmark")
-                            .font(.system(size: 36, weight: .semibold))
+                            .font(.system(size: heroIconSize, weight: .semibold))
                             .foregroundStyle(Color.electricIndigo)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
 
                     Text(L10n.Inbox.approveSuccess)

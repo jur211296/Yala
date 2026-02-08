@@ -15,6 +15,7 @@ struct TransactionAmountInputView: View {
     let currencyCode: String
     let onCurrencyTap: () -> Void
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48
     @FocusState private var isAmountFocused: Bool
 
     var body: some View {
@@ -40,11 +41,11 @@ struct TransactionAmountInputView: View {
             // Amount display
             HStack(spacing: 4) {
                 Text(transactionType == .expense ? "-" : "+")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                     .foregroundStyle(transactionType.color)
 
                 TextField("0", text: $amountText)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                     .foregroundStyle(transactionType.color)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)

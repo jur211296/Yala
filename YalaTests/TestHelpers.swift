@@ -185,3 +185,39 @@ func dateOffset(days: Int) -> Date {
 func dateOffset(months: Int) -> Date {
     Calendar.current.date(byAdding: .month, value: months, to: Date()) ?? Date()
 }
+
+// MARK: - InboxDraft Factory
+
+@MainActor
+func makeTestInboxDraft(
+    context: ModelContext,
+    amount: Double? = 50.0,
+    date: Date? = nil,
+    note: String = "Test draft"
+) -> InboxDraft {
+    let draft = InboxDraft(
+        note: note,
+        amount: amount,
+        date: date ?? Date(),
+        sourceType: .voice
+    )
+    context.insert(draft)
+    return draft
+}
+
+// MARK: - ExchangeRate Factory
+
+@MainActor
+func makeTestExchangeRate(
+    context: ModelContext,
+    dateKey: String = "2026-01-15",
+    rates: [String: Double] = ["PEN": 3.75, "EUR": 0.92, "USD": 1.0]
+) throws -> ExchangeRate {
+    let rate = try ExchangeRate(
+        dateKey: dateKey,
+        base: "USD",
+        ratesDictionary: rates
+    )
+    context.insert(rate)
+    return rate
+}

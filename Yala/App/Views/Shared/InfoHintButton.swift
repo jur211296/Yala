@@ -22,10 +22,11 @@ struct InfoHintButton: View {
                 showPopover = true
             } label: {
                 Image(systemName: "info.circle")
-                    .font(.system(size: 14))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(title)
             .popover(isPresented: $showPopover, arrowEdge: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(title)

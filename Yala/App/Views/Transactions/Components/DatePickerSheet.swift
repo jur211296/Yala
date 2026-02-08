@@ -34,7 +34,7 @@ struct DatePickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -46,7 +46,7 @@ struct DatePickerSheet: View {
                         dismiss()
                     } label: {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(DS.Typography.body.weight(.bold))
                             .foregroundStyle(.white)
                             .frame(width: 20, height: 20)
                     }

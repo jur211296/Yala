@@ -44,20 +44,20 @@ struct TagsSettingsListView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: DS.Spacing.md) {
-                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down")
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar")
                     {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             viewModel.isEditMode.toggle()
                         }
                     }
 
-                    YalaToolbarButton(systemName: "plus") {
+                    YalaToolbarButton(systemName: "plus", label: "Agregar") {
                         viewModel.isPresentingCreateTag = true
                     }
                 }

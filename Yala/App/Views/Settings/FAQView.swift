@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FAQView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expandedItem: FAQItem?
 
     var body: some View {
@@ -63,7 +64,7 @@ struct FAQView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
@@ -110,7 +111,7 @@ struct FAQView: View {
     @ViewBuilder
     private func faqRow(item: FAQItem) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
+            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.25)) {
                 expandedItem = expandedItem == item ? nil : item
             }
         } label: {

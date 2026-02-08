@@ -238,7 +238,7 @@ struct TopCategoriesWidget: Widget {
             provider: TopCategoriesWidgetProvider()
         ) { entry in
             TopCategoriesWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.topCategories")
         .description("widget.gallery.topCategories.desc")
@@ -254,16 +254,5 @@ struct TopCategoriesWidget: Widget {
     TopCategoriesEntry.placeholder
 }
 
-#Preview("Empty", as: .systemMedium) {
-    TopCategoriesWidget()
-} timeline: {
-    TopCategoriesEntry(
-        date: Date(),
-        categories: [],
-        totalExpense: 0,
-        currencyCode: "PEN",
-        currencyDisplayFormat: "symbol",
-        isPlaceholder: false,
-        period: .thisMonth
-    )
-}
+
+

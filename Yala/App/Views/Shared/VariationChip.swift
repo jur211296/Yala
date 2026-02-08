@@ -95,6 +95,7 @@ struct VariationChip: View {
                     Capsule()
                         .fill(variationColor.opacity(0.1))
                 )
+                .accessibilityLabel(variation >= 0 ? "Aumento \(PreviousPeriodHelper.formatVariationValue(variation))" : "Disminución \(PreviousPeriodHelper.formatVariationValue(variation))")
         } else if showNAWhenNil {
             // Show "N/A" for items without previous data (when comparison is active)
             Text("N/A")

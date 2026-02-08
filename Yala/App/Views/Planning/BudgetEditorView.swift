@@ -11,6 +11,7 @@ import SwiftUI
 struct BudgetEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28
     @Environment(SessionState.self) private var sessionState
     @Environment(EntityDeletionService.self) private var deletionService
 
@@ -107,7 +108,7 @@ struct BudgetEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -181,7 +182,8 @@ struct BudgetEditorView: View {
                         TextField("0.00", text: $limitAmount)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: scaledAmountSize, weight: .bold))
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
                 }
                 .padding()

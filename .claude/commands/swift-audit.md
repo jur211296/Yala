@@ -22,7 +22,7 @@ Ejecutar TODOS los checks en paralelo usando Grep sobre los archivos identificad
 - Excepción: `try?` en contextos triviales documentados
 
 ### B. Force unwraps
-- Buscar `\!` (excluyendo `!=`, `//`, `///`, strings)
+- Buscar `\!` en el código — ignorar `!=`, comentarios y strings
 - Cada `!` sin guard/if previo es crítico
 
 ### C. Prints en producción

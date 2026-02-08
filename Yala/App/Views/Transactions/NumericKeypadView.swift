@@ -96,6 +96,8 @@ struct KeypadButtonView: View {
     let button: KeypadButton
     let action: () -> Void
 
+    @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .title) private var deleteSize: CGFloat = 22
     @State private var isPressed = false
 
     var body: some View {
@@ -110,11 +112,11 @@ struct KeypadButtonView: View {
 
                 if let text = button.displayText {
                     Text(text)
-                        .font(.system(size: 28, weight: .medium, design: .rounded))
+                        .font(.system(size: digitSize, weight: .medium, design: .rounded))
                         .foregroundStyle(.primary)
                 } else if let systemImage = button.systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.system(size: deleteSize, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }

@@ -30,5 +30,6 @@ struct BudgetProgressBar: View {
             }
         }
         .frame(height: 6)
+        .accessibilityValue(isExceeded ? "Excedido" : "\(Int(percentage))%")
     }
 }

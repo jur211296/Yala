@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BudgetPeriodSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36
     @Bindable var viewModel: BudgetsViewModel
     var transactions: [TransactionItem]
     var onPeriodChange: () -> Void
@@ -29,7 +30,8 @@ struct BudgetPeriodSelectorSheet: View {
                         .frame(width: 80, height: 80)
 
                     Image(systemName: periodIcon)
-                        .font(.system(size: 36, weight: .medium))
+                        .font(.system(size: scaledIconSize, weight: .medium))
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(Color.electricIndigo)
                 }
                 .padding(.top, 24)

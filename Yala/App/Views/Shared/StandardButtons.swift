@@ -4,10 +4,12 @@ import SwiftUI
 
 /// Button style with scale-down animation on press (bouncy effect)
 struct BouncyButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
+            .dsAnimation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed, reduceMotion: reduceMotion)
     }
 }
 
@@ -17,16 +19,18 @@ struct BouncyButtonStyle: ButtonStyle {
 /// Diseño: Icono nativo (Circle, Chevron, XMark) sin fondo adicional.
 struct YalaToolbarButton: View {
     let systemName: String
+    let label: String
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 17, weight: .semibold))  // Standard size
+                .font(DS.Typography.label)
                 .foregroundStyle(Color.primary)
                 .frame(width: 32, height: 32)
-                .contentShape(Rectangle())  // Ensure touch area captures taps
+                .contentShape(Rectangle())
         }
+        .accessibilityLabel(label)
     }
 }
 
@@ -39,14 +43,15 @@ struct YalaSaveButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "checkmark")
-                .font(.system(size: 17, weight: .bold))  // Bolder checkmark for better visibility
+                .font(DS.Typography.label.weight(.bold))
                 .foregroundStyle(.white)
-                .frame(width: 20, height: 20)  // Smaller frame inside prominent button to prevent huge pill
+                .frame(width: 20, height: 20)
         }
         .disabled(isDisabled)
         .buttonStyle(.borderedProminent)
         .tint(Color.electricIndigo)
-        .buttonBorderShape(.circle)  // Explicitly request circle shape
+        .buttonBorderShape(.circle)
+        .accessibilityLabel("Guardar")
     }
 }
 
@@ -77,7 +82,8 @@ struct YalaPrimaryButton: View {
                         .tint(.white)
                 } else if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(DS.Typography.label)
+                        .accessibilityHidden(true)
                 }
                 Text(title)
                     .font(DS.Typography.label)
@@ -122,7 +128,8 @@ struct YalaSecondaryButton: View {
             HStack(spacing: DS.Spacing.sm) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DS.Typography.labelSmall)
+                        .accessibilityHidden(true)
                 }
                 Text(title)
                     .font(DS.Typography.label)
@@ -162,7 +169,8 @@ struct YalaTextButton: View {
             HStack(spacing: DS.Spacing.xs) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(DS.Typography.labelSmall)
+                        .accessibilityHidden(true)
                 }
                 Text(title)
                     .font(DS.Typography.label)
@@ -176,9 +184,9 @@ struct YalaTextButton: View {
     VStack(spacing: DS.Spacing.xl) {
         // Toolbar buttons
         HStack(spacing: DS.Spacing.xl) {
-            YalaToolbarButton(systemName: "chevron.left") {}
-            YalaToolbarButton(systemName: "xmark") {}
-            YalaToolbarButton(systemName: "plus") {}
+            YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {}
+            YalaToolbarButton(systemName: "xmark", label: "Cerrar") {}
+            YalaToolbarButton(systemName: "plus", label: "Agregar") {}
             YalaSaveButton(action: {})
             YalaSaveButton(action: {}, isDisabled: true)
         }

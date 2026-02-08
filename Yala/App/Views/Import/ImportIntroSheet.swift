@@ -25,6 +25,8 @@ struct ImportResult: Identifiable {
 /// Overlay view for showing import results - displayed on top of content in ZStack
 /// This approach avoids the nested sheet presentation bug in SwiftUI
 struct ImportResultOverlay: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 80
+
     let result: ImportResult
     let onDismiss: () -> Void
 
@@ -40,8 +42,9 @@ struct ImportResultOverlay: View {
 
                 // Icon
                 Image(systemName: result.isSuccess ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 80))
+                    .font(.system(size: heroSize))
                     .foregroundStyle(result.isSuccess ? Color.financeGreen : Color.red)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 // Title
                 Text(result.isSuccess ? L10n.Import.completed : L10n.Import.importError)
@@ -87,6 +90,8 @@ struct ImportIntroSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(SessionState.self) private var sessionState
+
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
 
     // Data passed from parent view (no @Query = no view reconstruction on save)
     let accounts: [Account]
@@ -177,6 +182,7 @@ struct ImportIntroSheet: View {
                         .tint(Color.brandPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .disabled(isImporting)
+                        .accessibilityHint(isImporting ? "Importación en proceso" : "")
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.lg)
@@ -189,7 +195,7 @@ struct ImportIntroSheet: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -254,8 +260,9 @@ struct ImportIntroSheet: View {
     private var introSection: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "square.and.arrow.down")
-                .font(.system(size: 48))
+                .font(.system(size: heroIconSize))
                 .foregroundStyle(Color.brandPrimary)
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)

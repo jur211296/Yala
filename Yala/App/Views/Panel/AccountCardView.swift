@@ -94,7 +94,7 @@ struct AccountCardView: View {
                     onEditTapped()
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(DS.Typography.labelTiny)
                         .foregroundStyle(isSelected ? Color.white : Color.yalaPrimaryText)
                         .padding(DS.Spacing.xs)
                         .background(.ultraThinMaterial, in: Circle())

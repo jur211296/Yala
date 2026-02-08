@@ -50,7 +50,7 @@ struct ExportColumnsStepView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
@@ -65,6 +65,7 @@ struct ExportColumnsStepView: View {
                     Text(L10n.Common.next)
                 }
                 .disabled(!isValid)
+                .accessibilityHint(!isValid ? "Selecciona al menos una columna" : "")
             }
         }
     }

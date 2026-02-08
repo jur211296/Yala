@@ -27,6 +27,7 @@ struct PanelView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(CurrencyConverter.self) private var currencyConverter
@@ -139,13 +140,13 @@ struct PanelView: View {
         } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "tray.fill")
-                    .font(.system(size: 18, weight: .medium))
+                    .font(DS.Typography.body).fontWeight(.medium)
                     .foregroundStyle(Color.toolbarIconColor)
 
                 // Badge with count
                 if pendingDrafts.count > 0 {
                     Text("\(min(pendingDrafts.count, 99))")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(DS.Typography.captionSmall).fontWeight(.bold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 1)
@@ -157,6 +158,7 @@ struct PanelView: View {
                 }
             }
         }
+        .accessibilityLabel("Bandeja de entrada")
     }
 
 
@@ -311,7 +313,7 @@ struct PanelView: View {
                                 color: .hotPink,
                                 isLocked: isVoiceLocked
                             ) {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                     showFABMenu = false
                                 }
                                 if isVoiceLocked {
@@ -330,7 +332,7 @@ struct PanelView: View {
                                 color: .teal,
                                 isLocked: isImageLocked
                             ) {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                     showFABMenu = false
                                 }
                                 if isImageLocked {
@@ -347,7 +349,7 @@ struct PanelView: View {
                             text: L10n.Panel.fabManual,
                             color: .electricIndigo
                         ) {
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false
                             }
                             showNewTransaction = true
@@ -362,12 +364,12 @@ struct PanelView: View {
                 // FAB button
                 Button {
                     DS.Haptic.medium()
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                         showFABMenu.toggle()
                     }
                 } label: {
                     Image(systemName: showFABMenu ? "xmark" : "plus")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
                         .background(showFABMenu ? Color.gray : fabBackground)
@@ -388,7 +390,7 @@ struct PanelView: View {
                 }
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.white)
                     .frame(width: 56, height: 56)
                     .background(fabBackground)
@@ -400,6 +402,7 @@ struct PanelView: View {
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
+            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
         }
     }
 
@@ -416,7 +419,7 @@ struct PanelView: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(DS.Typography.headline)
                     .frame(width: 24)
 
                 Text(text)
@@ -527,7 +530,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     text: "Fecha: \(formattedDate(focusedDate))",
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.focusedDate = nil
                                         }
                                     }
@@ -605,7 +608,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     nature: nature,
                                     onClear: {
-                                        withAnimation { viewModel.selectedNature = nil }
+                                        dsWithAnimation(reduceMotion) { viewModel.selectedNature = nil }
                                     }
                                 )
                             }
@@ -616,7 +619,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     transactionNature: transactionNature,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             sessionState.selectedTransactionNatures.removeAll()
                                         }
                                     }
@@ -631,7 +634,7 @@ struct PanelView: View {
                                         iconName: tag.iconName,
                                         colorHex: tag.colorHex,
                                         onClear: {
-                                            withAnimation {
+                                            dsWithAnimation(reduceMotion) {
                                                 viewModel.selectedTags.remove(tagID)
                                                 viewModel.syncToSessionState(sessionState)
                                             }
@@ -645,7 +648,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     currencyCode: currency.rawValue,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.selectedCurrencies.remove(currency)
                                             viewModel.syncToSessionState(sessionState)
                                         }
@@ -658,7 +661,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     amountText: viewModel.amountCondition.displayText,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.amountCondition = .any
                                             viewModel.syncToSessionState(sessionState)
                                         }
@@ -671,7 +674,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     noteText: viewModel.searchText,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.searchText = ""
                                             viewModel.syncToSessionState(sessionState)
                                         }
@@ -682,13 +685,14 @@ struct PanelView: View {
                             // Clear All Button
                             if activeFilterCount > 1 {
                                 Button {
-                                    withAnimation {
+                                    dsWithAnimation(reduceMotion) {
                                         clearAllPanelFilters()
                                     }
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.secondary)
                                 }
+                                .accessibilityLabel("Limpiar filtros")
                                 .buttonStyle(.plain)
                             }
                         }
@@ -709,9 +713,10 @@ struct PanelView: View {
                     showWidgetPreferences = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(Color.primary)
                 }
+                .accessibilityLabel("Preferencias de widgets")
             }
             .padding(.trailing, DS.Spacing.xxs)
 
@@ -777,7 +782,7 @@ struct PanelView: View {
         viewModel.loadData()
 
         // Direct synchronous call for instant response
-        withAnimation(.easeOut(duration: 0.15)) {
+        dsWithAnimation(reduceMotion, .easeOut(duration: 0.15)) {
             viewModel.calculateTrendData(
                 accounts: accounts,
                 transactions: transactions,
@@ -853,7 +858,7 @@ struct PanelView: View {
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
                 onSelectCategory: { id in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
@@ -870,7 +875,7 @@ struct PanelView: View {
                 globalCategoryFilterID: viewModel.selectedCategoryID,
                 localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
                 onSelectSubcategory: { subcategoryID in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleSubcategoryFilter(
                             subcategoryID,
                             transactions: transactions,
@@ -894,7 +899,7 @@ struct PanelView: View {
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryIDs: viewModel.selectedCategoryID.map { Set([$0]) } ?? [],
                 onSelectCategory: { id in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
@@ -911,7 +916,7 @@ struct PanelView: View {
                 selectedCategoryID: viewModel.selectedCategoryID,
                 selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
                 onSelectSubcategory: { subcategoryID in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleSubcategoryFilter(
                             subcategoryID,
                             transactions: transactions,
@@ -959,7 +964,7 @@ struct PanelView: View {
                 grouping: viewModel.natureGrouping,
                 interval: viewModel.currentInterval,
                 onSelectNature: { nature in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleNatureFilter(nature)
                     }
                 },

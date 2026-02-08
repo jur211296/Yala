@@ -75,7 +75,7 @@ struct CategoryDetailView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     handleBack()
                 }
             }
@@ -324,6 +324,7 @@ struct CategoryDetailView: View {
                                                 .font(.title2)
                                                 .foregroundStyle(.red)
                                         }
+                                        .accessibilityLabel("Eliminar subcategoría")
                                         .padding(.leading, DS.Spacing.lg)
                                         .padding(.trailing, DS.Spacing.sm)
                                     }
@@ -401,6 +402,7 @@ struct CategoryDetailView: View {
                                             .font(.title2)
                                             .foregroundStyle(.red)
                                     }
+                                    .accessibilityLabel("Eliminar subcategoría")
                                     .padding(.leading, DS.Spacing.lg)
                                     .padding(.trailing, DS.Spacing.sm)
                                 }

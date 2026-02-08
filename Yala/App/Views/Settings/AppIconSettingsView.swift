@@ -62,6 +62,8 @@ struct AppIconSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+
     @State private var selectedIcon: AppIconOption = .original
     @State private var showingError = false
     @State private var errorMessage = ""
@@ -85,8 +87,9 @@ struct AppIconSettingsView: View {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "app.fill")
-                            .font(.system(size: 48))
+                            .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.brandPrimary)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.appIcon)
@@ -118,7 +121,7 @@ struct AppIconSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }

@@ -11,6 +11,7 @@ struct ConfettiView: View {
 
     // MARK: - State
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var particles: [ConfettiParticle] = []
     @State private var isAnimating = false
 
@@ -56,6 +57,7 @@ struct ConfettiView: View {
             }
         }
         .onAppear {
+            guard !reduceMotion else { return }
             generateParticles()
             startAnimation()
         }

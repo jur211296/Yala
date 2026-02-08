@@ -61,7 +61,7 @@ struct AccountSelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -94,7 +94,7 @@ struct AccountSelectorRow: View {
                     .frame(width: 36, height: 36)
                     .overlay(
                         Image(systemName: displayIconName(for: account))
-                            .font(.system(size: 16, weight: .medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(.white)
                     )
 

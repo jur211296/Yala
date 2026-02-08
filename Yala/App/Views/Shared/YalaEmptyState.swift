@@ -3,6 +3,8 @@ import SwiftUI
 /// Vista de estado vacío reutilizable
 /// Uso: Listas vacías, sin resultados, sin datos
 struct YalaEmptyState: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+
     let icon: String
     let title: String
     let message: String?
@@ -26,8 +28,10 @@ struct YalaEmptyState: View {
     var body: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: icon)
-                .font(.system(size: 48, weight: .light))
+                .font(.system(size: heroIconSize, weight: .light))
                 .foregroundStyle(Color.secondary.opacity(0.6))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                .accessibilityHidden(true)
 
             VStack(spacing: DS.Spacing.sm) {
                 Text(title)

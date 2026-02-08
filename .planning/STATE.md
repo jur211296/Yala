@@ -14,7 +14,7 @@ Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
 Status: **Fase 10.5 en progreso** — Corrección de bugs pendientes
-Last activity: 2026-02-07 — Fixes de notificaciones, widgets y code review; fase 10.5 reabierta para bugs
+Last activity: 2026-02-08 — Restauración background nativo widgets (tema custom eliminado), BUG-13 reportado
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ██████████████░░ 95% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso — bugs)
@@ -24,13 +24,16 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-08] 4577ddf fix: invalidar cache de widgets al eliminar transacciones (BUG-14)
+- [2026-02-08] 15565d1 style: dark mode backgrounds from deep slate blue to pure black
+- [2026-02-08] f4752c8 style: remove trailing commas in widget preview entries
+- [2026-02-08] a1aae5b fix: restore native Apple widget background by removing custom theme system
 - [2026-02-08] c931b9f feat: waterfall chart for daily cash flow view (EXP-1)
 - [2026-02-08] 6f92bb5 chore: clean up skills — remove GSD + redundant commands, add quality skills
 - [2026-02-07] 6808209 fix: correct archive/exclude account behavior across entire app (BUG-12)
 - [2026-02-07] 57bd488 fix: force full decimal precision on individual transaction amounts
 - [2026-02-07] c64d2a0 fix: prevent empty notifications for scheduled payments and announcements
 - [2026-02-07] 69b8002 fix: support multi-select highlighting in pie chart widgets
-- [2026-02-07] 63c2c43 refactor: remove black PRO theme — defer to Phase 11 proper implementation
 - [2026-02-07] 085936d fix: correct report notification calculations — currency, interval, and account filtering
 - [2026-02-07] 4976add refactor: apply code review fixes — DS tokens, search localization, error logging
 - [2026-02-07] a5c87ef fix(widgets): restore native iOS background with .fill.tertiary
@@ -130,6 +133,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Fix decimales en transacciones individuales (BUG-11)** - forceFullPrecision: true en 11 call sites de YalaFormatter.currency() que muestran montos individuales (RecordCard, favoritos, inbox, pagos planificados, widgets, success views); ScheduledPaymentDetailView migrado de NumberFormatter manual a YalaFormatter; DS.Radius.card fix en ContentView; commit 57bd488
 - **Waterfall Chart CashFlow diario (EXP-1)** - Vista diaria de CashFlow ahora muestra gráfico waterfall cumulative (cada barra parte donde terminó la anterior); teal=neto positivo, hot pink=neto negativo; vista mensual sin cambios (bidireccional + línea neta); implementado en app (CashFlowWidget) y widget iOS (BidirectionalCashFlowChart); días con neto=0 filtrados; valores hardcodeados tokenizados a WDS/DS; guard explícito para LineMark/PointMark en widget; 9 escenarios QA (Sección 32); commit c931b9f
 - **Skills cleanup (tooling)** - Removidos 24 GSD skills + 13 redundantes (57→19); añadidos swift-audit, swiftdata-check, swift-modernize, ds-compliance, deep-scan, test-coverage, a11y-audit, pre-launch; CLAUDE.md optimizado (336→204 líneas) con Quick Reference tables; WORKFLOW.md simplificado; commit 6f92bb5
+- **Restauración background nativo widgets (10.5)** - Eliminado sistema de temas custom (WidgetThemeOption enum, @Parameter theme en 11 widgets); restaurado `.containerBackground(.fill.tertiary, for: .widget)` original de Apple en los 11 widgets; eliminado WidgetColors.yalaCard (código muerto); eliminadas 3 claves L10n de tema en es/en; eliminados 3 preview blocks "System Theme"; 15 archivos, +60/-319; commits a1aae5b + f4752c8
 - **Fix archive/exclude account behavior (BUG-12)** - Corregida semántica invertida de isArchived/excludeFromStatistics en toda la app: cálculos/estadísticas ahora filtran solo por excludeFromStatistics (no isArchived), selección de cuentas para nuevas tx filtra solo por isArchived (no excludeFromStatistics); 11 archivos de lógica corregidos (FilterService, StatisticsVM, TrendsTabView, PanelVM, BalanceHelper, RecordsVM, ReportNotificationService, WidgetDataCache, NewTransactionVM, InboxView, InboxDraftEditSheet); validación de cuenta archivada en aprobación de inbox; pre-filtro de cuentas excluidas en Records; L10n errorArchivedAccount en 6 idiomas; commit 6808209
 
 ### Fase 6 (archivado)
@@ -196,6 +200,15 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 **Bugs resueltos (2026-02-07 sesión 4):**
 - ✅ **BUG-12: Comportamiento incorrecto de Archivar/Excluir en cuentas** — Resuelto (6808209)
 
+**Fixes recientes (2026-02-08):**
+- ✅ Restauración background nativo widgets (tema custom eliminado) — a1aae5b + f4752c8
+- ✅ Dark mode de deep slate blue a negro puro (#000000 + #1C1C1E) — 15565d1
+
+**Bugs pendientes:**
+- 🔴 **BUG-13: Archivar/desarchivar cuenta fuerza ajuste de saldo** — Al desarchivar una cuenta se está forzando un nuevo saldo inicial o ajuste, no debería pasar. Archivar e inarchivar no debe afectar de ninguna manera el balance de una cuenta. Lo mismo para Excluir o no excluir de estadísticas: el toggle no debe provocar ningún cambio en el saldo.
+- ✅ **BUG-14: Eliminar transacción no actualiza cache de widgets** — Resuelto (4577ddf)
+- 🔴 **BUG-15: Eliminar transacción aprobada desde Inbox no funciona** — La eliminación de una transacción desde el Inbox no está funcionando correctamente.
+
 ---
 
 ### BUG-11: ✅ RESUELTO (57bd488)
@@ -206,9 +219,26 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 Semántica de isArchived/excludeFromStatistics corregida en toda la app. Cálculos/estadísticas filtran solo por excludeFromStatistics (cuentas archivadas siguen contando). Selección de cuentas para nuevas tx filtra solo por isArchived. Validación de cuenta archivada añadida en aprobación de inbox. 11 archivos de lógica + L10n en 6 idiomas.
 
+### BUG-13: 🔴 PENDIENTE
+
+**Al desarchivar una cuenta se fuerza un nuevo saldo inicial o ajuste.** Archivar e inarchivar no debe afectar de ninguna manera el balance de una cuenta. Lo mismo para el toggle de Excluir/incluir de estadísticas: cambiar ese toggle no debe provocar ningún cambio en el saldo de la cuenta.
+
+Síntomas:
+- Al desarchivar una cuenta, se crea o fuerza un saldo inicial/ajuste no deseado
+- Al cambiar el toggle de "Excluir de estadísticas", también afecta el balance
+- Ambas operaciones deberían ser puramente flags (metadata) sin tocar transacciones ni saldos
+
+### BUG-14: ✅ RESUELTO (4577ddf)
+
+Agregado `WidgetDataCache.updateCache(context:)` en los 2 paths de eliminación que bypaseaban TransactionService: NewTransactionView.deleteTransaction() y RecordsViewModel.deleteSelected(). Widgets ahora se invalidan inmediatamente al eliminar transacciones.
+
 ### EXP-1: ✅ COMPLETADO (c931b9f)
 
 Waterfall chart cumulative para vista diaria de CashFlow. Cada barra parte donde terminó la anterior: teal (neto positivo), hot pink (neto negativo). Vista mensual sin cambios (bidireccional + línea neta). Implementado en in-app (CashFlowWidget.swift) y widget iOS (YalaWidgets). Días con neto=0 filtrados. Valores hardcodeados tokenizados a WDS/DS.
+
+### BUG-15: 🔴 PENDIENTE
+
+**Eliminar transacción aprobada desde Inbox no funciona.** La acción de eliminación de transacciones dentro del Inbox no se ejecuta correctamente.
 
 ---
 
@@ -314,11 +344,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: EXP-1 waterfall chart completado + skills cleanup (57→19 skills)
-Next step: Evaluar cierre de fase 10.5 o siguiente experimento/mejora
+Stopped at: BUG-14 resuelto — widget cache invalidation al eliminar transacciones
+Next step: Investigar y resolver BUG-13 (archive/unarchive fuerza ajuste de saldo)
 Resume context:
-- EXP-1 completado: waterfall cumulative en CashFlow diario (app + widget iOS)
-- Skills cleanup: 57→19 skills, CLAUDE.md optimizado (336→204 líneas)
-- Sin bugs pendientes conocidos en fase 10.5
+- BUG-14 resuelto: 2 líneas añadidas (NewTransactionView + RecordsViewModel) — 4577ddf
+- BUG-13 pendiente: archivar/desarchivar y excluir/incluir de estadísticas fuerzan ajuste de saldo
 - Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md para Fase 11
-- ROADMAP actualizado: Fase 11=Temas, Fase 12=Plataforma, Fase 13=Avanzadas

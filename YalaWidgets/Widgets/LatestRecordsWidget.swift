@@ -242,7 +242,7 @@ struct LatestRecordsWidget: Widget {
             provider: LatestRecordsProvider()
         ) { entry in
             LatestRecordsWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.latestRecords")
         .description("widget.gallery.latestRecords.desc")

@@ -151,7 +151,7 @@ struct InboxBulkActionsSheet: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            YalaToolbarButton(systemName: "xmark") {
+                            YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                                 finishEditing()
                             }
                         }
@@ -236,11 +236,11 @@ struct InboxBulkActionsSheet: View {
                 // Applied checkmark or chevron
                 if isApplied {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18))
+                        .font(DS.Typography.body)
                         .foregroundStyle(.green)
                 } else if !isDisabled {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(DS.Typography.labelSmall.weight(.semibold))
                         .foregroundStyle(.tertiary)
                 }
             }

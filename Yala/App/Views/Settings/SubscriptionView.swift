@@ -33,7 +33,7 @@ struct SubscriptionView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
@@ -255,7 +255,7 @@ struct SubscriptionView: View {
     private func featureRow(icon: String, text: String, color: Color) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(DS.Typography.labelSmall.weight(.semibold))
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
                 .background(
@@ -270,7 +270,7 @@ struct SubscriptionView: View {
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 18))
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.brandPrimary)
         }
         .padding(.horizontal, DS.Spacing.lg)

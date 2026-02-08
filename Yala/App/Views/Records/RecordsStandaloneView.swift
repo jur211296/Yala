@@ -139,7 +139,7 @@ struct RecordsStandaloneView: View {
                     recordsViewModel.enterSelectionMode()
                 } label: {
                     Image(systemName: "checklist")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(Color.toolbarIconColor)
                 }
 
@@ -148,7 +148,7 @@ struct RecordsStandaloneView: View {
                     recordsViewModel.showFiltersSheet = true
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(Color.toolbarIconColor)
                 }
                 .overlay(alignment: .topTrailing) {
@@ -268,7 +268,7 @@ struct RecordsStandaloneView: View {
                             }
                         } label: {
                             Image(systemName: showFABMenu ? "xmark" : "plus")
-                                .font(.system(size: 24, weight: .bold))
+                                .font(DS.Typography.title.weight(.bold))
                                 .foregroundStyle(.white)
                                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                                 .background(showFABMenu ? Color.gray : fabBackground)
@@ -295,7 +295,7 @@ struct RecordsStandaloneView: View {
                         }
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(DS.Typography.title.weight(.bold))
                             .foregroundStyle(.white)
                             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                             .background(fabBackground)
@@ -307,6 +307,7 @@ struct RecordsStandaloneView: View {
                     .padding(.trailing, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)
                     .disabled(!canUseVoiceInput)
+                    .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
                 }
             }
         }
@@ -325,7 +326,7 @@ struct RecordsStandaloneView: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(DS.Typography.body.weight(.semibold))
                     .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)

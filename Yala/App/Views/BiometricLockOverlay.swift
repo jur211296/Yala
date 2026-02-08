@@ -10,6 +10,8 @@ import SwiftUI
 struct BiometricLockOverlay: View {
     private let authService = BiometricAuthService.shared
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
+
     @State private var isAuthenticating = false
 
     var body: some View {
@@ -23,8 +25,9 @@ struct BiometricLockOverlay: View {
 
                 // Lock icon
                 Image(systemName: authService.biometricType.icon)
-                    .font(.system(size: 56))
+                    .font(.system(size: heroSize))
                     .foregroundStyle(Color.brandPrimary)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Biometric.locked)
                     .font(.title2.bold())
@@ -54,6 +57,7 @@ struct BiometricLockOverlay: View {
                     .clipShape(Capsule())
                 }
                 .disabled(isAuthenticating)
+                .accessibilityHint(isAuthenticating ? "Autenticando" : "")
                 .padding(.horizontal, DS.Spacing.xxxl)
                 .padding(.bottom, DS.Spacing.xxxl)
             }

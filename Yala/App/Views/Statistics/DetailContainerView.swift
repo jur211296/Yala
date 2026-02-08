@@ -292,7 +292,7 @@ struct DetailContainerView: View {
                         recordsViewModel.enterSelectionMode()
                     } label: {
                         Image(systemName: "checklist")
-                            .font(.system(size: 18, weight: .medium))
+                            .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(Color.toolbarIconColor)
                     }
                 }
@@ -306,7 +306,7 @@ struct DetailContainerView: View {
                     }
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(Color.toolbarIconColor)
                 }
                 .overlay(alignment: .topTrailing) {
@@ -432,7 +432,7 @@ struct DetailContainerView: View {
                     }
                 } label: {
                     Image(systemName: showFABMenu ? "xmark" : "plus")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
                         .background(showFABMenu ? Color.gray : fabBackground)
@@ -459,7 +459,7 @@ struct DetailContainerView: View {
                 }
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.white)
                     .frame(width: 56, height: 56)
                     .background(fabBackground)
@@ -471,6 +471,7 @@ struct DetailContainerView: View {
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
+            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
                 }
             }
         }
@@ -489,7 +490,7 @@ struct DetailContainerView: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(DS.Typography.headline)
                     .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)
@@ -530,7 +531,7 @@ struct DetailContainerView: View {
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                 }
@@ -549,7 +550,7 @@ struct DetailContainerView: View {
                     handleEditAction()
                 } label: {
                     Image(systemName: "pencil")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                         .frame(width: 44, height: 44)
                 }

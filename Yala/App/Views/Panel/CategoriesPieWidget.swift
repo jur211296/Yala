@@ -11,6 +11,7 @@ import SwiftUI
 
 struct CategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
     let categories: [CategorySpendingSummary]
     let currencyCode: String
@@ -108,7 +109,8 @@ struct CategoriesPieWidget: View {
             VStack(spacing: DS.Spacing.md) {
                 Spacer()
                 Image(systemName: "folder.fill")
-                    .font(.system(size: 32))
+                    .font(.system(size: scaledEmptyIconSize))
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(.secondary)
                 Text(L10n.Empty.noExpenses)
                     .font(DS.Typography.subheadline)
@@ -369,7 +371,7 @@ struct CategoriesPieWidget: View {
                             Circle()
                                 .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
                             Image(systemName: selectedItem.iconName)
-                                .font(.system(size: 12, weight: .bold))
+                                .font(DS.Typography.labelTiny).fontWeight(.bold)
                                 .foregroundStyle(Color(hex: selectedItem.colorHex))
                         }
                         .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
@@ -404,7 +406,7 @@ struct CategoriesPieWidget: View {
                                 Circle()
                                     .fill(Color(hex: item.colorHex).opacity(0.15))
                                 Image(systemName: item.iconName)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(DS.Typography.captionSmall).fontWeight(.bold)
                                     .foregroundStyle(Color(hex: item.colorHex))
                             }
                             .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)

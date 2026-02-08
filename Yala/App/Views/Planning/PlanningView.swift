@@ -68,7 +68,7 @@ struct PlanningView: View {
                             showFavoritesSettings = true
                         } label: {
                             Image(systemName: "star.fill")
-                                .font(.system(size: 18, weight: .medium))
+                                .font(DS.Typography.body).fontWeight(.medium)
                                 .foregroundStyle(Color.yellow)
                         }
                     }

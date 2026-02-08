@@ -42,6 +42,8 @@ struct InboxDraftEditSheet: View {
     @State private var showDatePicker = false
     @State private var showNatureSelector = false
 
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64
+
     // Focus state
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -311,7 +313,7 @@ struct InboxDraftEditSheet: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            YalaToolbarButton(systemName: "xmark") {
+            YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                 if hasUnsavedChanges() {
                     showDiscardChangesAlert = true
                 } else {
@@ -385,7 +387,7 @@ struct InboxDraftEditSheet: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DS.Typography.label)
                     Text(dateChipText)
                         .font(.callout.weight(.medium))
                 }
@@ -480,6 +482,7 @@ struct InboxDraftEditSheet: View {
                     }
                 }
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private var sourceIndicator: some View {
@@ -602,7 +605,7 @@ struct InboxDraftEditSheet: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: tag.iconName)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(DS.Typography.labelSmall)
                     Text(tag.name)
                         .font(.subheadline.weight(.medium))
                         .lineLimit(1)
@@ -626,7 +629,7 @@ struct InboxDraftEditSheet: View {
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 16))
+                    .font(DS.Typography.label)
             }
             .buttonStyle(.plain)
         }
@@ -694,6 +697,7 @@ struct InboxDraftEditSheet: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!isReadyToApprove)
+                .accessibilityHint(!isReadyToApprove ? "Para aprobar, completa cuenta, monto y categoría" : "")
             }
         }
     }
@@ -702,13 +706,15 @@ struct InboxDraftEditSheet: View {
 
     private var amountFontSize: CGFloat {
         let length = amountString.count
+        let ratio: CGFloat
         switch length {
-        case 0...7: return 64
-        case 8...9: return 54
-        case 10...11: return 46
-        case 12...13: return 38
-        default: return 32
+        case 0...7: ratio = 1.0       // 64pt base
+        case 8...9: ratio = 54.0 / 64.0
+        case 10...11: ratio = 46.0 / 64.0
+        case 12...13: ratio = 38.0 / 64.0
+        default: ratio = 32.0 / 64.0
         }
+        return baseAmountSize * ratio
     }
 
     private var dateChipText: String {

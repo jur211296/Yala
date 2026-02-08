@@ -38,9 +38,17 @@ struct BudgetRowView: View {
 
                     // Amount (right-aligned)
                     VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        Text(formattedSpent)
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                        HStack(spacing: DS.Spacing.xxs) {
+                            if summary.status == .exceeded {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.hotPink)
+                                    .accessibilityHidden(true)
+                            }
+                            Text(formattedSpent)
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                        }
 
                         Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), formattedLimit))
                             .font(.caption2)

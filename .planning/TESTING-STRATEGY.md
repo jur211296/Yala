@@ -1,443 +1,286 @@
-# Estrategia de Testing - ViewModels
+# Testing — Referencia y Estrategia
 
-Documento que define la estrategia para agregar unit tests a los ViewModels después del refactoring arquitectural D.8.
+Documento de referencia para los tests de Yala. Consultar antes de agregar, modificar o depurar tests.
 
----
-
-## Estado Actual
-
-### Tests Existentes
-| Test File | Cobertura | Tipo |
-|-----------|-----------|------|
-| `CalculatorTests` | Cálculos financieros | Lógica pura |
-| `FilterServiceTests` | FilterCriteria, AmountCondition | Lógica pura |
-| `TagTests` | Operaciones con tags | Lógica pura |
-| `TrendProcessingTests` | Procesamiento de tendencias | Lógica pura |
-| `TrendGroupingTests` | Agrupación de tendencias | Lógica pura |
-
-### ViewModels Sin Tests (35 total)
-Todos los ViewModels creados en el refactoring D.8 no tienen tests automatizados.
+**Actualizado:** 2026-02-08 | **Total:** 255 tests, 28 suites, 21 archivos
 
 ---
 
-## Estrategia por Tiers
+## Inventario Completo
 
-### Tier 1: Lógica Pura (Sin SwiftData)
-**Complejidad**: Baja
-**Valor**: Alto
-**Prioridad**: Inmediata
+### Por archivo
 
-Testear métodos que no requieren ModelContext:
+| Archivo | Tests | Tipo | Componente |
+|---------|-------|------|------------|
+| NewTransactionViewModelTests | 35 | ViewModel | Teclado, validación, tipos |
+| PreviousPeriodHelperTests | 24 | Logic | Periodos anteriores, variación |
+| AmountParserTests | 15 | Parser/OCR | Parsing montos de texto |
+| AccountFormViewModelTests | 15 | ViewModel | Validación nombre/moneda/balance |
+| DraftDeduplicationServiceTests | 15 | Service | Normalización, similitud, dedup |
+| TrendGroupingTests | 13 | Logic | Agrupación día/semana/mes |
+| MerchantCanonicalizerTests | 12 | Service | Canonicalización merchants |
+| BudgetsViewModelTests | 11 | ViewModel | Status presupuestos |
+| FilterServiceTests | 10 | Service | Filtros, condiciones de monto |
+| TagTests | 10 | Model | Colores, next available |
+| DateParserTests | 10 | Parser/OCR | Parsing fechas de texto |
+| MoneyParsingTests | 10 | Utils | parseDecimal() formatos |
+| InboxViewModelTests | 10 | ViewModel | Filtrado/agrupación drafts |
+| CategoryDetailViewModelTests | 9 | ViewModel | Cambios, canSave, sistema |
+| TagFormViewModelTests | 8 | ViewModel | Validación nombre/unicidad |
+| CurrencyConverterTests | 8 | Service | Conversión con fallback rates |
+| AccountBalanceCalculatorTests | 6 | Utils | Balance actual, batch |
+| FeatureGateTests | 6 | Service | Límites free, features Pro |
+| ViewModelFilterTests | 6 | ViewModel | Filtros ScheduledPayments |
+| TrendProcessingTests | 5 | Logic | Moving average, yDomain |
+| DateContextProviderTests | 5 | Service | Contexto de fechas para AI |
+| ExchangeRateWidgetHelperTests | 4 | Logic | Cálculo rates para widgets |
+| CurrencyCodeTests | 4 | Model | Enum CurrencyCode |
+| CurrencyDefaultsTests | 3 | Utils | Defaults de moneda |
+| RecordsFiltersViewModelTests | 3 | ViewModel | Texto selección filtros |
+| BudgetEditorViewModelTests | 1 | ViewModel | Texto categorías vacías |
+| YalaTests | 1 | Placeholder | Test de ejemplo |
+| CalculatorTests | 3 | Logic | Agrupación cashflow/balance |
 
-#### NewTransactionViewModel
-```swift
-// Testeable sin SwiftData:
-- appendDigit(_ digit: String)      // Lógica del teclado numérico
-- deleteLastDigit()                 // Borrado
-- clearAmount()                     // Reset
-- amount: Double (computed)         // Parsing
-- formattedAmount: String           // Formateo
-- isAmountValid: Bool              // Validación
-- needsExchangeRate: Bool          // Lógica de transferencias
-- updateDestinationAmount()        // Cálculo tipo de cambio
-- updateExchangeRateFromDestination()
-```
+### Por categoría
 
-#### InboxViewModel
-```swift
-// Testeable sin SwiftData (pasando datos mock):
-- filteredDrafts(for filter:)      // Filtrado
-- groupedDrafts(for filter:)       // Agrupación por fecha
-- countForFilter(_ filter:)        // Conteo
-```
-
-#### BudgetsViewModel
-```swift
-// Testeable con datos mock:
-- getBudgetStatus(budget:spending:)           // Determinación de estado
-- getDaysRemaining(budget:)                   // Cálculo días restantes
-- getBudgetDateInterval(budget:)              // Intervalos de fecha
-- getBudgetDisplayProperties(budget:)         // Icono/color
-- getBudgetSpending(budget:transactions:...)  // Cálculo de gasto
-```
-
-### Tier 2: Tests con In-Memory SwiftData
-**Complejidad**: Media
-**Valor**: Alto
-**Prioridad**: Fase siguiente
-
-Requiere configurar ModelContainer in-memory:
-
-```swift
-// Test helper para crear contexto in-memory
-@MainActor
-func makeTestContext() throws -> ModelContext {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try ModelContainer(
-        for: TransactionItem.self, Account.self, Category.self,
-            Subcategory.self, Tag.self, Budget.self, InboxDraft.self,
-        configurations: config
-    )
-    return container.mainContext
-}
-```
-
-#### ViewModels para Tier 2:
-| ViewModel | Qué testear |
-|-----------|-------------|
-| `NewTransactionViewModel` | `save()`, `prefill()`, validación completa |
-| `InboxViewModel` | `loadData()`, lookup methods |
-| `BudgetsViewModel` | `refreshBudgetData()`, cálculos completos |
-| `RecordsFiltersViewModel` | Aplicación de filtros |
-| `PanelViewModel` | Carga y agregación de datos |
-
-### Tier 3: Tests de Integración
-**Complejidad**: Alta
-**Valor**: Medio
-**Prioridad**: Futura
-
-Flujos completos que cruzan múltiples ViewModels:
-- Crear transacción → verificar en Panel
-- Crear presupuesto → verificar cálculo de consumo
-- Aprobar draft → verificar transacción creada
+| Categoría | Suites | Tests | % del total |
+|-----------|--------|-------|-------------|
+| ViewModels | 10 | 104 | 41% |
+| Services | 5 | 51 | 20% |
+| Parsers/OCR | 2 | 25 | 10% |
+| Logic/Helpers | 4 | 45 | 18% |
+| Models/Utils | 5 | 29 | 11% |
+| Otro | 2 | 1 | <1% |
 
 ---
 
-## Plan de Implementación
+## Regla Fundamental: NUNCA usar makeTestContext()
 
-### Fase 1: Foundation (Inmediato)
-**Objetivo**: Establecer patterns y probar lógica pura
+### El problema
 
-1. **Crear `TestHelpers.swift`**
-   - Factory methods para crear modelos mock
-   - Helper para ModelContext in-memory
-   - Extensions útiles para tests
+`makeTestContext()` crea un `ModelContainer` in-memory. Al ejecutar tests, el **host de la app** (Yala.app) inicializa su propio `ModelContainer` con CloudKit. Crear un segundo container causa un **race condition** en la metadata de SwiftData que produce `EXC_BREAKPOINT` (crash).
 
-2. **Crear `NewTransactionViewModelTests.swift`**
-   - Tests de teclado numérico (Tier 1)
-   - Tests de validación (Tier 1)
-   - Tests de cálculo de tipo de cambio (Tier 1)
+### La solución
 
-3. **Crear `BudgetsViewModelTests.swift`**
-   - Tests de `getBudgetStatus()` (Tier 1)
-   - Tests de `getDaysRemaining()` (Tier 1)
-   - Tests de `getBudgetDateInterval()` (Tier 1)
-
-### Fase 2: SwiftData Tests (Siguiente)
-**Objetivo**: Testear interacción con datos
-
-4. **Crear `InboxViewModelTests.swift`**
-   - Tests con drafts mock in-memory
-   - Tests de filtrado y agrupación
-
-5. **Extender tests existentes**
-   - `NewTransactionViewModelTests` + save/edit
-   - `BudgetsViewModelTests` + spending calculation
-
-### Fase 3: Coverage Expansion (Futuro)
-**Objetivo**: Cobertura amplia
-
-6. **ViewModels de Settings**
-   - `AccountsSettingsListViewModel`
-   - `CategoriesSettingsListViewModel`
-   - `TagsSettingsListViewModel`
-
-7. **ViewModels de Selectors**
-   - `AccountSelectorViewModel`
-   - `SubcategorySelectorViewModel`
-   - `TagSelectorViewModel`
-
----
-
-## Ejemplos de Tests
-
-### Tier 1: Teclado Numérico (NewTransactionViewModel)
+Crear objetos `@Model` **sin insertarlos en un contexto**. Las propiedades y `persistentModelID` funcionan sin contexto:
 
 ```swift
-import Testing
-@testable import Yala
-
-struct NewTransactionViewModelTests {
-
-    // MARK: - Numeric Keypad Tests
-
-    @Test func appendDigitReplacesZero() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("5")
-        #expect(await vm.amountString == "5")
-    }
-
-    @Test func appendDigitAddsToExisting() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("1")
-        await vm.appendDigit("2")
-        await vm.appendDigit("3")
-        #expect(await vm.amountString == "123")
-    }
-
-    @Test func appendDecimalOnlyOnce() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("1")
-        await vm.appendDigit(".")
-        await vm.appendDigit(".")
-        await vm.appendDigit("5")
-        #expect(await vm.amountString == "1.5")
-    }
-
-    @Test func limitsDecimalsToTwo() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("1")
-        await vm.appendDigit(".")
-        await vm.appendDigit("2")
-        await vm.appendDigit("3")
-        await vm.appendDigit("4")  // Should be ignored
-        #expect(await vm.amountString == "1.23")
-    }
-
-    @Test func deleteLastDigitWorks() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("1")
-        await vm.appendDigit("2")
-        await vm.deleteLastDigit()
-        #expect(await vm.amountString == "1")
-    }
-
-    @Test func deleteLastDigitResetsToZero() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("5")
-        await vm.deleteLastDigit()
-        #expect(await vm.amountString == "0")
-    }
-
-    @Test func clearAmountResetsToZero() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("1")
-        await vm.appendDigit("2")
-        await vm.appendDigit("3")
-        await vm.clearAmount()
-        #expect(await vm.amountString == "0")
-    }
-
-    // MARK: - Validation Tests
-
-    @Test func isAmountValidWhenGreaterThanZero() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("1")
-        #expect(await vm.isAmountValid == true)
-    }
-
-    @Test func isAmountInvalidWhenZero() async {
-        let vm = await NewTransactionViewModel()
-        #expect(await vm.isAmountValid == false)
-    }
-
-    @Test func amountParsesCorrectly() async {
-        let vm = await NewTransactionViewModel()
-        await vm.appendDigit("1")
-        await vm.appendDigit("2")
-        await vm.appendDigit(".")
-        await vm.appendDigit("5")
-        #expect(await vm.amount == 12.5)
-    }
-}
-```
-
-### Tier 1: Budget Status (BudgetsViewModel)
-
-```swift
-import Testing
-@testable import Yala
-
-struct BudgetsViewModelTests {
-
-    @Test func budgetStatusActiveWhenUnderLimit() async {
-        let vm = await BudgetsViewModel()
-        let budget = makeMockBudget(limit: 1000, isActive: true)
-        let status = await vm.getBudgetStatus(budget: budget, spending: 500)
-        #expect(status == .active)
-    }
-
-    @Test func budgetStatusExceededWhenOverLimit() async {
-        let vm = await BudgetsViewModel()
-        let budget = makeMockBudget(limit: 1000, isActive: true)
-        let status = await vm.getBudgetStatus(budget: budget, spending: 1200)
-        #expect(status == .exceeded)
-    }
-
-    @Test func budgetStatusExceededWhenExactlyAtLimit() async {
-        let vm = await BudgetsViewModel()
-        let budget = makeMockBudget(limit: 1000, isActive: true)
-        let status = await vm.getBudgetStatus(budget: budget, spending: 1000)
-        #expect(status == .exceeded)
-    }
-
-    @Test func budgetStatusInactiveWhenManuallyDisabled() async {
-        let vm = await BudgetsViewModel()
-        let budget = makeMockBudget(limit: 1000, isActive: false)
-        let status = await vm.getBudgetStatus(budget: budget, spending: 500)
-        #expect(status == .inactive)
-    }
-
-    // MARK: - Days Remaining Tests
-
-    @Test func daysRemainingCalculatesCorrectly() async {
-        let vm = await BudgetsViewModel()
-        // Set up budget with known period
-        let budget = makeMockBudget(periodType: .monthly)
-        let days = await vm.getDaysRemaining(budget: budget)
-        #expect(days >= 0)
-    }
-
-    // Helper
-    private func makeMockBudget(
-        limit: Double = 1000,
-        isActive: Bool = true,
-        periodType: BudgetPeriodType = .monthly
-    ) -> Budget {
-        // Requires SwiftData context for full test
-        // For Tier 1, use minimal mock
-        fatalError("Implement with test context")
-    }
-}
-```
-
-### Tier 2: In-Memory SwiftData
-
-```swift
-import Testing
-import SwiftData
-@testable import Yala
-
-struct InboxViewModelIntegrationTests {
-
-    @MainActor
-    @Test func loadDataFetchesDrafts() async throws {
-        // Setup
-        let context = try makeTestContext()
-        let vm = InboxViewModel()
-
-        // Create test drafts
-        let draft1 = InboxDraft(/* ... */)
-        let draft2 = InboxDraft(/* ... */)
-        context.insert(draft1)
-        context.insert(draft2)
-        try context.save()
-
-        // Act
-        vm.setContext(context)
-
-        // Assert
-        #expect(vm.allDrafts.count == 2)
-    }
-
-    @MainActor
-    @Test func filteredDraftsReturnsPendingOnly() async throws {
-        let context = try makeTestContext()
-        let vm = InboxViewModel()
-
-        // Create mixed drafts
-        let pending = InboxDraft(status: .pending, /* ... */)
-        let approved = InboxDraft(status: .approved, /* ... */)
-        context.insert(pending)
-        context.insert(approved)
-        try context.save()
-
-        vm.setContext(context)
-
-        // Assert
-        let filtered = vm.filteredDrafts(for: .pending)
-        #expect(filtered.count == 1)
-    }
-
-    // Helper
-    @MainActor
-    private func makeTestContext() throws -> ModelContext {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: InboxDraft.self, TransactionItem.self, Account.self,
-                Category.self, Subcategory.self, Tag.self,
-            configurations: config
-        )
-        return container.mainContext
-    }
-}
-```
-
----
-
-## Métricas de Éxito
-
-### Fase 1 Completada ✅ (2026-01-30)
-- [x] `TestHelpers.swift` creado con factories ✅ (2026-01-29)
-- [x] `NewTransactionViewModelTests.swift` con 35 tests de teclado/validación ✅
-- [x] `BudgetsViewModelTests.swift` con 11 tests de status y display ✅
-- [x] Todos los tests pasan ✅
-
-### Fase 2 Completada ✅ (2026-01-30)
-- [x] `InboxViewModelTests.swift` con 10 tests de filtrado/agrupación ✅
-- [x] `TrendProcessingTests.swift` actualizado (5 tests) ✅
-- [x] Tests existentes funcionando (CalculatorTests, FilterServiceTests, TagTests, TrendGroupingTests)
-
-### Fase 3: Futura
-- [ ] Tests para ViewModels de Settings (opcional)
-- [ ] Tests para Selectors (opcional)
-- [ ] Tests de integración con SwiftData (requiere resolver issue de parallel testing)
-
----
-
-## Issues Conocidos
-
-### Swift Testing + SwiftData + @MainActor
-Los tests que crean ModelContainer in-memory causan crashes cuando se ejecutan en paralelo porque la app intenta ejecutar migraciones de datos.
-
-**Solución adoptada:**
-Extraer lógica pura en métodos sin dependencia de SwiftData. Los ViewModels ahora exponen métodos `calculate*()` que aceptan datos primitivos para testing.
-
-**Ejemplo:**
-```swift
-// Método original (requiere Budget SwiftData)
-func getBudgetStatus(budget: Budget, spending: Double) -> BudgetStatus
-
-// Método testeable (lógica pura)
-func calculateBudgetStatus(isActive: Bool, spending: Double, limit: Double) -> BudgetStatus
-```
-
-**Estado:** Problema resuelto con patrón de lógica pura
-
----
-
-## Prioridad de ViewModels por Riesgo/Valor
-
-| Prioridad | ViewModel | Razón |
-|-----------|-----------|-------|
-| 🔴 Alta | `NewTransactionViewModel` | Core de la app, lógica de validación y guardado |
-| 🔴 Alta | `BudgetsViewModel` | Cálculos financieros complejos |
-| 🟡 Media | `InboxViewModel` | Filtrado y agrupación de drafts |
-| 🟡 Media | `PanelViewModel` | Agregaciones para dashboard |
-| 🟡 Media | `RecordsFiltersViewModel` | Filtros combinados |
-| 🟢 Baja | `*SelectorViewModel` | Lógica simple de selección |
-| 🟢 Baja | `*SettingsViewModel` | CRUD básico |
-
----
-
-## Notas de Implementación
-
-### MainActor y Async Tests
-Los ViewModels usan `@MainActor`, por lo que los tests deben:
-```swift
-@MainActor
-@Test func testSomething() async {
-    let vm = SomeViewModel()
+// MAL — crashea por CloudKit race condition
+@MainActor @Test func test() throws {
+    let ctx = try makeTestContext()                    // CRASH
+    let account = makeTestAccount(context: ctx)
     // ...
 }
+
+// BIEN — sin ModelContext, sin crash
+@Test func test() {
+    let account = Account(name: "Test", currencyCode: "PEN",
+                          colorHex: "#000", iconName: "creditcard", type: "bank")
+    let vm = SomeViewModel()
+    vm.selectedAccounts.insert(account.persistentModelID)  // funciona
+    #expect(account.name == "Test")                         // funciona
+}
 ```
 
-### Evitar Tests Frágiles
-- No testear strings de UI (pueden cambiar)
-- Testear comportamiento, no implementación
-- Usar factories para crear datos consistentes
+### Cuándo NO se puede evitar el contexto
 
-### SwiftData en Tests
-- Siempre usar `isStoredInMemoryOnly: true`
-- Crear contexto fresco para cada test
-- No compartir estado entre tests
+Algunos métodos requieren `setContext()` para cargar datos con `FetchDescriptor`. En esos casos:
+- Si la lógica es trivial (string formatting), **no testear** — el costo/beneficio no justifica el riesgo
+- Si la lógica es compleja, considerar **extraer un método puro** que acepte datos primitivos
+
+### Tests existentes que SÍ usan contexto (legacy)
+
+`NewTransactionViewModelTests`, `InboxViewModelTests`, `BudgetsViewModelTests`, `FilterServiceTests` — funcionan porque **no crean `ModelContainer`** (usan lógica pura expuesta por los ViewModels).
+
+---
+
+## Patrones y Convenciones
+
+### Framework
+
+```swift
+import Testing
+@testable import Yala
+
+struct MiComponenteTests {
+    @Test func descripcion_del_test() {
+        // arrange → act → assert con #expect
+    }
+}
+```
+
+- **Swift Testing** (`@Test`, `#expect`), NO XCTest
+- **structs** para suites, NO classes
+- Un archivo = un componente
+- Nombre: `{Componente}Tests.swift`
+
+### Nomenclatura de tests
+
+```
+metodo_condicion_resultado()
+```
+
+Ejemplos:
+- `isNameValid_empty_false()`
+- `convertWithFallback_sameCurrency()`
+- `batchCalculateBalances_ignoresUnrelatedAccounts()`
+
+### Cuándo usar @MainActor
+
+Solo cuando el código bajo test requiere `@MainActor` (ViewModels con `@Observable`):
+
+```swift
+// ViewModel es @MainActor @Observable → test necesita @MainActor
+@MainActor @Test func test() { ... }
+
+// Función estática pura → NO necesita @MainActor
+@Test func test() { ... }
+```
+
+### Asserts direccionales (para valores que pueden cambiar)
+
+Para tests de conversión o cálculos con rates que pueden actualizarse:
+
+```swift
+// MAL — frágil, falla si cambian los rates
+#expect(result == 3.75)
+
+// BIEN — direccional, robusto
+#expect(result > 100)  // PEN vale menos que USD
+#expect(result < 100)  // USD vale más que PEN
+```
+
+### Factories disponibles en TestHelpers.swift
+
+| Factory | Parámetros clave | Notas |
+|---------|-----------------|-------|
+| `makeTestContext()` | — | NO USAR (ver regla arriba) |
+| `makeTestAccount()` | name, currencyCode | Requiere context |
+| `makeTestCategory()` | name, isIncome | Requiere context |
+| `makeTestSubcategory()` | name, category, nature | Requiere context |
+| `makeTestTag()` | name | Requiere context |
+| `makeTestBudget()` | name, limitAmount, periodType | Requiere context |
+| `makeTestTransaction()` | amount, date, account, category, subcategory | Requiere context |
+| `makeTestInboxDraft()` | amount, date, note | Requiere context |
+| `makeTestExchangeRate()` | dateKey, rates | Requiere context |
+
+**Nota:** Todas estas factories requieren `makeTestContext()` que NO se debe usar. Para tests nuevos, crear objetos directamente:
+
+```swift
+let account = Account(name: "Test", currencyCode: "PEN",
+                      colorHex: "#000", iconName: "creditcard", type: "bank")
+```
+
+---
+
+## Cómo ejecutar tests
+
+```bash
+# Todos los tests (recomendado)
+xcodebuild test -scheme Yala \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:YalaTests \
+  -parallel-testing-enabled NO
+
+# Tests específicos
+xcodebuild test -scheme Yala \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:YalaTests/MerchantCanonicalizerTests \
+  -parallel-testing-enabled NO
+
+# Skills disponibles
+/test-ios     # Todos los tests + resumen
+/test-smart   # Solo tests relevantes a cambios actuales
+```
+
+**IMPORTANTE:** Siempre usar `-parallel-testing-enabled NO`. Sin este flag, el simulador iOS 26 crea clones que crashean al inicializar.
+
+---
+
+## Guía para agregar tests
+
+### 1. Identificar el tipo de lógica
+
+| Tipo | Ejemplo | Necesita contexto? |
+|------|---------|-------------------|
+| Función pura/estática | `AmountParser.parse()` | No |
+| Computed property sin datos | `vm.isNameValid` | No |
+| Método con datos inyectados | `vm.calculateBudgetStatus(isActive:spending:limit:)` | No |
+| Computed property con datos del contexto | `vm.selectedAccountsText()` cuando `allAccounts` viene del contexto | No se puede testear fácilmente |
+
+### 2. Crear el archivo
+
+```swift
+//
+//  MiComponenteTests.swift
+//  YalaTests
+//
+
+import Foundation
+import Testing
+
+@testable import Yala
+
+struct MiComponenteTests {
+
+    // MARK: - Grupo de tests
+
+    @Test func metodo_condicion_resultado() {
+        // ...
+    }
+}
+```
+
+### 3. Verificar
+
+```bash
+xcodebuild test -scheme Yala \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:YalaTests/MiComponenteTests \
+  -parallel-testing-enabled NO
+```
+
+### 4. Actualizar CLAUDE.md
+
+Agregar la nueva suite a la sección `### Test Suites` con el conteo de tests.
+
+---
+
+## Componentes sin tests (candidatos futuros)
+
+### Alta prioridad (lógica financiera compleja)
+
+| Componente | Archivo | Lógica testeable |
+|------------|---------|-----------------|
+| PanelViewModel | ViewModels/PanelViewModel.swift | Agregaciones, totales por periodo |
+| StatisticsViewModel | ViewModels/StatisticsViewModel.swift | Cálculos estadísticos |
+| RecordsViewModel | ViewModels/RecordsViewModel.swift | Filtrado combinado |
+| TransactionCSVImportService | Services/TransactionCSVImportService.swift | Parsing CSV |
+
+### Media prioridad
+
+| Componente | Archivo | Lógica testeable |
+|------------|---------|-----------------|
+| ScheduledPaymentNotificationService | Services/ScheduledPayment*.swift | Cálculo próxima fecha |
+| BudgetAlertService | Services/BudgetAlertService.swift | Umbrales de alertas |
+| MerchantMemoryService | Services/MerchantMemoryService.swift | Auto-categorización |
+
+### No testear (CRUD puro o requiere frameworks)
+
+- ViewModels de selector (AccountSelector, SubcategorySelector, TagSelector)
+- ViewModels de settings (listas CRUD simples)
+- BiometricAuthService (requiere LAContext real)
+- StoreKitManager (requiere StoreKit sandbox)
+- NetworkMonitor (requiere NWPathMonitor)
+- iCloudSyncService (requiere CloudKit)
+
+---
+
+## Historial
+
+| Fecha | Cambio | Tests |
+|-------|--------|-------|
+| 2026-01-15 | Tests iniciales (Calculator, Filter, Tag, Trend) | 41 |
+| 2026-01-29 | TestHelpers + NewTransaction + Budgets | 87 |
+| 2026-01-30 | Inbox + TrendProcessing actualizado | 97 |
+| 2026-02-08 | Cobertura completa: 17 archivos nuevos, refactor sin ModelContext | 255 |

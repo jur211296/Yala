@@ -119,7 +119,7 @@ struct VoiceRecordingView: View {
                 // Only show X when idle (during recording/preview/processing, there's an X below)
                 if recorder.state == .idle && !isPreviewMode && !isProcessing {
                     ToolbarItem(placement: .topBarTrailing) {
-                        YalaToolbarButton(systemName: "xmark") {
+                        YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                             recorder.cancelRecording()
                             dismiss()
                         }
@@ -501,6 +501,7 @@ struct VoiceRecordingView: View {
                                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                         )
                 }
+                .accessibilityLabel("Cancelar grabación")
 
                 // Stop and enter preview mode
                 Button {
@@ -522,6 +523,7 @@ struct VoiceRecordingView: View {
                         .clipShape(Circle())
                         .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
+                .accessibilityLabel("Detener grabación")
             } else if isPreviewMode {
                 // Cancel button (stops countdown and returns to idle)
                 Button {
@@ -538,6 +540,7 @@ struct VoiceRecordingView: View {
                                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                         )
                 }
+                .accessibilityLabel("Cancelar vista previa")
 
                 // Process now button (skips countdown)
                 Button {
@@ -557,6 +560,7 @@ struct VoiceRecordingView: View {
                         .clipShape(Circle())
                         .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
+                .accessibilityLabel("Procesar audio")
             } else if isProcessing {
                 // Cancel processing button
                 Button {
@@ -573,6 +577,7 @@ struct VoiceRecordingView: View {
                                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                         )
                 }
+                .accessibilityLabel("Cancelar procesamiento")
             } else {
                 // Start recording button
                 Button {
@@ -594,6 +599,7 @@ struct VoiceRecordingView: View {
                         .clipShape(Circle())
                         .shadow(color: Color.hotPink.opacity(0.4), radius: 16, x: 0, y: 8)
                 }
+                .accessibilityLabel("Iniciar grabación")
             }
         }
         .padding(.bottom, DS.Spacing.xxl)

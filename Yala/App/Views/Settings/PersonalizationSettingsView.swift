@@ -12,6 +12,8 @@ struct PersonalizationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+
     @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
         .rawValue
     @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
@@ -64,8 +66,9 @@ struct PersonalizationSettingsView: View {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: 48))
+                            .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.brandPrimary)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.personalization)
@@ -136,7 +139,7 @@ struct PersonalizationSettingsView: View {
                                             .foregroundStyle(.secondary)
 
                                         Image(systemName: "chevron.right")
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(DS.Typography.labelSmall.weight(.medium))
                                             .foregroundStyle(.tertiary)
                                     }
                                     .padding(.horizontal, DS.FormRow.paddingH)
@@ -170,7 +173,7 @@ struct PersonalizationSettingsView: View {
                                     Spacer()
 
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(DS.Typography.labelSmall.weight(.medium))
                                         .foregroundStyle(.tertiary)
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -240,7 +243,7 @@ struct PersonalizationSettingsView: View {
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(DS.Typography.labelSmall.weight(.medium))
                                         .foregroundStyle(.tertiary)
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -277,7 +280,7 @@ struct PersonalizationSettingsView: View {
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(DS.Typography.labelSmall.weight(.medium))
                                         .foregroundStyle(.tertiary)
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -380,7 +383,7 @@ struct PersonalizationSettingsView: View {
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(DS.Typography.labelSmall.weight(.medium))
                                         .foregroundStyle(.tertiary)
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -417,7 +420,7 @@ struct PersonalizationSettingsView: View {
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(DS.Typography.labelSmall.weight(.medium))
                                         .foregroundStyle(.tertiary)
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -448,7 +451,7 @@ struct PersonalizationSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
@@ -584,7 +587,7 @@ private struct PeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -657,7 +660,7 @@ private struct WeekdayPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -736,7 +739,7 @@ private struct DecimalsPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -820,7 +823,7 @@ private struct CurrencyFormatPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }

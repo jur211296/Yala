@@ -9,6 +9,8 @@ import Charts
 import SwiftUI
 
 struct NatureTrendWidget: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     let trendPoints: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
     let currencyCode: String
@@ -183,7 +185,8 @@ struct NatureTrendWidget: View {
                 Spacer()
                 VStack(spacing: DS.Spacing.md) {
                     Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: scaledEmptyIconSize))
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(.secondary)
                     Text(L10n.Empty.noExpenses)
                         .font(.subheadline)

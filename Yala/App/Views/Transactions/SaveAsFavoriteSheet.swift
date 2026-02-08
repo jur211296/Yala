@@ -112,7 +112,7 @@ struct SaveAsFavoriteSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -373,7 +373,7 @@ struct SaveAsFavoriteSheet: View {
                                                     .frame(width: 28, height: 28)
                                                     .overlay(
                                                         Image(systemName: tag.iconName)
-                                                            .font(.system(size: 12, weight: .semibold))
+                                                            .font(DS.Typography.labelSmall)
                                                             .foregroundStyle(.white)
                                                     )
 
@@ -407,7 +407,7 @@ struct SaveAsFavoriteSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         showTagSelector = false
                     }
                 }

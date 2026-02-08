@@ -48,6 +48,7 @@ struct YalaSectionHeader: View {
                 }
             }
         }
+        .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -81,6 +82,7 @@ struct YalaSectionHeaderCompact: View {
 
             Spacer()
         }
+        .accessibilityAddTraits(.isHeader)
     }
 }
 

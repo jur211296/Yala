@@ -14,6 +14,8 @@ struct DowngradeResolutionSheet: View {
 
     @Environment(\.modelContext) private var modelContext
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+
     // MARK: - Properties
 
     let accounts: [Account]
@@ -118,7 +120,8 @@ struct DowngradeResolutionSheet: View {
     private var headerSection: some View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
+                .font(.system(size: heroIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(
                     LinearGradient(
                         colors: [Color.orange, Color.red],

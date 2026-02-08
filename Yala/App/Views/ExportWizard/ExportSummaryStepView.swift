@@ -189,6 +189,7 @@ struct ExportSummaryStepView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
         .disabled(isExporting)
+        .accessibilityHint(isExporting ? "Exportación en proceso" : "")
         .padding(.top, 16)
     }
 

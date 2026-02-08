@@ -48,7 +48,7 @@ struct ImportCurrencyMappingSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -239,6 +239,7 @@ struct ImportCurrencyMappingSheet: View {
             .tint(allCurrenciesAssigned ? Color.brandPrimary : Color.gray)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .disabled(!allCurrenciesAssigned)
+            .accessibilityHint(!allCurrenciesAssigned ? "Asigna todas las divisas" : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.lg)

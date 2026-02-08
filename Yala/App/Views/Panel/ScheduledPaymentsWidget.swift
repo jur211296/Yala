@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ScheduledPaymentsWidget: View {
     @Environment(\.modelContext) private var modelContext
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 32
 
     let payments: [ScheduledPayment]
     let currencyCode: String
@@ -185,7 +186,8 @@ struct ScheduledPaymentsWidget: View {
         return VStack(spacing: DS.Spacing.md) {
             // Amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
-                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.primary)
 
             // Payment count
@@ -458,14 +460,14 @@ struct ScheduledPaymentsWidget: View {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
                         Text(payment.name)
-                            .font(.system(size: 9, weight: .medium))
+                            .font(DS.Typography.captionSmall).fontWeight(.medium)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
                     if payments.count > 2 {
                         Text("+\(payments.count - 2)")
-                            .font(.system(size: 9, weight: .medium))
+                            .font(DS.Typography.captionSmall).fontWeight(.medium)
                             .foregroundStyle(.secondary)
                     }
                 }

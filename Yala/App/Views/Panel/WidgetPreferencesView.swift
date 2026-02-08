@@ -137,6 +137,7 @@ private struct WidgetRow: View {
                 )
                 .labelsHidden()
                 .disabled(config.isLocked)
+                .accessibilityHint(config.isLocked ? "Widget fijo, siempre visible" : "")
                 .opacity(config.isLocked ? 0.6 : 1.0)
                 .tint(Color.electricIndigo)
             }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BiometricSecurityView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let authService = BiometricAuthService.shared
 
@@ -107,7 +108,7 @@ struct BiometricSecurityView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
@@ -151,7 +152,7 @@ struct BiometricSecurityView: View {
         let isSelected = selectedTimeout == timeout
 
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                 selectedTimeout = timeout
             }
         } label: {

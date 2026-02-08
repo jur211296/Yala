@@ -12,6 +12,7 @@ import SwiftUI
 struct ScheduledPaymentDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
 
     let payment: ScheduledPayment
 
@@ -57,12 +58,12 @@ struct ScheduledPaymentDetailView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "pencil") {
+                YalaToolbarButton(systemName: "pencil", label: "Editar") {
                     showEditor = true
                 }
             }
@@ -85,7 +86,8 @@ struct ScheduledPaymentDetailView: View {
                     .foregroundStyle(.secondary)
 
                 Text(formatAmount(payment.amount))
-                    .font(.system(size: 36, weight: .bold))
+                    .font(.system(size: scaledAmountSize, weight: .bold))
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(payment.transactionType == "income" ? Color.teal : .primary)
             }
 

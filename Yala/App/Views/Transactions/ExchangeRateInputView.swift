@@ -35,7 +35,7 @@ struct ExchangeRateInputView: View {
             // Tipo de cambio
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 18))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
@@ -78,7 +78,7 @@ struct ExchangeRateInputView: View {
             // Monto destino
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "banknote")
-                    .font(.system(size: 18))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 

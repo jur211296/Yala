@@ -33,6 +33,8 @@ struct NewTransactionView: View {
     @State private var isCreatingAnother = false
     @State private var isDuplicating = false
 
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -131,7 +133,7 @@ struct NewTransactionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -141,9 +143,10 @@ struct NewTransactionView: View {
                         viewModel.showFavoritesSheet = true
                     } label: {
                         Image(systemName: "star.fill")
-                            .font(.system(size: 17, weight: .regular))
+                            .font(DS.Typography.body)
                             .foregroundStyle(Color(UIColor.label))
                     }
+                    .accessibilityLabel("Plantillas favoritas")
                     .tint(Color(UIColor.label))
                 }
             }
@@ -346,7 +349,7 @@ struct NewTransactionView: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DS.Typography.label)
                     Text(dateChipText)
                         .font(.callout.weight(.medium))
                 }
@@ -452,16 +455,18 @@ struct NewTransactionView: View {
         }
     }
 
-    /// Dynamic font size for amount based on length
+    /// Dynamic font size for amount based on length (scales with Dynamic Type via baseAmountSize)
     private var amountFontSize: CGFloat {
         let length = viewModel.amountString.count
+        let ratio: CGFloat
         switch length {
-        case 0...7: return 64
-        case 8...9: return 54
-        case 10...11: return 46
-        case 12...13: return 38
-        default: return 32
+        case 0...7: ratio = 1.0       // 64pt base
+        case 8...9: ratio = 54.0 / 64.0
+        case 10...11: ratio = 46.0 / 64.0
+        case 12...13: ratio = 38.0 / 64.0
+        default: ratio = 32.0 / 64.0
         }
+        return baseAmountSize * ratio
     }
 
     private var amountDisplay: some View {
@@ -505,6 +510,7 @@ struct NewTransactionView: View {
                     }
                 }
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .animation(.easeInOut(duration: DS.Animation.fast), value: viewModel.transactionType)
     }
 
@@ -644,7 +650,7 @@ struct NewTransactionView: View {
         Button(action: action) {
             VStack(spacing: DS.Spacing.xs) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 48, height: 48)
                     .background(
@@ -773,7 +779,7 @@ struct NewTransactionView: View {
                                 } label: {
                                     HStack(spacing: DS.Spacing.sm) {
                                         Image(systemName: tag.iconName)
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(DS.Typography.labelSmall)
                                         Text(tag.name)
                                             .font(.subheadline.weight(.medium))
                                             .lineLimit(1)
@@ -788,7 +794,7 @@ struct NewTransactionView: View {
                                     }
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 16))
+                                        .font(DS.Typography.label)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -993,7 +999,7 @@ struct NewTransactionView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(DS.Typography.headline)
                     Text(L10n.Action.save)
                         .font(.headline)
                 }
@@ -1004,6 +1010,7 @@ struct NewTransactionView: View {
         .tint(viewModel.canSave ? Color.electricIndigo : Color.gray.opacity(0.4))
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
+        .accessibilityHint(!viewModel.canSave ? "Para guardar, completa monto, cuenta y categoría" : "")
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 

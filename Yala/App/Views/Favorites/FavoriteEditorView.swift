@@ -47,6 +47,9 @@ struct FavoriteEditorView: View {
     @State private var showTagSelector = false
     @State private var showNatureSelector = false
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .title) private var currencySymbolSize: CGFloat = 28
+
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
 
@@ -82,7 +85,7 @@ struct FavoriteEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -253,11 +256,11 @@ struct FavoriteEditorView: View {
     private var amountDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             Text(currencySymbol)
-                .font(.system(size: 28, weight: .medium, design: .rounded))
+                .font(.system(size: currencySymbolSize, weight: .medium, design: .rounded))
                 .foregroundStyle(amountColor.opacity(0.7))
 
             TextField("0.00", text: $amountString)
-                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(amountColor)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
@@ -282,6 +285,7 @@ struct FavoriteEditorView: View {
                     }
                 }
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private var currencySymbol: String {

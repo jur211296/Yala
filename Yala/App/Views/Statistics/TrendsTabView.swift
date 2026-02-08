@@ -18,6 +18,7 @@ struct TrendsTabView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
     // MARK: - Data (passed from parent)
 
@@ -569,7 +570,8 @@ struct TrendsTabView: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
                 .font(.subheadline)
@@ -584,7 +586,8 @@ struct TrendsTabView: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
                 .font(.subheadline)
@@ -864,7 +867,8 @@ struct TrendsTabView: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.bar.fill")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
                 .font(.subheadline)

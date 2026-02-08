@@ -9,6 +9,8 @@ import Charts
 import SwiftUI
 
 struct CashFlowWidget: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -672,7 +674,8 @@ struct CashFlowWidget: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
                 .font(.subheadline)

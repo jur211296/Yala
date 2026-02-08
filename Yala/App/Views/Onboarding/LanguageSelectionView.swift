@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct LanguageSelectionView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
+
     @State private var selectedLanguage: String = "en"
     var onComplete: () -> Void
 
@@ -19,8 +21,9 @@ struct LanguageSelectionView: View {
             // Header
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "globe")
-                    .font(.system(size: 56))
+                    .font(.system(size: heroSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.languageTitle)
                     .font(.title2.weight(.bold))

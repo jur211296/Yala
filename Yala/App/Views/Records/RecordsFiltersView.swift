@@ -110,7 +110,7 @@ struct RecordsFiltersView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -524,7 +524,7 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
                         showAccountsSheet = false
                     }
                 }
@@ -607,7 +607,7 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
                         showTagsSheet = false
                     }
                 }
@@ -627,7 +627,7 @@ struct RecordsFiltersView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
                         showCurrencySheet = false
                     }
                 }

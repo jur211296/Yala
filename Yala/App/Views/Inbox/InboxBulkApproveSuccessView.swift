@@ -9,6 +9,9 @@
 import SwiftUI
 
 struct InboxBulkApproveSuccessView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var checkmarkSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var countSize: CGFloat = 48
+
     let approvedCount: Int
     let onViewRecords: () -> Void
     let onBackToInbox: () -> Void
@@ -45,15 +48,17 @@ struct InboxBulkApproveSuccessView: View {
 
                 // Checkmark icon
                 Image(systemName: "checkmark")
-                    .font(.system(size: 40, weight: .medium))
+                    .font(.system(size: checkmarkSize, weight: .medium))
                     .foregroundStyle(.white)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
 
             // Count and label
             VStack(spacing: DS.Spacing.sm) {
                 Text("\(approvedCount)")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: countSize, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
                     .font(.subheadline)

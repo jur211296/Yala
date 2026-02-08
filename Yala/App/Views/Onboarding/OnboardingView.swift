@@ -15,6 +15,8 @@ struct OnboardingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
     @State private var selectedCurrency: CurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()
@@ -158,8 +160,9 @@ struct OnboardingView: View {
             // Header
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "dollarsign.circle.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.currencyTitle)
                     .font(.title2.weight(.bold))
@@ -250,8 +253,9 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.left.arrow.right.circle.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.secondaryTitle)
                     .font(.title2.weight(.bold))
@@ -344,8 +348,9 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "calendar.circle.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.periodTitle)
                     .font(.title2.weight(.bold))
@@ -379,8 +384,9 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.expensesOnlyTitle)
                     .font(.title2.weight(.bold))
@@ -464,8 +470,9 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.lg) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "square.grid.2x2.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.categoriesTitle)
                     .font(.title2.weight(.bold))
@@ -563,8 +570,9 @@ struct OnboardingView: View {
         VStack(spacing: DS.Spacing.lg) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.notificationsTitle)
                     .font(.title2.weight(.bold))

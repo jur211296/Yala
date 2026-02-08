@@ -18,6 +18,7 @@ struct CategoriesTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 48
 
     // MARK: - Settings
 
@@ -920,7 +921,8 @@ struct CategoriesTabView: View {
     private func emptyState(icon: String, title: String, subtitle: String) -> some View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 48))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(title)
                 .font(.headline)

@@ -305,6 +305,7 @@
 
 "scheduled.saveDescription" = "Crea un pago planificado para recordarte de este gasto o ingreso recurrente. Lo encontrarás en la sección de Pagos Planificados desde tu perfil, donde podrás editarlo, activarlo o desactivarlo cuando quieras.";
 "scheduled.paid" = "Pagado";
+"scheduled.overdue" = "Vencido";
 "scheduled.draftCreatedTitle" = "¡Tienes pagos pendientes!";
 "scheduled.draftCreatedMessage" = "Se añadieron %d pagos planificados a tu bandeja. Revísalos cuando quieras.";
 "scheduled.viewInbox" = "Ver bandeja";

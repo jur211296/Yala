@@ -22,6 +22,8 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
 
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40
+
     @State private var viewModel = ProfileViewModel()
 
     @AppStorage("userName") private var userName: String = "Usuario"
@@ -138,7 +140,7 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -287,8 +289,9 @@ struct ProfileView: View {
                             .frame(width: 90, height: 90)
 
                         Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
-                            .font(.system(size: 40))
+                            .font(.system(size: avatarIconSize))
                             .foregroundStyle(Color.electricIndigo)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
 
                     // Spark badge for Pro users
@@ -546,7 +549,7 @@ struct ProfileView: View {
                                 .font(.body)
                                 .foregroundStyle(Color.brandPrimary)
                             Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(DS.Typography.captionSmall.weight(.medium))
                                 .foregroundStyle(Color.brandPrimary)
                         }
                     }
@@ -841,7 +844,7 @@ struct ProfileView: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .medium))
+                .font(DS.Typography.labelSmall.weight(.medium))
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, DS.Spacing.lg)

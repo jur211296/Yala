@@ -22,7 +22,7 @@ struct SelectionChip: View {
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(DS.Typography.labelSmall)
 
                 Text(text)
                     .font(.subheadline.weight(.medium))

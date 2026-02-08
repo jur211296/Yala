@@ -97,6 +97,7 @@ struct ExchangeRateWidget: View {
                         .foregroundStyle(Color.gray.opacity(0.7))
                         .padding(.leading, DS.Spacing.sm)
                 }
+                .accessibilityLabel("Ver detalle")
                 .buttonStyle(.plain)
             }
         }
@@ -183,7 +184,7 @@ struct ExchangeRateWidget: View {
                                 // Only show labels on first, last, and middle points to avoid clutter
                                 if shouldShowLabel(for: point, in: data.chartPoints) {
                                     Text(formatRateCompact(rate))
-                                        .font(.system(size: 9, weight: .medium))
+                                        .font(DS.Typography.captionSmall).fontWeight(.medium)
                                         .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
                                 }
                             }

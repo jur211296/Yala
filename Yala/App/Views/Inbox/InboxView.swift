@@ -14,6 +14,7 @@ import SwiftUI
 struct InboxView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
     @AppStorage("preferredCurrency") private var preferredCurrency: String = "PEN"
@@ -91,14 +92,14 @@ struct InboxView: View {
                     // Selection mode: Cancel left, Select All right
                     ToolbarItem(placement: .topBarLeading) {
                         Button(L10n.Action.cancel) {
-                            withAnimation {
+                            dsWithAnimation(reduceMotion) {
                                 exitSelectionMode()
                             }
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(L10n.Export.selectAll) {
-                            withAnimation {
+                            dsWithAnimation(reduceMotion) {
                                 selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
                             }
                         }
@@ -106,14 +107,14 @@ struct InboxView: View {
                 } else {
                     // Normal mode: X left, selection icon right
                     ToolbarItem(placement: .topBarLeading) {
-                        YalaToolbarButton(systemName: "xmark") {
+                        YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                             dismiss()
                         }
                     }
                     if !filteredDrafts.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
-                            YalaToolbarButton(systemName: "checkmark.circle") {
-                                withAnimation {
+                            YalaToolbarButton(systemName: "checkmark.circle", label: "Aprobar todo") {
+                                dsWithAnimation(reduceMotion) {
                                     isSelectionMode = true
                                 }
                             }
@@ -216,7 +217,7 @@ struct InboxView: View {
         HStack(spacing: DS.Spacing.lg) {
             // Select all / Deselect all
             Button {
-                withAnimation {
+                dsWithAnimation(reduceMotion) {
                     if selectedDraftIDs.count == filteredDrafts.count {
                         selectedDraftIDs.removeAll()
                     } else {
@@ -229,6 +230,7 @@ struct InboxView: View {
                     .foregroundStyle(Color.electricIndigo)
                     .frame(minWidth: 44, minHeight: 44)
             }
+            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? "Deseleccionar todos" : "Seleccionar todos")
 
             // Count
             Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
@@ -252,6 +254,7 @@ struct InboxView: View {
                     )
             }
             .disabled(selectedDraftIDs.isEmpty)
+            .accessibilityHint(selectedDraftIDs.isEmpty ? "Selecciona al menos un borrador" : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -287,7 +290,7 @@ struct InboxView: View {
         let count = countForFilter(filter)
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                 selectedFilter = filter
             }
         } label: {
@@ -412,7 +415,7 @@ struct InboxView: View {
     }
 
     private func toggleSelection(_ draft: InboxDraft) {
-        withAnimation {
+        dsWithAnimation(reduceMotion) {
             if selectedDraftIDs.contains(draft.persistentModelID) {
                 selectedDraftIDs.remove(draft.persistentModelID)
             } else {
@@ -447,7 +450,7 @@ struct InboxView: View {
         // Haptic feedback
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-        withAnimation {
+        dsWithAnimation(reduceMotion) {
             draftService.setContext(modelContext)
             do {
                 try draftService.rejectDraft(draft)
@@ -463,7 +466,7 @@ struct InboxView: View {
         // Haptic feedback for destructive action
         UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
 
-        withAnimation {
+        dsWithAnimation(reduceMotion) {
             draftService.setContext(modelContext)
             do {
                 try draftService.deleteDraft(draft)
@@ -489,7 +492,7 @@ struct InboxView: View {
         // Haptic feedback for positive action
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
-        withAnimation {
+        dsWithAnimation(reduceMotion) {
             draftService.setContext(modelContext)
             do {
                 let transaction = try draftService.approveDraft(

@@ -93,7 +93,7 @@ struct QuickManualEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { entry in
             QuickManualEntryWidgetView()
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.quickManual")
         .description("widget.gallery.quickManual.desc")
@@ -141,7 +141,7 @@ struct QuickVoiceEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { entry in
             QuickVoiceEntryWidgetView()
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.quickVoice")
         .description("widget.gallery.quickVoice.desc")
@@ -189,7 +189,7 @@ struct QuickImageEntryWidget: Widget {
             provider: QuickEntryProvider()
         ) { entry in
             QuickImageEntryWidgetView()
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.quickImage")
         .description("widget.gallery.quickImage.desc")

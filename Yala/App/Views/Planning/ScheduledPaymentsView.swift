@@ -96,7 +96,7 @@ struct ScheduledPaymentsView: View {
                     viewModel.createNewPayment()
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
                         .background(Color.electricIndigo)

@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct ScheduledPaymentsListView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
+
     @Bindable var viewModel: ScheduledPaymentsViewModel
     let payments: [ScheduledPayment]
     let tab: ScheduledPaymentsTab
@@ -67,7 +69,8 @@ struct ScheduledPaymentsListView: View {
 
             // Amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
-                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.primary)
 
             // Payment count
@@ -335,7 +338,7 @@ struct ScheduledPaymentsListView: View {
                         }
                         if payments.count > 2 {
                             Text("+\(payments.count - 2)")
-                                .font(.system(size: 8, weight: .medium))
+                                .font(DS.Typography.captionSmall).fontWeight(.medium)
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                                 .padding(.leading, 2)
                         }
@@ -380,7 +383,7 @@ struct ScheduledPaymentsListView: View {
                 .frame(width: 6, height: 6)
 
             Text(payment.name)
-                .font(.system(size: 8, weight: .medium))
+                .font(DS.Typography.captionSmall).fontWeight(.medium)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
         }

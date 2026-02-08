@@ -14,6 +14,8 @@ struct CurrencySettingsView: View {
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(ExchangeRateService.self) private var exchangeRateService
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
     @AppStorage("secondaryCurrencies") private var secondaryCurrenciesRaw: String = ""
@@ -60,8 +62,9 @@ struct CurrencySettingsView: View {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 48))
+                            .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.brandPrimary)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)
@@ -86,6 +89,7 @@ struct CurrencySettingsView: View {
             }
             .blur(radius: isUpdating ? 3 : 0)
             .disabled(isUpdating)
+            .accessibilityHint(isUpdating ? "Actualizando tipos de cambio" : "")
 
             // Progress Overlay
             if isUpdating {

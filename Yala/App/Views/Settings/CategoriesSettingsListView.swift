@@ -44,12 +44,12 @@ struct CategoriesSettingsListView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "plus") {
+                YalaToolbarButton(systemName: "plus", label: "Agregar") {
                     viewModel.createAndOpenNewCategory()
                 }
             }
