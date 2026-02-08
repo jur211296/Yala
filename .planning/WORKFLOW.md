@@ -3,13 +3,44 @@
 ## Referencia rápida
 
 ```
-/next → Plan Mode → /review-plan → /session-start
+/clear → /next → Plan Mode → /review-plan → Accept edits
+→ Implementar → /verify-ios → /test-smart → /swift-audit
+→ /commit-one → /clear
+```
+
+---
+
+## Flujos según tipo de tarea
+
+### Flujo estándar (feature normal — 80% del trabajo)
+```
+/clear → /next → Plan Mode (Shift+Tab) → /review-plan → Accept edits
      ↓
-[/analyze-impact] → Implementar → /verify-ios → /test-smart → /commit-one
-     ↓                              ↑__________________|
-[/idea si surge algo]                    (repetir)
+Implementar → /verify-ios → /test-smart → /swift-audit
      ↓
-/pre-deploy-check → /session-end → /compact → /clear
+/commit-one → /clear
+```
+
+### Flujo rápido (bug fix puntual)
+```
+/next → Implementar → /verify-ios → /commit-one
+```
+
+### Flujo autónomo (tarea mecánica con plan aprobado)
+```
+/clear → /next → Plan Mode → /review-plan → /yolo
+→ [Claude ejecuta TODO sin pausas]
+→ Validar reporte final
+```
+
+### Flujo complejo (modelo core, multi-archivo, alto riesgo)
+```
+/clear → /next → /analyze-impact [componente]
+→ Plan Mode → /review-plan → Accept edits
+→ Implementar → /verify-ios → /test-smart
+→ /review-session → aplicar mejoras
+→ /swift-audit → /commit-one
+→ /context-snapshot → /clear
 ```
 
 ---
@@ -21,7 +52,7 @@
 |---------|-----------|
 | `/next` | Ver qué sigue según STATE y ROADMAP |
 
-**Output esperado:** Lista de opciones numeradas para elegir.
+**Output:** Lista de opciones numeradas para elegir.
 
 ---
 
@@ -30,7 +61,6 @@
 |--------|-----------|
 | `Shift+Tab` | Entrar en Plan Mode (Claude explora sin modificar) |
 | `/review-plan` | Revisor escéptico del plan generado |
-| `Ctrl+G` | Editar plan si necesita ajustes |
 
 **Cuándo usar Plan Mode:**
 - Features nuevas
@@ -45,7 +75,7 @@
 
 ---
 
-### FASE 3: Análisis de impacto (opcional)
+### FASE 3: Análisis de impacto (solo para cambios de alto riesgo)
 | Comando | Propósito |
 |---------|-----------|
 | `/analyze-impact [componente]` | Subagentes analizan dependencias en paralelo |
@@ -57,20 +87,9 @@
 - Renombrar funciones/propiedades
 - Eliminar código
 
-**Output:** Mapa de impacto con nivel de riesgo y recomendación.
-
 ---
 
-### FASE 4: Inicio de sesión
-| Comando | Propósito |
-|---------|-----------|
-| `/session-start` | Crear log, registrar objetivo |
-
-**Se integra con /next:** Si vienes de /next con plan definido, no repite preguntas.
-
----
-
-### FASE 5: Ciclo de incremento
+### FASE 4: Ciclo de implementación
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -81,145 +100,81 @@
 │        ↓                                    │
 │   /test-smart        ← Tests relevantes     │
 │        ↓                                    │
-│   Usuario valida     ← Probar en simulador  │
-│        ↓                                    │
 │   ¿Funciona?                                │
 │     │                                       │
 │     ├─ No → Corregir → (volver arriba)      │
 │     │                                       │
-│     └─ Sí → /commit-one                     │
-│              ↓                              │
-│         ¿Más incrementos?                   │
-│           │                                 │
-│           ├─ Sí → (volver arriba)           │
-│           │                                 │
-│           └─ No → Siguiente fase            │
+│     └─ Sí → /swift-audit → /commit-one      │
 │                                             │
 └─────────────────────────────────────────────┘
 ```
 
-**Comando útil durante implementación:**
+**Comandos durante implementación:**
 | Comando | Propósito |
 |---------|-----------|
+| `/verify-quick` | Check rápido de sintaxis entre cambios |
 | `/idea` | Capturar idea sin perder foco |
 
 ---
 
-### FASE 6: Validación final
+### FASE 5: Cierre
 | Comando | Propósito |
 |---------|-----------|
-| `/pre-deploy-check` | Checklist automático de calidad |
-
-**Verifica:**
-- `try?` sin manejo de error
-- Force unwraps (`!`)
-- Prints sin `#if DEBUG`
-- TODOs pendientes
-- Credenciales hardcodeadas
-- QA-SCENARIOS actualizado
-
-**Output:** LISTO PARA DEPLOY o BLOQUEADO con lista de issues.
-
----
-
-### FASE 7: Cierre de tarea
-| Comando | Propósito |
-|---------|-----------|
-| `/session-end` | Resumen de la sesión, outcomes |
-
-**Genera:**
-- Estadísticas (commits, builds, tests)
-- Key learnings
-- Trabajo pendiente si quedó algo
-
----
-
-### FASE 8: Gestión de contexto
-| Comando | Propósito |
-|---------|-----------|
-| `/context-snapshot` | Guardar contexto mental antes de perderlo |
-| `/compact` | Comprimir conversación estratégicamente |
+| `/context-snapshot` | Guardar contexto mental (si sesión compleja) |
 | `/clear` | Liberar contexto completamente |
 
-**Decisión:**
-- ¿Hay contexto valioso no commiteado? → `/context-snapshot` primero
-- ¿Solo ruido acumulado? → `/compact` directo
-- ¿Cambio total de tarea? → `/clear`
-
 ---
 
-## Comandos por categoría
+## Skills disponibles (25)
 
 ### Orientación
-- `/next` - Qué viene después
+- `/next` — Qué viene después
 
 ### Planificación
-- `Shift+Tab` - Plan Mode
-- `/review-plan` - Revisar plan críticamente
+- `Shift+Tab` — Plan Mode
+- `/review-plan` — Revisar plan críticamente
 
 ### Análisis
-- `/analyze-impact [componente]` - Impacto de cambios
-- `/parallel-search [patrón]` - Búsqueda paralela
-
-### Sesión
-- `/session-start` - Iniciar sesión con log
-- `/session-end` - Cerrar sesión con resumen
+- `/analyze-impact [componente]` — Impacto de cambios con subagentes
+- `/parallel-search [patrón]` — Búsqueda paralela exhaustiva
 
 ### Verificación
-- `/verify-ios` - Build completo
-- `/verify-quick` - Check rápido de sintaxis
-- `/test-smart` - Tests relevantes
-- `/test-ios` - Todos los tests
-- `/pre-deploy-check` - Checklist pre-merge
+- `/verify-ios` — Build completo
+- `/verify-quick` — Check rápido de sintaxis
+- `/test-smart` — Tests relevantes para cambios actuales
+- `/test-ios` — Todos los tests
+
+### Calidad Swift
+- `/swift-audit` — Auditoría completa (try?, !, prints, DS, deprecated, L10n)
+- `/swiftdata-check` — Validación de modelos SwiftData
+- `/swift-modernize` — Detectar patrones legacy, sugerir APIs modernas
+
+### Review
+- `/review-code [archivo]` — Code review con agente swift-reviewer
+- `/review-session` — Review de todos los .swift modificados en sesión
+- `/pre-deploy-check` — Checklist pre-merge/deploy
 
 ### Commits
-- `/commit-one` - Commit atómico con actualización de STATE
-- `/checkpoint` - Verify + commit + actualizar docs
-
-### Captura
-- `/idea` - Capturar idea al Parking Lot
+- `/commit-one` — Commit atómico con actualización de STATE
+- `/checkpoint` — Verify + test + commit + actualizar docs en 1 paso
 
 ### Contexto
-- `/context-snapshot` - Guardar estado mental
-- `/compact` - Comprimir estratégicamente
-- `/clear` - Liberar todo
+- `/context-snapshot` — Guardar estado mental antes de perderlo
+- `/compact` — Comprimir conversación estratégicamente
+- `/clear` — Liberar contexto completamente
 
----
+### Captura
+- `/idea` — Capturar idea al Parking Lot sin interrumpir
 
-## Flujos alternativos
+### Autónomo
+- `/yolo` — Claude ejecuta todo sin pausas (implementar+verify+test+commit)
 
-### Flujo rápido (bug fix puntual)
-```
-/next → /session-start → Implementar → /verify-ios → /commit-one → /session-end
-```
-
-### Flujo profundo (feature compleja)
-```
-/next → Shift+Tab → /review-plan → /analyze-impact → /session-start
-     → [múltiples incrementos con verify/test/commit]
-     → /pre-deploy-check → /session-end → /context-snapshot → /compact
-```
-
-### Flujo de exploración (no sé qué hacer)
-```
-/next → Shift+Tab (solo explorar) → /context-snapshot → /clear
-```
-
-### Flujo YOLO (autónomo, cuando no puedes validar)
-```
-/next → Shift+Tab → /review-plan → /yolo
-     → [Claude ejecuta TODO sin pausas]
-     → [Regresas y validas el reporte final]
-```
-
-### Flujo paralelo (múltiples tareas no relacionadas)
-```
-/worktree-setup feature-a bugfix-b
-→ Abrir terminales adicionales
-→ En cada una: cd ../Yala-[nombre] && claude
-→ Trabajar independientemente
-→ Antes de merge: /audit-branches
-```
+### Auditoría periódica (pre-release, 1x por fase)
+- `/deep-scan [dir]` — Escaneo profundo archivo por archivo (bugs, patterns, mejoras)
+- `/a11y-audit [dir]` — Accesibilidad: VoiceOver, Dynamic Type, touch targets, contraste
+- `/ds-compliance [dir]` — Design System: tokens, componentes, APIs modernas
+- `/test-coverage` — Análisis de cobertura + identificación gaps críticos
+- `/pre-launch` — Checklist completo pre-App Store (Apple compliance)
 
 ---
 
@@ -227,41 +182,25 @@
 
 | Agente | Invocación | Propósito |
 |--------|------------|-----------|
-| `branch-auditor` | `/audit-branches` | Detecta conflictos entre branches paralelos |
 | `swift-reviewer` | `/review-code` | Revisa código según convenciones de Yala |
 | `test-generator` | `/generate-tests` | Genera tests unitarios |
-
-### Cómo invocar agentes manualmente
-```
-"Usa el agente swift-reviewer para revisar [archivo]"
-"Lanza el agente test-generator en background para [clase]"
-```
-
----
-
-## Background Tasks
-
-Ejecutar tareas en segundo plano mientras sigues trabajando:
-
-```
-"En background, analiza todos los ViewModels y guarda en /tmp/analysis.md"
-"Lanza en background el agente swift-reviewer para todo Yala/Services/"
-```
-
-Ver guía completa: `/background`
 
 ---
 
 ## Tips de eficiencia
 
-1. **Usa subagentes para búsquedas**: `/parallel-search` y `/analyze-impact` no consumen tu contexto principal.
+1. **Plan Mode no es opcional para features**: El tiempo invertido en planificar se recupera evitando retrabajo.
 
-2. **Compacta en puntos naturales**: Después de cada tarea completada, no cuando te quedas sin tokens.
+2. **`/test-smart` SIEMPRE antes de commit**: Cerrar el gap de calidad.
 
-3. **Plan Mode no es opcional para features**: El tiempo invertido en planificar se recupera evitando retrabajo.
+3. **`/swift-audit` reemplaza review+pre-deploy**: Un solo pase unificado de calidad.
 
-4. **`/idea` preserva el foco**: Capturar y seguir es mejor que interrumpir para "no olvidar".
+4. **`/yolo` para tareas mecánicas**: Si el plan está aprobado, no pierdas tiempo validando paso a paso.
 
-5. **`/pre-deploy-check` antes de PR**: Atrapa errores comunes antes de que lleguen a code review.
+5. **`/idea` preserva el foco**: Capturar y seguir es mejor que interrumpir.
 
-6. **Snapshots para contexto complejo**: Si investigaste algo por 30+ minutos, vale un snapshot.
+6. **`/context-snapshot` para sesiones complejas**: Si investigaste algo por 30+ minutos, vale un snapshot.
+
+7. **Compacta en puntos naturales**: Después de cada tarea completada, no cuando te quedas sin tokens.
+
+8. **Subagentes para búsquedas**: `/parallel-search` y `/analyze-impact` no consumen contexto principal.
