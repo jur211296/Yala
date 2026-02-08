@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-08] f5d2b43 fix: a11y audit corrections — missing labels, DT tokens, Reduce Motion
+- [2026-02-08] 7545bf8 fix: refresh Inbox UI after deleting draft permanently (BUG-15)
 - [2026-02-08] 0fdf436 feat: comprehensive accessibility — VoiceOver, Dynamic Type, Reduce Motion
 - [2026-02-08] 4577ddf fix: invalidar cache de widgets al eliminar transacciones (BUG-14)
 - [2026-02-08] 15565d1 style: dark mode backgrounds from deep slate blue to pure black
@@ -32,7 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-08] c931b9f feat: waterfall chart for daily cash flow view (EXP-1)
 - [2026-02-08] 6f92bb5 chore: clean up skills — remove GSD + redundant commands, add quality skills
 - [2026-02-07] 6808209 fix: correct archive/exclude account behavior across entire app (BUG-12)
-- [2026-02-07] 57bd488 fix: force full decimal precision on individual transaction amounts
 - [2026-02-07] c64d2a0 fix: prevent empty notifications for scheduled payments and announcements
 - [2026-02-07] 085936d fix: correct report notification calculations — currency, interval, and account filtering
 - [2026-02-07] 4976add refactor: apply code review fixes — DS tokens, search localization, error logging
@@ -209,7 +210,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - 🔴 **BUG-13: Archivar/desarchivar cuenta fuerza ajuste de saldo** — Al desarchivar una cuenta se está forzando un nuevo saldo inicial o ajuste, no debería pasar. Archivar e inarchivar no debe afectar de ninguna manera el balance de una cuenta. Lo mismo para Excluir o no excluir de estadísticas: el toggle no debe provocar ningún cambio en el saldo.
 - ✅ **BUG-14: Eliminar transacción no actualiza cache de widgets** — Resuelto (4577ddf)
 - ✅ **A11Y: Accesibilidad completa** — VoiceOver, Dynamic Type, Reduce Motion (0fdf436)
-- 🔴 **BUG-15: Eliminar transacción aprobada desde Inbox no funciona** — La eliminación de una transacción desde el Inbox no está funcionando correctamente.
+- ✅ **BUG-15: Eliminar draft desde Inbox no actualiza UI** — Resuelto (7545bf8)
+- 🔴 **BUG-16: Orden inconsistente de transacciones del mismo día** — En Registros ya se ordena por fecha de creación dentro del mismo día, pero falta aplicar el mismo criterio en otros lugares.
 
 ---
 
@@ -238,9 +240,9 @@ Agregado `WidgetDataCache.updateCache(context:)` en los 2 paths de eliminación 
 
 Waterfall chart cumulative para vista diaria de CashFlow. Cada barra parte donde terminó la anterior: teal (neto positivo), hot pink (neto negativo). Vista mensual sin cambios (bidireccional + línea neta). Implementado en in-app (CashFlowWidget.swift) y widget iOS (YalaWidgets). Días con neto=0 filtrados. Valores hardcodeados tokenizados a WDS/DS.
 
-### BUG-15: 🔴 PENDIENTE
+### BUG-15: ✅ RESUELTO (7545bf8)
 
-**Eliminar transacción aprobada desde Inbox no funciona.** La acción de eliminación de transacciones dentro del Inbox no se ejecuta correctamente.
+`deleteDraftPermanently()` eliminaba el draft del contexto pero no llamaba `viewModel.loadData()` para refrescar los arrays manuales del ViewModel. Agregada 1 línea. Aplica tanto a pendientes como rechazados (misma función).
 
 ---
 
@@ -346,10 +348,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Accesibilidad completa implementada (VoiceOver + Dynamic Type + Reduce Motion) — 0fdf436
-Next step: Investigar y resolver BUG-13 (archive/unarchive fuerza ajuste de saldo) o BUG-15 (eliminar tx aprobada desde Inbox)
+Stopped at: A11y audit corrections completadas — f5d2b43
+Next step: Investigar y resolver BUG-13 (archive/unarchive fuerza ajuste de saldo)
 Resume context:
-- A11Y completo: 131 archivos, 8 áreas (VoiceOver labels, shared components, icon-only buttons, DT transactions, DT panel/stats, DT remaining, disabled hints + color indicators, reduce motion)
+- A11y completa: 0fdf436 (implementación) + f5d2b43 (audit corrections)
+- Cobertura: VoiceOver labels, Dynamic Type, Reduce Motion, disabled hints, color indicators
 - BUG-13 pendiente: archivar/desarchivar y excluir/incluir de estadísticas fuerzan ajuste de saldo
-- BUG-15 pendiente: eliminar transacción aprobada desde Inbox no funciona
 - Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md para Fase 11
