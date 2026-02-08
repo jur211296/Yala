@@ -19,6 +19,7 @@ struct ScheduledPaymentsListView: View {
     let onRefresh: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var viewModeNamespace
 
     /// First day of week from app settings (1 = Sunday, 2 = Monday, etc.)
@@ -135,7 +136,7 @@ struct ScheduledPaymentsListView: View {
         let isSelected = viewModel.paymentsViewMode == mode
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 viewModel.paymentsViewMode = mode
             }
         } label: {
@@ -213,7 +214,7 @@ struct ScheduledPaymentsListView: View {
     private var monthNavigationHeader: some View {
         HStack {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     selectedDay = nil
                     viewModel.previousMonth()
                 }
@@ -234,7 +235,7 @@ struct ScheduledPaymentsListView: View {
             Spacer()
 
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     selectedDay = nil
                     viewModel.nextMonth()
                 }
@@ -317,7 +318,7 @@ struct ScheduledPaymentsListView: View {
         let hasPayments = !payments.isEmpty
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion) {
                 if selectedDay == day {
                     selectedDay = nil
                 } else {
@@ -436,7 +437,7 @@ struct ScheduledPaymentsListView: View {
                     Spacer()
 
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        dsWithAnimation(reduceMotion) {
                             selectedDay = nil
                         }
                     } label: {

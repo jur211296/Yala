@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - Transaction Type Selector
 
 struct TransactionTypeSelectorView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedType: TransactionType
     var availableTypes: [TransactionType] = TransactionType.allCases
     var onTypeChange: ((TransactionType) -> Void)?
@@ -27,7 +28,7 @@ struct TransactionTypeSelectorView: View {
         HStack(spacing: 0) {
             ForEach(availableTypes) { type in
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    dsWithAnimation(reduceMotion) {
                         selectedType = type
                         onTypeChange?(type)
                     }

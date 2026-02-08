@@ -13,6 +13,7 @@ import SwiftUI
 struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel = AccountsSettingsListViewModel()
@@ -73,7 +74,7 @@ struct AccountsSettingsListView: View {
                 HStack(spacing: DS.Spacing.md) {
                     YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar")
                     {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        dsWithAnimation(reduceMotion) {
                             viewModel.isEditMode.toggle()
                         }
                     }

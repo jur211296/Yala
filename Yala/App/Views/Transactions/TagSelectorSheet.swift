@@ -14,6 +14,7 @@ import SwiftUI
 struct TagSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var viewModel = TagSelectorViewModel()
 
@@ -146,7 +147,7 @@ struct TagSelectorSheet: View {
     }
 
     private func toggleTag(_ tag: Tag) {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+        dsWithAnimation(reduceMotion) {
             if isSelected(tag) {
                 selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
             } else {

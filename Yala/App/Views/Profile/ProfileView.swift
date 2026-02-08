@@ -465,7 +465,7 @@ struct ProfileView: View {
                 HStack(spacing: DS.Spacing.md) {
                     if colorfulIcons {
                         Image(systemName: "waveform.badge.mic")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(DS.Typography.subheadline).fontWeight(.medium)
                             .foregroundStyle(.white)
                             .frame(width: 28, height: 28)
                             .background(
@@ -569,7 +569,7 @@ struct ProfileView: View {
             HStack(spacing: DS.Spacing.md) {
                 if colorfulIcons {
                     Image(systemName: "photo.on.rectangle")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(DS.Typography.subheadline).fontWeight(.medium)
                         .foregroundStyle(.white)
                         .frame(width: 28, height: 28)
                         .background(
@@ -654,6 +654,7 @@ struct ProfileView: View {
                     )
                     .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
                 }
+                .accessibilityHint(!viewModel.hasTransactions ? "No hay transacciones para exportar" : "")
                 .disabled(!viewModel.hasTransactions)
                 .buttonStyle(.plain)
 
@@ -822,7 +823,7 @@ struct ProfileView: View {
             if colorfulIcons {
                 // iOS-style colored icon with rounded square background
                 Image(systemName: icon)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(DS.Typography.subheadline).fontWeight(.medium)
                     .foregroundStyle(.white)
                     .frame(width: 28, height: 28)
                     .background(

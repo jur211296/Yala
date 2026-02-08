@@ -14,6 +14,7 @@ import SwiftUI
 struct FavoriteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel = FavoriteEditorViewModel()
@@ -189,7 +190,7 @@ struct FavoriteEditorView: View {
         HStack(spacing: 0) {
             ForEach(availableTransactionTypes, id: \.self) { type in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    dsWithAnimation(reduceMotion) {
                         transactionType = type
                         selectedSubcategory = nil
                     }

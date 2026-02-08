@@ -17,6 +17,7 @@ struct DetailContainerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - ViewModels
 
@@ -376,7 +377,7 @@ struct DetailContainerView: View {
                                 color: .hotPink,
                                 isLocked: isVoiceLocked
                             ) {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                dsWithAnimation(reduceMotion) {
                                     showFABMenu = false
                                 }
                                 if isVoiceLocked {
@@ -395,7 +396,7 @@ struct DetailContainerView: View {
                                 color: .teal,
                                 isLocked: isImageLocked
                             ) {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                dsWithAnimation(reduceMotion) {
                                     showFABMenu = false
                                 }
                                 if isImageLocked {
@@ -412,7 +413,7 @@ struct DetailContainerView: View {
                             text: L10n.Panel.fabManual,
                             color: .electricIndigo
                         ) {
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            dsWithAnimation(reduceMotion) {
                                 showFABMenu = false
                             }
                             recordsViewModel.showNewTransaction = true
@@ -427,7 +428,7 @@ struct DetailContainerView: View {
                 // FAB button
                 Button {
                     DS.Haptic.medium()
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    dsWithAnimation(reduceMotion) {
                         showFABMenu.toggle()
                     }
                 } label: {
@@ -535,6 +536,7 @@ struct DetailContainerView: View {
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel("Eliminar")
                 .buttonStyle(.plain)
 
                 Spacer()

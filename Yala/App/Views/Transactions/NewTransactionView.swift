@@ -73,14 +73,14 @@ struct NewTransactionView: View {
                     newViewModel.setContext(modelContext)
                     viewModel = newViewModel
                     isCreatingAnother = true
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
                     }
                 },
                 onEdit: {
                     // Go back to form with current data
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
                     }
@@ -375,7 +375,7 @@ struct NewTransactionView: View {
                     .frame(maxWidth: 280)
                     .tint(Color(UIColor.label))
                     .onChange(of: viewModel.note) { _, newValue in
-                        withAnimation(.easeInOut(duration: 0.15)) {
+                        dsWithAnimation(reduceMotion) {
                             // Disable #!@ shortcuts for transfers
                             if viewModel.isTransfer {
                                 currentMentionState = nil
@@ -789,7 +789,7 @@ struct NewTransactionView: View {
 
                                 // Remove button (X)
                                 Button {
-                                    withAnimation {
+                                    dsWithAnimation(reduceMotion) {
                                         viewModel.selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
                                     }
                                 } label: {
@@ -1055,7 +1055,7 @@ struct NewTransactionView: View {
 
             // Delay animation to let keyboard dismiss
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                dsWithAnimation(reduceMotion) {
                     showSuccessScreen = true
                 }
             }
@@ -1155,7 +1155,7 @@ struct NewTransactionView: View {
         guard transactionToEdit != nil else { return }
 
         // Animate form out
-        withAnimation(.easeIn(duration: 0.15)) {
+        dsWithAnimation(reduceMotion) {
             duplicateAnimationVisible = false
         }
 
@@ -1170,7 +1170,7 @@ struct NewTransactionView: View {
             isDuplicating = true
 
             // Animate form back in
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 duplicateAnimationVisible = true
             }
 
@@ -1199,11 +1199,11 @@ struct NewTransactionView: View {
 
     private func showToast(_ message: String) {
         savedToastMessage = message
-        withAnimation(.easeInOut(duration: 0.25)) {
+        dsWithAnimation(reduceMotion) {
             showSavedToast = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation(.easeInOut(duration: 0.25)) {
+            dsWithAnimation(reduceMotion) {
                 showSavedToast = false
             }
         }

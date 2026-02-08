@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var store = StoreKitManager.shared
 
@@ -160,7 +161,7 @@ struct SubscriptionView: View {
                 }
                 .scaleEffect(animateHero ? 1.0 : 0.8)
                 .onAppear {
-                    withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                    dsWithAnimation(reduceMotion) {
                         animateHero = true
                     }
                 }
@@ -307,7 +308,7 @@ struct SubscriptionView: View {
 
     private func planCard(product: Product, badge: String?, isSelected: Bool) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion) {
                 selectedPlan = product.id
             }
         } label: {

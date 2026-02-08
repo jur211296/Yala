@@ -18,6 +18,7 @@ struct TrendsTabView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
     // MARK: - Data (passed from parent)
@@ -357,7 +358,7 @@ struct TrendsTabView: View {
 
                         if trendsViewModel.activeFilterCount > 1 {
                             Button {
-                                withAnimation { trendsViewModel.clearFilters() }
+                                dsWithAnimation(reduceMotion) { trendsViewModel.clearFilters() }
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -434,7 +435,7 @@ struct TrendsTabView: View {
         let isSelected = sessionState.comparisonMode == mode
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 sessionState.comparisonMode = mode
             }
         } label: {
@@ -902,7 +903,7 @@ struct TrendsTabView: View {
         let isSelected = cashFlowViewType == viewType
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 cashFlowViewType = viewType
                 // Reset carousel positions when switching view type
                 if viewType == .byAccount,

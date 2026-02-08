@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BudgetPeriodSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36
     @Bindable var viewModel: BudgetsViewModel
     var transactions: [TransactionItem]
@@ -67,7 +68,7 @@ struct BudgetPeriodSelectorSheet: View {
 
                                     Button {
                                         isScrolling = true
-                                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                        dsWithAnimation(reduceMotion) {
                                             selectedIndex = index
                                             proxy.scrollTo(period.id, anchor: .center)
                                         }
@@ -206,7 +207,7 @@ struct BudgetPeriodSelectorSheet: View {
         let timeSinceLastScroll = Date().timeIntervalSince(lastScrollTime)
         if timeSinceLastScroll >= 0.15 && !isScrolling {
             // Snap to the selected index
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 proxy.scrollTo(periods[selectedIndex].id, anchor: .center)
             }
         }

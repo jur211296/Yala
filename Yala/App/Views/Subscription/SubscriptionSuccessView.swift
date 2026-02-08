@@ -12,6 +12,7 @@ struct SubscriptionSuccessView: View {
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - State
 
@@ -131,12 +132,12 @@ struct SubscriptionSuccessView: View {
         showConfetti = true
 
         // Animate crown
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.1)) {
+        dsWithAnimation(reduceMotion) {
             crownScale = 1.0
         }
 
         // Fade in features
-        withAnimation(.easeOut(duration: 0.5).delay(0.4)) {
+        dsWithAnimation(reduceMotion) {
             featuresOpacity = 1.0
         }
     }

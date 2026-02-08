@@ -162,7 +162,7 @@ struct TagFormView: View {
                         .frame(width: 40, height: 40)
                         .overlay(
                             Image(systemName: viewModel.selectedIconName)
-                                .font(.system(size: 18, weight: .medium))
+                                .font(DS.Typography.body).fontWeight(.medium)
                                 .foregroundStyle(.white)
                         )
 

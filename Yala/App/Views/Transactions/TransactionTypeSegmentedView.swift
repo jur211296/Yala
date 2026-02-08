@@ -11,6 +11,7 @@ import SwiftUI
 
 /// Selector tipo cápsula iOS para Gasto/Ingreso/Transferencia
 struct TransactionTypeSegmentedView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedType: TransactionType
     var availableTypes: [TransactionType] = TransactionType.allCases
 
@@ -24,7 +25,7 @@ struct TransactionTypeSegmentedView: View {
                     isSelected: selectedType == type,
                     animation: animation
                 ) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    dsWithAnimation(reduceMotion) {
                         selectedType = type
                     }
                 }

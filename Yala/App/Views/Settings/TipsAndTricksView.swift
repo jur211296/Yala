@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TipsAndTricksView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expandedTip: TipItem?
 
     var body: some View {
@@ -77,7 +78,7 @@ struct TipsAndTricksView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(Color.yalaSecondaryText)
                 Text(title)
                     .font(.subheadline.weight(.semibold))
@@ -110,14 +111,14 @@ struct TipsAndTricksView: View {
     @ViewBuilder
     private func tipRow(tip: TipItem) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
+            dsWithAnimation(reduceMotion) {
                 expandedTip = expandedTip == tip ? nil : tip
             }
         } label: {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: tip.icon)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(DS.Typography.subheadline).fontWeight(.medium)
                         .foregroundStyle(.white)
                         .frame(width: 28, height: 28)
                         .background(
@@ -132,7 +133,7 @@ struct TipsAndTricksView: View {
                     Spacer()
 
                     Image(systemName: expandedTip == tip ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 

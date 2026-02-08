@@ -71,6 +71,7 @@ struct PlanningView: View {
                                 .font(DS.Typography.body).fontWeight(.medium)
                                 .foregroundStyle(Color.yellow)
                         }
+                        .accessibilityLabel("Plantillas favoritas")
                     }
 
                     // iOS 26 spacer creates separate glass groups

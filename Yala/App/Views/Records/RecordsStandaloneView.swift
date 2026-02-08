@@ -15,6 +15,7 @@ import SwiftUI
 /// Mirrors DetailContainerView functionality but only shows Records content.
 struct RecordsStandaloneView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
 
     // MARK: - ViewModels
@@ -212,7 +213,7 @@ struct RecordsStandaloneView: View {
                                         color: .hotPink,
                                         isLocked: isVoiceLocked
                                     ) {
-                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                        dsWithAnimation(reduceMotion) {
                                             showFABMenu = false
                                         }
                                         if isVoiceLocked {
@@ -231,7 +232,7 @@ struct RecordsStandaloneView: View {
                                         color: .teal,
                                         isLocked: isImageLocked
                                     ) {
-                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                        dsWithAnimation(reduceMotion) {
                                             showFABMenu = false
                                         }
                                         if isImageLocked {
@@ -248,7 +249,7 @@ struct RecordsStandaloneView: View {
                                     text: L10n.Panel.fabManual,
                                     color: .electricIndigo
                                 ) {
-                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    dsWithAnimation(reduceMotion) {
                                         showFABMenu = false
                                     }
                                     recordsViewModel.showNewTransaction = true
@@ -263,7 +264,7 @@ struct RecordsStandaloneView: View {
                         // FAB button
                         Button {
                             DS.Haptic.medium()
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            dsWithAnimation(reduceMotion) {
                                 showFABMenu.toggle()
                             }
                         } label: {
@@ -372,6 +373,7 @@ struct RecordsStandaloneView: View {
                         .foregroundStyle(.red)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
+                .accessibilityLabel("Eliminar")
                 .buttonStyle(.plain)
 
                 Spacer()
@@ -393,6 +395,7 @@ struct RecordsStandaloneView: View {
                         .foregroundStyle(Color.electricIndigo)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
+                .accessibilityLabel("Editar")
                 .buttonStyle(.plain)
             }
             .padding(.vertical, DS.Spacing.sm)

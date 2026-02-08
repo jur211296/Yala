@@ -647,7 +647,7 @@ struct ImageSelectionView: View {
                 createdDraft = drafts.first
             } else {
                 // Multiple drafts: show result view
-                withAnimation(.easeOut(duration: 0.3)) {
+                dsWithAnimation(reduceMotion) {
                     showingResult = true
                 }
             }

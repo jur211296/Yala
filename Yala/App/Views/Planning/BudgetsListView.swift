@@ -258,6 +258,7 @@ struct BudgetsListView: View {
         }
         .buttonStyle(.plain)
         .opacity(hasInactiveBudgets ? 1 : 0)
+        .accessibilityHint(!hasInactiveBudgets ? "No hay presupuestos inactivos" : "")
         .disabled(!hasInactiveBudgets)
     }
 

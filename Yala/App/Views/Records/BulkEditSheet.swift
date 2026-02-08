@@ -309,7 +309,7 @@ private struct BulkEditOptionRow: View {
                     .frame(width: 36, height: 36)
                     .overlay(
                         Image(systemName: option.icon)
-                            .font(.system(size: 16, weight: .medium))
+                            .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(option.iconColor)
                     )
 

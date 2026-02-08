@@ -13,6 +13,7 @@ import SwiftUI
 struct InboxDraftEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
@@ -271,7 +272,7 @@ struct InboxDraftEditSheet: View {
         HStack(spacing: 0) {
             // Expense button
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                dsWithAnimation(reduceMotion) {
                     isExpense = true
                     selectedSubcategory = nil
                 }
@@ -289,7 +290,7 @@ struct InboxDraftEditSheet: View {
 
             // Income button
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                dsWithAnimation(reduceMotion) {
                     isExpense = false
                     selectedSubcategory = nil
                 }
@@ -330,6 +331,7 @@ struct InboxDraftEditSheet: View {
                     Image(systemName: "trash")
                         .foregroundStyle(.red)
                 }
+                .accessibilityLabel("Eliminar")
             } else {
                 // Pending drafts: reject button only
                 Button {
@@ -338,6 +340,7 @@ struct InboxDraftEditSheet: View {
                     Image(systemName: "xmark.circle")
                         .foregroundStyle(.red)
                 }
+                .accessibilityLabel("Rechazar")
             }
         }
     }
@@ -490,7 +493,7 @@ struct InboxDraftEditSheet: View {
             // Source type button (tap to expand/collapse rawText)
             Button {
                 if draft.rawText != nil {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    dsWithAnimation(reduceMotion) {
                         showRawText.toggle()
                     }
                 }
@@ -624,7 +627,7 @@ struct InboxDraftEditSheet: View {
             .buttonStyle(.plain)
 
             Button {
-                withAnimation {
+                dsWithAnimation(reduceMotion) {
                     selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
                 }
             } label: {
@@ -989,7 +992,7 @@ struct InboxDraftEditSheet: View {
             )
 
             // Show success view with animation
-            withAnimation(.easeOut(duration: 0.3)) {
+            dsWithAnimation(reduceMotion) {
                 showSuccessView = true
             }
         } catch {

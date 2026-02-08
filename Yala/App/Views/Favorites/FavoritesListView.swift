@@ -83,7 +83,7 @@ struct FavoritesListView: View {
                                 editMode?.wrappedValue = .active
                             } label: {
                                 Text(L10n.Action.edit)
-                                    .font(.system(size: 17, weight: .semibold))
+                                    .font(DS.Typography.headline)
                                     .foregroundStyle(Color.primary)
                             }
                             .frame(height: 32)

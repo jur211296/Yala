@@ -125,6 +125,7 @@ struct CategoriesSettingsListView: View {
                                     .font(.title2)
                                     .foregroundStyle(.red)
                             }
+                            .accessibilityLabel("Eliminar categoría")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }
@@ -135,7 +136,7 @@ struct CategoriesSettingsListView: View {
                             HStack {
                                 categoryRow(category)
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(DS.Typography.subheadline).fontWeight(.medium)
                                     .foregroundStyle(.tertiary)
                             }
                         }
@@ -184,6 +185,7 @@ struct CategoriesSettingsListView: View {
                                     .font(.title2)
                                     .foregroundStyle(.red)
                             }
+                            .accessibilityLabel("Eliminar subcategoría")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }
@@ -194,7 +196,7 @@ struct CategoriesSettingsListView: View {
                             HStack {
                                 categoryRow(category)
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(DS.Typography.subheadline).fontWeight(.medium)
                                     .foregroundStyle(.tertiary)
                             }
                         }

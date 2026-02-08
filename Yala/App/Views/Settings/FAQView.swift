@@ -78,7 +78,7 @@ struct FAQView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(Color.yalaSecondaryText)
                 Text(title)
                     .font(.subheadline.weight(.semibold))
@@ -125,7 +125,7 @@ struct FAQView: View {
                     Spacer()
 
                     Image(systemName: expandedItem == item ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 

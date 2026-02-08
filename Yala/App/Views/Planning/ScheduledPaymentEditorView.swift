@@ -350,6 +350,7 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint(viewModel.activeAccounts.isEmpty ? "Crea una cuenta primero" : "")
         .disabled(viewModel.activeAccounts.isEmpty)
     }
 

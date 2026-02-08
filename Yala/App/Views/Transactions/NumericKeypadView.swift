@@ -96,6 +96,7 @@ struct KeypadButtonView: View {
     let button: KeypadButton
     let action: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28
     @ScaledMetric(relativeTo: .title) private var deleteSize: CGFloat = 22
     @State private var isPressed = false
@@ -128,12 +129,12 @@ struct KeypadButtonView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    withAnimation(.easeInOut(duration: 0.1)) {
+                    dsWithAnimation(reduceMotion) {
                         isPressed = true
                     }
                 }
                 .onEnded { _ in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    dsWithAnimation(reduceMotion) {
                         isPressed = false
                     }
                 }

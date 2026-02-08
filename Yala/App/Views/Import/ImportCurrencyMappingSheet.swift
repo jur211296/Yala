@@ -10,6 +10,7 @@ import SwiftUI
 /// Sheet for assigning accounts to each detected currency in multi-currency import
 struct ImportCurrencyMappingSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let detectedCurrencies: Set<String>
     let accounts: [Account]
@@ -105,7 +106,7 @@ struct ImportCurrencyMappingSheet: View {
         VStack(spacing: 0) {
             // Main row - currency info and selected account
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     expandedCurrency = isExpanded ? nil : currencyCode
                 }
             } label: {
@@ -185,7 +186,7 @@ struct ImportCurrencyMappingSheet: View {
 
         Button {
             currencyAccountMap[currencyCode] = account
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion) {
                 expandedCurrency = nil
             }
         } label: {

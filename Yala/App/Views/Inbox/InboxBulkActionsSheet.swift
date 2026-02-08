@@ -60,6 +60,7 @@ enum InboxBulkOption: String, Identifiable {
 struct InboxBulkActionsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
 
@@ -214,7 +215,7 @@ struct InboxBulkActionsSheet: View {
                     .frame(width: 36, height: 36)
                     .overlay(
                         Image(systemName: option.icon)
-                            .font(.system(size: 16, weight: .medium))
+                            .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(option.iconColor)
                     )
 
@@ -326,7 +327,7 @@ struct InboxBulkActionsSheet: View {
             // Show bulk success view
             if !transactions.isEmpty {
                 bulkApprovedCount = transactions.count
-                withAnimation(.easeOut(duration: 0.3)) {
+                dsWithAnimation(reduceMotion) {
                     showBulkSuccessView = true
                 }
             }

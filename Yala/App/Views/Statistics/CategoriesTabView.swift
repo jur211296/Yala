@@ -324,7 +324,7 @@ struct CategoriesTabView: View {
                         // Clear all button
                         if activeFilterCount > 1 {
                             Button {
-                                withAnimation {
+                                dsWithAnimation(reduceMotion) {
                                     clearAllFilters()
                                 }
                             } label: {
@@ -400,7 +400,7 @@ struct CategoriesTabView: View {
         let isSelected = sessionState.comparisonMode == mode
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 sessionState.comparisonMode = mode
             }
         } label: {
@@ -695,7 +695,7 @@ struct CategoriesTabView: View {
             grouping: natureGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNature: { nature in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     if selectedNature == nature {
                         selectedNature = nil
                     } else {
@@ -722,7 +722,7 @@ struct CategoriesTabView: View {
             grouping: natureGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNature: { nature in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     if selectedNature == nature {
                         selectedNature = nil
                     } else {
@@ -858,7 +858,7 @@ struct CategoriesTabView: View {
             // OR if trying to switch to subcategories (always allowed)
             guard !isLocked || viewType == .subcategories else { return }
 
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 setListViewManually(viewType)
             }
         } label: {

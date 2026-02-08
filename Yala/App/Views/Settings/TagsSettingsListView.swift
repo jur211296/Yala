@@ -11,6 +11,7 @@ import SwiftUI
 struct TagsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var viewModel = TagsSettingsListViewModel()
 
@@ -52,7 +53,7 @@ struct TagsSettingsListView: View {
                 HStack(spacing: DS.Spacing.md) {
                     YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar")
                     {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        dsWithAnimation(reduceMotion) {
                             viewModel.isEditMode.toggle()
                         }
                     }
@@ -197,7 +198,7 @@ struct TagsSettingsListView: View {
                 .frame(width: 28, height: 28)
                 .overlay(
                     Image(systemName: tag.iconName)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(DS.Typography.subheadline).fontWeight(.medium)
                         .foregroundStyle(.white)
                 )
 

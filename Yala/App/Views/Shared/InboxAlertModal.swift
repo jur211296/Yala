@@ -15,6 +15,7 @@ struct InboxAlertModal: View {
 
     @State private var isVisible = false
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var title: String {
         switch notification.notificationType {
@@ -130,14 +131,14 @@ struct InboxAlertModal: View {
             .opacity(isVisible ? 1 : 0)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            dsWithAnimation(reduceMotion) {
                 isVisible = true
             }
         }
     }
 
     private func dismissWithAnimation(_ completion: (() -> Void)? = nil) {
-        withAnimation(.easeOut(duration: 0.2)) {
+        dsWithAnimation(reduceMotion) {
             isVisible = false
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
