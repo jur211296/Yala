@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-08] c931b9f feat: waterfall chart for daily cash flow view (EXP-1)
+- [2026-02-08] 6f92bb5 chore: clean up skills — remove GSD + redundant commands, add quality skills
 - [2026-02-07] 6808209 fix: correct archive/exclude account behavior across entire app (BUG-12)
 - [2026-02-07] 57bd488 fix: force full decimal precision on individual transaction amounts
 - [2026-02-07] c64d2a0 fix: prevent empty notifications for scheduled payments and announcements
@@ -32,8 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-07] 085936d fix: correct report notification calculations — currency, interval, and account filtering
 - [2026-02-07] 4976add refactor: apply code review fixes — DS tokens, search localization, error logging
 - [2026-02-07] a5c87ef fix(widgets): restore native iOS background with .fill.tertiary
-- [2026-02-07] 75b5780 docs: add theme refactor plan and update roadmap for V1.2
-- [2026-02-07] d88a5fc feat: localize category seed names via L10n
 - [2026-02-07] 6f6faaa feat: add black PRO theme with paywall gate
 - [2026-02-07] 7151ee7 feat: redesign voice/image counters with glass effects and rings
 - [2026-02-07] 19ba584 feat: add push notifications for automatic records
@@ -128,6 +128,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Fix multi-select pie charts (BUG-9)** - Pie charts ahora resaltan TODOS los items seleccionados (no solo el primero); eliminados @State intermediarios single-value en CategoriesTabView, widgets aceptan Set<PersistentIdentifier> directamente; 6 sync functions eliminadas; DS tokens aplicados en 3 widgets (fonts, frames, spacing, colores); código muerto eliminado (isSelected, formattedAmountCompact duplicado); commit 69b8002
 - **Fix notificaciones vacías (BUG-10)** - scheduledPayments y announcements marcados como requiresDynamicContent=true para evitar scheduling estático con texto placeholder; cancelación de notificaciones huérfanas en reschedule; commit c64d2a0
 - **Fix decimales en transacciones individuales (BUG-11)** - forceFullPrecision: true en 11 call sites de YalaFormatter.currency() que muestran montos individuales (RecordCard, favoritos, inbox, pagos planificados, widgets, success views); ScheduledPaymentDetailView migrado de NumberFormatter manual a YalaFormatter; DS.Radius.card fix en ContentView; commit 57bd488
+- **Waterfall Chart CashFlow diario (EXP-1)** - Vista diaria de CashFlow ahora muestra gráfico waterfall cumulative (cada barra parte donde terminó la anterior); teal=neto positivo, hot pink=neto negativo; vista mensual sin cambios (bidireccional + línea neta); implementado en app (CashFlowWidget) y widget iOS (BidirectionalCashFlowChart); días con neto=0 filtrados; valores hardcodeados tokenizados a WDS/DS; guard explícito para LineMark/PointMark en widget; 9 escenarios QA (Sección 32); commit c931b9f
+- **Skills cleanup (tooling)** - Removidos 24 GSD skills + 13 redundantes (57→19); añadidos swift-audit, swiftdata-check, swift-modernize, ds-compliance, deep-scan, test-coverage, a11y-audit, pre-launch; CLAUDE.md optimizado (336→204 líneas) con Quick Reference tables; WORKFLOW.md simplificado; commit 6f92bb5
 - **Fix archive/exclude account behavior (BUG-12)** - Corregida semántica invertida de isArchived/excludeFromStatistics en toda la app: cálculos/estadísticas ahora filtran solo por excludeFromStatistics (no isArchived), selección de cuentas para nuevas tx filtra solo por isArchived (no excludeFromStatistics); 11 archivos de lógica corregidos (FilterService, StatisticsVM, TrendsTabView, PanelVM, BalanceHelper, RecordsVM, ReportNotificationService, WidgetDataCache, NewTransactionVM, InboxView, InboxDraftEditSheet); validación de cuenta archivada en aprobación de inbox; pre-filtro de cuentas excluidas en Records; L10n errorArchivedAccount en 6 idiomas; commit 6808209
 
 ### Fase 6 (archivado)
@@ -204,33 +206,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 Semántica de isArchived/excludeFromStatistics corregida en toda la app. Cálculos/estadísticas filtran solo por excludeFromStatistics (cuentas archivadas siguen contando). Selección de cuentas para nuevas tx filtra solo por isArchived. Validación de cuenta archivada añadida en aprobación de inbox. 11 archivos de lógica + L10n en 6 idiomas.
 
-### EXP-1: Waterfall chart en CashFlow para vista diaria
+### EXP-1: ✅ COMPLETADO (c931b9f)
 
-**Reportado:** 2026-02-07
-**Tipo:** Experimento / Mejora visual
-**Severidad:** Baja — Cambio visual, no afecta lógica de datos
-
-**Descripción:**
-Cuando el eje X del CashFlow muestra **días** (no meses), reemplazar la gráfica actual (línea con ingreso arriba / gasto abajo) por un **gráfico waterfall** del flujo neto de cada día:
-- Barra **teal** si el flujo neto del día es positivo
-- Barra **hot pink** si el flujo neto del día es negativo
-
-**Qué cambia:**
-- Solo la representación visual de la gráfica (barras waterfall en vez de líneas)
-- Solo cuando la granularidad es días (thisWeek, last7Days, thisMonth, lastMonth)
-
-**Qué NO cambia:**
-- Hover/tooltip: se mantiene tal cual
-- Ejes X/Y: se mantienen tal cual
-- Cálculos, datos, filtros: sin cambios
-- Vista mensual (thisYear, lastYear, allTime, custom): sigue usando la gráfica actual
-
-**Archivos afectados:**
-- `Yala/App/Views/Statistics/TrendsTabView.swift` — CashFlow chart
-- `Yala/App/Views/Panel/Widgets/CashFlowWidget.swift` — Panel widget
-- `YalaWidgets/` — Widget iOS (si aplica)
-
-**Estado:** Pendiente — Evaluar en próxima sesión
+Waterfall chart cumulative para vista diaria de CashFlow. Cada barra parte donde terminó la anterior: teal (neto positivo), hot pink (neto negativo). Vista mensual sin cambios (bidireccional + línea neta). Implementado en in-app (CashFlowWidget.swift) y widget iOS (YalaWidgets). Días con neto=0 filtrados. Valores hardcodeados tokenizados a WDS/DS.
 
 ---
 
@@ -335,14 +313,12 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-07
-Stopped at: BUG-12 resuelto — semántica archive/exclude corregida en toda la app (6808209)
-Next step: Sin bugs pendientes — evaluar cierre de fase 10.5 o verificar si hay más issues
+Last session: 2026-02-08
+Stopped at: EXP-1 waterfall chart completado + skills cleanup (57→19 skills)
+Next step: Evaluar cierre de fase 10.5 o siguiente experimento/mejora
 Resume context:
-- BUG-12 resuelto: isArchived/excludeFromStatistics con semántica correcta en 11 archivos
-- BUG-11 resuelto: forceFullPrecision: true en 11 call sites
-- BUG-10 resuelto: scheduledPayments y announcements marcados como requiresDynamicContent
-- BUG-9 resuelto: pie charts multi-select
+- EXP-1 completado: waterfall cumulative en CashFlow diario (app + widget iOS)
+- Skills cleanup: 57→19 skills, CLAUDE.md optimizado (336→204 líneas)
 - Sin bugs pendientes conocidos en fase 10.5
 - Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md para Fase 11
 - ROADMAP actualizado: Fase 11=Temas, Fase 12=Plataforma, Fase 13=Avanzadas
