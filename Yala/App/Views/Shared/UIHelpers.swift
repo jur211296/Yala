@@ -144,8 +144,8 @@ extension Color {
     /// Hot Pink: Corta el ruido visual. Urgencia y placer culposo.
     static let hotPink = Color(hex: "FF0080")
 
-    /// Deep Slate: El lienzo infinito (Principal Dark Mode).
-    static let deepSlate = Color(hex: "0F172A")
+    /// Deep Slate: Negro puro OLED (Principal Dark Mode).
+    static let deepSlate = Color(hex: "000000")
 
     /// Priority Nature: Softer Cyan for „Priority" expenses.
     static let priorityNature = Color(hex: "00C2CB")
@@ -219,7 +219,7 @@ extension Color {
             return Color(
                 UIColor { traitCollection in
                     if traitCollection.userInterfaceStyle == .dark {
-                        return UIColor(red: 0.11, green: 0.16, blue: 0.28, alpha: 1.0)
+                        return UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)  // #1C1C1E
                     }
                     return UIColor.white
                 })

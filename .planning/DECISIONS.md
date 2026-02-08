@@ -64,6 +64,32 @@ Cada decisión sigue esta estructura:
 
 ---
 
+### [2026-02-08] Dark Mode: De Deep Slate Blue a Negro Puro
+
+**Contexto:** El dark mode usaba tonalidades "deep slate blue" (azul oscuro) que no se alineaban con el estándar iOS de fondos negros puros para OLED.
+
+**Decisión:** Cambiar `deepSlate` de `#0F172A` a `#000000` (negro puro) y `yalaCard` dark de `rgb(0.11, 0.16, 0.28)` ≈ `#1C2847` a `#1C1C1E` (`UIColor.secondarySystemBackground` dark).
+
+**Razones:**
+- Negro puro aprovecha pantallas OLED (píxeles apagados = ahorro de batería)
+- Consistencia con el estándar visual de iOS en dark mode
+- Elimina el tinte azul que no aportaba valor funcional
+
+**Colores azules preservados para futuro tema "Azul" (Fase 11):**
+| Token | Valor original | Descripción |
+|-------|---------------|-------------|
+| `deepSlate` | `#0F172A` | Background principal dark |
+| `yalaCard` dark | `rgb(0.11, 0.16, 0.28)` ≈ `#1C2847` | Superficie cards/modales dark |
+
+**Consecuencias:**
+- 226+ vistas actualizan automáticamente vía colores semánticos (`yalaBackground`, `yalaCard`)
+- Sin cambios en light mode
+- Colores azules documentados aquí para reutilizar en sistema de temas
+
+**Estado:** Activa
+
+---
+
 ## Decisiones Superadas
 
 [Decisiones que ya no aplican pero queremos preservar el razonamiento histórico]
