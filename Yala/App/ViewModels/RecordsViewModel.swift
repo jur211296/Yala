@@ -210,9 +210,15 @@ final class RecordsViewModel: Filterable {
             dateInterval: effectiveDateInterval()
         )
 
+        // Pre-filter: hide transactions from accounts excluded from statistics
+        let eligibleTransactions = transactions.filter { tx in
+            guard let account = tx.account else { return true }
+            return !account.excludeFromStatistics
+        }
+
         // Use FilterService for filtering and grouping
         groupedRecords = FilterService.filterAndGroup(
-            transactions: transactions,
+            transactions: eligibleTransactions,
             criteria: criteria
         )
 
@@ -229,7 +235,7 @@ final class RecordsViewModel: Filterable {
         for group in groupedRecords {
             for record in group.records {
                 guard let account = record.account else { continue }
-                if account.isArchived || account.excludeFromStatistics { continue }
+                if account.excludeFromStatistics { continue }
 
                 // Exclude balance adjustments and transfers from summary
                 let isBalanceAdjustment = record.balanceAdjustmentType != nil

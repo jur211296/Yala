@@ -1398,6 +1398,7 @@
 "inbox.errorNoAccount" = "You must select an account";
 "inbox.errorNoAmount" = "You must specify an amount";
 "inbox.errorNoSubcategory" = "You must select a subcategory";
+"inbox.errorArchivedAccount" = "This account is archived. Edit the draft and change the account to approve.";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "A similar transaction already exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";

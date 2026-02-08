@@ -344,10 +344,9 @@ final class StatisticsViewModel: Filterable {
             criteria: criteria
         )
 
-        // Get eligible accounts for trend calculations
+        // Get eligible accounts for trend calculations (archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
-            !account.isArchived
-                && !account.excludeFromStatistics
+            !account.excludeFromStatistics
                 && (selectedAccounts.isEmpty
                     || selectedAccounts.contains(account.persistentModelID))
         }

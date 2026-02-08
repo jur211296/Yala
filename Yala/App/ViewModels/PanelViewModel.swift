@@ -731,9 +731,9 @@ final class PanelViewModel {
             }
         }()
 
-        // Determine eligible accounts
+        // Determine eligible accounts (archived accounts still count for calculations)
         let eligibleAccounts = accounts.filter { account in
-            !account.isArchived && !account.excludeFromStatistics
+            !account.excludeFromStatistics
                 && (selectedAccountID == nil || account.persistentModelID == selectedAccountID)
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })

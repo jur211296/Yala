@@ -856,6 +856,12 @@ struct InboxDraftEditSheet: View {
             return
         }
 
+        if account.isArchived {
+            approveErrorMessage = L10n.Inbox.errorArchivedAccount
+            showApproveError = true
+            return
+        }
+
         guard let amt = amount else {
             approveErrorMessage = L10n.Inbox.errorNoAmount
             showApproveError = true

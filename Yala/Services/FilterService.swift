@@ -303,10 +303,9 @@ struct FilterService {
         accounts: [Account],
         criteria: FilterCriteria
     ) -> [TransactionItem] {
-        // Determine eligible accounts (not excluded from statistics, not archived)
+        // Determine eligible accounts (not excluded from statistics; archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
             !account.excludeFromStatistics
-                && !account.isArchived
                 && (criteria.selectedAccounts.isEmpty
                     || criteria.selectedAccounts.contains(account.persistentModelID))
         }

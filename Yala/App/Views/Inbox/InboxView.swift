@@ -39,6 +39,9 @@ struct InboxView: View {
     // Pending next draft (for "Approve Next" flow)
     @State private var pendingNextDraftID: PersistentIdentifier?
 
+    // Archived account alert
+    @State private var showArchivedAccountAlert = false
+
     private var filteredDrafts: [InboxDraft] {
         viewModel.filteredDrafts(for: selectedFilter)
     }
@@ -190,6 +193,11 @@ struct InboxView: View {
                         }
                     )
                 }
+            }
+            .alert(L10n.Inbox.cannotApprove, isPresented: $showArchivedAccountAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(L10n.Inbox.errorArchivedAccount)
             }
             .safeAreaInset(edge: .bottom) {
                 if isSelectionMode {
@@ -471,6 +479,12 @@ struct InboxView: View {
         guard let account = draft.account,
               let amount = draft.amount,
               let subcategory = draft.subcategory else { return }
+
+        // Block approval if account is archived
+        if account.isArchived {
+            showArchivedAccountAlert = true
+            return
+        }
 
         // Haptic feedback for positive action
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()

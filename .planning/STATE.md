@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 10.5 — Mejoras Pre-Release (V1.1)
+**Current focus:** Fase 10.5 — Mejoras Pre-Release (V1.1) — corrección de bugs
 
 ## Current Position
 
@@ -13,17 +13,22 @@ Version: 1.1 (en desarrollo)
 Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **Fase 10.5 completa** — Todos los bugs resueltos
-Last activity: 2026-02-06 — BUG-5, BUG-6, BUG-7 resueltos, fase 10.5 cerrada
+Status: **Fase 10.5 en progreso** — Corrección de bugs pendientes
+Last activity: 2026-02-07 — Fixes de notificaciones, widgets y code review; fase 10.5 reabierta para bugs
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ████████████████ 100% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 ✅)
+Progress: V1.1 ██████████████░░ 95% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso — bugs)
 Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-07] 6808209 fix: correct archive/exclude account behavior across entire app (BUG-12)
+- [2026-02-07] 57bd488 fix: force full decimal precision on individual transaction amounts
+- [2026-02-07] c64d2a0 fix: prevent empty notifications for scheduled payments and announcements
+- [2026-02-07] 69b8002 fix: support multi-select highlighting in pie chart widgets
+- [2026-02-07] 63c2c43 refactor: remove black PRO theme — defer to Phase 11 proper implementation
 - [2026-02-07] 085936d fix: correct report notification calculations — currency, interval, and account filtering
 - [2026-02-07] 4976add refactor: apply code review fixes — DS tokens, search localization, error logging
 - [2026-02-07] a5c87ef fix(widgets): restore native iOS background with .fill.tertiary
@@ -116,6 +121,14 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - **Fix Dark Mode Cards (10.5.Q)** - Migración de List→ScrollView+SectionBox en 4 vistas (AdjustmentModeSelectorView, AccountTypeSelectorView, RecordsFiltersView accounts/tags sheets, MultiSelectionList); DatePickers mantienen List con `.listRowBackground(Color.yalaCard)`; fix crash PeriodSelector (safe DatePicker ranges con min/max); 5 keys L10n nuevas (filters.categories/type/nature/currency, action.apply); magic numbers→DS tokens; 6 idiomas
 - **Bugs finales fase 10.5 (BUG-5/6/7)** - BUG-7: nextDueDate default mañana en SaveAsRecurringSheet y ScheduledPaymentEditorView, DatePickers restringidos a futuro; BUG-6: subcategorías filtradas por tipo en edición masiva, opción deshabilitada si selección mixta; BUG-5: conversión de divisas en resumen de pagos planificados (ViewModel y Widget) con CurrencyConverter; fixes de review: force unwrap eliminado en Widget calendar, @MainActor en RecordsViewModel, guard nil subcategory
 - **Modo Solo Gastos (Fase 11.A)** - Toggle reversible en Personalización con doble confirmación; oculta income/transfers/balance en toda la app; SessionState.isExpensesOnlyMode como SSOT (stored property con didSet → UserDefaults + App Group + widgets); 42 archivos: creación de transacciones (solo gasto), panel (gasto por periodo en cuentas, CashFlow solo gastos, Trends forzado a expense), estadísticas (métricas/filtros/records sin income), settings (saldos ocultos, categorías income dimeadas), widgets iOS (filtrado income), búsqueda/records (FilterService forzado a expense), favoritos/planificados/notificaciones (filtrado income), onboarding (nuevo paso), Siri shortcuts (AppIntent forzado); localizaciones 6 idiomas; 50+ escenarios QA; DS spacing tokens corregidos en 9 archivos; @MainActor en StatisticsViewModel/SessionState; try?→do/catch en ContentView
+- **Fix notificaciones de reportes (10.5)** - Cálculos corregidos: divisa correcta (preferredCurrency vs hardcoded), filtrado por intervalo correcto (semanal/mensual), filtrado por cuentas seleccionadas en ReportConfig; commit 085936d
+- **Fix widgets fondo nativo (10.5)** - Restaurado fondo nativo iOS con .fill.tertiary en lugar de colores custom; commit a5c87ef
+- **Code review fixes (10.5)** - DS tokens aplicados, localización de búsqueda corregida, error logging mejorado; commit 3fdc15e
+- **Remoción tema negro PRO (10.5)** - Tema negro eliminado de V1.1, diferido a Fase 11 para implementación correcta; AppTheme solo system/light/dark; commit 63c2c43
+- **Fix multi-select pie charts (BUG-9)** - Pie charts ahora resaltan TODOS los items seleccionados (no solo el primero); eliminados @State intermediarios single-value en CategoriesTabView, widgets aceptan Set<PersistentIdentifier> directamente; 6 sync functions eliminadas; DS tokens aplicados en 3 widgets (fonts, frames, spacing, colores); código muerto eliminado (isSelected, formattedAmountCompact duplicado); commit 69b8002
+- **Fix notificaciones vacías (BUG-10)** - scheduledPayments y announcements marcados como requiresDynamicContent=true para evitar scheduling estático con texto placeholder; cancelación de notificaciones huérfanas en reschedule; commit c64d2a0
+- **Fix decimales en transacciones individuales (BUG-11)** - forceFullPrecision: true en 11 call sites de YalaFormatter.currency() que muestran montos individuales (RecordCard, favoritos, inbox, pagos planificados, widgets, success views); ScheduledPaymentDetailView migrado de NumberFormatter manual a YalaFormatter; DS.Radius.card fix en ContentView; commit 57bd488
+- **Fix archive/exclude account behavior (BUG-12)** - Corregida semántica invertida de isArchived/excludeFromStatistics en toda la app: cálculos/estadísticas ahora filtran solo por excludeFromStatistics (no isArchived), selección de cuentas para nuevas tx filtra solo por isArchived (no excludeFromStatistics); 11 archivos de lógica corregidos (FilterService, StatisticsVM, TrendsTabView, PanelVM, BalanceHelper, RecordsVM, ReportNotificationService, WidgetDataCache, NewTransactionVM, InboxView, InboxDraftEditSheet); validación de cuenta archivada en aprobación de inbox; pre-filtro de cuentas excluidas en Records; L10n errorArchivedAccount en 6 idiomas; commit 6808209
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
@@ -156,14 +169,40 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Next Steps
 
-### Fase 10.5: Mejoras Pre-Release (V1.1) — ✅ COMPLETADA
+### Fase 10.5: Mejoras Pre-Release (V1.1) — EN PROGRESO (bugs)
 
 **Subfases A-R completadas ✅** (ver Completed in Current Phase)
 
-**Bugs finales resueltos ✅ (b90443c):**
+**Bugs resueltos previamente ✅ (b90443c):**
 - ✅ BUG-5: Conversión de divisas en resumen de pagos planificados
 - ✅ BUG-6: Filtrado de subcategorías por tipo en edición masiva
 - ✅ BUG-7: nextDueDate default mañana al crear pagos planificados
+
+**Fixes recientes (2026-02-07):**
+- ✅ Fix notificaciones de reportes (divisa, intervalo, cuentas) — 085936d
+- ✅ Fix widgets fondo nativo (.fill.tertiary) — a5c87ef
+- ✅ Code review fixes (DS tokens, search L10n, error logging) — 3fdc15e
+- ✅ Remoción tema negro PRO (diferido a Fase 11) — 63c2c43
+
+**Bugs resueltos (2026-02-07 sesión 2):**
+- ✅ **BUG-9: Pie charts ignoran selección múltiple de filtros** — Resuelto (69b8002)
+
+**Bugs resueltos (2026-02-07 sesión 3):**
+- ✅ **BUG-10: Notificaciones vacías en pagos planificados y novedades** — Resuelto (c64d2a0)
+- ✅ **BUG-11: "Sin decimales" aplica a transacciones individuales** — Resuelto (57bd488)
+
+**Bugs resueltos (2026-02-07 sesión 4):**
+- ✅ **BUG-12: Comportamiento incorrecto de Archivar/Excluir en cuentas** — Resuelto (6808209)
+
+---
+
+### BUG-11: ✅ RESUELTO (57bd488)
+
+"Sin decimales" ahora solo aplica a valores agregados. Montos individuales siempre muestran 2 decimales via `forceFullPrecision: true` en 11 call sites + migración de ScheduledPaymentDetailView a YalaFormatter.
+
+### BUG-12: ✅ RESUELTO (6808209)
+
+Semántica de isArchived/excludeFromStatistics corregida en toda la app. Cálculos/estadísticas filtran solo por excludeFromStatistics (cuentas archivadas siguen contando). Selección de cuentas para nuevas tx filtra solo por isArchived. Validación de cuenta archivada añadida en aprobación de inbox. 11 archivos de lógica + L10n en 6 idiomas.
 
 ---
 
@@ -261,7 +300,7 @@ Ver ROADMAP.md para detalles.
 
 - `iconName` en Tag tiene default `"tag.fill"` para migración
 - `TagsPieWidget` sigue patrón de CategoriesPieWidget/SubcategoriesPieWidget
-- Sincronización bidireccional pie ↔ filtros usa flag `isSyncingFilters`
+- Sincronización bidireccional pie ↔ filtros: solo Nature usa `isSyncingFilters`; Category/Subcategory/Tag pasan Sets directamente al ViewModel
 - Tags existentes migran automáticamente con icono por defecto
 - Design System (DS) en `DesignTokens.swift` con: Spacing, Radius, FormRow, ListRow, Typography
 - SwiftData N:N requiere `@Relationship(inverse:)` explícito en un lado; arrays sin inverse se tratan como 1:N
@@ -269,9 +308,13 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Fix notificaciones de reporte (085936d) — 3 bugs + 5 riesgos corregidos
-Next step: QA manual de todos los cambios recientes → comenzar Fase 11 (temas)
+Stopped at: BUG-12 resuelto — semántica archive/exclude corregida en toda la app (6808209)
+Next step: Sin bugs pendientes — evaluar cierre de fase 10.5 o verificar si hay más issues
 Resume context:
-- ReportNotificationService: key divisa corregida, intervalo diario separado del semanal, cálculo directo con Decimal + normalizeCurrencyCode, filtro cuentas excluidas, filtro transacciones por cuentas elegibles, intervalo mensual firstDay reporta mes anterior
-- Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md
+- BUG-12 resuelto: isArchived/excludeFromStatistics con semántica correcta en 11 archivos
+- BUG-11 resuelto: forceFullPrecision: true en 11 call sites
+- BUG-10 resuelto: scheduledPayments y announcements marcados como requiresDynamicContent
+- BUG-9 resuelto: pie charts multi-select
+- Sin bugs pendientes conocidos en fase 10.5
+- Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md para Fase 11
 - ROADMAP actualizado: Fase 11=Temas, Fase 12=Plataforma, Fase 13=Avanzadas

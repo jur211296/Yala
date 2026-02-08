@@ -37,7 +37,7 @@ Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
 - [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT) ✅
-- [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría (2 bugs pendientes)
+- [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría (corrección de bugs en curso)
 
 ### V1.2 (App Store Release)
 - [ ] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (negro, rosa, cyan)

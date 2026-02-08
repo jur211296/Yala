@@ -234,9 +234,9 @@ enum WidgetDataCache {
             #endif
         }
 
-        // Fetch all accounts to calculate total balance
+        // Fetch ALL accounts (including archived) — archived still count for total balance
         let accountDescriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { !$0.isArchived }
+            sortBy: [SortDescriptor(\.name)]
         )
 
         var accounts: [Account] = []
@@ -248,8 +248,17 @@ enum WidgetDataCache {
             #endif
         }
 
-        // Calculate total balance using ALL transactions (not just recent)
-        let totalBalance = calculateTotalBalance(accounts: accounts, transactions: allTransactions)
+        // Pre-filter: exclude transactions from accounts excluded from statistics
+        let excludedAccountIDs = Set(
+            accounts.filter { $0.excludeFromStatistics }.map { $0.persistentModelID }
+        )
+        let eligibleTransactions = allTransactions.filter { tx in
+            guard let account = tx.account else { return true }
+            return !excludedAccountIDs.contains(account.persistentModelID)
+        }
+
+        // Calculate total balance using eligible transactions (not excluded from statistics)
+        let totalBalance = calculateTotalBalance(accounts: accounts, transactions: eligibleTransactions)
 
         // Get preferred currency from user settings (single source of truth)
         let preferredCurrency = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "USD"
@@ -309,11 +318,11 @@ enum WidgetDataCache {
             )
         }
 
-        // Build trend data with multiple granularities (uses ALL transactions)
-        let trendData = buildTrendData(transactions: allTransactions, totalBalance: totalBalance)
+        // Build trend data with multiple granularities (uses eligible transactions)
+        let trendData = buildTrendData(transactions: eligibleTransactions, totalBalance: totalBalance)
 
-        // Build account balances for widgets (calculate balance from transactions)
-        let widgetAccountBalances = accounts.map { account in
+        // Build account balances for widgets (only non-archived accounts shown as cards)
+        let widgetAccountBalances = accounts.filter { !$0.isArchived }.map { account in
             // Calculate account balance from its transactions
             let accountTransactions = allTransactions.filter { $0.account?.persistentModelID == account.persistentModelID }
             let accountBalance = accountTransactions.reduce(0.0) { sum, tx in
@@ -345,25 +354,29 @@ enum WidgetDataCache {
         for period in widgetPeriods {
             let interval = period.dateInterval()
             let summary = buildPeriodSummary(
-                transactions: allTransactions,
+                transactions: eligibleTransactions,
                 periodStart: interval.start,
                 periodEnd: interval.end,
                 currencyCode: preferredCurrency,
-                allTransactionsForBalance: allTransactions
+                allTransactionsForBalance: eligibleTransactions
             )
             periodSummaries[period.rawValue] = summary
         }
 
         // Legacy fields for backwards compatibility
+        let eligibleRecentTransactions = recentTransactions.filter { tx in
+            guard let account = tx.account else { return true }
+            return !excludedAccountIDs.contains(account.persistentModelID)
+        }
         let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
-            transactions: recentTransactions,
+            transactions: eligibleRecentTransactions,
             periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date(),
             periodEnd: Date(),
             currencyCode: preferredCurrency
         )
 
         let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
-            transactions: allTransactions,
+            transactions: eligibleTransactions,
             periodStart: Date.distantPast,
             periodEnd: Date(),
             currencyCode: preferredCurrency
@@ -386,9 +399,9 @@ enum WidgetDataCache {
     }
 
     private static func calculateTotalBalance(accounts: [Account], transactions: [TransactionItem]) -> Double {
-        // Filter to only eligible accounts (not archived, not excluded from statistics)
+        // Filter to only eligible accounts (not excluded from statistics; archived still count)
         let eligibleAccountIDs = Set(
-            accounts.filter { !$0.isArchived && !$0.excludeFromStatistics }
+            accounts.filter { !$0.excludeFromStatistics }
                 .map { $0.persistentModelID }
         )
 

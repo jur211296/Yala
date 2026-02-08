@@ -2202,6 +2202,9 @@ enum L10n {
         static var errorNoSubcategory: String {
             ls("inbox.errorNoSubcategory", comment: "")
         }
+        static var errorArchivedAccount: String {
+            ls("inbox.errorArchivedAccount", comment: "")
+        }
         static var duplicateWarningTitle: String {
             ls("inbox.duplicateWarningTitle", comment: "")
         }

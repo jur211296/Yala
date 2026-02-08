@@ -300,7 +300,7 @@ final class ReportNotificationService {
 
     private func fetchAccounts(context: ModelContext) -> [Account] {
         let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { !$0.isArchived && !$0.excludeFromStatistics }
+            predicate: #Predicate { !$0.excludeFromStatistics }
         )
 
         do {

@@ -1524,10 +1524,9 @@ struct TrendsTabView: View {
             customRange: sessionState.customDateRange
         )
 
-        // Get eligible accounts (same as StatisticsViewModel)
+        // Get eligible accounts (archived accounts still count; same as StatisticsViewModel)
         let eligibleAccounts = accounts.filter { account in
-            !account.isArchived
-                && !account.excludeFromStatistics
+            !account.excludeFromStatistics
                 && (trendsViewModel.selectedAccounts.isEmpty
                     || trendsViewModel.selectedAccounts.contains(account.persistentModelID))
         }

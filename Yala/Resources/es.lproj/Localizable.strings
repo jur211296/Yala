@@ -1396,6 +1396,7 @@
 "inbox.errorNoAccount" = "Debes seleccionar una cuenta";
 "inbox.errorNoAmount" = "Debes especificar un monto";
 "inbox.errorNoSubcategory" = "Debes seleccionar una subcategoría";
+"inbox.errorArchivedAccount" = "Esta cuenta está archivada. Edita el borrador y cambia la cuenta para poder aprobar.";
 "inbox.duplicateWarningTitle" = "Posible duplicado";
 "inbox.duplicateWarningMessage" = "Ya existe una transacción similar. ¿Crear de todas formas?";
 "inbox.createAnyway" = "Crear de todas formas";

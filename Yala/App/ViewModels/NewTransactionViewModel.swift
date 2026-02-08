@@ -252,20 +252,23 @@ final class NewTransactionViewModel {
 
     /// Prepara el estado para una transferencia, seleccionando cuentas por defecto si es necesario
     func prepareForTransfer(allAccounts: [Account]) {
+        // Only use non-archived accounts for auto-selection
+        let eligible = allAccounts.filter { !$0.isArchived }
+
         // Ensure source account is set (use selected if available)
         if sourceAccount == nil {
             sourceAccount = selectedAccount
         }
 
-        // If still nil, try to pick first account
+        // If still nil, try to pick first eligible account
         if sourceAccount == nil {
-            sourceAccount = allAccounts.first
+            sourceAccount = eligible.first
         }
 
         // Auto-select destination if nil
         if destinationAccount == nil, let source = sourceAccount {
-            // Pick first account that is not source
-            destinationAccount = allAccounts.first {
+            // Pick first eligible account that is not source
+            destinationAccount = eligible.first {
                 $0.persistentModelID != source.persistentModelID
             }
         }
