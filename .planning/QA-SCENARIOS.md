@@ -4338,6 +4338,47 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ---
 
-*Última actualización: 2026-02-08 - Sección 32 (Waterfall Chart CashFlow)*
-*Total escenarios: ~495*
-*Total verificaciones: ~920+*
+---
+
+## Sección 33: TransactionSuccessView Modernizada (BUG-19)
+
+### 33.1 Hero visual (BUG-19.1)
+- [ ] 33.1.1 Crear gasto → círculo con gradiente del color de gasto (rojo/rosa) + glow radiante detrás
+- [ ] 33.1.2 Crear ingreso → círculo con gradiente del color de ingreso (verde) + glow radiante
+- [ ] 33.1.3 Crear transferencia → círculo con gradiente del color de transferencia (índigo) + glow radiante
+- [ ] 33.1.4 Checkmark aparece en blanco sobre el gradiente (no coloreado sobre transparente)
+- [ ] 33.1.5 Glass overlay visible como reflejo sutil en parte superior del círculo
+- [ ] 33.1.6 Monto formateado aparece debajo del círculo en bold con color del tipo
+- [ ] 33.1.7 Título "¡Listo!" aparece encima del círculo en estilo headline secondary
+
+### 33.2 Animación escalonada (BUG-19.2)
+- [ ] 33.2.1 Hero (glow + círculo) aparece primero con efecto spring bouncy
+- [ ] 33.2.2 Checkmark aparece ~150ms después con spring bouncy
+- [ ] 33.2.3 Monto aparece ~300ms después con scale 0.8→1 + fade-in
+- [ ] 33.2.4 Details card aparece ~500ms después con slide-up 15pt + fade-in
+- [ ] 33.2.5 Botones aparecen ~700ms después con slide-up 10pt + fade-in (separados del card)
+- [ ] 33.2.6 Reduce Motion ON → todo aparece instantáneamente sin animación
+
+### 33.3 Details card (BUG-19.3)
+- [ ] 33.3.1 Card NO contiene fila de monto (monto está en hero)
+- [ ] 33.3.2 Card empieza con fila de tipo de transacción
+- [ ] 33.3.3 Fondo del card es Color.yalaCard (NO material)
+
+### 33.4 Brand Voice (BUG-19.4)
+- [ ] 33.4.1 ES: título dice "¡Listo!", botón secundario dice "Registrar otro"
+- [ ] 33.4.2 EN: título dice "Done!", botón secundario dice "Add another"
+- [ ] 33.4.3 DE: título dice "Fertig!", botón secundario dice "Weitere erfassen"
+- [ ] 33.4.4 FR: título dice "C'est fait !", botón secundario dice "En ajouter un autre"
+- [ ] 33.4.5 IT: título dice "Fatto!", botón secundario dice "Registra un altro"
+- [ ] 33.4.6 PT: título dice "Pronto!", botón secundario dice "Registrar outro"
+
+### 33.5 Accesibilidad (BUG-19.5)
+- [ ] 33.5.1 Dynamic Type accessibility1 → hero icon escala correctamente con @ScaledMetric
+- [ ] 33.5.2 Dark mode → gradientes y glass overlay se ven correctos sobre fondo oscuro
+- [ ] 33.5.3 Background gradient sutil visible sin dominar la vista
+
+---
+
+*Última actualización: 2026-02-09 - Sección 33 (TransactionSuccessView BUG-19)*
+*Total escenarios: ~510*
+*Total verificaciones: ~945+*

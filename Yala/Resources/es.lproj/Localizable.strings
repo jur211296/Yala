@@ -197,9 +197,9 @@
 "transaction.destination" = "Destino";
 "transaction.exchangeRate" = "Tipo de cambio";
 "transaction.willReceive" = "Recibirá";
-"transaction.createAnother" = "Crear otra transacción";
+"transaction.createAnother" = "Registrar otro";
 "transaction.recents" = "Recientes";
-"transaction.successTitle" = "¡Registro exitoso!";
+"transaction.successTitle" = "¡Listo!";
 "transaction.type.expense" = "Gasto";
 "transaction.type.income" = "Ingreso";
 "transaction.type.transfer" = "Transferencia";

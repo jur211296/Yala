@@ -195,9 +195,9 @@
 "transaction.destination" = "Ziel";
 "transaction.exchangeRate" = "Wechselkurs";
 "transaction.willReceive" = "Erhält";
-"transaction.createAnother" = "Weitere Transaktion erstellen";
+"transaction.createAnother" = "Weitere erfassen";
 "transaction.recents" = "Neueste";
-"transaction.successTitle" = "Erfolgreich gespeichert!";
+"transaction.successTitle" = "Fertig!";
 "transaction.type.expense" = "Ausgabe";
 "transaction.type.income" = "Einnahme";
 "transaction.type.transfer" = "Überweisung";

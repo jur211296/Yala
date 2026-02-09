@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-09] 279ccc1 fix: resolve Share Extension cold launch race condition (BUG-18)
+- [2026-02-09] af56040 fix: reduce inbox modal delay and defer when biometric locked (BUG-17)
 - [2026-02-09] da8309e fix: resolve 7 high-priority deep scan issues (DS-6 to DS-12)
 - [2026-02-09] 171a0ce fix: resolve 5 critical deep scan issues (DS-1 to DS-5)
 - [2026-02-08] 453b849 fix: add createdAt tiebreaker for consistent same-day transaction ordering (BUG-16)
@@ -32,9 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-08] 7545bf8 fix: refresh Inbox UI after deleting draft permanently (BUG-15)
 - [2026-02-08] 0fdf436 feat: comprehensive accessibility — VoiceOver, Dynamic Type, Reduce Motion
 - [2026-02-08] 4577ddf fix: invalidar cache de widgets al eliminar transacciones (BUG-14)
-- [2026-02-08] 15565d1 style: dark mode backgrounds from deep slate blue to pure black
-- [2026-02-08] f4752c8 style: remove trailing commas in widget preview entries
-- [2026-02-08] a1aae5b fix: restore native Apple widget background by removing custom theme system
 - [2026-02-08] c931b9f feat: waterfall chart for daily cash flow view (EXP-1)
 - [2026-02-08] 6f92bb5 chore: clean up skills — remove GSD + redundant commands, add quality skills
 - [2026-02-07] 6808209 fix: correct archive/exclude account behavior across entire app (BUG-12)
@@ -216,8 +215,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ **A11Y: Accesibilidad completa** — VoiceOver, Dynamic Type, Reduce Motion (0fdf436)
 - ✅ **BUG-15: Eliminar draft desde Inbox no actualiza UI** — Resuelto (7545bf8)
 - ✅ **BUG-16: Orden inconsistente de transacciones del mismo día** — Resuelto (453b849)
-- 🔴 **BUG-17: Modal de drafts nuevos en Inbox demora en aparecer** — Al volver a la app, la notificación in-app de pagos nuevos tarda varios segundos, permitiendo interactuar con Panel antes de que aparezca. Mala UX.
-- 🔴 **BUG-18: Share Extension no ejecuta registro por imagen al abrir** — A veces enviar imagen desde Share Sheet abre PanelView sin iniciar el flujo de imagen. Al cerrar y reabrir la app, recién se ejecuta el proceso. Posible race condition en deep link o lifecycle.
+- ✅ **BUG-17: Modal de drafts nuevos en Inbox demora en aparecer** — Resuelto (af56040)
+- ✅ **BUG-18: Share Extension no ejecuta registro por imagen al abrir** — Resuelto (279ccc1)
+- 🔴 **BUG-19: Modernizar pantalla de éxito de transacciones** — TransactionSuccessView demasiado simple, modernizar al nivel de los flujos de voz/imagen.
 
 **10.5.S: Deep Scan Pre-Launch (2026-02-09)**
 
@@ -301,13 +301,17 @@ Waterfall chart cumulative para vista diaria de CashFlow. Cada barra parte donde
 
 Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 FetchDescriptors (WidgetDataCache, BudgetsVM, NewTransactionVM, AccountsSettingsListVM) y `createdAt` tiebreaker en 4 array sorts (FilterService.groupByDate, InboxVM.groupedDrafts, StatisticsVM.recentRecords, PanelVM últimas 5 tx). 8 archivos corregidos.
 
-### BUG-17: 🔴 PENDIENTE
+### BUG-17: ✅ RESUELTO (af56040)
 
-**Modal de drafts nuevos en Inbox demora en aparecer.** Al volver a la app, la notificación in-app (modal unificado Inbox — 10.5.F) tarda varios segundos en mostrarse, lo que permite al usuario ver Panel e interactuar antes de que el modal aparezca. La experiencia debería ser inmediata o no mostrarse si el usuario ya interactuó.
+**Modal de drafts nuevos en Inbox demora en aparecer.** Fix: reducir delay y defer cuando biometric lock activo.
 
-### BUG-18: 🔴 PENDIENTE
+### BUG-18: ✅ RESUELTO (279ccc1)
 
-**Share Extension no ejecuta registro por imagen al abrir.** Al enviar una imagen desde el Share Sheet, la app abre PanelView sin iniciar el flujo de registro por imagen. Sin embargo, al cerrar por completo la app y reabrirla, el proceso de imagen sí se ejecuta. Posible race condition entre el lifecycle de la app y el deep link/shared container de la Share Extension.
+**Share Extension cold launch race condition.** Fix: race condition en deep link/lifecycle de Share Extension.
+
+### BUG-19: 🔴 PENDIENTE
+
+**Modernizar pantalla de éxito al crear/aprobar transacción.** La TransactionSuccessView actual es demasiado simple (checkmark arriba con animación básica). Ya tenemos experiencias más modernas en el flujo de registro por voz e imagen. Llevar ese nivel de modernización a la pantalla de éxito de nuevas transacciones como primer paso, y eventualmente a otras partes de la app.
 
 ---
 
@@ -413,9 +417,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: DS-6 a DS-12 (altos) resueltos — da8309e
-Next step: Resolver DS-13 a DS-22 (medios) o BUG-17/BUG-18
+Stopped at: BUG-19 documentado
+Next step: BUG-19 (modernizar TransactionSuccessView) o DS-13 a DS-22 (medios)
 Resume context:
 - Deep scan: 5/5 críticos ✅, 7/7 altos ✅, 10 medios pendientes, 6 bajos pendientes
-- BUG-17 y BUG-18 siguen pendientes
+- BUG-17 ✅, BUG-18 ✅, BUG-19 pendiente
 - Fase 10.5.S en progreso

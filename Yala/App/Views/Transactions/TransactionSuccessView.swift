@@ -44,12 +44,28 @@ struct TransactionSuccessView: View {
     let onEdit: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showHero = false
     @State private var showCheckmark = false
+    @State private var showAmount = false
     @State private var showDetails = false
+    @State private var showActions = false
+
+    private var typeColor: Color { data.transactionType.color }
 
     var body: some View {
         ZStack {
             Color.yalaBackground.ignoresSafeArea()
+
+            // Subtle background glow
+            RadialGradient(
+                colors: [typeColor.opacity(0.06), .clear],
+                center: .center,
+                startRadius: 0,
+                endRadius: 200
+            )
+            .frame(height: 300)
+            .blur(radius: 40)
+            .offset(y: -60)
 
             VStack(spacing: 0) {
                 // Edit button at top right - native iOS style (inverted)
@@ -63,27 +79,74 @@ struct TransactionSuccessView: View {
 
                 Spacer()
 
-                // Success icon and title
+                // Hero area
                 VStack(spacing: DS.Spacing.lg) {
-                    ZStack {
-                        Circle()
-                            .fill(data.transactionType.color.opacity(0.15))
-                            .frame(width: 80, height: 80)
-                            .scaleEffect(showCheckmark ? 1.0 : 0.5)
-                            .opacity(showCheckmark ? 1.0 : 0.0)
+                    // Title above circle
+                    Text(L10n.Transaction.successTitle)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .opacity(showHero ? 1.0 : 0.0)
 
+                    // Layered circle
+                    ZStack {
+                        // Radiant glow
+                        RadialGradient(
+                            colors: [typeColor.opacity(0.25), .clear],
+                            center: .center,
+                            startRadius: 20,
+                            endRadius: 90
+                        )
+                        .frame(width: 180, height: 180)
+                        .blur(radius: 12)
+                        .opacity(showHero ? 1.0 : 0.0)
+
+                        // Main gradient circle
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [typeColor, typeColor.opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 100, height: 100)
+                            .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
+                            .scaleEffect(showHero ? 1.0 : 0.3)
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // Glass overlay
+                        Circle()
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .mask(
+                                LinearGradient(
+                                    colors: [.white, .clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // White checkmark
                         Image(systemName: "checkmark")
                             .font(.system(size: heroIconSize, weight: .semibold))
-                            .foregroundStyle(data.transactionType.color)
+                            .foregroundStyle(.white)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .scaleEffect(showCheckmark ? 1.0 : 0.0)
                             .opacity(showCheckmark ? 1.0 : 0.0)
                     }
 
-                    Text(L10n.Transaction.successTitle)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.primary)
-                        .opacity(showCheckmark ? 1.0 : 0.0)
+                    // Promoted amount
+                    Text(
+                        YalaFormatter.currency(
+                            value: Double(truncating: data.amount as NSDecimalNumber),
+                            currencyCode: data.currencyCode,
+                            forceFullPrecision: true)
+                    )
+                    .font(.title.weight(.bold))
+                    .foregroundStyle(typeColor)
+                    .scaleEffect(showAmount ? 1.0 : 0.8)
+                    .opacity(showAmount ? 1.0 : 0.0)
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 
@@ -91,7 +154,7 @@ struct TransactionSuccessView: View {
                 detailsSection
                     .padding(.horizontal, DS.Spacing.xl)
                     .opacity(showDetails ? 1.0 : 0.0)
-                    .offset(y: showDetails ? 0 : 10)
+                    .offset(y: showDetails ? 0 : 15)
 
                 Spacer()
 
@@ -117,20 +180,46 @@ struct TransactionSuccessView: View {
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
-                .opacity(showDetails ? 1.0 : 0.0)
+                .opacity(showActions ? 1.0 : 0.0)
+                .offset(y: showActions ? 0 : 10)
             }
         }
         .onAppear {
             if reduceMotion {
+                showHero = true
                 showCheckmark = true
+                showAmount = true
                 showDetails = true
+                showActions = true
             } else {
-                withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
-                    showCheckmark = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    withAnimation(.easeOut(duration: 0.3)) {
+                Task {
+                    // 0ms — hero circle + glow
+                    withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
+                        showHero = true
+                    }
+
+                    // 150ms — checkmark
+                    try? await Task.sleep(for: .milliseconds(150))
+                    withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
+                        showCheckmark = true
+                    }
+
+                    // 300ms — amount
+                    try? await Task.sleep(for: .milliseconds(150))
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        showAmount = true
+                    }
+
+                    // 500ms — details card
+                    try? await Task.sleep(for: .milliseconds(200))
+                    withAnimation(.easeOut(duration: 0.35)) {
                         showDetails = true
+                    }
+
+                    // 700ms — action buttons
+                    try? await Task.sleep(for: .milliseconds(200))
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showActions = true
                     }
                 }
             }
@@ -141,9 +230,6 @@ struct TransactionSuccessView: View {
 
     private var detailsSection: some View {
         VStack(spacing: 0) {
-            // Amount (prominent)
-            amountRow
-
             // Transaction type
             typeRow
 
@@ -195,27 +281,6 @@ struct TransactionSuccessView: View {
     }
 
     // MARK: - Row Components
-
-    private var amountRow: some View {
-        HStack {
-            Text(L10n.Transaction.total)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            Text(
-                YalaFormatter.currency(
-                    value: Double(truncating: data.amount as NSDecimalNumber),
-                    currencyCode: data.currencyCode,
-                    forceFullPrecision: true)
-            )
-            .font(.title.weight(.bold))
-            .foregroundStyle(data.transactionType.color)
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.lg)
-    }
 
     private var typeRow: some View {
         HStack(spacing: DS.Spacing.md) {

@@ -195,9 +195,9 @@
 "transaction.destination" = "Destination";
 "transaction.exchangeRate" = "Taux de change";
 "transaction.willReceive" = "Recevra";
-"transaction.createAnother" = "Creer une autre";
+"transaction.createAnother" = "En ajouter un autre";
 "transaction.recents" = "Recents";
-"transaction.successTitle" = "Enregistrement reussi!";
+"transaction.successTitle" = "C'est fait !";
 "transaction.type.expense" = "Depense";
 "transaction.type.income" = "Revenu";
 "transaction.type.transfer" = "Virement";
