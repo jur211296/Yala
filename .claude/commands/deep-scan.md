@@ -13,7 +13,7 @@ Este skill lanza **3 subagentes en paralelo**, cada uno escaneando un subconjunt
 ## PASO 1: DETERMINAR ALCANCE
 
 Si hay argumento ($ARGUMENTS): escanear ese directorio.
-Si no: escanear `Yala/App/` completo.
+Si no: escanear Yala/App/ completo.
 
 Dividir archivos en 3 grupos para paralelizar:
 - Grupo 1: Views/ (UI)
@@ -22,20 +22,20 @@ Dividir archivos en 3 grupos para paralelizar:
 
 ## PASO 2: LANZAR SUBAGENTES
 
-Lanzar 3 subagentes `swift-reviewer` en paralelo con estas instrucciones para CADA grupo:
+Lanzar 3 subagentes swift-reviewer en paralelo con estas instrucciones para CADA grupo:
 
 ### Checks por archivo:
 
 **Seguridad y Estabilidad:**
-1. `try?` sin manejo de error → do/catch con diagnóstico
-2. Force unwraps `!` sin guard previo → crash potencial
+1. try? sin manejo de error → do/catch con diagnóstico
+2. Force unwraps (!) sin guard previo → crash potencial
 3. Índices de array sin bounds check → crash potencial
 4. División por cero posible
-5. Opcionales forzados en cadena (`a!.b!.c!`)
+5. Opcionales forzados en cadena (a!.b!.c!)
 6. Retain cycles (closures que capturan self sin [weak self])
 
 **Concurrencia:**
-7. `DispatchQueue.main.async` → preferir @MainActor
+7. DispatchQueue.main.async → preferir @MainActor
 8. Acceso a datos compartidos sin actor isolation
 9. @MainActor faltante en ViewModels/Services que usan ModelContext
 10. Race conditions en async/await
@@ -61,7 +61,7 @@ Lanzar 3 subagentes `swift-reviewer` en paralelo con estas instrucciones para CA
 24. @available innecesarios (target iOS 26+)
 
 **Design System:**
-25. `.font(.system(size:` → DS.Typography
+25. .font(.system(size:)) → DS.Typography
 26. Padding/spacing hardcodeado → DS.Spacing
 27. Colores no semánticos → colores del tema
 
@@ -84,7 +84,7 @@ Combinar reportes de los 3 subagentes en un solo reporte priorizado.
 ### Issues Críticos (resolver ANTES de lanzamiento)
 | # | Archivo:Línea | Tipo | Descripción |
 |---|---------------|------|-------------|
-| 1 | Service.swift:45 | Force unwrap | `array[index]!` sin bounds check |
+| 1 | Service.swift:45 | Force unwrap | 'array[index]!' sin bounds check |
 | 2 | ... | ... | ... |
 
 ### Issues Altos (resolver pronto)

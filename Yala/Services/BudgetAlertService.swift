@@ -101,8 +101,7 @@ final class BudgetAlertService {
 
         // Get currency for notification
         let currencyCode = budget.accounts?.first?.currencyCode
-            ?? UserDefaults.standard.string(forKey: "preferredCurrency")
-            ?? "USD"
+            ?? CurrencyDefaults.currentPreferred
 
         // Send notifications for new thresholds
         for threshold in newThresholds {

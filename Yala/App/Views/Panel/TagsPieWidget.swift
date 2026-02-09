@@ -552,7 +552,7 @@ struct TagsPieWidget: View {
             }
 
             let othersAmount = others.reduce(0) { $0 + $1.amount }
-            let othersPercentage = (othersAmount / totalExpense) * 100
+            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
 
             if othersAmount > 0 {
                 finalItems.append(

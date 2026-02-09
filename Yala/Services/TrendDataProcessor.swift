@@ -80,12 +80,8 @@ struct TrendDataProcessor {
             }
 
             let date = transaction.date
-            if minDate == nil || date < minDate! {
-                minDate = date
-            }
-            if maxDate == nil || date > maxDate! {
-                maxDate = date
-            }
+            if let currentMin = minDate { if date < currentMin { minDate = date } } else { minDate = date }
+            if let currentMax = maxDate { if date > currentMax { maxDate = date } } else { maxDate = date }
         }
 
         // 2. Determine actual data range from transactions (avoid empty leading periods)

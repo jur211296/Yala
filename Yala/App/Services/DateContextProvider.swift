@@ -19,8 +19,12 @@ struct DateContextProvider {
         fmt.timeZone = .current
 
         let today = fmt.string(from: now)
-        let yesterday = fmt.string(from: cal.date(byAdding: .day, value: -1, to: now)!)
-        let dayBefore = fmt.string(from: cal.date(byAdding: .day, value: -2, to: now)!)
+        guard let yesterdayDate = cal.date(byAdding: .day, value: -1, to: now),
+              let dayBeforeDate = cal.date(byAdding: .day, value: -2, to: now) else {
+            return "N/A"
+        }
+        let yesterday = fmt.string(from: yesterdayDate)
+        let dayBefore = fmt.string(from: dayBeforeDate)
 
         // Day of week in Spanish and English
         let spanishDayFmt = DateFormatter()
@@ -80,7 +84,7 @@ struct DateContextProvider {
             let targetWeekday = isoWeekdays[i]
             var daysBack = (todayWeekday - targetWeekday + 7) % 7
             if daysBack == 0 { daysBack = 7 } // "el lunes" = last Monday, not today
-            let date = calendar.date(byAdding: .day, value: -daysBack, to: now)!
+            guard let date = calendar.date(byAdding: .day, value: -daysBack, to: now) else { continue }
             let dateStr = formatter.string(from: date)
             lines.append("- \"el \(spanishDays[i])\" / \"\(englishDays[i])\" → \(dateStr)")
         }
@@ -100,8 +104,10 @@ struct DateContextProvider {
             return "N/A"
         }
         // Last week Monday = thisMonday - 7
-        let lastMonday = calendar.date(byAdding: .day, value: -7, to: thisMonday)!
-        let lastSunday = calendar.date(byAdding: .day, value: 6, to: lastMonday)!
+        guard let lastMonday = calendar.date(byAdding: .day, value: -7, to: thisMonday),
+              let lastSunday = calendar.date(byAdding: .day, value: 6, to: lastMonday) else {
+            return "N/A"
+        }
         return "\(formatter.string(from: lastMonday)) a \(formatter.string(from: lastSunday))"
     }
 }

@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 10.5 — Mejoras Pre-Release (V1.1) — corrección de bugs
+**Current focus:** Fase 10.5.S — Deep Scan Pre-Launch (V1.1) — 28 issues por resolver
 
 ## Current Position
 
@@ -13,8 +13,8 @@ Version: 1.1 (en desarrollo)
 Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **Fase 10.5 en progreso** — Corrección de bugs pendientes
-Last activity: 2026-02-08 — Restauración background nativo widgets (tema custom eliminado), BUG-13 reportado
+Status: **Fase 10.5.S en progreso** — Deep Scan Pre-Launch (28 issues)
+Last activity: 2026-02-09 — Deep scan completado (293 archivos, 3 subagentes), 28 issues documentados
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ██████████████░░ 95% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso — bugs)
@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-08] 453b849 fix: add createdAt tiebreaker for consistent same-day transaction ordering (BUG-16)
+- [2026-02-08] e8a6844 fix: prevent unwanted balance adjustments when editing accounts (BUG-13)
 - [2026-02-08] f5d2b43 fix: a11y audit corrections — missing labels, DT tokens, Reduce Motion
 - [2026-02-08] 7545bf8 fix: refresh Inbox UI after deleting draft permanently (BUG-15)
 - [2026-02-08] 0fdf436 feat: comprehensive accessibility — VoiceOver, Dynamic Type, Reduce Motion
@@ -207,11 +209,65 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ Dark mode de deep slate blue a negro puro (#000000 + #1C1C1E) — 15565d1
 
 **Bugs pendientes:**
-- 🔴 **BUG-13: Archivar/desarchivar cuenta fuerza ajuste de saldo** — Al desarchivar una cuenta se está forzando un nuevo saldo inicial o ajuste, no debería pasar. Archivar e inarchivar no debe afectar de ninguna manera el balance de una cuenta. Lo mismo para Excluir o no excluir de estadísticas: el toggle no debe provocar ningún cambio en el saldo.
+- ✅ **BUG-13: Archivar/desarchivar cuenta fuerza ajuste de saldo** — Resuelto (e8a6844)
 - ✅ **BUG-14: Eliminar transacción no actualiza cache de widgets** — Resuelto (4577ddf)
 - ✅ **A11Y: Accesibilidad completa** — VoiceOver, Dynamic Type, Reduce Motion (0fdf436)
 - ✅ **BUG-15: Eliminar draft desde Inbox no actualiza UI** — Resuelto (7545bf8)
-- 🔴 **BUG-16: Orden inconsistente de transacciones del mismo día** — En Registros ya se ordena por fecha de creación dentro del mismo día, pero falta aplicar el mismo criterio en otros lugares.
+- ✅ **BUG-16: Orden inconsistente de transacciones del mismo día** — Resuelto (453b849)
+- 🔴 **BUG-17: Modal de drafts nuevos en Inbox demora en aparecer** — Al volver a la app, la notificación in-app de pagos nuevos tarda varios segundos, permitiendo interactuar con Panel antes de que aparezca. Mala UX.
+- 🔴 **BUG-18: Share Extension no ejecuta registro por imagen al abrir** — A veces enviar imagen desde Share Sheet abre PanelView sin iniciar el flujo de imagen. Al cerrar y reabrir la app, recién se ejecuta el proceso. Posible race condition en deep link o lifecycle.
+
+**10.5.S: Deep Scan Pre-Launch (2026-02-09)**
+
+Escaneo profundo de 293 archivos Swift. Todos los puntos deben resolverse antes del lanzamiento.
+
+**S.1 — CRITICOS (crashes, data loss):**
+- 🔴 **DS-1: UserDefaults key incorrecta `"preferredCurrency"` en 3 archivos** — `QuickExpenseIntent.swift:154`, `InboxView.swift:20`, `BudgetAlertService.swift:104` usan key legacy en vez de `"defaultCurrencyCode"` (canonical). Bug real: usuarios no-PEN ven divisa incorrecta en Siri Shortcuts, Inbox y alertas presupuesto.
+- 🔴 **DS-2: División por cero en CategoriesPieWidget.swift:692** — `othersAmount / totalExpense` sin guard cuando `totalExpense == 0` → produce NaN. SubcategoriesPieWidget ya tiene guard correcto.
+- 🔴 **DS-3: División por cero en TagsPieWidget.swift:555** — Mismo patrón que DS-2.
+- 🔴 **DS-4: Force unwraps en DateContextProvider.swift (5x)** — Lines 22, 23, 83, 103, 104: `Calendar.date(byAdding:)!` sin guard.
+- 🔴 **DS-5: Force unwraps en TrendDataProcessor.swift:83,86** — `minDate!`/`maxDate!` en loop, patrón frágil.
+
+**S.2 — ALTOS (bugs probables):**
+- 🟠 **DS-6: Error silenciado en CurrencyConverter.swift:226,244** — `catch { return nil }` sin log. Conversiones fallidas son invisibles.
+- 🟠 **DS-7: Error silenciado en ExchangeRateService.swift:414,438** — `catch { return nil/0 }` sin log.
+- 🟠 **DS-8: Fetch sin límite en RecordsFiltersViewModel.swift:101** — Carga TODAS las transacciones solo para extraer currency codes.
+- 🟠 **DS-9: Fetch sin límite en TrendsTabView.swift:1343** — `FetchDescriptor<TransactionItem>()` sin predicado, ejecutado múltiples veces via onChange.
+- 🟠 **DS-10: `try?` silenciando I/O en AudioRecorderService.swift:155,164,192** — Errores de audio/archivo se pierden.
+- 🟠 **DS-11: Force unwrap en ImportIntroSheet.swift:209** — `filteredCurrencyForAccountPicker!` safe pero viola convenciones. Usar `.map { }`.
+- 🟠 **DS-12: Force unwraps (11x) en SharedModels.swift:177-224** — `Calendar.date()!` en `DetailPeriod.dateInterval()`, función usada en todo el app.
+
+**S.3 — MEDIOS (mejoras importantes):**
+- 🟡 **DS-13: `.cornerRadius()` deprecated (10x)** — CashFlowWidget (5), CategoriesPieWidget (1), NatureTrendWidget (2), TagsPieWidget (1), SubcategoriesPieWidget (1). Migrar a `.clipShape()`.
+- 🟡 **DS-14: Calendar extension duplicada en 3 archivos** — `startOfWeek/startOfMonth` en PanelViewModel, BudgetsViewModel, BudgetAlertService. Extraer a Utils.
+- 🟡 **DS-15: `@MainActor` faltante en WidgetConfigManager y StoreKitManager** — Son @Observable con UI state pero sin @MainActor a nivel de clase.
+- 🟡 **DS-16: `try?` en regex compilation (3x)** — DateParser:57, AmountParser:39, ScreenshotSingleExtractor:83. Patrones constantes, pero viola convenciones.
+- 🟡 **DS-17: `Subcategory.safeCategory` crea placeholder sin contexto** — Subcategory.swift:101-108 crea Category no insertada en contexto si `category == nil` (edge case CloudKit).
+- 🟡 **DS-18: `.font(.system(size:))` hardcoded (~100+ ocurrencias)** — OnboardingView, CategoryDetailView, NetoBadge, TransactionFormRow, etc. Migrar a DS.Typography.
+- 🟡 **DS-19: Hardcoded `spacing:` (~205 ocurrencias en 84 archivos)** — Migrar a DS.Spacing donde aplique.
+- 🟡 **DS-20: `DispatchQueue.main.asyncAfter` (~40 ocurrencias)** — ImportIntroSheet (14), InboxView (4), NewTransactionView (4). Preferir `Task { await Task.sleep }`.
+- 🟡 **DS-21: Force unwraps (5x) en PreviousPeriodHelper.swift:100-139** — `Calendar.date(byAdding:)!` en cálculos de periodo previo.
+- 🟡 **DS-22: Force unwrap pattern en TransactionCSVImportService.swift:409-410** — `columns[tagsIndex!]` safe pero frágil, duplicado entre single/multi-currency import.
+
+**S.4 — BAJOS (limpieza):**
+- 🔵 **DS-23: `@Relationship` inconsistente en Tag, Account, Subcategory** — Algunos lados sin annotation explícita (funcional pero inconsistente con otros modelos).
+- 🔵 **DS-24: `print()` fuera de `#if DEBUG` (~10)** — En Views de Import, Onboarding, LimitReachedBanner, TrialBanner.
+- 🔵 **DS-25: Código duplicado** — TransactionCSVImportService (single/multi-currency sections), QuickExpenseIntent (helper methods duplicados entre intents).
+- 🔵 **DS-26: `@MainActor` faltante en VoiceTranscriptionService y TranscriptionParserService** — Son @Observable con singletons pero sin @MainActor. No acceden ModelContext directamente.
+- 🔵 **DS-27: `try?` en Task.sleep en ExchangeRateService.swift:111,210,238** — Ignora CancellationError, impide cooperative cancellation en retry loops.
+- 🔵 **DS-28: InboxDraft.tags sin `inverse:` explícito** — Tag.inboxDrafts lo declara, pero inconsistente con patrón de otros modelos que lo declaran en ambos lados.
+
+**Archivos > 500 líneas (top 10 — candidatos a refactorizar):**
+TrendsTabView (1786), PanelViewModel (1735), CategoriesTabView (1723), TransactionCSVImportService (1682), PanelView (1399), NewTransactionView (1250), OnboardingView (1184), VoiceRecordingView (1154), QuickExpenseIntent (1141), InboxDraftEditSheet (1072)
+
+**Sin issues (validado limpio):**
+- foregroundColor → foregroundStyle: OK (0 usos legacy)
+- @available innecesarios: OK (0 encontrados)
+- #Predicate con enums: OK (todos usan rawValue)
+- SwiftData relationships: todas tienen inverse en al menos un lado
+- onChange firma vieja: OK (todos usan versión moderna)
+- No TODOs/FIXMEs pendientes
+- Retain cycles: OK (sin closures problemáticas)
 
 ---
 
@@ -223,14 +279,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 Semántica de isArchived/excludeFromStatistics corregida en toda la app. Cálculos/estadísticas filtran solo por excludeFromStatistics (cuentas archivadas siguen contando). Selección de cuentas para nuevas tx filtra solo por isArchived. Validación de cuenta archivada añadida en aprobación de inbox. 11 archivos de lógica + L10n en 6 idiomas.
 
-### BUG-13: 🔴 PENDIENTE
+### BUG-13: ✅ RESUELTO (e8a6844)
 
-**Al desarchivar una cuenta se fuerza un nuevo saldo inicial o ajuste.** Archivar e inarchivar no debe afectar de ninguna manera el balance de una cuenta. Lo mismo para el toggle de Excluir/incluir de estadísticas: cambiar ese toggle no debe provocar ningún cambio en el saldo de la cuenta.
-
-Síntomas:
-- Al desarchivar una cuenta, se crea o fuerza un saldo inicial/ajuste no deseado
-- Al cambiar el toggle de "Excluir de estadísticas", también afecta el balance
-- Ambas operaciones deberían ser puramente flags (metadata) sin tocar transacciones ni saldos
+Root cause: `initializeBalanceIfNeeded()` pre-llenaba `balanceText` con saldo inicial en modo `.byEntry`, causando ajuste no deseado al guardar. Fix: solo pre-llenar en `.changeInitialBalance`; `.byEntry` empieza vacío. Sección "Ajuste" oculta en creación. Títulos localizados. 5 tests nuevos (20 total).
 
 ### BUG-14: ✅ RESUELTO (4577ddf)
 
@@ -243,6 +294,18 @@ Waterfall chart cumulative para vista diaria de CashFlow. Cada barra parte donde
 ### BUG-15: ✅ RESUELTO (7545bf8)
 
 `deleteDraftPermanently()` eliminaba el draft del contexto pero no llamaba `viewModel.loadData()` para refrescar los arrays manuales del ViewModel. Agregada 1 línea. Aplica tanto a pendientes como rechazados (misma función).
+
+### BUG-16: ✅ RESUELTO (453b849)
+
+Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 FetchDescriptors (WidgetDataCache, BudgetsVM, NewTransactionVM, AccountsSettingsListVM) y `createdAt` tiebreaker en 4 array sorts (FilterService.groupByDate, InboxVM.groupedDrafts, StatisticsVM.recentRecords, PanelVM últimas 5 tx). 8 archivos corregidos.
+
+### BUG-17: 🔴 PENDIENTE
+
+**Modal de drafts nuevos en Inbox demora en aparecer.** Al volver a la app, la notificación in-app (modal unificado Inbox — 10.5.F) tarda varios segundos en mostrarse, lo que permite al usuario ver Panel e interactuar antes de que el modal aparezca. La experiencia debería ser inmediata o no mostrarse si el usuario ya interactuó.
+
+### BUG-18: 🔴 PENDIENTE
+
+**Share Extension no ejecuta registro por imagen al abrir.** Al enviar una imagen desde el Share Sheet, la app abre PanelView sin iniciar el flujo de registro por imagen. Sin embargo, al cerrar por completo la app y reabrirla, el proceso de imagen sí se ejecuta. Posible race condition entre el lifecycle de la app y el deep link/shared container de la Share Extension.
 
 ---
 
@@ -347,11 +410,12 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-08
-Stopped at: A11y audit corrections completadas — f5d2b43
-Next step: Investigar y resolver BUG-13 (archive/unarchive fuerza ajuste de saldo)
+Last session: 2026-02-09
+Stopped at: Deep Scan completado — 28 issues documentados en 10.5.S
+Next step: Resolver DS-1 a DS-5 (críticos) como primera prioridad
 Resume context:
-- A11y completa: 0fdf436 (implementación) + f5d2b43 (audit corrections)
-- Cobertura: VoiceOver labels, Dynamic Type, Reduce Motion, disabled hints, color indicators
-- BUG-13 pendiente: archivar/desarchivar y excluir/incluir de estadísticas fuerzan ajuste de saldo
-- Plan completo de refactor de temas en .planning/THEME-REFACTOR-PLAN.md para Fase 11
+- Deep scan de 293 archivos completado con 3 subagentes en paralelo
+- 28 issues documentados (5 críticos, 7 altos, 10 medios, 6 bajos)
+- DS-1 (UserDefaults key legacy) es bug real en producción para usuarios no-PEN
+- BUG-17 y BUG-18 siguen pendientes
+- Fase 10.5.S agregada al ROADMAP con DoD actualizado

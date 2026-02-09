@@ -151,7 +151,7 @@ struct QuickExpenseIntent: AppIntent {
         }
 
         // Get exchange rate info
-        let preferredCurrency = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "PEN"
+        let preferredCurrency = CurrencyDefaults.currentPreferred
         let transactionCurrency = resolvedAccount.currencyCode
 
         var exchangeRate = 1.0

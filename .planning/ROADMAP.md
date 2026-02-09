@@ -447,13 +447,21 @@ DoD:
 **10.5.Q: Fix Dark Mode** ✅
 - [x] Q.1: List→ScrollView+SectionBox en 4 vistas
 
-DoD: ✅
+**10.5.S: Deep Scan Pre-Launch** (28 issues, 293 archivos escaneados)
+- [ ] S.1 Críticos (5): UserDefaults key legacy (DS-1), div/zero en pie widgets (DS-2, DS-3), force unwraps en DateContextProvider (DS-4) y TrendDataProcessor (DS-5)
+- [ ] S.2 Altos (7): Error silenciado en CurrencyConverter/ExchangeRateService (DS-6, DS-7), fetches sin límite (DS-8, DS-9), try? en AudioRecorderService (DS-10), force unwraps en ImportIntroSheet (DS-11) y SharedModels (DS-12)
+- [ ] S.3 Medios (10): .cornerRadius deprecated (DS-13), Calendar extension duplicada (DS-14), @MainActor faltante (DS-15), try? en regex (DS-16), Subcategory.safeCategory (DS-17), DS.Typography/DS.Spacing (DS-18, DS-19), DispatchQueue (DS-20), force unwraps en PreviousPeriodHelper (DS-21) y CSVImport (DS-22)
+- [ ] S.4 Bajos (6): @Relationship inconsistente (DS-23), prints sin #if DEBUG (DS-24), código duplicado (DS-25), @MainActor minor (DS-26), try? en Task.sleep (DS-27), InboxDraft.tags inverse (DS-28)
+
+DoD (actualizado):
 - iCloud Sync funcional con datos privados ✅
 - Widgets en pantalla de inicio con datos actualizados ✅
 - Atajos accesibles desde centro de control ✅
 - Tab de Registros independiente ✅
 - Animaciones y haptics consistentes ✅
 - Modelo Pro/Free claramente definido ✅
+- Deep Scan: 0 issues críticos/altos pendientes
+- Deep Scan: issues medios y bajos resueltos o documentados como aceptados
 
 ---
 

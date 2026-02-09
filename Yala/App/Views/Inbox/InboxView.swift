@@ -17,7 +17,7 @@ struct InboxView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
-    @AppStorage("preferredCurrency") private var preferredCurrency: String = "PEN"
+    @AppStorage("defaultCurrencyCode") private var preferredCurrency: String = "PEN"
 
     /// Callback for navigating to Records tab (bulk approve success)
     var onNavigateToRecords: (() -> Void)?
