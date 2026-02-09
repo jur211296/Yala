@@ -224,6 +224,9 @@ final class CurrencyConverter: CurrencyConverterProtocol {
             let results = try context.fetch(descriptor)
             return results.first
         } catch {
+            #if DEBUG
+            print("CurrencyConverter: Error fetching rate: \(error)")
+            #endif
             return nil
         }
     }
@@ -242,6 +245,9 @@ final class CurrencyConverter: CurrencyConverterProtocol {
             let results = try context.fetch(limitedDescriptor)
             return results.first
         } catch {
+            #if DEBUG
+            print("CurrencyConverter: Error fetching fallback rate: \(error)")
+            #endif
             return nil
         }
     }

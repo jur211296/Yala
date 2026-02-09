@@ -205,9 +205,8 @@ struct ImportIntroSheet: View {
         // Sheets & Alerts
         .sheet(isPresented: $isShowingAccountPicker) {
             ImportAccountPickerSheet(
-                accounts: filteredCurrencyForAccountPicker != nil
-                    ? accountsForCurrency(filteredCurrencyForAccountPicker!)
-                    : activeAccounts,
+                accounts: filteredCurrencyForAccountPicker.map { accountsForCurrency($0) }
+                    ?? activeAccounts,
                 selectedAccount: $selectedAccount
             ) { account in
                 selectedAccount = account

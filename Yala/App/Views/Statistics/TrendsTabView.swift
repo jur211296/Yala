@@ -1338,18 +1338,7 @@ struct TrendsTabView: View {
         let baseInterval = trendsViewModel.panelDateInterval
 
         // For All Time, calculate effective interval based on actual transactions
-        let fetchedTransactions: [TransactionItem]
-        do {
-            fetchedTransactions = try modelContext.fetch(FetchDescriptor<TransactionItem>())
-        } catch {
-            #if DEBUG
-            print("TrendsTabView: Error fetching transactions for interval calculation: \(error)")
-            #endif
-            cashFlowSummary = nil
-            cashFlowByAccount = [:]
-            cashFlowByCurrency = [:]
-            return
-        }
+        let fetchedTransactions = allTransactions
         let effectiveInterval: DateInterval
         if trendsViewModel.detailPeriod == .allTime {
             let dates = fetchedTransactions.map(\.date)

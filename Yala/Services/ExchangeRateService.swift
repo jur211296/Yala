@@ -412,6 +412,9 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             let results = try context.fetch(descriptor)
             return results.first
         } catch {
+            #if DEBUG
+            print("ExchangeRateService: Error fetching rate: \(error)")
+            #endif
             return nil
         }
     }
@@ -436,6 +439,9 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         do {
             return try context.fetchCount(descriptor)
         } catch {
+            #if DEBUG
+            print("ExchangeRateService: Error counting rates: \(error)")
+            #endif
             return 0
         }
     }

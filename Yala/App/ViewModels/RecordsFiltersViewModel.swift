@@ -98,6 +98,7 @@ final class RecordsFiltersViewModel {
     private func loadCurrenciesWithTransactions() {
         guard let context = modelContext else { return }
 
+        // Note: SwiftData lacks DISTINCT/projection; full fetch required for currency code extraction
         let descriptor = FetchDescriptor<TransactionItem>()
         do {
             let transactions = try context.fetch(descriptor)

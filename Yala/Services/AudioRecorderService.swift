@@ -152,7 +152,13 @@ final class AudioRecorderService: NSObject, ObservableObject {
         state = .processing
 
         // Deactivate audio session
-        try? AVAudioSession.sharedInstance().setActive(false)
+        do {
+            try AVAudioSession.sharedInstance().setActive(false)
+        } catch {
+            #if DEBUG
+            print("AudioRecorderService: Error deactivating audio session: \(error)")
+            #endif
+        }
 
         // Check minimum duration
         guard duration >= minimumRecordingDuration else {
@@ -161,7 +167,17 @@ final class AudioRecorderService: NSObject, ObservableObject {
         }
 
         // Read audio data
-        guard let url = recordingURL, let audioData = try? Data(contentsOf: url) else {
+        guard let url = recordingURL else {
+            cleanup()
+            throw RecordingError.failedToReadAudioFile
+        }
+        let audioData: Data
+        do {
+            audioData = try Data(contentsOf: url)
+        } catch {
+            #if DEBUG
+            print("AudioRecorderService: Error reading audio file: \(error)")
+            #endif
             cleanup()
             throw RecordingError.failedToReadAudioFile
         }
@@ -189,7 +205,13 @@ final class AudioRecorderService: NSObject, ObservableObject {
     private func cleanup() {
         // Delete temporary file
         if let url = recordingURL {
-            try? FileManager.default.removeItem(at: url)
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch {
+                #if DEBUG
+                print("AudioRecorderService: Error removing temp file: \(error)")
+                #endif
+            }
         }
 
         audioRecorder = nil
