@@ -44,7 +44,9 @@ struct AccountFormView: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         currencySection
-                        adjustmentSection  // Moved above balance per design
+                        if viewModel.isEditing {
+                            adjustmentSection
+                        }
                         balanceSection
                         actionsSection
                     }
@@ -173,7 +175,7 @@ struct AccountFormView: View {
     }
 
     private var currencySection: some View {
-        SectionBox(title: "Moneda") {
+        SectionBox(title: L10n.Account.currency) {
             NavigationLink {
                 CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
                     .swipeBack()
@@ -203,7 +205,7 @@ struct AccountFormView: View {
     }
 
     private var adjustmentSection: some View {
-        SectionBox(title: "Ajuste") {
+        SectionBox(title: L10n.Account.adjustment) {
             VStack(spacing: 0) {
                 NavigationLink {
                     AdjustmentModeSelectorView(
@@ -245,6 +247,9 @@ struct AccountFormView: View {
                     .padding()
                 }
             }
+        }
+        .onChange(of: viewModel.selectedAdjustmentMode) {
+            viewModel.adjustmentModeChanged()
         }
     }
 

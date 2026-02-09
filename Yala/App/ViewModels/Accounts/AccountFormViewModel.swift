@@ -180,10 +180,28 @@ final class AccountFormViewModel {
     func initializeBalanceIfNeeded() {
         guard isEditing, !hasInitializedBalance, !allTransactions.isEmpty else { return }
 
-        let existingInitial = existingInitialBalance
-        isPositive = existingInitial >= 0
-        balanceText = String(format: "%.2f", abs(existingInitial))
+        if selectedAdjustmentMode == .changeInitialBalance {
+            let existingInitial = existingInitialBalance
+            isPositive = existingInitial >= 0
+            balanceText = String(format: "%.2f", abs(existingInitial))
+        }
+        // .byEntry: balanceText stays empty — user must explicitly enter target
+
         hasInitializedBalance = true
+    }
+
+    /// Handle adjustment mode change — reset balanceText based on new mode semantics
+    func adjustmentModeChanged() {
+        guard isEditing else { return }
+        if selectedAdjustmentMode == .changeInitialBalance {
+            let existingInitial = existingInitialBalance
+            isPositive = existingInitial >= 0
+            balanceText = String(format: "%.2f", abs(existingInitial))
+        } else {
+            // .byEntry: clear to require explicit user input
+            balanceText = ""
+            isPositive = true
+        }
     }
 
     // MARK: - Computed Properties (Validation)
