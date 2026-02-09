@@ -115,7 +115,7 @@ final class AccountsSettingsListViewModel {
 
         // Load transactions (for balance calculation)
         let transactionDescriptor = FetchDescriptor<TransactionItem>(
-            sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
+            sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
         )
         do {
             transactions = try context.fetch(transactionDescriptor)

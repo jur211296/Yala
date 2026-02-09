@@ -218,7 +218,7 @@ final class NewTransactionViewModel {
 
         // Load transactions (for recent suggestions)
         let transactionsDescriptor = FetchDescriptor<TransactionItem>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
+            sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
         )
         do {
             transactions = try context.fetch(transactionsDescriptor)

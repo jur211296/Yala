@@ -93,7 +93,7 @@ final class BudgetsViewModel {
         }
 
         // Load transactions
-        let transactionDescriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)])
+        let transactionDescriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)])
         do {
             allTransactions = try context.fetch(transactionDescriptor)
         } catch {

@@ -188,7 +188,7 @@ enum WidgetDataCache {
     private static func buildSnapshot(context: ModelContext) -> WidgetDataSnapshot {
         // Fetch ALL transactions for correct balance calculation
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
+            sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
         )
 
         var allTransactions: [TransactionItem] = []

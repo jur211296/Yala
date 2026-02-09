@@ -116,7 +116,10 @@ final class InboxViewModel {
             calendar.startOfDay(for: draft.effectiveDate)
         }
         return grouped
-            .map { (date: $0.key, drafts: $0.value.sorted { $0.effectiveDate > $1.effectiveDate }) }
+            .map { (date: $0.key, drafts: $0.value.sorted {
+                if $0.effectiveDate == $1.effectiveDate { return $0.createdAt > $1.createdAt }
+                return $0.effectiveDate > $1.effectiveDate
+            }) }
             .sorted { $0.date > $1.date }
     }
 

@@ -1277,7 +1277,10 @@ final class PanelViewModel {
 
         return Array(
             filtered
-                .sorted { $0.date > $1.date }
+                .sorted {
+                    if $0.date == $1.date { return $0.createdAt > $1.createdAt }
+                    return $0.date > $1.date
+                }
                 .prefix(5)
         )
     }
