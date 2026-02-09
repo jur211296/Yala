@@ -35,6 +35,7 @@ final class AppBootstrapper {
     // MARK: - State
 
     private(set) var isInitialized = false
+    var deferredInboxNotification: PendingInboxNotification?
 
     // MARK: - Initialization
 
@@ -390,8 +391,15 @@ final class AppBootstrapper {
         }
 
         if !notification.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-                self?.sessionState.pendingInboxNotification = notification
+            let delay: Double = 0.3
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                guard let self else { return }
+                if BiometricAuthService.shared.isLocked {
+                    self.deferredInboxNotification = notification
+                } else {
+                    self.sessionState.pendingInboxNotification = notification
+                }
             }
         }
 

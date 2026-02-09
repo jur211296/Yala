@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-09] da8309e fix: resolve 7 high-priority deep scan issues (DS-6 to DS-12)
 - [2026-02-09] 171a0ce fix: resolve 5 critical deep scan issues (DS-1 to DS-5)
 - [2026-02-08] 453b849 fix: add createdAt tiebreaker for consistent same-day transaction ordering (BUG-16)
 - [2026-02-08] e8a6844 fix: prevent unwanted balance adjustments when editing accounts (BUG-13)
@@ -230,13 +231,13 @@ Escaneo profundo de 293 archivos Swift. Todos los puntos deben resolverse antes 
 - ✅ **DS-5: Force unwraps en TrendDataProcessor** — Resuelto (171a0ce). Optional binding.
 
 **S.2 — ALTOS (bugs probables):**
-- 🟠 **DS-6: Error silenciado en CurrencyConverter.swift:226,244** — `catch { return nil }` sin log. Conversiones fallidas son invisibles.
-- 🟠 **DS-7: Error silenciado en ExchangeRateService.swift:414,438** — `catch { return nil/0 }` sin log.
-- 🟠 **DS-8: Fetch sin límite en RecordsFiltersViewModel.swift:101** — Carga TODAS las transacciones solo para extraer currency codes.
-- 🟠 **DS-9: Fetch sin límite en TrendsTabView.swift:1343** — `FetchDescriptor<TransactionItem>()` sin predicado, ejecutado múltiples veces via onChange.
-- 🟠 **DS-10: `try?` silenciando I/O en AudioRecorderService.swift:155,164,192** — Errores de audio/archivo se pierden.
-- 🟠 **DS-11: Force unwrap en ImportIntroSheet.swift:209** — `filteredCurrencyForAccountPicker!` safe pero viola convenciones. Usar `.map { }`.
-- 🟠 **DS-12: Force unwraps (11x) en SharedModels.swift:177-224** — `Calendar.date()!` en `DetailPeriod.dateInterval()`, función usada en todo el app.
+- ✅ **DS-6: Error silenciado en CurrencyConverter.swift** — Resuelto (da8309e). Debug logs en 2 catch blocks.
+- ✅ **DS-7: Error silenciado en ExchangeRateService.swift** — Resuelto (da8309e). Debug logs en 2 catch blocks.
+- ✅ **DS-8: Fetch sin límite en RecordsFiltersViewModel.swift** — Aceptado (da8309e). SwiftData no soporta DISTINCT; comentario explicativo.
+- ✅ **DS-9: Fetch redundante en TrendsTabView.swift** — Resuelto (da8309e). Reemplazado por `allTransactions` existente.
+- ✅ **DS-10: `try?` silenciando I/O en AudioRecorderService.swift** — Resuelto (da8309e). 3x try? → do/catch con debug logs.
+- ✅ **DS-11: Force unwrap en ImportIntroSheet.swift** — Resuelto (da8309e). `.map { }` safe.
+- ✅ **DS-12: Force unwraps (12x) en SharedModels.swift** — Resuelto (da8309e). `?? fallback` pattern.
 
 **S.3 — MEDIOS (mejoras importantes):**
 - 🟡 **DS-13: `.cornerRadius()` deprecated (10x)** — CashFlowWidget (5), CategoriesPieWidget (1), NatureTrendWidget (2), TagsPieWidget (1), SubcategoriesPieWidget (1). Migrar a `.clipShape()`.
@@ -412,9 +413,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: DS-1 a DS-5 (críticos) resueltos — 171a0ce
-Next step: Resolver DS-6 a DS-12 (altos) como siguiente prioridad
+Stopped at: DS-6 a DS-12 (altos) resueltos — da8309e
+Next step: Resolver DS-13 a DS-22 (medios) o BUG-17/BUG-18
 Resume context:
-- Deep scan: 5/5 críticos resueltos, 7 altos pendientes, 10 medios, 6 bajos
+- Deep scan: 5/5 críticos ✅, 7/7 altos ✅, 10 medios pendientes, 6 bajos pendientes
 - BUG-17 y BUG-18 siguen pendientes
 - Fase 10.5.S en progreso

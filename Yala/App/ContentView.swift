@@ -129,6 +129,15 @@ struct ContentView: View {
                 break
             }
         }
+        .onChange(of: authService.isLocked) { _, isLocked in
+            if !isLocked, let deferred = AppBootstrapper.shared.deferredInboxNotification {
+                AppBootstrapper.shared.deferredInboxNotification = nil
+                Task {
+                    try? await Task.sleep(for: .seconds(0.3))
+                    SessionState.shared.pendingInboxNotification = deferred
+                }
+            }
+        }
     }
 
     private func dismissSplash() {
