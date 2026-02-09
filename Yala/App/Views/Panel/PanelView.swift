@@ -1151,6 +1151,12 @@ private struct PanelSheetTriggers: ViewModifier {
                     sessionState.shouldShowInbox = false
                 }
             }
+            .onAppear {
+                // Catch flags set before view mounted (Share Extension cold launch)
+                if sessionState.hasPendingSharedImage && sessionState.pendingSharedImageURL != nil {
+                    showImageSelection = true
+                }
+            }
             .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
                 if hasPending && sessionState.pendingSharedImageURL != nil {
                     showImageSelection = true

@@ -241,6 +241,12 @@ struct MainTabView: View {
             }
             .tint(Color.electricIndigo)
             .transaction { $0.animation = nil }
+            .onAppear {
+                // Catch flags set before view mounted (Share Extension cold launch)
+                if sessionState.hasPendingSharedImage && sessionState.selectedMainTab != .panel {
+                    sessionState.selectedMainTab = .panel
+                }
+            }
             .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
                 // Navigate to Panel when shared image is pending (from Share Extension)
                 if hasPending && sessionState.selectedMainTab != .panel {

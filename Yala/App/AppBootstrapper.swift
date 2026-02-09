@@ -213,7 +213,12 @@ final class AppBootstrapper {
 
         switch url.host {
         case "shared-image":
-            checkForPendingSharedImage()
+            // Delay to ensure PanelView is mounted and observing before flags are set
+            // Covers cold launch from Share Extension where onOpenURL fires before first render
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
+                checkForPendingSharedImage()
+            }
 
         case "voice-entry":
             if UserDefaults.standard.bool(forKey: "voiceInputEnabled") {
