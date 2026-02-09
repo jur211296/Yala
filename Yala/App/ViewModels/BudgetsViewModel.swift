@@ -423,16 +423,3 @@ extension BudgetStatus: CaseIterable {
 
 // MARK: - Calendar Extension
 
-private extension Calendar {
-    /// Get start of week for a given date (Monday as first day of week)
-    func startOfWeek(for date: Date) -> Date {
-        let components = dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        return self.date(from: components) ?? date
-    }
-
-    /// Get start of month for a given date
-    func startOfMonth(for date: Date) -> Date {
-        let components = dateComponents([.year, .month], from: date)
-        return self.date(from: components) ?? date
-    }
-}
