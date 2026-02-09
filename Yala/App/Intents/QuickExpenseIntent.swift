@@ -201,7 +201,7 @@ struct QuickExpenseIntent: AppIntent {
         }
 
         // Format success message with all details
-        let formattedAmount = formatCurrency(amount: finalAmount, currencyCode: transactionCurrency)
+        let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: transactionCurrency)
         let noteText = (finalNote?.isEmpty == false) ? (finalNote ?? "-") : "-"
         let subcategoryText = resolvedSubcategory.name
         let tagText = resolvedTag?.name ?? String(localized: "shortcut.result.noTag")
@@ -328,13 +328,6 @@ struct QuickExpenseIntent: AppIntent {
         }
     }
 
-    private func formatCurrency(amount: Double, currencyCode: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
-    }
 }
 
 // MARK: - Intent Errors
@@ -737,7 +730,7 @@ struct ApplePayTransactionIntent: AppIntent {
         var needsUserInput: [String] = ["subcategory"]
 
         if let currency = detectedCurrency {
-            matchedAccount = findAccount(byCurrency: currency, context: context)
+            matchedAccount = findIntentAccount(byCurrency: currency, context: context)
         }
 
         if matchedAccount == nil {
@@ -800,52 +793,12 @@ struct ApplePayTransactionIntent: AppIntent {
         )
 
         // Format success message
-        let formattedAmount = formatCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
+        let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
         let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
         return .result(dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)")
     }
 
     // MARK: - Helpers
-
-    /// Finds an account matching the currency code.
-    /// Returns nil if no match or multiple matches (ambiguous).
-    private func findAccount(byCurrency currencyCode: String, context: ModelContext) -> Account? {
-        let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate<Account> { account in
-                account.isArchived == false
-            }
-        )
-
-        let accounts: [Account]
-        do {
-            accounts = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("ApplePayTransactionIntent: Error fetching accounts: \(error)")
-            #endif
-            return nil
-        }
-
-        // Find accounts with matching currency
-        let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
-
-        // Return only if exactly one match
-        if matches.count == 1 {
-            return matches.first
-        }
-
-        return nil
-    }
-
-    private func formatCurrency(amount: Double, currencyCode: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
-    }
 
     /// Parses amount and currency from Wallet text format
     /// Examples: "$32.04" -> (32.04, "USD"), "S/ 25.90" -> (25.90, "PEN"), "€25,50" -> (25.50, "EUR")
@@ -1029,7 +982,7 @@ struct AutomationEntryIntent: AppIntent {
         var matchedAccount: Account?
         var needsUserInput: [String] = ["subcategory"]
 
-        matchedAccount = findAccount(byCurrency: normalizedCurrency, context: context)
+        matchedAccount = findIntentAccount(byCurrency: normalizedCurrency, context: context)
 
         if matchedAccount == nil {
             needsUserInput.insert("account", at: 0)
@@ -1091,50 +1044,43 @@ struct AutomationEntryIntent: AppIntent {
         )
 
         // Format success message
-        let formattedAmount = formatCurrency(amount: transaction.amount, currencyCode: normalizedCurrency)
+        let formattedAmount = formatIntentCurrency(amount: transaction.amount, currencyCode: normalizedCurrency)
         let noteDisplay = finalNote.isEmpty ? "Automatización" : finalNote
         return .result(dialog: "shortcut.automation.success \(formattedAmount) \(noteDisplay)")
     }
 
-    // MARK: - Helpers
+}
 
-    /// Finds an account matching the currency code.
-    /// Returns nil if no match or multiple matches (ambiguous).
-    private func findAccount(byCurrency currencyCode: String, context: ModelContext) -> Account? {
-        let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+// MARK: - Shared Intent Helpers
 
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate<Account> { account in
-                account.isArchived == false
-            }
-        )
+private func formatIntentCurrency(amount: Double, currencyCode: String) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .currency
+    formatter.currencyCode = currencyCode
+    formatter.maximumFractionDigits = 2
+    return formatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
+}
 
-        let accounts: [Account]
-        do {
-            accounts = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("AutomationEntryIntent: Error fetching accounts: \(error)")
-            #endif
-            return nil
+@MainActor
+private func findIntentAccount(byCurrency currencyCode: String, context: ModelContext) -> Account? {
+    let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+    let descriptor = FetchDescriptor<Account>(
+        predicate: #Predicate<Account> { account in
+            account.isArchived == false
         }
+    )
 
-        // Find accounts with matching currency
-        let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
-
-        // Return only if exactly one match
-        if matches.count == 1 {
-            return matches.first
-        }
-
+    let accounts: [Account]
+    do {
+        accounts = try context.fetch(descriptor)
+    } catch {
+        #if DEBUG
+        print("findIntentAccount: Error fetching accounts: \(error)")
+        #endif
         return nil
     }
 
-    private func formatCurrency(amount: Double, currencyCode: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
-    }
+    let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
+    return matches.count == 1 ? matches.first : nil
 }
