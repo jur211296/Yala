@@ -34,7 +34,7 @@ struct TransferAmountInputView: View {
 
             // Arrow visual
             Image(systemName: "arrow.down")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.secondary.opacity(0.5))
 
             // Destination Amount (Large)
@@ -48,7 +48,7 @@ struct TransferAmountInputView: View {
     // MARK: - Source Amount Field
 
     private var sourceAmountField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             Text(viewModel.sourceAccount?.currencyCode ?? "")
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.hotPink.opacity(0.7))
@@ -87,7 +87,7 @@ struct TransferAmountInputView: View {
     // MARK: - Destination Amount Field
 
     private var destinationAmountField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             Text(viewModel.destinationAccount?.currencyCode ?? "")
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.electricIndigo.opacity(0.7))

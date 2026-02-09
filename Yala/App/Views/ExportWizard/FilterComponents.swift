@@ -18,16 +18,16 @@ struct FilterSectionHeader: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Text("(\(status))")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
@@ -43,22 +43,22 @@ struct FilterSelectionRow: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Text("(\(subtitle))")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -135,14 +135,14 @@ struct AmountFilterView: View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let code = currencyCode {
                 Text(code.rawValue)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
             }
 
             TextField("0.00", text: text)
                 .keyboardType(.decimalPad)
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .font(DS.Typography.amountLarge)
                 .multilineTextAlignment(.trailing)
                 .onChange(of: text.wrappedValue) {
                     updateCondition(newType: selectedType)
@@ -158,7 +158,7 @@ struct AmountFilterView: View {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
                     Text(L10n.Export.selectSingleCurrency)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 8)
@@ -235,7 +235,7 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
-                        VStack(spacing: 0) {
+                        VStack(spacing: DS.Spacing.none) {
                             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                                 if index > 0 {
                                     SubsectionDivider()
@@ -250,7 +250,7 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
                                 } label: {
                                     HStack {
                                         Text(label(item))
-                                            .font(.body)
+                                            .font(DS.Typography.body)
                                             .foregroundStyle(.primary)
 
                                         Spacer()
@@ -258,7 +258,7 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
                                         if selection.contains(item) {
                                             Image(systemName: "checkmark")
                                                 .foregroundStyle(Color.brandPrimary)
-                                                .font(.body.weight(.semibold))
+                                                .font(DS.Typography.headline)
                                         }
                                     }
                                     .padding(.horizontal, DS.FormRow.paddingH)

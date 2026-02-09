@@ -92,13 +92,13 @@ struct BulkEditSheet: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         // Header with count
                         Text(L10n.BulkEdit.editCount(selectedCount))
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         // Options list
                         SectionBox(title: "") {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(Array(BulkEditOption.allCases.enumerated()), id: \.element.id) { index, option in
                                     if index > 0 {
                                         SubsectionDivider()
@@ -202,7 +202,7 @@ struct BulkEditSheet: View {
                 .foregroundStyle(.orange)
 
             Text(L10n.BulkEdit.currencyWarning)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.md)
@@ -219,7 +219,7 @@ struct BulkEditSheet: View {
                 .foregroundStyle(.green)
 
             Text(L10n.BulkEdit.successMessage)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.md)
@@ -315,7 +315,7 @@ private struct BulkEditOptionRow: View {
 
                 // Title
                 Text(option.title)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -361,7 +361,7 @@ struct BulkTagEditorSheet: View {
                         // Common tags section (tags that ALL selected transactions have)
                         if !commonTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.commonTags) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(commonTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -379,7 +379,7 @@ struct BulkTagEditorSheet: View {
                         // Partial tags section (tags that SOME selected transactions have)
                         if !partialTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.partialTags) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(partialTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -397,7 +397,7 @@ struct BulkTagEditorSheet: View {
                         // Available tags section (tags that NO selected transactions have)
                         if !availableTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.availableTags) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(availableTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -550,7 +550,7 @@ private struct BulkTagRow: View {
 
                 // Tag name
                 Text(tag.name)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -568,17 +568,17 @@ private struct BulkTagRow: View {
         case .toAdd, .common:
             // Checked - tag will be present after save
             Image(systemName: "checkmark.square.fill")
-                .font(.system(size: 22))
+                .font(DS.Typography.title)
                 .foregroundStyle(Color.electricIndigo)
         case .toRemove, .available:
             // Unchecked - tag will NOT be present after save
             Image(systemName: "square")
-                .font(.system(size: 22))
+                .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
         case .partial:
             // Mixed state - some have it, some don't
             Image(systemName: "minus.square.fill")
-                .font(.system(size: 22))
+                .font(DS.Typography.title)
                 .foregroundStyle(.orange)
         }
     }
@@ -662,7 +662,7 @@ struct BulkAmountEditorSheet: View {
                         HStack {
                             TextField("0.00", text: $amountText)
                                 .keyboardType(.decimalPad)
-                                .font(.title2.weight(.semibold))
+                                .font(DS.Typography.title)
                                 .padding(.horizontal, DS.Spacing.lg)
                                 .padding(.vertical, DS.FormRow.paddingV)
                                 .focused($isFocused)

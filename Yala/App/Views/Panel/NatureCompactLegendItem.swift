@@ -15,12 +15,12 @@ struct NatureCompactLegendItem: View {
                     .frame(width: 8, height: 8)
 
                 Text(nature.displayName)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(Color.primary)
 
                 if total > 0 {
                     Text(YalaFormatter.currency(value: total, currencyCode: currencyCode))
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
             }

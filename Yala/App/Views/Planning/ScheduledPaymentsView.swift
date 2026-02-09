@@ -21,7 +21,7 @@ struct ScheduledPaymentsView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Tab segmented control
                     tabSelector
                         .padding(.horizontal, DS.Spacing.lg)

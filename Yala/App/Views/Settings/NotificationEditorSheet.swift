@@ -142,7 +142,7 @@ struct NotificationEditorSheet: View {
             // Show dynamic hint for non-customizable types
             if !isTextCustomizable && !isCustom {
                 Text(currentPreviewText)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -174,7 +174,7 @@ struct NotificationEditorSheet: View {
                 .frame(width: 80, height: 80)
 
             Image(systemName: currentIconName)
-                .font(.system(size: 32, weight: .semibold))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.white)
 
             // Edit badge for custom notifications
@@ -184,7 +184,7 @@ struct NotificationEditorSheet: View {
                     HStack {
                         Spacer()
                         Image(systemName: "pencil.circle.fill")
-                            .font(.system(size: 24))
+                            .font(DS.Typography.largeTitle)
                             .foregroundStyle(Color(hex: selectedColorHex))
                             .background(Circle().fill(Color.yalaBackground).padding(2))
                     }
@@ -244,12 +244,12 @@ struct NotificationEditorSheet: View {
         SectionBox(title: L10n.Notifications.time) {
             HStack {
                 Image(systemName: "clock")
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
                 Text(L10n.Notifications.time)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -300,7 +300,7 @@ struct NotificationEditorSheet: View {
             toggleWeekday(weekday.value)
         } label: {
             Text(weekday.short)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -341,7 +341,7 @@ struct NotificationEditorSheet: View {
 
     private var reportConfigSection: some View {
         SectionBox(title: L10n.Notifications.selectData) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Data type selection
                 ForEach(Array(availableDataTypes.enumerated()), id: \.element) { index, dataType in
                     Button {
@@ -349,19 +349,19 @@ struct NotificationEditorSheet: View {
                     } label: {
                         HStack {
                             Image(systemName: dataType.icon)
-                                .font(.body)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 28)
 
                             Text(dataType.displayName.capitalized)
-                                .font(.body)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
 
                             Spacer()
 
                             if selectedDataType == dataType {
                                 Image(systemName: "checkmark")
-                                    .font(.body.weight(.semibold))
+                                    .font(DS.Typography.headline)
                                     .foregroundStyle(Color.electricIndigo)
                             }
                         }
@@ -385,7 +385,7 @@ struct NotificationEditorSheet: View {
     private var dayPreferenceSection: some View {
         if showDayPreference {
             SectionBox(title: L10n.Notifications.selectDay) {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     if notificationType == .weeklyReport {
                         dayPreferenceRow(.monday, display: L10n.Notifications.dayMonday)
                         SubsectionDivider()
@@ -408,14 +408,14 @@ struct NotificationEditorSheet: View {
         } label: {
             HStack {
                 Text(display.capitalized)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 if selectedDayPreference == preference {
                     Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
@@ -458,13 +458,13 @@ struct NotificationEditorSheet: View {
 
     private var textSection: some View {
         SectionBox(title: L10n.Notifications.text) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Name field (only for custom)
                 if isNameCustomizable {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         HStack {
                             Image(systemName: "textformat")
-                                .font(.body)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 28)
 
@@ -477,7 +477,7 @@ struct NotificationEditorSheet: View {
                                 }
 
                             Text("\(name.count)/\(NotificationItem.maxNameLength)")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(name.count > 20 ? Color.orange : Color.secondary)
                         }
                         .padding(.horizontal, DS.Spacing.lg)
@@ -491,7 +491,7 @@ struct NotificationEditorSheet: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     HStack(alignment: .top) {
                         Image(systemName: "text.bubble")
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(.secondary)
                             .frame(width: 28)
                             .padding(.top, 2)
@@ -507,7 +507,7 @@ struct NotificationEditorSheet: View {
                                 }
 
                             Text("\(text.count)/\(NotificationItem.maxTextLength)")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(text.count > 80 ? Color.orange : Color.secondary)
                         }
                     }
@@ -531,7 +531,7 @@ struct NotificationEditorSheet: View {
                 Image(systemName: "bell.badge")
                 Text(L10n.Notifications.testNotification)
             }
-            .font(.subheadline.weight(.medium))
+            .font(DS.Typography.label)
             .foregroundStyle(Color.electricIndigo)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.md)

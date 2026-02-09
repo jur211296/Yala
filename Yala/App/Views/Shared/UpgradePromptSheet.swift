@@ -88,7 +88,7 @@ struct UpgradePromptSheet: View {
 
                 // Contextual message
                 Text(messageForFeature)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaSecondaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -107,7 +107,7 @@ struct UpgradePromptSheet: View {
                     Button(L10n.Common.cancel) {
                         dismiss()
                     }
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaSecondaryText)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -144,7 +144,7 @@ struct UpgradePromptSheet: View {
                 )
 
             Text(feature.localizedName)
-                .font(.body.weight(.medium))
+                .font(DS.Typography.bodyBold)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             Spacer()

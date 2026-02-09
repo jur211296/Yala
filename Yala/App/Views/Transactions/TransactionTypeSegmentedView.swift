@@ -18,7 +18,7 @@ struct TransactionTypeSegmentedView: View {
     @Namespace private var animation
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(availableTypes) { type in
                 TransactionTypeButton(
                     type: type,

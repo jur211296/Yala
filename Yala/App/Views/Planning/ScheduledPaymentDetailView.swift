@@ -82,7 +82,7 @@ struct ScheduledPaymentDetailView: View {
             // Amount
             VStack(spacing: DS.Spacing.xs) {
                 Text(payment.currencyCode)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
 
                 Text(formatAmount(payment.amount))
@@ -147,7 +147,7 @@ struct ScheduledPaymentDetailView: View {
                     Image(systemName: "pause.circle.fill")
                         .foregroundStyle(.orange)
                     Text(NSLocalizedString("scheduled.status.inactive", comment: ""))
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.orange)
                 }
                 .padding(.top, DS.Spacing.sm)
@@ -167,18 +167,18 @@ struct ScheduledPaymentDetailView: View {
     private func detailRow(icon: String, label: String, value: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
 
             Text(label)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.primary)
         }
     }
@@ -191,12 +191,12 @@ struct ScheduledPaymentDetailView: View {
                 Image(systemName: "arrow.forward.circle.fill")
                     .foregroundStyle(Color.electricIndigo)
                 Text(NSLocalizedString("scheduled.detail.upcoming", comment: ""))
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(upcomingOccurrences.enumerated()), id: \.offset) { index, date in
                     occurrenceRow(date: date, isPast: false, index: index + 1)
 
@@ -224,12 +224,12 @@ struct ScheduledPaymentDetailView: View {
                 Image(systemName: "clock.arrow.circlepath")
                     .foregroundStyle(.secondary)
                 Text(NSLocalizedString("scheduled.detail.history", comment: ""))
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(pastOccurrences.enumerated()), id: \.offset) { index, date in
                     occurrenceRow(date: date, isPast: true, index: nil)
 
@@ -252,12 +252,12 @@ struct ScheduledPaymentDetailView: View {
     private func occurrenceRow(date: Date, isPast: Bool, index: Int?) -> some View {
         HStack(spacing: DS.Spacing.md) {
             // Date indicator
-            VStack(spacing: 2) {
+            VStack(spacing: DS.Spacing.xxs) {
                 Text(dayOfMonth(date))
                     .font(.title3.weight(.bold))
                     .foregroundStyle(isPast ? .secondary : .primary)
                 Text(monthAbbrev(date))
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.tertiary)
             }
             .frame(width: 40)
@@ -265,12 +265,12 @@ struct ScheduledPaymentDetailView: View {
             // Full date
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(formatFullDate(date))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isPast ? .secondary : .primary)
 
                 if !isPast, let idx = index {
                     Text(ordinalText(idx))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -279,7 +279,7 @@ struct ScheduledPaymentDetailView: View {
 
             // Amount
             Text(formatAmount(payment.amount))
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(isPast ? .secondary : (payment.transactionType == "income" ? Color.teal : .primary))
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -291,11 +291,11 @@ struct ScheduledPaymentDetailView: View {
     private var infoNote: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
 
             Text(NSLocalizedString("scheduled.detail.info.note", comment: ""))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.lg)

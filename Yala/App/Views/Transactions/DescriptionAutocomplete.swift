@@ -118,7 +118,7 @@ struct AutocompleteSuggestionsView: View {
                                     .frame(width: 8, height: 8)
 
                                 Text(suggestion.name)
-                                    .font(.subheadline.weight(.medium))
+                                    .font(DS.Typography.label)
                                     .lineLimit(1)
                             }
                             .padding(.horizontal, DS.Spacing.md)

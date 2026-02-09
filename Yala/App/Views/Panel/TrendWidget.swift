@@ -75,13 +75,13 @@ struct TrendWidget: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(chartTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 // Prominent KPI Value - only show when we have data
                 if !hasNoData {
                     Text(currentKPIValue)
-                        .font(.title2.weight(.bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(Color.yalaPrimaryText)
                         .padding(.top, DS.Spacing.xs)
                 }
@@ -109,7 +109,7 @@ struct TrendWidget: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -118,7 +118,7 @@ struct TrendWidget: View {
     }
 
     private var metricSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             // Always show all options - user can switch freely
             ForEach(TrendType.allCases) { type in
                 metricButton(for: type)
@@ -157,7 +157,7 @@ struct TrendWidget: View {
         } label: {
             // Icon only (compact version like TrendsTabView)
             Image(systemName: type.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, 14)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))

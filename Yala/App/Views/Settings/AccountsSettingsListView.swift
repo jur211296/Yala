@@ -117,15 +117,15 @@ struct AccountsSettingsListView: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "creditcard")
-                .font(.system(size: 48))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
 
             Text(L10n.Empty.noAccounts)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
 
             Text(L10n.Empty.accountsDescription)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xxxl)
@@ -138,11 +138,11 @@ struct AccountsSettingsListView: View {
     private func accountsSection(title: String, accounts: [Account]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                     Button {
                         viewModel.accountToEdit = account
@@ -173,7 +173,7 @@ struct AccountsSettingsListView: View {
     private var listBasedSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.active)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
@@ -234,15 +234,15 @@ struct AccountsSettingsListView: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(primaryText)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Text(accountTypeText(for: account))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
                 Text(currencyInfoData.name.capitalized)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -253,13 +253,13 @@ struct AccountsSettingsListView: View {
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
                     Text(viewModel.formattedBalance(for: account))
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
 
                 if !viewModel.isEditMode {
                     Image(systemName: "chevron.right")
-                        .font(.footnote)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -303,15 +303,15 @@ struct AccountsSettingsListView: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(primaryText)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Text(accountTypeText(for: account))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
                 Text(currencyInfoTuple.name.capitalized)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
 
@@ -320,12 +320,12 @@ struct AccountsSettingsListView: View {
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
                     Text(viewModel.formattedBalance(for: account))
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
         }

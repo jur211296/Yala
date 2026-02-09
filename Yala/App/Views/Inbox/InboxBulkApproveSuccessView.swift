@@ -61,7 +61,7 @@ struct InboxBulkApproveSuccessView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
 

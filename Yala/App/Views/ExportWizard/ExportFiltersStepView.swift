@@ -109,7 +109,7 @@ struct ExportFiltersStepView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 periodRow
                                 Divider().padding(.leading, 16)
                                 accountsContent
@@ -244,7 +244,7 @@ struct ExportFiltersStepView: View {
             }
         } label: {
             Text(account.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -262,7 +262,7 @@ struct ExportFiltersStepView: View {
         Button {
             showCategoriesSheet = true
         } label: {
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 FilterSectionHeader(
                     icon: "tag",
                     title: L10n.Settings.categories,
@@ -272,7 +272,7 @@ struct ExportFiltersStepView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -317,7 +317,7 @@ struct ExportFiltersStepView: View {
                     .frame(width: 8, height: 8)
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -365,7 +365,7 @@ struct ExportFiltersStepView: View {
             }
         } label: {
             Text(currency.rawValue)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -419,7 +419,7 @@ struct ExportFiltersStepView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Text(nature.displayName)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -476,22 +476,22 @@ struct ExportFiltersStepView: View {
         } label: {
             HStack {
                 Image(systemName: "calendar")
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                     .frame(width: 24)
 
                 Text(L10n.Export.period)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
 
                 Text(periodDisplayText)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -504,7 +504,7 @@ struct ExportFiltersStepView: View {
     private var noteContent: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "note.text")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .frame(width: 24)
 
@@ -536,7 +536,7 @@ private struct ExportPeriodPickerSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         // Standard periods
                         ForEach(standardPeriods) { period in
                             periodRow(for: period)
@@ -584,7 +584,7 @@ private struct ExportPeriodPickerSheet: View {
         } label: {
             HStack {
                 Text(period.displayName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
@@ -592,7 +592,7 @@ private struct ExportPeriodPickerSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -607,14 +607,14 @@ private struct ExportPeriodPickerSheet: View {
             showCustomPicker = true
         } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Period.custom)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     if let range = customDateRange {
                         Text(formattedRange(range))
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -624,11 +624,11 @@ private struct ExportPeriodPickerSheet: View {
                 if selectedPeriod == .custom {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)

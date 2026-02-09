@@ -33,7 +33,7 @@ struct AccountSelectorSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: "") {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(
                                     Array(viewModel.activeAccounts.enumerated()),
                                     id: \.element.persistentModelID
@@ -100,11 +100,11 @@ struct AccountSelectorRow: View {
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(account.name)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Text(account.currencyCode)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -112,7 +112,7 @@ struct AccountSelectorRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }

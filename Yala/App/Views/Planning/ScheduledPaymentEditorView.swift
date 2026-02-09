@@ -177,7 +177,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var basicInfoSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.basic.info", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Transaction Type (Income/Expense)
                 if !sessionState.isExpensesOnlyMode {
                     Picker("", selection: $transactionType) {
@@ -211,7 +211,7 @@ struct ScheduledPaymentEditorView: View {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         if let account = selectedAccount {
                             Text(account.currencyCode)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
                         TextField("0.00", text: $amount)
@@ -244,7 +244,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var togglesSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.options", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Active Toggle
                 Toggle(isOn: $isActive) {
                     HStack(spacing: DS.Spacing.md) {
@@ -285,7 +285,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var classificationSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.classification", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Account selector
                 accountRow
 
@@ -371,7 +371,7 @@ struct ScheduledPaymentEditorView: View {
                 if let subcategory = selectedSubcategory {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: subcategory.iconName ?? "tag.fill")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(Color(hex: subcategory.colorHex ?? subcategory.safeCategory.colorHex))
                         Text(subcategory.name)
                             .foregroundStyle(.secondary)
@@ -415,11 +415,11 @@ struct ScheduledPaymentEditorView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: tag.iconName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(isSelected ? .white : Color(hex: tag.colorHex))
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -444,7 +444,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var recurrenceSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.recurrence", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // One-time vs Recurring toggle
                 Picker("", selection: $isRecurring) {
                     Text(NSLocalizedString("scheduled.recurrence.onetime", comment: "")).tag(false)
@@ -600,7 +600,7 @@ struct ScheduledPaymentEditorView: View {
             }
         } label: {
             Text(weekday.short)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -708,7 +708,7 @@ struct ScheduledPaymentEditorView: View {
     }
 
     private var endDateSection: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Toggle for end date
             Toggle(isOn: $hasEndDate) {
                 HStack(spacing: DS.Spacing.md) {
@@ -754,7 +754,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var notificationsSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.notifications", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Notify on due date
                 Toggle(isOn: $notifyOnDueDate) {
                     HStack(spacing: DS.Spacing.md) {
@@ -807,7 +807,7 @@ struct ScheduledPaymentEditorView: View {
             HStack {
                 Spacer()
                 Text(NSLocalizedString("scheduled.delete", comment: ""))
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                 Spacer()
             }
             .padding(.vertical, DS.Spacing.lg)

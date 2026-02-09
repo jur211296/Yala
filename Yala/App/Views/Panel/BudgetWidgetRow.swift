@@ -20,7 +20,7 @@ struct BudgetWidgetRow: View {
                     .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
                 Image(systemName: summary.icon)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
             }
 
@@ -28,35 +28,35 @@ struct BudgetWidgetRow: View {
                 // Name and Amount row
                 HStack {
                     Text(summary.budget.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     Spacer()
 
                     Text(formattedSpent)
-                        .font(.subheadline.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
                 }
 
                 // Status info
                 HStack(spacing: DS.Spacing.xs) {
                     Text(percentText)
-                        .font(.caption2.weight(.medium))
+                        .font(DS.Typography.labelTiny)
                         .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .secondary)
 
                     Text("•")
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary.opacity(0.5))
 
                     Text(daysText)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
 
                     Spacer()
 
                     Text(formattedLimit)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
 

@@ -34,7 +34,7 @@ struct BiometricLockOverlay: View {
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Text(L10n.Biometric.unlockPrompt)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaSecondaryText)
                     .multilineTextAlignment(.center)
 
@@ -46,9 +46,9 @@ struct BiometricLockOverlay: View {
                 } label: {
                     HStack(spacing: DS.Spacing.sm) {
                         Image(systemName: authService.biometricType.icon)
-                            .font(.body.weight(.medium))
+                            .font(DS.Typography.bodyBold)
                         Text(L10n.Biometric.unlock)
-                            .font(.body.weight(.semibold))
+                            .font(DS.Typography.headline)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)

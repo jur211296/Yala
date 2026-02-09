@@ -86,15 +86,15 @@ struct TagsSettingsListView: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "tag")
-                .font(.system(size: 48))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
 
             Text(L10n.Empty.noTags)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
 
             Text(L10n.Empty.tagsDescription)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
@@ -107,7 +107,7 @@ struct TagsSettingsListView: View {
     private var activeTagsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.active)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
@@ -152,7 +152,7 @@ struct TagsSettingsListView: View {
     private var inactiveTagsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.inactive)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
@@ -203,14 +203,14 @@ struct TagsSettingsListView: View {
                 )
 
             Text(tag.name)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Spacer()
 
             if !viewModel.isEditMode {
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
         }

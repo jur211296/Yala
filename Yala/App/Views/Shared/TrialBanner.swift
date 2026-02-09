@@ -44,16 +44,16 @@ struct TrialBanner: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: iconName)
-                .font(.title3)
+                .font(DS.Typography.title)
                 .foregroundStyle(iconColor)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Subscription.Trial.title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Text(daysText)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(Color.yalaSecondaryText)
             }
 
@@ -63,7 +63,7 @@ struct TrialBanner: View {
                 onUpgrade()
             } label: {
                 Text(L10n.Subscription.Trial.subscribe)
-                    .font(.caption.weight(.semibold))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.white)
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)

@@ -92,10 +92,10 @@ struct ScheduledPaymentsWidget: View {
 
     private var headerSection: some View {
         HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xxs) {
                     Text(L10n.WidgetType.scheduledPayments)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -107,7 +107,7 @@ struct ScheduledPaymentsWidget: View {
 
                 // Period label
                 Text(periodLabel)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -123,7 +123,7 @@ struct ScheduledPaymentsWidget: View {
                         onShowMore?()
                     } label: {
                         Image(systemName: "chevron.right")
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.gray.opacity(0.7))
                             .padding(.leading, 4)
                     }
@@ -141,7 +141,7 @@ struct ScheduledPaymentsWidget: View {
     }
 
     private var filterSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ScheduledPaymentsWidgetFilter.allCases) { filterOption in
                 filterButton(for: filterOption)
             }
@@ -160,7 +160,7 @@ struct ScheduledPaymentsWidget: View {
             }
         } label: {
             Image(systemName: filterOption.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
@@ -192,7 +192,7 @@ struct ScheduledPaymentsWidget: View {
 
             // Payment count
             Text(paymentCountLabel(activeCount))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -256,17 +256,17 @@ struct ScheduledPaymentsWidget: View {
     private var emptyListState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "calendar.badge.clock")
-                .font(.largeTitle)
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
                 .padding(.bottom, DS.Spacing.xs)
 
             Text(NSLocalizedString("scheduled.widget.empty.title", comment: ""))
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.primary)
 
             Text(NSLocalizedString("scheduled.widget.empty.message", comment: ""))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
@@ -283,19 +283,19 @@ struct ScheduledPaymentsWidget: View {
                     .frame(width: 36, height: 36)
 
                 Image(systemName: item.icon)
-                    .font(.caption.weight(.medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.white)
             }
 
             // Info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(item.payment.name)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(item.dueDateLabel)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(item.dueStatus == .past ? Color.hotPink : .secondary)
             }
 
@@ -303,7 +303,7 @@ struct ScheduledPaymentsWidget: View {
 
             // Amount
             Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
-                .font(.subheadline.weight(.semibold))
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
         }
     }
@@ -395,10 +395,10 @@ struct ScheduledPaymentsWidget: View {
         let startIndex = appFirstWeekday - 1
         let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
 
-        return HStack(spacing: 2) {
+        return HStack(spacing: DS.Spacing.xxs) {
             ForEach(Array(reorderedSymbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -432,7 +432,7 @@ struct ScheduledPaymentsWidget: View {
             cellData.append(day)
         }
 
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 2) {
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xxs), count: 7), spacing: DS.Spacing.xxs) {
             ForEach(Array(cellData.enumerated()), id: \.offset) { _, dayOrNil in
                 if let day = dayOrNil {
                     calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
@@ -457,7 +457,7 @@ struct ScheduledPaymentsWidget: View {
 
             // Payment names (show up to 2 with truncation)
             if hasPayments {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
                         Text(payment.name)
                             .font(DS.Typography.captionSmall).fontWeight(.medium)

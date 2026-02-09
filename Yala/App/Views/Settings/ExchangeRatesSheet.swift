@@ -34,7 +34,7 @@ struct ExchangeRatesSheet: View {
                     VStack(spacing: DS.Spacing.lg) {
                         ForEach(availableCurrencies, id: \.continent) { group in
                             SectionBox(title: group.continent.localizedName) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(group.currencies.enumerated()), id: \.element) {
                                         index, currency in
                                         if index > 0 {
@@ -59,7 +59,7 @@ struct ExchangeRatesSheet: View {
 
                             if let date = rateDate {
                                 Text("\(L10n.Common.lastUpdate) \(formatLastUpdated(date))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.top, DS.Spacing.sm)
@@ -92,14 +92,14 @@ struct ExchangeRatesSheet: View {
 
         HStack(spacing: DS.Spacing.md) {
             Text(info.flag)
-                .font(.title3)
+                .font(DS.Typography.title)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text("1 \(info.code)")
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                     .foregroundStyle(.primary)
                 Text(info.name.capitalized)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -111,7 +111,7 @@ struct ExchangeRatesSheet: View {
                     .foregroundStyle(.primary)
             } else {
                 Text("--")
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
             }
         }

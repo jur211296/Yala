@@ -362,7 +362,7 @@ struct CategoriesTabView: View {
     private var spendingAnalysisHeader: some View {
         HStack {
             Text(isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             InfoHintButton(
@@ -386,7 +386,7 @@ struct CategoriesTabView: View {
 
     /// Comparison mode selector (M/A toggle)
     private var comparisonModeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ComparisonMode.allCases) { mode in
                 comparisonSelectorButton(for: mode)
             }
@@ -489,7 +489,7 @@ struct CategoriesTabView: View {
     // MARK: - Category Chart Card
 
     private var categoryChartCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if categorySpending.isEmpty {
                 emptyState(
                     icon: "chart.pie",
@@ -531,7 +531,7 @@ struct CategoriesTabView: View {
     // MARK: - Subcategory Chart Card
 
     private var subcategoryChartCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if subcategorySpending.isEmpty {
                 emptyState(
                     icon: "chart.pie",
@@ -573,7 +573,7 @@ struct CategoriesTabView: View {
     // MARK: - Tag Chart Card
 
     private var tagChartCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if tagSpending.isEmpty {
                 emptyState(
                     icon: "tag",
@@ -756,14 +756,14 @@ struct CategoriesTabView: View {
     // MARK: - Categories List Section
 
     private var categoriesListSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Header with title and selector
             HStack(alignment: .center) {
                 Text(
                     listViewType == .categories
                         ? L10n.Statistics.topCategories : L10n.Statistics.topSubcategories
                 )
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
                 Spacer()
@@ -839,7 +839,7 @@ struct CategoriesTabView: View {
     }
 
     private var listViewSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ListViewType.allCases) { viewType in
                 listViewButton(for: viewType)
             }
@@ -863,7 +863,7 @@ struct CategoriesTabView: View {
             }
         } label: {
             Image(systemName: viewType.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
@@ -925,10 +925,10 @@ struct CategoriesTabView: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(title)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
             Text(subtitle)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
         }
@@ -1238,7 +1238,7 @@ struct CategoriesTabView: View {
     private var recentRecordsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             if viewModel.recentRecords.isEmpty {
@@ -1255,9 +1255,9 @@ struct CategoriesTabView: View {
                 HStack {
                     Spacer()
                     Text(L10n.Action.viewAll)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
@@ -1280,10 +1280,10 @@ struct CategoriesTabView: View {
     private var emptyRecordsState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
             Text(L10n.Statistics.noRecords)
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -1456,9 +1456,9 @@ private struct AllCategoriesListContent: View {
                         HStack {
                             Spacer()
                             Text(isExpanded ? L10n.Action.viewLess : L10n.Action.viewAll)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DS.Typography.headline)
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
@@ -1536,9 +1536,9 @@ private struct AllSubcategoriesListContent: View {
                         HStack {
                             Spacer()
                             Text(isExpanded ? L10n.Action.viewLess : L10n.Action.viewAll)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DS.Typography.headline)
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
@@ -1573,7 +1573,7 @@ private struct CategoryRowView: View {
                     .frame(width: 40, height: 40)
 
                 Image(systemName: summary.category.iconName ?? "tag.fill")
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
             }
 
@@ -1581,13 +1581,13 @@ private struct CategoryRowView: View {
                 // Name and Amount
                 HStack {
                     Text(summary.category.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     Spacer()
 
                     Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(.subheadline.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
 
@@ -1596,7 +1596,7 @@ private struct CategoryRowView: View {
                     // Percentage Text + Variation Chip (inline, chip aligned right)
                     HStack(spacing: DS.Spacing.sm) {
                         Text("\(formattedPercentage(summary.percentage)) \(L10n.Statistics.ofExpense)")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
 
                         Spacer()
@@ -1654,11 +1654,11 @@ private struct SubcategoryRowView: View {
 
                 if let subcategory = summary.subcategory {
                     Image(systemName: subcategory.iconName ?? "list.bullet.indent")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 } else {
                     Image(systemName: "list.bullet.indent")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 }
             }
@@ -1667,13 +1667,13 @@ private struct SubcategoryRowView: View {
                 // Name and Amount
                 HStack {
                     Text(summary.subcategoryName)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     Spacer()
 
                     Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(.subheadline.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
 
@@ -1682,7 +1682,7 @@ private struct SubcategoryRowView: View {
                     // Percentage Text + Variation Chip (inline, chip aligned right)
                     HStack(spacing: DS.Spacing.sm) {
                         Text("\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Statistics.ofExpense)")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
 
                         Spacer()

@@ -111,7 +111,7 @@ struct TopCategoriesWidget: View {
             // Left: Title and total amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -119,14 +119,14 @@ struct TopCategoriesWidget: View {
                 if showVariationHeader && size != .small && !categories.isEmpty {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         Text(YalaFormatter.currency(value: totalAmount, currencyCode: currencyCode))
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
 
                         if let prevAmount = previousTotalAmount {
                             Text("vs \(YalaFormatter.number(value: prevAmount))")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(Color.yalaSecondaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -151,7 +151,7 @@ struct TopCategoriesWidget: View {
 
                     if !comparisonText.isEmpty {
                         Text(comparisonText)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -165,7 +165,7 @@ struct TopCategoriesWidget: View {
                     onShowMore?()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
                         .padding(.leading, DS.Spacing.xs)
                 }
@@ -225,18 +225,18 @@ struct TopCategoriesWidget: View {
                             .frame(width: 48, height: 48)  // Slightly smaller for dense layout
 
                         Image(systemName: topCategory.category.iconName ?? "tag.fill")
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.white)
                     }
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(topCategory.category.name)
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
                         Text(formattedAmount(topCategory.amount))
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .minimumScaleFactor(0.8)
                             .lineLimit(1)
@@ -244,7 +244,7 @@ struct TopCategoriesWidget: View {
                         Text(
                             "\(formattedPercentage(topCategory.percentage)) \(L10n.Widget.ofTotal)"
                         )
-                        .font(.caption2.bold())
+                        .font(DS.Typography.labelTiny)
                         .foregroundStyle(Color(hex: topCategory.category.colorHex))
                         .padding(.horizontal, DS.Spacing.xs)
                         .padding(.vertical, DS.Spacing.xxs)
@@ -269,25 +269,25 @@ struct TopCategoriesWidget: View {
             if size == .small {
                 Spacer()  // Push down
                 Image(systemName: "folder.fill")
-                    .font(.largeTitle)
+                    .font(DS.Typography.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
                 Text(L10n.Empty.noExpenses)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                 Spacer()  // Push up
             } else {
                 Image(systemName: "folder.fill")
-                    .font(.largeTitle)
+                    .font(DS.Typography.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
                     .padding(.bottom, DS.Spacing.xs)
 
                 Text(L10n.Widget.noExpensesPeriod)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
                 Text(L10n.Widget.noExpensesDescriptionCategories)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }
@@ -323,7 +323,7 @@ private struct CategoryRow: View {
                     .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
                 Image(systemName: summary.category.iconName ?? "tag.fill")  // Use actual category icon
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
             }
 
@@ -331,13 +331,13 @@ private struct CategoryRow: View {
                 // Name and Amount
                 HStack {
                     Text(summary.category.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     Spacer()
 
                     Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(.subheadline.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
 
@@ -346,7 +346,7 @@ private struct CategoryRow: View {
                     // Percentage Text + Variation Chip (inline, chip aligned right)
                     HStack(spacing: DS.Spacing.sm) {
                         Text("\(formattedPercentage(summary.percentage)) \(L10n.Widget.ofExpense)")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
 
                         Spacer()

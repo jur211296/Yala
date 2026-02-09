@@ -63,7 +63,7 @@ struct SubcategoriesPieWidget: View {
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Guard against empty chartData (Charts framework crashes on empty array)
             if chartData.isEmpty {
                 emptyState
@@ -86,7 +86,7 @@ struct SubcategoriesPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Header (same as content)
             HStack {
                 Text(L10n.Widget.subcategories)
@@ -349,7 +349,7 @@ struct SubcategoriesPieWidget: View {
             headerView
 
             // 1. Subcategory Labels
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .top, spacing: DS.Spacing.none) {
                 if !selectedSubcategoryIDs.isEmpty,
                     let selectedItem = chartData.first(where: { guard let id = $0.persistentID else { return false }; return selectedSubcategoryIDs.contains(id) })
                 {
@@ -481,7 +481,7 @@ struct SubcategoriesPieWidget: View {
                         .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)

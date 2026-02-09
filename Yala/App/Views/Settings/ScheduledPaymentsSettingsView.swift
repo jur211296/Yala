@@ -19,7 +19,7 @@ struct ScheduledPaymentsSettingsView: View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Tab selector
                 Picker("Tab", selection: $viewModel.selectedTab) {
                     ForEach(ScheduledPaymentsTab.allCases) { tab in
@@ -117,21 +117,21 @@ struct ScheduledPaymentsSettingsView: View {
                         .frame(width: 44, height: 44)
 
                     Image(systemName: iconName)
-                        .font(.system(size: 18, weight: .medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(payment.isActive ? Color(hex: colorHex) : Color.gray)
                 }
 
                 // Info
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(payment.name)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(payment.isActive ? .primary : .secondary)
                         .lineLimit(1)
 
                     HStack(spacing: DS.Spacing.sm) {
                         // Amount
                         Text(formatAmount(payment.amount, currency: payment.currencyCode))
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 
                         // Recurrence info
@@ -139,7 +139,7 @@ struct ScheduledPaymentsSettingsView: View {
                             Text("•")
                                 .foregroundStyle(.tertiary)
                             Text(recurrenceDescription(payment))
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.tertiary)
                         }
                     }
@@ -150,7 +150,7 @@ struct ScheduledPaymentsSettingsView: View {
                 // Status badge
                 if !payment.isActive {
                     Text(NSLocalizedString("scheduled.inactive", comment: ""))
-                        .font(.caption2.weight(.medium))
+                        .font(DS.Typography.labelTiny)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.sm)
                         .padding(.vertical, DS.Spacing.xxs)

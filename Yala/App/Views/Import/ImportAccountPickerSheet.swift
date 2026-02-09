@@ -23,9 +23,9 @@ struct ImportAccountPickerSheet: View {
                 if accounts.isEmpty {
                     VStack(spacing: DS.Spacing.md) {
                         Text(L10n.Import.noAccountsAvailable)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                         Text(L10n.Import.createAccountBeforeImport)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     .padding()
@@ -33,7 +33,7 @@ struct ImportAccountPickerSheet: View {
                     ScrollView {
                         VStack(spacing: DS.Spacing.xxl) {
                             SectionBox(title: "") {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -94,9 +94,9 @@ struct ImportAccountPickerSheet: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(account.name)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                 Text(info.name.capitalized)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 

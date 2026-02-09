@@ -299,7 +299,7 @@ struct ImportIntroSheet: View {
                     Spacer()
 
                     Image(systemName: "arrow.down.circle")
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.brandPrimary)
                 }
                 .padding(.horizontal, DS.Spacing.lg)

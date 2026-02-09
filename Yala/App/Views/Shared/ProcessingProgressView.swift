@@ -33,7 +33,7 @@ struct ProcessingProgressView: View {
             // Status text
             VStack(spacing: DS.Spacing.sm) {
                 Text(statusText)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 progressIndicator
@@ -137,11 +137,11 @@ struct ProcessingProgressView: View {
 
                 // Counter text
                 Text("\(current)/\(total)")
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             } else {
                 Text(L10n.Image.processingSubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
         }
@@ -152,7 +152,7 @@ struct ProcessingProgressView: View {
     private func steppedProgress(currentStep: Int, steps: [String]) -> some View {
         VStack(spacing: DS.Spacing.md) {
             // Step circles with connecting lines
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                     if index > 0 {
                         // Connecting line
@@ -172,7 +172,7 @@ struct ProcessingProgressView: View {
                         if index < currentStep {
                             // Completed checkmark
                             Image(systemName: "checkmark")
-                                .font(.caption.weight(.bold))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.white)
                         } else if index == currentStep {
                             // Current step: pulsing dot
@@ -182,7 +182,7 @@ struct ProcessingProgressView: View {
                         } else {
                             // Future step: number
                             Text("\(index + 1)")
-                                .font(.caption2.weight(.medium))
+                                .font(DS.Typography.labelTiny)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -193,7 +193,7 @@ struct ProcessingProgressView: View {
             // Current step label
             if currentStep < steps.count {
                 Text(steps[currentStep])
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .contentTransition(.opacity)
                     .dsAnimation(.easeInOut(duration: 0.2), value: currentStep, reduceMotion: reduceMotion)

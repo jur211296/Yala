@@ -61,7 +61,7 @@ struct RecentRecordsWidget: View {
     private var headerSection: some View {
         HStack(alignment: .top) {
             Text(L10n.Records.latest)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
@@ -78,7 +78,7 @@ struct RecentRecordsWidget: View {
                     onShowMore?()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
                         .padding(.leading, DS.Spacing.xs)
                 }
@@ -110,13 +110,13 @@ struct RecentRecordsWidget: View {
                 // Line 1: Note (bold) or Subcategory as fallback
                 if let note = record.note, !note.isEmpty {
                     Text(note)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     // Line 2: Subcategory • Account
                     Text(secondaryLine(for: record))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 } else {
@@ -124,13 +124,13 @@ struct RecentRecordsWidget: View {
                         record.subcategory?.name ?? record.category?.name
                             ?? L10n.Common.uncategorized
                     )
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                     // Date as secondary
                     Text(shortDateFormat(record.date))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -141,7 +141,7 @@ struct RecentRecordsWidget: View {
             // Right Column: Amount + Nature (matches CompactRecordRow and RecordRowView)
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                 Text(formattedAmount(record.amount, currencyCode: record.currencyCode))
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(amountColor(for: record))
 
                 // Nature indicator (if available)
@@ -161,7 +161,7 @@ struct RecentRecordsWidget: View {
                 .frame(width: 6, height: 6)
 
             Text(nature.displayName)
-                .font(.caption2.weight(.medium))
+                .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, DS.Spacing.xs)
@@ -236,17 +236,17 @@ struct RecentRecordsWidget: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "list.bullet.rectangle")
-                .font(.largeTitle)
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
                 .padding(.bottom, DS.Spacing.xs)
 
             Text(L10n.Widget.noRecordsForFilters)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.primary)
 
             Text(L10n.Widget.recordsWillAppear)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }

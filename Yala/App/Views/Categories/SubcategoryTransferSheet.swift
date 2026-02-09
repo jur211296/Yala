@@ -85,18 +85,18 @@ struct SubcategoryTransferSheet: View {
                     .frame(width: 70, height: 70)
 
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 32))
+                    .font(DS.Typography.amountLarge)
                     .foregroundStyle(.orange)
             }
 
             // Mensaje
             VStack(spacing: DS.Spacing.sm) {
                 Text(L10n.Subcategory.transferHeader)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Subcategory.transferDescription(transactionCount, subcategoryToDelete.name))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -156,17 +156,17 @@ struct SubcategoryTransferSheet: View {
                             .frame(width: 44, height: 44)
 
                         Image(systemName: icon)
-                            .font(.title3)
+                            .font(DS.Typography.title)
                             .foregroundStyle(color)
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(title)
-                            .font(.body.weight(.medium))
+                            .font(DS.Typography.bodyBold)
                             .foregroundStyle(.primary)
 
                         Text(description)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                     }
@@ -174,7 +174,7 @@ struct SubcategoryTransferSheet: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.footnote)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
                 .padding()
@@ -194,7 +194,7 @@ struct SubcategoryTransferSheet: View {
                     VStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.availableDestinations(excluding: subcategoryToDelete), id: \.category.persistentModelID) { group in
                             SectionBox(title: group.category.name) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(
                                         Array(group.subcategories.enumerated()),
                                         id: \.element.persistentModelID
@@ -215,7 +215,7 @@ struct SubcategoryTransferSheet: View {
                                                             systemName: subcategory.iconName
                                                                 ?? "tag.fill"
                                                         )
-                                                        .font(.subheadline)
+                                                        .font(DS.Typography.subheadline)
                                                         .foregroundStyle(.white)
                                                     )
 

@@ -64,7 +64,7 @@ struct CategoriesPieWidget: View {
     // We'll calculate exact pixels in GeometryReader
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Guard against empty chartData (Charts framework crashes on empty array)
             if chartData.isEmpty {
                 emptyState
@@ -87,7 +87,7 @@ struct CategoriesPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Header (same as content)
             HStack {
                 Text(L10n.Widget.categories)
@@ -353,7 +353,7 @@ struct CategoriesPieWidget: View {
             headerView
 
             // 1. Category Labels
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .top, spacing: DS.Spacing.none) {
                 if !selectedCategoryIDs.isEmpty,
                     let selectedItem = chartData.first(where: { guard let id = $0.id else { return false }; return selectedCategoryIDs.contains(id) })
                 {
@@ -484,7 +484,7 @@ struct CategoriesPieWidget: View {
                         .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)

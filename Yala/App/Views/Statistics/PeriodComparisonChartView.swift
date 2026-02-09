@@ -149,7 +149,7 @@ struct PeriodComparisonChartView: View {
                                 .fill(trendType.color)
                                 .frame(width: 6, height: 6)
                             Text("\(periodLabel(for: selectedCurrentPoint.date)): \(formattedAmount(selectedCurrentPoint.value))")
-                                .font(.caption.bold())
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.yalaPrimaryText)
                         }
 
@@ -161,7 +161,7 @@ struct PeriodComparisonChartView: View {
                                     .fill(Color.yalaSecondaryText.opacity(0.5))
                                     .frame(width: 6, height: 6)
                                 Text("\(periodLabel(for: originalPrevDate)): \(formattedAmount(previousPoint.value))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                             }
                         }
@@ -191,7 +191,7 @@ struct PeriodComparisonChartView: View {
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -205,7 +205,7 @@ struct PeriodComparisonChartView: View {
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatCurrencyShort(value: doubleValue))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -221,7 +221,7 @@ struct PeriodComparisonChartView: View {
                         .fill(trendType.color)
                         .frame(width: 20, height: 3)
                     Text(L10n.Statistics.currentPeriod)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 
@@ -232,7 +232,7 @@ struct PeriodComparisonChartView: View {
                             .fill(Color.yalaSecondaryText.opacity(0.5))
                             .frame(width: 20, height: 3)
                         Text(L10n.Statistics.previousPeriod)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }

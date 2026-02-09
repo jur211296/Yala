@@ -26,10 +26,10 @@ struct TransactionAmountInputView: View {
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(currencyCode)
-                        .font(.headline.weight(.semibold))
+                        .font(DS.Typography.headline)
 
                     Image(systemName: "chevron.down")
-                        .font(.caption.weight(.medium))
+                        .font(DS.Typography.labelSmall)
                 }
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 14)
@@ -39,7 +39,7 @@ struct TransactionAmountInputView: View {
             .buttonStyle(.plain)
 
             // Amount display
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(transactionType == .expense ? "-" : "+")
                     .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                     .foregroundStyle(transactionType.color)

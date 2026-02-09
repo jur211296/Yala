@@ -76,7 +76,7 @@ struct PersonalizationSettingsView: View {
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         Text(L10n.Settings.personalizationDescription)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .multilineTextAlignment(.center)
                     }
@@ -89,7 +89,7 @@ struct PersonalizationSettingsView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                             HStack {
                                 Text(L10n.Settings.expensesOnlyMode)
-                                    .font(.body)
+                                    .font(DS.Typography.body)
                                     .foregroundStyle(Color.yalaPrimaryText)
 
                                 Spacer()
@@ -111,7 +111,7 @@ struct PersonalizationSettingsView: View {
                             )
 
                             Text(L10n.Settings.expensesOnlyModeDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -129,13 +129,13 @@ struct PersonalizationSettingsView: View {
                                 } label: {
                                     HStack {
                                         Text(L10n.Settings.appLanguage)
-                                            .font(.body)
+                                            .font(DS.Typography.body)
                                             .foregroundStyle(Color.yalaPrimaryText)
 
                                         Spacer()
 
                                         Text(currentLanguageDisplayName)
-                                            .font(.body)
+                                            .font(DS.Typography.body)
                                             .foregroundStyle(.secondary)
 
                                         Image(systemName: "chevron.right")
@@ -154,7 +154,7 @@ struct PersonalizationSettingsView: View {
                                 .buttonStyle(.plain)
 
                                 Text(L10n.Settings.appLanguageRestart)
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, DS.Spacing.xxs)
                             }
@@ -167,7 +167,7 @@ struct PersonalizationSettingsView: View {
                             } label: {
                                 HStack {
                                     Text(L10n.Settings.tabBarConfig)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(Color.yalaPrimaryText)
 
                                     Spacer()
@@ -188,7 +188,7 @@ struct PersonalizationSettingsView: View {
                             .buttonStyle(.plain)
 
                             Text(L10n.Settings.tabBarConfigInfo)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -197,7 +197,7 @@ struct PersonalizationSettingsView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                             HStack {
                                 Text(L10n.Settings.colorfulIcons)
-                                    .font(.body)
+                                    .font(DS.Typography.body)
                                     .foregroundStyle(Color.yalaPrimaryText)
 
                                 Spacer()
@@ -216,7 +216,7 @@ struct PersonalizationSettingsView: View {
                             )
 
                             Text(L10n.Settings.colorfulIconsDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -233,13 +233,13 @@ struct PersonalizationSettingsView: View {
                             } label: {
                                 HStack {
                                     Text(L10n.Settings.defaultPeriod)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(Color.yalaPrimaryText)
 
                                     Spacer()
 
                                     Text(selectedPeriod.displayName)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
@@ -258,7 +258,7 @@ struct PersonalizationSettingsView: View {
                             .buttonStyle(.plain)
 
                             Text(L10n.Settings.defaultPeriodDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -270,13 +270,13 @@ struct PersonalizationSettingsView: View {
                             } label: {
                                 HStack {
                                     Text(L10n.Settings.firstWeekday)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(Color.yalaPrimaryText)
 
                                     Spacer()
 
                                     Text(selectedWeekday.displayName)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
@@ -295,7 +295,7 @@ struct PersonalizationSettingsView: View {
                             .buttonStyle(.plain)
 
                             Text(L10n.Settings.firstWeekdayDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -309,7 +309,7 @@ struct PersonalizationSettingsView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                             HStack {
                                 Text(L10n.Settings.widgetHints)
-                                    .font(.body)
+                                    .font(DS.Typography.body)
                                     .foregroundStyle(Color.yalaPrimaryText)
 
                                 Spacer()
@@ -328,7 +328,7 @@ struct PersonalizationSettingsView: View {
                             )
 
                             Text(L10n.Settings.widgetHintsDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -337,7 +337,7 @@ struct PersonalizationSettingsView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                             HStack {
                                 Text(L10n.Settings.showVariations)
-                                    .font(.body)
+                                    .font(DS.Typography.body)
                                     .foregroundStyle(Color.yalaPrimaryText)
 
                                 Spacer()
@@ -356,7 +356,7 @@ struct PersonalizationSettingsView: View {
                             )
 
                             Text(L10n.Settings.showVariationsDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -373,13 +373,13 @@ struct PersonalizationSettingsView: View {
                             } label: {
                                 HStack {
                                     Text(L10n.Settings.decimalPlaces)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(Color.yalaPrimaryText)
 
                                     Spacer()
 
                                     Text(decimalPlacesDisplayName)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
@@ -398,7 +398,7 @@ struct PersonalizationSettingsView: View {
                             .buttonStyle(.plain)
 
                             Text(L10n.Settings.decimalPlacesDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -410,13 +410,13 @@ struct PersonalizationSettingsView: View {
                             } label: {
                                 HStack {
                                     Text(L10n.Settings.currencyFormat)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(Color.yalaPrimaryText)
 
                                     Spacer()
 
                                     Text(currencyFormatDisplayName)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
                                     Image(systemName: "chevron.right")
@@ -435,7 +435,7 @@ struct PersonalizationSettingsView: View {
                             .buttonStyle(.plain)
 
                             Text(L10n.Settings.currencyFormatDescription)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
@@ -569,7 +569,7 @@ private struct PeriodPickerSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         ForEach(availablePeriods) { period in
                             periodRow(for: period)
                         }
@@ -604,7 +604,7 @@ private struct PeriodPickerSheet: View {
         } label: {
             HStack {
                 Text(period.displayName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
@@ -612,7 +612,7 @@ private struct PeriodPickerSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -642,7 +642,7 @@ private struct WeekdayPickerSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         ForEach(FirstWeekday.allCases) { weekday in
                             weekdayRow(for: weekday)
                         }
@@ -677,7 +677,7 @@ private struct WeekdayPickerSheet: View {
         } label: {
             HStack {
                 Text(weekday.displayName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
@@ -685,7 +685,7 @@ private struct WeekdayPickerSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -721,7 +721,7 @@ private struct DecimalsPickerSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         ForEach(options, id: \.value) { option in
                             decimalsRow(for: option)
                         }
@@ -757,11 +757,11 @@ private struct DecimalsPickerSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Text(option.example)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -770,7 +770,7 @@ private struct DecimalsPickerSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -805,7 +805,7 @@ private struct CurrencyFormatPickerSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         ForEach(options, id: \.value) { option in
                             formatRow(for: option)
                         }
@@ -841,11 +841,11 @@ private struct CurrencyFormatPickerSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Text(option.example)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -854,7 +854,7 @@ private struct CurrencyFormatPickerSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -884,7 +884,7 @@ private struct LanguagePickerSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         ForEach(LanguageManager.supportedLanguages, id: \.code) { lang in
                             languageRow(lang: lang)
                         }
@@ -911,16 +911,16 @@ private struct LanguagePickerSheet: View {
     private func languageRow(lang: (code: String, nativeName: String, flag: String)) -> some View {
         let isSelected = selectedLanguage == lang.code
 
-        return VStack(spacing: 0) {
+        return VStack(spacing: DS.Spacing.none) {
             Button {
                 onSelect(lang.code)
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Text(lang.flag)
-                        .font(.title2)
+                        .font(DS.Typography.title)
 
                     Text(lang.nativeName)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Spacer()
@@ -928,7 +928,7 @@ private struct LanguagePickerSheet: View {
                     if isSelected {
                         Image(systemName: "checkmark")
                             .foregroundStyle(Color.brandPrimary)
-                            .font(.body.weight(.semibold))
+                            .font(DS.Typography.headline)
                     }
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)

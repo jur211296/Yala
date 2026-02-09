@@ -61,7 +61,7 @@ struct RecordsFiltersView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 accountsContent
                                 // Transaction natures (Income/Expense) - hidden in expenses-only mode
                                 if !sessionState.isExpensesOnlyMode {
@@ -90,7 +90,7 @@ struct RecordsFiltersView: View {
                             }
                         } label: {
                             Text(L10n.Filters.clearFilters)
-                                .font(.body.weight(.semibold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(Color.electricIndigo)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, DS.FormRow.paddingV)
@@ -155,7 +155,7 @@ struct RecordsFiltersView: View {
             }
         } label: {
             Text(account.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -183,7 +183,7 @@ struct RecordsFiltersView: View {
         Button {
             showCategoriesSheet = true
         } label: {
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 FilterSectionHeader(
                     icon: "tag",
                     title: L10n.Filters.categories,
@@ -193,7 +193,7 @@ struct RecordsFiltersView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -246,7 +246,7 @@ struct RecordsFiltersView: View {
                     .frame(width: 8, height: 8)
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -305,7 +305,7 @@ struct RecordsFiltersView: View {
             }
         } label: {
             Text(nature.displayName)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -363,7 +363,7 @@ struct RecordsFiltersView: View {
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Text(nature.displayName)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -423,7 +423,7 @@ struct RecordsFiltersView: View {
             }
         } label: {
             Text(currency.rawValue)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -463,7 +463,7 @@ struct RecordsFiltersView: View {
     private var noteContent: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "note.text")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .frame(width: DS.FormRow.iconWidth)
 
@@ -483,7 +483,7 @@ struct RecordsFiltersView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: "") {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(Array(filtersViewModel.activeAccounts.enumerated()), id: \.element.id) { index, account in
                                     if index > 0 {
                                         SubsectionDivider()
@@ -498,13 +498,13 @@ struct RecordsFiltersView: View {
                                     } label: {
                                         HStack {
                                             Text(account.name)
-                                                .font(.body)
+                                                .font(DS.Typography.body)
                                                 .foregroundStyle(.primary)
                                             Spacer()
                                             if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
                                                 Image(systemName: "checkmark")
                                                     .foregroundStyle(Color.brandPrimary)
-                                                    .font(.body.weight(.semibold))
+                                                    .font(DS.Typography.headline)
                                             }
                                         }
                                         .padding(.horizontal, DS.FormRow.paddingH)
@@ -560,7 +560,7 @@ struct RecordsFiltersView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: "") {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(Array(filtersViewModel.activeTags.enumerated()), id: \.element.id) { index, tag in
                                     if index > 0 {
                                         SubsectionDivider()
@@ -579,7 +579,7 @@ struct RecordsFiltersView: View {
                                                 .frame(width: 10, height: 10)
 
                                             Text(tag.name)
-                                                .font(.body)
+                                                .font(DS.Typography.body)
                                                 .foregroundStyle(.primary)
 
                                             Spacer()
@@ -587,7 +587,7 @@ struct RecordsFiltersView: View {
                                             if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
                                                 Image(systemName: "checkmark")
                                                     .foregroundStyle(Color.brandPrimary)
-                                                    .font(.body.weight(.semibold))
+                                                    .font(DS.Typography.headline)
                                             }
                                         }
                                         .padding(.horizontal, DS.FormRow.paddingH)

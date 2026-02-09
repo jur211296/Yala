@@ -247,7 +247,7 @@ struct InboxDraftEditSheet: View {
                 .ignoresSafeArea()
                 .dismissKeyboardOnTap()
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Transaction type selector (full width, at top)
                 if !sessionState.isExpensesOnlyMode {
                     transactionTypeSelector
@@ -269,7 +269,7 @@ struct InboxDraftEditSheet: View {
     // MARK: - Transaction Type Selector
 
     private var transactionTypeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             // Expense button
             Button {
                 dsWithAnimation(reduceMotion) {
@@ -392,7 +392,7 @@ struct InboxDraftEditSheet: View {
                     Image(systemName: "calendar")
                         .font(DS.Typography.label)
                     Text(dateChipText)
-                        .font(.callout.weight(.medium))
+                        .font(DS.Typography.label)
                 }
                 .foregroundStyle(.primary)
                 .padding(.horizontal, DS.Spacing.lg)
@@ -406,7 +406,7 @@ struct InboxDraftEditSheet: View {
 
             // Note field
             TextField(L10n.Transaction.description, text: $note)
-                .font(.title2.weight(.semibold))
+                .font(DS.Typography.title)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .textContentType(.none)
@@ -426,9 +426,9 @@ struct InboxDraftEditSheet: View {
                     let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
-                            .font(.caption2.weight(.medium))
+                            .font(DS.Typography.labelTiny)
                         Text(category.name)
-                            .font(.caption2.weight(.medium))
+                            .font(DS.Typography.labelTiny)
                     }
                     .foregroundStyle(categoryColor)
                     .padding(.horizontal, 10)
@@ -500,12 +500,12 @@ struct InboxDraftEditSheet: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: draft.sourceIcon)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                     Text(sourceTypeName)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                     if draft.rawText != nil {
                         Image(systemName: showRawText ? "chevron.up" : "chevron.down")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                     }
                 }
                 .foregroundStyle(.tertiary)
@@ -521,7 +521,7 @@ struct InboxDraftEditSheet: View {
             // Expandable rawText
             if showRawText, let rawText = draft.rawText, !rawText.isEmpty {
                 Text(rawText)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.lg)
@@ -610,7 +610,7 @@ struct InboxDraftEditSheet: View {
                     Image(systemName: tag.iconName)
                         .font(DS.Typography.labelSmall)
                     Text(tag.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .lineLimit(1)
 
                     // Show "New" badge for newly created tags
@@ -660,7 +660,7 @@ struct InboxDraftEditSheet: View {
             // Validation message when not ready
             if let missingText = missingFieldsText {
                 Text(missingText)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.red)
             }
 
@@ -672,7 +672,7 @@ struct InboxDraftEditSheet: View {
                         dismiss()
                     } label: {
                         Text(L10n.Inbox.saveLater)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.electricIndigo)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, DS.Spacing.lg)
@@ -689,7 +689,7 @@ struct InboxDraftEditSheet: View {
                     approveDraft()
                 } label: {
                     Text(L10n.Inbox.approve)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.lg)

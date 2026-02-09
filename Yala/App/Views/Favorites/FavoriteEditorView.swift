@@ -65,7 +65,7 @@ struct FavoriteEditorView: View {
                     .ignoresSafeArea()
                     .dismissKeyboardOnTap()
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Transaction type selector (without transfer)
                     transactionTypeSelector
                         .padding(.top, DS.Spacing.sm)
@@ -187,7 +187,7 @@ struct FavoriteEditorView: View {
     }
 
     private var transactionTypeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(availableTransactionTypes, id: \.self) { type in
                 Button {
                     dsWithAnimation(reduceMotion) {
@@ -196,7 +196,7 @@ struct FavoriteEditorView: View {
                     }
                 } label: {
                     Text(type == .expense ? L10n.Transaction.expense : L10n.Transaction.income)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(transactionType == type ? .white : .secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -224,7 +224,7 @@ struct FavoriteEditorView: View {
         VStack(spacing: DS.Spacing.xxl) {
             // Name field
             TextField(L10n.Favorites.namePlaceholder, text: $name)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .focused($isNameFieldFocused)
@@ -233,7 +233,7 @@ struct FavoriteEditorView: View {
 
             // Description field
             TextField(L10n.Favorites.descriptionPlaceholder, text: $note)
-                .font(.title2.weight(.semibold))
+                .font(DS.Typography.title)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 280)
@@ -301,7 +301,7 @@ struct FavoriteEditorView: View {
 
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: 10) { // DS: intentional non-token value
                 // Account chip
                 SelectionChip(
                     icon: "creditcard",

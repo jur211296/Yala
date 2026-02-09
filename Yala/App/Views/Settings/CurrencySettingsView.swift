@@ -102,11 +102,11 @@ struct CurrencySettingsView: View {
                         .frame(width: 200)
 
                     Text(L10n.Common.updatingRecords)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.white)
 
                     Text(L10n.Common.recalculatingConversions)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.white.opacity(0.8))
                 }
                 .padding(DS.Spacing.xxl)
@@ -153,21 +153,21 @@ struct CurrencySettingsView: View {
                 let info = currencyInfo(for: preferredCurrency)
                 HStack(spacing: DS.Spacing.md) {
                     Text(info.flag)
-                        .font(.title3)
+                        .font(DS.Typography.title)
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(info.name.capitalized)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(.primary)
                         Text(info.code)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -191,7 +191,7 @@ struct CurrencySettingsView: View {
                         // Show selected currencies or "None"
                         if secondaryCurrencies.isEmpty {
                             Text(L10n.Common.none)
-                                .font(.body)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(.secondary)
                         } else {
                             let sorted = secondaryCurrencies.sorted {
@@ -202,9 +202,9 @@ struct CurrencySettingsView: View {
                                     let info = currencyInfo(for: currency)
                                     HStack(spacing: DS.Spacing.xxs) {
                                         Text(info.flag)
-                                            .font(.title3)
+                                            .font(DS.Typography.title)
                                         Text(info.code)
-                                            .font(.body)
+                                            .font(DS.Typography.body)
                                             .foregroundStyle(.primary)
                                     }
                                 }
@@ -214,7 +214,7 @@ struct CurrencySettingsView: View {
                         Spacer()
 
                         Image(systemName: "chevron.right")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, DS.FormRow.paddingH)
@@ -226,7 +226,7 @@ struct CurrencySettingsView: View {
 
             // Hint text
             Text(L10n.Settings.secondaryCurrenciesHint)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -237,7 +237,7 @@ struct CurrencySettingsView: View {
     private var exchangeRatesSection: some View {
         VStack(spacing: DS.Spacing.sm) {
             SectionBox(title: L10n.Settings.exchangeRate) {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Show secondary currencies inline (or first 2 if none selected)
                     let displayCurrencies: [CurrencyCode] = {
                         if secondaryCurrencies.isEmpty {
@@ -263,11 +263,11 @@ struct CurrencySettingsView: View {
                     } label: {
                         HStack {
                             Text(L10n.Common.seeAll)
-                                .font(.body)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(Color.electricIndigo)
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.horizontal, DS.FormRow.paddingH)
@@ -291,7 +291,7 @@ struct CurrencySettingsView: View {
 
                 if let date = rateDate {
                     Text("\(L10n.Common.lastUpdate) \(formatLastUpdated(date))")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
@@ -307,14 +307,14 @@ struct CurrencySettingsView: View {
 
         HStack(spacing: DS.Spacing.md) {
             Text(info.flag)
-                .font(.title3)
+                .font(DS.Typography.title)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text("1 \(info.code)")
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                     .foregroundStyle(.primary)
                 Text(info.name.capitalized)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -326,7 +326,7 @@ struct CurrencySettingsView: View {
                     .foregroundStyle(.primary)
             } else {
                 Text("--")
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
             }
         }

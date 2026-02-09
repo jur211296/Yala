@@ -21,7 +21,7 @@ struct BudgetPeriodSelectorSheet: View {
     @State private var lastScrollTime: Date = Date()
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Header with icon and title
             VStack(spacing: DS.Spacing.lg) {
                 // Icon
@@ -39,7 +39,7 @@ struct BudgetPeriodSelectorSheet: View {
 
                 // Title
                 Text(periodSelectorTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
             }
             .padding(.bottom, 20)
@@ -56,7 +56,7 @@ struct BudgetPeriodSelectorSheet: View {
                 // Scrollable picker
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
-                        LazyVStack(spacing: 0) {
+                        LazyVStack(spacing: DS.Spacing.none) {
                             // Top spacer
                             Color.clear.frame(height: 95)
 
@@ -159,7 +159,7 @@ struct BudgetPeriodSelectorSheet: View {
                 confirmSelection()
             } label: {
                 Text(NSLocalizedString("budgets.period.confirm", comment: ""))
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)

@@ -79,15 +79,15 @@ struct CategoriesSettingsListView: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "folder.fill")
-                .font(.system(size: 48))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
 
             Text(L10n.Empty.noCategories)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
 
             Text(L10n.Empty.categoriesDescription)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xxxl)
@@ -101,28 +101,28 @@ struct CategoriesSettingsListView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text(L10n.Common.active)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.primary.opacity(0.6))
                 Spacer()
                 Button {
                     viewModel.isEditing.toggle()
                 } label: {
                     Text(viewModel.isEditing ? L10n.Action.done : L10n.Action.edit)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
             .padding(.horizontal, 6)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(viewModel.activeCategories.enumerated()), id: \.element.id) { index, category in
-                    HStack(spacing: 0) {
+                    HStack(spacing: DS.Spacing.none) {
                         if viewModel.isEditing {
                             Button {
                                 viewModel.handleCategoryDelete(category)
                             } label: {
                                 Image(systemName: "minus.circle.fill")
-                                    .font(.title2)
+                                    .font(DS.Typography.title)
                                     .foregroundStyle(.red)
                             }
                             .accessibilityLabel("Eliminar categoría")
@@ -170,19 +170,19 @@ struct CategoriesSettingsListView: View {
     private var hiddenCategoriesSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.hidden)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(viewModel.hiddenCategories.enumerated()), id: \.element.id) { index, category in
-                    HStack(spacing: 0) {
+                    HStack(spacing: DS.Spacing.none) {
                         if viewModel.isEditing {
                             Button {
                                 viewModel.handleCategoryDelete(category)
                             } label: {
                                 Image(systemName: "minus.circle.fill")
-                                    .font(.title2)
+                                    .font(DS.Typography.title)
                                     .foregroundStyle(.red)
                             }
                             .accessibilityLabel("Eliminar subcategoría")
@@ -238,17 +238,17 @@ struct CategoriesSettingsListView: View {
                 .frame(width: 36, height: 36)
                 .overlay(
                     Image(systemName: category.iconName ?? "tag")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 )
 
             Text(category.name)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             if isDimmed {
                 Text(L10n.Settings.categoryHidden)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)

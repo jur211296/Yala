@@ -71,7 +71,7 @@ struct SecondaryCurrencyPickerSheet: View {
                         // All currencies by continent
                         ForEach(availableCurrencies, id: \.continent) { group in
                             SectionBox(title: group.continent.localizedName) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(group.currencies.enumerated()), id: \.element) {
                                         index, currency in
                                         if index > 0 {
@@ -103,7 +103,7 @@ struct SecondaryCurrencyPickerSheet: View {
 
     private var selectedSection: some View {
         SectionBox(title: L10n.Common.selected.capitalized) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 let sortedSelected = selectedCurrencies.sorted { $0.localizedName < $1.localizedName }
                 ForEach(Array(sortedSelected.enumerated()), id: \.element) { index, currency in
                     if index > 0 {
@@ -120,12 +120,12 @@ struct SecondaryCurrencyPickerSheet: View {
     private var recommendedSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.recommendedCurrencies)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(recommendedCurrencies.enumerated()), id: \.element) { index, currency in
                     if index > 0 { SubsectionDivider() }
                     currencyRow(currency: currency)
@@ -153,21 +153,21 @@ struct SecondaryCurrencyPickerSheet: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Text(info.flag)
-                    .font(.title3)
+                    .font(DS.Typography.title)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(info.name.capitalized)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
                     Text(info.code)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemName: isSelected ? "star.fill" : "star")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)

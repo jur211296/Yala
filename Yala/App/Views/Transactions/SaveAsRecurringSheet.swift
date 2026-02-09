@@ -187,7 +187,7 @@ struct SaveAsRecurringSheet: View {
             }
 
             Text(L10n.Scheduled.saveDescription)
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -196,7 +196,7 @@ struct SaveAsRecurringSheet: View {
 
     private var fieldsSection: some View {
         SectionBox(title: L10n.Common.details) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Amount (required - editable)
                 amountRow
 
@@ -389,7 +389,7 @@ struct SaveAsRecurringSheet: View {
                             )
                         } else {
                             SectionBox(title: "") {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -407,19 +407,19 @@ struct SaveAsRecurringSheet: View {
                                                     .frame(width: 28, height: 28)
                                                     .overlay(
                                                         Image(systemName: tag.iconName)
-                                                            .font(.system(size: 12, weight: .semibold))
+                                                            .font(DS.Typography.labelSmall)
                                                             .foregroundStyle(.white)
                                                     )
 
                                                 Text(tag.name)
-                                                    .font(.body)
+                                                    .font(DS.Typography.body)
                                                     .foregroundStyle(.primary)
 
                                                 Spacer()
 
                                                 if selectedTags.contains(tag.persistentModelID) {
                                                     Image(systemName: "checkmark")
-                                                        .font(.body.weight(.semibold))
+                                                        .font(DS.Typography.headline)
                                                         .foregroundStyle(Color.electricIndigo)
                                                 }
                                             }
@@ -482,7 +482,7 @@ struct SaveAsRecurringSheet: View {
 
     private var recurrenceSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.recurrence", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 Picker("", selection: $isRecurring) {
                     Text(NSLocalizedString("scheduled.recurrence.onetime", comment: "")).tag(false)
                     Text(NSLocalizedString("scheduled.recurrence.recurring", comment: "")).tag(true)
@@ -615,7 +615,7 @@ struct SaveAsRecurringSheet: View {
             }
         } label: {
             Text(weekday.short)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -707,7 +707,7 @@ struct SaveAsRecurringSheet: View {
     }
 
     private var endDateSection: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             Toggle(isOn: $hasEndDate) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar.badge.minus")

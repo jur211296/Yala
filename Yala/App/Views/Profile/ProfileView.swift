@@ -129,7 +129,7 @@ struct ProfileView: View {
 
                         // Version info
                         Text(L10n.Settings.versionInfo)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.tertiary)
                             .padding(.top, DS.Spacing.sm)
                     }
@@ -311,7 +311,7 @@ struct ProfileView: View {
 
             // Name
             Text(userName)
-                .font(.title2.weight(.bold))
+                .font(DS.Typography.title)
                 .foregroundStyle(.primary)
 
             // Pro badge with cyan spark (only here, so it stands out)
@@ -322,7 +322,7 @@ struct ProfileView: View {
             Button(L10n.Profile.edit) {
                 activeSheet = .personalDetails
             }
-            .font(.subheadline.weight(.medium))
+            .font(DS.Typography.label)
             .foregroundStyle(Color.electricIndigo)
 
             // Trial banner
@@ -371,7 +371,7 @@ struct ProfileView: View {
                 .frame(width: 12, height: 12)
 
             Text("PRO")
-                .font(.caption.weight(.bold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.white)
         }
         .padding(.horizontal, DS.Spacing.sm)
@@ -390,7 +390,7 @@ struct ProfileView: View {
 
     private var organizacionSection: some View {
         SectionBox(title: L10n.Settings.organization) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: .green,
                     destination: .accounts)
@@ -424,7 +424,7 @@ struct ProfileView: View {
 
     private var preferenciasSection: some View {
         SectionBox(title: L10n.Settings.preferences) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                     iconColor: .indigo, destination: .personalization)
@@ -455,7 +455,7 @@ struct ProfileView: View {
     }
 
     private var voiceInputRow: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Toggle row
             Button {
                 if isVoiceLocked {
@@ -475,14 +475,14 @@ struct ProfileView: View {
                             .opacity(isVoiceLocked ? 0.5 : 1)
                     } else {
                         Image(systemName: "waveform.badge.mic")
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(.primary)
                             .frame(width: 28)
                             .opacity(isVoiceLocked ? 0.5 : 1)
                     }
 
                     Text(L10n.Settings.voiceInputEnabled)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(isVoiceLocked ? .secondary : .primary)
 
                     if isVoiceLocked {
@@ -493,7 +493,7 @@ struct ProfileView: View {
 
                     if isVoiceLocked {
                         Image(systemName: "lock.fill")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     } else {
                         Toggle("", isOn: $voiceInputEnabled)
@@ -525,7 +525,7 @@ struct ProfileView: View {
                         .frame(width: 28, height: 28)
 
                     Text(L10n.Settings.voiceLanguage)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
 
                     Spacer()
@@ -546,7 +546,7 @@ struct ProfileView: View {
                     } label: {
                         HStack(spacing: DS.Spacing.xs) {
                             Text(VoiceLanguage(rawValue: voiceLanguageRaw)?.displayName ?? L10n.VoiceLanguage.system)
-                                .font(.body)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(Color.brandPrimary)
                             Image(systemName: "chevron.up.chevron.down")
                                 .font(DS.Typography.captionSmall.weight(.medium))
@@ -579,14 +579,14 @@ struct ProfileView: View {
                         .opacity(isImageLocked ? 0.5 : 1)
                 } else {
                     Image(systemName: "photo.on.rectangle")
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
                         .frame(width: 28)
                         .opacity(isImageLocked ? 0.5 : 1)
                 }
 
                 Text(L10n.Settings.imageInputEnabled)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(isImageLocked ? .secondary : .primary)
 
                 if isImageLocked {
@@ -597,7 +597,7 @@ struct ProfileView: View {
 
                 if isImageLocked {
                     Image(systemName: "lock.fill")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 } else {
                     Toggle("", isOn: $imageInputEnabled)
@@ -624,7 +624,7 @@ struct ProfileView: View {
 
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: "icloud.fill",
                     title: L10n.iCloud.title,
@@ -672,7 +672,7 @@ struct ProfileView: View {
 
     private var seguridadSection: some View {
         SectionBox(title: L10n.Settings.security) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: BiometricAuthService.shared.biometricType.icon,
                     title: BiometricAuthService.shared.biometricType.displayName,
@@ -709,7 +709,7 @@ struct ProfileView: View {
 
     private var ayudaSection: some View {
         SectionBox(title: L10n.Settings.help) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: "lightbulb.fill", title: L10n.Settings.tips,
                     iconColor: .yellow, destination: .tips)
@@ -735,7 +735,7 @@ struct ProfileView: View {
 
     private var legalSection: some View {
         SectionBox(title: L10n.Settings.legal) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 Button {
                     if let url = URL(string: "https://yala-app.pe/privacy") {
                         openURL(url)
@@ -767,17 +767,17 @@ struct ProfileView: View {
     @ViewBuilder
     private var developerSection: some View {
         SectionBox(title: "Developer") {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 HStack {
                     YalaSpark(size: .medium, animated: false)
                         .frame(width: 28)
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text("Simular Pro")
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(Color.yalaPrimaryText)
                         Text("Activar para probar features Pro")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
 
@@ -833,13 +833,13 @@ struct ProfileView: View {
             } else {
                 // Plain icon without background
                 Image(systemName: icon)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                     .frame(width: 28)
             }
 
             Text(title)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(textColor)
 
             Spacer()

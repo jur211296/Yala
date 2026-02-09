@@ -70,26 +70,26 @@ struct InboxDraftRowView: View {
         // Line 1: Note (primary text) OR Subcategory (if no note)
         if !draft.note.isEmpty {
             Text(draft.note)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
             // Line 2: Subcategory • Account
             Text("\(subcategoryName) • \(accountName)")
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         } else {
             // Fallback: Line 1 = Subcategory
             Text(subcategoryName)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
             // Line 2: Account name
             if !accountName.isEmpty {
                 Text(accountName)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
@@ -107,7 +107,7 @@ struct InboxDraftRowView: View {
     private var incompleteContentView: some View {
         // Line 1: Note or placeholder
         Text(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note)
-            .font(.subheadline.weight(.medium))
+            .font(DS.Typography.label)
             .foregroundStyle(draft.note.isEmpty ? .secondary : .primary)
             .lineLimit(1)
 
@@ -118,7 +118,7 @@ struct InboxDraftRowView: View {
 
         // Line 3: Date
         Text(formattedDate)
-            .font(.caption)
+            .font(DS.Typography.caption)
             .foregroundStyle(.tertiary)
     }
 
@@ -128,26 +128,26 @@ struct InboxDraftRowView: View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
                 Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode, forceFullPrecision: true))
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(amount >= 0 ? Color.electricIndigo : Color.hotPink)
             } else {
                 Text(L10n.Inbox.noAmount)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.secondary)
             }
 
             // Date for complete drafts, confidence for incomplete
             if draft.hasAllRequiredFields {
                 Text(formattedDate)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             } else if let confidence = draft.confidenceAmount, confidence < 0.7 {
                 // Confidence indicator for incomplete drafts with low confidence
                 HStack(spacing: DS.Spacing.xxs) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                     Text("\(Int(confidence * 100))%")
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                 }
                 .foregroundStyle(.orange)
             }
@@ -160,7 +160,7 @@ struct InboxDraftRowView: View {
         HStack(spacing: DS.Spacing.xs) {
             ForEach(Array((draft.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
@@ -172,7 +172,7 @@ struct InboxDraftRowView: View {
 
             if (draft.tags ?? []).count > 3 {
                 Text("+\((draft.tags ?? []).count - 3)")
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
         }
@@ -224,7 +224,7 @@ struct InboxDraftRowView: View {
                         .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.callout.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.orange)
                 }
             } else {
@@ -235,7 +235,7 @@ struct InboxDraftRowView: View {
                         .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.callout.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.green)
                 }
             }
@@ -248,7 +248,7 @@ struct InboxDraftRowView: View {
                     .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                 Image(systemName: "xmark.circle.fill")
-                    .font(.callout.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.red)
             }
 
@@ -266,7 +266,7 @@ struct InboxDraftRowView: View {
                         .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                     Image(systemName: iconName)
-                        .font(.callout.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.white)
                 }
             } else {
@@ -277,7 +277,7 @@ struct InboxDraftRowView: View {
                         .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                     Image(systemName: draft.sourceIcon)
-                        .font(.callout.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(sourceColor)
                 }
             }
@@ -308,12 +308,12 @@ struct InboxDraftRowView: View {
     private var missingFieldsRow: some View {
         HStack(spacing: DS.Spacing.xs) {
             Text(L10n.Inbox.missingLabel)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
 
             ForEach(draft.needsUserInput.prefix(2), id: \.self) { field in
                 Text(localizedFieldName(field))
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.white)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
@@ -325,7 +325,7 @@ struct InboxDraftRowView: View {
 
             if draft.needsUserInput.count > 2 {
                 Text("+\(draft.needsUserInput.count - 2)")
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
         }
@@ -372,7 +372,7 @@ struct InboxDraftRowView: View {
 
         VStack(spacing: DS.Spacing.md) {
             Text("InboxDraftRowView Preview")
-                .font(.headline)
+                .font(DS.Typography.headline)
         }
         .padding()
     }

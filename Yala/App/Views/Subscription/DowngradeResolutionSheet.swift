@@ -87,7 +87,7 @@ struct DowngradeResolutionSheet: View {
                         Button(L10n.Subscription.Downgrade.reactivate) {
                             showSubscription = true
                         }
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(Color.brandPrimary)
                     }
                     .padding(.horizontal, DS.Spacing.lg)
@@ -136,7 +136,7 @@ struct DowngradeResolutionSheet: View {
                 .multilineTextAlignment(.center)
 
             Text(L10n.Subscription.Downgrade.subtitle)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.yalaSecondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xl)
@@ -146,11 +146,11 @@ struct DowngradeResolutionSheet: View {
     private var accountSelectionSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Subscription.Downgrade.selectAccounts(accountsToKeep))
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
                 .padding(.horizontal, DS.Spacing.lg)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(activeAccounts, id: \.persistentModelID) { account in
                     accountRow(account)
 
@@ -166,7 +166,7 @@ struct DowngradeResolutionSheet: View {
 
             // Selection count
             Text(L10n.FeatureGate.limitInfo(selectedAccountIDs.count, accountsToKeep))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(selectedAccountIDs.count == accountsToKeep ? Color.green : Color.orange)
                 .padding(.horizontal, DS.Spacing.lg)
         }
@@ -190,11 +190,11 @@ struct DowngradeResolutionSheet: View {
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(account.name)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Text(account.currencyCode)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 
@@ -202,7 +202,7 @@ struct DowngradeResolutionSheet: View {
 
                 // Selection indicator
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.3))
             }
             .padding(DS.Spacing.md)
@@ -214,11 +214,11 @@ struct DowngradeResolutionSheet: View {
     private var budgetSelectionSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Subscription.Downgrade.selectBudgets(budgetsToKeep))
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
                 .padding(.horizontal, DS.Spacing.lg)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(activeBudgets, id: \.persistentModelID) { budget in
                     budgetRow(budget)
 
@@ -234,7 +234,7 @@ struct DowngradeResolutionSheet: View {
 
             // Selection count
             Text(L10n.FeatureGate.limitInfo(selectedBudgetIDs.count, budgetsToKeep))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(selectedBudgetIDs.count == budgetsToKeep ? Color.green : Color.orange)
                 .padding(.horizontal, DS.Spacing.lg)
         }
@@ -258,11 +258,11 @@ struct DowngradeResolutionSheet: View {
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(budget.name)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Text(formatCurrency(budget.limitAmount, code: budget.currencyCode))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 
@@ -270,7 +270,7 @@ struct DowngradeResolutionSheet: View {
 
                 // Selection indicator
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.3))
             }
             .padding(DS.Spacing.md)

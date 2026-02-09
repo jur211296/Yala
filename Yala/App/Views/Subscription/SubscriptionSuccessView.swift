@@ -55,12 +55,12 @@ struct SubscriptionSuccessView: View {
                 // Title
                 VStack(spacing: DS.Spacing.md) {
                     Text(L10n.Subscription.Success.title)
-                        .font(.title.bold())
+                        .font(DS.Typography.largeTitle)
                         .foregroundStyle(Color.yalaPrimaryText)
                         .multilineTextAlignment(.center)
 
                     Text(L10n.Subscription.Success.subtitle)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .multilineTextAlignment(.center)
                 }
@@ -111,13 +111,13 @@ struct SubscriptionSuccessView: View {
                 )
 
             Text(text)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
-                .font(.title3)
+                .font(DS.Typography.title)
                 .foregroundStyle(.green)
         }
     }

@@ -200,7 +200,7 @@ struct SubcategoryDetailView: View {
                         .frame(width: 70, height: 70)
                         .overlay(
                             Image(systemName: selectedIconName)
-                                .font(.title2)
+                                .font(DS.Typography.title)
                                 .foregroundStyle(.white)
                         )
                         .shadow(
@@ -212,7 +212,7 @@ struct SubcategoryDetailView: View {
                         .frame(width: 24, height: 24)
                         .overlay(
                             Image(systemName: "pencil")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.electricIndigo)
                         )
                         .overlay(
@@ -225,7 +225,7 @@ struct SubcategoryDetailView: View {
             .buttonStyle(.plain)
 
             Text(parentCategory.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -244,7 +244,7 @@ struct SubcategoryDetailView: View {
     private var detailsSection: some View {
         VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: L10n.Subcategory.details) {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
@@ -268,12 +268,12 @@ struct SubcategoryDetailView: View {
                                     Text(L10n.Category.nature)
                                         .foregroundStyle(.primary)
                                     Text(selectedNature.displayName)
-                                        .font(.subheadline)
+                                        .font(DS.Typography.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.footnote)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(.tertiary)
                             }
                             .padding()

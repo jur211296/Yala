@@ -41,11 +41,11 @@ struct RecordRowView: View {
                 subcategoryIcon
 
                 // Text content - reordered: Note, Subcategory • Account
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
                     // Line 1: Note (primary text) OR Category (if no note)
                     if let note = record.note, !note.isEmpty {
                         Text(note)
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
@@ -55,20 +55,20 @@ struct RecordRowView: View {
                         let accountName = record.account?.name ?? ""
 
                         Text("\(categoryName) • \(accountName)")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     } else {
                         // Fallback: Line 1 = Category
                         Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
                         // Line 2: Account name
                         if let account = record.account {
                             Text(account.name)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.tertiary)
                                 .lineLimit(1)
                         }
@@ -86,7 +86,7 @@ struct RecordRowView: View {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     // Amount with currency
                     Text(formattedAmount)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(amountColor)
 
                     // Nature indicator
@@ -159,7 +159,7 @@ struct RecordRowView: View {
                 .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
             Image(systemName: iconName)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
@@ -170,7 +170,7 @@ struct RecordRowView: View {
         HStack(spacing: DS.Spacing.xs) {
             ForEach(Array((record.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
                     .padding(.horizontal, DS.Chip.paddingV)
                     .padding(.vertical, DS.Spacing.xxs)
@@ -182,7 +182,7 @@ struct RecordRowView: View {
 
             if (record.tags ?? []).count > 3 {
                 Text("+\((record.tags ?? []).count - 3)")
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
         }
@@ -197,7 +197,7 @@ struct RecordRowView: View {
                 .frame(width: DS.Chip.dotSize - 2, height: DS.Chip.dotSize - 2)
 
             Text(nature.displayName)
-                .font(.caption2.weight(.medium))
+                .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, DS.Chip.paddingV)
@@ -230,7 +230,7 @@ struct RecordRowView: View {
 
         VStack(spacing: DS.Spacing.md) {
             Text("RecordRowView Preview")
-                .font(.headline)
+                .font(DS.Typography.headline)
         }
         .padding()
     }

@@ -49,7 +49,7 @@ struct CurrencySelectorView: View {
                     // Remaining currencies by continent
                     ForEach(filteredContinentGroups, id: \.continent) { group in
                         SectionBox(title: group.continent.localizedName) {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(Array(group.currencies.enumerated()), id: \.element) {
                                     index, currency in
                                     if index > 0 {
@@ -81,12 +81,12 @@ struct CurrencySelectorView: View {
     private var recommendedSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.recommendedCurrencies)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(recommendedCurrencies.enumerated()), id: \.element) { index, currency in
                     if index > 0 {
                         SubsectionDivider()
@@ -115,14 +115,14 @@ struct CurrencySelectorView: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Text(info.flag)
-                    .font(.title3)
+                    .font(DS.Typography.title)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(info.name.capitalized)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
                     Text(info.code)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -131,7 +131,7 @@ struct CurrencySelectorView: View {
                 if currency == selectedCurrency {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.electricIndigo)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)

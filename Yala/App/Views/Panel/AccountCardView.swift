@@ -53,7 +53,7 @@ struct AccountCardView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: iconForAccount)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .padding(DS.Spacing.sm)
                         .background(
                             Circle()
@@ -62,7 +62,7 @@ struct AccountCardView: View {
                         .foregroundStyle(foregroundColor)
 
                     Text(account.name)
-                        .font(.caption.weight(.semibold))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(secondaryForeground)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -75,7 +75,7 @@ struct AccountCardView: View {
                 Text(
                     formattedAmount(currentBalance)
                 )
-                .font(.headline.weight(.bold))
+                .font(DS.Typography.headline)
                 .foregroundStyle(foregroundColor)
             }
             .padding(DS.Spacing.md)
@@ -142,11 +142,11 @@ struct AddAccountCardView: View {
         } label: {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "plus")
-                    .font(.title2.weight(.semibold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Text(L10n.Account.addAccount)
-                    .font(.callout.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
             }
             .frame(maxWidth: .infinity, minHeight: 96)

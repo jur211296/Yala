@@ -38,10 +38,10 @@ struct SubcategorySelectorSheet: View {
                             // Empty state
                             VStack(spacing: DS.Spacing.lg) {
                                 Image(systemName: "tag.slash")
-                                    .font(.system(size: 48))
+                                    .font(DS.Typography.amountLarge)
                                     .foregroundStyle(.secondary)
                                 Text(L10n.Empty.noSubcategories)
-                                    .font(.headline)
+                                    .font(DS.Typography.headline)
                                     .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity)
@@ -52,10 +52,10 @@ struct SubcategorySelectorSheet: View {
                                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                                     HStack(spacing: DS.Spacing.sm) {
                                         Image(systemName: "clock.arrow.circlepath")
-                                            .font(.caption)
+                                            .font(DS.Typography.caption)
                                             .foregroundStyle(.secondary)
                                         Text(L10n.Common.recent)
-                                            .font(.subheadline.weight(.semibold))
+                                            .font(DS.Typography.headline)
                                             .foregroundStyle(.secondary)
                                     }
                                     .padding(.leading, DS.Spacing.xs)
@@ -139,7 +139,7 @@ struct SubcategoryGridSection: View {
                     .fill(Color(hex: category.colorHex))
                     .frame(width: 10, height: 10)
                 Text(category.name)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -181,7 +181,7 @@ struct SubcategoryGridItem: View {
                         .frame(width: 48, height: 48)
 
                     Image(systemName: subcategory.iconName ?? "tag.fill")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(isSelected ? .white : Color(hex: effectiveColor))
 
                     if isSelected {
@@ -192,7 +192,7 @@ struct SubcategoryGridItem: View {
                 }
 
                 Text(subcategory.name)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(isSelected ? Color(hex: effectiveColor) : .primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)

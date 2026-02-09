@@ -278,12 +278,12 @@ struct CashFlowWidget: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(kpiLabel)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .padding(.bottom, DS.Spacing.xxs)
 
@@ -295,7 +295,7 @@ struct CashFlowWidget: View {
                                     value: kpiValue, currencyCode: summary.currencyCode,
                                     forceSign: displayMode == .balance || displayMode == .none)
                             )
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -303,7 +303,7 @@ struct CashFlowWidget: View {
                             // Show previous period value for comparison
                             if let prevAmount = previousAmount {
                                 Text("vs \(YalaFormatter.number(value: prevAmount))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
@@ -334,7 +334,7 @@ struct CashFlowWidget: View {
 
                         if let periodText = comparisonPeriodText, !periodText.isEmpty {
                             Text(periodText)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color.yalaSecondaryText)
                         }
                     }
@@ -343,7 +343,7 @@ struct CashFlowWidget: View {
                 if onShowDetail != nil {
                     Button(action: { onShowDetail?() }) {
                         Image(systemName: "chevron.right")
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.gray.opacity(0.7))
                     }
                     .buttonStyle(.plain)
@@ -470,7 +470,7 @@ struct CashFlowWidget: View {
 
                             AxisValueLabel(anchor: anchor) {
                                 Text(smartAxisLabel(for: date))
-                                    .font(.caption2.bold())
+                                    .font(DS.Typography.labelTiny)
                                     .foregroundStyle(Color.yalaSecondaryText)
                             }
                         }
@@ -483,7 +483,7 @@ struct CashFlowWidget: View {
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
                                 Text(formatK(doubleValue))
-                                    .font(.caption2)
+                                    .font(DS.Typography.captionSmall)
                                     .foregroundStyle(Color.yalaSecondaryText)
                             }
                         }
@@ -507,7 +507,7 @@ struct CashFlowWidget: View {
                         {
                             VStack(spacing: DS.Spacing.xs) {
                                 Text(formatTooltipDate(selectedData.date, grouping: grouping))
-                                    .font(.caption2)
+                                    .font(DS.Typography.captionSmall)
                                     .foregroundStyle(Color.yalaSecondaryText)
 
                                 if isWaterfallMode {
@@ -521,7 +521,7 @@ struct CashFlowWidget: View {
                                                 value: selectedData.net,
                                                 currencyCode: summary.currencyCode, forceSign: true)
                                         )
-                                        .font(.caption2.bold())
+                                        .font(DS.Typography.labelTiny)
                                         .foregroundStyle(.primary)
                                     }
                                 } else {
@@ -533,7 +533,7 @@ struct CashFlowWidget: View {
                                                     value: selectedData.income,
                                                     currencyCode: summary.currencyCode, forceSign: true)
                                             )
-                                            .font(.caption2.bold())
+                                            .font(DS.Typography.labelTiny)
                                             .foregroundStyle(.primary)
                                         }
                                         HStack(spacing: DS.Spacing.xs) {
@@ -543,7 +543,7 @@ struct CashFlowWidget: View {
                                                     value: -selectedData.expense,
                                                     currencyCode: summary.currencyCode)
                                             )
-                                            .font(.caption2.bold())
+                                            .font(DS.Typography.labelTiny)
                                             .foregroundStyle(.primary)
                                         }
                                         Divider()
@@ -554,7 +554,7 @@ struct CashFlowWidget: View {
                                                     value: selectedData.net,
                                                     currencyCode: summary.currencyCode, forceSign: true)
                                             )
-                                            .font(.caption2.bold())
+                                            .font(DS.Typography.labelTiny)
                                             .foregroundStyle(.primary)
                                         }
                                     }
@@ -598,7 +598,7 @@ struct CashFlowWidget: View {
                         VStack(spacing: DS.Spacing.xs) {
                             HStack {
                                 Text(L10n.CashFlow.income)
-                                    .font(.subheadline)
+                                    .font(DS.Typography.subheadline)
                                     .foregroundStyle(Color.yalaSecondaryText)
                                 Spacer()
                                 Text(
@@ -633,7 +633,7 @@ struct CashFlowWidget: View {
                     VStack(spacing: DS.Spacing.xs) {
                         HStack {
                             Text(L10n.Transaction.expense)
-                                .font(.subheadline)
+                                .font(DS.Typography.subheadline)
                                 .foregroundStyle(Color.yalaSecondaryText)
                             Spacer()
                             Text(
@@ -678,7 +678,7 @@ struct CashFlowWidget: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -734,7 +734,7 @@ struct CashFlowLegendView: View {
                     .fill(Color.incomeGraph)
                     .frame(width: 6, height: 6)
                 Text(L10n.CashFlow.income)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.yalaSecondaryText)
             }
 
@@ -744,7 +744,7 @@ struct CashFlowLegendView: View {
                     .fill(Color.expenseGraph)
                     .frame(width: 6, height: 6)
                 Text(L10n.CashFlow.expense)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.yalaSecondaryText)
             }
 
@@ -755,7 +755,7 @@ struct CashFlowLegendView: View {
                         .fill(Color.brandPrimary)
                         .frame(width: 6, height: 6)
                     Text(L10n.CashFlow.netFlow)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
             }

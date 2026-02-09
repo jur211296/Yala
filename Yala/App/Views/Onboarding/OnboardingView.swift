@@ -50,7 +50,7 @@ struct OnboardingView: View {
     private let totalSteps = 7
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Progress indicator
             progressIndicator
                 .padding(.top, DS.Spacing.xl)
@@ -107,12 +107,12 @@ struct OnboardingView: View {
 
             VStack(spacing: DS.Spacing.md) {
                 Text(L10n.Onboarding.welcomeTitle)
-                    .font(.title.weight(.bold))
+                    .font(DS.Typography.largeTitle)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.welcomeSubtitle)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -120,11 +120,11 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 Text(L10n.Onboarding.nameLabel)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.secondary)
 
                 TextField(L10n.Onboarding.namePlaceholder, text: $userName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .padding(DS.Spacing.md)
                     .background(Color.yalaCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -165,12 +165,12 @@ struct OnboardingView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.currencyTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.currencySubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -195,7 +195,7 @@ struct OnboardingView: View {
     private var recommendedCurrencySection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Onboarding.recommended)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .padding(.leading, DS.Spacing.xs)
@@ -212,12 +212,12 @@ struct OnboardingView: View {
     private func continentCurrencySection(_ group: (continent: Continent, currencies: [CurrencyCode])) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(group.continent.localizedName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(group.currencies) { currency in
                     currencyRow(currency, isSelected: selectedCurrency == currency) {
                         selectedCurrency = currency
@@ -258,12 +258,12 @@ struct OnboardingView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.secondaryTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.secondarySubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -280,12 +280,12 @@ struct OnboardingView: View {
                     // Other currencies section
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         Text(L10n.Common.others)
-                            .font(.caption.weight(.semibold))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
                             .padding(.leading, DS.Spacing.xs)
 
-                        VStack(spacing: 0) {
+                        VStack(spacing: DS.Spacing.none) {
                             ForEach(otherSecondaryCurrencies) { currency in
                                 let isSelected = selectedSecondaryCurrencies.contains(currency)
                                 currencyRow(currency, isSelected: isSelected, showCheckmark: true) {
@@ -306,7 +306,7 @@ struct OnboardingView: View {
 
             // Selection hint
             Text(L10n.Onboarding.secondaryHint(selectedSecondaryCurrencies.count, 2))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .padding(.bottom, DS.Spacing.md)
         }
@@ -316,12 +316,12 @@ struct OnboardingView: View {
     private var recommendedSecondaryCurrenciesSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.recommendedCurrencies)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(recommendedSecondaryCurrencies) { currency in
                     let isSelected = selectedSecondaryCurrencies.contains(currency)
                     currencyRow(currency, isSelected: isSelected, showCheckmark: true) {
@@ -353,12 +353,12 @@ struct OnboardingView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.periodTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.periodSubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -389,12 +389,12 @@ struct OnboardingView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.expensesOnlyTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.expensesOnlySubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -408,18 +408,18 @@ struct OnboardingView: View {
                 } label: {
                     HStack {
                         Image(systemName: expensesOnlyMode ? "circle" : "checkmark.circle.fill")
-                            .font(.title3)
+                            .font(DS.Typography.title)
                             .foregroundStyle(expensesOnlyMode ? .secondary : Color.electricIndigo)
 
                         Text(L10n.Onboarding.expensesOnlyOptionAll)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(.primary)
 
                         Spacer()
 
                         if !expensesOnlyMode {
                             Text(L10n.Onboarding.categoriesRecommended)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(Color.electricIndigo)
                         }
                     }
@@ -439,11 +439,11 @@ struct OnboardingView: View {
                 } label: {
                     HStack {
                         Image(systemName: expensesOnlyMode ? "checkmark.circle.fill" : "circle")
-                            .font(.title3)
+                            .font(DS.Typography.title)
                             .foregroundStyle(expensesOnlyMode ? Color.electricIndigo : .secondary)
 
                         Text(L10n.Onboarding.expensesOnlyOptionExpenses)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(.primary)
 
                         Spacer()
@@ -475,12 +475,12 @@ struct OnboardingView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.categoriesTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.categoriesSubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -494,10 +494,10 @@ struct OnboardingView: View {
             // Info text about subcategories
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: "info.circle")
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                 Text(L10n.Onboarding.categoriesInfo)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
             }
@@ -512,17 +512,17 @@ struct OnboardingView: View {
                 } label: {
                     HStack {
                         Image(systemName: loadSeedCategories ? "checkmark.circle.fill" : "circle")
-                            .font(.title3)
+                            .font(DS.Typography.title)
                             .foregroundStyle(loadSeedCategories ? Color.electricIndigo : .secondary)
 
                         Text(L10n.Onboarding.categoriesYes)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(.primary)
 
                         Spacer()
 
                         Text(L10n.Onboarding.categoriesRecommended)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(Color.electricIndigo)
                     }
                     .padding(DS.Spacing.md)
@@ -540,11 +540,11 @@ struct OnboardingView: View {
                 } label: {
                     HStack {
                         Image(systemName: loadSeedCategories ? "circle" : "checkmark.circle.fill")
-                            .font(.title3)
+                            .font(DS.Typography.title)
                             .foregroundStyle(loadSeedCategories ? .secondary : Color.electricIndigo)
 
                         Text(L10n.Onboarding.categoriesNo)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(.primary)
 
                         Spacer()
@@ -575,12 +575,12 @@ struct OnboardingView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.notificationsTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.notificationsSubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -597,11 +597,11 @@ struct OnboardingView: View {
                             Text(allNotificationsSelected
                                  ? L10n.Onboarding.notificationsDeselectAll
                                  : L10n.Onboarding.notificationsSelectAll)
-                                .font(.body.weight(.semibold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(Color.electricIndigo)
                             Spacer()
                             Image(systemName: allNotificationsSelected ? "checkmark.circle.fill" : "circle")
-                                .font(.title3)
+                                .font(DS.Typography.title)
                                 .foregroundStyle(allNotificationsSelected ? Color.electricIndigo : .secondary)
                         }
                         .padding(DS.Spacing.md)
@@ -640,7 +640,7 @@ struct OnboardingView: View {
     private func notificationGroupHeader(_ title: String) -> some View {
         HStack {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
             Spacer()
@@ -665,18 +665,18 @@ struct OnboardingView: View {
                         .frame(width: 40, height: 40)
 
                     Image(systemName: type.defaultIcon)
-                        .font(.system(size: 16))
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color(hex: type.defaultColor))
                 }
 
                 // Name and description
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(notificationName(for: type))
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Text(notificationHint(for: type))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -685,7 +685,7 @@ struct OnboardingView: View {
 
                 // Toggle indicator
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
             }
             .padding(DS.Spacing.md)
@@ -768,18 +768,18 @@ struct OnboardingView: View {
                         .frame(width: 40, height: 40)
 
                     Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 16))
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.hotPink)
                 }
 
                 // Name and description
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Notifications.budgetAlertsTitle)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Text(L10n.Notifications.budgetAlertsHint)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -788,7 +788,7 @@ struct OnboardingView: View {
 
                 // Toggle indicator
                 Image(systemName: budgetAlertsEnabled ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(budgetAlertsEnabled ? Color.electricIndigo : .secondary)
             }
             .padding(DS.Spacing.md)
@@ -850,12 +850,12 @@ struct OnboardingView: View {
                             .frame(width: 52, height: 52)
 
                         Image(systemName: category.iconName)
-                            .font(.system(size: 22))
+                            .font(DS.Typography.title)
                             .foregroundStyle(Color(hex: category.colorHex))
                     }
 
                     Text(category.name)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
@@ -891,14 +891,14 @@ struct OnboardingView: View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
                 Text(currencyFlag(currency))
-                    .font(.title2)
+                    .font(DS.Typography.title)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(currency.rawValue)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(.primary)
                     Text(currencyName(currency))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -906,11 +906,11 @@ struct OnboardingView: View {
 
                 if showCheckmark {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
+                        .font(DS.Typography.title)
                         .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
                 } else if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
@@ -933,14 +933,14 @@ struct OnboardingView: View {
         Button(action: action) {
             HStack {
                 Text(period.displayName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
@@ -967,7 +967,7 @@ struct OnboardingView: View {
                     }
                 } label: {
                     Text(L10n.Action.back)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.md)
@@ -996,7 +996,7 @@ struct OnboardingView: View {
                 let isLastStep = currentStep >= 6
 
                 Text(isLastStep ? L10n.Onboarding.finish : L10n.Action.next)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)

@@ -210,7 +210,7 @@ struct VoiceRecordingView: View {
 
             // Icon
             Image(systemName: recorder.state == .recording ? "waveform" : "mic.fill")
-                .font(.system(size: 40, weight: .medium))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.white)
                 .symbolEffect(.variableColor.iterative, isActive: recorder.state == .recording)
         }
@@ -257,7 +257,7 @@ struct VoiceRecordingView: View {
             if recorder.state == .recording {
                 // Glass capsule timer
                 Text(formatDuration(recorder.recordingDuration))
-                    .font(.system(size: 40, weight: .light, design: .monospaced))
+                    .font(DS.Typography.amountLarge)
                     .foregroundStyle(.primary)
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.vertical, DS.Spacing.sm)
@@ -266,7 +266,7 @@ struct VoiceRecordingView: View {
                     .glassEffect()
 
                 Text(L10n.Voice.recording)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             } else if isPreviewMode {
                 // Preview mode: countdown ring inside main circle area
@@ -284,14 +284,14 @@ struct VoiceRecordingView: View {
                         .animation(.easeInOut(duration: 1.0), value: countdownValue)
 
                     Text("\(countdownValue)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(DS.Typography.amountLarge)
                         .foregroundStyle(Color.hotPink)
                         .contentTransition(.numericText())
                 }
 
                 // Glass recorded label
                 Text(L10n.Voice.recorded)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xs)
@@ -310,7 +310,7 @@ struct VoiceRecordingView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: DS.Spacing.lg) {
                 Text(L10n.Voice.tapToRecord)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 // Hints grid
@@ -326,7 +326,7 @@ struct VoiceRecordingView: View {
     private var hintsSection: some View {
         VStack(alignment: .center, spacing: DS.Spacing.sm) {
             Text(L10n.Voice.youCanSay)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
@@ -350,11 +350,11 @@ struct VoiceRecordingView: View {
     private func hintChip(icon: String, text: String) -> some View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: icon)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(Color.hotPink)
 
             Text(text)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
@@ -368,7 +368,7 @@ struct VoiceRecordingView: View {
     private var examplesSection: some View {
         VStack(alignment: .center, spacing: DS.Spacing.sm) {
             Text(L10n.Voice.exampleLabel)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
@@ -386,11 +386,11 @@ struct VoiceRecordingView: View {
     private func exampleRow(text: String) -> some View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "text.quote")
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(Color.hotPink)
 
             Text(text)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.primary)
                 .italic()
 
@@ -416,7 +416,7 @@ struct VoiceRecordingView: View {
     private func errorView(message: String) -> some View {
         VStack(spacing: DS.Spacing.md) {
             Text(message)
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.red)
                 .multilineTextAlignment(.center)
 
@@ -438,7 +438,7 @@ struct VoiceRecordingView: View {
                                 Image(systemName: "photo")
                                 Text(L10n.Voice.tryImage)
                             }
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(Color.hotPink)
                         }
                     }
@@ -452,7 +452,7 @@ struct VoiceRecordingView: View {
                             Image(systemName: "gear")
                             Text(L10n.Voice.openSettings)
                         }
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(Color.hotPink)
                     }
 
@@ -466,7 +466,7 @@ struct VoiceRecordingView: View {
                                 Image(systemName: "arrow.clockwise")
                                 Text(L10n.Action.retry)
                             }
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(Color.hotPink)
                         }
                     }
@@ -510,7 +510,7 @@ struct VoiceRecordingView: View {
                     }
                 } label: {
                     Image(systemName: "checkmark")
-                        .font(.title2.weight(.semibold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 72, height: 72)
                         .background(
@@ -547,7 +547,7 @@ struct VoiceRecordingView: View {
                     processNow()
                 } label: {
                     Image(systemName: "arrow.right")
-                        .font(.title2.weight(.semibold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 72, height: 72)
                         .background(
@@ -586,7 +586,7 @@ struct VoiceRecordingView: View {
                     }
                 } label: {
                     Image(systemName: "mic.fill")
-                        .font(.title.weight(.medium))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 80, height: 80)
                         .background(

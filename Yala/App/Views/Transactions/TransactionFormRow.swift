@@ -83,18 +83,18 @@ struct AccountFormRow: View {
                 }
 
                 Text(title)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(hasError ? .red : .primary)
 
                 Spacer()
 
                 if let account = account {
                     Text(account.name)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
                     Text(L10n.Transaction.select)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(hasError ? .red.opacity(0.8) : .secondary)
                 }
 
@@ -128,7 +128,7 @@ struct SubcategoryFormRow: View {
                         .frame(width: 28, height: 28)
                         .overlay(
                             Image(systemName: "tag.fill")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.white)
                         )
                 } else {
@@ -140,12 +140,12 @@ struct SubcategoryFormRow: View {
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Transaction.subcategory)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(hasError ? .red : .primary)
 
                     if let subcategory = subcategory {
                         Text(subcategory.safeCategory.name)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -158,12 +158,12 @@ struct SubcategoryFormRow: View {
                         NatureChip(nature: subcategory.nature)
 
                         Text(subcategory.name)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 } else {
                     Text(L10n.Transaction.select)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(hasError ? .red.opacity(0.8) : .secondary)
                 }
 
@@ -192,7 +192,7 @@ struct NatureChip: View {
 
     var body: some View {
         Text(nature.displayName)
-            .font(.caption2.weight(.medium))
+            .font(DS.Typography.labelTiny)
             .foregroundStyle(nature.color)
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xxs)
@@ -219,13 +219,13 @@ struct DateFormRow: View {
                     .frame(width: DS.FormRow.iconWidth)
 
                 Text(L10n.Transaction.date)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 Text(formattedDate)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
                 Image(systemName: "chevron.right")
@@ -267,20 +267,20 @@ struct TagsFormRow: View {
                     .frame(width: DS.FormRow.iconWidth)
 
                 Text(L10n.Transaction.tags)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 if tags.isEmpty {
                     Text(L10n.Transaction.addTags)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
                     HStack(spacing: DS.Chip.spacing) {
                         ForEach(tags.prefix(3)) { tag in
                             Text(tag.name)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, DS.Spacing.sm)
                                 .padding(.vertical, DS.Spacing.xs)
@@ -291,7 +291,7 @@ struct TagsFormRow: View {
                         }
                         if tags.count > 3 {
                             Text("+\(tags.count - 3)")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -324,7 +324,7 @@ struct NoteFormRow: View {
                 .frame(width: DS.FormRow.iconWidth)
 
             TextField(L10n.Transaction.notePlaceholder, text: $note)
-                .font(.body)
+                .font(DS.Typography.body)
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -333,7 +333,7 @@ struct NoteFormRow: View {
 }
 
 #Preview {
-    VStack(spacing: 0) {
+    VStack(spacing: DS.Spacing.none) {
         AccountFormRow(
             title: "Cuenta",
             account: nil,

@@ -38,13 +38,13 @@ struct UserDataResetView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.md) {
                             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                                 Text(L10n.Settings.resetAllData)
-                                    .font(.title3)
+                                    .font(DS.Typography.title)
                                     .fontWeight(.semibold)
 
                                 Text(
                                     L10n.Settings.resetDataDescription
                                 )
-                                .font(.footnote)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                             }
                             .padding(.horizontal, DS.Spacing.lg)
@@ -62,7 +62,7 @@ struct UserDataResetView: View {
                                     }
 
                                     Text(L10n.Settings.deleteAllData)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
 
                                     Spacer()
                                 }

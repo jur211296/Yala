@@ -34,7 +34,7 @@ struct BudgetsListView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Limit reached banner
                     if isAtLimit {
                         LimitReachedBanner(
@@ -91,7 +91,7 @@ struct BudgetsListView: View {
     // MARK: - Controls Bar
 
     private var controlsBar: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Period type segmented control
             periodTypeSegmentedControl
                 .padding(.horizontal, DS.Spacing.lg)
@@ -167,7 +167,7 @@ struct BudgetsListView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Text(currentPeriodText)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
 
                 Image(systemName: "chevron.up.chevron.down")
@@ -252,7 +252,7 @@ struct BudgetsListView: View {
             refreshData()
         } label: {
             Image(systemName: hideInactive ? "eye" : "eye.slash")
-                .font(.body.weight(.medium))
+                .font(DS.Typography.bodyBold)
                 .foregroundStyle(.secondary)
                 .frame(width: 32, height: 32)
         }
@@ -281,7 +281,7 @@ struct BudgetsListView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     // Section header
                     Text(section.status.localizedName)
-                        .font(.headline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .padding(.horizontal, DS.Spacing.lg)
 

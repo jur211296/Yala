@@ -16,7 +16,7 @@ struct BalanceStatusIndicator: View {
                 .font(DS.Typography.labelTiny).fontWeight(.bold)
 
             Text(statusText)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
         }
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)

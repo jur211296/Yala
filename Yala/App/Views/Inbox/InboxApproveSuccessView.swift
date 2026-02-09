@@ -35,7 +35,7 @@ struct InboxApproveSuccessView: View {
         ZStack {
             Color.yalaBackground.ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Edit button at top right
                 HStack {
                     Spacer()
@@ -61,7 +61,7 @@ struct InboxApproveSuccessView: View {
                     }
 
                     Text(L10n.Inbox.approveSuccess)
-                        .font(.title2.weight(.bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.primary)
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
@@ -83,7 +83,7 @@ struct InboxApproveSuccessView: View {
     // MARK: - Details Section
 
     private var detailsSection: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Amount (prominent)
             amountRow
 
@@ -125,7 +125,7 @@ struct InboxApproveSuccessView: View {
             Spacer()
 
             Text(YalaFormatter.currency(value: data.amount, currencyCode: data.currencyCode, forceFullPrecision: true))
-                .font(.title.weight(.bold))
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(data.isExpense ? Color.hotPink : Color.electricIndigo)
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -142,18 +142,18 @@ struct InboxApproveSuccessView: View {
     private func detailRow(icon: String, label: String, value: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(label)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
@@ -164,12 +164,12 @@ struct InboxApproveSuccessView: View {
     private var accountRow: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "creditcard")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(L10n.Transaction.account)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -179,7 +179,7 @@ struct InboxApproveSuccessView: View {
                     .fill(Color(hex: data.accountColorHex))
                     .frame(width: 8, height: 8)
                 Text(data.accountName)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
             }
         }
@@ -190,12 +190,12 @@ struct InboxApproveSuccessView: View {
     private var categoryRow: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(L10n.Transaction.category)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -206,11 +206,11 @@ struct InboxApproveSuccessView: View {
                         .fill(Color(hex: data.categoryColorHex))
                         .frame(width: 8, height: 8)
                     Text(data.subcategoryName)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                 }
                 Text(data.categoryName)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
         }

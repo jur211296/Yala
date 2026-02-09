@@ -265,9 +265,9 @@ struct DetailContainerView: View {
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                 Text(tab.title)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
@@ -495,7 +495,7 @@ struct DetailContainerView: View {
                     .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
 
                 if isLocked {
                     ProBadge(size: .small)
@@ -543,7 +543,7 @@ struct DetailContainerView: View {
 
                 // Selection count
                 Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
 
                 Spacer()
 

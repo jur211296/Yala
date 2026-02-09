@@ -56,7 +56,7 @@ struct InboxView: View {
             ZStack {
                 PanelBackgroundView()
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Filter chips
                     filterChips
                         .padding(.horizontal, DS.Spacing.lg)
@@ -67,9 +67,9 @@ struct InboxView: View {
                     if !isSelectionMode && selectedFilter == .pending && filteredDrafts.count >= 2 {
                         HStack(spacing: DS.Spacing.xs) {
                             Image(systemName: "hand.tap")
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                             Text(L10n.Inbox.bulkHint)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                         }
                         .foregroundStyle(.secondary)
                         .padding(.bottom, DS.Spacing.sm)
@@ -226,7 +226,7 @@ struct InboxView: View {
                 }
             } label: {
                 Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
+                    .font(DS.Typography.title)
                     .foregroundStyle(Color.electricIndigo)
                     .frame(minWidth: 44, minHeight: 44)
             }
@@ -234,7 +234,7 @@ struct InboxView: View {
 
             // Count
             Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
 
             Spacer()
 
@@ -243,7 +243,7 @@ struct InboxView: View {
                 showBulkActions = true
             } label: {
                 Text(L10n.Action.edit)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
@@ -296,12 +296,12 @@ struct InboxView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: filter.icon)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                 Text(filter.displayName)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                 if count > 0 {
                     Text("\(count)")
-                        .font(.caption.weight(.bold))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(isSelected ? .white : .secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -339,7 +339,7 @@ struct InboxView: View {
                     }
                 } header: {
                     Text(formattedDate(group.date))
-                        .font(.caption.weight(.semibold))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(.secondary)
                         .textCase(nil)
                 }

@@ -21,10 +21,10 @@ struct NatureEditChip: View {
                     .frame(width: 6, height: 6)
 
                 Text(nature.displayName)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
 
                 Image(systemName: "chevron.down")
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
             }
             .foregroundStyle(.secondary)
             .padding(.horizontal, 10)

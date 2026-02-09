@@ -65,7 +65,7 @@ struct ScheduledPaymentsListView: View {
         return VStack(spacing: DS.Spacing.md) {
             // Month label
             Text(monthYearLabel)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
 
             // Amount
@@ -76,7 +76,7 @@ struct ScheduledPaymentsListView: View {
 
             // Payment count
             Text(paymentCountLabel)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -111,7 +111,7 @@ struct ScheduledPaymentsListView: View {
     private var viewModeHeader: some View {
         HStack {
             Text(tab.localizedName)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -122,7 +122,7 @@ struct ScheduledPaymentsListView: View {
     }
 
     private var viewModeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(PaymentsViewMode.allCases) { mode in
                 viewModeButton(for: mode)
             }
@@ -141,7 +141,7 @@ struct ScheduledPaymentsListView: View {
             }
         } label: {
             Image(systemName: mode.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
@@ -176,7 +176,7 @@ struct ScheduledPaymentsListView: View {
                             }
 
                             Text(section.status.localizedName)
-                                .font(.headline.weight(.semibold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(.primary)
                         }
 
@@ -220,7 +220,7 @@ struct ScheduledPaymentsListView: View {
                 }
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
             }
@@ -229,7 +229,7 @@ struct ScheduledPaymentsListView: View {
             Spacer()
 
             Text(monthYearLabel)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -241,7 +241,7 @@ struct ScheduledPaymentsListView: View {
                 }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
             }
@@ -281,7 +281,7 @@ struct ScheduledPaymentsListView: View {
         return VStack(spacing: DS.Spacing.sm) {
             weekdayHeaders
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xs), count: 7), spacing: DS.Spacing.xs) {
                 ForEach(Array(cellData.enumerated()), id: \.offset) { _, dayOrNil in
                     if let day = dayOrNil {
                         calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
@@ -302,10 +302,10 @@ struct ScheduledPaymentsListView: View {
         let startIndex = appFirstWeekday - 1
         let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
 
-        return HStack(spacing: 4) {
+        return HStack(spacing: DS.Spacing.xs) {
             ForEach(Array(reorderedSymbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -326,14 +326,14 @@ struct ScheduledPaymentsListView: View {
                 }
             }
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text("\(day)")
                     .font(.caption2.weight(isToday || isSelected ? .bold : .medium))
                     .foregroundStyle(isSelected ? .white : (isToday ? Color.electricIndigo : .secondary))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 if hasPayments {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
                             paymentPill(payment, isSelected: isSelected)
                         }
@@ -378,7 +378,7 @@ struct ScheduledPaymentsListView: View {
     private func paymentPill(_ payment: ScheduledPayment, isSelected: Bool = false) -> some View {
         let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
 
-        return HStack(spacing: 2) {
+        return HStack(spacing: DS.Spacing.xxs) {
             Circle()
                 .fill(isSelected ? Color.white : Color(hex: color))
                 .frame(width: 6, height: 6)
@@ -431,7 +431,7 @@ struct ScheduledPaymentsListView: View {
             if let day = selectedDay {
                 HStack {
                     Text(selectedDayLabel(day: day))
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -442,7 +442,7 @@ struct ScheduledPaymentsListView: View {
                         }
                     } label: {
                         Text(NSLocalizedString("scheduled.calendar.show.all", comment: ""))
-                            .font(.caption.weight(.medium))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.electricIndigo)
                     }
                     .buttonStyle(.plain)
@@ -453,7 +453,7 @@ struct ScheduledPaymentsListView: View {
                 Text(selectedDay != nil
                      ? NSLocalizedString("scheduled.calendar.day.empty", comment: "")
                      : NSLocalizedString("scheduled.calendar.month.empty", comment: ""))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.xl)
@@ -495,28 +495,28 @@ struct ScheduledPaymentsListView: View {
                         .frame(width: 36, height: 36)
 
                     Image(systemName: icon)
-                        .font(.caption.weight(.medium))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(.white)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(payment.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
 
                     Text(dates.map { dateFormatter.string(from: $0) }.joined(separator: ", "))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 Text(YalaFormatter.currency(value: payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(DS.Spacing.md)

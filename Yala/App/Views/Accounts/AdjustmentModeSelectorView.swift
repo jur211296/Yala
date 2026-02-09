@@ -18,7 +18,7 @@ struct AdjustmentModeSelectorView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
-                        VStack(spacing: 0) {
+                        VStack(spacing: DS.Spacing.none) {
                             ForEach(Array(AdjustmentMode.allCases.enumerated()), id: \.element) { index, mode in
                                 if index > 0 {
                                     SubsectionDivider()
@@ -31,10 +31,10 @@ struct AdjustmentModeSelectorView: View {
                                     HStack(alignment: .top, spacing: DS.Spacing.md) {
                                         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                                             Text(mode.displayName)
-                                                .font(.body)
+                                                .font(DS.Typography.body)
                                                 .foregroundStyle(.primary)
                                             Text(mode.description)
-                                                .font(.caption)
+                                                .font(DS.Typography.caption)
                                                 .foregroundStyle(.secondary)
                                                 .fixedSize(horizontal: false, vertical: true)
                                         }
@@ -44,7 +44,7 @@ struct AdjustmentModeSelectorView: View {
                                         if mode == selectedAdjustmentMode {
                                             Image(systemName: "checkmark")
                                                 .foregroundStyle(Color.electricIndigo)
-                                                .font(.body.weight(.semibold))
+                                                .font(DS.Typography.headline)
                                         }
                                     }
                                     .padding(.horizontal, DS.FormRow.paddingH)

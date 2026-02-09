@@ -79,7 +79,7 @@ struct ExportColumnsStepView: View {
                 .foregroundStyle(.primary)
 
             Text(L10n.Export.columnsDescription)
-            .font(.body)
+            .font(DS.Typography.body)
             .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,7 +87,7 @@ struct ExportColumnsStepView: View {
 
     private var columnsListSection: some View {
         SectionBox(title: L10n.Export.availableColumns) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(ExportColumns.defaultOrder.enumerated()), id: \.element.id) {
                     index, column in
                     columnRow(for: column)
@@ -114,11 +114,11 @@ struct ExportColumnsStepView: View {
         ) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(column.displayName)
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                     .foregroundStyle(.primary)
 
                 Text(column.description)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, DS.Spacing.md)

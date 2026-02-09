@@ -21,7 +21,7 @@ struct FAQView: View {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "questionmark.circle.fill")
-                            .font(.system(size: 48))
+                            .font(DS.Typography.amountLarge)
                             .foregroundStyle(.orange)
                             .padding(.bottom, DS.Spacing.sm)
 
@@ -30,7 +30,7 @@ struct FAQView: View {
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         Text(L10n.FAQ.subtitle)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .multilineTextAlignment(.center)
                     }
@@ -81,13 +81,13 @@ struct FAQView: View {
                     .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(Color.yalaSecondaryText)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaSecondaryText)
                     .textCase(.uppercase)
             }
             .padding(.horizontal, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(items.enumerated()), id: \.element) { index, item in
                     faqRow(item: item)
 
@@ -115,23 +115,23 @@ struct FAQView: View {
                 expandedItem = expandedItem == item ? nil : item
             }
         } label: {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
                 HStack(spacing: DS.Spacing.md) {
                     Text(item.question)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(Color.yalaPrimaryText)
                         .multilineTextAlignment(.leading)
 
                     Spacer()
 
                     Image(systemName: expandedItem == item ? "chevron.up" : "chevron.down")
-                        .font(.footnote.weight(.medium))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 
                 if expandedItem == item {
                     Text(item.answer)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .padding(.top, DS.Spacing.sm)
                         .transition(.opacity.combined(with: .move(edge: .top)))

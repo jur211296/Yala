@@ -28,7 +28,7 @@ struct FilterChipView: View {
             indicatorView
 
             Text(text)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 

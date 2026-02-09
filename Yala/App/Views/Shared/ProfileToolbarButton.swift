@@ -71,7 +71,7 @@ struct ProfileToolbarButton: View {
                     .frame(width: size, height: size)
                     .overlay {
                         Image(systemName: displayIcon)
-                            .font(.system(size: 18, weight: .medium))
+                            .font(DS.Typography.bodyBold)
                             .foregroundStyle(Color.electricIndigo)
                     }
             }
@@ -134,11 +134,11 @@ struct ProfileToolbarItem: ToolbarContent {
 #Preview("States") {
     HStack(spacing: DS.Spacing.xxl) {
         VStack {
-            Text("Free\nNo photo").font(.caption).multilineTextAlignment(.center)
+            Text("Free\nNo photo").font(DS.Typography.caption).multilineTextAlignment(.center)
             ProfileToolbarButton { }
         }
         VStack {
-            Text("PRO\nNo photo").font(.caption).multilineTextAlignment(.center)
+            Text("PRO\nNo photo").font(DS.Typography.caption).multilineTextAlignment(.center)
             ProfileToolbarButton { }
         }
     }

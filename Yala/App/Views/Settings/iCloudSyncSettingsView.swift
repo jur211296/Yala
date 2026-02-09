@@ -25,7 +25,7 @@ struct iCloudSyncSettingsView: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.orange)
                             Text(L10n.iCloud.noAccountWarning)
-                                .font(.footnote)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.horizontal, DS.Spacing.lg)
@@ -34,11 +34,11 @@ struct iCloudSyncSettingsView: View {
                     // Description
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {
                         Text(L10n.iCloud.description)
-                            .font(.footnote)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 
                         Text(L10n.iCloud.privacyNote)
-                            .font(.footnote)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -62,18 +62,18 @@ struct iCloudSyncSettingsView: View {
                     .frame(width: DS.Spacing.xxxxl, height: DS.Spacing.xxxxl)
 
                 Image(systemName: statusIcon)
-                    .font(.title2)
+                    .font(DS.Typography.title)
                     .foregroundStyle(statusColor)
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(statusText)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 if let lastSync = syncService.lastSyncDate {
                     Text(L10n.iCloud.lastSync(formatLastSync(lastSync)))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }

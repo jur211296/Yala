@@ -57,7 +57,7 @@ struct TagsPieWidget: View {
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if chartData.isEmpty {
                 emptyState
             } else {
@@ -278,7 +278,7 @@ struct TagsPieWidget: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerView
 
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .top, spacing: DS.Spacing.none) {
                 if !selectedTagIDs.isEmpty,
                     let selectedItem = chartData.first(where: { guard let id = $0.id else { return false }; return selectedTagIDs.contains(id) })
                 {
@@ -399,7 +399,7 @@ struct TagsPieWidget: View {
                             .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)

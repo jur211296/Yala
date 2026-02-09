@@ -76,7 +76,7 @@ struct FilterChipButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -109,7 +109,7 @@ struct FilterChipWithIndicator: View {
                     .frame(width: 8, height: 8)
 
                 Text(title)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }

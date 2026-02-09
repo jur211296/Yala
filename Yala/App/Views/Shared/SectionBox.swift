@@ -16,11 +16,11 @@ struct SectionBox<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaSecondaryText)
                 .padding(.leading, DS.Spacing.sm)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 content()
             }
             .background(

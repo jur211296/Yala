@@ -87,7 +87,7 @@ struct SaveAsFavoriteSheet: View {
 
                     // Info text
                     Text(L10n.Favorites.saveDescription)
-                        .font(.footnote)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -158,7 +158,7 @@ struct SaveAsFavoriteSheet: View {
 
     private var fieldsSection: some View {
         SectionBox(title: L10n.Common.details) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Account
                 fieldRow(
                     icon: "creditcard",
@@ -355,7 +355,7 @@ struct SaveAsFavoriteSheet: View {
                             )
                         } else {
                             SectionBox(title: "") {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -378,14 +378,14 @@ struct SaveAsFavoriteSheet: View {
                                                     )
 
                                                 Text(tag.name)
-                                                    .font(.body)
+                                                    .font(DS.Typography.body)
                                                     .foregroundStyle(.primary)
 
                                                 Spacer()
 
                                                 if selectedTags.contains(tag.persistentModelID) {
                                                     Image(systemName: "checkmark")
-                                                        .font(.body.weight(.semibold))
+                                                        .font(DS.Typography.headline)
                                                         .foregroundStyle(Color.electricIndigo)
                                                 }
                                             }

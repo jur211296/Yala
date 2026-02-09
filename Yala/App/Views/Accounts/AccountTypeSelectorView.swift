@@ -18,7 +18,7 @@ struct AccountTypeSelectorView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
-                        VStack(spacing: 0) {
+                        VStack(spacing: DS.Spacing.none) {
                             ForEach(Array(AccountType.allCases.enumerated()), id: \.element) { index, type in
                                 if index > 0 {
                                     SubsectionDivider()
@@ -30,12 +30,12 @@ struct AccountTypeSelectorView: View {
                                 } label: {
                                     HStack(spacing: DS.Spacing.md) {
                                         Image(systemName: iconName(for: type))
-                                            .font(.body)
+                                            .font(DS.Typography.body)
                                             .foregroundStyle(.secondary)
                                             .frame(width: DS.FormRow.iconWidth)
 
                                         Text(type.localizedName)
-                                            .font(.body)
+                                            .font(DS.Typography.body)
                                             .foregroundStyle(.primary)
 
                                         Spacer()
@@ -43,7 +43,7 @@ struct AccountTypeSelectorView: View {
                                         if type == selectedType {
                                             Image(systemName: "checkmark")
                                                 .foregroundStyle(Color.electricIndigo)
-                                                .font(.body.weight(.semibold))
+                                                .font(DS.Typography.headline)
                                         }
                                     }
                                     .padding(.horizontal, DS.FormRow.paddingH)

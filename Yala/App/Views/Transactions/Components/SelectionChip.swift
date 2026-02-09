@@ -25,7 +25,7 @@ struct SelectionChip: View {
                     .font(DS.Typography.labelSmall)
 
                 Text(text)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .lineLimit(1)
             }
             .foregroundStyle(isSelected ? (color ?? Color.electricIndigo) : .secondary)

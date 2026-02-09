@@ -134,7 +134,7 @@ struct TagFormView: View {
 
     private var generalSection: some View {
         SectionBox(title: L10n.Common.general) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "tag")
                         .foregroundStyle(.secondary)
@@ -172,7 +172,7 @@ struct TagFormView: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
                 .padding()
@@ -184,7 +184,7 @@ struct TagFormView: View {
 
     private var colorSection: some View {
         SectionBox(title: L10n.Tag.color) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     LazyVGrid(
                         columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.md), count: 8),
@@ -217,7 +217,7 @@ struct TagFormView: View {
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Image(systemName: "plus")
-                                        .font(.caption.weight(.semibold))
+                                        .font(DS.Typography.labelSmall)
                                         .foregroundStyle(.primary)
                                 )
                         }
@@ -225,7 +225,7 @@ struct TagFormView: View {
                     }
 
                     Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding()

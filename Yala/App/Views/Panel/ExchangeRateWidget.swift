@@ -39,7 +39,7 @@ struct ExchangeRateWidget: View {
     private let currencyBColor = Color.hotPink
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Header
             headerView
                 .padding([.horizontal, .top], DS.Spacing.lg)
@@ -64,18 +64,18 @@ struct ExchangeRateWidget: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.ExchangeRate.title)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .padding(.bottom, 2)
 
                 // Subtitle: "Hoy, HH:mm" or "d MMM, HH:mm"
                 if let data = data, !data.hasError {
                     Text(formatSubtitleDate(data.currentRatesDate))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 } else {
                     Text(L10n.Empty.noData)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -93,7 +93,7 @@ struct ExchangeRateWidget: View {
                     onShowDetail?()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
                         .padding(.leading, DS.Spacing.sm)
                 }
@@ -180,7 +180,7 @@ struct ExchangeRateWidget: View {
                             )
                             .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
                             .symbolSize(20)
-                            .annotation(position: originalIndex == 0 ? .top : .bottom, spacing: 2) {
+                            .annotation(position: originalIndex == 0 ? .top : .bottom, spacing: DS.Spacing.xxs) {
                                 // Only show labels on first, last, and middle points to avoid clutter
                                 if shouldShowLabel(for: point, in: data.chartPoints) {
                                     Text(formatRateCompact(rate))
@@ -207,7 +207,7 @@ struct ExchangeRateWidget: View {
 
                         AxisValueLabel(anchor: anchor) {
                             Text(smartAxisLabel(for: date, in: data.chartPoints))
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color.yalaSecondaryText)
                         }
                     }
@@ -220,7 +220,7 @@ struct ExchangeRateWidget: View {
                     AxisValueLabel {
                         if let doubleValue = value.as(Double.self) {
                             Text(formatRate(doubleValue))
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color.yalaSecondaryText)
                         }
                     }
@@ -312,7 +312,7 @@ struct ExchangeRateWidget: View {
                                     .frame(width: 6, height: 6)
 
                                 Text("1 \(currency.rawValue) = \(formatRate(rate)) \(preferredCurrency)")
-                                    .font(.caption2.weight(.medium))
+                                    .font(DS.Typography.labelTiny)
                                     .foregroundStyle(color)
                             }
                             .padding(.horizontal, DS.Spacing.sm)
@@ -394,7 +394,7 @@ struct ExchangeRateWidget: View {
     ) -> some View {
         VStack(spacing: DS.Spacing.xs) {
             Text(formatTooltipDate(point.date))
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(Color.yalaSecondaryText)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -409,7 +409,7 @@ struct ExchangeRateWidget: View {
                             Text(
                                 "1 \(currency.rawValue) = \(formatRate(rate)) \(preferredCurrency)"
                             )
-                            .font(.caption2.weight(.medium))
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
                         }
                     }
@@ -432,7 +432,7 @@ struct ExchangeRateWidget: View {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle())
             Text(L10n.Common.loading)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(height: 120)
@@ -444,10 +444,10 @@ struct ExchangeRateWidget: View {
     private var emptyChartView: some View {
         VStack {
             Image(systemName: "chart.line.downtrend.xyaxis")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.secondary)
             Text(L10n.Widget.noDataForPeriod)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(height: 120)
@@ -459,14 +459,14 @@ struct ExchangeRateWidget: View {
     private var noSecondaryCurrenciesView: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "arrow.left.arrow.right.circle")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.secondary)
             Text(L10n.ExchangeRate.noSecondaryCurrenciesHint)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Text(L10n.ExchangeRate.noSecondaryCurrenciesPath)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(Color.electricIndigo)
         }
         .frame(height: 120)
@@ -478,10 +478,10 @@ struct ExchangeRateWidget: View {
     private func errorView(message: String) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.orange)
             Text(message)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }

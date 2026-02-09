@@ -46,6 +46,9 @@ enum DS {
         /// 48pt - Page margins, large gaps
         static let xxxxl: CGFloat = 48
 
+        /// 0pt - Explicit zero spacing
+        static let none: CGFloat = 0
+
         /// 100pt - Safe bottom padding for scrollable content
         static let safeBottom: CGFloat = 100
     }
@@ -416,39 +419,4 @@ func dsWithAnimation(_ reduceMotion: Bool, _ animation: Animation? = .easeInOut(
 /// Allows using `Typography.title` instead of `DS.Typography.title`
 typealias Typography = DS.Typography
 
-// MARK: - Legacy Aliases (Deprecated)
-
-// These provide backwards compatibility during migration.
-// Will be removed in a future version.
-
-/// Legacy DesignSystem namespace - use DS instead
-@available(*, deprecated, message: "Use DS instead")
-enum DesignSystem {
-
-    @available(*, deprecated, message: "Use DS.Spacing instead")
-    enum Spacing {
-        static var two: CGFloat { DS.Spacing.xxs }
-        static var four: CGFloat { DS.Spacing.xs }
-        static var standard: CGFloat { DS.Spacing.sm }
-        static var medium: CGFloat { DS.Spacing.md }
-        static var large: CGFloat { DS.Spacing.lg }
-        static var xLarge: CGFloat { DS.Spacing.xl }
-        static var xxLarge: CGFloat { DS.Spacing.xxl }
-        static var triple: CGFloat { DS.Spacing.xxxl }
-    }
-
-    @available(*, deprecated, message: "Use DS.Radius instead")
-    enum Radius {
-        static var small: CGFloat { DS.Radius.sm }
-        static var standard: CGFloat { DS.Radius.md }
-        static var large: CGFloat { DS.Radius.lg }
-        static var xLarge: CGFloat { DS.Radius.xl }
-    }
-
-    @available(*, deprecated, message: "Use DS.Opacity instead")
-    enum Opacity {
-        static var glass: Double { DS.Opacity.glass }
-        static var subtle: Double { DS.Opacity.subtle }
-    }
-}
 

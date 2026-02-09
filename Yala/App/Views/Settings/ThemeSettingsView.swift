@@ -79,11 +79,11 @@ struct ThemeSettingsView: View {
                 if userThemeRaw == theme.rawValue {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.title3)
+                        .font(DS.Typography.title)
                 } else {
                     Image(systemName: "circle")
                         .foregroundStyle(Color.yalaSecondaryText.opacity(0.3))
-                        .font(.title3)
+                        .font(DS.Typography.title)
                 }
             }
             .padding(.vertical, DS.Spacing.md)

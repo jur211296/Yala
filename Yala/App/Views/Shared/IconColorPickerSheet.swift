@@ -271,13 +271,13 @@ struct IconColorPickerSheet: View {
                 .frame(width: 80, height: 80)
                 .overlay(
                     Image(systemName: tempIconName)
-                        .font(.system(size: 32, weight: .medium))
+                        .font(DS.Typography.amountLarge)
                         .foregroundStyle(.white)
                 )
                 .shadow(color: Color(hex: tempColorHex).opacity(0.4), radius: 8, x: 0, y: 4)
 
             Text(L10n.IconPicker.preview)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -289,7 +289,7 @@ struct IconColorPickerSheet: View {
     private var colorSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Common.color)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             LazyVGrid(columns: colorColumns, spacing: DS.Spacing.md) {
@@ -342,7 +342,7 @@ struct IconColorPickerSheet: View {
             ForEach(iconCategories, id: \.name) { category in
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     Text(category.name)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     LazyVGrid(columns: iconColumns, spacing: DS.Spacing.md) {
@@ -369,7 +369,7 @@ struct IconColorPickerSheet: View {
                     .frame(width: 48, height: 48)
 
                 Image(systemName: name)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(DS.Typography.title)
                     .foregroundStyle(
                         tempIconName == name
                             ? Color(hex: tempColorHex)

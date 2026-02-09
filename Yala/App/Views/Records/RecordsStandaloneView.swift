@@ -331,7 +331,7 @@ struct RecordsStandaloneView: View {
                     .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
 
                 if isLocked {
                     ProBadge(size: .small)
@@ -369,7 +369,7 @@ struct RecordsStandaloneView: View {
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.red)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
@@ -380,7 +380,7 @@ struct RecordsStandaloneView: View {
 
                 // Selection count
                 Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .contentTransition(.numericText())
 
                 Spacer()
@@ -391,7 +391,7 @@ struct RecordsStandaloneView: View {
                     handleEditAction()
                 } label: {
                     Image(systemName: "pencil")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(DS.Typography.title)
                         .foregroundStyle(Color.electricIndigo)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }

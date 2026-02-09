@@ -141,9 +141,9 @@ struct PlanningView: View {
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                 Text(tab.displayName)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)

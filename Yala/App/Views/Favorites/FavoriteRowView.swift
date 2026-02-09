@@ -24,10 +24,10 @@ struct FavoriteRowView: View {
                 favoriteIcon
 
                 // Text content
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
                     // Line 1: Favorite name
                     Text(favorite.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -46,7 +46,7 @@ struct FavoriteRowView: View {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     if let amount = favorite.amount, amount > 0 {
                         Text(formattedAmount)
-                            .font(.subheadline.weight(.semibold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(amountColor)
                     }
 
@@ -94,7 +94,7 @@ struct FavoriteRowView: View {
                 .frame(width: 40, height: 40)
 
             Image(systemName: iconName)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
@@ -108,7 +108,7 @@ struct FavoriteRowView: View {
         let text = parts.isEmpty ? L10n.Favorites.notConfigured : parts.joined(separator: " • ")
 
         return Text(text)
-            .font(.caption)
+            .font(DS.Typography.caption)
             .foregroundStyle(.secondary)
             .lineLimit(1)
     }
@@ -117,7 +117,7 @@ struct FavoriteRowView: View {
         HStack(spacing: DS.Spacing.xs) {
             ForEach(Array((favorite.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -129,7 +129,7 @@ struct FavoriteRowView: View {
 
             if (favorite.tags ?? []).count > 3 {
                 Text("+\((favorite.tags ?? []).count - 3)")
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
         }
@@ -142,7 +142,7 @@ struct FavoriteRowView: View {
                 .frame(width: 6, height: 6)
 
             Text(nature.displayName)
-                .font(.caption2.weight(.medium))
+                .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 6)

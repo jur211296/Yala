@@ -122,13 +122,13 @@ struct InboxBulkActionsSheet: View {
                             VStack(spacing: DS.Spacing.xxl) {
                                 // Header with count
                                 Text(L10n.Inbox.selectedCount(selectedDrafts.count))
-                                    .font(.subheadline)
+                                    .font(DS.Typography.subheadline)
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
 
                                 // Options list
                                 SectionBox(title: "") {
-                                    VStack(spacing: 0) {
+                                    VStack(spacing: DS.Spacing.none) {
                                         ForEach(Array(availableOptions.enumerated()), id: \.element.id) { index, option in
                                             if index > 0 {
                                                 SubsectionDivider()
@@ -220,14 +220,14 @@ struct InboxBulkActionsSheet: View {
                     )
 
                 // Title with subtitle for approve
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.title)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(isDisabled ? .tertiary : .primary)
 
                     if option == .approve && approveableCount < selectedDrafts.count {
                         Text(L10n.Inbox.approveableCount(approveableCount, selectedDrafts.count))
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -261,7 +261,7 @@ struct InboxBulkActionsSheet: View {
                 .foregroundStyle(.green)
 
             Text(L10n.BulkEdit.successMessage)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.md)

@@ -130,7 +130,7 @@ struct AccountFormView: View {
 
     private var generalSection: some View {
         SectionBox(title: L10n.Common.general) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
@@ -152,7 +152,7 @@ struct AccountFormView: View {
                         Text(viewModel.selectedType.localizedName)
                             .foregroundStyle(.secondary)
                         Image(systemName: "chevron.right")
-                            .font(.footnote)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .padding()
@@ -182,10 +182,10 @@ struct AccountFormView: View {
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Text(currencyInfo(for: viewModel.selectedCurrency).flag)
-                        .font(.title3)
+                        .font(DS.Typography.title)
 
                     Text(L10n.Account.currency)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -194,7 +194,7 @@ struct AccountFormView: View {
                         .foregroundStyle(.secondary)
 
                     Image(systemName: "chevron.right")
-                        .font(.footnote)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
                 .padding()
@@ -206,7 +206,7 @@ struct AccountFormView: View {
 
     private var adjustmentSection: some View {
         SectionBox(title: L10n.Account.adjustment) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 NavigationLink {
                     AdjustmentModeSelectorView(
                         selectedAdjustmentMode: $viewModel.selectedAdjustmentMode)
@@ -219,7 +219,7 @@ struct AccountFormView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                         Image(systemName: "chevron.right")
-                            .font(.footnote)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .padding()
@@ -230,7 +230,7 @@ struct AccountFormView: View {
                 SubsectionDivider()
 
                 Text(viewModel.selectedAdjustmentMode.description)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -259,7 +259,7 @@ struct AccountFormView: View {
                 ? (viewModel.selectedAdjustmentMode == .changeInitialBalance
                     ? L10n.Account.initialBalance : L10n.Account.newBalance) : L10n.Account.initialBalance
         ) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Show current balance (read-only) when editing (hidden in expenses-only mode)
                 if viewModel.isEditing && !sessionState.isExpensesOnlyMode {
                     HStack {
@@ -270,7 +270,7 @@ struct AccountFormView: View {
                             formatAmount(
                                 viewModel.currentBalance, currency: viewModel.selectedCurrency)
                         )
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     }
                     .padding()
@@ -281,7 +281,7 @@ struct AccountFormView: View {
                 // Sign selector
                 HStack(spacing: DS.Spacing.md) {
                     Text(L10n.Account.sign)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                     Spacer()
                     Picker(L10n.Account.sign, selection: $viewModel.isPositive) {
                         Text(L10n.Account.positive).tag(true)
@@ -301,21 +301,21 @@ struct AccountFormView: View {
                             viewModel.selectedAdjustmentMode == .changeInitialBalance
                                 ? L10n.Account.initialBalance : L10n.Account.newBalance
                         )
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
 
                         ZStack(alignment: .trailing) {
                             // Placeholder
                             if viewModel.balanceText.isEmpty {
                                 Text("0.00")
-                                    .font(.system(size: 28, weight: .bold))
+                                    .font(DS.Typography.largeTitle)
                                     .foregroundStyle(.gray.opacity(0.4))
                             }
 
                             TextField("", text: $viewModel.balanceText)
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
-                                .font(.system(size: 28, weight: .bold))
+                                .font(DS.Typography.largeTitle)
                                 .focused($focusedField, equals: .balance)
                         }
                         .onChange(of: focusedField) { _, newField in
@@ -357,7 +357,7 @@ struct AccountFormView: View {
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(formatAmount(finalBalance, currency: viewModel.selectedCurrency))
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(finalBalance >= 0 ? Color.primary : Color.red)
                     }
                     .padding()
@@ -371,11 +371,11 @@ struct AccountFormView: View {
 
                     HStack {
                         Text(L10n.Account.adjustment + ":")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(formatAdjustment(adjustment, currency: viewModel.selectedCurrency))
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(adjustment >= 0 ? .green : .red)
                     }
                     .padding()
@@ -386,7 +386,7 @@ struct AccountFormView: View {
 
     private var colorSection: some View {
         SectionBox(title: L10n.Common.color) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     HStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.colorOptions, id: \.self) { hex in
@@ -413,7 +413,7 @@ struct AccountFormView: View {
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Image(systemName: "plus")
-                                        .font(.caption.weight(.semibold))
+                                        .font(DS.Typography.labelSmall)
                                         .foregroundStyle(.primary)
                                 )
                         }
@@ -421,7 +421,7 @@ struct AccountFormView: View {
                     }
 
                     Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding()
@@ -431,7 +431,7 @@ struct AccountFormView: View {
 
     private var actionsSection: some View {
         SectionBox(title: L10n.Common.actions) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text(L10n.Account.excludeFromStats)
                 }

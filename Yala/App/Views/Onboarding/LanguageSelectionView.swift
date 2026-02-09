@@ -15,7 +15,7 @@ struct LanguageSelectionView: View {
     var onComplete: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             Spacer()
 
             // Header
@@ -26,12 +26,12 @@ struct LanguageSelectionView: View {
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Onboarding.languageTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(L10n.Onboarding.languageSubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
@@ -55,7 +55,7 @@ struct LanguageSelectionView: View {
                 onComplete()
             } label: {
                 Text(L10n.Action.next)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
@@ -76,16 +76,16 @@ struct LanguageSelectionView: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Text(flag)
-                    .font(.title2)
+                    .font(DS.Typography.title)
 
                 Text(name)
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
             }
             .padding(DS.Spacing.md)

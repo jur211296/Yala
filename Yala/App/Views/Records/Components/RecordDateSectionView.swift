@@ -16,7 +16,7 @@ struct RecordDateSectionView: View {
     var body: some View {
         HStack {
             Text(formattedDate)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -37,7 +37,7 @@ struct RecordDateSectionView: View {
 // MARK: - Preview
 
 #Preview {
-    VStack(spacing: 0) {
+    VStack(spacing: DS.Spacing.none) {
         RecordDateSectionView(date: Date())
         RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
         RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!)

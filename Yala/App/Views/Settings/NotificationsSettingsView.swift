@@ -273,18 +273,18 @@ struct NotificationsSettingsView: View {
                     .frame(width: 44, height: 44)
 
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.white)
             }
 
             // Content
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Notifications.budgetAlertsTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Text(L10n.Notifications.budgetAlertsHint)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -340,7 +340,7 @@ struct NotificationCard: View {
                         .frame(width: 44, height: 44)
 
                     Image(systemName: notification.iconName)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.white)
                 }
 
@@ -348,19 +348,19 @@ struct NotificationCard: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     HStack {
                         Text(notification.name)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
                         Spacer()
 
                         Text(notification.formattedTime)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
 
                     Text(notification.displayText)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }

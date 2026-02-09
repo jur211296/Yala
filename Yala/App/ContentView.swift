@@ -329,7 +329,7 @@ struct MainTabView: View {
                     .scaleEffect(1.5)
 
                 Text(L10n.Settings.deletingData)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
             }
         }
@@ -390,11 +390,11 @@ struct MorePlaceholderView: View {
     private var hiddenTabsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.More.sections)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(tabConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
                     hiddenTabRow(tab)
 
@@ -428,7 +428,7 @@ struct MorePlaceholderView: View {
         } label: {
             HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: tab.iconName)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.white)
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
@@ -437,7 +437,7 @@ struct MorePlaceholderView: View {
                     )
 
                 Text(tab.displayName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -456,13 +456,13 @@ struct MorePlaceholderView: View {
     // MARK: - Profile Button
 
     private var profileButton: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             Button {
                 showProfile = true
             } label: {
                 HStack(spacing: DS.FormRow.iconSpacing) {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.white)
                         .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                         .background(
@@ -471,7 +471,7 @@ struct MorePlaceholderView: View {
                         )
 
                     Text(L10n.Profile.title)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -520,11 +520,11 @@ struct GlobalSearchView: View {
                     SearchContentView(searchText: $searchText, transactions: allTransactions)
                 } else {
                     // Loading state - subtle animation
-                    VStack(spacing: 16) {
+                    VStack(spacing: DS.Spacing.lg) {
                         ProgressView()
                             .scaleEffect(1.2)
                         Text(L10n.Common.loading)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -681,7 +681,7 @@ struct SearchContentView: View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Filter chips (only show when searching)
                 if !searchText.isEmpty {
                     filterChipsBar
@@ -740,12 +740,12 @@ struct SearchContentView: View {
 
     private var searchResultsView: some View {
         ScrollView {
-            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(spacing: DS.Spacing.none, pinnedViews: [.sectionHeaders]) {
                 // Header with count and Ver todo
                 if !filteredResults.isEmpty && !searchText.isEmpty {
                     HStack {
                         Text(L10n.Search.resultsCount(totalMatchingCount))
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 
                         Spacer()
@@ -762,7 +762,7 @@ struct SearchContentView: View {
                                 Text(L10n.Action.viewAll)
                                 Image(systemName: "arrow.right")
                             }
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(Color.electricIndigo)
                         }
                     }
@@ -788,17 +788,17 @@ struct SearchContentView: View {
 
                 // No results message
                 if filteredResults.isEmpty && !searchText.isEmpty {
-                    VStack(spacing: 12) {
+                    VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 40))
+                            .font(DS.Typography.amountLarge)
                             .foregroundStyle(.tertiary)
 
                         Text(L10n.Search.noResults)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
 
                         Text(L10n.Search.tryAnotherTerm)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
@@ -834,7 +834,7 @@ struct SearchDateSectionHeader: View {
     var body: some View {
         HStack {
             Text(formattedDate)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
@@ -884,17 +884,17 @@ struct SearchResultRow: View {
         Button {
             onTap()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 // Icon
                 subcategoryIcon
 
                 // Content
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
                     Text(
                         record.note ?? record.subcategory?.name ?? record.category?.name
                             ?? L10n.Common.uncategorized
                     )
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -903,7 +903,7 @@ struct SearchResultRow: View {
 
                     if !categoryName.isEmpty || !accountName.isEmpty {
                         Text("\(categoryName) • \(accountName)")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -913,7 +913,7 @@ struct SearchResultRow: View {
 
                 // Amount
                 Text(formattedAmount)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(amountColor)
             }
             .padding(.vertical, 12)
@@ -934,7 +934,7 @@ struct SearchResultRow: View {
                 .frame(width: 40, height: 40)
 
             Image(systemName: iconName)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }

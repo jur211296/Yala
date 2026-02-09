@@ -81,11 +81,11 @@ struct BudgetsFavoritesSettingsView: View {
     private var infoHeader: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
 
             Text(L10n.Settings.budgetsFavoritesInfo)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.lg)
@@ -101,15 +101,15 @@ struct BudgetsFavoritesSettingsView: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "chart.pie")
-                .font(.system(size: 48))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
 
             Text(NSLocalizedString("budgets.empty.title", comment: ""))
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
 
             Text(L10n.Settings.budgetsFavoritesEmptyHint)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
@@ -122,11 +122,11 @@ struct BudgetsFavoritesSettingsView: View {
     private func periodSection(periodType: BudgetPeriodType, budgets: [Budget]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(periodType.localizedName)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(budgets.enumerated()), id: \.element.persistentModelID) { index, budget in
                     budgetRow(budget)
 
@@ -160,7 +160,7 @@ struct BudgetsFavoritesSettingsView: View {
                 }
             } label: {
                 Image(systemName: budget.isFavorite ? "star.fill" : "star")
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(budget.isFavorite ? Color.yellow : Color.secondary)
                     .frame(width: 28, height: 28)
             }
@@ -169,12 +169,12 @@ struct BudgetsFavoritesSettingsView: View {
             // Budget info
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(budget.name)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(formatAmount(budget.limitAmount, currency: budget.currencyCode))
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -197,7 +197,7 @@ struct BudgetsFavoritesSettingsView: View {
     private var reorderSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.budgetsFavoritesReorder)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
@@ -239,14 +239,14 @@ struct BudgetsFavoritesSettingsView: View {
                 .frame(width: 28)
 
             Text(budget.name)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
             Spacer()
 
             Text(BudgetPeriodType(rawValue: budget.periodType)?.localizedName ?? "")
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())

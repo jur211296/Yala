@@ -66,11 +66,11 @@ struct TabBarConfigView: View {
     private var infoHeader: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
 
             Text(L10n.Settings.tabBarConfigInfo)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.lg)
@@ -87,13 +87,13 @@ struct TabBarConfigView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text(L10n.Settings.tabBarConfigActive)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.primary.opacity(0.6))
 
                 Spacer()
 
                 Text("\(localConfig.activeTabs.count)/3")
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 6)
@@ -140,13 +140,13 @@ struct TabBarConfigView: View {
 
             // Tab icon
             Image(systemName: tab.iconName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
                 .frame(width: 28, height: 28)
 
             // Tab name
             Text(tab.displayName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -154,7 +154,7 @@ struct TabBarConfigView: View {
             // Panel is locked (always first, cannot remove)
             if tab == .panel {
                 Image(systemName: "lock.fill")
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             } else if canDeactivate {
                 // Remove button for other tabs
@@ -162,7 +162,7 @@ struct TabBarConfigView: View {
                     removeTab(tab)
                 } label: {
                     Image(systemName: "minus.circle.fill")
-                        .font(.title3)
+                        .font(DS.Typography.title)
                         .foregroundStyle(.red.opacity(0.8))
                 }
                 .buttonStyle(.plain)
@@ -178,11 +178,11 @@ struct TabBarConfigView: View {
     private var availableTabsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.tabBarConfigAvailable)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, 6)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(localConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
                     availableTabRow(tab)
 
@@ -214,14 +214,14 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.md) {
             // Tab icon
             Image(systemName: tab.iconName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.secondary)
                 .frame(width: 28, height: 28)
                 .padding(.leading, 20) // Align with active tabs
 
             // Tab name
             Text(tab.displayName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -231,7 +231,7 @@ struct TabBarConfigView: View {
                 addTab(tab)
             } label: {
                 Image(systemName: "plus.circle.fill")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(canActivate ? Color.electricIndigo : Color.secondary.opacity(0.5))
             }
             .buttonStyle(.plain)
@@ -246,11 +246,11 @@ struct TabBarConfigView: View {
     private func validationMessage(_ text: String, icon: String) -> some View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.orange)
 
             Text(text)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(.leading, 6)

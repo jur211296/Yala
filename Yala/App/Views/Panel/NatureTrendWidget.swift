@@ -103,7 +103,7 @@ struct NatureTrendWidget: View {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Widget.distributionByNature)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
@@ -113,7 +113,7 @@ struct NatureTrendWidget: View {
                                 YalaFormatter.currency(
                                     value: totalAmount, currencyCode: currencyCode)
                             )
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.yalaPrimaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -121,7 +121,7 @@ struct NatureTrendWidget: View {
                             // Show previous period value for comparison
                             if let prevAmount = previousTotalAmount {
                                 Text("vs \(YalaFormatter.number(value: prevAmount))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
@@ -144,7 +144,7 @@ struct NatureTrendWidget: View {
 
                         if !comparisonText.isEmpty {
                             Text(comparisonText)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -158,7 +158,7 @@ struct NatureTrendWidget: View {
                         onShowDetail?()
                     } label: {
                         Image(systemName: "chevron.right")
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.secondary.opacity(0.7))
                     }
                     .padding(.top, DS.Spacing.xs)
@@ -172,10 +172,10 @@ struct NatureTrendWidget: View {
                 Spacer()
                 VStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "info.circle")
-                        .font(.title2)
+                        .font(DS.Typography.title)
                         .foregroundStyle(.secondary)
                     Text(L10n.Nature.incomeNotApplicable)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -189,7 +189,7 @@ struct NatureTrendWidget: View {
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(.secondary)
                     Text(L10n.Empty.noExpenses)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -445,7 +445,7 @@ struct NatureTrendChartView: View {
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -459,7 +459,7 @@ struct NatureTrendChartView: View {
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
                         Text(formatAxisAmount(amount))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -489,7 +489,7 @@ struct NatureTrendChartView: View {
                     // Tooltip Card
                     VStack(spacing: DS.Spacing.xs) {
                         Text(formatDateFull(selectedData.date, grouping: grouping))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
 
                         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
@@ -516,14 +516,14 @@ struct NatureTrendChartView: View {
                             Divider()
                             HStack {
                                 Text(L10n.Widget.total)
-                                    .font(.caption2)
+                                    .font(DS.Typography.captionSmall)
                                     .foregroundStyle(Color.secondary)
                                 Spacer()
                                 Text(
                                     YalaFormatter.currency(
                                         value: selectedData.total, currencyCode: currencyCode)
                                 )
-                                .font(.caption2.bold())
+                                .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
                             }
                         }
@@ -583,12 +583,12 @@ struct NatureTrendChartView: View {
             HStack {
                 Circle().fill(nature.color).frame(width: 6, height: 6)
                 Text(nature.displayName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.primary)
                 Spacer()
                 // Simple formatting for tooltip
                 Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
-                    .font(.caption2.bold())
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.primary)
             }
         }
@@ -705,13 +705,13 @@ struct LegendItem: View {
                     .fill(extensionColor(for: nature))
                     .frame(width: 8, height: 8)
 
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: DS.Spacing.none) {
                     Text(nature.displayName)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.primary)
 
                     Text("\(formattedPercent(amount, total))")
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color.secondary)
                 }
                 Spacer()
@@ -754,11 +754,11 @@ struct CompactLegendChip: View {
                     .frame(width: 6, height: 6)
 
                 Text(nature.displayName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.primary)
 
                 Text(formattedPercent(amount, total))
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.secondary)
             }
             .padding(.horizontal, DS.Spacing.sm)
@@ -803,7 +803,7 @@ struct CompactNatureLegendView: View {
                             .frame(width: 8, height: 8)
 
                         Text(nature.displayName)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.primary)
                     }
                     .padding(.horizontal, DS.Spacing.xs)
@@ -859,7 +859,7 @@ struct NatureCompactBar: View {
                 // Name and Amount + Variation
                 HStack {
                     Text(nature.displayName)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     Spacer()
                     Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))

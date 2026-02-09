@@ -30,7 +30,7 @@ struct YalaBadge: View {
         HStack(spacing: DS.Spacing.xs) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(DS.Typography.labelTiny)
                     .accessibilityHidden(true)
             }
             Text(text)
@@ -138,7 +138,7 @@ struct YalaStatusBadge: View {
     var body: some View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: status.icon)
-                .font(.system(size: 10))
+                .font(DS.Typography.captionSmall)
                 .accessibilityHidden(true)
 
             if let text {
@@ -172,7 +172,7 @@ struct YalaTagBadge: View {
         HStack(spacing: DS.Spacing.xs) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(DS.Typography.labelTiny)
                     .accessibilityHidden(true)
             }
             Text(name)

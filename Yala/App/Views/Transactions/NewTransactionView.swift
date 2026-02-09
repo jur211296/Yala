@@ -100,7 +100,7 @@ struct NewTransactionView: View {
                     .ignoresSafeArea()
                     .dismissKeyboardOnTap()
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Transaction type selector
                     transactionTypeSelector
                         .padding(.top, DS.Spacing.sm)
@@ -284,7 +284,7 @@ struct NewTransactionView: View {
             .overlay(alignment: .bottom) {
                 if showSavedToast {
                     Text(savedToastMessage)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
@@ -351,7 +351,7 @@ struct NewTransactionView: View {
                     Image(systemName: "calendar")
                         .font(DS.Typography.label)
                     Text(dateChipText)
-                        .font(.callout.weight(.medium))
+                        .font(DS.Typography.label)
                 }
                 .foregroundStyle(.primary)
                 .padding(.horizontal, DS.Spacing.lg)
@@ -366,7 +366,7 @@ struct NewTransactionView: View {
             // Note field with mention detection and popover autocomplete
             VStack(spacing: DS.Spacing.xs) {
                 TextField(L10n.Transaction.description, text: $viewModel.note)
-                    .font(.title2.weight(.semibold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .textContentType(.none)
@@ -392,7 +392,7 @@ struct NewTransactionView: View {
                 // Shortcut hint (hidden for transfers)
                 if !viewModel.isTransfer {
                     Text(L10n.Transaction.descriptionHint)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -421,9 +421,9 @@ struct NewTransactionView: View {
                     let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
-                            .font(.caption2.weight(.medium))
+                            .font(DS.Typography.labelTiny)
                         Text(category.name)
-                            .font(.caption2.weight(.medium))
+                            .font(DS.Typography.labelTiny)
                     }
                     .foregroundStyle(categoryColor)
                     .padding(.horizontal, 10)
@@ -590,7 +590,7 @@ struct NewTransactionView: View {
         let formattedRate = String(format: "%.4f", rate)
 
         return Text("≈ \(currencyDisplay) \(formattedAmount) (TC: \(formattedRate))")
-            .font(.caption.weight(.medium))
+            .font(DS.Typography.labelSmall)
             .foregroundStyle(Color.yalaSecondaryText)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.xs)
@@ -659,7 +659,7 @@ struct NewTransactionView: View {
                             .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                     )
                 Text(label)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
             }
         }
@@ -781,7 +781,7 @@ struct NewTransactionView: View {
                                         Image(systemName: tag.iconName)
                                             .font(DS.Typography.labelSmall)
                                         Text(tag.name)
-                                            .font(.subheadline.weight(.medium))
+                                            .font(DS.Typography.label)
                                             .lineLimit(1)
                                     }
                                 }
@@ -914,7 +914,7 @@ struct NewTransactionView: View {
                             .frame(width: 10, height: 10)
 
                         Text(suggestion.name)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.primary)
 
                         Spacer()
@@ -1001,7 +1001,7 @@ struct NewTransactionView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.headline)
                     Text(L10n.Action.save)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                 }
             }
             .frame(maxWidth: .infinity)

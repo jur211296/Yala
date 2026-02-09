@@ -81,15 +81,15 @@ struct TagSelectorSheet: View {
         VStack(spacing: DS.Spacing.lg) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "tag.slash")
-                    .font(.system(size: 40))
+                    .font(DS.Typography.amountLarge)
                     .foregroundStyle(.secondary)
 
                 Text(L10n.Empty.noTags)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
 
                 Text(L10n.Tag.createFirstDescription)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
             }
@@ -104,7 +104,7 @@ struct TagSelectorSheet: View {
     private var tagsList: some View {
         VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: "") {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) {
                         index, tag in
                         if index > 0 {
@@ -173,19 +173,19 @@ struct TagSelectorRow: View {
                     .frame(width: 28, height: 28)
                     .overlay(
                         Image(systemName: tag.iconName)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                     )
 
                 Text(tag.name)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }

@@ -97,7 +97,7 @@ struct AppIconSettingsView: View {
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         Text(L10n.Settings.appIconDescription)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .multilineTextAlignment(.center)
                     }
@@ -188,7 +188,7 @@ struct AppIconSettingsView: View {
                     // Lock badge for premium icons
                     if isLocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                             .padding(6)
                             .background(Circle().fill(Color.gray))
@@ -199,7 +199,7 @@ struct AppIconSettingsView: View {
                 // Label
                 HStack(spacing: DS.Spacing.xs) {
                     Text(icon.displayName)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(isLocked ? Color.yalaSecondaryText : Color.yalaPrimaryText)
 
                     if icon.isPremium && !isSelected {
@@ -208,7 +208,7 @@ struct AppIconSettingsView: View {
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(Color.brandPrimary)
                     }
                 }

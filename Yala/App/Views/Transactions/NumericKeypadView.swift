@@ -29,9 +29,9 @@ struct NumericKeypadView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             ForEach(0..<buttons.count, id: \.self) { row in
-                HStack(spacing: 0) {
+                HStack(spacing: DS.Spacing.none) {
                     ForEach(buttons[row]) { button in
                         KeypadButtonView(button: button) {
                             handleTap(button)

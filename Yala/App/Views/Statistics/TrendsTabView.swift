@@ -394,7 +394,7 @@ struct TrendsTabView: View {
     private var trendsHeader: some View {
         HStack {
             Text(L10n.Trend.title)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             InfoHintButton(
@@ -419,7 +419,7 @@ struct TrendsTabView: View {
     // MARK: - Comparison Mode Selector
 
     private var comparisonModeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ComparisonMode.allCases) { mode in
                 comparisonSelectorButton(for: mode)
             }
@@ -440,7 +440,7 @@ struct TrendsTabView: View {
             }
         } label: {
             Text(mode.shortName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, 10)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
@@ -525,7 +525,7 @@ struct TrendsTabView: View {
                             )
 
                             Text(comparisonPeriodText)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color.yalaSecondaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -535,7 +535,7 @@ struct TrendsTabView: View {
             } else {
                 // Simple title when no data
                 Text(chartTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
             }
 
@@ -575,7 +575,7 @@ struct TrendsTabView: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -591,7 +591,7 @@ struct TrendsTabView: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -616,20 +616,20 @@ struct TrendsTabView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(periodComparisonTitle)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         // KPI value with "vs" previous
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(currentKPIValue)
-                                .font(.callout.weight(.bold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(Color.yalaPrimaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
 
                             if let prevTotal = previousPeriodTotal {
                                 Text("vs \(YalaFormatter.number(value: prevTotal))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
@@ -651,7 +651,7 @@ struct TrendsTabView: View {
                         )
 
                         Text(comparisonPeriodText)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -660,7 +660,7 @@ struct TrendsTabView: View {
             } else {
                 // Simple title when no data
                 Text(periodComparisonTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
             }
 
@@ -718,12 +718,12 @@ struct TrendsTabView: View {
     private var chartHeader: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(chartTitle)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                 Text(currentKPIValue)
-                    .font(.callout.weight(.bold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -732,7 +732,7 @@ struct TrendsTabView: View {
                 if showVariations && trendsViewModel.detailPeriod != .allTime,
                    let prevTotal = previousPeriodTotal {
                     Text("vs \(YalaFormatter.number(value: prevTotal))")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -751,7 +751,7 @@ struct TrendsTabView: View {
     }
 
     private var metricSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             // Always show all options - user can switch freely
             ForEach(TrendMetric.allCases) { metric in
                 metricButton(for: metric)
@@ -793,7 +793,7 @@ struct TrendsTabView: View {
         } label: {
             // Icon only (compact version for TrendsTabView header)
             Image(systemName: metric.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, 14)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? metric.color.opacity(0.4) : metric.color))
@@ -818,7 +818,7 @@ struct TrendsTabView: View {
             // Header with selector
             HStack {
                 Text(L10n.CashFlow.title)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 InfoHintButton(
@@ -872,7 +872,7 @@ struct TrendsTabView: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -889,7 +889,7 @@ struct TrendsTabView: View {
     }
 
     private var cashFlowViewSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(CashFlowViewType.allCases) { viewType in
                 cashFlowViewButton(for: viewType)
             }
@@ -930,7 +930,7 @@ struct TrendsTabView: View {
             }
         } label: {
             Image(systemName: viewType.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, 10)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
@@ -956,7 +956,7 @@ struct TrendsTabView: View {
         if !accountIDs.isEmpty {
             VStack(spacing: DS.Spacing.sm) {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 0) {
+                    LazyHStack(alignment: .top, spacing: DS.Spacing.none) {
                         ForEach(accountIDs, id: \.self) { accountID in
                             if let account = accounts.first(where: {
                                 $0.persistentModelID == accountID
@@ -1024,7 +1024,7 @@ struct TrendsTabView: View {
         if !currencyCodes.isEmpty {
             VStack(spacing: DS.Spacing.sm) {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 0) {
+                    LazyHStack(alignment: .top, spacing: DS.Spacing.none) {
                         ForEach(currencyCodes, id: \.self) { currencyCode in
                             if let summary = cashFlowByCurrency[currencyCode] {
                                 cashFlowCard(
@@ -1131,7 +1131,7 @@ struct TrendsTabView: View {
     private var recentRecordsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             if trendsViewModel.recentRecords.isEmpty {
@@ -1149,9 +1149,9 @@ struct TrendsTabView: View {
                 HStack {
                     Spacer()
                     Text(L10n.Action.viewAll)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
@@ -1169,10 +1169,10 @@ struct TrendsTabView: View {
     private var emptyRecordsState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
             Text(L10n.Records.noRecords)
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -1654,24 +1654,24 @@ struct CompactRecordRow: View {
                 // Line 1: Note (bold) or Subcategory as fallback
                 if let note = record.note, !note.isEmpty {
                     Text(note)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     // Line 2: Subcategory • Date
                     Text(secondaryLine)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 } else {
                     Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     // Date as secondary
                     Text(shortDateFormat)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -1682,7 +1682,7 @@ struct CompactRecordRow: View {
             // Right column: Amount + Nature
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                 Text(formattedAmount)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(amountColor)
 
                 // Nature indicator (if available)
@@ -1702,7 +1702,7 @@ struct CompactRecordRow: View {
                 .frame(width: 6, height: 6)
 
             Text(nature.displayName)
-                .font(.caption2.weight(.medium))
+                .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, DS.Spacing.xs)

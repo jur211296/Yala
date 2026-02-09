@@ -21,7 +21,7 @@ struct TipsAndTricksView: View {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 48))
+                            .font(DS.Typography.amountLarge)
                             .foregroundStyle(.yellow)
                             .padding(.bottom, DS.Spacing.sm)
 
@@ -30,7 +30,7 @@ struct TipsAndTricksView: View {
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         Text(L10n.Tips.subtitle)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .multilineTextAlignment(.center)
                     }
@@ -81,13 +81,13 @@ struct TipsAndTricksView: View {
                     .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(Color.yalaSecondaryText)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaSecondaryText)
                     .textCase(.uppercase)
             }
             .padding(.horizontal, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(tips.enumerated()), id: \.element) { index, tip in
                     tipRow(tip: tip)
 
@@ -115,7 +115,7 @@ struct TipsAndTricksView: View {
                 expandedTip = expandedTip == tip ? nil : tip
             }
         } label: {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: tip.icon)
                         .font(DS.Typography.subheadline).fontWeight(.medium)
@@ -127,19 +127,19 @@ struct TipsAndTricksView: View {
                         )
 
                     Text(tip.title)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Spacer()
 
                     Image(systemName: expandedTip == tip ? "chevron.up" : "chevron.down")
-                        .font(.footnote.weight(.medium))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 
                 if expandedTip == tip {
                     Text(tip.detail)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .padding(.top, DS.Spacing.sm)
                         .padding(.leading, 40)

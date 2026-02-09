@@ -23,7 +23,7 @@ struct ScheduledPaymentRowView: View {
                 // Payment info
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(summary.payment.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -36,7 +36,7 @@ struct ScheduledPaymentRowView: View {
                 // Amount (right-aligned)
                 VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     Text(formattedAmount)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(amountColor)
 
                     // Recurrence badge
@@ -75,21 +75,21 @@ struct ScheduledPaymentRowView: View {
                 .frame(width: 40, height: 40)
 
             Image(systemName: summary.icon)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
 
     private var dueInfo: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) {
             // Paid badge (if paid for current cycle)
             if summary.payment.isPaidForCurrentCycle {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.green)
 
                 Text(L10n.Scheduled.paid)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.green)
             } else {
                 // Due status indicator (only for past due)
@@ -105,17 +105,17 @@ struct ScheduledPaymentRowView: View {
                 }
 
                 Text(dueText)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(summary.dueStatus == .past ? Color.hotPink : .secondary)
             }
 
             if let accountName = summary.payment.account?.name {
                 Text("•")
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary.opacity(0.5))
 
                 Text(accountName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -131,7 +131,7 @@ struct ScheduledPaymentRowView: View {
         }
 
         return Text(recurrenceText)
-            .font(.caption2)
+            .font(DS.Typography.captionSmall)
             .foregroundStyle(.secondary)
     }
 

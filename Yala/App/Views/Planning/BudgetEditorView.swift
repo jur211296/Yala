@@ -156,7 +156,7 @@ struct BudgetEditorView: View {
 
     private var basicInfoSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.basic.info", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Name Field
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
@@ -177,7 +177,7 @@ struct BudgetEditorView: View {
                     Spacer()
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         Text(currencyCode)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $limitAmount)
                             .keyboardType(.decimalPad)
@@ -210,16 +210,16 @@ struct BudgetEditorView: View {
 
     private var dateRangeSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.date.range", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Start Date
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar")
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
 
                     Text(NSLocalizedString("budgets.editor.start.date", comment: ""))
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -238,12 +238,12 @@ struct BudgetEditorView: View {
                 // End Date
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar")
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
 
                     Text(NSLocalizedString("budgets.editor.end.date", comment: ""))
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -266,7 +266,7 @@ struct BudgetEditorView: View {
     private var activeToggle: some View {
         Toggle(isOn: $isActive) {
             Text(NSLocalizedString("common.active", comment: ""))
-                .font(.body)
+                .font(DS.Typography.body)
         }
         .tint(Color.brandPrimary)
     }
@@ -275,7 +275,7 @@ struct BudgetEditorView: View {
 
     private var alertsSection: some View {
         SectionBox(title: L10n.Budgets.alertsTitle) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Toggle
                 Toggle(isOn: $alertEnabled) {
                     HStack {
@@ -291,9 +291,9 @@ struct BudgetEditorView: View {
                 if !budgetAlertsGloballyEnabled {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "info.circle")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                         Text(L10n.Budgets.alertsGlobalDisabledHint)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                     }
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)
@@ -306,7 +306,7 @@ struct BudgetEditorView: View {
                     // Threshold chips
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         Text(L10n.Budgets.alertsThresholds)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, DS.Spacing.lg)
                             .padding(.top, DS.Spacing.sm)
@@ -335,7 +335,7 @@ struct BudgetEditorView: View {
             }
         } label: {
             Text("\(threshold)%")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
@@ -351,7 +351,7 @@ struct BudgetEditorView: View {
 
     private var filtersSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 accountsContent
                 Divider().padding(.leading, 16)
                 categoriesContent
@@ -388,7 +388,7 @@ struct BudgetEditorView: View {
             }
         } label: {
             Text(account.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -418,7 +418,7 @@ struct BudgetEditorView: View {
         Button {
             showCategoriesSheet = true
         } label: {
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 FilterSectionHeader(
                     icon: "tag",
                     title: NSLocalizedString("subcategories.title", comment: ""),
@@ -428,7 +428,7 @@ struct BudgetEditorView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -472,7 +472,7 @@ struct BudgetEditorView: View {
                     .frame(width: 8, height: 8)
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -533,7 +533,7 @@ struct BudgetEditorView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Text(nature.displayName)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -563,7 +563,7 @@ struct BudgetEditorView: View {
             HStack {
                 Spacer()
                 Text(NSLocalizedString("budgets.delete", comment: ""))
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                 Spacer()
             }
             .padding(.vertical, DS.Spacing.lg)

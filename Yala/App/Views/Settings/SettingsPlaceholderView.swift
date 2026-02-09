@@ -34,7 +34,7 @@ struct SettingsPlaceholderView: View {
                     .font(.title3.weight(.semibold))
 
                 Text(message)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)

@@ -67,7 +67,7 @@ struct InboxAlertModal: View {
                         .frame(width: 72, height: 72)
 
                     Image(systemName: icon)
-                        .font(.system(size: 32, weight: .medium))
+                        .font(DS.Typography.amountLarge)
                         .foregroundStyle(Color.electricIndigo)
                 }
                 .padding(.top, DS.Spacing.sm)

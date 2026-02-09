@@ -186,7 +186,7 @@ struct CategoryDetailView: View {
                         .frame(width: 70, height: 70)
                         .overlay(
                             Image(systemName: viewModel.iconName)
-                                .font(.title2)
+                                .font(DS.Typography.title)
                                 .foregroundStyle(.white)
                         )
                         .shadow(color: Color(hex: viewModel.colorHex).opacity(0.3), radius: 6, x: 0, y: 3)
@@ -197,7 +197,7 @@ struct CategoryDetailView: View {
                         .frame(width: 24, height: 24)
                         .overlay(
                             Image(systemName: "pencil")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.electricIndigo)
                         )
                         .overlay(
@@ -210,7 +210,7 @@ struct CategoryDetailView: View {
             .buttonStyle(.plain)
 
             Text(viewModel.displayName)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -228,7 +228,7 @@ struct CategoryDetailView: View {
     private var detailsSection: some View {
         VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: L10n.Category.details) {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
@@ -290,7 +290,7 @@ struct CategoryDetailView: View {
                 // Header with Edit/Done button
                 HStack {
                     Text(L10n.Category.activeSubcategories)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.primary.opacity(0.6))
                     Spacer()
                     if !visibles.isEmpty || !ocultas.isEmpty {
@@ -298,30 +298,30 @@ struct CategoryDetailView: View {
                             isEditingSubcategories.toggle()
                         } label: {
                             Text(isEditingSubcategories ? L10n.Action.done : L10n.Action.edit)
-                                .font(.subheadline)
+                                .font(DS.Typography.subheadline)
                                 .foregroundStyle(Color.electricIndigo)
                         }
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xs)
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     if visibles.isEmpty && ocultas.isEmpty {
                         Text(L10n.Category.noSubcategoriesYet)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
                             .padding()
                     } else if !visibles.isEmpty {
-                        VStack(spacing: 0) {
+                        VStack(spacing: DS.Spacing.none) {
                             ForEach(Array(visibles.enumerated()), id: \.element.id) { index, subcategory in
-                                HStack(spacing: 0) {
+                                HStack(spacing: DS.Spacing.none) {
                                     if isEditingSubcategories && !subcategory.isSystemSubcategory {
                                         Button {
                                             handleSubcategoryDelete(subcategory)
                                         } label: {
                                             Image(systemName: "minus.circle.fill")
-                                                .font(.title2)
+                                                .font(DS.Typography.title)
                                                 .foregroundStyle(.red)
                                         }
                                         .accessibilityLabel("Eliminar subcategoría")
@@ -336,7 +336,7 @@ struct CategoryDetailView: View {
                                         HStack {
                                             subcategoryRow(subcategory)
                                             Image(systemName: "chevron.right")
-                                                .font(.system(size: 14, weight: .medium))
+                                                .font(DS.Typography.labelSmall)
                                                 .foregroundStyle(.tertiary)
                                         }
                                     }
@@ -387,19 +387,19 @@ struct CategoryDetailView: View {
             if !ocultas.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(L10n.Category.hiddenSubcategories)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.primary.opacity(0.6))
                         .padding(.leading, DS.Spacing.xs)
 
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         ForEach(Array(ocultas.enumerated()), id: \.element.id) { index, subcategory in
-                            HStack(spacing: 0) {
+                            HStack(spacing: DS.Spacing.none) {
                                 if isEditingSubcategories && !subcategory.isSystemSubcategory {
                                     Button {
                                         handleSubcategoryDelete(subcategory)
                                     } label: {
                                         Image(systemName: "minus.circle.fill")
-                                            .font(.title2)
+                                            .font(DS.Typography.title)
                                             .foregroundStyle(.red)
                                     }
                                     .accessibilityLabel("Eliminar subcategoría")
@@ -414,7 +414,7 @@ struct CategoryDetailView: View {
                                     HStack {
                                         subcategoryRow(subcategory)
                                         Image(systemName: "chevron.right")
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(DS.Typography.labelSmall)
                                             .foregroundStyle(.tertiary)
                                     }
                                 }
@@ -453,12 +453,12 @@ struct CategoryDetailView: View {
                 .frame(width: 36, height: 36)
                 .overlay(
                     Image(systemName: subcategory.iconName ?? viewModel.category.iconName ?? "tag")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 )
 
             Text(subcategory.name)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Spacer()

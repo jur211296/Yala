@@ -23,7 +23,7 @@ struct ScheduledPaymentsFiltersView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
                     SectionBox(title: NSLocalizedString("filters.title", comment: "")) {
-                        VStack(spacing: 0) {
+                        VStack(spacing: DS.Spacing.none) {
                             accountsContent
                             Divider().padding(.leading, 16)
                             transactionTypesContent
@@ -87,7 +87,7 @@ struct ScheduledPaymentsFiltersView: View {
             }
         } label: {
             Text(account.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -140,7 +140,7 @@ struct ScheduledPaymentsFiltersView: View {
             }
         } label: {
             Text(label)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
@@ -165,7 +165,7 @@ struct ScheduledPaymentsFiltersView: View {
         Button {
             showCategoriesSheet = true
         } label: {
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 FilterSectionHeader(
                     icon: "tag",
                     title: NSLocalizedString("categories.title", comment: ""),
@@ -175,7 +175,7 @@ struct ScheduledPaymentsFiltersView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -219,11 +219,11 @@ struct ScheduledPaymentsFiltersView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: tag.iconName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(isSelected ? .white : Color(hex: tag.colorHex))
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }

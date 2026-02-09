@@ -131,7 +131,7 @@ struct PersonalDetailsView: View {
             }
 
             Text(L10n.Profile.editAvatar)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(Color.electricIndigo)
         }
         .padding(.vertical, DS.Spacing.sm)
@@ -186,7 +186,7 @@ struct PersonalDetailsView: View {
                 .frame(width: 32, height: 32)
                 .overlay {
                     Image(systemName: "pencil")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(.white)
                 }
                 .offset(x: 35, y: 35)
@@ -205,9 +205,9 @@ struct PersonalDetailsView: View {
 
     private var detailsSection: some View {
         SectionBox(title: "") {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Name row
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     HStack {
                         Text(L10n.Common.name)
                             .foregroundStyle(.primary)
@@ -221,7 +221,7 @@ struct PersonalDetailsView: View {
                     // Character count
                     if !editedName.isEmpty {
                         Text("\(editedName.count)/\(maxNameLength) \(L10n.Profile.characters)")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(
                                 editedName.count >= maxNameLength ? .orange : .secondary
                             )
@@ -233,7 +233,7 @@ struct PersonalDetailsView: View {
                 SubsectionDivider()
 
                 // Alias row
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     HStack {
                         Text(L10n.Common.alias)
                             .foregroundStyle(.primary)
@@ -248,16 +248,16 @@ struct PersonalDetailsView: View {
 
                     // Validation message
                     if !editedAlias.isEmpty {
-                        HStack(spacing: 4) {
+                        HStack(spacing: DS.Spacing.xs) {
                             Image(
                                 systemName: isAliasValid
                                     ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
                             )
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(isAliasValid ? .green : .orange)
 
                             Text(aliasValidationMessage)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(isAliasValid ? .green : .orange)
                         }
                         .padding(.horizontal, 16)
@@ -266,7 +266,7 @@ struct PersonalDetailsView: View {
 
                     // Alias info
                     Text(L10n.Profile.aliasHelper)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 12)
@@ -280,15 +280,15 @@ struct PersonalDetailsView: View {
     private var privacyDisclaimer: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Profile.privacyTitle)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.primary)
 
             Text(L10n.Profile.privacyDesc)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
 
             Text(L10n.Profile.aliasFutureNote)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.tertiary)
                 .italic()
                 .padding(.top, DS.Spacing.sm)
@@ -441,14 +441,14 @@ struct IconPickerSheet: View {
                         .frame(width: 60, height: 60)
 
                     Image(systemName: icon.symbol)
-                        .font(.system(size: 28))
+                        .font(DS.Typography.largeTitle)
                         .foregroundStyle(selectedIcon == icon.symbol
                                          ? .white
                                          : Color.electricIndigo)
                 }
 
                 Text(icon.name)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }

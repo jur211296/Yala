@@ -20,17 +20,17 @@ struct LimitReachedBanner: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.title3)
+                .font(DS.Typography.title)
                 .foregroundStyle(.orange)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.FeatureGate.limitReachedTitle)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 if let limit = feature.freeLimit {
                     Text(L10n.FeatureGate.limitInfo(currentCount, limit))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
             }
@@ -43,7 +43,7 @@ struct LimitReachedBanner: View {
                 HStack(spacing: DS.Spacing.xs) {
                     YalaSpark(size: .small, animated: false)
                     Text(L10n.FeatureGate.upgrade)
-                        .font(.caption.weight(.semibold))
+                        .font(DS.Typography.labelSmall)
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, DS.Spacing.md)

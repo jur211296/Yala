@@ -61,7 +61,7 @@ struct BudgetsWidget: View {
     private var headerSection: some View {
         HStack(alignment: .top) {
             Text(L10n.WidgetType.budgets)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
@@ -77,7 +77,7 @@ struct BudgetsWidget: View {
                     onShowMore?()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
                         .padding(.leading, 4)
                 }
@@ -117,18 +117,18 @@ struct BudgetsWidget: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: hasBudgetsButNoFavorites ? "star" : "chart.pie.fill")
-                .font(.largeTitle)
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
                 .padding(.bottom, DS.Spacing.xs)
 
             if hasBudgetsButNoFavorites {
                 Text(NSLocalizedString("budgets.widget.noFavorites.title", comment: ""))
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
                 Text(NSLocalizedString("budgets.widget.noFavorites.message", comment: ""))
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
 
@@ -138,7 +138,7 @@ struct BudgetsWidget: View {
                         onEditFavorites?()
                     } label: {
                         Text(L10n.Budgets.Widget.selectFavorites)
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(Color.electricIndigo)
                     }
                     .buttonStyle(.plain)
@@ -146,12 +146,12 @@ struct BudgetsWidget: View {
                 }
             } else {
                 Text(NSLocalizedString("budgets.empty.title", comment: ""))
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
                 Text(NSLocalizedString("budgets.empty.message", comment: ""))
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }

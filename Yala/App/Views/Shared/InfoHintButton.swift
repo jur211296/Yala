@@ -50,7 +50,7 @@ struct InfoHintButton: View {
 #Preview {
     HStack {
         Text("Widget Title")
-            .font(.headline)
+            .font(DS.Typography.headline)
 
         InfoHintButton(
             title: "Tendencias",

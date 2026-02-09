@@ -25,7 +25,7 @@ struct TransactionTypeSelectorView: View {
     }
 
     private var selectorContent: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(availableTypes) { type in
                 Button {
                     dsWithAnimation(reduceMotion) {

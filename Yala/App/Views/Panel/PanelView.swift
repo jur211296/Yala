@@ -423,7 +423,7 @@ struct PanelView: View {
                     .frame(width: 24)
 
                 Text(text)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
 
                 if isLocked {
                     ProBadge(size: .small)
@@ -451,7 +451,7 @@ struct PanelView: View {
     private var accountsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Text(L10n.Panel.accounts)
-                .font(.title2.weight(.semibold))
+                .font(DS.Typography.title)
 
             AccountsCarouselView(
                 viewModel: viewModel,
@@ -705,7 +705,7 @@ struct PanelView: View {
 
             HStack {
                 Text(L10n.Panel.widgets)
-                    .font(.title2.weight(.semibold))
+                    .font(DS.Typography.title)
 
                 Spacer()
 

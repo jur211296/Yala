@@ -92,7 +92,7 @@ struct TrendChartView: View {
                     .symbolSize(0)  // Invisible point just for annotation context
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
                         Text(formattedAmountShort(point.value))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -115,7 +115,7 @@ struct TrendChartView: View {
                 .foregroundStyle(Color.yalaSecondaryText.opacity(0.5))
                 .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
                     Text(L10n.Widget.today)
-                        .font(.caption2.bold())
+                        .font(DS.Typography.labelTiny)
                         .foregroundStyle(Color.yalaPrimaryText)
                         .padding(.horizontal, DS.Spacing.xs)
                         .padding(.vertical, DS.Spacing.xs)
@@ -161,10 +161,10 @@ struct TrendChartView: View {
                 ) {
                     VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         Text(periodLabel(for: activeDate))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                         Text("\(formattedAmount(rawValue)) \(currencyCode)")
-                            .font(.caption.bold())
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.yalaPrimaryText)
                     }
                     .padding(.horizontal, DS.Spacing.sm)
@@ -185,7 +185,7 @@ struct TrendChartView: View {
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatK(doubleValue))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -209,7 +209,7 @@ struct TrendChartView: View {
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }

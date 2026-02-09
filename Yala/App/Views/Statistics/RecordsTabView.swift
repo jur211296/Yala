@@ -30,7 +30,7 @@ struct RecordsTabView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 controlBar
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
@@ -268,7 +268,7 @@ struct RecordsTabView: View {
                     YalaFormatter.currency(
                         value: recordsSummary.balance, currencyCode: defaultCurrencyCode)
                 )
-                .font(.title.weight(.bold))
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(.primary)
             }
 
@@ -289,13 +289,13 @@ struct RecordsTabView: View {
                     } label: {
                         HStack(spacing: DS.Spacing.xs) {
                             Image(systemName: "arrow.up.right")
-                                .font(.caption.weight(.semibold))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.incomeGraph)
                             Text(
                                 YalaFormatter.currency(
                                     value: recordsSummary.income, currencyCode: defaultCurrencyCode)
                             )
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                         }
                         .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
@@ -320,13 +320,13 @@ struct RecordsTabView: View {
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "arrow.down.right")
-                            .font(.caption.weight(.semibold))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.expenseGraph)
                         Text(
                             YalaFormatter.currency(
                                 value: recordsSummary.expense, currencyCode: defaultCurrencyCode)
                         )
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                     }
                     .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
@@ -380,7 +380,7 @@ struct RecordsTabView: View {
     private var emptyStateContent: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "list.bullet.rectangle")
-                .font(.largeTitle)
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
 
             Text(L10n.Records.noRecords)
@@ -392,7 +392,7 @@ struct RecordsTabView: View {
                     ? L10n.Statistics.noRecordsFiltered
                     : L10n.Statistics.noRecordsDescription
             )
-            .font(.subheadline)
+            .font(DS.Typography.subheadline)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, DS.Spacing.xxxl + DS.Spacing.sm)
@@ -403,7 +403,7 @@ struct RecordsTabView: View {
                     onFilterChange()
                 } label: {
                     Text(L10n.Filters.clearFilters)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(Color.electricIndigo)
                 }
                 .padding(.top, DS.Spacing.sm)

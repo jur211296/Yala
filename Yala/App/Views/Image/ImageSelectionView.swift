@@ -242,18 +242,18 @@ struct ImageSelectionView: View {
 
                 // Icon
                 Image(systemName: "photo.on.rectangle.angled")
-                    .font(.system(size: 40, weight: .medium))
+                    .font(DS.Typography.amountLarge)
                     .foregroundStyle(.white)
             }
 
             // Status text
             VStack(spacing: DS.Spacing.sm) {
                 Text(L10n.Image.selectTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Text(L10n.Image.selectSubtitle)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -267,7 +267,7 @@ struct ImageSelectionView: View {
                 matching: .images
             ) {
                 Image(systemName: "photo.badge.plus")
-                    .font(.title.weight(.medium))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.white)
                     .frame(width: 80, height: 80)
                     .background(
@@ -325,13 +325,13 @@ struct ImageSelectionView: View {
                                     .fill(Color.teal.opacity(0.2))
                                     .frame(width: 80, height: 80)
                                 Text("+\(selectedImages.count - 6)")
-                                    .font(.headline)
+                                    .font(DS.Typography.headline)
                                     .foregroundStyle(Color.teal)
                             }
                         }
                     }
                     Text(L10n.Image.imagesSelected(selectedImages.count))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -353,14 +353,14 @@ struct ImageSelectionView: View {
                         .animation(.easeInOut(duration: 1.0), value: countdownValue)
 
                     Text("\(countdownValue)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(DS.Typography.amountLarge)
                         .foregroundStyle(Color.teal)
                         .contentTransition(.numericText())
                 }
 
                 // Glass label
                 Text(L10n.Image.analyzingIn(countdownValue))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xs)
@@ -437,18 +437,18 @@ struct ImageSelectionView: View {
 
                 // Checkmark icon
                 Image(systemName: "checkmark")
-                    .font(.system(size: 40, weight: .medium))
+                    .font(DS.Typography.amountLarge)
                     .foregroundStyle(.white)
             }
 
             // Count and label
             VStack(spacing: DS.Spacing.sm) {
                 Text("\(draftsCreated)")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(DS.Typography.amountLarge)
                     .foregroundStyle(Color.electricIndigo)
 
                 Text(L10n.Image.transactionsDetectedCount)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
 

@@ -68,7 +68,7 @@ struct SubscriptionView: View {
 
     private var paywallContent: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Hero gradient header
                 heroSection
 
@@ -95,7 +95,7 @@ struct SubscriptionView: View {
                             Task { await store.restorePurchases() }
                         } label: {
                             Text(L10n.Subscription.restore)
-                                .font(.subheadline)
+                                .font(DS.Typography.subheadline)
                                 .foregroundStyle(Color.brandPrimary)
                         }
                     }
@@ -103,7 +103,7 @@ struct SubscriptionView: View {
 
                     // Legal footer
                     Text(L10n.Subscription.legalFooter)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
@@ -168,14 +168,14 @@ struct SubscriptionView: View {
 
                 // Title
                 Text(L10n.Subscription.paywallTitle)
-                    .font(.title.bold())
+                    .font(DS.Typography.largeTitle)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .shadow(color: Color.black.opacity(0.2), radius: 4, y: 2)
 
                 // Subtitle
                 Text(L10n.Subscription.paywallSubtitle)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
 
@@ -209,7 +209,7 @@ struct SubscriptionView: View {
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Text(L10n.Subscription.activeSubtitle)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .multilineTextAlignment(.center)
                 }
@@ -225,7 +225,7 @@ struct SubscriptionView: View {
                     showManageSubscription = true
                 } label: {
                     Text(L10n.Subscription.manageInAppStore)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(Color.brandPrimary)
                 }
                 .manageSubscriptionsSheet(isPresented: $showManageSubscription)
@@ -236,7 +236,7 @@ struct SubscriptionView: View {
     // MARK: - Features
 
     private var featuresSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             featureRow(icon: "building.columns.fill", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
             featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
             featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
@@ -265,7 +265,7 @@ struct SubscriptionView: View {
                 )
 
             Text(text)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             Spacer()
@@ -316,12 +316,12 @@ struct SubscriptionView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     HStack(spacing: DS.Spacing.sm) {
                         Text(planDisplayName(for: product))
-                            .font(.body.weight(.semibold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         if let badge {
                             Text(badge)
-                                .font(.caption.weight(.bold))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, DS.Spacing.sm)
                                 .padding(.vertical, DS.Spacing.xxs)
@@ -338,12 +338,12 @@ struct SubscriptionView: View {
                     }
 
                     Text(product.displayPrice + " " + planPeriodLabel(for: product))
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(Color.yalaSecondaryText)
 
                     if let monthlyEquiv = store.monthlyEquivalent(for: product) {
                         Text(L10n.Subscription.perMonth(monthlyEquiv))
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -387,13 +387,13 @@ struct SubscriptionView: View {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Subscription.currentPlan)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.yalaSecondaryText)
 
                     Text(transaction.productID == StoreKitManager.proYearlyID
                         ? L10n.Subscription.planYearly
                         : L10n.Subscription.planMonthly)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.yalaPrimaryText)
                 }
 
@@ -407,11 +407,11 @@ struct SubscriptionView: View {
 
                 HStack {
                     Text(L10n.Subscription.renewsOn)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(Color.yalaSecondaryText)
                     Spacer()
                     Text(expirationDate.formatted(date: .abbreviated, time: .omitted))
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(Color.yalaPrimaryText)
                 }
             }

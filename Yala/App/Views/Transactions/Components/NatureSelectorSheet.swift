@@ -65,11 +65,11 @@ private struct NatureOptionRow: View {
                 // Text content
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(nature.displayName)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
 
                     Text(nature.description)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
@@ -79,7 +79,7 @@ private struct NatureOptionRow: View {
                 // Checkmark
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }

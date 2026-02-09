@@ -261,7 +261,7 @@ extension View {
 
 #Preview("Card Modifiers") {
     ScrollView {
-        VStack(spacing: 20) {
+        VStack(spacing: DS.Spacing.xl) {
             // Standard card
             Text("Card estándar")
                 .frame(maxWidth: .infinity)
@@ -279,7 +279,7 @@ extension View {
                 VStack(alignment: .leading) {
                     Text("Supermercado")
                     Text("Alimentación")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -332,7 +332,7 @@ extension View {
 }
 
 #Preview("Icon Badges") {
-    HStack(spacing: 20) {
+    HStack(spacing: DS.Spacing.xl) {
         Image(systemName: "cart.fill")
             .yalaIconBadgeSmall(background: .blue)
 

@@ -27,7 +27,7 @@ struct BiometricSecurityView: View {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: authService.biometricType.icon)
-                            .font(.system(size: 48))
+                            .font(DS.Typography.amountLarge)
                             .foregroundStyle(Color.brandPrimary)
                             .padding(.bottom, DS.Spacing.sm)
 
@@ -36,7 +36,7 @@ struct BiometricSecurityView: View {
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         Text(L10n.Biometric.description)
-                            .font(.body)
+                            .font(DS.Typography.body)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .multilineTextAlignment(.center)
                     }
@@ -46,7 +46,7 @@ struct BiometricSecurityView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         HStack {
                             Text(L10n.Biometric.enableLock)
-                                .font(.body)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(Color.yalaPrimaryText)
 
                             Spacer()
@@ -65,7 +65,7 @@ struct BiometricSecurityView: View {
                         )
 
                         Text(L10n.Biometric.enableLockHint)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 4)
                     }
@@ -73,7 +73,7 @@ struct BiometricSecurityView: View {
                     // Lock timeout selector (only when enabled)
                     if isEnabled {
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(Array(LockTimeout.allCases.enumerated()), id: \.element.id) { index, timeout in
                                     timeoutRow(for: timeout)
 
@@ -91,7 +91,7 @@ struct BiometricSecurityView: View {
                             )
 
                             Text(L10n.Biometric.lockAfterHint)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 4)
                         }
@@ -158,7 +158,7 @@ struct BiometricSecurityView: View {
         } label: {
             HStack {
                 Text(timeout.label)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
@@ -166,7 +166,7 @@ struct BiometricSecurityView: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)

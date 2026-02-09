@@ -32,7 +32,7 @@ struct ImportCurrencyMappingSheet: View {
             ZStack {
                 PanelBackgroundView()
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     ScrollView {
                         VStack(spacing: DS.Spacing.xxl) {
                             headerSection
@@ -62,7 +62,7 @@ struct ImportCurrencyMappingSheet: View {
     private var headerSection: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "dollarsign.arrow.circlepath")
-                .font(.system(size: 48))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(Color.brandPrimary)
                 .padding(.bottom, DS.Spacing.sm)
 
@@ -81,7 +81,7 @@ struct ImportCurrencyMappingSheet: View {
 
     private var currencyMappingSection: some View {
         SectionBox(title: "") {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(sortedCurrencies.enumerated()), id: \.element) { index, currencyCode in
                     if index > 0 {
                         SubsectionDivider()
@@ -103,7 +103,7 @@ struct ImportCurrencyMappingSheet: View {
         }
         let isExpanded = expandedCurrency == currencyCode
 
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Main row - currency info and selected account
             Button {
                 dsWithAnimation(reduceMotion) {
@@ -113,7 +113,7 @@ struct ImportCurrencyMappingSheet: View {
                 HStack(spacing: DS.Spacing.md) {
                     // Currency flag and code
                     Text(info.flag)
-                        .font(.system(size: 28))
+                        .font(DS.Typography.largeTitle)
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(currencyCode)
@@ -134,7 +134,7 @@ struct ImportCurrencyMappingSheet: View {
                                 .frame(width: 24, height: 24)
                                 .overlay(
                                     Image(systemName: displayIconName(for: account))
-                                        .font(.system(size: 12))
+                                        .font(DS.Typography.caption)
                                         .foregroundStyle(.white)
                                 )
                             Text(account.name)
@@ -149,7 +149,7 @@ struct ImportCurrencyMappingSheet: View {
                     }
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -160,7 +160,7 @@ struct ImportCurrencyMappingSheet: View {
 
             // Expanded account list
             if isExpanded {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     Divider()
                         .padding(.horizontal, DS.Spacing.lg)
 
@@ -196,7 +196,7 @@ struct ImportCurrencyMappingSheet: View {
                     .frame(width: 32, height: 32)
                     .overlay(
                         Image(systemName: displayIconName(for: account))
-                            .font(.system(size: 14))
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.white)
                     )
 
