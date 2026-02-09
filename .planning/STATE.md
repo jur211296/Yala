@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-09] 171a0ce fix: resolve 5 critical deep scan issues (DS-1 to DS-5)
 - [2026-02-08] 453b849 fix: add createdAt tiebreaker for consistent same-day transaction ordering (BUG-16)
 - [2026-02-08] e8a6844 fix: prevent unwanted balance adjustments when editing accounts (BUG-13)
 - [2026-02-08] f5d2b43 fix: a11y audit corrections — missing labels, DT tokens, Reduce Motion
@@ -222,11 +223,11 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 Escaneo profundo de 293 archivos Swift. Todos los puntos deben resolverse antes del lanzamiento.
 
 **S.1 — CRITICOS (crashes, data loss):**
-- 🔴 **DS-1: UserDefaults key incorrecta `"preferredCurrency"` en 3 archivos** — `QuickExpenseIntent.swift:154`, `InboxView.swift:20`, `BudgetAlertService.swift:104` usan key legacy en vez de `"defaultCurrencyCode"` (canonical). Bug real: usuarios no-PEN ven divisa incorrecta en Siri Shortcuts, Inbox y alertas presupuesto.
-- 🔴 **DS-2: División por cero en CategoriesPieWidget.swift:692** — `othersAmount / totalExpense` sin guard cuando `totalExpense == 0` → produce NaN. SubcategoriesPieWidget ya tiene guard correcto.
-- 🔴 **DS-3: División por cero en TagsPieWidget.swift:555** — Mismo patrón que DS-2.
-- 🔴 **DS-4: Force unwraps en DateContextProvider.swift (5x)** — Lines 22, 23, 83, 103, 104: `Calendar.date(byAdding:)!` sin guard.
-- 🔴 **DS-5: Force unwraps en TrendDataProcessor.swift:83,86** — `minDate!`/`maxDate!` en loop, patrón frágil.
+- ✅ **DS-1: UserDefaults key incorrecta** — Resuelto (171a0ce). 3 archivos migrados a `CurrencyDefaults.currentPreferred` / `@AppStorage("defaultCurrencyCode")`.
+- ✅ **DS-2: División por cero en CategoriesPieWidget** — Resuelto (171a0ce). Guard `totalExpense > 0`.
+- ✅ **DS-3: División por cero en TagsPieWidget** — Resuelto (171a0ce). Guard `totalExpense > 0`.
+- ✅ **DS-4: Force unwraps en DateContextProvider (5x)** — Resuelto (171a0ce). `guard let` con fallback `"N/A"` / `continue`.
+- ✅ **DS-5: Force unwraps en TrendDataProcessor** — Resuelto (171a0ce). Optional binding.
 
 **S.2 — ALTOS (bugs probables):**
 - 🟠 **DS-6: Error silenciado en CurrencyConverter.swift:226,244** — `catch { return nil }` sin log. Conversiones fallidas son invisibles.
@@ -411,11 +412,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Deep Scan completado — 28 issues documentados en 10.5.S
-Next step: Resolver DS-1 a DS-5 (críticos) como primera prioridad
+Stopped at: DS-1 a DS-5 (críticos) resueltos — 171a0ce
+Next step: Resolver DS-6 a DS-12 (altos) como siguiente prioridad
 Resume context:
-- Deep scan de 293 archivos completado con 3 subagentes en paralelo
-- 28 issues documentados (5 críticos, 7 altos, 10 medios, 6 bajos)
-- DS-1 (UserDefaults key legacy) es bug real en producción para usuarios no-PEN
+- Deep scan: 5/5 críticos resueltos, 7 altos pendientes, 10 medios, 6 bajos
 - BUG-17 y BUG-18 siguen pendientes
-- Fase 10.5.S agregada al ROADMAP con DoD actualizado
+- Fase 10.5.S en progreso
