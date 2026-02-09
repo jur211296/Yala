@@ -10,7 +10,7 @@ import SwiftUI
 
 /// Manages widget configurations including persistence, visibility, and ordering.
 /// Extracted from PanelViewModel for better separation of concerns.
-@Observable
+@MainActor @Observable
 final class WidgetConfigManager {
 
     // MARK: - State

@@ -97,13 +97,13 @@ enum PreviousPeriodHelper {
 
         case .thisMonth:
             // Previous month
-            let startOfPreviousMonth = calendar.date(byAdding: .month, value: -1, to: currentInterval.start)!
+            let startOfPreviousMonth = calendar.date(byAdding: .month, value: -1, to: currentInterval.start) ?? currentInterval.start
             return DateInterval(start: startOfPreviousMonth, end: currentInterval.start)
 
         case .lastMonth:
             // Two months ago
-            let startOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -2, to: currentInterval.end)!
-            let endOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -1, to: currentInterval.end)!
+            let startOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -2, to: currentInterval.end) ?? currentInterval.end
+            let endOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -1, to: currentInterval.end) ?? currentInterval.end
             return DateInterval(start: startOfTwoMonthsAgo, end: endOfTwoMonthsAgo)
 
         case .last30Days:
@@ -135,8 +135,8 @@ enum PreviousPeriodHelper {
         currentInterval: DateInterval,
         calendar: Calendar
     ) -> DateInterval {
-        let previousYearStart = calendar.date(byAdding: .year, value: -1, to: currentInterval.start)!
-        let previousYearEnd = calendar.date(byAdding: .year, value: -1, to: currentInterval.end)!
+        let previousYearStart = calendar.date(byAdding: .year, value: -1, to: currentInterval.start) ?? currentInterval.start
+        let previousYearEnd = calendar.date(byAdding: .year, value: -1, to: currentInterval.end) ?? currentInterval.end
         return DateInterval(start: previousYearStart, end: previousYearEnd)
     }
 

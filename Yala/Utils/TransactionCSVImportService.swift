@@ -406,8 +406,8 @@ enum TransactionCSVImportService {
             let tagsIndex = hasTagsColumn ? 5 : nil
             let noteIndex = hasNoteColumn ? (hasTagsColumn ? 6 : 5) : nil
 
-            let tagsString = tagsIndex != nil ? columns[tagsIndex!] : nil
-            let noteString = noteIndex != nil ? columns[noteIndex!] : nil
+            let tagsString = tagsIndex.map { columns[$0] }
+            let noteString = noteIndex.map { columns[$0] }
 
             // 5.1 Validar fecha
             guard let parsedDate = parseDate(dateString) else {
@@ -1265,8 +1265,8 @@ enum TransactionCSVImportService {
             let tagsIndex = hasTagsColumn ? 5 : nil
             let noteIndex = hasNoteColumn ? (hasTagsColumn ? 6 : 5) : nil
 
-            let tagsString = tagsIndex != nil ? columns[tagsIndex!] : nil
-            let noteString = noteIndex != nil ? columns[noteIndex!] : nil
+            let tagsString = tagsIndex.map { columns[$0] }
+            let noteString = noteIndex.map { columns[$0] }
 
             // Validar fecha
             guard let parsedDate = parseDate(dateString) else {
