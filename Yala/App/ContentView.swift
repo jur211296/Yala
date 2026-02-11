@@ -506,7 +506,7 @@ struct MorePlaceholderView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                    .font(DS.Typography.chevron)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -540,7 +540,7 @@ struct MorePlaceholderView: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                        .font(DS.Typography.chevron)
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)

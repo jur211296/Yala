@@ -135,7 +135,7 @@ struct UpgradePromptSheet: View {
     private var featureHighlight: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: feature.icon)
-                .font(.system(size: DS.Icon.sizeMedium, weight: .semibold))
+                .font(DS.Typography.iconMedium)
                 .foregroundStyle(.white)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background(

@@ -175,7 +175,7 @@ struct BudgetsListView: View {
                     .foregroundStyle(.primary)
 
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
+                    .font(DS.Typography.indicator)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, DS.Spacing.md)

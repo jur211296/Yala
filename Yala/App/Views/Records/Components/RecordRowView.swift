@@ -133,7 +133,7 @@ struct RecordRowView: View {
                     .transition(.scale.combined(with: .opacity))
 
                 Image(systemName: "checkmark")
-                    .font(.caption2.weight(.bold))
+                    .font(DS.Typography.badgeLabel)
                     .foregroundStyle(.white)
                     .transition(.scale)
             }

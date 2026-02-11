@@ -165,7 +165,7 @@ struct YalaSpark: View {
         HStack(spacing: DS.Spacing.xs) {
             YalaSpark(size: .small)
             Text("PRO")
-                .font(.caption2.weight(.bold))
+                .font(DS.Typography.badgeLabel)
                 .foregroundStyle(.white)
         }
         .padding(.horizontal, DS.Spacing.sm)

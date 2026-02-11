@@ -100,7 +100,7 @@ struct ScheduledPaymentRowView: View {
                         .accessibilityHidden(true)
 
                     Text(NSLocalizedString("scheduled.overdue", comment: "Overdue label"))
-                        .font(.caption2.weight(.bold))
+                        .font(DS.Typography.badgeLabel)
                         .foregroundStyle(Color.hotPink)
                 }
 

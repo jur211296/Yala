@@ -399,6 +399,28 @@ enum DS {
         /// Smallest text
         static let captionSmall = Font.caption2
 
+        // MARK: Badges & Indicators
+        /// Badge labels ("PRO", "New", "Overdue")
+        static let badgeLabel = Font.caption2.weight(.bold)
+        /// Sort/dropdown indicators (chevrons, arrows)
+        static let indicator = Font.caption2.weight(.semibold)
+        /// Monospaced digits for counters
+        static let captionMono = Font.caption.monospacedDigit()
+        /// Monospaced digits for counters, bold
+        static let captionMonoBold = Font.caption.monospacedDigit().bold()
+
+        // MARK: Icon Fonts
+        /// Form row chevrons
+        static let chevron = Font.system(size: DS.FormRow.chevronSize, weight: .semibold)
+        /// Chip close button
+        static let chipClose = Font.system(size: DS.Chip.closeButtonSize, weight: .semibold)
+        /// Chip icon
+        static let chipIcon = Font.system(size: DS.Chip.iconSize, weight: .semibold)
+        /// Chip icon-only variant
+        static let chipIconOnly = Font.system(size: DS.Chip.iconOnlySize, weight: .medium)
+        /// Icon inside medium badge
+        static let iconMedium = Font.system(size: DS.Icon.sizeMedium, weight: .semibold)
+
         // MARK: Numbers
         /// Large amounts (hero numbers)
         static let amountLarge = Font.system(.title, design: .rounded).weight(.bold)

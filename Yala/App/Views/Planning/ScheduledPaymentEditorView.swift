@@ -342,7 +342,7 @@ struct ScheduledPaymentEditorView: View {
 
                 if !viewModel.activeAccounts.isEmpty {
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption2.weight(.semibold))
+                        .font(DS.Typography.indicator)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -382,7 +382,7 @@ struct ScheduledPaymentEditorView: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
+                    .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
             }
             .padding()

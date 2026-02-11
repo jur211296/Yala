@@ -96,7 +96,7 @@ struct YalaFormRowModifier: ViewModifier {
             if showChevron {
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: DS.FormRow.chevronSize, weight: .semibold))
+                    .font(DS.Typography.chevron)
                     .foregroundStyle(Color.secondary.opacity(0.5))
             }
         }

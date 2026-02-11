@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-11] 328efbb chore: pre-launch fixes — terms link, widget i18n, a11y labels, weak self
 - [2026-02-11] 101fbb6 style: migrate hardcoded spacing to DS tokens + update docs (DS-COMPLIANCE)
 - [2026-02-11] 0a2edec style: migrate hardcoded colors to DS.Semantic/Gradients/Colors tokens (DS-COMPLIANCE)
 - [2026-02-11] 96ad324 style: add DS.Semantic, DS.Gradients and DS.Colors.borderDark tokens (DS-COMPLIANCE)
@@ -436,11 +437,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: DS Compliance — 3 incrementos completados
+Stopped at: Pre-launch fixes completados (W1/W2/W3/W5)
 Next step: Siguiente item de /next (pendiente evaluación)
 Resume context:
-- DS Compliance migración completa en 3 commits: tokens (96ad324), colors (0a2edec), spacing+docs (101fbb6)
-- Score estimado: B+ (86%) → A (>95%)
-- 18 tokens nuevos (DS.Semantic 13, DS.Gradients 4, DS.Colors.borderDark 1)
-- ~192 colores y ~120 spacing migrados en ~85 archivos
-- CLAUDE.md y UI-PATTERNS.md actualizados con documentación de tokens
+- 4 pre-launch fixes en 1 commit (328efbb): terms link paywall, widget i18n, FAB a11y labels, weak self
+- W4 (64 fonts hardcodeados) diferido intencionalmente
+- Build limpio, swift-audit limpio

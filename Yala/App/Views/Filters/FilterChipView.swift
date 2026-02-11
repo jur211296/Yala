@@ -38,7 +38,7 @@ struct FilterChipView: View {
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: DS.Chip.closeButtonSize, weight: .semibold))
+                    .font(DS.Typography.chipClose)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
@@ -64,12 +64,12 @@ struct FilterChipView: View {
                     .fill(color)
                     .frame(width: DS.Chip.iconCircleSize, height: DS.Chip.iconCircleSize)
                 Image(systemName: iconName)
-                    .font(.system(size: DS.Chip.iconSize, weight: .semibold))
+                    .font(DS.Typography.chipIcon)
                     .foregroundStyle(.white)
             }
         case .iconOnly(let iconName):
             Image(systemName: iconName)
-                .font(.system(size: DS.Chip.iconOnlySize, weight: .medium))
+                .font(DS.Typography.chipIconOnly)
                 .foregroundStyle(.secondary)
         }
     }

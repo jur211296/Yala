@@ -616,7 +616,7 @@ struct InboxDraftEditSheet: View {
                     // Show "New" badge for newly created tags
                     if isNewlyCreated {
                         Text(L10n.Inbox.newTag)
-                            .font(.caption2.weight(.bold))
+                            .font(DS.Typography.badgeLabel)
                             .foregroundStyle(.white)
                             .padding(.horizontal, DS.Spacing.xs)
                             .padding(.vertical, DS.Spacing.xxs)

@@ -161,7 +161,7 @@ struct ScheduledPaymentsSettingsView: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
+                    .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
             }
             .padding(DS.Spacing.md)

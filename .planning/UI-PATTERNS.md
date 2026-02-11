@@ -136,6 +136,12 @@ HStack {
 | `label` / `labelSmall` / `labelTiny` | Etiquetas, badges |
 | `subheadline` | Info secundaria |
 | `caption` / `captionSmall` | Texto de soporte |
+| `badgeLabel` | Badges ("PRO", "New", "Overdue") — caption2 bold |
+| `indicator` | Chevrones de sort/dropdown — caption2 semibold |
+| `captionMono` / `captionMonoBold` | Contadores con dígitos monoespaciados |
+| `chevron` | Chevrones de form row (14pt semibold) |
+| `chipClose` / `chipIcon` / `chipIconOnly` | Iconos dentro de chips |
+| `iconMedium` | Iconos en badges medianos (16pt semibold) |
 | `amountLarge` / `amount` / `amountSmall` | **Montos (fuente rounded)** |
 
 ---

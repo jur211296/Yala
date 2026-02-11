@@ -183,7 +183,7 @@ struct BudgetsFavoritesSettingsView: View {
             // Order indicator for favorites
             if budget.isFavorite {
                 Text("#\(budget.favoriteOrder + 1)")
-                    .font(.caption.monospacedDigit())
+                    .font(DS.Typography.captionMono)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -234,7 +234,7 @@ struct BudgetsFavoritesSettingsView: View {
     private func reorderRow(_ budget: Budget, position: Int) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Text("#\(position)")
-                .font(.caption.monospacedDigit().bold())
+                .font(DS.Typography.captionMonoBold)
                 .foregroundStyle(Color.electricIndigo)
                 .frame(width: 28)
 

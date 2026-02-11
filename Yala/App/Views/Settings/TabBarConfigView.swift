@@ -134,7 +134,7 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.md) {
             // Position indicator
             Text("\(position)")
-                .font(.caption.monospacedDigit().bold())
+                .font(DS.Typography.captionMonoBold)
                 .foregroundStyle(Color.electricIndigo)
                 .frame(width: 20)
 

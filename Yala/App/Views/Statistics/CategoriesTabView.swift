@@ -405,7 +405,7 @@ struct CategoriesTabView: View {
             }
         } label: {
             Text(mode.shortName)
-                .font(.caption2.weight(.semibold))
+                .font(DS.Typography.indicator)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)

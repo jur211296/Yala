@@ -203,7 +203,7 @@ struct InboxDraftRowView: View {
                     .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
                 Image(systemName: "checkmark")
-                    .font(.caption2.weight(.bold))
+                    .font(DS.Typography.badgeLabel)
                     .foregroundStyle(.white)
             }
         }
