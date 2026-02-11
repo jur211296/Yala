@@ -26,7 +26,7 @@ struct InboxBulkApproveSuccessView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.green, Color.green.opacity(0.85)],
+                            colors: DS.Gradients.success,
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

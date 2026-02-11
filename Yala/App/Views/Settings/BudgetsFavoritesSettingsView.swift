@@ -143,7 +143,7 @@ struct BudgetsFavoritesSettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
         }
@@ -161,7 +161,7 @@ struct BudgetsFavoritesSettingsView: View {
             } label: {
                 Image(systemName: budget.isFavorite ? "star.fill" : "star")
                     .font(DS.Typography.body)
-                    .foregroundStyle(budget.isFavorite ? Color.yellow : Color.secondary)
+                    .foregroundStyle(budget.isFavorite ? DS.Semantic.favoriteIcon : Color.secondary)
                     .frame(width: 28, height: 28)
             }
             .buttonStyle(.plain)
@@ -224,7 +224,7 @@ struct BudgetsFavoritesSettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
             .environment(\.editMode, .constant(.active))

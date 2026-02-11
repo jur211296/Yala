@@ -81,12 +81,12 @@ struct SubcategoryTransferSheet: View {
             // Icono de advertencia
             ZStack {
                 Circle()
-                    .fill(Color.orange.opacity(0.15))
+                    .fill(DS.Semantic.warningBackground)
                     .frame(width: 70, height: 70)
 
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(DS.Typography.amountLarge)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(DS.Semantic.warningForeground)
             }
 
             // Mensaje

@@ -75,7 +75,7 @@ struct ProBadge: View {
         .padding(.vertical, size.verticalPadding)
         .background(
             LinearGradient(
-                colors: [Color.yellow, Color.orange],
+                colors: DS.Gradients.proBadge,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

@@ -813,15 +813,15 @@ struct ScheduledPaymentEditorView: View {
             .padding(.vertical, DS.Spacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.red.opacity(0.1))
+                    .fill(DS.Semantic.errorBackgroundSubtle)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                    .stroke(DS.Semantic.errorBorder, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.red)
+        .foregroundStyle(DS.Semantic.errorForeground)
         .padding(.top, DS.Spacing.lg)
     }
 

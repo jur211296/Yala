@@ -43,7 +43,7 @@ struct ImportResultOverlay: View {
                 // Icon
                 Image(systemName: result.isSuccess ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.system(size: heroSize))
-                    .foregroundStyle(result.isSuccess ? Color.financeGreen : Color.red)
+                    .foregroundStyle(result.isSuccess ? Color.financeGreen : DS.Semantic.errorForeground)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 // Title

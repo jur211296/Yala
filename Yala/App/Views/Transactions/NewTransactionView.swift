@@ -1007,7 +1007,7 @@ struct NewTransactionView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .tint(viewModel.canSave ? Color.electricIndigo : Color.gray.opacity(0.4))
+        .tint(viewModel.canSave ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.4))
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
         .accessibilityHint(!viewModel.canSave ? "Para guardar, completa monto, cuenta y categoría" : "")

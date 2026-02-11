@@ -1614,7 +1614,7 @@ private struct CategoryRowView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color.gray.opacity(0.1))
+                                .fill(DS.Semantic.neutralBackground)
                                 .frame(height: 6)
 
                             Capsule()
@@ -1700,7 +1700,7 @@ private struct SubcategoryRowView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color.gray.opacity(0.1))
+                                .fill(DS.Semantic.neutralBackground)
                                 .frame(height: 6)
 
                             Capsule()

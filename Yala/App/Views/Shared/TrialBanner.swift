@@ -72,7 +72,7 @@ struct TrialBanner: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(isUrgent ? Color.orange.opacity(0.1) : Color.blue.opacity(0.1))
+        .background(isUrgent ? DS.Semantic.warningBackground : DS.Semantic.infoBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 }

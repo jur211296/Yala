@@ -195,7 +195,7 @@ struct TopSubcategoriesWidget: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.1))
+                .background(DS.Semantic.neutralBackground)
                 .clipShape(Capsule())
             } else {
                 // Interactive State (Local Filter)
@@ -219,7 +219,7 @@ struct TopSubcategoriesWidget: View {
                                 Capsule()
                                     .fill(
                                         localCategoryFilterID == nil
-                                            ? Color.electricIndigo : Color.gray.opacity(0.1))
+                                            ? Color.electricIndigo : DS.Semantic.neutralBackground)
                             )
                         }
 
@@ -243,7 +243,7 @@ struct TopSubcategoriesWidget: View {
                                         .fill(
                                             isSelected
                                                 ? Color(hex: category.colorHex)
-                                                : Color.gray.opacity(0.1))
+                                                : DS.Semantic.neutralBackground)
                                 )
                             }
                         }
@@ -484,7 +484,7 @@ private struct SubcategoryRow: View {
                             let width =
                                 maxAmount > 0 ? (summary.amount / maxAmount) * geo.size.width : 0
                             ZStack(alignment: .leading) {
-                                Capsule().fill(Color.gray.opacity(0.1)).frame(height: 6)
+                                Capsule().fill(DS.Semantic.neutralBackground).frame(height: 6)
                                 Capsule().fill(Color(hex: summary.colorHex ?? "#888888")).frame(
                                     width: width, height: 6)
                             }

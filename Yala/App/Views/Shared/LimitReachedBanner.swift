@@ -53,7 +53,7 @@ struct LimitReachedBanner: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.orange.opacity(0.1))
+        .background(DS.Semantic.warningBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 }

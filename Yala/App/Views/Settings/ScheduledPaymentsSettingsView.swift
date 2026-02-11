@@ -113,12 +113,12 @@ struct ScheduledPaymentsSettingsView: View {
                 // Icon from subcategory
                 ZStack {
                     Circle()
-                        .fill(payment.isActive ? Color(hex: colorHex).opacity(0.15) : Color.gray.opacity(0.1))
+                        .fill(payment.isActive ? Color(hex: colorHex).opacity(0.15) : DS.Semantic.neutralBackground)
                         .frame(width: 44, height: 44)
 
                     Image(systemName: iconName)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(payment.isActive ? Color(hex: colorHex) : Color.gray)
+                        .foregroundStyle(payment.isActive ? Color(hex: colorHex) : DS.Semantic.disabledForeground)
                 }
 
                 // Info
@@ -171,7 +171,7 @@ struct ScheduledPaymentsSettingsView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
         }
         .buttonStyle(.plain)

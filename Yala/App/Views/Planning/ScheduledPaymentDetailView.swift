@@ -160,7 +160,7 @@ struct ScheduledPaymentDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                .stroke(DS.Colors.borderDark, lineWidth: 0.8)
         )
     }
 
@@ -211,7 +211,7 @@ struct ScheduledPaymentDetailView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
         }
     }
@@ -244,7 +244,7 @@ struct ScheduledPaymentDetailView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
         }
     }

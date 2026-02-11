@@ -372,7 +372,7 @@ struct PanelView: View {
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(showFABMenu ? Color.gray : fabBackground)
+                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                         .clipShape(Circle())
                         .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 }
@@ -435,9 +435,9 @@ struct PanelView: View {
             .frame(width: DS.Button.fabMenuWidth)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? Color.gray : color)
+            .background(isLocked ? DS.Semantic.disabledForeground : color)
             .clipShape(Capsule())
-            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
         .phaseAnimator([false, true]) { content, phase in

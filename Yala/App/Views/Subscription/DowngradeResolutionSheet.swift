@@ -124,7 +124,7 @@ struct DowngradeResolutionSheet: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.orange, Color.red],
+                        colors: DS.Gradients.warning,
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -167,7 +167,7 @@ struct DowngradeResolutionSheet: View {
             // Selection count
             Text(L10n.FeatureGate.limitInfo(selectedAccountIDs.count, accountsToKeep))
                 .font(DS.Typography.caption)
-                .foregroundStyle(selectedAccountIDs.count == accountsToKeep ? Color.green : Color.orange)
+                .foregroundStyle(selectedAccountIDs.count == accountsToKeep ? DS.Semantic.successForeground : DS.Semantic.warningForeground)
                 .padding(.horizontal, DS.Spacing.lg)
         }
     }
@@ -235,7 +235,7 @@ struct DowngradeResolutionSheet: View {
             // Selection count
             Text(L10n.FeatureGate.limitInfo(selectedBudgetIDs.count, budgetsToKeep))
                 .font(DS.Typography.caption)
-                .foregroundStyle(selectedBudgetIDs.count == budgetsToKeep ? Color.green : Color.orange)
+                .foregroundStyle(selectedBudgetIDs.count == budgetsToKeep ? DS.Semantic.successForeground : DS.Semantic.warningForeground)
                 .padding(.horizontal, DS.Spacing.lg)
         }
     }

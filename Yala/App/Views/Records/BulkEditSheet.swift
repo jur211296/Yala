@@ -207,7 +207,7 @@ struct BulkEditSheet: View {
         }
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.orange.opacity(0.1))
+        .background(DS.Semantic.warningBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
@@ -216,7 +216,7 @@ struct BulkEditSheet: View {
     private var appliedChangesSummary: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(DS.Semantic.successForeground)
 
             Text(L10n.BulkEdit.successMessage)
                 .font(DS.Typography.caption)
@@ -224,7 +224,7 @@ struct BulkEditSheet: View {
         }
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.green.opacity(0.1))
+        .background(DS.Semantic.successBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 

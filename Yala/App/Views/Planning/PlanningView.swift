@@ -69,7 +69,7 @@ struct PlanningView: View {
                         } label: {
                             Image(systemName: "star.fill")
                                 .font(DS.Typography.body).fontWeight(.medium)
-                                .foregroundStyle(Color.yellow)
+                                .foregroundStyle(DS.Semantic.favoriteIcon)
                         }
                         .accessibilityLabel("Plantillas favoritas")
                     }

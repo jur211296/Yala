@@ -196,7 +196,7 @@ struct RecordsStandaloneView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.5)
         let hasMultipleInputs = voiceInputEnabled || imageInputEnabled
 
         if hasMultipleInputs && canUseVoiceInput {
@@ -276,7 +276,7 @@ struct RecordsStandaloneView: View {
                                 .font(DS.Typography.title.weight(.bold))
                                 .foregroundStyle(.white)
                                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                                .background(showFABMenu ? Color.gray : fabBackground)
+                                .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                                 .clipShape(Circle())
                                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                         }

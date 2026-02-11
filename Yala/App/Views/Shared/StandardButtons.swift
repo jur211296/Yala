@@ -91,7 +91,7 @@ struct YalaPrimaryButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 50)
             .foregroundStyle(.white)
-            .background(isDisabled ? Color.gray : Color.electricIndigo)
+            .background(isDisabled ? DS.Semantic.disabledForeground : Color.electricIndigo)
             .clipShape(Capsule())
         }
         .disabled(isDisabled || isLoading)

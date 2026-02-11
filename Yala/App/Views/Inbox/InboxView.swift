@@ -254,7 +254,7 @@ struct InboxView: View {
                     .frame(minHeight: 44)
                     .background(
                         Capsule()
-                            .fill(selectedDraftIDs.isEmpty ? Color.gray : Color.electricIndigo)
+                            .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : Color.electricIndigo)
                     )
             }
             .disabled(selectedDraftIDs.isEmpty)

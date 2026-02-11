@@ -478,7 +478,7 @@ struct NotificationEditorSheet: View {
 
                             Text("\(name.count)/\(NotificationItem.maxNameLength)")
                                 .font(DS.Typography.caption)
-                                .foregroundStyle(name.count > 20 ? Color.orange : Color.secondary)
+                                .foregroundStyle(name.count > 20 ? DS.Semantic.warningForeground : Color.secondary)
                         }
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.FormRow.paddingV)
@@ -508,7 +508,7 @@ struct NotificationEditorSheet: View {
 
                             Text("\(text.count)/\(NotificationItem.maxTextLength)")
                                 .font(DS.Typography.caption)
-                                .foregroundStyle(text.count > 80 ? Color.orange : Color.secondary)
+                                .foregroundStyle(text.count > 80 ? DS.Semantic.warningForeground : Color.secondary)
                         }
                     }
                     .padding(.horizontal, DS.Spacing.lg)

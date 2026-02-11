@@ -328,7 +328,7 @@ struct SubscriptionView: View {
                                 .background(
                                     Capsule().fill(
                                         LinearGradient(
-                                            colors: [Color.orange, Color.hotPink],
+                                            colors: DS.Gradients.subscription,
                                             startPoint: .leading,
                                             endPoint: .trailing
                                         )

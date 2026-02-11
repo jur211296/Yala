@@ -237,7 +237,7 @@ struct ImportCurrencyMappingSheet: View {
                 .frame(height: 52)
             }
             .buttonStyle(.borderedProminent)
-            .tint(allCurrenciesAssigned ? Color.brandPrimary : Color.gray)
+            .tint(allCurrenciesAssigned ? Color.brandPrimary : DS.Semantic.disabledForeground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .disabled(!allCurrenciesAssigned)
             .accessibilityHint(!allCurrenciesAssigned ? "Asigna todas las divisas" : "")

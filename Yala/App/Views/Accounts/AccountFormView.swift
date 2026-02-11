@@ -358,7 +358,7 @@ struct AccountFormView: View {
                         Spacer()
                         Text(formatAmount(finalBalance, currency: viewModel.selectedCurrency))
                             .font(DS.Typography.headline)
-                            .foregroundStyle(finalBalance >= 0 ? Color.primary : Color.red)
+                            .foregroundStyle(finalBalance >= 0 ? Color.primary : DS.Semantic.errorForeground)
                     }
                     .padding()
                 }
@@ -409,7 +409,7 @@ struct AccountFormView: View {
                             viewModel.isPresentingColorPicker = true
                         } label: {
                             Circle()
-                                .fill(Color.black.opacity(0.05))
+                                .fill(DS.Colors.borderDark)
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Image(systemName: "plus")

@@ -358,7 +358,7 @@ struct DetailContainerView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.5)
         let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
                                 (voiceInputEnabled && !imageInputEnabled) ||
                                 (!voiceInputEnabled && imageInputEnabled)
@@ -440,7 +440,7 @@ struct DetailContainerView: View {
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(showFABMenu ? Color.gray : fabBackground)
+                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                         .clipShape(Circle())
                         .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 }

@@ -213,7 +213,7 @@ struct TagFormView: View {
                             isPresentingColorPicker = true
                         } label: {
                             Circle()
-                                .fill(Color.black.opacity(0.05))
+                                .fill(DS.Colors.borderDark)
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Image(systemName: "plus")

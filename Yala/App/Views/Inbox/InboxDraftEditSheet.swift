@@ -695,7 +695,7 @@ struct InboxDraftEditSheet: View {
                         .padding(.vertical, DS.Spacing.lg)
                         .background(
                             Capsule()
-                                .fill(isReadyToApprove ? Color.electricIndigo : Color.gray)
+                                .fill(isReadyToApprove ? Color.electricIndigo : DS.Semantic.disabledForeground)
                         )
                 }
                 .buttonStyle(.plain)

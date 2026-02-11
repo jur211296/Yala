@@ -264,7 +264,7 @@ struct ProfileView: View {
                         .stroke(
                             LinearGradient(
                                 colors: isProUser
-                                    ? [Color.yellow, Color.orange]
+                                    ? DS.Gradients.proBadge
                                     : [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -378,7 +378,7 @@ struct ProfileView: View {
         .padding(.vertical, DS.Spacing.xs)
         .background(
             LinearGradient(
-                colors: [Color.yellow, Color.orange],
+                colors: DS.Gradients.proBadge,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

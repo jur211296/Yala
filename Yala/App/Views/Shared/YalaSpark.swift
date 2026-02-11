@@ -108,7 +108,7 @@ struct YalaSpark: View {
             YalaSparkShape()
                 .fill(
                     LinearGradient(
-                        colors: [Color.yellow, Color.orange],
+                        colors: DS.Gradients.proBadge,
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -172,7 +172,7 @@ struct YalaSpark: View {
         .padding(.vertical, DS.Spacing.xs)
         .background(
             LinearGradient(
-                colors: [Color.yellow, Color.orange],
+                colors: DS.Gradients.proBadge,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

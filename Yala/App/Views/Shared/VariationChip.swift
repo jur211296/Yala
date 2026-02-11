@@ -105,7 +105,7 @@ struct VariationChip: View {
                 .padding(.vertical, size.verticalPadding)
                 .background(
                     Capsule()
-                        .fill(Color.gray.opacity(0.1))
+                        .fill(DS.Semantic.neutralBackground)
                 )
         }
         // When variation is nil and showNAWhenNil is false, show nothing (for headers)

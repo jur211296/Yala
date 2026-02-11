@@ -266,7 +266,7 @@ struct InboxBulkActionsSheet: View {
         }
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.green.opacity(0.1))
+        .background(DS.Semantic.successBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 

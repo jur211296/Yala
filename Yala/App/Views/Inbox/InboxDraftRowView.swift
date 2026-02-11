@@ -220,23 +220,23 @@ struct InboxDraftRowView: View {
                 // Transaction was deleted - show warning icon
                 ZStack {
                     Circle()
-                        .fill(Color.orange.opacity(0.15))
+                        .fill(DS.Semantic.warningBackground)
                         .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(DS.Typography.label)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DS.Semantic.warningForeground)
                 }
             } else {
                 // Normal approved - show green check
                 ZStack {
                     Circle()
-                        .fill(Color.green.opacity(0.15))
+                        .fill(DS.Semantic.successBackground)
                         .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.label)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DS.Semantic.successForeground)
                 }
             }
 
@@ -244,12 +244,12 @@ struct InboxDraftRowView: View {
             // Show red X
             ZStack {
                 Circle()
-                    .fill(Color.red.opacity(0.15))
+                    .fill(DS.Semantic.errorBackground)
                     .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                 Image(systemName: "xmark.circle.fill")
                     .font(DS.Typography.label)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DS.Semantic.errorForeground)
             }
 
         case .pending:

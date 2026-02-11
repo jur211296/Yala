@@ -364,7 +364,7 @@ struct IconColorPickerSheet: View {
                     .fill(
                         tempIconName == name
                             ? Color(hex: tempColorHex).opacity(0.2)
-                            : Color.gray.opacity(0.1)
+                            : DS.Semantic.neutralBackground
                     )
                     .frame(width: 48, height: 48)
 
