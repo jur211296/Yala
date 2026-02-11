@@ -4420,6 +4420,39 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ---
 
-*Última actualización: 2026-02-09 - Sección 33 (TransactionSuccessView BUG-19)*
-*Total escenarios: ~510*
-*Total verificaciones: ~945+*
+*Última actualización: 2026-02-11 - Sección 34 (Pantalla Privacy Onboarding)*
+*Total escenarios: ~517*
+*Total verificaciones: ~960+*
+
+---
+
+## Sección 34: Pantalla de Privacidad (Onboarding Step 7)
+
+### 34.1 Flujo completo 8 pasos
+- [ ] Completar onboarding del paso 0 al 7 → pantalla de privacidad aparece después de notificaciones
+- [ ] Verificar que son 8 pasos en total (0-7)
+
+### 34.2 Botón "Empezar" en paso correcto
+- [ ] Step 6 (Notificaciones) muestra botón "Siguiente", NO "Empezar"
+- [ ] Step 7 (Privacidad) muestra botón "Empezar"
+- [ ] Botón "Empezar" cierra onboarding correctamente (guarda preferencias)
+
+### 34.3 Progress capsules
+- [ ] Pasos 0-6: se muestran 7 capsulas de progreso
+- [ ] Paso 7 (Privacidad): capsulas de progreso ocultas
+
+### 34.4 Contenido pantalla de privacidad
+- [ ] Icono checkmark grande visible
+- [ ] Título "Todo listo" y subtítulo visibles
+- [ ] 4 puntos de privacidad con iconos (dispositivo, sin rastreo, iCloud, sin compartir)
+
+### 34.5 Link tutoriales
+- [ ] Botón "Descubre los tutoriales..." visible
+- [ ] Tap abre sheet con TipsAndTricksView
+- [ ] Sheet funciona correctamente dentro del fullScreenCover
+- [ ] Al cerrar sheet, se regresa a pantalla de privacidad
+- [ ] Después de cerrar sheet, botón "Empezar" sigue funcionando
+
+### 34.6 Rename "Tutoriales y consejos"
+- [ ] Perfil > Ayuda muestra "Tutoriales y consejos" (no "Consejos y trucos")
+- [ ] Verificar en al menos 2 idiomas (ES, EN)

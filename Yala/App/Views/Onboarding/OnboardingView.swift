@@ -37,6 +37,7 @@ struct OnboardingView: View {
     @State private var selectedNotifications: Set<NotificationType> = []
     @State private var hasRequestedPermission: Bool = false
     @State private var budgetAlertsEnabled: Bool = false
+    @State private var showTutorialsSheet: Bool = false
 
     // Callback when onboarding completes
     var onComplete: () -> Void
@@ -47,14 +48,15 @@ struct OnboardingView: View {
         .thisYear, .lastYear, .allTime
     ]
 
-    private let totalSteps = 7
+    private let totalSteps = 8
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
-            // Progress indicator
+            // Progress indicator (hidden on final privacy step)
             progressIndicator
                 .padding(.top, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
+                .opacity(currentStep < totalSteps - 1 ? 1 : 0)
 
             // Content based on current step
             TabView(selection: $currentStep) {
@@ -65,6 +67,7 @@ struct OnboardingView: View {
                 expensesOnlyStep.tag(4)
                 categoriesStep.tag(5)
                 notificationsStep.tag(6)
+                privacyStep.tag(7)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
@@ -829,6 +832,116 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Step 8: Privacy & Finish
+
+    private var privacyStep: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            Spacer()
+
+            // Checkmark icon with gradient circle background
+            ZStack {
+                Circle()
+                    .fill(Color.electricIndigo.opacity(0.12))
+                    .frame(width: 100, height: 100)
+
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 56))
+                    .foregroundStyle(Color.electricIndigo)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            }
+
+            VStack(spacing: DS.Spacing.md) {
+                Text(L10n.Onboarding.privacyTitle)
+                    .font(DS.Typography.largeTitle)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+
+                Text(L10n.Onboarding.privacySubtitle)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+            }
+
+            // Privacy points with colored icon circles
+            VStack(spacing: DS.Spacing.sm) {
+                privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
+                privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
+                privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
+                privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+
+            // Tutorials card button
+            Button {
+                showTutorialsSheet = true
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.electricIndigo.opacity(0.15))
+                            .frame(width: 36, height: 36)
+
+                        Image(systemName: "lightbulb.fill")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(Color.electricIndigo)
+                    }
+
+                    Text(L10n.Onboarding.privacyTutorialsHint)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(Color.electricIndigo)
+                        .multilineTextAlignment(.leading)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(Color.electricIndigo.opacity(0.6))
+                }
+                .padding(DS.Spacing.md)
+                .background(Color.electricIndigo.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.md)
+                        .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, DS.Spacing.xl)
+
+            Spacer()
+            Spacer()
+        }
+        .sheet(isPresented: $showTutorialsSheet) {
+            NavigationStack {
+                TipsAndTricksView()
+            }
+        }
+    }
+
+    private func privacyPoint(icon: String, color: Color, text: String) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: icon)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(color)
+            }
+
+            Text(text)
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+
+            Spacer()
+        }
+        .padding(DS.Spacing.md)
+        .background(Color.yalaCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
     // MARK: - Category Icons Grid
 
     /// Preview grid showing seed category icons with staggered animation
@@ -993,7 +1106,7 @@ struct OnboardingView: View {
                     completeOnboarding()
                 }
             } label: {
-                let isLastStep = currentStep >= 6
+                let isLastStep = currentStep >= totalSteps - 1
 
                 Text(isLastStep ? L10n.Onboarding.finish : L10n.Action.next)
                     .font(DS.Typography.headline)

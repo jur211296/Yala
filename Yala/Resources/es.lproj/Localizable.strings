@@ -711,7 +711,7 @@
 "settings.permissions" = "Permisos";
 "settings.subscriptions" = "Administrar suscripciones";
 "settings.rateApp" = "Calificar y recomendar";
-"settings.tips" = "Consejos y trucos";
+"settings.tips" = "Tutoriales y consejos";
 "settings.faq" = "Preguntas frecuentes";
 "settings.contact" = "Contacta con nosotros";
 "settings.privacy" = "Política de privacidad";
@@ -1322,6 +1322,13 @@
 "onboarding.expensesOnlySubtitle" = "Puedes cambiar esto cuando quieras en Ajustes.";
 "onboarding.expensesOnlyOptionAll" = "Quiero registrar todo";
 "onboarding.expensesOnlyOptionExpenses" = "Solo quiero registrar gastos";
+"onboarding.privacyTitle" = "Todo listo";
+"onboarding.privacySubtitle" = "Ya puedes empezar a usar Yala";
+"onboarding.privacyLocal" = "Tus datos se guardan en tu dispositivo";
+"onboarding.privacyNoTracking" = "Sin rastreo ni anuncios";
+"onboarding.privacyIcloud" = "Solo tú tienes acceso a tus datos";
+"onboarding.privacyNoSharing" = "No compartimos tu información";
+"onboarding.privacyTutorialsHint" = "Descubre los tutoriales y consejos de Yala";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Al cambiar de cuenta, se actualizará la divisa de las transacciones seleccionadas.";

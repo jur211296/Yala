@@ -2067,6 +2067,13 @@ enum L10n {
         static var expensesOnlyOptionExpenses: String {
             ls("onboarding.expensesOnlyOptionExpenses", comment: "")
         }
+        static var privacyTitle: String { ls("onboarding.privacyTitle", comment: "") }
+        static var privacySubtitle: String { ls("onboarding.privacySubtitle", comment: "") }
+        static var privacyLocal: String { ls("onboarding.privacyLocal", comment: "") }
+        static var privacyNoTracking: String { ls("onboarding.privacyNoTracking", comment: "") }
+        static var privacyIcloud: String { ls("onboarding.privacyIcloud", comment: "") }
+        static var privacyNoSharing: String { ls("onboarding.privacyNoSharing", comment: "") }
+        static var privacyTutorialsHint: String { ls("onboarding.privacyTutorialsHint", comment: "") }
     }
 
     // MARK: - Bulk Edit
