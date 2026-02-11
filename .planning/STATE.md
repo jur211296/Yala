@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 10.5.S — Deep Scan Pre-Launch (V1.1) — 28 issues por resolver
+**Current focus:** Fase 10.5.S — Deep Scan Pre-Launch (V1.1) — 28 issues cerrados (12✅ 6🟢 3🔵 7 false positives)
 
 ## Current Position
 
@@ -13,8 +13,8 @@ Version: 1.1 (en desarrollo)
 Phase: 10.5 — Mejoras Pre-Release
 Spec: None
 Plan: None
-Status: **Fase 10.5.S en progreso** — Deep Scan Pre-Launch (28 issues)
-Last activity: 2026-02-09 — Deep scan completado (293 archivos, 3 subagentes), 28 issues documentados
+Status: **Fase 10.5.S completada** — Deep Scan Pre-Launch (28/28 issues cerrados)
+Last activity: 2026-02-09 — Deep scan resuelto: 12 fixed, 6 accepted, 3 deferred, 7 false positives
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ██████████████░░ 95% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso — bugs)
@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-11] 9406d11 fix: cross-view refresh via SessionState.dataVersion (BUG-20)
+- [2026-02-09] 7e327e1 style: modernize TransactionSuccessView with gradient hero and staggered animations (BUG-19)
 - [2026-02-09] 279ccc1 fix: resolve Share Extension cold launch race condition (BUG-18)
 - [2026-02-09] af56040 fix: reduce inbox modal delay and defer when biometric locked (BUG-17)
 - [2026-02-09] da8309e fix: resolve 7 high-priority deep scan issues (DS-6 to DS-12)
@@ -217,7 +219,14 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ **BUG-16: Orden inconsistente de transacciones del mismo día** — Resuelto (453b849)
 - ✅ **BUG-17: Modal de drafts nuevos en Inbox demora en aparecer** — Resuelto (af56040)
 - ✅ **BUG-18: Share Extension no ejecuta registro por imagen al abrir** — Resuelto (279ccc1)
-- 🔴 **BUG-19: Modernizar pantalla de éxito de transacciones** — TransactionSuccessView demasiado simple, modernizar al nivel de los flujos de voz/imagen.
+- ✅ **BUG-19: Modernizar pantalla de éxito de transacciones** — Resuelto (7e327e1)
+- ✅ **BUG-20: Vistas no se refrescan después de mutaciones de datos** — Resuelto (9406d11)
+
+### BUG-20: ✅ RESUELTO (9406d11)
+
+**Cross-view refresh con SessionState.dataVersion.** Cada servicio/VM que hace `context.save()` incrementa `dataVersion`. Vistas clave observan con `.onChange(of: sessionState.dataVersion)` y llaman `loadData()`/`refreshData()`. También corregido `WidgetDataCache.updateCache()` faltante en `TransactionService.save()/saveAll()`. 16 archivos Swift modificados.
+
+---
 
 **10.5.S: Deep Scan Pre-Launch (2026-02-09)**
 
@@ -240,24 +249,24 @@ Escaneo profundo de 293 archivos Swift. Todos los puntos deben resolverse antes 
 - ✅ **DS-12: Force unwraps (12x) en SharedModels.swift** — Resuelto (da8309e). `?? fallback` pattern.
 
 **S.3 — MEDIOS (mejoras importantes):**
-- 🟡 **DS-13: `.cornerRadius()` deprecated (10x)** — CashFlowWidget (5), CategoriesPieWidget (1), NatureTrendWidget (2), TagsPieWidget (1), SubcategoriesPieWidget (1). Migrar a `.clipShape()`.
-- 🟡 **DS-14: Calendar extension duplicada en 3 archivos** — `startOfWeek/startOfMonth` en PanelViewModel, BudgetsViewModel, BudgetAlertService. Extraer a Utils.
-- 🟡 **DS-15: `@MainActor` faltante en WidgetConfigManager y StoreKitManager** — Son @Observable con UI state pero sin @MainActor a nivel de clase.
-- 🟡 **DS-16: `try?` en regex compilation (3x)** — DateParser:57, AmountParser:39, ScreenshotSingleExtractor:83. Patrones constantes, pero viola convenciones.
-- 🟡 **DS-17: `Subcategory.safeCategory` crea placeholder sin contexto** — Subcategory.swift:101-108 crea Category no insertada en contexto si `category == nil` (edge case CloudKit).
-- 🟡 **DS-18: `.font(.system(size:))` hardcoded (~100+ ocurrencias)** — OnboardingView, CategoryDetailView, NetoBadge, TransactionFormRow, etc. Migrar a DS.Typography.
-- 🟡 **DS-19: Hardcoded `spacing:` (~205 ocurrencias en 84 archivos)** — Migrar a DS.Spacing donde aplique.
-- 🟡 **DS-20: `DispatchQueue.main.asyncAfter` (~40 ocurrencias)** — ImportIntroSheet (14), InboxView (4), NewTransactionView (4). Preferir `Task { await Task.sleep }`.
-- 🟡 **DS-21: Force unwraps (5x) en PreviousPeriodHelper.swift:100-139** — `Calendar.date(byAdding:)!` en cálculos de periodo previo.
-- 🟡 **DS-22: Force unwrap pattern en TransactionCSVImportService.swift:409-410** — `columns[tagsIndex!]` safe pero frágil, duplicado entre single/multi-currency import.
+- 🟢 **DS-13: `.cornerRadius()` en charts** — FALSE POSITIVE: todas las 15 instancias son ChartContent (BarMark/SectorMark), no View API deprecated.
+- ✅ **DS-14: Calendar extension duplicada en 5 archivos** — Resuelto (8d2dbce). Extraído a Calendar+Extensions.swift.
+- ✅ **DS-15: `@MainActor` faltante en WidgetConfigManager** — Resuelto (3e80433). StoreKitManager excluido (usa nonisolated/Task.detached).
+- 🟢 **DS-16: `try?` en regex compilation (3x)** — Aceptado. `guard let regex = try?` es patrón correcto en parsers.
+- 🟢 **DS-17: `Subcategory.safeCategory` crea placeholder sin contexto** — Aceptado. assertionFailure + fallback es razonable para edge case CloudKit.
+- 🔵 **DS-18: `.font(.system(size:))` hardcoded (~143 en 84 archivos)** — Diferido. Tarea mecánica masiva, separar.
+- 🔵 **DS-19: Hardcoded `spacing:` (~237 en 96 archivos)** — Diferido. Tarea mecánica masiva, separar.
+- 🔵 **DS-20: `DispatchQueue.main.asyncAfter` (~46 ocurrencias)** — Diferido. Cambio de comportamiento riesgoso en UI timing.
+- ✅ **DS-21: Force unwraps (5x) en PreviousPeriodHelper.swift** — Resuelto (3e80433). `?? fallback` preservando return types.
+- ✅ **DS-22: Force unwraps (4x) en TransactionCSVImportService.swift** — Resuelto (3e80433). `.map { columns[$0] }` en single y multi-currency.
 
 **S.4 — BAJOS (limpieza):**
-- 🔵 **DS-23: `@Relationship` inconsistente en Tag, Account, Subcategory** — Algunos lados sin annotation explícita (funcional pero inconsistente con otros modelos).
-- 🔵 **DS-24: `print()` fuera de `#if DEBUG` (~10)** — En Views de Import, Onboarding, LimitReachedBanner, TrialBanner.
-- 🔵 **DS-25: Código duplicado** — TransactionCSVImportService (single/multi-currency sections), QuickExpenseIntent (helper methods duplicados entre intents).
-- 🔵 **DS-26: `@MainActor` faltante en VoiceTranscriptionService y TranscriptionParserService** — Son @Observable con singletons pero sin @MainActor. No acceden ModelContext directamente.
-- 🔵 **DS-27: `try?` en Task.sleep en ExchangeRateService.swift:111,210,238** — Ignora CancellationError, impide cooperative cancellation en retry loops.
-- 🔵 **DS-28: InboxDraft.tags sin `inverse:` explícito** — Tag.inboxDrafts lo declara, pero inconsistente con patrón de otros modelos que lo declaran en ambos lados.
+- 🟢 **DS-23: `@Relationship` en un lado** — Aceptado. Suficiente para SwiftData/CloudKit.
+- 🟢 **DS-24: `print()` fuera de `#if DEBUG`** — FALSE POSITIVE: todos los prints ya envueltos en #if DEBUG o dentro de #Preview.
+- ✅ **DS-25: Código duplicado en QuickExpenseIntent** — Resuelto (fe5b6a7). 3x formatCurrency y 2x findAccount extraídos a funciones file-level.
+- 🟢 **DS-26: VoiceTranscriptionService sin @MainActor** — Aceptado. Hacen network calls (OpenAI API), @MainActor bloquearía UI.
+- 🟢 **DS-27: `try?` en Task.sleep** — Aceptado. Intencional — solo falla por CancellationError y queremos continuar.
+- 🟢 **DS-28: InboxDraft.tags inverse** — Aceptado. Ya declarado en Tag.inboxDrafts — funcional.
 
 **Archivos > 500 líneas (top 10 — candidatos a refactorizar):**
 TrendsTabView (1786), PanelViewModel (1735), CategoriesTabView (1723), TransactionCSVImportService (1682), PanelView (1399), NewTransactionView (1250), OnboardingView (1184), VoiceRecordingView (1154), QuickExpenseIntent (1141), InboxDraftEditSheet (1072)
@@ -309,9 +318,9 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 **Share Extension cold launch race condition.** Fix: race condition en deep link/lifecycle de Share Extension.
 
-### BUG-19: 🔴 PENDIENTE
+### BUG-19: ✅ RESUELTO (7e327e1)
 
-**Modernizar pantalla de éxito al crear/aprobar transacción.** La TransactionSuccessView actual es demasiado simple (checkmark arriba con animación básica). Ya tenemos experiencias más modernas en el flujo de registro por voz e imagen. Llevar ese nivel de modernización a la pantalla de éxito de nuevas transacciones como primer paso, y eventualmente a otras partes de la app.
+**Modernizar pantalla de éxito al crear/aprobar transacción.** Hero con gradiente lineal + glow radiante + glass overlay + checkmark blanco. Monto promovido al hero. Animación escalonada 5 fases (0→700ms). Brand voice corregido en 6 idiomas. QA-SCENARIOS sección 33 agregada.
 
 ---
 
@@ -416,10 +425,11 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-09
-Stopped at: BUG-19 documentado
-Next step: BUG-19 (modernizar TransactionSuccessView) o DS-13 a DS-22 (medios)
+Last session: 2026-02-11
+Stopped at: BUG-20 resuelto — cross-view refresh con dataVersion
+Next step: /next para siguiente item — todos los bugs resueltos, release V1.1 pendiente
 Resume context:
-- Deep scan: 5/5 críticos ✅, 7/7 altos ✅, 10 medios pendientes, 6 bajos pendientes
-- BUG-17 ✅, BUG-18 ✅, BUG-19 pendiente
-- Fase 10.5.S en progreso
+- BUG-20 fix: SessionState.dataVersion + incrementDataVersion() en 16 archivos
+- Patrón: servicios/VMs emiten incrementDataVersion() después de context.save(), vistas observan con .onChange
+- También agregado WidgetDataCache.updateCache() faltante en TransactionService.save()/saveAll()
+- swift-audit skill fix: backticks con caracteres especiales causaban parsing errors
