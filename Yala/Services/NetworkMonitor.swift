@@ -5,23 +5,24 @@
 //  Simple network connectivity monitor using NWPathMonitor.
 //
 
-import Combine
 import Foundation
 import Network
 
 /// Monitors network connectivity status.
-final class NetworkMonitor: ObservableObject {
+@MainActor @Observable
+final class NetworkMonitor {
     static let shared = NetworkMonitor()
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "NetworkMonitor")
 
-    @Published private(set) var isConnected = true
+    private(set) var isConnected = true
 
     private init() {
         monitor.pathUpdateHandler = { [weak self] path in
-            DispatchQueue.main.async {
-                self?.isConnected = path.status == .satisfied
+            let connected = path.status == .satisfied
+            Task { @MainActor [weak self] in
+                self?.isConnected = connected
             }
         }
         monitor.start(queue: queue)

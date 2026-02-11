@@ -6,7 +6,6 @@
 //
 
 import AVFoundation
-import Combine
 import Foundation
 
 // MARK: - Recording State
@@ -47,12 +46,12 @@ enum RecordingError: LocalizedError {
 
 // MARK: - Audio Recorder Service
 
-@MainActor
-final class AudioRecorderService: NSObject, ObservableObject {
+@MainActor @Observable
+final class AudioRecorderService: NSObject {
     static let shared = AudioRecorderService()
 
-    @Published private(set) var state: RecordingState = .idle
-    @Published private(set) var recordingDuration: TimeInterval = 0
+    private(set) var state: RecordingState = .idle
+    private(set) var recordingDuration: TimeInterval = 0
 
     private var audioRecorder: AVAudioRecorder?
     private var recordingURL: URL?

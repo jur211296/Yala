@@ -15,8 +15,8 @@ struct VoiceRecordingView: View {
     @Environment(VoiceTranscriptionService.self) private var voiceTranscriptionService
     @Environment(TranscriptionParserService.self) private var transcriptionParserService
 
-    @StateObject private var recorder = AudioRecorderService.shared
-    @StateObject private var networkMonitor = NetworkMonitor.shared
+    @State private var recorder = AudioRecorderService.shared
+    @State private var networkMonitor = NetworkMonitor.shared
 
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.usd.rawValue
