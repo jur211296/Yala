@@ -44,7 +44,7 @@ struct ScheduledPaymentsListView: View {
             }
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, 100) // Space for FAB
+        .padding(.bottom, DS.Spacing.safeBottom) // Space for FAB
     }
 
     // MARK: - Filtered Payments

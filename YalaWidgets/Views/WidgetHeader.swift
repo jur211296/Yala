@@ -72,7 +72,7 @@ struct WidgetHeader: View {
 // MARK: - Preview
 
 #Preview {
-    VStack(alignment: .leading, spacing: 20) {
+    VStack(alignment: .leading, spacing: WDS.Spacing.xxl) {
         Text("Vertical (Small)").font(.caption).foregroundStyle(.secondary)
         WidgetHeader(title: "Balance", subtitle: "Este mes", icon: "creditcard.fill")
         WidgetHeader(title: "Gastos", subtitle: nil, icon: "arrow.down.circle.fill")

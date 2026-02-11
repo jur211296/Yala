@@ -92,7 +92,7 @@ struct CategoriesSettingsListView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xxxl)
         }
-        .padding(.top, 64)
+        .padding(.top, DS.Spacing.sheetTop)
     }
 
     // MARK: - Active Categories Section

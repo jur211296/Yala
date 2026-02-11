@@ -114,7 +114,7 @@ struct BudgetsFavoritesSettingsView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xxxl)
         }
-        .padding(.top, 64)
+        .padding(.top, DS.Spacing.sheetTop)
     }
 
     // MARK: - Period Section
@@ -132,7 +132,7 @@ struct BudgetsFavoritesSettingsView: View {
 
                     if index < budgets.count - 1 {
                         Divider()
-                            .padding(.leading, 52)
+                            .padding(.leading, DS.Spacing.formIndent)
                     }
                 }
             }

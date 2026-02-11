@@ -52,7 +52,7 @@ struct FilterChipsSection<Item: Identifiable, ChipContent: View>: View {
                         chipContent(item)
                     }
                 }
-                .padding(.leading, 52)
+                .padding(.leading, DS.Spacing.formIndent)
                 .padding(.trailing, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.md)
             } else {

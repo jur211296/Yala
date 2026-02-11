@@ -747,7 +747,7 @@ struct SearchContentView: View {
                 // Filter chips (only show when searching)
                 if !searchText.isEmpty {
                     filterChipsBar
-                        .padding(.top, 8)
+                        .padding(.top, DS.Spacing.sm)
                 }
 
                 // Always show results (all or filtered)
@@ -784,7 +784,7 @@ struct SearchContentView: View {
             Text(filter.displayName)
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
@@ -978,8 +978,8 @@ struct SearchResultRow: View {
                     .font(DS.Typography.headline)
                     .foregroundStyle(amountColor)
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 14)
+            .padding(.vertical, DS.Spacing.md)
+            .padding(.horizontal, DS.Spacing.md)
             .background(cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         }

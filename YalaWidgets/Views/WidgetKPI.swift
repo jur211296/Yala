@@ -75,7 +75,7 @@ struct WidgetKPI: View {
 // MARK: - Preview
 
 #Preview {
-    VStack(alignment: .leading, spacing: 16) {
+    VStack(alignment: .leading, spacing: WDS.Spacing.xl) {
         WidgetKPI(
             amount: 15420.50,
             currencyCode: "PEN",

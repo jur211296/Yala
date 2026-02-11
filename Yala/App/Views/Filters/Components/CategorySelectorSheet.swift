@@ -204,7 +204,7 @@ struct CategorySelectorSheet: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Chip.paddingH)
-            .padding(.leading, 48)
+            .padding(.leading, DS.Spacing.xxxxl)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }

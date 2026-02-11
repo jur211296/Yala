@@ -116,7 +116,7 @@ struct NotificationsSettingsView: View {
         ) {
             viewModel.isCreatingNew = true
         }
-        .padding(.top, 64)
+        .padding(.top, DS.Spacing.sheetTop)
     }
 
     // MARK: - Notifications List

@@ -221,7 +221,7 @@ struct WidgetSectorChart: View {
         WidgetSectorSegment(id: "5", name: "Otros", iconName: "ellipsis.circle", amount: 250, percentage: 8, colorHex: "6B7280"),
     ]
 
-    VStack(spacing: 20) {
+    VStack(spacing: WDS.Spacing.xxl) {
         // With bubbles
         WidgetSectorChart(segments: sampleSegments, innerRadiusRatio: 0.50, showBubbles: true)
             .frame(width: 200, height: 200)

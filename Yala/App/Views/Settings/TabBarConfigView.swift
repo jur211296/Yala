@@ -188,7 +188,7 @@ struct TabBarConfigView: View {
 
                     if index < localConfig.inactiveTabs.count - 1 {
                         Divider()
-                            .padding(.leading, 52)
+                            .padding(.leading, DS.Spacing.formIndent)
                     }
                 }
             }
@@ -217,7 +217,7 @@ struct TabBarConfigView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(Color.secondary)
                 .frame(width: 28, height: 28)
-                .padding(.leading, 20) // Align with active tabs
+                .padding(.leading, DS.Spacing.xl) // Align with active tabs
 
             // Tab name
             Text(tab.displayName)

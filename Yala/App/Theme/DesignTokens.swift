@@ -51,6 +51,12 @@ enum DS {
 
         /// 100pt - Safe bottom padding for scrollable content
         static let safeBottom: CGFloat = 100
+
+        /// 64pt - Safe area offset for Settings sheets
+        static let sheetTop: CGFloat = 64
+
+        /// 52pt - Form/filter leading indentation
+        static let formIndent: CGFloat = 52
     }
 
     // MARK: - Corner Radius

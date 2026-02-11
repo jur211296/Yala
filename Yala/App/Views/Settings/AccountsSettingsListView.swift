@@ -130,7 +130,7 @@ struct AccountsSettingsListView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xxxl)
         }
-        .padding(.top, 64)
+        .padding(.top, DS.Spacing.sheetTop)
     }
 
     // Caja blanca de sección para cuentas archivadas

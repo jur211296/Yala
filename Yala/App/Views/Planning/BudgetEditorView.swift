@@ -515,7 +515,7 @@ struct BudgetEditorView: View {
                     natureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.formIndent)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }

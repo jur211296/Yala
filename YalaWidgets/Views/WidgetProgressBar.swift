@@ -65,7 +65,7 @@ extension WidgetProgressBar {
 // MARK: - Preview
 
 #Preview {
-    VStack(spacing: 16) {
+    VStack(spacing: WDS.Spacing.xl) {
         // Healthy (green)
         WidgetProgressBar(progress: 0.5, color: WidgetColors.success)
 

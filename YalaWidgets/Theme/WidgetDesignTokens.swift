@@ -33,6 +33,9 @@ enum WDS {
 
         /// 16pt - Large spacing (standard padding)
         static let xl: CGFloat = 16
+
+        /// 20pt - Extra large spacing
+        static let xxl: CGFloat = 20
     }
 
     // MARK: - Corner Radius

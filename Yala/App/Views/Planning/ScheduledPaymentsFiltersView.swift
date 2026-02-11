@@ -123,7 +123,7 @@ struct ScheduledPaymentsFiltersView: View {
                 transactionTypeChip("expense", label: NSLocalizedString("transaction.type.expense", comment: ""))
                 transactionTypeChip("income", label: NSLocalizedString("transaction.type.income", comment: ""))
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.formIndent)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }

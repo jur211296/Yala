@@ -348,7 +348,7 @@ struct ExportFiltersStepView: View {
                     currencyChip(currency)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.formIndent)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
@@ -401,7 +401,7 @@ struct ExportFiltersStepView: View {
                     natureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.formIndent)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
