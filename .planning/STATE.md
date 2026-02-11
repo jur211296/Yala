@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-11] 13cff73 style: migrate hardcoded spacing to DS tokens (DS-19)
 - [2026-02-11] 89b204c style: migrate widget foregroundColor to foregroundStyle (18 sites)
 - [2026-02-11] 0aa5597 refactor: replace DispatchQueue.main.asyncAfter with Task.sleep
 - [2026-02-11] ae162e2 refactor: migrate NetworkMonitor + AudioRecorderService to @Observable
@@ -268,7 +269,7 @@ Escaneo profundo de 293 archivos Swift. Todos los puntos deben resolverse antes 
 - 🟢 **DS-16: `try?` en regex compilation (3x)** — Aceptado. `guard let regex = try?` es patrón correcto en parsers.
 - 🟢 **DS-17: `Subcategory.safeCategory` crea placeholder sin contexto** — Aceptado. assertionFailure + fallback es razonable para edge case CloudKit.
 - ✅ **DS-18: `.font(.system(size:))` hardcoded (~143 en 84 archivos)** — Parcialmente resuelto (ba2aca0). 21 fonts migrables → DS.Typography tokens (9 nuevos). ~70 icon sizing con @ScaledMetric y ~15 amount inputs con .rounded no migrables por diseño.
-- 🔵 **DS-19: Hardcoded `spacing:` (~237 en 96 archivos)** — Diferido. Tarea mecánica masiva, separar.
+- ✅ **DS-19: Hardcoded `spacing:` (~237 en 96 archivos)** — Resuelto (13cff73). 23 instancias migrables → DS/WDS tokens (sheetTop, formIndent, WDS.xxl). ~214 restantes son intencionales (micro-ajustes, widgets con spacing:0, non-token values).
 - ✅ **DS-20: `DispatchQueue.main.asyncAfter` (~46 ocurrencias)** — Parcialmente resuelto (0aa5597). 4 migraciones seguras (toast 2s, import render 0.1s ×2, splash). 42 instancias de timing UI (<0.4s) mantenidas intencionalmente.
 - ✅ **DS-21: Force unwraps (5x) en PreviousPeriodHelper.swift** — Resuelto (3e80433). `?? fallback` preservando return types.
 - ✅ **DS-22: Force unwraps (4x) en TransactionCSVImportService.swift** — Resuelto (3e80433). `.map { columns[$0] }` en single y multi-currency.
@@ -439,11 +440,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Swift modernize — @Observable, Task.sleep, foregroundStyle migrations
+Stopped at: DS-19 spacing token migration complete
 Next step: Siguiente item de /next (pendiente evaluación)
 Resume context:
-- @Observable migrado en NetworkMonitor y AudioRecorderService (ae162e2)
-- 4 DispatchQueue.main.asyncAfter migrados a Task.sleep (0aa5597)
-- 18 foregroundColor → foregroundStyle en 10 widget files (89b204c)
-- DS-20 del deep scan parcialmente resuelto (42 instancias UI timing mantenidas)
+- DS-19 spacing migration: 23 instances across 20 files (13cff73)
+- New tokens: DS.Spacing.sheetTop (64pt), DS.Spacing.formIndent (52pt), WDS.Spacing.xxl (20pt)
+- All deep scan S.3 items now resolved or accepted
 - Build limpio, 260 tests pasan
