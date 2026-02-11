@@ -24,14 +24,16 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-11] 89b204c style: migrate widget foregroundColor to foregroundStyle (18 sites)
+- [2026-02-11] 0aa5597 refactor: replace DispatchQueue.main.asyncAfter with Task.sleep
+- [2026-02-11] ae162e2 refactor: migrate NetworkMonitor + AudioRecorderService to @Observable
+- [2026-02-11] eac4749 chore: SwiftData hardening — @MainActor + explicit deleteRules
+- [2026-02-11] ba2aca0 style: migrate hardcoded fonts to DS.Typography tokens (DS-18)
 - [2026-02-11] 328efbb chore: pre-launch fixes — terms link, widget i18n, a11y labels, weak self
 - [2026-02-11] 101fbb6 style: migrate hardcoded spacing to DS tokens + update docs (DS-COMPLIANCE)
 - [2026-02-11] 0a2edec style: migrate hardcoded colors to DS.Semantic/Gradients/Colors tokens (DS-COMPLIANCE)
 - [2026-02-11] 96ad324 style: add DS.Semantic, DS.Gradients and DS.Colors.borderDark tokens (DS-COMPLIANCE)
 - [2026-02-11] 4cbc40c fix: add iCloud sync waiting screen for new device setup (BUG-22)
-- [2026-02-11] 9406d11 fix: cross-view refresh via SessionState.dataVersion (BUG-20)
-- [2026-02-09] 7e327e1 style: modernize TransactionSuccessView with gradient hero and staggered animations (BUG-19)
-- [2026-02-09] 279ccc1 fix: resolve Share Extension cold launch race condition (BUG-18)
 - [2026-02-09] af56040 fix: reduce inbox modal delay and defer when biometric locked (BUG-17)
 - [2026-02-09] da8309e fix: resolve 7 high-priority deep scan issues (DS-6 to DS-12)
 - [2026-02-09] 171a0ce fix: resolve 5 critical deep scan issues (DS-1 to DS-5)
@@ -265,19 +267,19 @@ Escaneo profundo de 293 archivos Swift. Todos los puntos deben resolverse antes 
 - ✅ **DS-15: `@MainActor` faltante en WidgetConfigManager** — Resuelto (3e80433). StoreKitManager excluido (usa nonisolated/Task.detached).
 - 🟢 **DS-16: `try?` en regex compilation (3x)** — Aceptado. `guard let regex = try?` es patrón correcto en parsers.
 - 🟢 **DS-17: `Subcategory.safeCategory` crea placeholder sin contexto** — Aceptado. assertionFailure + fallback es razonable para edge case CloudKit.
-- 🔵 **DS-18: `.font(.system(size:))` hardcoded (~143 en 84 archivos)** — Diferido. Tarea mecánica masiva, separar.
+- ✅ **DS-18: `.font(.system(size:))` hardcoded (~143 en 84 archivos)** — Parcialmente resuelto (ba2aca0). 21 fonts migrables → DS.Typography tokens (9 nuevos). ~70 icon sizing con @ScaledMetric y ~15 amount inputs con .rounded no migrables por diseño.
 - 🔵 **DS-19: Hardcoded `spacing:` (~237 en 96 archivos)** — Diferido. Tarea mecánica masiva, separar.
-- 🔵 **DS-20: `DispatchQueue.main.asyncAfter` (~46 ocurrencias)** — Diferido. Cambio de comportamiento riesgoso en UI timing.
+- ✅ **DS-20: `DispatchQueue.main.asyncAfter` (~46 ocurrencias)** — Parcialmente resuelto (0aa5597). 4 migraciones seguras (toast 2s, import render 0.1s ×2, splash). 42 instancias de timing UI (<0.4s) mantenidas intencionalmente.
 - ✅ **DS-21: Force unwraps (5x) en PreviousPeriodHelper.swift** — Resuelto (3e80433). `?? fallback` preservando return types.
 - ✅ **DS-22: Force unwraps (4x) en TransactionCSVImportService.swift** — Resuelto (3e80433). `.map { columns[$0] }` en single y multi-currency.
 
 **S.4 — BAJOS (limpieza):**
-- 🟢 **DS-23: `@Relationship` en un lado** — Aceptado. Suficiente para SwiftData/CloudKit.
+- ✅ **DS-23: `@Relationship` en un lado** — Resuelto (eac4749). deleteRule explícito en todas las 33 relaciones.
 - 🟢 **DS-24: `print()` fuera de `#if DEBUG`** — FALSE POSITIVE: todos los prints ya envueltos en #if DEBUG o dentro de #Preview.
 - ✅ **DS-25: Código duplicado en QuickExpenseIntent** — Resuelto (fe5b6a7). 3x formatCurrency y 2x findAccount extraídos a funciones file-level.
 - 🟢 **DS-26: VoiceTranscriptionService sin @MainActor** — Aceptado. Hacen network calls (OpenAI API), @MainActor bloquearía UI.
 - 🟢 **DS-27: `try?` en Task.sleep** — Aceptado. Intencional — solo falla por CancellationError y queremos continuar.
-- 🟢 **DS-28: InboxDraft.tags inverse** — Aceptado. Ya declarado en Tag.inboxDrafts — funcional.
+- ✅ **DS-28: InboxDraft.tags inverse** — Resuelto (eac4749). Inverse consolidado en InboxDraft, deleteRule en ambos lados.
 
 **Archivos > 500 líneas (top 10 — candidatos a refactorizar):**
 TrendsTabView (1786), PanelViewModel (1735), CategoriesTabView (1723), TransactionCSVImportService (1682), PanelView (1399), NewTransactionView (1250), OnboardingView (1184), VoiceRecordingView (1154), QuickExpenseIntent (1141), InboxDraftEditSheet (1072)
@@ -437,9 +439,11 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Pre-launch fixes completados (W1/W2/W3/W5)
+Stopped at: Swift modernize — @Observable, Task.sleep, foregroundStyle migrations
 Next step: Siguiente item de /next (pendiente evaluación)
 Resume context:
-- 4 pre-launch fixes en 1 commit (328efbb): terms link paywall, widget i18n, FAB a11y labels, weak self
-- W4 (64 fonts hardcodeados) diferido intencionalmente
-- Build limpio, swift-audit limpio
+- @Observable migrado en NetworkMonitor y AudioRecorderService (ae162e2)
+- 4 DispatchQueue.main.asyncAfter migrados a Task.sleep (0aa5597)
+- 18 foregroundColor → foregroundStyle en 10 widget files (89b204c)
+- DS-20 del deep scan parcialmente resuelto (42 instancias UI timing mantenidas)
+- Build limpio, 260 tests pasan
