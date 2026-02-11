@@ -167,7 +167,7 @@ struct CategoryRow: View {
 
                     Image(systemName: category.iconName)
                         .font(.system(size: WDS.Icon.sm))
-                        .foregroundColor(categoryColor)
+                        .foregroundStyle(categoryColor)
                         .widgetAccentable()
                 }
 

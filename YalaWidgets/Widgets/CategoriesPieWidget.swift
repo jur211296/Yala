@@ -144,7 +144,7 @@ struct CategoriesPieWidgetView: View {
                         .foregroundStyle(.secondary)
                     Text(formattedTotal)
                         .font(WDS.Typography.kpiSmall)
-                        .foregroundColor(WidgetColors.expense)
+                        .foregroundStyle(WidgetColors.expense)
                 }
             }
 

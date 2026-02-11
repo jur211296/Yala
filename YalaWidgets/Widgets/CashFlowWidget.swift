@@ -152,7 +152,7 @@ struct SmallCashFlowView: View {
                         Image(systemName: "arrow.up")
                             .font(WDS.Typography.barValue)
                     }
-                    .foregroundColor(WidgetColors.income)
+                    .foregroundStyle(WidgetColors.income)
                     .widgetAccentable()
                 }
 
@@ -163,7 +163,7 @@ struct SmallCashFlowView: View {
                     Image(systemName: "arrow.down")
                         .font(WDS.Typography.barValue)
                 }
-                .foregroundColor(WidgetColors.expense)
+                .foregroundStyle(WidgetColors.expense)
                 .widgetAccentable()
             }
         }
@@ -408,7 +408,7 @@ struct CashFlowBars: View {
                     Text("widget.ui.income", bundle: .main)
                         .font(WDS.Typography.tiny)
                 }
-                .foregroundColor(WidgetColors.income)
+                .foregroundStyle(WidgetColors.income)
 
                 GeometryReader { geo in
                     RoundedRectangle(cornerRadius: WDS.Radius.xs)
@@ -430,7 +430,7 @@ struct CashFlowBars: View {
                     Text("widget.ui.expenses", bundle: .main)
                         .font(WDS.Typography.tiny)
                 }
-                .foregroundColor(WidgetColors.expense)
+                .foregroundStyle(WidgetColors.expense)
 
                 GeometryReader { geo in
                     RoundedRectangle(cornerRadius: WDS.Radius.xs)

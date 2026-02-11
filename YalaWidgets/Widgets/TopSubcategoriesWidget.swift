@@ -167,7 +167,7 @@ struct SubcategoryRow: View {
 
                     Image(systemName: subcategory.iconName ?? "tag.fill")
                         .font(.system(size: WDS.Icon.sm))
-                        .foregroundColor(subcategoryColor)
+                        .foregroundStyle(subcategoryColor)
                         .widgetAccentable()
                 }
 

@@ -48,7 +48,7 @@ struct WidgetKPI: View {
     var body: some View {
         Text(formattedAmount)
             .font(size.font)
-            .foregroundColor(color)
+            .foregroundStyle(color)
             .minimumScaleFactor(0.5)
             .lineLimit(1)
             .widgetAccentable()

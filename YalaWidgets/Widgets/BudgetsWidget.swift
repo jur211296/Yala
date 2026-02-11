@@ -212,7 +212,7 @@ struct BudgetRowView: View {
 
                     Image(systemName: budget.iconName ?? "chart.pie.fill")
                         .font(.system(size: WDS.Icon.sm))
-                        .foregroundColor(budgetColor)
+                        .foregroundStyle(budgetColor)
                         .widgetAccentable()
                 }
 

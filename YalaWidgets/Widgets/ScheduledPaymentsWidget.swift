@@ -211,7 +211,7 @@ struct PaymentRowView: View {
 
                 Image(systemName: iconName)
                     .font(.system(size: WDS.Icon.sm))
-                    .foregroundColor(payment.isOverdue ? WidgetColors.overdue : paymentColor)
+                    .foregroundStyle(payment.isOverdue ? WidgetColors.overdue : paymentColor)
                     .widgetAccentable()
             }
 
@@ -223,7 +223,7 @@ struct PaymentRowView: View {
 
                 Text(formattedDate)
                     .font(WDS.Typography.tiny)
-                    .foregroundColor(payment.isOverdue ? WidgetColors.overdue : .secondary)
+                    .foregroundStyle(payment.isOverdue ? WidgetColors.overdue : .secondary)
                     .lineLimit(1)
             }
 
@@ -232,7 +232,7 @@ struct PaymentRowView: View {
             // Amount
             Text(formattedAmount)
                 .font(WDS.Typography.value)
-                .foregroundColor(amountColor)
+                .foregroundStyle(amountColor)
                 .widgetAccentable()
         }
     }

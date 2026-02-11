@@ -67,7 +67,7 @@ struct QuickManualEntryWidgetView: View {
 
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: WDS.Icon.xl))
-                    .foregroundColor(WidgetColors.electricIndigo)
+                    .foregroundStyle(WidgetColors.electricIndigo)
                     .widgetAccentable()
             }
 
@@ -115,7 +115,7 @@ struct QuickVoiceEntryWidgetView: View {
 
                 Image(systemName: "mic.fill")
                     .font(.system(size: WDS.Icon.xl))
-                    .foregroundColor(WidgetColors.hotPink)
+                    .foregroundStyle(WidgetColors.hotPink)
                     .widgetAccentable()
             }
 
@@ -163,7 +163,7 @@ struct QuickImageEntryWidgetView: View {
 
                 Image(systemName: "camera.fill")
                     .font(.system(size: WDS.Icon.xl))
-                    .foregroundColor(WidgetColors.yalaTeal)
+                    .foregroundStyle(WidgetColors.yalaTeal)
                     .widgetAccentable()
             }
 
