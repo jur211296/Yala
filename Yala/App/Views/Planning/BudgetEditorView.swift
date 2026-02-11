@@ -353,11 +353,11 @@ struct BudgetEditorView: View {
         SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
             VStack(spacing: DS.Spacing.none) {
                 accountsContent
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, DS.Spacing.lg)
                 categoriesContent
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, DS.Spacing.lg)
                 tagsContent
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, DS.Spacing.lg)
                 naturesContent
             }
         }
@@ -578,7 +578,7 @@ struct BudgetEditorView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(DS.Semantic.errorForeground)
-        .padding(.top, 16)
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Categories Sheet

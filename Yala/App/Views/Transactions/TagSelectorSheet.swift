@@ -94,7 +94,7 @@ struct TagSelectorSheet: View {
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 40)
+            .padding(.vertical, DS.Spacing.xxxxl)
 
             // Add tag button even when empty
             addTagButton

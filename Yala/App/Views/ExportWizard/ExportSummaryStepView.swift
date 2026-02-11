@@ -156,7 +156,7 @@ struct ExportSummaryStepView: View {
                 .padding(.vertical, DS.Spacing.lg)
                 .padding(.horizontal, DS.Spacing.lg)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
     private var exportButtonSection: some View {
@@ -190,7 +190,7 @@ struct ExportSummaryStepView: View {
         }
         .disabled(isExporting)
         .accessibilityHint(isExporting ? "Exportación en proceso" : "")
-        .padding(.top, 16)
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Helpers UI

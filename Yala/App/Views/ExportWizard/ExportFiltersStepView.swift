@@ -111,19 +111,19 @@ struct ExportFiltersStepView: View {
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
                                 periodRow
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 accountsContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 tagsContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 naturesContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 amountContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 noteContent
                             }
                         }

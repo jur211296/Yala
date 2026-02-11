@@ -158,7 +158,7 @@ struct TrendWidget: View {
             // Icon only (compact version like TrendsTabView)
             Image(systemName: type.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, DS.FormRow.paddingV)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))
                 .background(

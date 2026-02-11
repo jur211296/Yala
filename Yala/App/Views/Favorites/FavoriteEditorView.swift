@@ -199,7 +199,7 @@ struct FavoriteEditorView: View {
                         .font(DS.Typography.headline)
                         .foregroundStyle(transactionType == type ? .white : .secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, DS.Chip.paddingH)
                         .background {
                             if transactionType == type {
                                 Capsule()
@@ -215,7 +215,7 @@ struct FavoriteEditorView: View {
             Capsule()
                 .fill(Color(UIColor.label).opacity(0.08))
         )
-        .padding(.horizontal, 60)
+        .padding(.horizontal, DS.Spacing.xxxxl + DS.Spacing.md)
     }
 
     // MARK: - Central Content
@@ -228,7 +228,7 @@ struct FavoriteEditorView: View {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .focused($isNameFieldFocused)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, DS.Spacing.xxxxl)
                 .tint(Color(UIColor.label))
 
             // Description field

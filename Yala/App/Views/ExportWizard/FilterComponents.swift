@@ -161,7 +161,7 @@ struct AmountFilterView: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, DS.Spacing.sm)
             } else {
                 // Selector superior (Cualquiera / Mayor a / Menor a / Entre)
                 Picker(L10n.Export.condition, selection: $selectedType) {
@@ -177,7 +177,7 @@ struct AmountFilterView: View {
                 // Zona inferior con los montos en grande
                 if selectedType != .any {
                     Divider()
-                        .padding(.top, 4)
+                        .padding(.top, DS.Spacing.xs)
 
                     switch selectedType {
                     case .between:

@@ -25,11 +25,11 @@ struct ScheduledPaymentsFiltersView: View {
                     SectionBox(title: NSLocalizedString("filters.title", comment: "")) {
                         VStack(spacing: DS.Spacing.none) {
                             accountsContent
-                            Divider().padding(.leading, 16)
+                            Divider().padding(.leading, DS.Spacing.lg)
                             transactionTypesContent
-                            Divider().padding(.leading, 16)
+                            Divider().padding(.leading, DS.Spacing.lg)
                             categoriesContent
-                            Divider().padding(.leading, 16)
+                            Divider().padding(.leading, DS.Spacing.lg)
                             tagsContent
                         }
                     }

@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-11] 96ad324 style: add DS.Semantic, DS.Gradients and DS.Colors.borderDark tokens (DS-COMPLIANCE)
 - [2026-02-11] 4cbc40c fix: add iCloud sync waiting screen for new device setup (BUG-22)
 - [2026-02-11] 9406d11 fix: cross-view refresh via SessionState.dataVersion (BUG-20)
 - [2026-02-09] 7e327e1 style: modernize TransactionSuccessView with gradient hero and staggered animations (BUG-19)
@@ -433,9 +434,8 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: BUG-21 descartado (false positive), BUG-22 documentado
-Next step: Investigar y resolver BUG-22 (iCloud Sync en dispositivo nuevo)
+Stopped at: DS Compliance incremento 1 (tokens) committed
+Next step: DS Compliance incremento 2 (migrar colores no semánticos)
 Resume context:
-- BUG-21: Código de balance es correcto — solo filtra por excludeFromStatistics, no isArchived
-- BUG-22: iPad con misma cuenta iCloud no sincroniza datos de iPhone, muestra onboarding normal
-- iCloud Sync es always-on desde 10.5.G.1, tiene detección de datos existentes + pantalla "Sincronizando..."
+- DS.Semantic (13 tokens), DS.Gradients (4 arrays), DS.Colors.borderDark added
+- Plan: 3 increments — tokens ✅, colors (next), spacing + docs

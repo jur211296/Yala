@@ -96,7 +96,7 @@ struct TabBarConfigView: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, DS.Chip.paddingV)
 
             List {
                 ForEach(Array(localConfig.activeTabs.enumerated()), id: \.element) { index, tab in
@@ -180,7 +180,7 @@ struct TabBarConfigView: View {
             Text(L10n.Settings.tabBarConfigAvailable)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(localConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
@@ -253,7 +253,7 @@ struct TabBarConfigView: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.leading, 6)
+        .padding(.leading, DS.Chip.paddingV)
         .padding(.top, DS.Spacing.xs)
     }
 

@@ -83,8 +83,8 @@ private struct NatureOptionRow: View {
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .fill(isSelected ? nature.color.opacity(0.1) : Color.yalaCard)

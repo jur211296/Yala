@@ -27,8 +27,8 @@ struct NatureEditChip: View {
                     .font(DS.Typography.captionSmall)
             }
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, DS.Chip.paddingH)
+            .padding(.vertical, DS.Chip.paddingV)
             .background(
                 Capsule().fill(nature.color.opacity(0.1))
             )

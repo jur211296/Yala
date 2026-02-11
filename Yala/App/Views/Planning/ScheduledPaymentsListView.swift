@@ -348,7 +348,7 @@ struct ScheduledPaymentsListView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(4)
+            .padding(DS.Spacing.xs)
             .frame(minHeight: 70)
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .background(
@@ -388,8 +388,8 @@ struct ScheduledPaymentsListView: View {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
+        .padding(.horizontal, DS.Spacing.xs)
+        .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
                 .fill(isSelected ? Color.white.opacity(0.2) : Color(hex: color).opacity(0.15))

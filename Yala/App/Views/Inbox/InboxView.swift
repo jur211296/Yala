@@ -307,8 +307,8 @@ struct InboxView: View {
                     Text("\(count)")
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(isSelected ? .white : .secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, DS.Chip.paddingV)
+                        .padding(.vertical, DS.Spacing.xxs)
                         .background(
                             Capsule()
                                 .fill(isSelected ? Color.white.opacity(0.3) : Color.secondary.opacity(0.2))

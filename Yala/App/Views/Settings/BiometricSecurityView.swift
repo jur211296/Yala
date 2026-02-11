@@ -67,7 +67,7 @@ struct BiometricSecurityView: View {
                         Text(L10n.Biometric.enableLockHint)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, DS.Spacing.xs)
                     }
 
                     // Lock timeout selector (only when enabled)
@@ -93,7 +93,7 @@ struct BiometricSecurityView: View {
                             Text(L10n.Biometric.lockAfterHint)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
-                                .padding(.horizontal, 4)
+                                .padding(.horizontal, DS.Spacing.xs)
                         }
                         .transition(.opacity.combined(with: .move(edge: .top)))
                     }

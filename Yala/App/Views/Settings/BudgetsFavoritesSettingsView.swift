@@ -112,7 +112,7 @@ struct BudgetsFavoritesSettingsView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, DS.Spacing.xxxl)
         }
         .padding(.top, 64)
     }
@@ -124,7 +124,7 @@ struct BudgetsFavoritesSettingsView: View {
             Text(periodType.localizedName)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(budgets.enumerated()), id: \.element.persistentModelID) { index, budget in
@@ -199,7 +199,7 @@ struct BudgetsFavoritesSettingsView: View {
             Text(L10n.Settings.budgetsFavoritesReorder)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             List {
                 ForEach(Array(viewModel.favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in

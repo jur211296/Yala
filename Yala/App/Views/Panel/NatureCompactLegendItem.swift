@@ -24,8 +24,8 @@ struct NatureCompactLegendItem: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, DS.Chip.paddingH)
+            .padding(.vertical, DS.Chip.paddingV)
             .background(isSelected ? Color.yalaBackground : Color.clear)
             .clipShape(Capsule())
             .overlay(

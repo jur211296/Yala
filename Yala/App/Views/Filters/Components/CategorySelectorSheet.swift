@@ -108,8 +108,8 @@ struct CategorySelectorSheet: View {
                             ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.4)
                     )
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
         }
         .buttonStyle(.plain)
     }
@@ -162,8 +162,8 @@ struct CategorySelectorSheet: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle())
         .onTapGesture {
             toggleExpanded(category)
@@ -202,8 +202,8 @@ struct CategorySelectorSheet: View {
                         isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.4)
                     )
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Chip.paddingH)
             .padding(.leading, 48)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())

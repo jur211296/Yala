@@ -426,8 +426,8 @@ struct NewTransactionView: View {
                             .font(DS.Typography.labelTiny)
                     }
                     .foregroundStyle(categoryColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, DS.Chip.paddingH)
+                    .padding(.vertical, DS.Chip.paddingV)
                     .background(
                         Capsule().fill(categoryColor.opacity(0.12))
                     )

@@ -125,7 +125,7 @@ struct ScheduledPaymentsWidget: View {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
                             .foregroundStyle(Color.gray.opacity(0.7))
-                            .padding(.leading, 4)
+                            .padding(.leading, DS.Spacing.xs)
                     }
                     .buttonStyle(.plain)
                 }
@@ -161,8 +161,8 @@ struct ScheduledPaymentsWidget: View {
         } label: {
             Image(systemName: filterOption.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {

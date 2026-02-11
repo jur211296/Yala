@@ -184,7 +184,29 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 - SIEMPRE `DS.Spacing`, `DS.Radius`, `DS.Typography` — NUNCA valores hardcodeados
 - SIEMPRE filas clicables con `Button` + `contentShape(Rectangle())`
 - SIEMPRE colores semánticos y componentes estándar (YalaPrimaryButton, YalaEmptyState, etc.)
+- SIEMPRE `DS.Semantic.*` para colores de estado (success/warning/error/info/neutral/disabled)
+- SIEMPRE `DS.Gradients.*` para gradientes de marca (proBadge/subscription/success/warning)
 - Proponer agregar reglas nuevas a UI-PATTERNS.md cuando surjan
+
+### DS.Semantic (colores de estado)
+| Token | Uso |
+|-------|-----|
+| `successBackground/Foreground` | Confirmaciones, checks verdes |
+| `warningBackground/Foreground` | Alertas, límites excedidos |
+| `errorBackground/Foreground` | Errores, balances negativos |
+| `errorBackgroundSubtle/errorBorder` | Validación de formularios |
+| `infoBackground` | Banners informativos |
+| `neutralBackground` | Fondos neutros (chips, barras) |
+| `favoriteIcon` | Estrellas de favorito |
+| `disabledForeground` | Estados deshabilitados |
+
+### DS.Gradients (gradientes de marca)
+| Token | Uso |
+|-------|-----|
+| `proBadge` | Badge Pro [yellow→orange] |
+| `subscription` | Suscripción [orange→hotPink] |
+| `success` | Éxito [green→green85%] |
+| `warning` | Advertencia [orange→red] |
 
 ## Brand Voice (OBLIGATORIO para textos)
 **Leer antes de escribir textos:** `.planning/BRAND-VOICE.md`

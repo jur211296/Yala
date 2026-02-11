@@ -21,8 +21,8 @@ struct RecordDateSectionView: View {
 
             Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 4)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
     /// Format: "12 December" or "12 de diciembre" depending on locale

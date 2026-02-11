@@ -32,8 +32,8 @@ struct TransactionAmountInputView: View {
                         .font(DS.Typography.labelSmall)
                 }
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.FormRow.paddingV)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(Capsule().fill(Color.yalaCard))
             }
             .buttonStyle(.plain)
@@ -53,7 +53,7 @@ struct TransactionAmountInputView: View {
                     .frame(maxWidth: 200)
             }
         }
-        .padding(.top, 24)
+        .padding(.top, DS.Spacing.xxl)
         .onAppear {
             isAmountFocused = true
         }

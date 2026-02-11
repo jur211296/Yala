@@ -119,8 +119,8 @@ struct FavoriteRowView: View {
                 Text(tag.name)
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, DS.Chip.paddingV)
+                    .padding(.vertical, DS.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color(hex: tag.colorHex))
@@ -145,8 +145,8 @@ struct FavoriteRowView: View {
                 .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
+        .padding(.horizontal, DS.Chip.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
                 .fill(nature.color.opacity(0.1))

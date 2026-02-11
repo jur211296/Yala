@@ -260,16 +260,16 @@ struct PersonalDetailsView: View {
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(isAliasValid ? .green : .orange)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.md)
                     }
 
                     // Alias info
                     Text(L10n.Profile.aliasHelper)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.md)
                 }
             }
         }

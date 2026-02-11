@@ -176,7 +176,7 @@ private struct WidgetRow: View {
                 .padding(.leading, 44)  // Indent to align with text
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
     private func availableSizes(for type: WidgetType) -> [WidgetSize] {

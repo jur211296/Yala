@@ -140,7 +140,7 @@ struct AccountsSettingsListView: View {
             Text(title)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
@@ -175,7 +175,7 @@ struct AccountsSettingsListView: View {
             Text(L10n.Common.active)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             List {
                 ForEach(Array(viewModel.orderedActiveAccounts.enumerated()), id: \.element.id) {

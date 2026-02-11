@@ -148,7 +148,7 @@ struct PanelView: View {
                     Text("\(min(pendingDrafts.count, 99))")
                         .font(DS.Typography.captionSmall).fontWeight(.bold)
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 4)
+                        .padding(.horizontal, DS.Spacing.xs)
                         .padding(.vertical, 1)
                         .background(
                             Capsule()

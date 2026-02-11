@@ -441,7 +441,7 @@ struct TrendsTabView: View {
         } label: {
             Text(mode.shortName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, 10)
+                .padding(.horizontal, DS.Chip.paddingH)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
@@ -794,7 +794,7 @@ struct TrendsTabView: View {
             // Icon only (compact version for TrendsTabView header)
             Image(systemName: metric.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, DS.FormRow.paddingV)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? metric.color.opacity(0.4) : metric.color))
                 .background(
@@ -931,7 +931,7 @@ struct TrendsTabView: View {
         } label: {
             Image(systemName: viewType.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, 10)
+                .padding(.horizontal, DS.Chip.paddingH)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(

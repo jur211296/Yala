@@ -40,7 +40,7 @@ struct TransactionTypeSelectorView: View {
                         )
                         .foregroundStyle(selectedType == type ? .white : .secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, DS.Chip.paddingH)
                         .background(
                             Capsule()
                                 .fill(selectedType == type ? type.color : Color.clear)

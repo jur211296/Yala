@@ -112,7 +112,7 @@ struct CategoriesSettingsListView: View {
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, DS.Chip.paddingV)
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(viewModel.activeCategories.enumerated()), id: \.element.id) { index, category in
@@ -151,7 +151,7 @@ struct CategoriesSettingsListView: View {
                     }
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, DS.Chip.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
@@ -172,7 +172,7 @@ struct CategoriesSettingsListView: View {
             Text(L10n.Common.hidden)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(viewModel.hiddenCategories.enumerated()), id: \.element.id) { index, category in
@@ -211,7 +211,7 @@ struct CategoriesSettingsListView: View {
                     }
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, DS.Chip.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)

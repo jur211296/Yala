@@ -162,7 +162,7 @@ struct TopSubcategoriesWidget: View {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
                             .foregroundStyle(Color.gray.opacity(0.7))
-                            .padding(.leading, 4)
+                            .padding(.leading, DS.Spacing.xs)
                     }
                     .buttonStyle(.plain)
                 }
@@ -193,8 +193,8 @@ struct TopSubcategoriesWidget: View {
                         .font(DS.Typography.captionSmall)
                 }
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xs)
                 .background(DS.Semantic.neutralBackground)
                 .clipShape(Capsule())
             } else {
@@ -213,8 +213,8 @@ struct TopSubcategoriesWidget: View {
                                     .font(DS.Typography.labelSmall)
                             }
                             .foregroundStyle(localCategoryFilterID == nil ? .white : .primary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, DS.Spacing.md)
+                            .padding(.vertical, DS.Chip.paddingV)
                             .background(
                                 Capsule()
                                     .fill(
@@ -236,8 +236,8 @@ struct TopSubcategoriesWidget: View {
                                         .font(DS.Typography.labelSmall)
                                 }
                                 .foregroundStyle(isSelected ? .white : .primary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.vertical, DS.Chip.paddingV)
                                 .background(
                                     Capsule()
                                         .fill(
@@ -349,8 +349,8 @@ struct TopSubcategoriesWidget: View {
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color(hex: top.colorHex ?? "#888888"))
                         }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, DS.Chip.paddingV)
+                        .padding(.vertical, DS.Spacing.xxs)
                         .background(Color(hex: top.colorHex ?? "#888888").opacity(0.1))
                         .clipShape(Capsule())
                     }
@@ -381,7 +381,7 @@ struct TopSubcategoriesWidget: View {
                 Image(systemName: "list.bullet.indent")
                     .font(DS.Typography.largeTitle)
                     .foregroundStyle(.secondary.opacity(0.5))
-                    .padding(.bottom, 4)
+                    .padding(.bottom, DS.Spacing.xs)
 
                 Text(L10n.Widget.noExpensesPeriod)
                     .font(DS.Typography.label)

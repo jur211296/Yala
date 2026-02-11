@@ -110,8 +110,8 @@ struct ScheduledPaymentsView: View {
                 .glassEffect(.regular.interactive())
                 .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
-            .padding(.trailing, 20)
-            .padding(.bottom, 24)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
     }
 

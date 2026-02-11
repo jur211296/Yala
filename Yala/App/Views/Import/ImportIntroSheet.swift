@@ -72,8 +72,8 @@ struct ImportResultOverlay: View {
                         .background(result.isSuccess ? Color.financeGreen : Color.brandPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                 }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 40)
+                .padding(.horizontal, DS.Spacing.xxxxl)
+                .padding(.bottom, DS.Spacing.xxxxl)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.yalaCard)
@@ -315,7 +315,7 @@ struct ImportIntroSheet: View {
             Text(L10n.Import.templateDescription)
             .font(Typography.label)
             .foregroundStyle(Color.yalaSecondaryText)
-            .padding(.horizontal, 4)
+            .padding(.horizontal, DS.Spacing.xs)
         }
     }
 
@@ -346,7 +346,7 @@ struct ImportIntroSheet: View {
             Text(L10n.Import.categoriesDescription)
             .font(Typography.label)
             .foregroundStyle(Color.yalaSecondaryText)
-            .padding(.horizontal, 4)
+            .padding(.horizontal, DS.Spacing.xs)
         }
     }
 

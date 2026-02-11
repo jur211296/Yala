@@ -35,14 +35,14 @@ struct BudgetPeriodSelectorSheet: View {
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(Color.electricIndigo)
                 }
-                .padding(.top, 24)
+                .padding(.top, DS.Spacing.xxl)
 
                 // Title
                 Text(periodSelectorTitle)
                     .font(DS.Typography.title)
                     .foregroundStyle(.primary)
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, DS.Spacing.xl)
 
             // Wheel Picker Style
             ZStack {
@@ -50,7 +50,7 @@ struct BudgetPeriodSelectorSheet: View {
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .strokeBorder(Color.electricIndigo.opacity(0.3), lineWidth: 1.5)
                     .frame(height: 50)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, DS.Spacing.xl)
                     .allowsHitTesting(false)
 
                 // Scrollable picker
@@ -167,8 +167,8 @@ struct BudgetPeriodSelectorSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
         .background(Color.yalaBackground)
         .onAppear {

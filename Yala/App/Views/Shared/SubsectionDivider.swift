@@ -12,6 +12,6 @@ import SwiftUI
 struct SubsectionDivider: View {
     var body: some View {
         Divider()
-            .padding(.horizontal, 20)
+            .padding(.horizontal, DS.Spacing.xl)
     }
 }

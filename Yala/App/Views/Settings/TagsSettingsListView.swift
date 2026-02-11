@@ -97,7 +97,7 @@ struct TagsSettingsListView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, DS.Spacing.xxxl)
         }
         .padding(.top, 64)
     }
@@ -109,7 +109,7 @@ struct TagsSettingsListView: View {
             Text(L10n.Common.active)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             List {
                 ForEach(Array(viewModel.orderedActiveTags.enumerated()), id: \.element.id) { index, tag in
@@ -154,7 +154,7 @@ struct TagsSettingsListView: View {
             Text(L10n.Common.inactive)
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             List {
                 ForEach(Array(viewModel.inactiveTags.enumerated()), id: \.element.id) { index, tag in

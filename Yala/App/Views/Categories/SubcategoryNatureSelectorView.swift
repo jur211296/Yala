@@ -48,8 +48,8 @@ struct SubcategoryNatureSelectorView: View {
                                                 .font(DS.Typography.headline)
                                         }
                                     }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
+                                    .padding(.horizontal, DS.Spacing.lg)
+                                    .padding(.vertical, DS.FormRow.paddingV)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)

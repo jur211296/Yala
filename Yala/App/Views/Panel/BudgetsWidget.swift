@@ -79,7 +79,7 @@ struct BudgetsWidget: View {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
-                        .padding(.leading, 4)
+                        .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
             }

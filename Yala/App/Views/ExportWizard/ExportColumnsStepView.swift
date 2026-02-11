@@ -94,7 +94,7 @@ struct ExportColumnsStepView: View {
 
                     if index < ExportColumns.defaultOrder.count - 1 {
                         Divider()
-                            .padding(.leading, 16)
+                            .padding(.leading, DS.Spacing.lg)
                     }
                 }
             }

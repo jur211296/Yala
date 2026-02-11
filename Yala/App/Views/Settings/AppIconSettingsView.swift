@@ -190,7 +190,7 @@ struct AppIconSettingsView: View {
                         Image(systemName: "lock.fill")
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
-                            .padding(6)
+                            .padding(DS.Chip.paddingV)
                             .background(Circle().fill(Color.gray))
                             .offset(x: 4, y: -4)
                     }

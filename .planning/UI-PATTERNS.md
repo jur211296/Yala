@@ -152,6 +152,36 @@ HStack {
 - `Color.yalaCard` - Fondo de tarjetas/modales
 - `Color.yalaPrimaryText` - Texto principal
 - `Color.yalaSecondaryText` - Texto secundario
+- `DS.Colors.borderDark` - Bordes de cards (`.black.opacity(0.05)`)
+
+### DS.Semantic — Colores de Estado
+| Token | Color | Cuándo usar |
+|-------|-------|-------------|
+| `successBackground` | green 15% | Fondos de éxito, confirmaciones |
+| `successForeground` | green | Iconos/texto de éxito |
+| `warningBackground` | orange 15% | Fondos de alerta, pendientes |
+| `warningForeground` | orange | Iconos/texto de alerta |
+| `errorBackground` | red 15% | Fondos de error, rechazos |
+| `errorBackgroundSubtle` | red 10% | Validación sutil (formularios) |
+| `errorBorder` | red 20% | Bordes de campos con error |
+| `errorForeground` | red | Iconos/texto de error |
+| `infoBackground` | blue 10% | Banners informativos |
+| `neutralBackground` | gray 10% | Chips no seleccionados, barras |
+| `favoriteIcon` | yellow | Estrellas de favorito |
+| `disabledForeground` | gray | Botones/textos deshabilitados |
+
+**NO usar DS.Semantic cuando:**
+- El color es decorativo (glow, sombra)
+- Es `Color.secondary` (texto secundario del sistema)
+- Es `Color(hex:)` dinámico (datos de categorías/tags)
+
+### DS.Gradients — Gradientes de Marca
+| Token | Colores | Cuándo usar |
+|-------|---------|-------------|
+| `proBadge` | [yellow, orange] | Badge Pro, YalaSpark |
+| `subscription` | [orange, hotPink] | Pantalla de suscripción |
+| `success` | [green, green 85%] | Animación de éxito |
+| `warning` | [orange, red] | Downgrade, alertas graves |
 
 ### Regla de Montos
 - **Ingresos**: `Color.electricIndigo`
@@ -497,7 +527,7 @@ Antes de commitear cambios de UI, verificar:
 - [ ] ¿Se usan tokens de `DS.Spacing` en lugar de valores hardcodeados?
 - [ ] ¿Se usan tokens de `DS.Radius` para corners?
 - [ ] ¿Se usa `DS.Typography` para fuentes?
-- [ ] ¿Los colores son semánticos (`Color.yalaCard`, etc.)?
+- [ ] ¿Los colores son semánticos (`Color.yalaCard`, `DS.Semantic.*`, etc.)?
 - [ ] ¿Los montos usan `amountLarge`/`amount`/`amountSmall`?
 - [ ] ¿Los estados vacíos usan `YalaEmptyState`?
 - [ ] ¿Los loading states usan componentes estándar?

@@ -142,7 +142,7 @@ struct TipsAndTricksView: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .padding(.top, DS.Spacing.sm)
-                        .padding(.leading, 40)
+                        .padding(.leading, DS.Spacing.xxxxl)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
