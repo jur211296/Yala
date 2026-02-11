@@ -50,11 +50,10 @@ struct ContentView: View {
                 SplashScreenView()
                     .opacity(splashOpacity)
                     .ignoresSafeArea()
-                    .onAppear {
+                    .task {
                         // Dismiss splash after minimum duration
-                        DispatchQueue.main.asyncAfter(deadline: .now() + minimumSplashDuration) {
-                            dismissSplash()
-                        }
+                        try? await Task.sleep(for: .seconds(minimumSplashDuration))
+                        dismissSplash()
                     }
             }
         }
