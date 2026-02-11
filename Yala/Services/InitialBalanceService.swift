@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 
 /// Service for managing initial balance and adjustment transactions
-struct InitialBalanceService {
+@MainActor struct InitialBalanceService {
 
     // MARK: - Balance Adjustment Types
 

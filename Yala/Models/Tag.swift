@@ -24,16 +24,19 @@ final class Tag {
     var transactions: [TransactionItem]?
 
     /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var budgets: [Budget]?
 
     /// Relación inversa con pagos favoritos (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var favoritePayments: [FavoritePayment]?
 
     /// Relación inversa con pagos planificados (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var scheduledPayments: [ScheduledPayment]?
 
     /// Relación inversa con borradores de bandeja (muchos-a-muchos) - CloudKit: must be optional
-    @Relationship(inverse: \InboxDraft.tags)
+    @Relationship(deleteRule: .nullify)
     var inboxDrafts: [InboxDraft]?
 
     /// Paleta de 15 colores visibles en light y dark mode (evita negros/blancos)

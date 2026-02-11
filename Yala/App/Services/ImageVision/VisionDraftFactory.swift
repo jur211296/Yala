@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 /// Factory for creating InboxDrafts from Vision API responses
-struct VisionDraftFactory {
+@MainActor struct VisionDraftFactory {
 
     /// Creates InboxDrafts from a VisionResponse and inserts them into context.
     /// - Parameters:

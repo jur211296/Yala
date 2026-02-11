@@ -25,18 +25,23 @@ final class Account {
     var isArchived: Bool = false
 
     /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var budgets: [Budget]?
 
     /// Inverse relationship: transactions linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var transactions: [TransactionItem]?
 
     /// Inverse relationship: favorite payments linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var favoritePayments: [FavoritePayment]?
 
     /// Inverse relationship: scheduled payments linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var scheduledPayments: [ScheduledPayment]?
 
     /// Inverse relationship: inbox drafts linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var inboxDrafts: [InboxDraft]?
 
     init(

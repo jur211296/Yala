@@ -26,15 +26,15 @@ final class FavoritePayment {
     var note: String?
 
     /// Optional linked account
-    @Relationship(inverse: \Account.favoritePayments)
+    @Relationship(deleteRule: .nullify, inverse: \Account.favoritePayments)
     var account: Account?
 
     /// Optional linked subcategory
-    @Relationship(inverse: \Subcategory.favoritePayments)
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.favoritePayments)
     var subcategory: Subcategory?
 
     /// Optional linked tags (many-to-many) - CloudKit: must be optional
-    @Relationship(inverse: \Tag.favoritePayments)
+    @Relationship(deleteRule: .nullify, inverse: \Tag.favoritePayments)
     var tags: [Tag]?
 
     /// Optional nature override (nil = use subcategory's nature)

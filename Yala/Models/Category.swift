@@ -33,9 +33,11 @@ final class Category {
     var subcategories: [Subcategory]?
 
     /// Inverse relationship: transactions linked to this category - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var transactions: [TransactionItem]?
 
     /// Inverse relationship: budgets linked to this category - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var budgets: [Budget]?
 
     init(

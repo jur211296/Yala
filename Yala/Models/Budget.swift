@@ -20,7 +20,7 @@ final class Budget {
     var year: Int = 0
     var currencyCode: String = "USD"
     var limitAmount: Double = 0
-    @Relationship(inverse: \Category.budgets)
+    @Relationship(deleteRule: .nullify, inverse: \Category.budgets)
     var category: Category?
 
     // New properties for enhanced budget system - CloudKit: defaults required
@@ -31,13 +31,13 @@ final class Budget {
     var currentPeriodStart: Date?  // For tracking which week/month/year
 
     // Many-to-many relationships - CloudKit: must be optional
-    @Relationship(inverse: \Account.budgets)
+    @Relationship(deleteRule: .nullify, inverse: \Account.budgets)
     var accounts: [Account]?
 
-    @Relationship(inverse: \Subcategory.budgets)
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.budgets)
     var subcategories: [Subcategory]?
 
-    @Relationship(inverse: \Tag.budgets)
+    @Relationship(deleteRule: .nullify, inverse: \Tag.budgets)
     var tags: [Tag]?
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
     var isActive: Bool = true

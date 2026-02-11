@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 
 /// Service to migrate existing positive transfers from Otros/Transferencia to Ingresos/Transferencia
-struct TransferMigrationService {
+@MainActor struct TransferMigrationService {
 
     /// Key to track if migration has been performed
     private static let migrationCompletedKey = "TransferMigrationV1Completed"

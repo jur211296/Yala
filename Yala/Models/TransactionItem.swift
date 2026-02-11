@@ -18,19 +18,21 @@ final class TransactionItem {
     var currencyCode: String = "USD"
     var note: String?
 
-    @Relationship(inverse: \Category.transactions)
+    @Relationship(deleteRule: .nullify, inverse: \Category.transactions)
     var category: Category?
 
-    @Relationship(inverse: \Subcategory.transactions)
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.transactions)
     var subcategory: Subcategory?
 
-    @Relationship(inverse: \Account.transactions)
+    @Relationship(deleteRule: .nullify, inverse: \Account.transactions)
     var account: Account?
 
     /// CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
     var tags: [Tag]?
 
     /// Inverse relationship: draft that created this transaction (CloudKit requirement)
+    @Relationship(deleteRule: .nullify)
     var approvedDraft: InboxDraft?
 
     // MARK: - Standardized Currency Data

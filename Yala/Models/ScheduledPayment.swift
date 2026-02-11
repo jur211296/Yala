@@ -40,15 +40,15 @@ final class ScheduledPayment {
     // MARK: - Classification
 
     /// Linked account (required for context)
-    @Relationship(inverse: \Account.scheduledPayments)
+    @Relationship(deleteRule: .nullify, inverse: \Account.scheduledPayments)
     var account: Account?
 
     /// Linked subcategory for categorization
-    @Relationship(inverse: \Subcategory.scheduledPayments)
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.scheduledPayments)
     var subcategory: Subcategory?
 
     /// Linked tags (many-to-many) - CloudKit: must be optional
-    @Relationship(inverse: \Tag.scheduledPayments)
+    @Relationship(deleteRule: .nullify, inverse: \Tag.scheduledPayments)
     var tags: [Tag]?
 
     /// Optional nature override (nil = use subcategory's nature)
