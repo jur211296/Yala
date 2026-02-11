@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-11] 101fbb6 style: migrate hardcoded spacing to DS tokens + update docs (DS-COMPLIANCE)
+- [2026-02-11] 0a2edec style: migrate hardcoded colors to DS.Semantic/Gradients/Colors tokens (DS-COMPLIANCE)
 - [2026-02-11] 96ad324 style: add DS.Semantic, DS.Gradients and DS.Colors.borderDark tokens (DS-COMPLIANCE)
 - [2026-02-11] 4cbc40c fix: add iCloud sync waiting screen for new device setup (BUG-22)
 - [2026-02-11] 9406d11 fix: cross-view refresh via SessionState.dataVersion (BUG-20)
@@ -434,8 +436,11 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: DS Compliance incremento 1 (tokens) committed
-Next step: DS Compliance incremento 2 (migrar colores no semánticos)
+Stopped at: DS Compliance — 3 incrementos completados
+Next step: Siguiente item de /next (pendiente evaluación)
 Resume context:
-- DS.Semantic (13 tokens), DS.Gradients (4 arrays), DS.Colors.borderDark added
-- Plan: 3 increments — tokens ✅, colors (next), spacing + docs
+- DS Compliance migración completa en 3 commits: tokens (96ad324), colors (0a2edec), spacing+docs (101fbb6)
+- Score estimado: B+ (86%) → A (>95%)
+- 18 tokens nuevos (DS.Semantic 13, DS.Gradients 4, DS.Colors.borderDark 1)
+- ~192 colores y ~120 spacing migrados en ~85 archivos
+- CLAUDE.md y UI-PATTERNS.md actualizados con documentación de tokens
