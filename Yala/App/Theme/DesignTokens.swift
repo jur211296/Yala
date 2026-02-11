@@ -171,6 +171,30 @@ enum DS {
 
         /// Faint background for very subtle effects (0.05 opacity white)
         static let backgroundFaint = Color.white.opacity(Opacity.faint)
+
+        /// Light mode card borders/strokes (0.05 opacity black)
+        static let borderDark = Color.black.opacity(0.05)
+    }
+
+    // MARK: - Semantic
+
+    /// Status/state colors for success, warning, error, info states.
+    /// Usage: `DS.Semantic.successBackground`, `DS.Semantic.errorForeground`
+    enum Semantic {
+        // Backgrounds
+        static let successBackground = Color.green.opacity(0.15)
+        static let warningBackground = Color.orange.opacity(0.15)
+        static let errorBackground = Color.red.opacity(0.15)
+        static let errorBackgroundSubtle = Color.red.opacity(0.1)
+        static let errorBorder = Color.red.opacity(0.2)
+        static let infoBackground = Color.blue.opacity(0.1)
+        static let neutralBackground = Color.gray.opacity(0.1)
+        // Foregrounds
+        static let successForeground = Color.green
+        static let warningForeground = Color.orange
+        static let errorForeground = Color.red
+        static let favoriteIcon = Color.yellow
+        static let disabledForeground = Color.gray
     }
 
     // MARK: - Shadow
@@ -191,6 +215,17 @@ enum DS {
         static let large: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
             .black.opacity(0.20), 20, 0, 10
         )
+    }
+
+    // MARK: - Gradients
+
+    /// Pre-defined gradient color arrays for consistent branding.
+    /// Usage: `LinearGradient(colors: DS.Gradients.proBadge, ...)`
+    enum Gradients {
+        static let proBadge: [Color] = [.yellow, .orange]
+        static let subscription: [Color] = [.orange, .hotPink]
+        static let success: [Color] = [.green, .green.opacity(0.85)]
+        static let warning: [Color] = [.orange, .red]
     }
 
     // MARK: - Chip Dimensions
