@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
     @State private var showICloudDataFound: Bool = false
+    @State private var isWaitingForSync: Bool = false
     @Environment(\.scenePhase) private var scenePhase
 
     /// Query to detect existing data (for iCloud sync detection)
@@ -37,6 +38,8 @@ struct ContentView: View {
             // Main content only when onboarding is done; static background otherwise
             if hasCompletedOnboarding {
                 MainTabView()
+            } else if isWaitingForSync {
+                iCloudSyncWaitingView
             } else {
                 Color.yalaBackground
                     .ignoresSafeArea()
@@ -60,7 +63,7 @@ struct ContentView: View {
         }
         .onChange(of: accounts.count) { _, newCount in
             // iCloud data arrived while user is in onboarding — notify them
-            if showOnboarding && newCount > 0 {
+            if (showOnboarding || isWaitingForSync) && newCount > 0 {
                 showICloudDataFound = true
             }
         }
@@ -176,11 +179,71 @@ struct ContentView: View {
             return
         }
 
-        // New user — no data, no previous onboarding
+        // No data yet — if iCloud is available, wait for sync before showing onboarding
+        if SwiftDataConfiguration.isICloudAvailable() {
+            isWaitingForSync = true
+
+            for _ in 0..<7 { // 7 × 2s = 14s max
+                do {
+                    try await Task.sleep(for: .seconds(2))
+                } catch {
+                    break // Task cancelled
+                }
+                if hasExistingData {
+                    hasCompletedOnboarding = true
+                    isWaitingForSync = false
+                    return
+                }
+            }
+
+            // Timeout: proceed to onboarding
+            isWaitingForSync = false
+        }
+
         if needsLanguageSelection {
             showLanguageSelection = true
         } else {
             showOnboarding = true
+        }
+    }
+
+    /// Inline view shown while waiting for iCloud sync on a new device
+    private var iCloudSyncWaitingView: some View {
+        ZStack {
+            Color.yalaBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: DS.Spacing.xl) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.electricIndigo)
+
+                VStack(spacing: DS.Spacing.sm) {
+                    Text(L10n.iCloud.syncingData)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+
+                    Text(L10n.iCloud.syncingDescription)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                Button {
+                    isWaitingForSync = false
+                    if needsLanguageSelection {
+                        showLanguageSelection = true
+                    } else {
+                        showOnboarding = true
+                    }
+                } label: {
+                    Text(L10n.iCloud.syncingSkip)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, DS.Spacing.lg)
+            }
+            .padding(.horizontal, DS.Spacing.xxl)
         }
     }
 }

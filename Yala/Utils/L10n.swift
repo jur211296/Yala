@@ -2784,6 +2784,7 @@ enum L10n {
         static var noAccountWarning: String { ls("icloud.noAccountWarning", comment: "") }
         static var syncingData: String { ls("icloud.syncingData", comment: "") }
         static var syncingDescription: String { ls("icloud.syncingDescription", comment: "") }
+        static var syncingSkip: String { ls("icloud.syncing.skip", comment: "") }
         static var dataFoundTitle: String { ls("icloud.dataFoundTitle", comment: "") }
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }

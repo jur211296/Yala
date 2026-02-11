@@ -1759,6 +1759,7 @@
 "icloud.noAccountWarning" = "Entre no iCloud em Ajustes para ativar a sincronização.";
 "icloud.syncingData" = "Sincronizando seus dados...";
 "icloud.syncingDescription" = "Estamos recuperando suas informações do iCloud.";
+"icloud.syncing.skip" = "Configurar como novo";
 "icloud.dataFoundTitle" = "Dados encontrados!";
 "icloud.dataFoundMessage" = "Encontramos seus dados no iCloud. Não é preciso configurar novamente.";
 "icloud.dataFoundAction" = "Continuar";

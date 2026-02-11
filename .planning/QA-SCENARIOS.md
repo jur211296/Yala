@@ -4205,6 +4205,47 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 - [ ] 30.5.1 Conflictos se resuelven (last-write-wins)
 - [ ] 30.6.1 ExchangeRate no tiene duplicados
 
+### 30.7 Dispositivo nuevo con datos existentes en iCloud (BUG-22)
+1. Device A: Tiene datos (cuentas, transacciones)
+2. Device B (nuevo): Instalar Yala desde TestFlight con misma cuenta iCloud
+3. Verificar: splash → pantalla "Sincronizando tus datos..." aparece
+4. Esperar hasta que datos lleguen (< 15s normalmente)
+5. Verificar: app navega automáticamente a MainTabView con datos
+
+### 30.8 Dispositivo nuevo — timeout sync (BUG-22)
+1. Simular sync lento (o sin datos en iCloud)
+2. Instalar en dispositivo nuevo
+3. Verificar: sync screen aparece tras splash
+4. Esperar 15s sin datos
+5. Verificar: se muestra onboarding normal después del timeout
+6. Si datos llegan durante onboarding → alert "Datos encontrados" aparece
+
+### 30.9 Dispositivo nuevo sin iCloud (BUG-22)
+1. Cerrar sesión de iCloud en Ajustes
+2. Instalar Yala
+3. Verificar: splash → onboarding directo (SIN pantalla de sync)
+
+### 30.10 Skip manual durante sync (BUG-22)
+1. Device nuevo con iCloud y datos existentes
+2. Pantalla de sync aparece
+3. Tocar "Configurar como nuevo"
+4. Verificar: navega a onboarding (o language selection si aplica)
+5. Si datos llegan después del skip → alert "Datos encontrados"
+
+### 30.11 Usuario existente no ve sync screen (BUG-22)
+1. Usuario que ya completó onboarding (hasCompletedOnboarding = true)
+2. Cerrar y reabrir app
+3. Verificar: splash → MainTabView directo (NUNCA pantalla de sync)
+
+- [ ] 30.7.1 Device nuevo: sync screen aparece tras splash
+- [ ] 30.7.2 Device nuevo: datos llegan → navega a app automáticamente
+- [ ] 30.8.1 Timeout 15s → onboarding normal
+- [ ] 30.8.2 Alert fallback funciona si datos llegan durante onboarding
+- [ ] 30.9.1 Sin iCloud → onboarding directo sin sync screen
+- [ ] 30.10.1 Skip manual → onboarding
+- [ ] 30.10.2 Alert fallback funciona después de skip
+- [ ] 30.11.1 Usuario existente nunca ve sync screen
+
 ---
 
 ## Sección 31: Modo Solo Gastos (Expenses Only Mode)
