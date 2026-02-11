@@ -332,6 +332,7 @@ final class AccountFormViewModel {
         do {
             try context.save()
             WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             isShowingSaveError = true
             return false

@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
 
@@ -64,6 +65,9 @@ struct ScheduledPaymentsView: View {
             refreshData()
         }
         .onChange(of: viewModel.selectedTab) { _, _ in
+            refreshData()
+        }
+        .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in

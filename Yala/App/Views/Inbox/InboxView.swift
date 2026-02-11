@@ -17,6 +17,7 @@ struct InboxView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
+    @Environment(SessionState.self) private var sessionState
     @AppStorage("defaultCurrencyCode") private var preferredCurrency: String = "PEN"
 
     /// Callback for navigating to Records tab (bulk approve success)
@@ -207,6 +208,9 @@ struct InboxView: View {
             }
             .onAppear {
                 viewModel.setContext(modelContext)
+            }
+            .onChange(of: sessionState.dataVersion) { _, _ in
+                viewModel.loadData()
             }
         }
     }

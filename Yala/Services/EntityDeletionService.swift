@@ -54,6 +54,7 @@ final class EntityDeletionService {
         try context.save()
         // Process pending changes to ensure @Query views update immediately
         context.processPendingChanges()
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Deletes multiple entities and saves the context
@@ -65,6 +66,7 @@ final class EntityDeletionService {
         }
         try context.save()
         context.processPendingChanges()
+        SessionState.shared.incrementDataVersion()
     }
 
     // MARK: - Account Deletion

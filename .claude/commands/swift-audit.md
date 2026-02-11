@@ -18,39 +18,39 @@ Si no hay diff, usar archivos del último commit. Guardar lista.
 Ejecutar TODOS los checks en paralelo usando Grep sobre los archivos identificados:
 
 ### A. Errores silenciados
-- Buscar `try\?` → debe ser do-catch con log
-- Excepción: `try?` en contextos triviales documentados
+- Grep pattern: try\? — debe ser do-catch con log
+- Excepción: try? en contextos triviales documentados
 
 ### B. Force unwraps
-- Buscar `\!` en el código — ignorar `!=`, comentarios y strings
-- Cada `!` sin guard/if previo es crítico
+- Grep pattern: \w\! — ignorar operadores !=, comentarios y strings
+- Force unwrap sin guard/if previo es crítico
 
 ### C. Prints en producción
-- Buscar `print\(` fuera de `#if DEBUG`
-- Verificar contexto (5 líneas arriba) para `#if DEBUG`
+- Grep pattern: print\(
+- Verificar contexto (5 líneas arriba) buscando #if DEBUG
 
 ### D. Valores hardcodeados (anti-DS)
-- Buscar `.padding(\d` o `padding(` con números literales → usar DS.Spacing
-- Buscar `.cornerRadius(` → usar DS.Radius o .clipShape
-- Buscar `.font(.system(size:` → usar DS.Typography
-- Buscar `Color(` con hex o RGB → usar colores semánticos
+- Grep pattern: \.padding\(\d — usar DS.Spacing
+- Grep pattern: \.cornerRadius\( — usar DS.Radius o .clipShape
+- Grep pattern: \.font\(\.system\(size: — usar DS.Typography
+- Grep pattern: Color\( con hex o RGB — usar colores semánticos
 
 ### E. APIs deprecated
-- Buscar `foregroundColor(` → usar foregroundStyle
-- Buscar `.cornerRadius(` → usar .clipShape(RoundedRectangle)
-- Buscar `NavigationView` → usar NavigationStack
-- Buscar `@available` innecesarios (target iOS 26+)
+- Grep pattern: foregroundColor\( — usar foregroundStyle
+- Grep pattern: \.cornerRadius\( — usar .clipShape(RoundedRectangle)
+- Grep pattern: NavigationView — usar NavigationStack
+- Grep pattern: @available innecesarios (target iOS 26+)
 
 ### F. Concurrencia
-- Buscar `DispatchQueue.main.async` → preferir @MainActor
+- Grep pattern: DispatchQueue\.main\.async — preferir @MainActor
 - Verificar que clases con ModelContext tengan @MainActor
 
 ### G. Strings sin localizar
-- Buscar `Text("` con texto literal (no variable, no L10n)
+- Grep pattern: Text\(" con texto literal (no variable, no L10n)
 - Excluir SF Symbols, formatos, y textos de debug
 
 ### H. TODOs pendientes
-- Buscar `TODO|FIXME|HACK|XXX`
+- Grep pattern: TODO|FIXME|HACK|XXX
 
 ### I. Credenciales
 - Buscar patrones de API keys, passwords, tokens hardcodeados
@@ -80,8 +80,8 @@ Ejecutar TODOS los checks en paralelo usando Grep sobre los archivos identificad
 
 ## REGLAS
 - NO reportar falsos positivos
-- `try?` justificado (ej: optional binding en UI) es OK
-- `!` después de guard que valida es OK
-- Prints dentro de `#if DEBUG` son OK
-- Texto en `.accessibilityLabel` puede ser literal
+- try? justificado (ej: optional binding en UI) es OK
+- Force unwrap después de guard que valida es OK
+- Prints dentro de #if DEBUG son OK
+- Texto en .accessibilityLabel puede ser literal
 - Solo reportar problemas REALES en archivos MODIFICADOS

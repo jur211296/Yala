@@ -164,6 +164,7 @@ final class ScheduledPaymentEditorViewModel {
         do {
             try context.save()
             WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             return true
         } catch {
             #if DEBUG

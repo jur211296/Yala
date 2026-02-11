@@ -56,6 +56,7 @@ final class TransactionService {
 
         // Update widgets
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
 
         // Check budget alerts
         Task {
@@ -74,6 +75,7 @@ final class TransactionService {
 
         // Update widgets
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
 
         // Check budget alerts
         Task {
@@ -87,12 +89,16 @@ final class TransactionService {
     func save(_ transaction: TransactionItem) throws {
         let context = try requireContext()
         try context.save()
+        WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Saves changes to multiple transactions (just save, transactions already in context)
     func saveAll() throws {
         let context = try requireContext()
         try context.save()
+        WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     // MARK: - Delete Operations
@@ -106,6 +112,7 @@ final class TransactionService {
 
         // Update widgets
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Deletes multiple transactions and saves
@@ -119,6 +126,7 @@ final class TransactionService {
 
         // Update widgets
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     // MARK: - Bulk Update Operations
@@ -135,6 +143,7 @@ final class TransactionService {
         }
         try context.save()
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Updates subcategory for multiple transactions
@@ -149,6 +158,7 @@ final class TransactionService {
         }
         try context.save()
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Adds tags to multiple transactions
@@ -167,6 +177,7 @@ final class TransactionService {
             transaction.tags = currentTags
         }
         try context.save()
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Removes tags from multiple transactions
@@ -182,6 +193,7 @@ final class TransactionService {
             transaction.tags = currentTags
         }
         try context.save()
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Updates note for multiple transactions
@@ -195,6 +207,7 @@ final class TransactionService {
             transaction.note = finalNote
         }
         try context.save()
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Updates amount for multiple transactions
@@ -210,6 +223,7 @@ final class TransactionService {
         }
         try context.save()
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 }
 

@@ -319,6 +319,7 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
             WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
             print("Error deleting records: \(error)")

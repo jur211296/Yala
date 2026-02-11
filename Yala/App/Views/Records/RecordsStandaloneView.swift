@@ -85,6 +85,10 @@ struct RecordsStandaloneView: View {
                 dataViewModel.setContext(modelContext)
                 refreshRecordsData()
             }
+            .onChange(of: sessionState.dataVersion) { _, _ in
+                dataViewModel.loadData()
+                refreshRecordsData()
+            }
     }
 
     // MARK: - Main Content

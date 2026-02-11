@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BudgetsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
@@ -84,6 +85,9 @@ struct BudgetsListView: View {
         }
         .onAppear {
             viewModel.setContext(modelContext)
+            refreshData()
+        }
+        .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
     }

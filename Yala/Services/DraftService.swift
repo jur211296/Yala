@@ -206,6 +206,7 @@ final class DraftService: DraftServiceProtocol {
 
         // Update widgets
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
 
         // Check budget alerts
         Task {
@@ -281,6 +282,7 @@ final class DraftService: DraftServiceProtocol {
 
         // Update widgets
         WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
 
         // Check budget alerts
         Task {

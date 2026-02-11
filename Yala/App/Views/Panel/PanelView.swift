@@ -1124,6 +1124,9 @@ private struct PanelDataObservers: ViewModifier {
             .onChange(of: sessionState.formattingVersion) { _, _ in
                 recalculateData()
             }
+            .onChange(of: sessionState.dataVersion) { _, _ in
+                recalculateData()
+            }
             .onChange(of: viewModel.trendType) { _, _ in
                 viewModel.syncToSessionState(sessionState)
                 recalculateData()

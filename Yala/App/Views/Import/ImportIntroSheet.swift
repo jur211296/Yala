@@ -577,6 +577,7 @@ struct ImportIntroSheet: View {
                     // Save to persist transactions
                     try modelContext.save()
                     WidgetDataCache.updateCache(context: modelContext)
+                    SessionState.shared.incrementDataVersion()
                     #if DEBUG
                     print("🔵 [IMPORT] Save complete")
                     #endif
@@ -686,6 +687,7 @@ struct ImportIntroSheet: View {
                     // Save to persist transactions
                     try modelContext.save()
                     WidgetDataCache.updateCache(context: modelContext)
+                    SessionState.shared.incrementDataVersion()
                     #if DEBUG
                     print("🔵 [IMPORT-MULTI] Save complete")
                     #endif

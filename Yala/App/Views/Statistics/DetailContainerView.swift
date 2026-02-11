@@ -162,6 +162,10 @@ struct DetailContainerView: View {
                 calculateTrendsData()
                 refreshRecordsData()
             }
+            .onChange(of: sessionState.dataVersion) { _, _ in
+                refreshRecordsData()
+                calculateTrendsData()
+            }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
