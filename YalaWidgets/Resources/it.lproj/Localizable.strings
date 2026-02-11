@@ -48,6 +48,25 @@
 "widget.intent.topCategories.desc" = "Mostra le tue categorie con più spese";
 "widget.intent.topSubcategories.title" = "Top Sottocategorie";
 "widget.intent.topSubcategories.desc" = "Mostra le tue sottocategorie con più spese";
+"widget.intent.budgets.title" = "Budget";
+"widget.intent.budgets.desc" = "Mostra il tuo progresso del budget";
+"widget.intent.scheduledPayments.title" = "Pagamenti in arrivo";
+"widget.intent.scheduledPayments.desc" = "Mostra i tuoi prossimi pagamenti pianificati";
+"widget.intent.latestRecords.title" = "Ultimi registri";
+"widget.intent.latestRecords.desc" = "Mostra le tue transazioni più recenti";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "Mostra";
+"widget.selection.automatic" = "Automatico";
+"widget.selection.custom" = "Personalizzato";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "Budget";
+"widget.select.payments" = "Pagamenti";
+
+// MARK: - Entities
+"widget.entity.budget" = "Budget";
+"widget.entity.payment" = "Pagamento pianificato";
 
 // MARK: - UI (texts in widget views)
 "widget.ui.noPayments" = "Nessun pagamento in sospeso";

@@ -52,8 +52,9 @@ final class BackgroundTaskManager {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: Self.widgetRefreshTaskID,
             using: nil
-        ) { task in
+        ) { [weak self] task in
             Task { @MainActor in
+                guard let self else { return }
                 guard let refreshTask = task as? BGAppRefreshTask else {
                     #if DEBUG
                     print("BackgroundTaskManager: Task is not BGAppRefreshTask")
@@ -68,8 +69,9 @@ final class BackgroundTaskManager {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: Self.reportNotificationTaskID,
             using: nil
-        ) { task in
+        ) { [weak self] task in
             Task { @MainActor in
+                guard let self else { return }
                 guard let appRefreshTask = task as? BGAppRefreshTask else {
                     #if DEBUG
                     print("BackgroundTaskManager: Report task is not BGAppRefreshTask")
@@ -84,8 +86,9 @@ final class BackgroundTaskManager {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: Self.reportBackupTaskID,
             using: nil
-        ) { task in
+        ) { [weak self] task in
             Task { @MainActor in
+                guard let self else { return }
                 guard let appRefreshTask = task as? BGAppRefreshTask else {
                     #if DEBUG
                     print("BackgroundTaskManager: Backup task is not BGAppRefreshTask")

@@ -1467,6 +1467,7 @@
 "subscription.feature.themes" = "Exclusive themes and icons";
 "subscription.feature.export" = "Export to Excel and CSV";
 "subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.";
+"subscription.termsLink" = "Terms of Use & Privacy Policy";
 "subscription.errorTitle" = "Purchase error";
 "subscription.activeTitle" = "You're Yala Pro";
 "subscription.activeSubtitle" = "You have access to all premium features";

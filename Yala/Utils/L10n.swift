@@ -2540,6 +2540,7 @@ enum L10n {
         static var featureThemes: String { ls("subscription.feature.themes", comment: "") }
         static var featureExport: String { ls("subscription.feature.export", comment: "") }
         static var legalFooter: String { ls("subscription.legalFooter", comment: "") }
+        static var termsLink: String { ls("subscription.termsLink", comment: "") }
         static var errorTitle: String { ls("subscription.errorTitle", comment: "") }
         static var activeTitle: String { ls("subscription.activeTitle", comment: "") }
         static var activeSubtitle: String { ls("subscription.activeSubtitle", comment: "") }

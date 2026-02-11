@@ -102,12 +102,18 @@ struct SubscriptionView: View {
                     .padding(.horizontal, DS.Spacing.lg)
 
                     // Legal footer
-                    Text(L10n.Subscription.legalFooter)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.xxl)
+                    VStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.Subscription.legalFooter)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.center)
+                        if let url = URL(string: "https://yala-app.pe/terms") {
+                            Link(L10n.Subscription.termsLink, destination: url)
+                                .font(DS.Typography.caption)
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.bottom, DS.Spacing.xxl)
                 }
                 .padding(.top, DS.Spacing.xxl)
             }
