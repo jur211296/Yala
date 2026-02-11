@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-11] 4cbc40c fix: add iCloud sync waiting screen for new device setup (BUG-22)
 - [2026-02-11] 9406d11 fix: cross-view refresh via SessionState.dataVersion (BUG-20)
 - [2026-02-09] 7e327e1 style: modernize TransactionSuccessView with gradient hero and staggered animations (BUG-19)
 - [2026-02-09] 279ccc1 fix: resolve Share Extension cold launch race condition (BUG-18)
@@ -221,6 +222,12 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ **BUG-18: Share Extension no ejecuta registro por imagen al abrir** — Resuelto (279ccc1)
 - ✅ **BUG-19: Modernizar pantalla de éxito de transacciones** — Resuelto (7e327e1)
 - ✅ **BUG-20: Vistas no se refrescan después de mutaciones de datos** — Resuelto (9406d11)
+- ✅ **BUG-21: Archivar cuenta cambia balance total en Panel** — False positive (código correcto, solo filtra por excludeFromStatistics)
+- ✅ **BUG-22: iCloud Sync no sincroniza datos en dispositivo nuevo** — Resuelto (4cbc40c)
+
+### BUG-22: ✅ RESUELTO (4cbc40c)
+
+**Pantalla de espera iCloud sync para dispositivo nuevo.** Polling cada 2s durante hasta 14s cuando iCloud está disponible pero no hay datos. Sync screen con ProgressView + textos localizados + botón "Configurar como nuevo" para skip manual. Alert fallback si datos llegan después del timeout/skip durante onboarding. Sin iCloud → onboarding directo. Usuarios existentes nunca ven sync screen. 5 escenarios QA nuevos (30.7–30.11).
 
 ### BUG-20: ✅ RESUELTO (9406d11)
 
@@ -426,10 +433,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: BUG-20 resuelto — cross-view refresh con dataVersion
-Next step: /next para siguiente item — todos los bugs resueltos, release V1.1 pendiente
+Stopped at: BUG-21 descartado (false positive), BUG-22 documentado
+Next step: Investigar y resolver BUG-22 (iCloud Sync en dispositivo nuevo)
 Resume context:
-- BUG-20 fix: SessionState.dataVersion + incrementDataVersion() en 16 archivos
-- Patrón: servicios/VMs emiten incrementDataVersion() después de context.save(), vistas observan con .onChange
-- También agregado WidgetDataCache.updateCache() faltante en TransactionService.save()/saveAll()
-- swift-audit skill fix: backticks con caracteres especiales causaban parsing errors
+- BUG-21: Código de balance es correcto — solo filtra por excludeFromStatistics, no isArchived
+- BUG-22: iPad con misma cuenta iCloud no sincroniza datos de iPhone, muestra onboarding normal
+- iCloud Sync es always-on desde 10.5.G.1, tiene detección de datos existentes + pantalla "Sincronizando..."
