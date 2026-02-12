@@ -12,9 +12,7 @@ import SwiftUI
 enum TutorialCategory: String, CaseIterable, Identifiable {
     case gettingStarted
     case dailyUse
-    case personalization
     case advanced
-    case powerUser
 
     var id: String { rawValue }
 
@@ -22,9 +20,7 @@ enum TutorialCategory: String, CaseIterable, Identifiable {
         switch self {
         case .gettingStarted: return L10n.Tutorials.categoryGettingStarted
         case .dailyUse: return L10n.Tutorials.categoryDailyUse
-        case .personalization: return L10n.Tutorials.categoryPersonalization
         case .advanced: return L10n.Tutorials.categoryAdvanced
-        case .powerUser: return L10n.Tutorials.categoryPowerUser
         }
     }
 
@@ -44,17 +40,10 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
     case createBudgets
     case createScheduledPayments
     case createFavorites
-    case editAvatar
-    case changeIcon
-    case changeCurrency
     case editPanel
     case panelFiltering
     case inboxApproval
     case applePay
-    case controlCenter
-    case notifications
-    case faceID
-    case goPro
 
     var id: String { rawValue }
 
@@ -64,12 +53,8 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
             return .gettingStarted
         case .createRecord, .importData, .createBudgets, .createScheduledPayments, .createFavorites:
             return .dailyUse
-        case .editAvatar, .changeIcon, .changeCurrency:
-            return .personalization
         case .editPanel, .panelFiltering, .inboxApproval, .applePay:
             return .advanced
-        case .controlCenter, .notifications, .faceID, .goPro:
-            return .powerUser
         }
     }
 
@@ -83,17 +68,10 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
         case .createBudgets: return L10n.Tutorials.createBudgetsTitle
         case .createScheduledPayments: return L10n.Tutorials.createScheduledPaymentsTitle
         case .createFavorites: return L10n.Tutorials.createFavoritesTitle
-        case .editAvatar: return L10n.Tutorials.editAvatarTitle
-        case .changeIcon: return L10n.Tutorials.changeIconTitle
-        case .changeCurrency: return L10n.Tutorials.changeCurrencyTitle
         case .editPanel: return L10n.Tutorials.editPanelTitle
         case .panelFiltering: return L10n.Tutorials.panelFilteringTitle
         case .inboxApproval: return L10n.Tutorials.inboxApprovalTitle
         case .applePay: return L10n.Tutorials.applePayTitle
-        case .controlCenter: return L10n.Tutorials.controlCenterTitle
-        case .notifications: return L10n.Tutorials.notificationsTitle
-        case .faceID: return L10n.Tutorials.faceIDTitle
-        case .goPro: return L10n.Tutorials.goProTitle
         }
     }
 
@@ -107,17 +85,10 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
         case .createBudgets: return "chart.pie.fill"
         case .createScheduledPayments: return "calendar.badge.clock"
         case .createFavorites: return "star.fill"
-        case .editAvatar: return "person.crop.circle.fill"
-        case .changeIcon: return "app.badge.fill"
-        case .changeCurrency: return "dollarsign.circle.fill"
         case .editPanel: return "rectangle.grid.2x2.fill"
         case .panelFiltering: return "line.3.horizontal.decrease"
         case .inboxApproval: return "tray.full.fill"
         case .applePay: return "apple.logo"
-        case .controlCenter: return "slider.horizontal.3"
-        case .notifications: return "bell.fill"
-        case .faceID: return "faceid"
-        case .goPro: return "crown.fill"
         }
     }
 
@@ -131,17 +102,10 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
         case .createBudgets: return .purple
         case .createScheduledPayments: return .blue
         case .createFavorites: return .yellow
-        case .editAvatar: return .pink
-        case .changeIcon: return .cyan
-        case .changeCurrency: return .green
         case .editPanel: return .electricIndigo
         case .panelFiltering: return .orange
         case .inboxApproval: return .teal
         case .applePay: return .black
-        case .controlCenter: return .gray
-        case .notifications: return .red
-        case .faceID: return .blue
-        case .goPro: return .hotPink
         }
     }
 
@@ -195,22 +159,6 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
                 (L10n.Tutorials.createFavoritesStep1Title, L10n.Tutorials.createFavoritesStep1Desc),
                 (L10n.Tutorials.createFavoritesStep2Title, L10n.Tutorials.createFavoritesStep2Desc),
             ])
-        case .editAvatar:
-            return TutorialStep.make(tutorial: self, items: [
-                (L10n.Tutorials.editAvatarStep0Title, L10n.Tutorials.editAvatarStep0Desc),
-                (L10n.Tutorials.editAvatarStep1Title, L10n.Tutorials.editAvatarStep1Desc),
-            ])
-        case .changeIcon:
-            return TutorialStep.make(tutorial: self, items: [
-                (L10n.Tutorials.changeIconStep0Title, L10n.Tutorials.changeIconStep0Desc),
-                (L10n.Tutorials.changeIconStep1Title, L10n.Tutorials.changeIconStep1Desc),
-            ])
-        case .changeCurrency:
-            return TutorialStep.make(tutorial: self, items: [
-                (L10n.Tutorials.changeCurrencyStep0Title, L10n.Tutorials.changeCurrencyStep0Desc),
-                (L10n.Tutorials.changeCurrencyStep1Title, L10n.Tutorials.changeCurrencyStep1Desc),
-                (L10n.Tutorials.changeCurrencyStep2Title, L10n.Tutorials.changeCurrencyStep2Desc),
-            ])
         case .editPanel:
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.editPanelStep0Title, L10n.Tutorials.editPanelStep0Desc),
@@ -234,29 +182,6 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
                 (L10n.Tutorials.applePayStep0Title, L10n.Tutorials.applePayStep0Desc),
                 (L10n.Tutorials.applePayStep1Title, L10n.Tutorials.applePayStep1Desc),
                 (L10n.Tutorials.applePayStep2Title, L10n.Tutorials.applePayStep2Desc),
-            ])
-        case .controlCenter:
-            return TutorialStep.make(tutorial: self, items: [
-                (L10n.Tutorials.controlCenterStep0Title, L10n.Tutorials.controlCenterStep0Desc),
-                (L10n.Tutorials.controlCenterStep1Title, L10n.Tutorials.controlCenterStep1Desc),
-                (L10n.Tutorials.controlCenterStep2Title, L10n.Tutorials.controlCenterStep2Desc),
-            ])
-        case .notifications:
-            return TutorialStep.make(tutorial: self, items: [
-                (L10n.Tutorials.notificationsStep0Title, L10n.Tutorials.notificationsStep0Desc),
-                (L10n.Tutorials.notificationsStep1Title, L10n.Tutorials.notificationsStep1Desc),
-                (L10n.Tutorials.notificationsStep2Title, L10n.Tutorials.notificationsStep2Desc),
-            ])
-        case .faceID:
-            return TutorialStep.make(tutorial: self, items: [
-                (L10n.Tutorials.faceIDStep0Title, L10n.Tutorials.faceIDStep0Desc),
-                (L10n.Tutorials.faceIDStep1Title, L10n.Tutorials.faceIDStep1Desc),
-            ])
-        case .goPro:
-            return TutorialStep.make(tutorial: self, items: [
-                (L10n.Tutorials.goProStep0Title, L10n.Tutorials.goProStep0Desc),
-                (L10n.Tutorials.goProStep1Title, L10n.Tutorials.goProStep1Desc),
-                (L10n.Tutorials.goProStep2Title, L10n.Tutorials.goProStep2Desc),
             ])
         }
     }
