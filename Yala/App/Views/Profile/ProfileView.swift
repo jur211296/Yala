@@ -215,7 +215,7 @@ struct ProfileView: View {
                 case .subscription:
                     SubscriptionView()
                 case .tips:
-                    TipsAndTricksView()
+                    TutorialsListView()
                 case .faq:
                     FAQView()
                 case .placeholder(let title):
@@ -711,8 +711,8 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.help) {
             VStack(spacing: DS.Spacing.none) {
                 profileRow(
-                    icon: "lightbulb.fill", title: L10n.Settings.tips,
-                    iconColor: .yellow, destination: .tips)
+                    icon: "book.fill", title: L10n.Settings.tutorials,
+                    iconColor: .electricIndigo, destination: .tips)
                 SubsectionDivider()
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,

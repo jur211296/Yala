@@ -914,7 +914,7 @@ struct OnboardingView: View {
         }
         .sheet(isPresented: $showTutorialsSheet) {
             NavigationStack {
-                TipsAndTricksView()
+                TutorialsListView()
             }
         }
     }

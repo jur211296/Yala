@@ -1418,7 +1418,7 @@ enum L10n {
             ls("settings.subscriptions", comment: "")
         }
         static var rateApp: String { ls("settings.rateApp", comment: "") }
-        static var tips: String { ls("settings.tips", comment: "") }
+        static var tutorials: String { ls("settings.tutorials", comment: "") }
         static var faq: String { ls("settings.faq", comment: "") }
         static var contact: String { ls("settings.contact", comment: "") }
         static var privacy: String { ls("settings.privacy", comment: "") }
@@ -2556,27 +2556,184 @@ enum L10n {
         static var manageInAppStore: String { ls("subscription.manageInAppStore", comment: "") }
     }
 
-    enum Tips {
-        static var subtitle: String { ls("tips.subtitle", comment: "") }
-        static var sectionQuickEntry: String { ls("tips.section.quickEntry", comment: "") }
-        static var sectionOrganize: String { ls("tips.section.organize", comment: "") }
-        static var sectionAdvanced: String { ls("tips.section.advanced", comment: "") }
-        static var voiceTitle: String { ls("tips.voice.title", comment: "") }
-        static var voiceDetail: String { ls("tips.voice.detail", comment: "") }
-        static var cameraTitle: String { ls("tips.camera.title", comment: "") }
-        static var cameraDetail: String { ls("tips.camera.detail", comment: "") }
-        static var favoritesTitle: String { ls("tips.favorites.title", comment: "") }
-        static var favoritesDetail: String { ls("tips.favorites.detail", comment: "") }
-        static var budgetsTitle: String { ls("tips.budgets.title", comment: "") }
-        static var budgetsDetail: String { ls("tips.budgets.detail", comment: "") }
-        static var tagsTitle: String { ls("tips.tags.title", comment: "") }
-        static var tagsDetail: String { ls("tips.tags.detail", comment: "") }
-        static var filtersTitle: String { ls("tips.filters.title", comment: "") }
-        static var filtersDetail: String { ls("tips.filters.detail", comment: "") }
-        static var exportTitle: String { ls("tips.export.title", comment: "") }
-        static var exportDetail: String { ls("tips.export.detail", comment: "") }
-        static var faceIDTitle: String { ls("tips.faceID.title", comment: "") }
-        static var faceIDDetail: String { ls("tips.faceID.detail", comment: "") }
+    enum Tutorials {
+        static var subtitle: String { ls("tutorials.subtitle", comment: "") }
+        static var stepsCount: String { ls("tutorials.stepsCount", comment: "") }
+        static var next: String { ls("tutorials.next", comment: "") }
+        static var previous: String { ls("tutorials.previous", comment: "") }
+        static var done: String { ls("tutorials.done", comment: "") }
+
+        // Categories
+        static var categoryGettingStarted: String { ls("tutorials.category.gettingStarted", comment: "") }
+        static var categoryDailyUse: String { ls("tutorials.category.dailyUse", comment: "") }
+        static var categoryPersonalization: String { ls("tutorials.category.personalization", comment: "") }
+        static var categoryAdvanced: String { ls("tutorials.category.advanced", comment: "") }
+        static var categoryPowerUser: String { ls("tutorials.category.powerUser", comment: "") }
+
+        // 1. createAccount
+        static var createAccountTitle: String { ls("tutorials.createAccount.title", comment: "") }
+        static var createAccountStep0Title: String { ls("tutorials.createAccount.step0.title", comment: "") }
+        static var createAccountStep0Desc: String { ls("tutorials.createAccount.step0.desc", comment: "") }
+        static var createAccountStep1Title: String { ls("tutorials.createAccount.step1.title", comment: "") }
+        static var createAccountStep1Desc: String { ls("tutorials.createAccount.step1.desc", comment: "") }
+        static var createAccountStep2Title: String { ls("tutorials.createAccount.step2.title", comment: "") }
+        static var createAccountStep2Desc: String { ls("tutorials.createAccount.step2.desc", comment: "") }
+
+        // 2. createCategories
+        static var createCategoriesTitle: String { ls("tutorials.createCategories.title", comment: "") }
+        static var createCategoriesStep0Title: String { ls("tutorials.createCategories.step0.title", comment: "") }
+        static var createCategoriesStep0Desc: String { ls("tutorials.createCategories.step0.desc", comment: "") }
+        static var createCategoriesStep1Title: String { ls("tutorials.createCategories.step1.title", comment: "") }
+        static var createCategoriesStep1Desc: String { ls("tutorials.createCategories.step1.desc", comment: "") }
+        static var createCategoriesStep2Title: String { ls("tutorials.createCategories.step2.title", comment: "") }
+        static var createCategoriesStep2Desc: String { ls("tutorials.createCategories.step2.desc", comment: "") }
+
+        // 3. createTags
+        static var createTagsTitle: String { ls("tutorials.createTags.title", comment: "") }
+        static var createTagsStep0Title: String { ls("tutorials.createTags.step0.title", comment: "") }
+        static var createTagsStep0Desc: String { ls("tutorials.createTags.step0.desc", comment: "") }
+        static var createTagsStep1Title: String { ls("tutorials.createTags.step1.title", comment: "") }
+        static var createTagsStep1Desc: String { ls("tutorials.createTags.step1.desc", comment: "") }
+        static var createTagsStep2Title: String { ls("tutorials.createTags.step2.title", comment: "") }
+        static var createTagsStep2Desc: String { ls("tutorials.createTags.step2.desc", comment: "") }
+
+        // 4. createRecord
+        static var createRecordTitle: String { ls("tutorials.createRecord.title", comment: "") }
+        static var createRecordStep0Title: String { ls("tutorials.createRecord.step0.title", comment: "") }
+        static var createRecordStep0Desc: String { ls("tutorials.createRecord.step0.desc", comment: "") }
+        static var createRecordStep1Title: String { ls("tutorials.createRecord.step1.title", comment: "") }
+        static var createRecordStep1Desc: String { ls("tutorials.createRecord.step1.desc", comment: "") }
+        static var createRecordStep2Title: String { ls("tutorials.createRecord.step2.title", comment: "") }
+        static var createRecordStep2Desc: String { ls("tutorials.createRecord.step2.desc", comment: "") }
+
+        // 5. importData
+        static var importDataTitle: String { ls("tutorials.importData.title", comment: "") }
+        static var importDataStep0Title: String { ls("tutorials.importData.step0.title", comment: "") }
+        static var importDataStep0Desc: String { ls("tutorials.importData.step0.desc", comment: "") }
+        static var importDataStep1Title: String { ls("tutorials.importData.step1.title", comment: "") }
+        static var importDataStep1Desc: String { ls("tutorials.importData.step1.desc", comment: "") }
+        static var importDataStep2Title: String { ls("tutorials.importData.step2.title", comment: "") }
+        static var importDataStep2Desc: String { ls("tutorials.importData.step2.desc", comment: "") }
+
+        // 6. createBudgets
+        static var createBudgetsTitle: String { ls("tutorials.createBudgets.title", comment: "") }
+        static var createBudgetsStep0Title: String { ls("tutorials.createBudgets.step0.title", comment: "") }
+        static var createBudgetsStep0Desc: String { ls("tutorials.createBudgets.step0.desc", comment: "") }
+        static var createBudgetsStep1Title: String { ls("tutorials.createBudgets.step1.title", comment: "") }
+        static var createBudgetsStep1Desc: String { ls("tutorials.createBudgets.step1.desc", comment: "") }
+        static var createBudgetsStep2Title: String { ls("tutorials.createBudgets.step2.title", comment: "") }
+        static var createBudgetsStep2Desc: String { ls("tutorials.createBudgets.step2.desc", comment: "") }
+
+        // 7. createScheduledPayments
+        static var createScheduledPaymentsTitle: String { ls("tutorials.createScheduledPayments.title", comment: "") }
+        static var createScheduledPaymentsStep0Title: String { ls("tutorials.createScheduledPayments.step0.title", comment: "") }
+        static var createScheduledPaymentsStep0Desc: String { ls("tutorials.createScheduledPayments.step0.desc", comment: "") }
+        static var createScheduledPaymentsStep1Title: String { ls("tutorials.createScheduledPayments.step1.title", comment: "") }
+        static var createScheduledPaymentsStep1Desc: String { ls("tutorials.createScheduledPayments.step1.desc", comment: "") }
+        static var createScheduledPaymentsStep2Title: String { ls("tutorials.createScheduledPayments.step2.title", comment: "") }
+        static var createScheduledPaymentsStep2Desc: String { ls("tutorials.createScheduledPayments.step2.desc", comment: "") }
+
+        // 8. createFavorites
+        static var createFavoritesTitle: String { ls("tutorials.createFavorites.title", comment: "") }
+        static var createFavoritesStep0Title: String { ls("tutorials.createFavorites.step0.title", comment: "") }
+        static var createFavoritesStep0Desc: String { ls("tutorials.createFavorites.step0.desc", comment: "") }
+        static var createFavoritesStep1Title: String { ls("tutorials.createFavorites.step1.title", comment: "") }
+        static var createFavoritesStep1Desc: String { ls("tutorials.createFavorites.step1.desc", comment: "") }
+        static var createFavoritesStep2Title: String { ls("tutorials.createFavorites.step2.title", comment: "") }
+        static var createFavoritesStep2Desc: String { ls("tutorials.createFavorites.step2.desc", comment: "") }
+
+        // 9. editAvatar
+        static var editAvatarTitle: String { ls("tutorials.editAvatar.title", comment: "") }
+        static var editAvatarStep0Title: String { ls("tutorials.editAvatar.step0.title", comment: "") }
+        static var editAvatarStep0Desc: String { ls("tutorials.editAvatar.step0.desc", comment: "") }
+        static var editAvatarStep1Title: String { ls("tutorials.editAvatar.step1.title", comment: "") }
+        static var editAvatarStep1Desc: String { ls("tutorials.editAvatar.step1.desc", comment: "") }
+
+        // 10. changeIcon
+        static var changeIconTitle: String { ls("tutorials.changeIcon.title", comment: "") }
+        static var changeIconStep0Title: String { ls("tutorials.changeIcon.step0.title", comment: "") }
+        static var changeIconStep0Desc: String { ls("tutorials.changeIcon.step0.desc", comment: "") }
+        static var changeIconStep1Title: String { ls("tutorials.changeIcon.step1.title", comment: "") }
+        static var changeIconStep1Desc: String { ls("tutorials.changeIcon.step1.desc", comment: "") }
+
+        // 11. changeCurrency
+        static var changeCurrencyTitle: String { ls("tutorials.changeCurrency.title", comment: "") }
+        static var changeCurrencyStep0Title: String { ls("tutorials.changeCurrency.step0.title", comment: "") }
+        static var changeCurrencyStep0Desc: String { ls("tutorials.changeCurrency.step0.desc", comment: "") }
+        static var changeCurrencyStep1Title: String { ls("tutorials.changeCurrency.step1.title", comment: "") }
+        static var changeCurrencyStep1Desc: String { ls("tutorials.changeCurrency.step1.desc", comment: "") }
+        static var changeCurrencyStep2Title: String { ls("tutorials.changeCurrency.step2.title", comment: "") }
+        static var changeCurrencyStep2Desc: String { ls("tutorials.changeCurrency.step2.desc", comment: "") }
+
+        // 12. editPanel
+        static var editPanelTitle: String { ls("tutorials.editPanel.title", comment: "") }
+        static var editPanelStep0Title: String { ls("tutorials.editPanel.step0.title", comment: "") }
+        static var editPanelStep0Desc: String { ls("tutorials.editPanel.step0.desc", comment: "") }
+        static var editPanelStep1Title: String { ls("tutorials.editPanel.step1.title", comment: "") }
+        static var editPanelStep1Desc: String { ls("tutorials.editPanel.step1.desc", comment: "") }
+        static var editPanelStep2Title: String { ls("tutorials.editPanel.step2.title", comment: "") }
+        static var editPanelStep2Desc: String { ls("tutorials.editPanel.step2.desc", comment: "") }
+
+        // 13. panelFiltering
+        static var panelFilteringTitle: String { ls("tutorials.panelFiltering.title", comment: "") }
+        static var panelFilteringStep0Title: String { ls("tutorials.panelFiltering.step0.title", comment: "") }
+        static var panelFilteringStep0Desc: String { ls("tutorials.panelFiltering.step0.desc", comment: "") }
+        static var panelFilteringStep1Title: String { ls("tutorials.panelFiltering.step1.title", comment: "") }
+        static var panelFilteringStep1Desc: String { ls("tutorials.panelFiltering.step1.desc", comment: "") }
+        static var panelFilteringStep2Title: String { ls("tutorials.panelFiltering.step2.title", comment: "") }
+        static var panelFilteringStep2Desc: String { ls("tutorials.panelFiltering.step2.desc", comment: "") }
+
+        // 14. inboxApproval
+        static var inboxApprovalTitle: String { ls("tutorials.inboxApproval.title", comment: "") }
+        static var inboxApprovalStep0Title: String { ls("tutorials.inboxApproval.step0.title", comment: "") }
+        static var inboxApprovalStep0Desc: String { ls("tutorials.inboxApproval.step0.desc", comment: "") }
+        static var inboxApprovalStep1Title: String { ls("tutorials.inboxApproval.step1.title", comment: "") }
+        static var inboxApprovalStep1Desc: String { ls("tutorials.inboxApproval.step1.desc", comment: "") }
+        static var inboxApprovalStep2Title: String { ls("tutorials.inboxApproval.step2.title", comment: "") }
+        static var inboxApprovalStep2Desc: String { ls("tutorials.inboxApproval.step2.desc", comment: "") }
+
+        // 15. applePay
+        static var applePayTitle: String { ls("tutorials.applePay.title", comment: "") }
+        static var applePayStep0Title: String { ls("tutorials.applePay.step0.title", comment: "") }
+        static var applePayStep0Desc: String { ls("tutorials.applePay.step0.desc", comment: "") }
+        static var applePayStep1Title: String { ls("tutorials.applePay.step1.title", comment: "") }
+        static var applePayStep1Desc: String { ls("tutorials.applePay.step1.desc", comment: "") }
+        static var applePayStep2Title: String { ls("tutorials.applePay.step2.title", comment: "") }
+        static var applePayStep2Desc: String { ls("tutorials.applePay.step2.desc", comment: "") }
+
+        // 16. controlCenter
+        static var controlCenterTitle: String { ls("tutorials.controlCenter.title", comment: "") }
+        static var controlCenterStep0Title: String { ls("tutorials.controlCenter.step0.title", comment: "") }
+        static var controlCenterStep0Desc: String { ls("tutorials.controlCenter.step0.desc", comment: "") }
+        static var controlCenterStep1Title: String { ls("tutorials.controlCenter.step1.title", comment: "") }
+        static var controlCenterStep1Desc: String { ls("tutorials.controlCenter.step1.desc", comment: "") }
+        static var controlCenterStep2Title: String { ls("tutorials.controlCenter.step2.title", comment: "") }
+        static var controlCenterStep2Desc: String { ls("tutorials.controlCenter.step2.desc", comment: "") }
+
+        // 17. notifications
+        static var notificationsTitle: String { ls("tutorials.notifications.title", comment: "") }
+        static var notificationsStep0Title: String { ls("tutorials.notifications.step0.title", comment: "") }
+        static var notificationsStep0Desc: String { ls("tutorials.notifications.step0.desc", comment: "") }
+        static var notificationsStep1Title: String { ls("tutorials.notifications.step1.title", comment: "") }
+        static var notificationsStep1Desc: String { ls("tutorials.notifications.step1.desc", comment: "") }
+        static var notificationsStep2Title: String { ls("tutorials.notifications.step2.title", comment: "") }
+        static var notificationsStep2Desc: String { ls("tutorials.notifications.step2.desc", comment: "") }
+
+        // 18. faceID
+        static var faceIDTitle: String { ls("tutorials.faceID.title", comment: "") }
+        static var faceIDStep0Title: String { ls("tutorials.faceID.step0.title", comment: "") }
+        static var faceIDStep0Desc: String { ls("tutorials.faceID.step0.desc", comment: "") }
+        static var faceIDStep1Title: String { ls("tutorials.faceID.step1.title", comment: "") }
+        static var faceIDStep1Desc: String { ls("tutorials.faceID.step1.desc", comment: "") }
+
+        // 19. goPro
+        static var goProTitle: String { ls("tutorials.goPro.title", comment: "") }
+        static var goProStep0Title: String { ls("tutorials.goPro.step0.title", comment: "") }
+        static var goProStep0Desc: String { ls("tutorials.goPro.step0.desc", comment: "") }
+        static var goProStep1Title: String { ls("tutorials.goPro.step1.title", comment: "") }
+        static var goProStep1Desc: String { ls("tutorials.goPro.step1.desc", comment: "") }
+        static var goProStep2Title: String { ls("tutorials.goPro.step2.title", comment: "") }
+        static var goProStep2Desc: String { ls("tutorials.goPro.step2.desc", comment: "") }
     }
 
     enum FAQ {

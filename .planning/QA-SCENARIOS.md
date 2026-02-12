@@ -4448,11 +4448,44 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ### 34.5 Link tutoriales
 - [ ] Botón "Descubre los tutoriales..." visible
-- [ ] Tap abre sheet con TipsAndTricksView
+- [ ] Tap abre sheet con TutorialsListView
 - [ ] Sheet funciona correctamente dentro del fullScreenCover
 - [ ] Al cerrar sheet, se regresa a pantalla de privacidad
 - [ ] Después de cerrar sheet, botón "Empezar" sigue funcionando
 
-### 34.6 Rename "Tutoriales y consejos"
-- [ ] Perfil > Ayuda muestra "Tutoriales y consejos" (no "Consejos y trucos")
+### 34.6 Rename a "Tutoriales"
+- [ ] Perfil > Ayuda muestra "Tutoriales" (no "Tutoriales y consejos")
 - [ ] Verificar en al menos 2 idiomas (ES, EN)
+
+---
+
+## Sección 35: Tutoriales (TutorialsListView + TutorialDetailView)
+
+### 35.1 Lista de tutoriales desde Perfil
+- [ ] Perfil > Ayuda > Tutoriales abre TutorialsListView
+- [ ] Header con icono de libro y subtítulo visible
+- [ ] 5 secciones visibles: Primeros pasos, Uso diario, Personalización, Avanzado, Usuario experto
+- [ ] 19 tutoriales en total distribuidos en las 5 secciones
+- [ ] Cada fila muestra: icono con color, título, conteo de pasos, chevron derecho
+- [ ] Scroll funciona correctamente con todo el contenido
+
+### 35.2 Detalle de tutorial (carousel)
+- [ ] Tap en tutorial abre TutorialDetailView (push navigation)
+- [ ] Indicador de progreso con cápsulas animadas (activa = color del tutorial)
+- [ ] Swipe horizontal entre pasos funciona
+- [ ] Placeholder visible cuando no hay screenshot (rectángulo con icono)
+- [ ] Título y descripción del paso visibles y centrados
+- [ ] Botón "Siguiente" avanza al siguiente paso
+- [ ] Botón "Anterior" aparece a partir del segundo paso
+- [ ] Botón "Listo" en último paso cierra la vista (dismiss)
+
+### 35.3 Tutoriales desde Onboarding
+- [ ] Onboarding > Privacidad > Tutoriales abre sheet con TutorialsListView
+- [ ] NavigationStack funciona correctamente dentro del sheet
+- [ ] Push a TutorialDetailView funciona dentro del sheet
+- [ ] Cerrar sheet regresa a pantalla de privacidad
+
+### 35.4 Idiomas
+- [ ] Tutoriales muestran strings en español (idioma principal)
+- [ ] Cambiar a inglés muestra strings en English
+- [ ] Los otros 4 idiomas (fr, de, it, pt) muestran placeholder en español
