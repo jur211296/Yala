@@ -181,8 +181,7 @@ struct FilterService {
         return
             grouped
             .map { (date: $0.key, records: $0.value.sorted {
-                if $0.date == $1.date { return $0.createdAt > $1.createdAt }
-                return $0.date > $1.date
+                return $0.createdAt > $1.createdAt
             }) }
             .sorted { $0.date > $1.date }
     }
