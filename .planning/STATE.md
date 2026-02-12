@@ -24,6 +24,10 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-12] 7065e73 fix: sort same-day transactions by createdAt instead of date hour
+- [2026-02-12] ad63797 refactor: remove personalization and power user tutorial categories
+- [2026-02-12] e0d0555 feat: redesign tutorials with categorized list, detail carousel and video support
+- [2026-02-11] d5aefea feat: add privacy screen to onboarding + rename tips to tutorials
 - [2026-02-11] 13cff73 style: migrate hardcoded spacing to DS tokens (DS-19)
 - [2026-02-11] 89b204c style: migrate widget foregroundColor to foregroundStyle (18 sites)
 - [2026-02-11] 0aa5597 refactor: replace DispatchQueue.main.asyncAfter with Task.sleep
@@ -439,11 +443,11 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-11
-Stopped at: DS-19 spacing token migration complete
-Next step: Siguiente item de /next (pendiente evaluación)
+Last session: 2026-02-12
+Stopped at: Fix same-day transaction sorting (createdAt over date hour)
+Next step: Siguiente item de /next
 Resume context:
-- DS-19 spacing migration: 23 instances across 20 files (13cff73)
-- New tokens: DS.Spacing.sheetTop (64pt), DS.Spacing.formIndent (52pt), WDS.Spacing.xxl (20pt)
-- All deep scan S.3 items now resolved or accepted
+- Fix aplicado en 3 archivos: FilterService, PanelViewModel, StatisticsViewModel
+- Within-day sort ahora usa createdAt (drafts aprobados se ordenan por momento de aprobación)
+- FetchDescriptors no tocados (date como primario entre días sigue correcto)
 - Build limpio, 260 tests pasan
