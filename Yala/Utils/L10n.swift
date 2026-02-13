@@ -2484,6 +2484,39 @@ enum L10n {
         static func imagesSelected(_ count: Int) -> String {
             String(format: ls("image.imagesSelected", comment: ""), count)
         }
+        static var youCanUpload: String {
+            ls("image.youCanUpload", comment: "")
+        }
+        static var hintReceipts: String {
+            ls("image.hintReceipts", comment: "")
+        }
+        static var hintBankScreenshots: String {
+            ls("image.hintBankScreenshots", comment: "")
+        }
+        static var hintRestaurantTickets: String {
+            ls("image.hintRestaurantTickets", comment: "")
+        }
+        static var hintStatements: String {
+            ls("image.hintStatements", comment: "")
+        }
+        static var hintPaymentProofs: String {
+            ls("image.hintPaymentProofs", comment: "")
+        }
+        static var hintMultiple: String {
+            ls("image.hintMultiple", comment: "")
+        }
+        static var exampleLabel: String {
+            ls("image.exampleLabel", comment: "")
+        }
+        static var example1: String {
+            ls("image.example1", comment: "")
+        }
+        static var example2: String {
+            ls("image.example2", comment: "")
+        }
+        static var example3: String {
+            ls("image.example3", comment: "")
+        }
     }
 
     // MARK: - Biometric

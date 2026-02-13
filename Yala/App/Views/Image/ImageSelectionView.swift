@@ -246,17 +246,8 @@ struct ImageSelectionView: View {
                     .foregroundStyle(.white)
             }
 
-            // Status text
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Image.selectTitle)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Image.selectSubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+            // Instructions (hints + examples)
+            imageInstructionsView
 
             Spacer()
 
@@ -282,6 +273,106 @@ struct ImageSelectionView: View {
             }
             .padding(.bottom, DS.Spacing.xxl)
         }
+    }
+
+    // MARK: - Instructions View
+
+    private var imageInstructionsView: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: DS.Spacing.lg) {
+                Text(L10n.Image.selectTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+
+                // Hints grid
+                imageHintsSection
+
+                // Examples
+                imageExamplesSection
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+        }
+    }
+
+    private var imageHintsSection: some View {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
+            Text(L10n.Image.youCanUpload)
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: DS.Spacing.sm) {
+                imageHintChip(icon: "receipt", text: L10n.Image.hintReceipts)
+                imageHintChip(icon: "iphone", text: L10n.Image.hintBankScreenshots)
+                imageHintChip(icon: "tag", text: L10n.Image.hintRestaurantTickets)
+                imageHintChip(icon: "doc.text", text: L10n.Image.hintStatements)
+                imageHintChip(icon: "creditcard", text: L10n.Image.hintPaymentProofs)
+                imageHintChip(icon: "photo.on.rectangle", text: L10n.Image.hintMultiple)
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(Color.yalaCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func imageHintChip(icon: String, text: String) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Image(systemName: icon)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(Color.teal)
+
+            Text(text)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.teal.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+    }
+
+    private var imageExamplesSection: some View {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
+            Text(L10n.Image.exampleLabel)
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            VStack(spacing: DS.Spacing.xs) {
+                imageExampleRow(text: L10n.Image.example1)
+                imageExampleRow(text: L10n.Image.example2)
+                imageExampleRow(text: L10n.Image.example3)
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(Color.yalaCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func imageExampleRow(text: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "photo")
+                .font(DS.Typography.caption)
+                .foregroundStyle(Color.teal)
+
+            Text(text)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .italic()
+
+            Spacer()
+        }
+        .padding(.vertical, DS.Spacing.sm)
+        .padding(.horizontal, DS.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .stroke(Color.teal.opacity(0.2), lineWidth: 1)
+        )
     }
 
     // MARK: - Countdown View

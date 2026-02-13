@@ -1454,6 +1454,17 @@
 "image.transactionsDetectedMessage" = "We detected %d transactions. You can review and approve them in the inbox.";
 "image.analyzingIn" = "Analyzing in %d...";
 "image.imagesSelected" = "%d images selected";
+"image.youCanUpload" = "You can upload:";
+"image.hintReceipts" = "Purchase receipts";
+"image.hintBankScreenshots" = "Bank screenshots";
+"image.hintRestaurantTickets" = "Restaurant tickets";
+"image.hintStatements" = "Account statements";
+"image.hintPaymentProofs" = "Payment proofs";
+"image.hintMultiple" = "Multiple at once";
+"image.exampleLabel" = "Examples";
+"image.example1" = "Photo of a grocery receipt";
+"image.example2" = "Screenshot of a bank transfer";
+"image.example3" = "Photo of several tickets from a trip";
 
 // MARK: - Subscription
 "subscription.title" = "Yala Pro";
