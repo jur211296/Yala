@@ -24,6 +24,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-13] f6ea01b feat: add 2s freeze between video loops and zoom into center content
 - [2026-02-13] b8e3f13 feat: overhaul tutorial system with intro, completion screen and correct step alignment
 - [2026-02-13] 5b9038a fix: align X-axis labels with bar centers and data points in all charts
 - [2026-02-13] d7b2970 fix: show visible point on trend charts when period has single data point
