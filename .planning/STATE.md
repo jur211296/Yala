@@ -5,25 +5,27 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 10.5.S — Deep Scan Pre-Launch (V1.1) — 28 issues cerrados (12✅ 6🟢 3🔵 7 false positives)
+**Current focus:** Fase 11 — Sistema de Temas Independientes (V1.2)
 
 ## Current Position
 
-Version: 1.1 (en desarrollo)
-Phase: 10.5 — Mejoras Pre-Release
-Spec: None
+Version: 1.2 (en desarrollo)
+Phase: 11 — Sistema de Temas Independientes
+Spec: `.planning/THEME-REFACTOR-PLAN.md`
 Plan: None
-Status: **Fase 10.5.S completada** — Deep Scan Pre-Launch (28/28 issues cerrados)
-Last activity: 2026-02-09 — Deep scan resuelto: 12 fixed, 6 accepted, 3 deferred, 7 false positives
+Status: **V1.1 CERRADA** — Release preparado (2026-02-13)
+Last activity: 2026-02-13 — Cierre V1.1: fase 10.5 completada, merge 1.1 → 1.0
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ██████████████░░ 95% (Fase 8 ✅, Fase 10 ✅, Fase 10.5 en progreso — bugs)
+Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
 Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-13] f586a15 fix: resolve pre-launch warnings — prints, VoiceOver, Dynamic Type, touch targets
+- [2026-02-13] 2b3677d feat: redesign image selection idle screen with hints and examples
 - [2026-02-13] f6ea01b feat: add 2s freeze between video loops and zoom into center content
 - [2026-02-13] b8e3f13 feat: overhaul tutorial system with intro, completion screen and correct step alignment
 - [2026-02-13] 5b9038a fix: align X-axis labels with bar centers and data points in all charts
@@ -195,9 +197,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Next Steps
 
-### Fase 10.5: Mejoras Pre-Release (V1.1) — EN PROGRESO (bugs)
+### Fase 10.5: Mejoras Pre-Release (V1.1) — ✅ COMPLETADA (2026-02-13)
 
-**Subfases A-R completadas ✅** (ver Completed in Current Phase)
+**Todas las subfases completadas ✅** (A-S). Pre-launch checklist pasado. 524 commits. Mergeado a 1.0.
 
 **Bugs resueltos previamente ✅ (b90443c):**
 - ✅ BUG-5: Conversión de divisas en resumen de pagos planificados
@@ -283,7 +285,7 @@ Escaneo profundo de 293 archivos Swift. Todos los puntos deben resolverse antes 
 
 **S.4 — BAJOS (limpieza):**
 - ✅ **DS-23: `@Relationship` en un lado** — Resuelto (eac4749). deleteRule explícito en todas las 33 relaciones.
-- 🟢 **DS-24: `print()` fuera de `#if DEBUG`** — FALSE POSITIVE: todos los prints ya envueltos en #if DEBUG o dentro de #Preview.
+- ✅ **DS-24: `print()` fuera de `#if DEBUG`** — Resuelto (f586a15). 2 prints en YalaShare/ShareViewController.swift envueltos en #if DEBUG.
 - ✅ **DS-25: Código duplicado en QuickExpenseIntent** — Resuelto (fe5b6a7). 3x formatCurrency y 2x findAccount extraídos a funciones file-level.
 - 🟢 **DS-26: VoiceTranscriptionService sin @MainActor** — Aceptado. Hacen network calls (OpenAI API), @MainActor bloquearía UI.
 - 🟢 **DS-27: `try?` en Task.sleep** — Aceptado. Intencional — solo falla por CancellationError y queremos continuar.
@@ -447,10 +449,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Fix BUG-24 — X-axis labels aligned with bar centers and data points in all charts
-Next step: Siguiente item de /next
+Stopped at: Cierre V1.1 — merge 1.1 → 1.0 completado
+Next step: Crear branch 1.2 para Fase 11 (Sistema de Temas)
 Resume context:
-- SmartAxisHelper: centerInCalendarUnit() centers dates at midpoint of calendar unit
-- Bar charts (CashFlow, NatureTrend): axis marks now centered within calendar units
-- Line charts (TrendChart, PeriodComparison): use actual data dates instead of linear interpolation
-- Both app and widget targets updated
+- V1.1 cerrada con 524 commits sobre 1.0
+- Pre-launch checklist pasado, 260 tests OK
+- Siguiente: Fase 11 — Sistema de Temas Independientes (THEME-REFACTOR-PLAN.md)
