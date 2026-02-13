@@ -165,7 +165,7 @@ struct TutorialDetailView: View {
     private func mediaView(_ step: TutorialStep) -> some View {
         if step.videoURL != nil {
             LoopingVideoView(step: step)
-                .aspectRatio(1, contentMode: .fit)
+                .aspectRatio(3.0 / 4.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
                 .padding(.horizontal, DS.Spacing.lg)
@@ -255,9 +255,13 @@ private struct LoopingVideoView: UIViewRepresentable {
 
 private final class LoopingPlayerUIView: UIView {
     private var playerLayer = AVPlayerLayer()
-    private var player: AVQueuePlayer?
-    private var looper: AVPlayerLooper?
+    private var player: AVPlayer?
     private var currentURL: URL?
+    private var endObserver: Any?
+    private var restartWork: DispatchWorkItem?
+
+    /// Seconds to freeze on the last frame before restarting
+    private let freezeDuration: TimeInterval = 2.0
 
     init(url: URL?) {
         super.init(frame: .zero)
@@ -281,9 +285,7 @@ private final class LoopingPlayerUIView: UIView {
     }
 
     private func setupPlayer(url: URL?) {
-        player?.pause()
-        looper = nil
-        player = nil
+        cleanUp()
         currentURL = url
 
         guard let url else {
@@ -292,10 +294,44 @@ private final class LoopingPlayerUIView: UIView {
         }
 
         let item = AVPlayerItem(url: url)
-        let queuePlayer = AVQueuePlayer(playerItem: item)
-        queuePlayer.isMuted = true
-        looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
-        playerLayer.player = queuePlayer
-        queuePlayer.play()
+        let avPlayer = AVPlayer(playerItem: item)
+        avPlayer.isMuted = true
+        player = avPlayer
+        playerLayer.player = avPlayer
+
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            self?.scheduleRestart()
+        }
+
+        avPlayer.play()
+    }
+
+    private func scheduleRestart() {
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, let player = self.player else { return }
+            player.seek(to: .zero)
+            player.play()
+        }
+        restartWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + freezeDuration, execute: work)
+    }
+
+    private func cleanUp() {
+        restartWork?.cancel()
+        restartWork = nil
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+        }
+        endObserver = nil
+        player?.pause()
+        player = nil
+    }
+
+    deinit {
+        cleanUp()
     }
 }
