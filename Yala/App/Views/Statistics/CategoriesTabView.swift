@@ -64,9 +64,28 @@ struct CategoriesTabView: View {
     // Nature Carousel State
     @State private var natureCarouselIndex: Int? = 0
 
-    /// Effective category ID for subcategory filtering (uses first selected category)
+    /// Effective category ID for subcategory filtering (uses first selected category or derives parent from subcategory)
     private var effectiveCategoryID: PersistentIdentifier? {
-        viewModel.selectedCategories.first
+        if let catID = viewModel.selectedCategories.first {
+            return catID
+        }
+        // Derive parent category from selected subcategories
+        if let subID = viewModel.selectedSubcategories.first,
+           let subcategory = allSubcategories.first(where: { $0.persistentModelID == subID }) {
+            return subcategory.category?.persistentModelID
+        }
+        return nil
+    }
+
+    /// Category IDs to use for visual dimming (includes derived parent from subcategory selection)
+    private var effectiveCategoryIDsForDim: Set<PersistentIdentifier> {
+        if !viewModel.selectedCategories.isEmpty {
+            return viewModel.selectedCategories
+        }
+        if let catID = effectiveCategoryID {
+            return [catID]
+        }
+        return []
     }
 
     // MARK: - List View Type
@@ -501,7 +520,7 @@ struct CategoriesTabView: View {
                 CategoriesPieWidget(
                     categories: categorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryIDs: viewModel.selectedCategories,
+                    selectedCategoryIDs: effectiveCategoryIDsForDim,
                     onSelectCategory: { categoryID in
                         if viewModel.selectedCategories.contains(categoryID) {
                             viewModel.selectedCategories.remove(categoryID)
@@ -787,7 +806,7 @@ struct CategoriesTabView: View {
                     AllCategoriesListContent(
                         categories: categorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryIDs: viewModel.selectedCategories,
+                        selectedCategoryIDs: effectiveCategoryIDsForDim,
                         isExpanded: isListExpanded,
                         showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
@@ -813,7 +832,7 @@ struct CategoriesTabView: View {
                     AllSubcategoriesListContent(
                         subcategories: subcategorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryIDs: viewModel.selectedCategories,
+                        selectedCategoryIDs: effectiveCategoryIDsForDim,
                         selectedSubcategoryIDs: viewModel.selectedSubcategories,
                         isExpanded: isListExpanded,
                         showVariation: showVariations && viewModel.detailPeriod != .allTime,
@@ -889,7 +908,7 @@ struct CategoriesTabView: View {
     /// - When a category filter is applied (show only subcategories of that category)
     /// - When income mode is active (category breakdown not useful for income)
     private var shouldLockToSubcategories: Bool {
-        !viewModel.selectedCategories.isEmpty || isIncomeMode
+        !viewModel.selectedCategories.isEmpty || !viewModel.selectedSubcategories.isEmpty || isIncomeMode
     }
 
     /// Enforce list view lock logic based on current category filter
