@@ -10,14 +10,25 @@ import SwiftUI
 // MARK: - Transaction Type Selector
 
 struct TransactionTypeSelectorView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedType: TransactionType
+    var availableTypes: [TransactionType] = TransactionType.allCases
     var onTypeChange: ((TransactionType) -> Void)?
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(TransactionType.allCases) { type in
+        // Hide selector completely when only one type available
+        if availableTypes.count <= 1 {
+            EmptyView()
+        } else {
+            selectorContent
+        }
+    }
+
+    private var selectorContent: some View {
+        HStack(spacing: DS.Spacing.none) {
+            ForEach(availableTypes) { type in
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    dsWithAnimation(reduceMotion) {
                         selectedType = type
                         onTypeChange?(type)
                     }
@@ -29,7 +40,7 @@ struct TransactionTypeSelectorView: View {
                         )
                         .foregroundStyle(selectedType == type ? .white : .secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, DS.Chip.paddingH)
                         .background(
                             Capsule()
                                 .fill(selectedType == type ? type.color : Color.clear)

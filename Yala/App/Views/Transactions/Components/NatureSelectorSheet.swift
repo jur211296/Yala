@@ -37,7 +37,7 @@ struct NatureSelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -65,11 +65,11 @@ private struct NatureOptionRow: View {
                 // Text content
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(nature.displayName)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
 
                     Text(nature.description)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
@@ -79,12 +79,12 @@ private struct NatureOptionRow: View {
                 // Checkmark
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .fill(isSelected ? nature.color.opacity(0.1) : Color.yalaCard)

@@ -180,7 +180,9 @@ struct FilterService {
 
         return
             grouped
-            .map { (date: $0.key, records: $0.value.sorted { $0.date > $1.date }) }
+            .map { (date: $0.key, records: $0.value.sorted {
+                return $0.createdAt > $1.createdAt
+            }) }
             .sorted { $0.date > $1.date }
     }
 
@@ -231,7 +233,7 @@ struct FilterService {
 
         // Tags filter (match if ANY selected tag is present)
         if !criteria.selectedTags.isEmpty {
-            let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+            let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
             guard !transactionTagIDs.isDisjoint(with: criteria.selectedTags) else { return false }
         }
 
@@ -279,7 +281,7 @@ struct FilterService {
             let subcategoryMatch = (transaction.subcategory?.name ?? "").lowercased().contains(
                 search)
             let accountMatch = (transaction.account?.name ?? "").lowercased().contains(search)
-            let tagMatch = transaction.tags.contains { $0.name.lowercased().contains(search) }
+            let tagMatch = (transaction.tags ?? []).contains { $0.name.lowercased().contains(search) }
 
             guard noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch else {
                 return false
@@ -303,10 +305,9 @@ struct FilterService {
         accounts: [Account],
         criteria: FilterCriteria
     ) -> [TransactionItem] {
-        // Determine eligible accounts (not excluded from statistics, not archived)
+        // Determine eligible accounts (not excluded from statistics; archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
             !account.excludeFromStatistics
-                && !account.isArchived
                 && (criteria.selectedAccounts.isEmpty
                     || criteria.selectedAccounts.contains(account.persistentModelID))
         }

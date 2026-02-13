@@ -100,7 +100,7 @@ struct ExportSummaryStepView: View {
                 .foregroundStyle(.primary)
 
             Text(L10n.Export.summaryDescription)
-            .font(.body)
+            .font(DS.Typography.body)
             .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -150,13 +150,13 @@ struct ExportSummaryStepView: View {
     private var columnsSummarySection: some View {
         SectionBox(title: L10n.Export.columnsToExport) {
             Text(columnsSummaryText)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, DS.Spacing.lg)
                 .padding(.horizontal, DS.Spacing.lg)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
     private var exportButtonSection: some View {
@@ -179,7 +179,7 @@ struct ExportSummaryStepView: View {
                         .tint(.white)
                 } else {
                     Label(L10n.Export.exportBtn, systemImage: "square.and.arrow.up")
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -189,7 +189,8 @@ struct ExportSummaryStepView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
         .disabled(isExporting)
-        .padding(.top, 16)
+        .accessibilityHint(isExporting ? "Exportación en proceso" : "")
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Helpers UI
@@ -197,12 +198,12 @@ struct ExportSummaryStepView: View {
     private func summaryRow(label: String, value: String) -> some View {
         HStack(alignment: .top) {
             Text(label)
-                .font(.body.weight(.medium))
+                .font(DS.Typography.bodyBold)
                 .foregroundStyle(.primary)
                 .frame(width: 100, alignment: .leading)
 
             Text(value)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

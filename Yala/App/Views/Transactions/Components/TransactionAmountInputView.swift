@@ -15,6 +15,7 @@ struct TransactionAmountInputView: View {
     let currencyCode: String
     let onCurrencyTap: () -> Void
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48
     @FocusState private var isAmountFocused: Bool
 
     var body: some View {
@@ -25,26 +26,26 @@ struct TransactionAmountInputView: View {
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(currencyCode)
-                        .font(.headline.weight(.semibold))
+                        .font(DS.Typography.headline)
 
                     Image(systemName: "chevron.down")
-                        .font(.caption.weight(.medium))
+                        .font(DS.Typography.labelSmall)
                 }
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.FormRow.paddingV)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(Capsule().fill(Color.yalaCard))
             }
             .buttonStyle(.plain)
 
             // Amount display
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(transactionType == .expense ? "-" : "+")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                     .foregroundStyle(transactionType.color)
 
                 TextField("0", text: $amountText)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                     .foregroundStyle(transactionType.color)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
@@ -52,7 +53,8 @@ struct TransactionAmountInputView: View {
                     .frame(maxWidth: 200)
             }
         }
-        .padding(.top, 24)
+        .padding(.top, DS.Spacing.xxl)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .onAppear {
             isAmountFocused = true
         }

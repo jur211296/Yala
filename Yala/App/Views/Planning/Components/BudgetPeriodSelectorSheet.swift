@@ -9,6 +9,8 @@ import SwiftUI
 
 struct BudgetPeriodSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36
     @Bindable var viewModel: BudgetsViewModel
     var transactions: [TransactionItem]
     var onPeriodChange: () -> Void
@@ -19,7 +21,7 @@ struct BudgetPeriodSelectorSheet: View {
     @State private var lastScrollTime: Date = Date()
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Header with icon and title
             VStack(spacing: DS.Spacing.lg) {
                 // Icon
@@ -29,17 +31,18 @@ struct BudgetPeriodSelectorSheet: View {
                         .frame(width: 80, height: 80)
 
                     Image(systemName: periodIcon)
-                        .font(.system(size: 36, weight: .medium))
+                        .font(.system(size: scaledIconSize, weight: .medium))
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(Color.electricIndigo)
                 }
-                .padding(.top, 24)
+                .padding(.top, DS.Spacing.xxl)
 
                 // Title
                 Text(periodSelectorTitle)
-                    .font(.title2.weight(.bold))
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, DS.Spacing.xl)
 
             // Wheel Picker Style
             ZStack {
@@ -47,13 +50,13 @@ struct BudgetPeriodSelectorSheet: View {
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .strokeBorder(Color.electricIndigo.opacity(0.3), lineWidth: 1.5)
                     .frame(height: 50)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, DS.Spacing.xl)
                     .allowsHitTesting(false)
 
                 // Scrollable picker
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
-                        LazyVStack(spacing: 0) {
+                        LazyVStack(spacing: DS.Spacing.none) {
                             // Top spacer
                             Color.clear.frame(height: 95)
 
@@ -65,7 +68,7 @@ struct BudgetPeriodSelectorSheet: View {
 
                                     Button {
                                         isScrolling = true
-                                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                        dsWithAnimation(reduceMotion) {
                                             selectedIndex = index
                                             proxy.scrollTo(period.id, anchor: .center)
                                         }
@@ -156,7 +159,7 @@ struct BudgetPeriodSelectorSheet: View {
                 confirmSelection()
             } label: {
                 Text(NSLocalizedString("budgets.period.confirm", comment: ""))
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
@@ -164,8 +167,8 @@ struct BudgetPeriodSelectorSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
         .background(Color.yalaBackground)
         .onAppear {
@@ -204,7 +207,7 @@ struct BudgetPeriodSelectorSheet: View {
         let timeSinceLastScroll = Date().timeIntervalSince(lastScrollTime)
         if timeSinceLastScroll >= 0.15 && !isScrolling {
             // Snap to the selected index
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 proxy.scrollTo(periods[selectedIndex].id, anchor: .center)
             }
         }
@@ -367,14 +370,3 @@ struct BudgetPeriodSelectorSheet: View {
 
 // MARK: - Calendar Extension
 
-private extension Calendar {
-    func startOfWeek(for date: Date) -> Date {
-        let components = dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        return self.date(from: components) ?? date
-    }
-
-    func startOfMonth(for date: Date) -> Date {
-        let components = dateComponents([.year, .month], from: date)
-        return self.date(from: components) ?? date
-    }
-}

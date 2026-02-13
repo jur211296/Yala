@@ -11,10 +11,16 @@ import SwiftUI
 struct CurrencySettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(CurrencyConverter.self) private var currencyConverter
+    @Environment(ExchangeRateService.self) private var exchangeRateService
+
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
     @AppStorage("secondaryCurrencies") private var secondaryCurrenciesRaw: String = ""
+
+    // MARK: - Computed Properties
 
     private var preferredCurrency: CurrencyCode {
         CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
@@ -22,20 +28,28 @@ struct CurrencySettingsView: View {
 
     /// Parsed secondary currencies from storage
     private var secondaryCurrencies: Set<CurrencyCode> {
-        Set(
-            secondaryCurrenciesRaw
-                .split(separator: ",")
-                .compactMap { CurrencyCode(rawValue: String($0)) }
-        )
+        get {
+            Set(
+                secondaryCurrenciesRaw
+                    .split(separator: ",")
+                    .compactMap { CurrencyCode(rawValue: String($0)) }
+            )
+        }
     }
 
-    /// All currencies to show in exchange rate section (all except the preferred one)
-    private var displayedCurrencies: [CurrencyCode] {
-        CurrencyCode.allCases.filter { $0 != preferredCurrency }
-    }
+    // MARK: - State
 
     @State private var isUpdating: Bool = false
     @State private var updateProgress: Double = 0.0
+
+    // Sheet states
+    @State private var showPreferredCurrencySheet = false
+    @State private var showSecondaryCurrenciesSheet = false
+    @State private var showExchangeRatesSheet = false
+
+    // Temporary binding values for sheets
+    @State private var tempPreferredCurrency: CurrencyCode = .pen
+    @State private var tempSecondaryCurrencies: Set<CurrencyCode> = []
 
     var body: some View {
         ZStack {
@@ -48,8 +62,9 @@ struct CurrencySettingsView: View {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 48))
+                            .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.brandPrimary)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)
@@ -74,6 +89,7 @@ struct CurrencySettingsView: View {
             }
             .blur(radius: isUpdating ? 3 : 0)
             .disabled(isUpdating)
+            .accessibilityHint(isUpdating ? "Actualizando tipos de cambio" : "")
 
             // Progress Overlay
             if isUpdating {
@@ -86,72 +102,80 @@ struct CurrencySettingsView: View {
                         .frame(width: 200)
 
                     Text(L10n.Common.updatingRecords)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.white)
 
                     Text(L10n.Common.recalculatingConversions)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.white.opacity(0.8))
                 }
                 .padding(DS.Spacing.xxl)
                 .background(.ultraThinMaterial)
-                .cornerRadius(DS.Radius.lg)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             }
         }
         .navigationTitle(L10n.Settings.currencyAndExchange)
         .navigationBarTitleDisplayMode(.inline)
         .interactiveDismissDisabled(isUpdating)
+        .sheet(isPresented: $showPreferredCurrencySheet) {
+            CurrencyPickerSheet(selectedCurrency: $tempPreferredCurrency)
+                .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showSecondaryCurrenciesSheet) {
+            SecondaryCurrencyPickerSheet(
+                selectedCurrencies: $tempSecondaryCurrencies,
+                preferredCurrency: preferredCurrency
+            )
+            .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showExchangeRatesSheet) {
+            ExchangeRatesSheet(preferredCurrency: preferredCurrency)
+                .presentationDetents([.large])
+        }
+        .onChange(of: tempPreferredCurrency) { _, newValue in
+            if newValue != preferredCurrency {
+                updatePreferredCurrency(to: newValue)
+            }
+        }
+        .onChange(of: tempSecondaryCurrencies) { oldValue, newValue in
+            handleSecondaryChange(from: oldValue, to: newValue)
+        }
     }
 
     // MARK: - Preferred Currency Section
 
     private var preferredCurrencySection: some View {
         SectionBox(title: L10n.Settings.preferredCurrency) {
-            VStack(spacing: 0) {
-                ForEach(Array(CurrencyCode.allCases.enumerated()), id: \.element) {
-                    index, currency in
-                    if index > 0 {
-                        SubsectionDivider()
+            Button {
+                tempPreferredCurrency = preferredCurrency
+                showPreferredCurrencySheet = true
+            } label: {
+                let info = currencyInfo(for: preferredCurrency)
+                HStack(spacing: DS.Spacing.md) {
+                    Text(info.flag)
+                        .font(DS.Typography.title)
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(info.name.capitalized)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+                        Text(info.code)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    preferredCurrencyRow(currency: currency)
-                }
-            }
-        }
-    }
 
-    @ViewBuilder
-    private func preferredCurrencyRow(currency: CurrencyCode) -> some View {
-        let info = currencyInfo(for: currency)
+                    Spacer()
 
-        Button {
-            updatePreferredCurrency(to: currency)
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Text(info.flag)
-                    .font(.title3)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(info.name.capitalized)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                    Text(info.code)
-                        .font(.caption)
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                Spacer()
-
-                if currency == preferredCurrency {
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(Color.electricIndigo)
-                        .font(.body.weight(.semibold))
-                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Secondary Currencies Section
@@ -159,99 +183,52 @@ struct CurrencySettingsView: View {
     private var secondaryCurrenciesSection: some View {
         VStack(spacing: DS.Spacing.sm) {
             SectionBox(title: L10n.Settings.secondaryCurrencies) {
-                VStack(spacing: 0) {
-                    ForEach(Array(displayedCurrencies.enumerated()), id: \.element) {
-                        index, currency in
-                        if index > 0 {
-                            SubsectionDivider()
+                Button {
+                    tempSecondaryCurrencies = secondaryCurrencies
+                    showSecondaryCurrenciesSheet = true
+                } label: {
+                    HStack(spacing: DS.Spacing.md) {
+                        // Show selected currencies or "None"
+                        if secondaryCurrencies.isEmpty {
+                            Text(L10n.Common.none)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            let sorted = secondaryCurrencies.sorted {
+                                $0.localizedName < $1.localizedName
+                            }
+                            HStack(spacing: DS.Spacing.sm) {
+                                ForEach(sorted, id: \.self) { currency in
+                                    let info = currencyInfo(for: currency)
+                                    HStack(spacing: DS.Spacing.xxs) {
+                                        Text(info.flag)
+                                            .font(DS.Typography.title)
+                                        Text(info.code)
+                                            .font(DS.Typography.body)
+                                            .foregroundStyle(.primary)
+                                    }
+                                }
+                            }
                         }
-                        secondaryCurrencyRow(currency: currency)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
                     }
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
 
             // Hint text
             Text(L10n.Settings.secondaryCurrenciesHint)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
-        }
-    }
-
-    @ViewBuilder
-    private func secondaryCurrencyRow(currency: CurrencyCode) -> some View {
-        let info = currencyInfo(for: currency)
-        let isSelected = secondaryCurrencies.contains(currency)
-        let canSelect = isSelected || secondaryCurrencies.count < 2
-
-        Button {
-            toggleSecondaryCurrency(currency)
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Text(info.flag)
-                    .font(.title3)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(info.name.capitalized)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                    Text(info.code)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
-            }
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .opacity(canSelect ? 1.0 : 0.5)
-        .disabled(!canSelect)
-    }
-
-    private func toggleSecondaryCurrency(_ currency: CurrencyCode) {
-        var current = secondaryCurrencies
-        if current.contains(currency) {
-            current.remove(currency)
-        } else if current.count < 2 {
-            current.insert(currency)
-        }
-        // Save back to storage
-        secondaryCurrenciesRaw = current.map { $0.rawValue }.joined(separator: ",")
-    }
-
-    private func updatePreferredCurrency(to newCurrency: CurrencyCode) {
-        guard newCurrency != preferredCurrency else { return }
-
-        isUpdating = true
-        updateProgress = 0.0
-
-        Task {
-            do {
-                // Run the batch update
-                try await CurrencyChangeService.shared.updateAllTransactions(
-                    to: newCurrency.rawValue,
-                    context: modelContext,
-                    onProgress: { progress in
-                        updateProgress = progress
-                    }
-                )
-
-                // Only update the AppStorage setting AFTER successful migration
-                defaultCurrencyCode = newCurrency.rawValue
-
-            } catch {
-                print("Error updating transactions: \(error)")
-                // Optionally show an alert here?
-            }
-
-            isUpdating = false
         }
     }
 
@@ -260,20 +237,49 @@ struct CurrencySettingsView: View {
     private var exchangeRatesSection: some View {
         VStack(spacing: DS.Spacing.sm) {
             SectionBox(title: L10n.Settings.exchangeRate) {
-                VStack(spacing: 0) {
-                    ForEach(Array(displayedCurrencies.enumerated()), id: \.element) {
+                VStack(spacing: DS.Spacing.none) {
+                    // Show secondary currencies inline (or first 2 if none selected)
+                    let displayCurrencies: [CurrencyCode] = {
+                        if secondaryCurrencies.isEmpty {
+                            return Array(
+                                CurrencyCode.allCases.filter { $0 != preferredCurrency }.prefix(2))
+                        }
+                        return secondaryCurrencies.sorted { $0.localizedName < $1.localizedName }
+                    }()
+
+                    ForEach(Array(displayCurrencies.enumerated()), id: \.element) {
                         index, currency in
                         if index > 0 {
                             SubsectionDivider()
                         }
                         exchangeRateRow(currency: currency)
                     }
+
+                    SubsectionDivider()
+
+                    // "See all" button
+                    Button {
+                        showExchangeRatesSheet = true
+                    } label: {
+                        HStack {
+                            Text(L10n.Common.seeAll)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(Color.electricIndigo)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.FormRow.paddingV)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
             // Last updated disclaimer
-            if let latestRate = ExchangeRateService.shared.getLatestRate(context: modelContext) {
-                // Use API timestamp if available, otherwise fall back to dateKey
+            if let latestRate = exchangeRateService.getLatestRate(context: modelContext) {
                 let rateDate: Date? =
                     latestRate.timestamp
                     ?? {
@@ -285,19 +291,12 @@ struct CurrencySettingsView: View {
 
                 if let date = rateDate {
                     Text("\(L10n.Common.lastUpdate) \(formatLastUpdated(date))")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
         }
-    }
-
-    private func formatLastUpdated(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
-        formatter.dateFormat = "d 'de' MMMM yyyy, HH:mm"
-        return formatter.string(from: date)
     }
 
     @ViewBuilder
@@ -308,14 +307,14 @@ struct CurrencySettingsView: View {
 
         HStack(spacing: DS.Spacing.md) {
             Text(info.flag)
-                .font(.title3)
+                .font(DS.Typography.title)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text("1 \(info.code)")
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                     .foregroundStyle(.primary)
                 Text(info.name.capitalized)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -327,7 +326,7 @@ struct CurrencySettingsView: View {
                     .foregroundStyle(.primary)
             } else {
                 Text("--")
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
             }
         }
@@ -338,9 +337,121 @@ struct CurrencySettingsView: View {
 
     // MARK: - Helpers
 
+    private func formatLastUpdated(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        formatter.dateFormat = "d 'de' MMMM yyyy, HH:mm"
+        return formatter.string(from: date)
+    }
+
     private func getDisplayRate(from: CurrencyCode, to: CurrencyCode) -> Double? {
-        CurrencyConverter.shared.getDisplayRate(
+        currencyConverter.getDisplayRate(
             from: from.rawValue, to: to.rawValue, context: modelContext)
+    }
+
+    // MARK: - Update Actions
+
+    private func handleSecondaryChange(from oldValue: Set<CurrencyCode>, to newValue: Set<CurrencyCode>) {
+        // Find newly added currencies
+        let added = newValue.subtracting(oldValue)
+        let removed = oldValue.subtracting(newValue)
+
+        // Save to storage
+        secondaryCurrenciesRaw = newValue.map { $0.rawValue }.joined(separator: ",")
+
+        // Signal widget refresh if anything changed
+        if !added.isEmpty || !removed.isEmpty {
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
+        }
+
+        // Load historical data for newly added currencies
+        for currency in added {
+            loadHistoricalRatesForCurrency(currency)
+        }
+    }
+
+    private func loadHistoricalRatesForCurrency(_ currency: CurrencyCode) {
+        isUpdating = true
+        updateProgress = 0.0
+
+        Task {
+            // 1. First, force update TODAY's rate with ALL currencies
+            await exchangeRateService.forceUpdateToday(context: modelContext)
+
+            // 2. Calculate 1 year date range for historical data
+            let calendar = Calendar.current
+            let today = Date()
+            guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else {
+                isUpdating = false
+                return
+            }
+
+            let dateInterval = DateInterval(start: oneYearAgo, end: today)
+
+            // 3. FORCE refresh historical rates
+            await exchangeRateService.forceRefreshRates(for: dateInterval, context: modelContext)
+
+            // Signal widget to refresh
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
+
+            isUpdating = false
+        }
+    }
+
+    private func updatePreferredCurrency(to newCurrency: CurrencyCode) {
+        guard newCurrency != preferredCurrency else { return }
+
+        // Auto-remove from secondary currencies if it was selected there
+        if secondaryCurrencies.contains(newCurrency) {
+            var updated = secondaryCurrencies
+            updated.remove(newCurrency)
+            secondaryCurrenciesRaw = updated.map { $0.rawValue }.joined(separator: ",")
+        }
+
+        isUpdating = true
+        updateProgress = 0.0
+
+        Task {
+            do {
+                // Run the batch update for transactions
+                try await CurrencyChangeService.shared.updateAllTransactions(
+                    to: newCurrency.rawValue,
+                    context: modelContext,
+                    onProgress: { progress in
+                        updateProgress = progress * 0.5  // First half of progress
+                    }
+                )
+
+                // Only update the AppStorage setting AFTER successful migration
+                defaultCurrencyCode = newCurrency.rawValue
+
+                // Force refresh exchange rates
+                await exchangeRateService.forceUpdateToday(context: modelContext)
+
+                // Force refresh historical rates (1 year)
+                let calendar = Calendar.current
+                let today = Date()
+                if let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) {
+                    let dateInterval = DateInterval(start: oneYearAgo, end: today)
+                    await exchangeRateService.forceRefreshRates(for: dateInterval, context: modelContext)
+                }
+
+                // Signal widget to refresh with new preferred currency
+                SessionState.shared.needsExchangeRateWidgetRefresh = true
+
+                // Update widget cache with new currency values (must be on MainActor)
+                await MainActor.run {
+                    WidgetDataCache.updateCache(context: modelContext)
+                }
+
+            } catch {
+                #if DEBUG
+                print("CurrencySettingsView: Error updating transactions: \(error)")
+                #endif
+            }
+
+            isUpdating = false
+        }
     }
 }
 

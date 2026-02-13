@@ -13,6 +13,8 @@ import SwiftUI
 struct UserDataResetView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(ExchangeRateService.self) private var exchangeRateService
+    @Environment(SessionState.self) private var sessionState
 
     @State private var isShowingConfirmationAlert = false
     @State private var isProcessing = false
@@ -36,13 +38,13 @@ struct UserDataResetView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.md) {
                             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                                 Text(L10n.Settings.resetAllData)
-                                    .font(.title3)
+                                    .font(DS.Typography.title)
                                     .fontWeight(.semibold)
 
                                 Text(
                                     L10n.Settings.resetDataDescription
                                 )
-                                .font(.footnote)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                             }
                             .padding(.horizontal, DS.Spacing.lg)
@@ -60,13 +62,14 @@ struct UserDataResetView: View {
                                     }
 
                                     Text(L10n.Settings.deleteAllData)
-                                        .font(.body)
+                                        .font(DS.Typography.body)
 
                                     Spacer()
                                 }
                                 .padding(DS.Spacing.lg)
                             }
                             .disabled(isProcessing)
+                            .accessibilityHint(isProcessing ? "Procesando" : "")
                         }
                     }
                 }
@@ -123,7 +126,7 @@ struct UserDataResetView: View {
 
         // 1. Activate wipe overlay BEFORE starting deletion
         //    This prevents @Query observers from crashing by showing a blocking overlay
-        SessionState.shared.isWipingData = true
+        sessionState.isWipingData = true
 
         // 2. Dismiss all sheets first to reduce active observers
         onUserDataWiped?()
@@ -133,31 +136,31 @@ struct UserDataResetView: View {
         //    This is critical - without this delay, @Query observers may still be active during deletion
         try? await Task.sleep(for: .milliseconds(500))
 
-        // 4. Perform the actual wipe
+        // 4. Perform the actual wipe (without auto-seeding categories)
         do {
             try DataWipeService.wipeAllUserData(
                 in: modelContext,
-                reseedInitialData: true
+                reseedInitialData: false
             )
 
             // 5. Small delay to let SwiftData settle before removing overlay
             try? await Task.sleep(for: .milliseconds(200))
 
             isProcessing = false
-            SessionState.shared.isWipingData = false
+            sessionState.isWipingData = false
 
             // 6. Load exchange rates directly after wipe (more reliable than flag mechanism)
             //    We call the service directly using the same context
             try? await Task.sleep(for: .milliseconds(100))
-            await ExchangeRateService.shared.updateTodayIfNeeded(context: modelContext)
-            await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: modelContext)
+            await exchangeRateService.updateTodayIfNeeded(context: modelContext)
+            await exchangeRateService.preloadHistoricalIfNeeded(context: modelContext)
             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
 
             // 7. Trigger widget refresh so Panel recalculates with new data
-            SessionState.shared.needsExchangeRateWidgetRefresh = true
+            sessionState.needsExchangeRateWidgetRefresh = true
         } catch {
             isProcessing = false
-            SessionState.shared.isWipingData = false
+            sessionState.isWipingData = false
             errorMessage = error.localizedDescription
         }
     }

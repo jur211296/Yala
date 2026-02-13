@@ -17,19 +17,11 @@ struct DetailContainerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
-
-    // MARK: - Data Queries
-
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var allTransactions: [TransactionItem]
-
-    @Query(sort: \Account.name) private var accounts: [Account]
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
-    @Query(sort: \Subcategory.name) private var allSubcategories: [Subcategory]
-    @Query(sort: \Tag.name) private var tags: [Tag]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - ViewModels
 
+    @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel: RecordsViewModel
     @State private var trendsViewModel: StatisticsViewModel
 
@@ -47,6 +39,36 @@ struct DetailContainerView: View {
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+
+    /// Voice recording sheet
+    @State private var showVoiceRecording = false
+
+    /// Image selection sheet
+    @State private var showImageSelection = false
+
+    /// FAB menu expanded state
+    @State private var showFABMenu = false
+
+    /// Upgrade prompt sheets for Pro features
+    @State private var showUpgradeForVoice = false
+    @State private var showUpgradeForImage = false
+
+    // MARK: - Pro Feature Gates
+
+    private var isVoiceLocked: Bool {
+        !FeatureGateService.shared.canAccess(.voiceInput)
+    }
+
+    private var isImageLocked: Bool {
+        !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
+    /// Check if voice input can be used (requires accounts and subcategories)
+    private var canUseVoiceInput: Bool {
+        dataViewModel.canUseVoiceInput
+    }
 
     // MARK: - Initialization
 
@@ -63,8 +85,9 @@ struct DetailContainerView: View {
         }
         _recordsViewModel = State(initialValue: RecordsViewModel(context: cleanContext))
 
+        let initialMetric: TrendMetric = SessionState.shared.isExpensesOnlyMode ? .expense : .balance
         let trendsContext = StatisticsContext(
-            initialMetric: .balance,
+            initialMetric: initialMetric,
             period: .thisMonth,
             accountID: nil,
             categoryID: nil,
@@ -96,6 +119,10 @@ struct DetailContainerView: View {
                     showDeleteConfirmation: $showDeleteConfirmation,
                     showBulkEditSheet: $showBulkEditSheet,
                     isPresentingSettings: $isPresentingSettings,
+                    showVoiceRecording: $showVoiceRecording,
+                    showImageSelection: $showImageSelection,
+                    showUpgradeForVoice: $showUpgradeForVoice,
+                    showUpgradeForImage: $showUpgradeForImage,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
                     syncFiltersToTrends: syncFiltersToTrends,
@@ -113,11 +140,16 @@ struct DetailContainerView: View {
                 syncToSessionState()
             }
             .onAppear {
+                dataViewModel.setContext(modelContext)
                 if !isFromSearch { syncFromSessionState() }
                 refreshRecordsData()
                 calculateTrendsData()
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
+                // Close FAB menu when navigating away from Statistics
+                if showFABMenu {
+                    showFABMenu = false
+                }
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
                     syncFromSessionState()
@@ -125,18 +157,22 @@ struct DetailContainerView: View {
                     refreshRecordsData()
                 }
             }
-            .onChange(of: allTransactions) {
+            .onChange(of: dataViewModel.allTransactions) {
                 // Recalculate when transactions change (e.g., initial balance modified)
                 calculateTrendsData()
                 refreshRecordsData()
+            }
+            .onChange(of: sessionState.dataVersion) { _, _ in
+                refreshRecordsData()
+                calculateTrendsData()
             }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
                     trendsViewModel: trendsViewModel,
                     recordsViewModel: recordsViewModel,
-                    categories: categories,
-                    subcategories: allSubcategories,
+                    categories: dataViewModel.categories,
+                    subcategories: dataViewModel.allSubcategories,
                     syncFromSessionState: syncFromSessionState,
                     handleSessionStateFilterChange: handleSessionStateFilterChange,
                     syncToSessionState: syncToSessionState,
@@ -172,12 +208,22 @@ struct DetailContainerView: View {
         switch selectedTab {
         case .trends:
             TrendsTabView(
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                allSubcategories: dataViewModel.allSubcategories,
+                tags: dataViewModel.tags,
+                allTransactions: dataViewModel.allTransactions,
                 trendsViewModel: trendsViewModel,
                 defaultCurrencyCode: defaultCurrencyCode,
                 onNavigateToRecords: { selectedTab = .records }
             )
         case .categories:
             CategoriesTabView(
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                allSubcategories: dataViewModel.allSubcategories,
+                tags: dataViewModel.tags,
+                allTransactions: dataViewModel.allTransactions,
                 viewModel: trendsViewModel,
                 defaultCurrencyCode: defaultCurrencyCode,
                 onNavigateToRecords: { selectedTab = .records }
@@ -185,9 +231,11 @@ struct DetailContainerView: View {
         case .records:
             RecordsTabView(
                 viewModel: recordsViewModel,
-                accounts: accounts,
-                categories: categories,
-                tags: tags,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags,
+                subcategories: dataViewModel.allSubcategories,
+                transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: defaultCurrencyCode,
                 onFilterChange: { refreshRecordsData() }
             )
@@ -221,9 +269,9 @@ struct DetailContainerView: View {
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                 Text(tab.title)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
@@ -242,15 +290,15 @@ struct DetailContainerView: View {
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.lg) {
+            HStack(spacing: DS.Spacing.md) {
                 // Selection button (only for Records)
                 if selectedTab == .records {
                     Button {
                         recordsViewModel.enterSelectionMode()
                     } label: {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(Color.electricIndigo)
+                        Image(systemName: "checklist")
+                            .font(DS.Typography.body).fontWeight(.medium)
+                            .foregroundStyle(Color.toolbarIconColor)
                     }
                 }
 
@@ -262,28 +310,30 @@ struct DetailContainerView: View {
                         trendsViewModel.showFiltersSheet = true
                     }
                 } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(DS.Typography.body).fontWeight(.medium)
+                        .foregroundStyle(Color.toolbarIconColor)
                 }
                 .overlay(alignment: .topTrailing) {
-                    if selectedTab == .records && recordsViewModel.activeFilterCount > 0 {
+                    let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
+                                       (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
+                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0)
+
+                    if showIndicator {
                         Circle()
                             .fill(Color.hotPink)
                             .frame(width: 8, height: 8)
                             .offset(x: 2, y: -2)
                     }
                 }
-
-                // Profile button
-                Button {
-                    isPresentingSettings = true
-                } label: {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.electricIndigo)
-                }
             }
+        }
+
+        // iOS 26 spacer creates separate glass groups
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+        ProfileToolbarItem {
+            isPresentingSettings = true
         }
     }
 
@@ -306,22 +356,93 @@ struct DetailContainerView: View {
 
     // MARK: - New Record FAB
 
+    @ViewBuilder
     private var newRecordFAB: some View {
-        VStack {
-            Spacer()
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.5)
+        let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
+                                (voiceInputEnabled && !imageInputEnabled) ||
+                                (!voiceInputEnabled && imageInputEnabled)
 
-            HStack {
+        if hasMultipleInputs && canUseVoiceInput {
+            VStack {
                 Spacer()
+                HStack {
+                    Spacer()
+            // Custom FAB with popup menu above
+            VStack(alignment: .trailing, spacing: DS.Spacing.md) {
+                // Menu options (shown when expanded)
+                if showFABMenu {
+                    VStack(spacing: DS.Spacing.sm) {
+                        // Voice option (if enabled)
+                        if voiceInputEnabled {
+                            fabMenuButton(
+                                icon: "waveform",
+                                text: L10n.Panel.fabVoice,
+                                color: .hotPink,
+                                isLocked: isVoiceLocked
+                            ) {
+                                dsWithAnimation(reduceMotion) {
+                                    showFABMenu = false
+                                }
+                                if isVoiceLocked {
+                                    showUpgradeForVoice = true
+                                } else {
+                                    showVoiceRecording = true
+                                }
+                            }
+                        }
 
+                        // Image option (if enabled)
+                        if imageInputEnabled {
+                            fabMenuButton(
+                                icon: "photo",
+                                text: L10n.Panel.fabImage,
+                                color: .teal,
+                                isLocked: isImageLocked
+                            ) {
+                                dsWithAnimation(reduceMotion) {
+                                    showFABMenu = false
+                                }
+                                if isImageLocked {
+                                    showUpgradeForImage = true
+                                } else {
+                                    showImageSelection = true
+                                }
+                            }
+                        }
+
+                        // Manual option (always shown)
+                        fabMenuButton(
+                            icon: "square.and.pencil",
+                            text: L10n.Panel.fabManual,
+                            color: .electricIndigo
+                        ) {
+                            dsWithAnimation(reduceMotion) {
+                                showFABMenu = false
+                            }
+                            recordsViewModel.showNewTransaction = true
+                        }
+                    }
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
+                        removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
+                    ))
+                }
+
+                // FAB button
                 Button {
-                    recordsViewModel.showNewTransaction = true
+                    DS.Haptic.medium()
+                    dsWithAnimation(reduceMotion) {
+                        showFABMenu.toggle()
+                    }
                 } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
+                    Image(systemName: showFABMenu ? "xmark" : "plus")
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(Color.electricIndigo)
+                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                         .clipShape(Circle())
+                        .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 }
                 .buttonStyle(.plain)
                 .glassEffect(.regular.interactive())
@@ -329,6 +450,77 @@ struct DetailContainerView: View {
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
+                }
+            }
+        } else {
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+            // Simple FAB (no special inputs enabled)
+            Button {
+                if canUseVoiceInput {
+                    recordsViewModel.showNewTransaction = true
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(DS.Typography.title)
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(fabBackground)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
+            .disabled(!canUseVoiceInput)
+            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
+                }
+            }
+        }
+    }
+
+    private func fabMenuButton(
+        icon: String,
+        text: String,
+        color: Color,
+        isLocked: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            DS.Haptic.selection()
+            action()
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(DS.Typography.headline)
+                    .frame(width: DS.Button.fabMenuIconSize)
+
+                Text(text)
+                    .font(DS.Typography.headline)
+
+                if isLocked {
+                    ProBadge(size: .small)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .frame(width: DS.Button.fabMenuWidth)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(isLocked ? Color.gray : color)
+            .clipShape(Capsule())
+            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .phaseAnimator([false, true]) { content, phase in
+            content
+                .scaleEffect(phase ? 1.03 : 1.0)
+        } animation: { _ in
+            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
         }
     }
 
@@ -344,17 +536,18 @@ struct DetailContainerView: View {
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel("Eliminar")
                 .buttonStyle(.plain)
 
                 Spacer()
 
                 // Selection count
                 Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
 
                 Spacer()
 
@@ -363,7 +556,7 @@ struct DetailContainerView: View {
                     handleEditAction()
                 } label: {
                     Image(systemName: "pencil")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                         .frame(width: 44, height: 44)
                 }
@@ -381,11 +574,14 @@ struct DetailContainerView: View {
 
     private func refreshRecordsData() {
         DispatchQueue.main.async {
+            // Reload fresh data from SwiftData before applying filters
+            // This ensures deleted/modified transactions are reflected immediately
+            dataViewModel.loadData()
             recordsViewModel.applyFilters(
-                transactions: allTransactions,
-                accounts: accounts,
-                categories: categories,
-                tags: tags
+                transactions: dataViewModel.allTransactions,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags
             )
         }
     }
@@ -393,8 +589,8 @@ struct DetailContainerView: View {
     private func calculateTrendsData() {
         DispatchQueue.main.async {
             trendsViewModel.calculateTrendData(
-                accounts: accounts,
-                transactions: allTransactions,
+                accounts: dataViewModel.accounts,
+                transactions: dataViewModel.allTransactions,
                 defaultCurrencyCode: defaultCurrencyCode,
                 context: modelContext
             )
@@ -510,6 +706,10 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showDeleteConfirmation: Bool
     @Binding var showBulkEditSheet: Bool
     @Binding var isPresentingSettings: Bool
+    @Binding var showVoiceRecording: Bool
+    @Binding var showImageSelection: Bool
+    @Binding var showUpgradeForVoice: Bool
+    @Binding var showUpgradeForImage: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
     let syncFiltersToTrends: () -> Void
@@ -518,12 +718,24 @@ private struct DetailContainerSheets: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
-                RecordsFiltersView(viewModel: recordsViewModel)
+                RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { refreshRecordsData() }
             }
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
                     .onDisappear { refreshRecordsData() }
+            }
+            .sheet(isPresented: $showVoiceRecording) {
+                VoiceRecordingView()
+            }
+            .sheet(isPresented: $showImageSelection) {
+                ImageSelectionView()
+            }
+            .sheet(isPresented: $showUpgradeForVoice) {
+                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showUpgradeForImage) {
+                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
@@ -535,7 +747,7 @@ private struct DetailContainerSheets: ViewModifier {
                 }
             }
             .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
-                RecordsFiltersView(viewModel: recordsViewModel)
+                RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear {
                         syncFiltersToTrends()
                         calculateTrendsData()
@@ -611,7 +823,7 @@ private struct DetailContainerObservers: ViewModifier {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
                     // Only set expense if we found matching subcategories AND all are from expense categories
-                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.category.isIncome }) {
+                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
                 }

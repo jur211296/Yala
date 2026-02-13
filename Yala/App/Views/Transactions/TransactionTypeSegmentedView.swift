@@ -2,7 +2,7 @@
 //  TransactionTypeSegmentedView.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftUI
@@ -11,19 +11,21 @@ import SwiftUI
 
 /// Selector tipo cápsula iOS para Gasto/Ingreso/Transferencia
 struct TransactionTypeSegmentedView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedType: TransactionType
+    var availableTypes: [TransactionType] = TransactionType.allCases
 
     @Namespace private var animation
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(TransactionType.allCases) { type in
+        HStack(spacing: DS.Spacing.none) {
+            ForEach(availableTypes) { type in
                 TransactionTypeButton(
                     type: type,
                     isSelected: selectedType == type,
                     animation: animation
                 ) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    dsWithAnimation(reduceMotion) {
                         selectedType = type
                     }
                 }
@@ -55,8 +57,8 @@ struct TransactionTypeButton: View {
             Text(type.displayName)
                 .font(.subheadline.weight(isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Chip.paddingH)
                 .frame(maxWidth: .infinity)
                 .background {
                     if isSelected {

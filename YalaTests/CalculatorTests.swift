@@ -1,6 +1,6 @@
 //
 //  CalculatorTests.swift
-//  NetoTests
+//  YalaTests
 //
 //  Unit tests for standard calculators to ensure refactoring didn't break logic.
 //

@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC32EC3D721002AC31C /* CoreXLSX */; };
+		96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC72EC3D721002AC31C /* OpenAI */; };
+		CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CFADC3B82F2A42810040D198 /* YalaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CFB1B6AF2F30EC930083BC08 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6AE2F30EC930083BC08 /* WidgetKit.framework */; };
+		CFB1B6B12F30EC930083BC08 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6B02F30EC930083BC08 /* SwiftUI.framework */; };
+		CFB1B6C02F30EC940083BC08 /* YalaWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CFB1B6AC2F30EC930083BC08 /* YalaWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,12 +30,46 @@
 			remoteGlobalIDString = 96CFFF922EC3CF06002AC31C;
 			remoteInfo = Yala;
 		};
+		CFADC3C02F2A42810040D198 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96CFFF8B2EC3CF06002AC31C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFADC3B72F2A42810040D198;
+			remoteInfo = YalaShare;
+		};
+		CFB1B6BE2F30EC940083BC08 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96CFFF8B2EC3CF06002AC31C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFB1B6AB2F30EC930083BC08;
+			remoteInfo = YalaWidgetsExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CFADC3C32F2A42810040D198 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */,
+				CFB1B6C02F30EC940083BC08 /* YalaWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		96CFFF932EC3CF06002AC31C /* Yala.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yala.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96CFFFA42EC3CF09002AC31C /* YalaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YalaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YalaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		CFADC3B82F2A42810040D198 /* YalaShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YalaShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFB1B6AC2F30EC930083BC08 /* YalaWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YalaWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFB1B6AE2F30EC930083BC08 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		CFB1B6B02F30EC930083BC08 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -41,6 +80,27 @@
 			);
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
 		};
+		CFA3952D2F33BC1500ED1D89 /* Exceptions for "Yala" folder in "YalaWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/ControlCenterIntents.swift,
+			);
+			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
+		};
+		CFADC3C92F2A42810040D198 /* Exceptions for "YalaShare" folder in "YalaShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CFADC3B72F2A42810040D198 /* YalaShare */;
+		};
+		CFB1B6C62F30EC940083BC08 /* Exceptions for "YalaWidgets" folder in "YalaWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -48,6 +108,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				96CFFFB62EC3CF09002AC31C /* Exceptions for "Yala" folder in "Yala" target */,
+				CFA3952D2F33BC1500ED1D89 /* Exceptions for "Yala" folder in "YalaWidgetsExtension" target */,
 			);
 			path = Yala;
 			sourceTree = "<group>";
@@ -62,6 +123,22 @@
 			path = YalaUITests;
 			sourceTree = "<group>";
 		};
+		CFADC3B92F2A42810040D198 /* YalaShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CFADC3C92F2A42810040D198 /* Exceptions for "YalaShare" folder in "YalaShare" target */,
+			);
+			path = YalaShare;
+			sourceTree = "<group>";
+		};
+		CFB1B6B22F30EC930083BC08 /* YalaWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CFB1B6C62F30EC940083BC08 /* Exceptions for "YalaWidgets" folder in "YalaWidgetsExtension" target */,
+			);
+			path = YalaWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +147,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */,
+				96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,15 +165,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CFADC3B52F2A42810040D198 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFB1B6A92F30EC930083BC08 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFB1B6B12F30EC930083BC08 /* SwiftUI.framework in Frameworks */,
+				CFB1B6AF2F30EC930083BC08 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		96CFFF8A2EC3CF06002AC31C = {
 			isa = PBXGroup;
 			children = (
+				96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */,
 				96CFFF952EC3CF06002AC31C /* Yala */,
 				96CFFFA72EC3CF09002AC31C /* YalaTests */,
 				96CFFFB12EC3CF09002AC31C /* YalaUITests */,
+				CFADC3B92F2A42810040D198 /* YalaShare */,
+				CFB1B6B22F30EC930083BC08 /* YalaWidgets */,
+				CFB1B6AD2F30EC930083BC08 /* Frameworks */,
 				96CFFF942EC3CF06002AC31C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -106,8 +204,19 @@
 				96CFFF932EC3CF06002AC31C /* Yala.app */,
 				96CFFFA42EC3CF09002AC31C /* YalaTests.xctest */,
 				96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */,
+				CFADC3B82F2A42810040D198 /* YalaShare.appex */,
+				CFB1B6AC2F30EC930083BC08 /* YalaWidgetsExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CFB1B6AD2F30EC930083BC08 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CFB1B6AE2F30EC930083BC08 /* WidgetKit.framework */,
+				CFB1B6B02F30EC930083BC08 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -120,10 +229,13 @@
 				96CFFF8F2EC3CF06002AC31C /* Sources */,
 				96CFFF902EC3CF06002AC31C /* Frameworks */,
 				96CFFF912EC3CF06002AC31C /* Resources */,
+				CFADC3C32F2A42810040D198 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CFADC3C12F2A42810040D198 /* PBXTargetDependency */,
+				CFB1B6BF2F30EC940083BC08 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				96CFFF952EC3CF06002AC31C /* Yala */,
@@ -131,6 +243,7 @@
 			name = Yala;
 			packageProductDependencies = (
 				96CFFFC32EC3D721002AC31C /* CoreXLSX */,
+				96CFFFC72EC3D721002AC31C /* OpenAI */,
 			);
 			productName = Yala;
 			productReference = 96CFFF932EC3CF06002AC31C /* Yala.app */;
@@ -182,6 +295,50 @@
 			productReference = 96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		CFADC3B72F2A42810040D198 /* YalaShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFADC3C82F2A42810040D198 /* Build configuration list for PBXNativeTarget "YalaShare" */;
+			buildPhases = (
+				CFADC3B42F2A42810040D198 /* Sources */,
+				CFADC3B52F2A42810040D198 /* Frameworks */,
+				CFADC3B62F2A42810040D198 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CFADC3B92F2A42810040D198 /* YalaShare */,
+			);
+			name = YalaShare;
+			packageProductDependencies = (
+			);
+			productName = YalaShare;
+			productReference = CFADC3B82F2A42810040D198 /* YalaShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFB1B6C52F30EC940083BC08 /* Build configuration list for PBXNativeTarget "YalaWidgetsExtension" */;
+			buildPhases = (
+				CFB1B6A82F30EC930083BC08 /* Sources */,
+				CFB1B6A92F30EC930083BC08 /* Frameworks */,
+				CFB1B6AA2F30EC930083BC08 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CFB1B6B22F30EC930083BC08 /* YalaWidgets */,
+			);
+			name = YalaWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = YalaWidgetsExtension;
+			productReference = CFB1B6AC2F30EC930083BC08 /* YalaWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -189,7 +346,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2610;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					96CFFF922EC3CF06002AC31C = {
@@ -202,6 +359,12 @@
 					96CFFFAD2EC3CF09002AC31C = {
 						CreatedOnToolsVersion = 26.1;
 						TestTargetID = 96CFFF922EC3CF06002AC31C;
+					};
+					CFADC3B72F2A42810040D198 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					CFB1B6AB2F30EC930083BC08 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -221,6 +384,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */,
+				96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96CFFF942EC3CF06002AC31C /* Products */;
@@ -230,6 +394,8 @@
 				96CFFF922EC3CF06002AC31C /* Yala */,
 				96CFFFA32EC3CF09002AC31C /* YalaTests */,
 				96CFFFAD2EC3CF09002AC31C /* YalaUITests */,
+				CFADC3B72F2A42810040D198 /* YalaShare */,
+				CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -250,6 +416,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		96CFFFAC2EC3CF09002AC31C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFADC3B62F2A42810040D198 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFB1B6AA2F30EC930083BC08 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -280,6 +460,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CFADC3B42F2A42810040D198 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFB1B6A82F30EC930083BC08 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -293,17 +487,29 @@
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
 			targetProxy = 96CFFFAF2EC3CF09002AC31C /* PBXContainerItemProxy */;
 		};
+		CFADC3C12F2A42810040D198 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFADC3B72F2A42810040D198 /* YalaShare */;
+			targetProxy = CFADC3C02F2A42810040D198 /* PBXContainerItemProxy */;
+		};
+		CFB1B6BF2F30EC940083BC08 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
+			targetProxy = CFB1B6BE2F30EC940083BC08 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		96CFFFB82EC3CF09002AC31C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Yala/App/Yala.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
@@ -321,9 +527,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
@@ -334,17 +541,20 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
 			};
 			name = Debug;
 		};
 		96CFFFB92EC3CF09002AC31C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Yala/App/Yala.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
@@ -362,9 +572,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
@@ -375,11 +586,13 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
 			};
 			name = Release;
 		};
 		96CFFFBA2EC3CF09002AC31C /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -446,6 +659,7 @@
 		};
 		96CFFFBB2EC3CF09002AC31C /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -512,7 +726,7 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -534,7 +748,7 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -554,7 +768,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -574,7 +788,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -590,6 +804,7 @@
 		96CFFFD82EC3CF09002AC31C /* Debug-Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -626,12 +841,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
 			};
 			name = "Debug-Dev";
 		};
 		96CFFFD92EC3CF09002AC31C /* Release-Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconLight AppIconNeon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -668,11 +885,13 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
 			};
 			name = "Release-Dev";
 		};
 		96CFFFDA2EC3CF09002AC31C /* Debug-Dev */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -732,13 +951,14 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG DEV_BUILD $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = "Debug-Dev";
 		};
 		96CFFFDB2EC3CF09002AC31C /* Release-Dev */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96CFFFC82EC3D721002AC31C /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -805,7 +1025,7 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -827,7 +1047,7 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -847,7 +1067,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -867,7 +1087,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -877,6 +1097,274 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Yala;
+			};
+			name = "Release-Dev";
+		};
+		CFADC3C42F2A42810040D198 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
+			};
+			name = Debug;
+		};
+		CFADC3C52F2A42810040D198 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
+			};
+			name = Release;
+		};
+		CFADC3C62F2A42810040D198 /* Debug-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
+			};
+			name = "Debug-Dev";
+		};
+		CFADC3C72F2A42810040D198 /* Release-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
+				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
+			};
+			name = "Release-Dev";
+		};
+		CFB1B6C12F30EC940083BC08 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
+			};
+			name = Debug;
+		};
+		CFB1B6C22F30EC940083BC08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yala;
+			};
+			name = Release;
+		};
+		CFB1B6C32F30EC940083BC08 /* Debug-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
+			};
+			name = "Debug-Dev";
+		};
+		CFB1B6C42F30EC940083BC08 /* Release-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WKFFVD66J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YalaWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YalaWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				URL_SCHEME = yaladev;
 			};
 			name = "Release-Dev";
 		};
@@ -927,6 +1415,28 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		CFADC3C82F2A42810040D198 /* Build configuration list for PBXNativeTarget "YalaShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFADC3C42F2A42810040D198 /* Debug */,
+				CFADC3C52F2A42810040D198 /* Release */,
+				CFADC3C62F2A42810040D198 /* Debug-Dev */,
+				CFADC3C72F2A42810040D198 /* Release-Dev */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFB1B6C52F30EC940083BC08 /* Build configuration list for PBXNativeTarget "YalaWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFB1B6C12F30EC940083BC08 /* Debug */,
+				CFB1B6C22F30EC940083BC08 /* Release */,
+				CFB1B6C32F30EC940083BC08 /* Debug-Dev */,
+				CFB1B6C42F30EC940083BC08 /* Release-Dev */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -938,6 +1448,14 @@
 				minimumVersion = 0.14.2;
 			};
 		};
+		96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MacPaw/OpenAI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -945,6 +1463,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */;
 			productName = CoreXLSX;
+		};
+		96CFFFC72EC3D721002AC31C /* OpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */;
+			productName = OpenAI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -56,8 +56,7 @@ struct BulkEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Account.name) private var accounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
+    @State private var bulkEditViewModel = BulkEditViewModel()
 
     @Bindable var viewModel: RecordsViewModel
     let selectedCount: Int
@@ -72,6 +71,11 @@ struct BulkEditSheet: View {
 
     // Track applied changes
     @State private var appliedChanges: Set<BulkEditOption> = []
+
+    // Detected transaction type for subcategory filtering
+    private var detectedTransactionType: TransactionType? {
+        viewModel.getSelectedTransactionType()
+    }
 
     // Selected values for editing
     @State private var selectedAccount: Account?
@@ -88,24 +92,27 @@ struct BulkEditSheet: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         // Header with count
                         Text(L10n.BulkEdit.editCount(selectedCount))
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         // Options list
                         SectionBox(title: "") {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(Array(BulkEditOption.allCases.enumerated()), id: \.element.id) { index, option in
                                     if index > 0 {
                                         SubsectionDivider()
                                     }
 
+                                    let isDisabled = option == .subcategory && detectedTransactionType == nil
                                     BulkEditOptionRow(
                                         option: option,
                                         isApplied: appliedChanges.contains(option)
                                     ) {
                                         handleOptionTap(option)
                                     }
+                                    .opacity(isDisabled ? 0.4 : 1.0)
+                                    .allowsHitTesting(!isDisabled)
                                 }
                             }
                         }
@@ -128,7 +135,7 @@ struct BulkEditSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         finishEditing()
                     }
                 }
@@ -153,7 +160,7 @@ struct BulkEditSheet: View {
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $selectedSubcategory,
-                    transactionType: .expense
+                    transactionType: detectedTransactionType ?? .expense
                 )
                 .onDisappear {
                     if let subcategory = selectedSubcategory {
@@ -164,7 +171,7 @@ struct BulkEditSheet: View {
             .sheet(isPresented: $showTagEditor) {
                 BulkTagEditorSheet(
                     viewModel: viewModel,
-                    allTags: allTags.filter { $0.isActive },
+                    allTags: bulkEditViewModel.activeTags,
                     onApply: { tagsToAdd, tagsToRemove in
                         applyTagChanges(add: tagsToAdd, remove: tagsToRemove)
                     }
@@ -182,6 +189,9 @@ struct BulkEditSheet: View {
             }
         }
         .tint(Color.electricIndigo)
+        .onAppear {
+            bulkEditViewModel.setContext(modelContext)
+        }
     }
 
     // MARK: - Currency Warning
@@ -192,13 +202,13 @@ struct BulkEditSheet: View {
                 .foregroundStyle(.orange)
 
             Text(L10n.BulkEdit.currencyWarning)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.orange.opacity(0.1))
-        .cornerRadius(DS.Radius.md)
+        .background(DS.Semantic.warningBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     // MARK: - Applied Changes Summary
@@ -206,16 +216,16 @@ struct BulkEditSheet: View {
     private var appliedChangesSummary: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(DS.Semantic.successForeground)
 
             Text(L10n.BulkEdit.successMessage)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(DS.Radius.md)
+        .background(DS.Semantic.successBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     // MARK: - Actions
@@ -226,6 +236,7 @@ struct BulkEditSheet: View {
             selectedAccount = nil
             showAccountSelector = true
         case .subcategory:
+            guard detectedTransactionType != nil else { return }
             selectedSubcategory = nil
             showSubcategorySelector = true
         case .tag:
@@ -298,13 +309,13 @@ private struct BulkEditOptionRow: View {
                     .frame(width: 36, height: 36)
                     .overlay(
                         Image(systemName: option.icon)
-                            .font(.system(size: 16, weight: .medium))
+                            .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(option.iconColor)
                     )
 
                 // Title
                 Text(option.title)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -312,11 +323,11 @@ private struct BulkEditOptionRow: View {
                 // Applied checkmark or chevron
                 if isApplied {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18))
+                        .font(DS.Typography.body)
                         .foregroundStyle(.green)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(DS.Typography.labelSmall.weight(.semibold))
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -350,7 +361,7 @@ struct BulkTagEditorSheet: View {
                         // Common tags section (tags that ALL selected transactions have)
                         if !commonTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.commonTags) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(commonTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -368,7 +379,7 @@ struct BulkTagEditorSheet: View {
                         // Partial tags section (tags that SOME selected transactions have)
                         if !partialTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.partialTags) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(partialTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -386,7 +397,7 @@ struct BulkTagEditorSheet: View {
                         // Available tags section (tags that NO selected transactions have)
                         if !availableTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.availableTags) {
-                                VStack(spacing: 0) {
+                                VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(availableTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -417,7 +428,7 @@ struct BulkTagEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -430,6 +441,7 @@ struct BulkTagEditorSheet: View {
                         dismiss()
                     }
                     .disabled(tagsToAdd.isEmpty && tagsToRemove.isEmpty)
+                    .accessibilityHint(tagsToAdd.isEmpty && tagsToRemove.isEmpty ? "Completa la selección requerida" : "")
                 }
             }
         }
@@ -532,13 +544,13 @@ private struct BulkTagRow: View {
                     .frame(width: 28, height: 28)
                     .overlay(
                         Image(systemName: tag.iconName)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(DS.Typography.labelSmall.weight(.semibold))
                             .foregroundStyle(.white)
                     )
 
                 // Tag name
                 Text(tag.name)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -556,17 +568,17 @@ private struct BulkTagRow: View {
         case .toAdd, .common:
             // Checked - tag will be present after save
             Image(systemName: "checkmark.square.fill")
-                .font(.system(size: 22))
+                .font(DS.Typography.title)
                 .foregroundStyle(Color.electricIndigo)
         case .toRemove, .available:
             // Unchecked - tag will NOT be present after save
             Image(systemName: "square")
-                .font(.system(size: 22))
+                .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
         case .partial:
             // Mixed state - some have it, some don't
             Image(systemName: "minus.square.fill")
-                .font(.system(size: 22))
+                .font(DS.Typography.title)
                 .foregroundStyle(.orange)
         }
     }
@@ -605,7 +617,7 @@ struct BulkNoteEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -616,6 +628,7 @@ struct BulkNoteEditorSheet: View {
                         dismiss()
                     }
                     .disabled(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityHint(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Completa la selección requerida" : "")
                 }
             }
             .onAppear {
@@ -649,7 +662,7 @@ struct BulkAmountEditorSheet: View {
                         HStack {
                             TextField("0.00", text: $amountText)
                                 .keyboardType(.decimalPad)
-                                .font(.title2.weight(.semibold))
+                                .font(DS.Typography.title)
                                 .padding(.horizontal, DS.Spacing.lg)
                                 .padding(.vertical, DS.FormRow.paddingV)
                                 .focused($isFocused)
@@ -665,7 +678,7 @@ struct BulkAmountEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -679,6 +692,7 @@ struct BulkAmountEditorSheet: View {
                         dismiss()
                     }
                     .disabled(amountText.isEmpty)
+                    .accessibilityHint(amountText.isEmpty ? "Completa la selección requerida" : "")
                 }
             }
             .onAppear {

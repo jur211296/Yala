@@ -13,11 +13,11 @@ import SwiftData
 /// Template for quickly creating recurring transactions
 @Model
 final class FavoritePayment {
-    /// Display name for the favorite (required)
-    var name: String
+    /// Display name for the favorite (required) - CloudKit: default required
+    var name: String = ""
 
-    /// Transaction type: "income" or "expense" (no transfers)
-    var transactionType: String
+    /// Transaction type: "income" or "expense" (no transfers) - CloudKit: default required
+    var transactionType: String = "expense"
 
     /// Optional pre-filled amount
     var amount: Double?
@@ -26,14 +26,16 @@ final class FavoritePayment {
     var note: String?
 
     /// Optional linked account
+    @Relationship(deleteRule: .nullify, inverse: \Account.favoritePayments)
     var account: Account?
 
     /// Optional linked subcategory
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.favoritePayments)
     var subcategory: Subcategory?
 
-    /// Optional linked tags (many-to-many)
-    @Relationship(inverse: \Tag.favoritePayments)
-    var tags: [Tag]
+    /// Optional linked tags (many-to-many) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify, inverse: \Tag.favoritePayments)
+    var tags: [Tag]?
 
     /// Optional nature override (nil = use subcategory's nature)
     var natureOverride: String?
@@ -41,11 +43,11 @@ final class FavoritePayment {
     /// Optional currency code
     var currencyCode: String?
 
-    /// Creation date for sorting
-    var createdAt: Date
+    /// Creation date for sorting - CloudKit: default required
+    var createdAt: Date = Date()
 
-    /// Display order for manual reordering
-    var displayOrder: Int
+    /// Display order for manual reordering - CloudKit: default required
+    var displayOrder: Int = 0
 
     init(
         name: String,

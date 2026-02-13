@@ -21,14 +21,14 @@ struct NatureEditChip: View {
                     .frame(width: 6, height: 6)
 
                 Text(nature.displayName)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
 
                 Image(systemName: "chevron.down")
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
             }
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, DS.Chip.paddingH)
+            .padding(.vertical, DS.Chip.paddingV)
             .background(
                 Capsule().fill(nature.color.opacity(0.1))
             )

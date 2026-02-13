@@ -3,6 +3,8 @@ import SwiftUI
 /// Overlay de carga con blur de fondo
 /// Uso: Operaciones asíncronas, guardando datos, cargando
 struct YalaLoadingOverlay: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let message: String?
     let isPresented: Bool
 
@@ -37,7 +39,7 @@ struct YalaLoadingOverlay: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
         }
-        .animation(.easeInOut(duration: DS.Animation.normal), value: isPresented)
+        .dsAnimation(.easeInOut(duration: DS.Animation.normal), value: isPresented, reduceMotion: reduceMotion)
     }
 }
 

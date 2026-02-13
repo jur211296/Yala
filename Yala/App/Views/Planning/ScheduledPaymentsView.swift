@@ -10,19 +10,7 @@ import SwiftUI
 
 struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
-
-    // Data Queries
-    @Query(sort: \ScheduledPayment.nextDueDate)
-    private var allPayments: [ScheduledPayment]
-
-    @Query(sort: \Account.name)
-    private var accounts: [Account]
-
-    @Query(sort: \Category.sortOrder)
-    private var categories: [Category]
-
-    @Query(filter: #Predicate<Tag> { $0.isActive })
-    private var tags: [Tag]
+    @Environment(SessionState.self) private var sessionState
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
 
@@ -34,7 +22,7 @@ struct ScheduledPaymentsView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Tab segmented control
                     tabSelector
                         .padding(.horizontal, DS.Spacing.lg)
@@ -73,9 +61,13 @@ struct ScheduledPaymentsView: View {
             }
         }
         .onAppear {
+            viewModel.setContext(modelContext)
             refreshData()
         }
         .onChange(of: viewModel.selectedTab) { _, _ in
+            refreshData()
+        }
+        .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
@@ -108,7 +100,7 @@ struct ScheduledPaymentsView: View {
                     viewModel.createNewPayment()
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
                         .background(Color.electricIndigo)
@@ -118,8 +110,8 @@ struct ScheduledPaymentsView: View {
                 .glassEffect(.regular.interactive())
                 .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
-            .padding(.trailing, 20)
-            .padding(.bottom, 24)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
     }
 
@@ -128,18 +120,19 @@ struct ScheduledPaymentsView: View {
     private var filteredPaymentsForCurrentTab: [ScheduledPayment] {
         switch viewModel.selectedTab {
         case .all:
-            return allPayments
+            return viewModel.allPayments
         case .recurring:
-            return viewModel.getRecurringPayments(from: allPayments)
+            return viewModel.getRecurringPayments(from: viewModel.allPayments)
         case .subscriptions:
-            return viewModel.getSubscriptions(from: allPayments)
+            return viewModel.getSubscriptions(from: viewModel.allPayments)
         }
     }
 
     // MARK: - Data Management
 
     private func refreshData() {
-        viewModel.calculatePaymentData(payments: allPayments)
+        viewModel.loadPayments()
+        viewModel.calculatePaymentData(payments: viewModel.allPayments)
     }
 }
 

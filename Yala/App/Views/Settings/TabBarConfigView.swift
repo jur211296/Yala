@@ -10,6 +10,7 @@ import SwiftUI
 
 struct TabBarConfigView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
     @State private var localConfig: TabBarConfiguration = .default
@@ -65,11 +66,11 @@ struct TabBarConfigView: View {
     private var infoHeader: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
 
             Text(L10n.Settings.tabBarConfigInfo)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.lg)
@@ -86,16 +87,16 @@ struct TabBarConfigView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text(L10n.Settings.tabBarConfigActive)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.primary.opacity(0.6))
 
                 Spacer()
 
                 Text("\(localConfig.activeTabs.count)/3")
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, DS.Chip.paddingV)
 
             List {
                 ForEach(Array(localConfig.activeTabs.enumerated()), id: \.element) { index, tab in
@@ -117,7 +118,7 @@ struct TabBarConfigView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
             .environment(\.editMode, .constant(.active))
@@ -133,30 +134,35 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.md) {
             // Position indicator
             Text("\(position)")
-                .font(.caption.monospacedDigit().bold())
+                .font(DS.Typography.captionMonoBold)
                 .foregroundStyle(Color.electricIndigo)
                 .frame(width: 20)
 
             // Tab icon
             Image(systemName: tab.iconName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
                 .frame(width: 28, height: 28)
 
             // Tab name
             Text(tab.displayName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Spacer()
 
-            // Remove button (if can deactivate)
-            if canDeactivate {
+            // Panel is locked (always first, cannot remove)
+            if tab == .panel {
+                Image(systemName: "lock.fill")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            } else if canDeactivate {
+                // Remove button for other tabs
                 Button {
                     removeTab(tab)
                 } label: {
                     Image(systemName: "minus.circle.fill")
-                        .font(.title3)
+                        .font(DS.Typography.title)
                         .foregroundStyle(.red.opacity(0.8))
                 }
                 .buttonStyle(.plain)
@@ -172,17 +178,17 @@ struct TabBarConfigView: View {
     private var availableTabsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.tabBarConfigAvailable)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(localConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
                     availableTabRow(tab)
 
                     if index < localConfig.inactiveTabs.count - 1 {
                         Divider()
-                            .padding(.leading, 52)
+                            .padding(.leading, DS.Spacing.formIndent)
                     }
                 }
             }
@@ -193,7 +199,7 @@ struct TabBarConfigView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
 
@@ -208,14 +214,14 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.md) {
             // Tab icon
             Image(systemName: tab.iconName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.secondary)
                 .frame(width: 28, height: 28)
-                .padding(.leading, 20) // Align with active tabs
+                .padding(.leading, DS.Spacing.xl) // Align with active tabs
 
             // Tab name
             Text(tab.displayName)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -225,11 +231,12 @@ struct TabBarConfigView: View {
                 addTab(tab)
             } label: {
                 Image(systemName: "plus.circle.fill")
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(canActivate ? Color.electricIndigo : Color.secondary.opacity(0.5))
             }
             .buttonStyle(.plain)
             .disabled(!canActivate)
+            .accessibilityHint(!canActivate ? "Límite de pestañas alcanzado" : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -239,33 +246,38 @@ struct TabBarConfigView: View {
     private func validationMessage(_ text: String, icon: String) -> some View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.orange)
 
             Text(text)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.leading, 6)
+        .padding(.leading, DS.Chip.paddingV)
         .padding(.top, DS.Spacing.xs)
     }
 
     // MARK: - Actions
 
     private func moveTab(from source: IndexSet, to destination: Int) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        // Prevent moving panel from first position
+        if source.contains(0) { return }
+        // Prevent moving other tabs to first position (before panel)
+        if destination == 0 { return }
+
+        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
             localConfig.activeTabs.move(fromOffsets: source, toOffset: destination)
         }
     }
 
     private func addTab(_ tab: ConfigurableTab) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
             _ = localConfig.activate(tab)
         }
     }
 
     private func removeTab(_ tab: ConfigurableTab) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
             _ = localConfig.deactivate(tab)
         }
     }

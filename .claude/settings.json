@@ -22,5 +22,49 @@
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%H:%M:%S)] Editado: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%H:%M:%S)] Escrito: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash(git commit*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if git diff --cached --name-only | grep -qE '\\.(env|pem|key)$'; then echo 'BLOCKED: Archivo sensible detectado' && exit 1; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date -Iseconds)] Sesión terminada\" >> .claude/sessions/activity.log"
+          }
+        ]
+      }
+    ]
   }
 }

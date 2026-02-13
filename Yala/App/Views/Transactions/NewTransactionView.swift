@@ -2,7 +2,7 @@
 //  NewTransactionView.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftData
@@ -14,13 +14,11 @@ import SwiftUI
 struct NewTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SessionState.self) private var sessionState
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Category.sortOrder, order: .forward) private var categories: [Category]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(filter: #Predicate<Subcategory> { $0.isVisible }) private var subcategories:
-        [Subcategory]
-    @Query(sort: \TransactionItem.date, order: .reverse) private var transactions: [TransactionItem]
+    @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = CurrencyCode.pen.rawValue
+    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
 
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
@@ -34,6 +32,8 @@ struct NewTransactionView: View {
     @State private var successData: TransactionSuccessData?
     @State private var isCreatingAnother = false
     @State private var isDuplicating = false
+
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64
 
     // Quick action states
     @State private var showSavedToast = false
@@ -69,16 +69,18 @@ struct NewTransactionView: View {
                 },
                 onCreateAnother: {
                     // Reset form for new transaction
-                    viewModel = NewTransactionViewModel()
+                    let newViewModel = NewTransactionViewModel()
+                    newViewModel.setContext(modelContext)
+                    viewModel = newViewModel
                     isCreatingAnother = true
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
                     }
                 },
                 onEdit: {
                     // Go back to form with current data
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
                     }
@@ -98,7 +100,7 @@ struct NewTransactionView: View {
                     .ignoresSafeArea()
                     .dismissKeyboardOnTap()
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Transaction type selector
                     transactionTypeSelector
                         .padding(.top, DS.Spacing.sm)
@@ -131,7 +133,7 @@ struct NewTransactionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -141,9 +143,10 @@ struct NewTransactionView: View {
                         viewModel.showFavoritesSheet = true
                     } label: {
                         Image(systemName: "star.fill")
-                            .font(.system(size: 17, weight: .regular))
-                            .foregroundColor(Color(UIColor.label))
+                            .font(DS.Typography.body)
+                            .foregroundStyle(Color(UIColor.label))
                     }
+                    .accessibilityLabel("Plantillas favoritas")
                     .tint(Color(UIColor.label))
                 }
             }
@@ -264,6 +267,14 @@ struct NewTransactionView: View {
             } message: {
                 Text(L10n.Alert.deleteWarning)
             }
+            .alert(
+                L10n.Validation.futureDateTitle,
+                isPresented: $viewModel.showFutureDateAlert
+            ) {
+                Button(L10n.Common.understood, role: .cancel) {}
+            } message: {
+                Text(L10n.Validation.futureDateMessage)
+            }
             .sheet(isPresented: $viewModel.showSaveAsFavoriteSheet) {
                 favoriteSheetContent
             }
@@ -273,7 +284,7 @@ struct NewTransactionView: View {
             .overlay(alignment: .bottom) {
                 if showSavedToast {
                     Text(savedToastMessage)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
@@ -285,7 +296,12 @@ struct NewTransactionView: View {
         }
         .tint(Color.electricIndigo)
         .onAppear {
+            viewModel.setContext(modelContext)
             prefillFromContext()
+            // Force expense type in expenses-only mode
+            if sessionState.isExpensesOnlyMode {
+                viewModel.transactionType = .expense
+            }
             // Auto-focus amount field only for new transactions (not editing)
             if transactionToEdit == nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -310,10 +326,11 @@ struct NewTransactionView: View {
     private var transactionTypeSelector: some View {
         TransactionTypeSelectorView(
             selectedType: $viewModel.transactionType,
+            availableTypes: sessionState.isExpensesOnlyMode ? [.expense] : TransactionType.allCases,
             onTypeChange: { type in
                 viewModel.selectedSubcategory = nil
                 if type == .transfer {
-                    viewModel.prepareForTransfer(allAccounts: accounts)
+                    viewModel.prepareForTransfer(allAccounts: viewModel.accounts)
                     Task {
                         await viewModel.loadExchangeRate(context: modelContext)
                     }
@@ -332,9 +349,9 @@ struct NewTransactionView: View {
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DS.Typography.label)
                     Text(dateChipText)
-                        .font(.callout.weight(.medium))
+                        .font(DS.Typography.label)
                 }
                 .foregroundStyle(.primary)
                 .padding(.horizontal, DS.Spacing.lg)
@@ -347,29 +364,38 @@ struct NewTransactionView: View {
             .buttonStyle(.plain)
 
             // Note field with mention detection and popover autocomplete
-            TextField(L10n.Transaction.description, text: $viewModel.note)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .textContentType(.none)
-                .autocorrectionDisabled(false)
-                .focused($isNoteFieldFocused)
-                .frame(maxWidth: 280)
-                .tint(Color(UIColor.label))
-                .onChange(of: viewModel.note) { _, newValue in
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        // Disable #!@ shortcuts for transfers
-                        if viewModel.isTransfer {
-                            currentMentionState = nil
-                        } else {
-                            currentMentionState = MentionState.detect(in: newValue)
+            VStack(spacing: DS.Spacing.xs) {
+                TextField(L10n.Transaction.description, text: $viewModel.note)
+                    .font(DS.Typography.title)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .textContentType(.none)
+                    .autocorrectionDisabled(false)
+                    .focused($isNoteFieldFocused)
+                    .frame(maxWidth: 280)
+                    .tint(Color(UIColor.label))
+                    .onChange(of: viewModel.note) { _, newValue in
+                        dsWithAnimation(reduceMotion) {
+                            // Disable #!@ shortcuts for transfers
+                            if viewModel.isTransfer {
+                                currentMentionState = nil
+                            } else {
+                                currentMentionState = MentionState.detect(in: newValue)
+                            }
                         }
                     }
+                    .popover(isPresented: showAutocompletePopover, arrowEdge: .bottom) {
+                        autocompletePopoverContent
+                            .presentationCompactAdaptation(.popover)
+                    }
+
+                // Shortcut hint (hidden for transfers)
+                if !viewModel.isTransfer {
+                    Text(L10n.Transaction.descriptionHint)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .popover(isPresented: showAutocompletePopover, arrowEdge: .bottom) {
-                    autocompletePopoverContent
-                        .presentationCompactAdaptation(.popover)
-                }
+            }
 
             // Amount display (Standard or Transfer)
             if viewModel.needsExchangeRate {
@@ -378,21 +404,30 @@ struct NewTransactionView: View {
                 amountDisplay
             }
 
+            // Exchange rate chip (shown when currency differs from preferred, not for transfers)
+            // Use viewModel.currencyCode (transaction's currency), NOT effectiveCurrencyCode (account's currency)
+            // This handles cases where transaction is in USD but account is in PEN
+            if !viewModel.isTransfer,
+               viewModel.currencyCode != preferredCurrencyCode,
+               viewModel.exchangeRate != 1.0 {
+                exchangeRateChip
+            }
+
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
                     // Category chip (read-only, styled like NatureEditChip)
-                    let category = subcategory.category
+                    let category = subcategory.safeCategory
                     let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
-                            .font(.caption2.weight(.medium))
+                            .font(DS.Typography.labelTiny)
                         Text(category.name)
-                            .font(.caption2.weight(.medium))
+                            .font(DS.Typography.labelTiny)
                     }
                     .foregroundStyle(categoryColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, DS.Chip.paddingH)
+                    .padding(.vertical, DS.Chip.paddingV)
                     .background(
                         Capsule().fill(categoryColor.opacity(0.12))
                     )
@@ -420,16 +455,18 @@ struct NewTransactionView: View {
         }
     }
 
-    /// Dynamic font size for amount based on length
+    /// Dynamic font size for amount based on length (scales with Dynamic Type via baseAmountSize)
     private var amountFontSize: CGFloat {
         let length = viewModel.amountString.count
+        let ratio: CGFloat
         switch length {
-        case 0...7: return 64
-        case 8...9: return 54
-        case 10...11: return 46
-        case 12...13: return 38
-        default: return 32
+        case 0...7: ratio = 1.0       // 64pt base
+        case 8...9: ratio = 54.0 / 64.0
+        case 10...11: ratio = 46.0 / 64.0
+        case 12...13: ratio = 38.0 / 64.0
+        default: ratio = 32.0 / 64.0
         }
+        return baseAmountSize * ratio
     }
 
     private var amountDisplay: some View {
@@ -438,6 +475,7 @@ struct NewTransactionView: View {
                 Text(symbol)
                     .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
                     .foregroundStyle(viewModel.amountColor.opacity(0.7))
+                    .contentTransition(.numericText())
             }
 
             TextField("0.00", text: $viewModel.amountString)
@@ -472,6 +510,8 @@ struct NewTransactionView: View {
                     }
                 }
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+        .animation(.easeInOut(duration: DS.Animation.fast), value: viewModel.transactionType)
     }
 
     /// Filters amount input to only allow numbers and one decimal with max 2 decimal places
@@ -514,9 +554,50 @@ struct NewTransactionView: View {
         return result
     }
 
-    /// Currency code for display (PEN, USD, EUR, etc.) - only when account is selected
+    /// Currency display for amount field - respects user preference (code vs symbol)
     private var currencySymbol: String? {
-        viewModel.effectiveAccount != nil ? viewModel.effectiveCurrencyCode : nil
+        guard viewModel.effectiveAccount != nil else { return nil }
+        let code = viewModel.effectiveCurrencyCode
+        if let currency = CurrencyCode(rawValue: code) {
+            return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
+        }
+        return code
+    }
+
+    /// Exchange rate chip showing the converted amount and rate
+    /// Format: "≈ S/ 38.99 (TC: 3.8900)" or "≈ PEN 38.99 (TC: 3.8900)" based on user preference
+    private var exchangeRateChip: some View {
+        let rate = viewModel.exchangeRate
+        let amount = Double(viewModel.amountString) ?? 0
+        let convertedAmount = amount * rate
+
+        // Get preferred currency display based on user setting
+        let currencyDisplay: String
+        if let currency = CurrencyCode(rawValue: preferredCurrencyCode) {
+            currencyDisplay = currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
+        } else {
+            currencyDisplay = preferredCurrencyCode
+        }
+
+        // Format converted amount (no decimals if whole number, otherwise 2 decimals)
+        let formattedAmount: String
+        if convertedAmount.truncatingRemainder(dividingBy: 1) == 0 {
+            formattedAmount = String(format: "%.0f", convertedAmount)
+        } else {
+            formattedAmount = String(format: "%.2f", convertedAmount)
+        }
+
+        let formattedRate = String(format: "%.4f", rate)
+
+        return Text("≈ \(currencyDisplay) \(formattedAmount) (TC: \(formattedRate))")
+            .font(DS.Typography.labelSmall)
+            .foregroundStyle(Color.yalaSecondaryText)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(
+                Capsule().fill(Color.yalaSecondaryText.opacity(0.1))
+            )
+            .padding(.top, DS.Spacing.sm)
     }
 
     // MARK: - Quick Actions Bar
@@ -569,7 +650,7 @@ struct NewTransactionView: View {
         Button(action: action) {
             VStack(spacing: DS.Spacing.xs) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 48, height: 48)
                     .background(
@@ -578,7 +659,7 @@ struct NewTransactionView: View {
                             .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                     )
                 Text(label)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
             }
         }
@@ -653,8 +734,7 @@ struct NewTransactionView: View {
                         icon: "creditcard",
                         text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
                         isSelected: viewModel.selectedAccount != nil,
-                        color: viewModel.selectedAccount != nil
-                            ? Color(hex: viewModel.selectedAccount!.colorHex) : nil
+                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
                     ) {
                         dismissKeyboard()
                         viewModel.showAccountSelector = true
@@ -699,9 +779,9 @@ struct NewTransactionView: View {
                                 } label: {
                                     HStack(spacing: DS.Spacing.sm) {
                                         Image(systemName: tag.iconName)
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(DS.Typography.labelSmall)
                                         Text(tag.name)
-                                            .font(.subheadline.weight(.medium))
+                                            .font(DS.Typography.label)
                                             .lineLimit(1)
                                     }
                                 }
@@ -709,14 +789,15 @@ struct NewTransactionView: View {
 
                                 // Remove button (X)
                                 Button {
-                                    withAnimation {
+                                    dsWithAnimation(reduceMotion) {
                                         viewModel.selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
                                     }
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 16))
+                                        .font(DS.Typography.label)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Eliminar etiqueta")
                             }
                             .foregroundStyle(Color.tagChipColor)
                             .padding(.horizontal, DS.FormRow.paddingV)
@@ -744,7 +825,7 @@ struct NewTransactionView: View {
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"
-            formatter.locale = Locale(identifier: "es")
+            formatter.locale = Locale.current
             return formatter.string(from: viewModel.transactionDate)
         }
     }
@@ -774,7 +855,7 @@ struct NewTransactionView: View {
             return nil
         }
         // Use subcategory color if it has one, otherwise use category color
-        let colorHex = subcategory.colorHex ?? subcategory.category.colorHex
+        let colorHex = subcategory.colorHex ?? subcategory.safeCategory.colorHex
         return Color(hex: colorHex)
     }
 
@@ -794,21 +875,21 @@ struct NewTransactionView: View {
         case .tag:
             return AutocompleteHelper.getTagSuggestions(
                 query: mentionState.query,
-                allTags: tags,
-                recentTransactions: transactions
+                allTags: viewModel.tags,
+                recentTransactions: viewModel.transactions
             )
         case .subcategory:
             return AutocompleteHelper.getSubcategorySuggestions(
                 query: mentionState.query,
-                allSubcategories: subcategories,
-                recentTransactions: transactions,
+                allSubcategories: viewModel.subcategories,
+                recentTransactions: viewModel.transactions,
                 transactionType: viewModel.transactionType
             )
         case .account:
             return AutocompleteHelper.getAccountSuggestions(
                 query: mentionState.query,
-                allAccounts: accounts,
-                recentTransactions: transactions
+                allAccounts: viewModel.accounts,
+                recentTransactions: viewModel.transactions
             )
         }
     }
@@ -834,7 +915,7 @@ struct NewTransactionView: View {
                             .frame(width: 10, height: 10)
 
                         Text(suggestion.name)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.primary)
 
                         Spacer()
@@ -919,18 +1000,19 @@ struct NewTransactionView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(DS.Typography.headline)
                     Text(L10n.Action.save)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                 }
             }
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .tint(viewModel.canSave ? Color.electricIndigo : Color.gray.opacity(0.4))
+        .tint(viewModel.canSave ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.4))
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.canSave)
+        .accessibilityHint(!viewModel.canSave ? "Para guardar, completa monto, cuenta y categoría" : "")
+        .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 
     // MARK: - Actions
@@ -943,6 +1025,7 @@ struct NewTransactionView: View {
 
     private func saveTransaction() {
         if viewModel.save(context: modelContext) != nil {
+            DS.Haptic.success()
             // Dismiss keyboard first
             dismissKeyboard()
 
@@ -960,8 +1043,8 @@ struct NewTransactionView: View {
                 currencyCode: viewModel.effectiveCurrencyCode,
                 subcategoryName: viewModel.selectedSubcategory?.name,
                 subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
-                categoryName: viewModel.selectedSubcategory?.category.name,
-                categoryColorHex: viewModel.selectedSubcategory?.category.colorHex,
+                categoryName: viewModel.selectedSubcategory?.safeCategory.name,
+                categoryColorHex: viewModel.selectedSubcategory?.safeCategory.colorHex,
                 tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
                 nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature,
                 isTransfer: viewModel.isTransfer,
@@ -973,7 +1056,7 @@ struct NewTransactionView: View {
 
             // Delay animation to let keyboard dismiss
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                dsWithAnimation(reduceMotion) {
                     showSuccessScreen = true
                 }
             }
@@ -987,11 +1070,13 @@ struct NewTransactionView: View {
             return
         }
 
-        let allSubcategories = categories.flatMap { $0.subcategories }
+        let allSubcategories = viewModel.categories.flatMap { $0.subcategories ?? [] }
 
         // Reset viewModel if opening for new transaction (prevents stale data from previous edit)
         if transactionToEdit == nil && viewModel.editingTransaction != nil {
-            viewModel = NewTransactionViewModel()
+            let newViewModel = NewTransactionViewModel()
+            newViewModel.setContext(modelContext)
+            viewModel = newViewModel
         }
 
         // If we're editing an existing transaction, load all its data
@@ -1010,7 +1095,7 @@ struct NewTransactionView: View {
             viewModel.selectedSubcategory = tx.subcategory
 
             // Determine transaction type from amount sign and category
-            if tx.subcategory?.category.isIncome == true || tx.amount > 0 {
+            if tx.subcategory?.safeCategory.isIncome == true || tx.amount > 0 {
                 viewModel.transactionType = .income
             } else {
                 viewModel.transactionType = .expense
@@ -1020,10 +1105,39 @@ struct NewTransactionView: View {
             viewModel.transactionDate = tx.date
 
             // Load tags
-            viewModel.selectedTags = tx.tags
+            viewModel.selectedTags = tx.tags ?? []
 
             // Load note
             viewModel.note = tx.note ?? ""
+
+            // Load exchange rate (for display chip when currency differs from preferred)
+            // For non-transfers: shows rate from transaction currency to preferred currency
+            if tx.currencyCode != preferredCurrencyCode {
+                if tx.exchangeRate != 1.0 {
+                    // Use stored rate
+                    viewModel.exchangeRate = tx.exchangeRate
+                } else {
+                    // Stored rate is 1.0 but currencies differ - load from CurrencyConverter
+                    if let rate = CurrencyConverter.shared.getDisplayRate(
+                        from: tx.currencyCode,
+                        to: preferredCurrencyCode,
+                        date: tx.date,
+                        context: modelContext
+                    ) {
+                        viewModel.exchangeRate = rate
+                    } else {
+                        // Fallback: use static rates from CurrencyCode enum
+                        if let fromCurrency = CurrencyCode(rawValue: tx.currencyCode),
+                           let toCurrency = CurrencyCode(rawValue: preferredCurrencyCode) {
+                            let fromRate = fromCurrency.fallbackRateToUSD
+                            let toRate = toCurrency.fallbackRateToUSD
+                            if fromRate > 0 {
+                                viewModel.exchangeRate = toRate / fromRate
+                            }
+                        }
+                    }
+                }
+            }
 
             return
         }
@@ -1033,7 +1147,7 @@ struct NewTransactionView: View {
             accountID: prefillAccountID,
             categoryID: prefillCategoryID,
             subcategoryName: prefillSubcategoryName,
-            accounts: accounts,
+            accounts: viewModel.accounts,
             subcategories: allSubcategories
         )
     }
@@ -1042,7 +1156,7 @@ struct NewTransactionView: View {
         guard transactionToEdit != nil else { return }
 
         // Animate form out
-        withAnimation(.easeIn(duration: 0.15)) {
+        dsWithAnimation(reduceMotion) {
             duplicateAnimationVisible = false
         }
 
@@ -1057,7 +1171,7 @@ struct NewTransactionView: View {
             isDuplicating = true
 
             // Animate form back in
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 duplicateAnimationVisible = true
             }
 
@@ -1070,23 +1184,29 @@ struct NewTransactionView: View {
 
     private func deleteTransaction() {
         guard let transaction = transactionToEdit else { return }
+        DS.Haptic.warning()
 
         do {
             modelContext.delete(transaction)
             try modelContext.save()
+            WidgetDataCache.updateCache(context: modelContext)
+            SessionState.shared.incrementDataVersion()
             dismiss()
         } catch {
+            #if DEBUG
             print("Error deleting transaction: \(error)")
+            #endif
         }
     }
 
     private func showToast(_ message: String) {
         savedToastMessage = message
-        withAnimation(.easeInOut(duration: 0.25)) {
+        dsWithAnimation(reduceMotion) {
             showSavedToast = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation(.easeInOut(duration: 0.25)) {
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            dsWithAnimation(reduceMotion) {
                 showSavedToast = false
             }
         }
@@ -1119,7 +1239,7 @@ struct NewTransactionView: View {
         }
 
         // Set tags
-        viewModel.selectedTags = favorite.tags
+        viewModel.selectedTags = favorite.tags ?? []
 
         // Set note if available
         if let note = favorite.note, !note.isEmpty {

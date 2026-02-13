@@ -6,6 +6,67 @@ Este documento define los patrones UI que DEBEN respetarse en toda la app para m
 
 ---
 
+## iOS 26 Liquid Glass (PRIORIDAD MÁXIMA)
+
+**SIEMPRE preferir APIs nativas de iOS 26 para mantener la app moderna y actualizada.**
+
+Yala es una app iOS 26+. Esto significa que DEBEMOS usar las APIs más recientes del sistema en lugar de soluciones manuales o legacy.
+
+### APIs Obligatorias
+
+| Patrón Legacy | API iOS 26 | Cuándo Usar |
+|---------------|------------|-------------|
+| `Rectangle` divider en toolbar | `ToolbarSpacer(.fixed, placement:)` | Separar grupos de botones en toolbar |
+| `Spacer()` en toolbar | `ToolbarSpacer(.flexible)` | Espacio flexible entre items |
+| `.background(Color.gray.opacity(0.2))` | `.glassEffect(.regular)` | Chips, barras flotantes, elementos translúcidos |
+| Custom blur effects | `.glassEffect()` variants | Cualquier efecto de profundidad |
+
+### Ejemplo: Toolbar con Separación (Grupos Glass Separados)
+
+```swift
+// ✅ iOS 26: Grupos glass separados (cada ToolbarItem en su propia píldora)
+.toolbar {
+    ToolbarItem(placement: .topBarTrailing) {
+        HStack(spacing: DS.Spacing.md) {
+            Button { } label: { Image(systemName: "checkmark.circle.fill") }
+            Button { } label: { Image(systemName: "line.3.horizontal.decrease.circle.fill") }
+        }
+    }
+
+    // ⚠️ CRÍTICO: ToolbarSpacer REQUIERE placement para crear grupos glass separados
+    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+    ToolbarItem(placement: .topBarTrailing) {
+        ProfileToolbarButton { }
+    }
+}
+
+// ❌ MAL: ToolbarSpacer sin placement (NO crea separación visual)
+ToolbarSpacer(.fixed)  // Los botones quedan en la misma píldora glass
+
+// ❌ Legacy: Divider manual (NO usar)
+HStack {
+    actionButtons
+    Rectangle().fill(Color.primary.opacity(0.1)).frame(width: 1, height: 20)
+    ProfileToolbarButton { }
+}
+```
+
+### ToolbarSpacer - Referencia Rápida
+
+| Uso | Sintaxis |
+|-----|----------|
+| Separar en grupos glass | `ToolbarSpacer(.fixed, placement: .topBarTrailing)` |
+| Espacio flexible | `ToolbarSpacer(.flexible, placement: .topBarTrailing)` |
+| Item sin fondo glass | `.sharedBackgroundVisibility(.hidden)` en el ToolbarItem |
+
+**Documentación:** Ver `.planning/TOOLBAR-INVESTIGATION.md` para investigación completa.
+
+### Filosofía
+> Si existe una API de iOS 26 que resuelve un problema de UI, **USARLA** en lugar de implementar soluciones manuales. Esto garantiza que la app se vea nativa, moderna, y se beneficie automáticamente de mejoras futuras del sistema.
+
+---
+
 ## Reglas de Oro (NUNCA violar)
 
 ### 1. Áreas de Toque
@@ -33,7 +94,7 @@ HStack {
 - **NUNCA** escribir `.padding(16)` - usar `.padding(.horizontal, DS.Spacing.lg)`
 
 ### 3. Colores Semánticos
-- **SIEMPRE** usar colores del sistema: `Color.netoBackground`, `Color.yalaCard`, `Color.electricIndigo`
+- **SIEMPRE** usar colores del sistema: `Color.yalaBackground`, `Color.yalaCard`, `Color.electricIndigo`
 - **NUNCA** usar colores hardcodeados como `Color.blue` o `Color(hex: "...")`
 
 ---
@@ -75,6 +136,12 @@ HStack {
 | `label` / `labelSmall` / `labelTiny` | Etiquetas, badges |
 | `subheadline` | Info secundaria |
 | `caption` / `captionSmall` | Texto de soporte |
+| `badgeLabel` | Badges ("PRO", "New", "Overdue") — caption2 bold |
+| `indicator` | Chevrones de sort/dropdown — caption2 semibold |
+| `captionMono` / `captionMonoBold` | Contadores con dígitos monoespaciados |
+| `chevron` | Chevrones de form row (14pt semibold) |
+| `chipClose` / `chipIcon` / `chipIconOnly` | Iconos dentro de chips |
+| `iconMedium` | Iconos en badges medianos (16pt semibold) |
 | `amountLarge` / `amount` / `amountSmall` | **Montos (fuente rounded)** |
 
 ---
@@ -87,10 +154,40 @@ HStack {
 - `Color.priorityNature` - Gastos prioritarios/esenciales (teal)
 
 ### Colores Semánticos
-- `Color.netoBackground` - Fondo de app
+- `Color.yalaBackground` - Fondo de app
 - `Color.yalaCard` - Fondo de tarjetas/modales
-- `Color.netoPrimaryText` - Texto principal
-- `Color.netoSecondaryText` - Texto secundario
+- `Color.yalaPrimaryText` - Texto principal
+- `Color.yalaSecondaryText` - Texto secundario
+- `DS.Colors.borderDark` - Bordes de cards (`.black.opacity(0.05)`)
+
+### DS.Semantic — Colores de Estado
+| Token | Color | Cuándo usar |
+|-------|-------|-------------|
+| `successBackground` | green 15% | Fondos de éxito, confirmaciones |
+| `successForeground` | green | Iconos/texto de éxito |
+| `warningBackground` | orange 15% | Fondos de alerta, pendientes |
+| `warningForeground` | orange | Iconos/texto de alerta |
+| `errorBackground` | red 15% | Fondos de error, rechazos |
+| `errorBackgroundSubtle` | red 10% | Validación sutil (formularios) |
+| `errorBorder` | red 20% | Bordes de campos con error |
+| `errorForeground` | red | Iconos/texto de error |
+| `infoBackground` | blue 10% | Banners informativos |
+| `neutralBackground` | gray 10% | Chips no seleccionados, barras |
+| `favoriteIcon` | yellow | Estrellas de favorito |
+| `disabledForeground` | gray | Botones/textos deshabilitados |
+
+**NO usar DS.Semantic cuando:**
+- El color es decorativo (glow, sombra)
+- Es `Color.secondary` (texto secundario del sistema)
+- Es `Color(hex:)` dinámico (datos de categorías/tags)
+
+### DS.Gradients — Gradientes de Marca
+| Token | Colores | Cuándo usar |
+|-------|---------|-------------|
+| `proBadge` | [yellow, orange] | Badge Pro, YalaSpark |
+| `subscription` | [orange, hotPink] | Pantalla de suscripción |
+| `success` | [green, green 85%] | Animación de éxito |
+| `warning` | [orange, red] | Downgrade, alertas graves |
 
 ### Regla de Montos
 - **Ingresos**: `Color.electricIndigo`
@@ -144,8 +241,8 @@ Button(action: onTap) {
 |------|-----|------------|
 | Primario | Acción principal | `YalaPrimaryButton` |
 | Secundario | Acciones alternativas | `YalaSecondaryButton` |
-| Texto | Links, acciones terciarias | `NetoTextButton` |
-| Toolbar | Navegación, cerrar | `NetoToolbarButton` |
+| Texto | Links, acciones terciarias | `YalaTextButton` |
+| Toolbar | Navegación, cerrar | `YalaToolbarButton` |
 | Guardar | Confirmación circular | `YalaSaveButton` |
 
 ### Empty States
@@ -155,15 +252,15 @@ Button(action: onTap) {
 
 ### Loading States
 - `YalaLoadingOverlay` - Modal con overlay oscuro
-- `NetoLoadingInline` - Indicador pequeño inline
-- `NetoLoadingFullScreen` - Pantalla completa
+- `YalaLoadingInline` - Indicador pequeño inline
+- `YalaLoadingFullScreen` - Pantalla completa
 - Skeletons para contenido: `WidgetSkeleton`, `LatestRecordsSkeleton`, etc.
 
 ### Badges
 - `YalaBadge` - Badge genérico (filled/soft/outline)
-- `NetoStatusBadge` - Estados (success/warning/error/info)
-- `NetoTagBadge` - Tags de transacciones
-- `NetoCountBadge` - Contadores
+- `YalaStatusBadge` - Estados (success/warning/error/info)
+- `YalaTagBadge` - Tags de transacciones
+- `YalaCountBadge` - Contadores
 
 ---
 
@@ -431,11 +528,12 @@ Los formularios de **creación** (NO edición) DEBEN auto-posicionar el cursor e
 
 Antes de commitear cambios de UI, verificar:
 
+- [ ] ¿Se usan APIs nativas de iOS 26 donde aplique? (`ToolbarSpacer`, `.glassEffect()`, etc.)
 - [ ] ¿Todas las filas clicables usan `Button` + `contentShape(Rectangle())`?
 - [ ] ¿Se usan tokens de `DS.Spacing` en lugar de valores hardcodeados?
 - [ ] ¿Se usan tokens de `DS.Radius` para corners?
 - [ ] ¿Se usa `DS.Typography` para fuentes?
-- [ ] ¿Los colores son semánticos (`Color.yalaCard`, etc.)?
+- [ ] ¿Los colores son semánticos (`Color.yalaCard`, `DS.Semantic.*`, etc.)?
 - [ ] ¿Los montos usan `amountLarge`/`amount`/`amountSmall`?
 - [ ] ¿Los estados vacíos usan `YalaEmptyState`?
 - [ ] ¿Los loading states usan componentes estándar?
@@ -452,12 +550,12 @@ Antes de commitear cambios de UI, verificar:
 
 ## Archivos de Referencia
 
-- **Design Tokens**: `Neto/App/Theme/DesignTokens.swift`
-- **Botones**: `Neto/App/Views/Shared/StandardButtons.swift`
-- **Empty States**: `Neto/App/Views/Shared/YalaEmptyState.swift`
-- **Badges**: `Neto/App/Views/Shared/YalaBadge.swift`
-- **Loading**: `Neto/App/Views/Shared/YalaLoadingOverlay.swift`
-- **Skeletons**: `Neto/App/Views/Shared/SkeletonView.swift`
-- **Section Headers**: `Neto/App/Views/Shared/YalaSectionHeader.swift`
-- **Form Rows**: `Neto/App/Views/Transactions/TransactionFormRow.swift`
-- **List Rows**: `Neto/App/Views/Records/Components/RecordRowView.swift`
+- **Design Tokens**: `Yala/App/Theme/DesignTokens.swift`
+- **Botones**: `Yala/App/Views/Shared/StandardButtons.swift`
+- **Empty States**: `Yala/App/Views/Shared/YalaEmptyState.swift`
+- **Badges**: `Yala/App/Views/Shared/YalaBadge.swift`
+- **Loading**: `Yala/App/Views/Shared/YalaLoadingOverlay.swift`
+- **Skeletons**: `Yala/App/Views/Shared/SkeletonView.swift`
+- **Section Headers**: `Yala/App/Views/Shared/YalaSectionHeader.swift`
+- **Form Rows**: `Yala/App/Views/Transactions/TransactionFormRow.swift`
+- **List Rows**: `Yala/App/Views/Records/Components/RecordRowView.swift`

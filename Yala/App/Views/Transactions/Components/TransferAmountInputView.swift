@@ -19,6 +19,9 @@ struct TransferAmountInputView: View {
     @State private var exchangeRateString: String = "1.0000"
     @State private var isRateInverted: Bool = false
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .title) private var currencyLabelSize: CGFloat = 20
+
     // Focus states
     @FocusState private var isAmountFieldFocused: Bool
     @FocusState private var isDestFieldFocused: Bool
@@ -31,7 +34,7 @@ struct TransferAmountInputView: View {
 
             // Arrow visual
             Image(systemName: "arrow.down")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.secondary.opacity(0.5))
 
             // Destination Amount (Large)
@@ -40,18 +43,19 @@ struct TransferAmountInputView: View {
             // Exchange Rate (Clean, Explicit, No Box)
             exchangeRateField
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: - Source Amount Field
 
     private var sourceAmountField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             Text(viewModel.sourceAccount?.currencyCode ?? "")
-                .font(.system(size: 20, weight: .medium, design: .rounded))
+                .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.hotPink.opacity(0.7))
 
             TextField("0.00", text: $viewModel.amountString)
-                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.hotPink)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
@@ -84,13 +88,13 @@ struct TransferAmountInputView: View {
     // MARK: - Destination Amount Field
 
     private var destinationAmountField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             Text(viewModel.destinationAccount?.currencyCode ?? "")
-                .font(.system(size: 20, weight: .medium, design: .rounded))
+                .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.electricIndigo.opacity(0.7))
 
             TextField("0.00", text: $destinationAmountString)
-                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.electricIndigo)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)

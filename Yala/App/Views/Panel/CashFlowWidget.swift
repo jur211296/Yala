@@ -9,6 +9,8 @@ import Charts
 import SwiftUI
 
 struct CashFlowWidget: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -25,6 +27,12 @@ struct CashFlowWidget: View {
     // Filter state for dimming non-selected bars
     let selectedTransactionNatures: Set<TransactionNature>
 
+    // Control whether to show InfoHintButton (false when shown in parent header)
+    let showInfoHint: Bool
+
+    // When true, hides income bars and KPIs in compact layout
+    let isExpensesOnlyMode: Bool
+
     init(
         summary: CashFlowSummary,
         size: WidgetSize,
@@ -36,7 +44,9 @@ struct CashFlowWidget: View {
         displayMode: TrendType? = nil,
         previousAmount: Double? = nil,
         comparisonPeriodText: String? = nil,
-        selectedTransactionNatures: Set<TransactionNature> = []
+        selectedTransactionNatures: Set<TransactionNature> = [],
+        showInfoHint: Bool = true,
+        isExpensesOnlyMode: Bool = false
     ) {
         self.summary = summary
         self.size = size
@@ -49,9 +59,9 @@ struct CashFlowWidget: View {
         self.previousAmount = previousAmount
         self.comparisonPeriodText = comparisonPeriodText
         self.selectedTransactionNatures = selectedTransactionNatures
+        self.showInfoHint = showInfoHint
+        self.isExpensesOnlyMode = isExpensesOnlyMode
     }
-
-    @Environment(\.colorScheme) var colorScheme
 
     /// Check if we have no data to display
     private var hasNoData: Bool {
@@ -127,6 +137,32 @@ struct CashFlowWidget: View {
         return totalExpense == 0 && totalIncome > 0
     }
 
+    /// Waterfall mode: daily grouping + bidirectional data (not expenses-only or income-only)
+    private var isWaterfallMode: Bool {
+        grouping == .day && !hasOnlyExpenses && !hasOnlyIncome
+    }
+
+    /// Chart data for waterfall mode: exclude days where net is exactly zero
+    /// (income == expense produces invisible bars that still occupy axis space)
+    private var waterfallChartData: [CashFlowData] {
+        nonEmptyChartData.filter { $0.net != 0 }
+    }
+
+    /// Active chart data: waterfall-filtered in waterfall mode, otherwise standard nonEmpty
+    private var activeChartData: [CashFlowData] {
+        isWaterfallMode ? waterfallChartData : nonEmptyChartData
+    }
+
+    /// Cumulative waterfall bars: each bar starts where the previous ended
+    private var waterfallBars: [(date: Date, net: Double, yStart: Double, yEnd: Double)] {
+        var cumulative = 0.0
+        return waterfallChartData.map { point in
+            let start = cumulative
+            cumulative += point.net
+            return (date: point.date, net: point.net, yStart: start, yEnd: cumulative)
+        }
+    }
+
     // MARK: - Compact Bar Dimming Logic
 
     /// Whether income bar should be dimmed (expense filter is active)
@@ -140,56 +176,98 @@ struct CashFlowWidget: View {
     }
 
     /// Calculate smart axis dates for chart X-axis
+    /// Uses actual data dates to prevent duplicate labels (e.g., "ene", "ene", "feb")
     private var smartAxisDates: [Date] {
-        guard !nonEmptyChartData.isEmpty else { return [] }
-        guard let firstDate = nonEmptyChartData.first?.date,
-            let lastDate = nonEmptyChartData.last?.date
-        else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+        guard !activeChartData.isEmpty else { return [] }
+
+        let calendarUnit: Calendar.Component = {
+            switch grouping {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
+            }
+        }()
+
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: activeChartData.map(\.date),
+            grouping: calendarUnit
+        )
     }
 
-    /// Format axis label based on data span
+    /// Format axis label based on data span and grouping
     private func smartAxisLabel(for date: Date) -> String {
-        guard let firstDate = nonEmptyChartData.first?.date,
-            let lastDate = nonEmptyChartData.last?.date
+        guard let firstDate = activeChartData.first?.date,
+            let lastDate = activeChartData.last?.date
         else { return "" }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+
+        // Determine calendar unit for forceGrouping
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil  // Use span-based logic for days
+            }
+        }()
+
+        return SmartAxisHelper.formatAxisLabel(
+            for: date,
+            startDate: firstDate,
+            endDate: lastDate,
+            forceGrouping: forceGrouping
+        )
     }
 
     /// X-axis domain based on actual data range (not period range)
+    /// Uses SmartAxisHelper to extend domain when few data points to prevent overly wide bars
     private var dataXDomain: ClosedRange<Date> {
-        guard let firstDate = nonEmptyChartData.first?.date,
-            let lastDate = nonEmptyChartData.last?.date
+        guard let firstDate = activeChartData.first?.date,
+            let lastDate = activeChartData.last?.date
         else { return interval.start...interval.end }
-        // Asymmetric padding: less on left, more on right (where Y-axis labels are)
-        let calendar = Calendar.current
-        let (startPadding, endPadding): (Int, Int) = {
+
+        let calendarUnit: Calendar.Component = {
             switch grouping {
-            case .day: return (0, 1)
-            case .week: return (0, 4)
-            case .month: return (0, 30)
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
             }
         }()
-        let paddedStart =
-            calendar.date(byAdding: .day, value: -startPadding, to: firstDate) ?? firstDate
-        let paddedEnd = calendar.date(byAdding: .day, value: endPadding, to: lastDate) ?? lastDate
-        return paddedStart...paddedEnd
+
+        return SmartAxisHelper.extendedXDomain(
+            dataPoints: activeChartData.count,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            grouping: calendarUnit
+        )
     }
 
     /// Y-axis domain with independent scales for income and expense
     private var dataYDomain: ClosedRange<Double> {
+        // Waterfall: domain based on cumulative yStart/yEnd values
+        if isWaterfallMode {
+            let bars = waterfallBars
+            let allValues = bars.flatMap { [$0.yStart, $0.yEnd] }
+            let maxVal = allValues.max() ?? 0
+            let minVal = allValues.min() ?? 0
+            let top = max(maxVal * 1.1, 0)
+            let bottom = min(minVal * 1.1, 0)
+            if top == bottom { return -1...1 }
+            return bottom...top
+        }
+
         let maxIncome = nonEmptyChartData.map { $0.income }.max() ?? 0
         let maxExpense = nonEmptyChartData.map { $0.expense }.max() ?? 0
 
         // If only expenses: show expenses as positive bars (0 to max)
         if hasOnlyExpenses {
             let maxValue = maxExpense * 1.1
+            if maxValue == 0 { return 0...1 }
             return 0...maxValue
         }
 
         // If only income: show income bars (0 to max)
         if hasOnlyIncome {
             let maxValue = maxIncome * 1.1
+            if maxValue == 0 { return 0...1 }
             return 0...maxValue
         }
 
@@ -200,14 +278,14 @@ struct CashFlowWidget: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(kpiLabel)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
-                        .padding(.bottom, 2)
+                        .padding(.bottom, DS.Spacing.xxs)
 
                     // KPI with "vs previous amount" - only show when we have data
                     if !hasNoData {
@@ -217,7 +295,7 @@ struct CashFlowWidget: View {
                                     value: kpiValue, currencyCode: summary.currencyCode,
                                     forceSign: displayMode == .balance || displayMode == .none)
                             )
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -225,7 +303,7 @@ struct CashFlowWidget: View {
                             // Show previous period value for comparison
                             if let prevAmount = previousAmount {
                                 Text("vs \(YalaFormatter.number(value: prevAmount))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
@@ -234,10 +312,12 @@ struct CashFlowWidget: View {
                     }
                 }
 
-                InfoHintButton(
-                    title: L10n.WidgetType.cashFlow,
-                    message: L10n.Widget.Hint.cashFlow
-                )
+                if showInfoHint {
+                    InfoHintButton(
+                        title: L10n.WidgetType.cashFlow,
+                        message: L10n.Widget.Hint.cashFlow
+                    )
+                }
 
                 Spacer()
 
@@ -254,7 +334,7 @@ struct CashFlowWidget: View {
 
                         if let periodText = comparisonPeriodText, !periodText.isEmpty {
                             Text(periodText)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color.yalaSecondaryText)
                         }
                     }
@@ -263,10 +343,11 @@ struct CashFlowWidget: View {
                 if onShowDetail != nil {
                     Button(action: { onShowDetail?() }) {
                         Image(systemName: "chevron.right")
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.gray.opacity(0.7))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Ver detalles")
                 }
             }
             .padding([.horizontal, .top], DS.Spacing.lg)
@@ -300,62 +381,74 @@ struct CashFlowWidget: View {
                     // Zero Baseline (only show for bidirectional charts)
                     if !hasOnlyExpenses && !hasOnlyIncome {
                         RuleMark(y: .value("Zero", 0))
-                            .foregroundStyle(Color.yalaSecondaryText.opacity(0.3))
+                            .foregroundStyle(Color.yalaSecondaryText.opacity(0.2))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
                     }
 
-                    ForEach(nonEmptyChartData) { data in
-                        if hasOnlyExpenses {
-                            // Only expenses mode: show expenses as positive bars upward
+                    if isWaterfallMode {
+                        // WATERFALL: cumulative bars — each starts where previous ended
+                        ForEach(Array(waterfallBars.enumerated()), id: \.offset) { _, bar in
                             BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Expense", data.expense)
+                                x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
+                                yStart: .value("Start", bar.yStart),
+                                yEnd: .value("End", bar.yEnd)
                             )
-                            .foregroundStyle(Color.expenseGraph.gradient)
-                            .cornerRadius(DS.Radius.xs)
-                        } else if hasOnlyIncome {
-                            // Only income mode: show income bars upward (teal)
-                            BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Income", data.income)
+                            .foregroundStyle(
+                                bar.net >= 0 ? Color.incomeGraph.gradient : Color.expenseGraph.gradient
                             )
-                            .foregroundStyle(Color.incomeGraph.gradient)
                             .cornerRadius(DS.Radius.xs)
-                        } else {
-                            // Default bidirectional mode
-                            // Income (Up) - Teal bars
-                            BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Income", data.income)
-                            )
-                            .foregroundStyle(Color.incomeGraph.gradient)
-                            .cornerRadius(DS.Radius.xs)
-
-                            // Expense (Down)
-                            BarMark(
-                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                y: .value("Expense", -data.expense)
-                            )
-                            .foregroundStyle(Color.expenseGraph.gradient)
-                            .cornerRadius(DS.Radius.xs)
-
-                            // Net Flow Line - Purple line
-                            if grouping == .month {
-                                LineMark(
+                        }
+                    } else {
+                        ForEach(activeChartData) { data in
+                            if hasOnlyExpenses {
+                                // Only expenses mode: show expenses as positive bars upward
+                                BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Net", data.net)
+                                    y: .value("Expense", data.expense)
                                 )
-                                .foregroundStyle(Color.brandPrimary)
-                                .lineStyle(StrokeStyle(lineWidth: 2))
-                                .interpolationMethod(.monotone)
-
-                                // Points on Line
-                                PointMark(
+                                .foregroundStyle(Color.expenseGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+                            } else if hasOnlyIncome {
+                                // Only income mode: show income bars upward (teal)
+                                BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Net", data.net)
+                                    y: .value("Income", data.income)
                                 )
-                                .foregroundStyle(Color.brandPrimary)
-                                .symbolSize(20)
+                                .foregroundStyle(Color.incomeGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+                            } else {
+                                // Default bidirectional mode (monthly)
+                                BarMark(
+                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                    y: .value("Income", data.income)
+                                )
+                                .foregroundStyle(Color.incomeGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+
+                                BarMark(
+                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                    y: .value("Expense", -data.expense)
+                                )
+                                .foregroundStyle(Color.expenseGraph.gradient)
+                                .cornerRadius(DS.Radius.xs)
+
+                                // Net Flow Line - Purple line
+                                if grouping == .month {
+                                    LineMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Net", data.net)
+                                    )
+                                    .foregroundStyle(Color.brandPrimary)
+                                    .lineStyle(StrokeStyle(lineWidth: 2))
+                                    .interpolationMethod(.monotone)
+
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Net", data.net)
+                                    )
+                                    .foregroundStyle(Color.brandPrimary)
+                                    .symbolSize(20)
+                                }
                             }
                         }
                     }
@@ -363,21 +456,24 @@ struct CashFlowWidget: View {
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {
-                    // Smart dynamic X-axis labels (matching TrendChartView)
-                    AxisMarks(values: smartAxisDates) { value in
+                    // Center axis dates within calendar unit to align with BarMark centers
+                    let unit = calendarUnit(for: grouping)
+                    let centeredDates = SmartAxisHelper.centerDatesInCalendarUnit(smartAxisDates, unit: unit)
+
+                    AxisMarks(values: centeredDates) { value in
                         AxisGridLine()
                             .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
 
                         if let date = value.as(Date.self) {
-                            // Use trailing anchor for last label to prevent truncation
-                            let isLast = date == smartAxisDates.last
-                            let isFirst = date == smartAxisDates.first
-                            let anchor: UnitPoint =
-                                isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+                            let anchor = SmartAxisHelper.axisLabelAnchor(
+                                for: date,
+                                in: centeredDates,
+                                dataPointCount: activeChartData.count
+                            )
 
                             AxisValueLabel(anchor: anchor) {
                                 Text(smartAxisLabel(for: date))
-                                    .font(.caption2.bold())
+                                    .font(DS.Typography.labelTiny)
                                     .foregroundStyle(Color.yalaSecondaryText)
                             }
                         }
@@ -390,7 +486,7 @@ struct CashFlowWidget: View {
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
                                 Text(formatK(doubleValue))
-                                    .font(.caption2)
+                                    .font(DS.Typography.captionSmall)
                                     .foregroundStyle(Color.yalaSecondaryText)
                             }
                         }
@@ -402,8 +498,9 @@ struct CashFlowWidget: View {
                         let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
 
                         // Tooltip only (no gesture - chartXSelection handles it)
+                        // Use activeChartData so waterfall mode only matches rendered bars
                         if let activeDate = selectedDate,
-                            let selectedData = summary.chartData.first(where: {
+                            let selectedData = activeChartData.first(where: {
                                 Calendar.current.isDate(
                                     $0.date, equalTo: activeDate,
                                     toGranularity: grouping == .month
@@ -413,40 +510,56 @@ struct CashFlowWidget: View {
                         {
                             VStack(spacing: DS.Spacing.xs) {
                                 Text(formatTooltipDate(selectedData.date, grouping: grouping))
-                                    .font(.caption2)
+                                    .font(DS.Typography.captionSmall)
                                     .foregroundStyle(Color.yalaSecondaryText)
 
-                                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                                if isWaterfallMode {
+                                    // Waterfall: show net with color matching bar sign
                                     HStack(spacing: DS.Spacing.xs) {
-                                        Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
-                                        Text(
-                                            YalaFormatter.currency(
-                                                value: selectedData.income,
-                                                currencyCode: summary.currencyCode, forceSign: true)
-                                        )
-                                        .font(.caption2.bold())
-                                        .foregroundStyle(.primary)
-                                    }
-                                    HStack(spacing: DS.Spacing.xs) {
-                                        Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
-                                        Text(
-                                            YalaFormatter.currency(
-                                                value: -selectedData.expense,
-                                                currencyCode: summary.currencyCode)
-                                        )
-                                        .font(.caption2.bold())
-                                        .foregroundStyle(.primary)
-                                    }
-                                    Divider()
-                                    HStack(spacing: DS.Spacing.xs) {
-                                        Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
+                                        Circle()
+                                            .fill(selectedData.net >= 0 ? Color.incomeGraph : Color.expenseGraph)
+                                            .frame(width: 6, height: 6)
                                         Text(
                                             YalaFormatter.currency(
                                                 value: selectedData.net,
                                                 currencyCode: summary.currencyCode, forceSign: true)
                                         )
-                                        .font(.caption2.bold())
+                                        .font(DS.Typography.labelTiny)
                                         .foregroundStyle(.primary)
+                                    }
+                                } else {
+                                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                                        HStack(spacing: DS.Spacing.xs) {
+                                            Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
+                                            Text(
+                                                YalaFormatter.currency(
+                                                    value: selectedData.income,
+                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            )
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.primary)
+                                        }
+                                        HStack(spacing: DS.Spacing.xs) {
+                                            Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
+                                            Text(
+                                                YalaFormatter.currency(
+                                                    value: -selectedData.expense,
+                                                    currencyCode: summary.currencyCode)
+                                            )
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.primary)
+                                        }
+                                        Divider()
+                                        HStack(spacing: DS.Spacing.xs) {
+                                            Circle().fill(Color.brandPrimary).frame(width: 6, height: 6)
+                                            Text(
+                                                YalaFormatter.currency(
+                                                    value: selectedData.net,
+                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            )
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.primary)
+                                        }
                                     }
                                 }
                             }
@@ -466,8 +579,8 @@ struct CashFlowWidget: View {
                     }
                 }
 
-                // Legend (only for bidirectional mode)
-                if !hasOnlyExpenses && !hasOnlyIncome {
+                // Legend (only for bidirectional mode, hidden in waterfall — colors are self-evident)
+                if !isWaterfallMode && !hasOnlyExpenses && !hasOnlyIncome {
                     CashFlowLegendView(showNet: grouping == .month)
                         .frame(maxWidth: .infinity)
                 }
@@ -483,45 +596,47 @@ struct CashFlowWidget: View {
                 let maxVal = max(summary.totalIncome, summary.totalExpense)
 
                 VStack(spacing: DS.Spacing.md) {
-                    // Income Group
-                    VStack(spacing: DS.Spacing.xs) {
-                        HStack {
-                            Text(L10n.CashFlow.income)
-                                .font(.subheadline)
-                                .foregroundStyle(Color.yalaSecondaryText)
-                            Spacer()
-                            Text(
-                                YalaFormatter.currency(
-                                    value: summary.totalIncome, currencyCode: summary.currencyCode)
-                            )
-                            .font(DS.Typography.amountSmall)
-                            .foregroundStyle(Color.yalaPrimaryText)
-                        }
-                        // Bar
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                // Track
-                                Capsule()
-                                    .fill(Color.yalaPrimaryText.opacity(0.05))
-                                    .frame(height: 8)
-
-                                // Fill - teal color for income
-                                let width =
-                                    maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
-                                Capsule()
-                                    .fill(Color.incomeGraph)
-                                    .frame(width: max(width, 6), height: 8)
+                    // Income Group (hidden in expenses-only mode)
+                    if !isExpensesOnlyMode {
+                        VStack(spacing: DS.Spacing.xs) {
+                            HStack {
+                                Text(L10n.CashFlow.income)
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(Color.yalaSecondaryText)
+                                Spacer()
+                                Text(
+                                    YalaFormatter.currency(
+                                        value: summary.totalIncome, currencyCode: summary.currencyCode)
+                                )
+                                .font(DS.Typography.amountSmall)
+                                .foregroundStyle(Color.yalaPrimaryText)
                             }
+                            // Bar
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    // Track
+                                    Capsule()
+                                        .fill(Color.yalaPrimaryText.opacity(0.05))
+                                        .frame(height: 8)
+
+                                    // Fill - teal color for income
+                                    let width =
+                                        maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
+                                    Capsule()
+                                        .fill(Color.incomeGraph)
+                                        .frame(width: max(width, 6), height: 8)
+                                }
+                            }
+                            .frame(height: 8)
                         }
-                        .frame(height: 8)
+                        .opacity(isIncomeDimmed ? 0.4 : 1.0)
                     }
-                    .opacity(isIncomeDimmed ? 0.4 : 1.0)
 
                     // Expense Group
                     VStack(spacing: DS.Spacing.xs) {
                         HStack {
                             Text(L10n.Transaction.expense)
-                                .font(.subheadline)
+                                .font(DS.Typography.subheadline)
                                 .foregroundStyle(Color.yalaSecondaryText)
                             Spacer()
                             Text(
@@ -562,25 +677,17 @@ struct CashFlowWidget: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.xl)
-    }
-
-    // Consistent Widget Background Logic
-    private var cardBackgroundColor: Color {
-        if colorScheme == .dark {
-            return Color.deepSlate.opacity(0.6)
-        } else {
-            return Color.white.opacity(0.7)
-        }
     }
 
     // Helpers
@@ -630,7 +737,7 @@ struct CashFlowLegendView: View {
                     .fill(Color.incomeGraph)
                     .frame(width: 6, height: 6)
                 Text(L10n.CashFlow.income)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.yalaSecondaryText)
             }
 
@@ -640,7 +747,7 @@ struct CashFlowLegendView: View {
                     .fill(Color.expenseGraph)
                     .frame(width: 6, height: 6)
                 Text(L10n.CashFlow.expense)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.yalaSecondaryText)
             }
 
@@ -651,7 +758,7 @@ struct CashFlowLegendView: View {
                         .fill(Color.brandPrimary)
                         .frame(width: 6, height: 6)
                     Text(L10n.CashFlow.netFlow)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
             }

@@ -112,6 +112,7 @@ struct RawImportRow {
 struct TransactionImportResult {
     let createdCount: Int
     let drafts: [ParsedTransactionDraft]
+    let ignoredFutureDatesCount: Int
 }
 
 // MARK: - Servicio principal de importación
@@ -208,7 +209,16 @@ enum TransactionCSVImportService {
         // After import, update initial balance date if older transactions were imported
         // This ensures the initial balance always precedes all other transactions
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             InitialBalanceService.updateInitialBalanceDateIfNeeded(
                 for: account,
                 allTransactions: allTransactions,
@@ -396,8 +406,8 @@ enum TransactionCSVImportService {
             let tagsIndex = hasTagsColumn ? 5 : nil
             let noteIndex = hasNoteColumn ? (hasTagsColumn ? 6 : 5) : nil
 
-            let tagsString = tagsIndex != nil ? columns[tagsIndex!] : nil
-            let noteString = noteIndex != nil ? columns[noteIndex!] : nil
+            let tagsString = tagsIndex.map { columns[$0] }
+            let noteString = noteIndex.map { columns[$0] }
 
             // 5.1 Validar fecha
             guard let parsedDate = parseDate(dateString) else {
@@ -533,6 +543,12 @@ enum TransactionCSVImportService {
             drafts.append(draft)
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // NOTE: Removed ensureRates() call here.
         // CurrencyConverter.convert() already has fallback logic that uses:
         // 1. Exact rate for the date (if available)
@@ -542,13 +558,14 @@ enum TransactionCSVImportService {
         // triggered @Query updates and reset @State in ImportIntroSheet.
 
         // 6. Segunda pasada: solo si TODO es válido, creamos las transacciones reales
-        for draft in drafts {
+        for draft in validDrafts {
             try createTransaction(draft, context)
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts
+            createdCount: validDrafts.count,
+            drafts: validDrafts,
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 
@@ -580,7 +597,15 @@ enum TransactionCSVImportService {
 
         // Obtener colores ya usados para asignar colores únicos a tags nuevos
         let allTagsDescriptor = FetchDescriptor<Tag>()
-        let allTags = (try? context.fetch(allTagsDescriptor)) ?? []
+        let allTags: [Tag]
+        do {
+            allTags = try context.fetch(allTagsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all tags: \(error)")
+            #endif
+            allTags = []
+        }
         var usedColors = allTags.map { $0.colorHex }
 
         var resolved: [Tag] = []
@@ -781,7 +806,7 @@ enum TransactionCSVImportService {
                         components.second = 0
 
                         var calendar = Calendar(identifier: .gregorian)
-                        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+                        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? TimeZone(identifier: "UTC")!
 
                         if let date = calendar.date(from: components) {
                             return date
@@ -1094,7 +1119,16 @@ enum TransactionCSVImportService {
 
         // Update initial balance dates for all affected accounts
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for multi-currency initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             for account in Set(currencyAccountMap.values) {
                 InitialBalanceService.updateInitialBalanceDateIfNeeded(
                     for: account,
@@ -1231,8 +1265,8 @@ enum TransactionCSVImportService {
             let tagsIndex = hasTagsColumn ? 5 : nil
             let noteIndex = hasNoteColumn ? (hasTagsColumn ? 6 : 5) : nil
 
-            let tagsString = tagsIndex != nil ? columns[tagsIndex!] : nil
-            let noteString = noteIndex != nil ? columns[noteIndex!] : nil
+            let tagsString = tagsIndex.map { columns[$0] }
+            let noteString = noteIndex.map { columns[$0] }
 
             // Validar fecha
             guard let parsedDate = parseDate(dateString) else {
@@ -1344,14 +1378,21 @@ enum TransactionCSVImportService {
             drafts.append((draft, account))
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // 7. Crear transacciones
-        for (draft, account) in drafts {
+        for (draft, account) in validDrafts {
             try createTransaction(draft, account, context)
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts.map { $0.0 }
+            createdCount: validDrafts.count,
+            drafts: validDrafts.map { $0.0 },
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 
@@ -1404,8 +1445,14 @@ enum TransactionCSVImportService {
             drafts.append(draft)
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // 3. Crear transacciones
-        for draft in drafts {
+        for draft in validDrafts {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
             let hasExactRate = CurrencyConverter.shared.hasExactRate(
@@ -1455,7 +1502,16 @@ enum TransactionCSVImportService {
 
         // 4. Actualizar fecha de saldo inicial si es necesario
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for XLSX initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             InitialBalanceService.updateInitialBalanceDateIfNeeded(
                 for: account,
                 allTransactions: allTransactions,
@@ -1464,8 +1520,9 @@ enum TransactionCSVImportService {
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts
+            createdCount: validDrafts.count,
+            drafts: validDrafts,
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 
@@ -1539,8 +1596,14 @@ enum TransactionCSVImportService {
             drafts.append((draft, account))
         }
 
+        // Filter out future dates
+        let today = Date()
+        let totalDrafts = drafts.count
+        let validDrafts = drafts.filter { $0.0.date <= today }
+        let ignoredFutureDatesCount = totalDrafts - validDrafts.count
+
         // 3. Crear transacciones
-        for (draft, account) in drafts {
+        for (draft, account) in validDrafts {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
             let hasExactRate = CurrencyConverter.shared.hasExactRate(
@@ -1590,7 +1653,16 @@ enum TransactionCSVImportService {
 
         // 4. Actualizar fechas de saldo inicial para todas las cuentas afectadas
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>()
-        if let allTransactions = try? context.fetch(allTransactionsDescriptor) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(allTransactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionCSVImportService: Error fetching all transactions for XLSX multi-currency initial balance update: \(error)")
+            #endif
+            allTransactions = []
+        }
+        if !allTransactions.isEmpty {
             for account in Set(currencyAccountMap.values) {
                 InitialBalanceService.updateInitialBalanceDateIfNeeded(
                     for: account,
@@ -1601,8 +1673,9 @@ enum TransactionCSVImportService {
         }
 
         return TransactionImportResult(
-            createdCount: drafts.count,
-            drafts: drafts.map { $0.0 }
+            createdCount: validDrafts.count,
+            drafts: validDrafts.map { $0.0 },
+            ignoredFutureDatesCount: ignoredFutureDatesCount
         )
     }
 }

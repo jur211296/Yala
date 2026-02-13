@@ -9,8 +9,17 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+@MainActor
 @Observable
 final class ScheduledPaymentsViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Data
+
+    private(set) var allPayments: [ScheduledPayment] = []
 
     // MARK: - Tab State
 
@@ -86,6 +95,29 @@ final class ScheduledPaymentsViewModel {
 
     init() {}
 
+    // MARK: - Context Setup
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadPayments()
+    }
+
+    func loadPayments() {
+        guard let context = modelContext else { return }
+
+        let descriptor = FetchDescriptor<ScheduledPayment>(
+            sortBy: [SortDescriptor(\.nextDueDate)]
+        )
+
+        do {
+            allPayments = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error loading payments: \(error)")
+            #endif
+        }
+    }
+
     // MARK: - Data Calculation
 
     /// Calculate and group payments for display
@@ -97,6 +129,11 @@ final class ScheduledPaymentsViewModel {
         var filtered = payments
         if let categoryFilter = selectedTab.categoryFilter {
             filtered = filtered.filter { $0.paymentCategory == categoryFilter }
+        }
+
+        // Filter income payments in expenses-only mode
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.transactionType != "income" }
         }
 
         // Filter by active status
@@ -123,7 +160,7 @@ final class ScheduledPaymentsViewModel {
         // Apply category filter (if subcategory not set, check category)
         if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
             filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
                 return selectedCategories.contains(catID)
             }
         }
@@ -131,7 +168,7 @@ final class ScheduledPaymentsViewModel {
         // Apply tag filter
         if !selectedTags.isEmpty {
             filtered = filtered.filter { payment in
-                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
                 return !paymentTagIDs.isDisjoint(with: selectedTags)
             }
         }
@@ -188,8 +225,8 @@ final class ScheduledPaymentsViewModel {
     func getPaymentDisplayProperties(payment: ScheduledPayment) -> (icon: String, color: String) {
         // If has subcategory, use its icon/color
         if let subcategory = payment.subcategory {
-            let icon = subcategory.iconName ?? subcategory.category.iconName ?? "creditcard.fill"
-            let color = subcategory.colorHex ?? subcategory.category.colorHex
+            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "creditcard.fill"
+            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
             return (icon, color)
         }
 
@@ -232,6 +269,11 @@ final class ScheduledPaymentsViewModel {
     func getSubscriptions(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
         var filtered = payments.filter { $0.paymentCategory == PaymentCategory.subscription.rawValue }
 
+        // Filter income payments in expenses-only mode
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.transactionType != "income" }
+        }
+
         // Apply filters
         if hideInactive {
             filtered = filtered.filter { $0.isActive }
@@ -250,13 +292,13 @@ final class ScheduledPaymentsViewModel {
         }
         if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
             filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
                 return selectedCategories.contains(catID)
             }
         }
         if !selectedTags.isEmpty {
             filtered = filtered.filter { payment in
-                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
                 return !paymentTagIDs.isDisjoint(with: selectedTags)
             }
         }
@@ -267,6 +309,11 @@ final class ScheduledPaymentsViewModel {
     /// Get all recurring payments (non-subscription, filtered)
     func getRecurringPayments(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
         var filtered = payments.filter { $0.paymentCategory == PaymentCategory.recurring.rawValue }
+
+        // Filter income payments in expenses-only mode
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.transactionType != "income" }
+        }
 
         // Apply same filters as subscriptions
         if hideInactive {
@@ -286,13 +333,13 @@ final class ScheduledPaymentsViewModel {
         }
         if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
             filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.category.persistentModelID else { return false }
+                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
                 return selectedCategories.contains(catID)
             }
         }
         if !selectedTags.isEmpty {
             filtered = filtered.filter { payment in
-                let paymentTagIDs = Set(payment.tags.map { $0.persistentModelID })
+                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
                 return !paymentTagIDs.isDisjoint(with: selectedTags)
             }
         }
@@ -300,14 +347,37 @@ final class ScheduledPaymentsViewModel {
         return filtered
     }
 
-    /// Calculate total monthly subscription spending for a given month
-    func calculateMonthlyTotal(subscriptions: [ScheduledPayment], for month: Date) -> Double {
+    /// Calculate total monthly subscription spending for a given month, converting all amounts to preferredCurrencyCode
+    func calculateMonthlyTotal(subscriptions: [ScheduledPayment], for month: Date, preferredCurrencyCode: String? = nil) -> Double {
         var total: Double = 0
+        let converter = CurrencyConverter.shared
+        let targetCurrency = preferredCurrencyCode
 
-        for subscription in subscriptions where subscription.isActive {
+        // Only count expenses (exclude income payments)
+        let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
+
+        for subscription in expensePayments {
             // Calculate how many times this subscription occurs in the month
             let occurrences = getPaymentDatesInMonth(payment: subscription, month: month)
-            total += subscription.amount * Double(occurrences.count)
+            let rawAmount = subscription.amount * Double(occurrences.count)
+
+            // Convert currency if needed
+            if let target = targetCurrency, subscription.currencyCode != target, rawAmount > 0 {
+                let decimalAmount = Decimal(rawAmount)
+                let converted: Decimal
+                if let context = modelContext {
+                    converted = converter.convertWithLatestRate(
+                        decimalAmount, from: subscription.currencyCode, to: target, context: context
+                    )
+                } else {
+                    converted = converter.convertWithFallback(
+                        decimalAmount, from: subscription.currencyCode, to: target
+                    )
+                }
+                total += NSDecimalNumber(decimal: converted).doubleValue
+            } else {
+                total += rawAmount
+            }
         }
 
         return total

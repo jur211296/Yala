@@ -5,6 +5,7 @@ struct AccountsCarouselView: View {
     @Bindable var viewModel: PanelViewModel
     let orderedAccounts: [Account]
     let transactions: [TransactionItem]
+    var isExpensesOnlyMode: Bool = false
     let onAddAccount: () -> Void
     let onEditAccount: (Account) -> Void
 
@@ -71,7 +72,9 @@ struct AccountsCarouselView: View {
 
             AccountCardView(
                 account: account,
-                currentBalance: currentBalance(for: account),
+                currentBalance: isExpensesOnlyMode
+                    ? viewModel.expenseForPeriod(for: account, allTransactions: transactions)
+                    : currentBalance(for: account),
                 isSelected: isSelected,
                 onEditTapped: {
                     onEditAccount(account)

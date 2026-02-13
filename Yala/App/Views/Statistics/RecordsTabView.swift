@@ -16,18 +16,12 @@ import SwiftUI
 struct RecordsTabView: View {
     @Environment(SessionState.self) private var sessionState
 
-    /// All transactions (unfiltered) for date range limits
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var allTransactions: [TransactionItem]
-
-    /// All subcategories for chip display (independent of spending data)
-    @Query(sort: \Subcategory.name, order: .forward)
-    private var allSubcategories: [Subcategory]
-
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
     let categories: [Category]
     let tags: [Tag]
+    let subcategories: [Subcategory]
+    let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
 
@@ -36,7 +30,7 @@ struct RecordsTabView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 controlBar
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
@@ -64,13 +58,6 @@ struct RecordsTabView: View {
         }
     }
 
-    /// Date range of all transactions (unfiltered, for custom period picker limits)
-    private var transactionDateRange: (start: Date, end: Date) {
-        let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
-        return (start, end)
-    }
 
     // MARK: - Control Bar
 
@@ -96,7 +83,7 @@ struct RecordsTabView: View {
                         // Category chip (aggregated - one chip max)
                         if let catChip = aggregatedCategoryChip(
                             selectedSubcategories: viewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
+                            allSubcategories: subcategories
                         ) {
                             FilterChipView(
                                 categoryName: catChip.name,
@@ -129,7 +116,7 @@ struct RecordsTabView: View {
                         // Subcategory chip (aggregated - one chip max)
                         if let subChip = aggregatedSubcategoryChip(
                             selectedSubcategories: viewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
+                            allSubcategories: subcategories
                         ) {
                             FilterChipView(
                                 subcategoryName: subChip.name,
@@ -168,8 +155,9 @@ struct RecordsTabView: View {
                         }
 
                         // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected
-                        if viewModel.selectedTransactionNatures.count == 1,
+                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
+                        if !sessionState.isExpensesOnlyMode,
+                            viewModel.selectedTransactionNatures.count == 1,
                             let nature = viewModel.selectedTransactionNatures.first
                         {
                             FilterChipView(
@@ -274,49 +262,56 @@ struct RecordsTabView: View {
         let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
 
         return VStack(alignment: .center, spacing: DS.Spacing.xs) {
-            // Balance (Saldo) - Large and centered
-            Text(
-                YalaFormatter.currency(
-                    value: recordsSummary.balance, currencyCode: defaultCurrencyCode)
-            )
-            .font(.title.weight(.bold))
-            .foregroundStyle(.primary)
+            // Balance (Saldo) - Large and centered (hidden in expenses-only mode)
+            if !sessionState.isExpensesOnlyMode {
+                Text(
+                    YalaFormatter.currency(
+                        value: recordsSummary.balance, currencyCode: defaultCurrencyCode)
+                )
+                .font(DS.Typography.largeTitle)
+                .foregroundStyle(.primary)
+            }
 
             // Income and Expense indicators below (tappable to filter)
             HStack(spacing: DS.Spacing.md) {
-                // Income button
-                Button {
-                    withAnimation {
-                        // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
-                        if isIncomeFiltered {
-                            viewModel.selectedTransactionNatures.removeAll()
-                        } else {
-                            viewModel.selectedTransactionNatures = [.income]
+                // Income button (hidden in expenses-only mode)
+                if !sessionState.isExpensesOnlyMode {
+                    Button {
+                        withAnimation {
+                            // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
+                            if isIncomeFiltered {
+                                viewModel.selectedTransactionNatures.removeAll()
+                            } else {
+                                viewModel.selectedTransactionNatures = [.income]
+                            }
+                            onFilterChange()
                         }
-                        onFilterChange()
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "arrow.up.right")
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(Color.incomeGraph)
+                            Text(
+                                YalaFormatter.currency(
+                                    value: recordsSummary.income, currencyCode: defaultCurrencyCode)
+                            )
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
+                        .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
                     }
-                } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.incomeGraph)
-                        Text(
-                            YalaFormatter.currency(
-                                value: recordsSummary.income, currencyCode: defaultCurrencyCode)
-                        )
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
-                    .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 // Expense button
                 Button {
                     withAnimation {
                         // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
                         if isExpenseFiltered {
-                            viewModel.selectedTransactionNatures.removeAll()
+                            // In expenses-only mode, don't allow clearing the expense filter
+                            if !sessionState.isExpensesOnlyMode {
+                                viewModel.selectedTransactionNatures.removeAll()
+                            }
                         } else {
                             viewModel.selectedTransactionNatures = [.expense]
                         }
@@ -325,13 +320,13 @@ struct RecordsTabView: View {
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "arrow.down.right")
-                            .font(.caption.weight(.semibold))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.expenseGraph)
                         Text(
                             YalaFormatter.currency(
                                 value: recordsSummary.expense, currencyCode: defaultCurrencyCode)
                         )
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                     }
                     .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
@@ -385,7 +380,7 @@ struct RecordsTabView: View {
     private var emptyStateContent: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "list.bullet.rectangle")
-                .font(.largeTitle)
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
 
             Text(L10n.Records.noRecords)
@@ -397,7 +392,7 @@ struct RecordsTabView: View {
                     ? L10n.Statistics.noRecordsFiltered
                     : L10n.Statistics.noRecordsDescription
             )
-            .font(.subheadline)
+            .font(DS.Typography.subheadline)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, DS.Spacing.xxxl + DS.Spacing.sm)
@@ -408,7 +403,7 @@ struct RecordsTabView: View {
                     onFilterChange()
                 } label: {
                     Text(L10n.Filters.clearFilters)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(Color.electricIndigo)
                 }
                 .padding(.top, DS.Spacing.sm)
@@ -461,11 +456,11 @@ struct RecordsTabView: View {
     private var subcategoryChips: [SubcategoryChip] {
         var chips: [SubcategoryChip] = []
         for subcategoryID in viewModel.selectedSubcategories {
-            // Use allSubcategories Query for chip display
-            if let subcategory = allSubcategories.first(where: {
+            // Use subcategories Query for chip display
+            if let subcategory = subcategories.first(where: {
                 $0.persistentModelID == subcategoryID
             }) {
-                let categoryColor = subcategory.category.colorHex
+                let categoryColor = subcategory.safeCategory.colorHex
                 chips.append(
                     SubcategoryChip(
                         name: subcategory.name,

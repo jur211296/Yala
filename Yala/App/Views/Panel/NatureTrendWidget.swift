@@ -9,6 +9,8 @@ import Charts
 import SwiftUI
 
 struct NatureTrendWidget: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     let trendPoints: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
     let currencyCode: String
@@ -101,7 +103,7 @@ struct NatureTrendWidget: View {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Widget.distributionByNature)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
@@ -111,7 +113,7 @@ struct NatureTrendWidget: View {
                                 YalaFormatter.currency(
                                     value: totalAmount, currencyCode: currencyCode)
                             )
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.yalaPrimaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -119,7 +121,7 @@ struct NatureTrendWidget: View {
                             // Show previous period value for comparison
                             if let prevAmount = previousTotalAmount {
                                 Text("vs \(YalaFormatter.number(value: prevAmount))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
@@ -142,7 +144,7 @@ struct NatureTrendWidget: View {
 
                         if !comparisonText.isEmpty {
                             Text(comparisonText)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -156,7 +158,7 @@ struct NatureTrendWidget: View {
                         onShowDetail?()
                     } label: {
                         Image(systemName: "chevron.right")
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.secondary.opacity(0.7))
                     }
                     .padding(.top, DS.Spacing.xs)
@@ -170,10 +172,10 @@ struct NatureTrendWidget: View {
                 Spacer()
                 VStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "info.circle")
-                        .font(.title2)
+                        .font(DS.Typography.title)
                         .foregroundStyle(.secondary)
                     Text(L10n.Nature.incomeNotApplicable)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -183,10 +185,11 @@ struct NatureTrendWidget: View {
                 Spacer()
                 VStack(spacing: DS.Spacing.md) {
                     Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: scaledEmptyIconSize))
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(.secondary)
                     Text(L10n.Empty.noExpenses)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -319,40 +322,67 @@ struct NatureTrendChartView: View {
     // MARK: - Smart Axis Logic
 
     /// Calculate smart axis dates for chart X-axis
+    /// Uses actual data dates to prevent duplicate labels (e.g., "ene", "ene", "feb")
     private var smartAxisDates: [Date] {
         guard !points.isEmpty else { return [] }
-        guard let firstDate = points.first?.date,
-            let lastDate = points.last?.date
-        else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+
+        let calendarUnit: Calendar.Component = {
+            switch grouping {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
+            }
+        }()
+
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: points.map(\.date),
+            grouping: calendarUnit
+        )
     }
 
-    /// Format axis label based on data span
+    /// Format axis label based on data span and grouping
     private func smartAxisLabel(for date: Date) -> String {
         guard let firstDate = points.first?.date,
             let lastDate = points.last?.date
         else { return "" }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+
+        // Determine calendar unit for forceGrouping
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil  // Use span-based logic for days
+            }
+        }()
+
+        return SmartAxisHelper.formatAxisLabel(
+            for: date,
+            startDate: firstDate,
+            endDate: lastDate,
+            forceGrouping: forceGrouping
+        )
     }
 
-    /// X-axis domain based on actual data range (not period range)
+    /// X-axis domain based on actual data range with extended padding for few data points
     private var dataXDomain: ClosedRange<Date> {
         guard let firstDate = points.first?.date,
             let lastDate = points.last?.date
         else { return interval.start...interval.end }
-        // Asymmetric padding: less on left, more on right (where Y-axis labels are)
-        let calendar = Calendar.current
-        let (startPadding, endPadding): (Int, Int) = {
+
+        let calendarUnit: Calendar.Component = {
             switch grouping {
-            case .day: return (0, 1)
-            case .week: return (0, 4)
-            case .month: return (0, 30)
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
             }
         }()
-        let paddedStart =
-            calendar.date(byAdding: .day, value: -startPadding, to: firstDate) ?? firstDate
-        let paddedEnd = calendar.date(byAdding: .day, value: endPadding, to: lastDate) ?? lastDate
-        return paddedStart...paddedEnd
+
+        return SmartAxisHelper.extendedXDomain(
+            dataPoints: points.count,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            grouping: calendarUnit
+        )
     }
 
     var body: some View {
@@ -401,19 +431,24 @@ struct NatureTrendChartView: View {
         .chartLegend(.hidden)
         // X-Axis: Smart dynamic labels matching TrendChartView
         .chartXAxis {
-            AxisMarks(values: smartAxisDates) { value in
+            // Center axis dates within calendar unit to align with BarMark centers
+            let unit = mapGroupingToUnit(grouping)
+            let centeredDates = SmartAxisHelper.centerDatesInCalendarUnit(smartAxisDates, unit: unit)
+
+            AxisMarks(values: centeredDates) { value in
                 AxisGridLine()
                     .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
 
                 if let date = value.as(Date.self) {
-                    // Use trailing anchor for last label to prevent truncation
-                    let isLast = date == smartAxisDates.last
-                    let isFirst = date == smartAxisDates.first
-                    let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
+                    let anchor = SmartAxisHelper.axisLabelAnchor(
+                        for: date,
+                        in: centeredDates,
+                        dataPointCount: points.count
+                    )
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -427,7 +462,7 @@ struct NatureTrendChartView: View {
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
                         Text(formatAxisAmount(amount))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -457,7 +492,7 @@ struct NatureTrendChartView: View {
                     // Tooltip Card
                     VStack(spacing: DS.Spacing.xs) {
                         Text(formatDateFull(selectedData.date, grouping: grouping))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
 
                         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
@@ -484,14 +519,14 @@ struct NatureTrendChartView: View {
                             Divider()
                             HStack {
                                 Text(L10n.Widget.total)
-                                    .font(.caption2)
+                                    .font(DS.Typography.captionSmall)
                                     .foregroundStyle(Color.secondary)
                                 Spacer()
                                 Text(
                                     YalaFormatter.currency(
                                         value: selectedData.total, currencyCode: currencyCode)
                                 )
-                                .font(.caption2.bold())
+                                .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
                             }
                         }
@@ -551,12 +586,12 @@ struct NatureTrendChartView: View {
             HStack {
                 Circle().fill(nature.color).frame(width: 6, height: 6)
                 Text(nature.displayName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.primary)
                 Spacer()
                 // Simple formatting for tooltip
                 Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
-                    .font(.caption2.bold())
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.primary)
             }
         }
@@ -673,20 +708,20 @@ struct LegendItem: View {
                     .fill(extensionColor(for: nature))
                     .frame(width: 8, height: 8)
 
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: DS.Spacing.none) {
                     Text(nature.displayName)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.primary)
 
                     Text("\(formattedPercent(amount, total))")
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color.secondary)
                 }
                 Spacer()
             }
             .padding(DS.Spacing.sm)
             .background(isSelected ? Color.yalaBackground : Color.clear)
-            .cornerRadius(DS.Radius.sm)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
             .opacity(isSelected ? 1.0 : 0.4)
         }
     }
@@ -722,17 +757,17 @@ struct CompactLegendChip: View {
                     .frame(width: 6, height: 6)
 
                 Text(nature.displayName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.primary)
 
                 Text(formattedPercent(amount, total))
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.secondary)
             }
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xs)
             .background(isSelected ? Color.yalaBackground.opacity(0.5) : Color.clear)
-            .cornerRadius(DS.Radius.md)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .opacity(isSelected ? 1.0 : 0.4)
         }
     }
@@ -771,7 +806,7 @@ struct CompactNatureLegendView: View {
                             .frame(width: 8, height: 8)
 
                         Text(nature.displayName)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.primary)
                     }
                     .padding(.horizontal, DS.Spacing.xs)
@@ -827,7 +862,7 @@ struct NatureCompactBar: View {
                 // Name and Amount + Variation
                 HStack {
                     Text(nature.displayName)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     Spacer()
                     Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))

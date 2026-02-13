@@ -13,51 +13,20 @@ import SwiftUI
 struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SessionState.self) private var sessionState
 
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var transactions: [TransactionItem]
+    @State private var viewModel = AccountsSettingsListViewModel()
+    @State private var showUpgradeSheet = false
 
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
 
-    @State private var isPresentingCreateAccount = false
-    @State private var accountToEdit: Account?
-    @State private var isEditMode = false
-
-    // Solo cuentas no archivadas para esta vista
-    private var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived }
+    private var activeAccountsCount: Int {
+        viewModel.orderedActiveAccounts.count
     }
 
-    // Orden persistente por nombre
-    private var accountsSortOrderNames: [String] {
-        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
-    }
-
-    private var orderedActiveAccounts: [Account] {
-        let order = accountsSortOrderNames
-        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
-
-        return activeAccounts.sorted { a, b in
-            let ia = indexByName[a.name]
-            let ib = indexByName[b.name]
-
-            switch (ia, ib) {
-            case (let x?, let y?):
-                return x < y
-            case (_?, nil):
-                return true
-            case (nil, _?):
-                return false
-            default:
-                return a.name < b.name
-            }
-        }
-    }
-
-    // Cuentas archivadas (sin reordenamiento)
-    private var archivedAccounts: [Account] {
-        accounts.filter { $0.isArchived }
+    private var isAtLimit: Bool {
+        FeatureGateService.shared.isAtLimit(.accounts, currentCount: activeAccountsCount)
     }
 
     var body: some View {
@@ -66,15 +35,25 @@ struct AccountsSettingsListView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    if accounts.isEmpty {
+                    // Limit reached banner
+                    if isAtLimit {
+                        LimitReachedBanner(
+                            feature: .accounts,
+                            currentCount: activeAccountsCount
+                        ) {
+                            showUpgradeSheet = true
+                        }
+                    }
+
+                    if viewModel.isEmpty {
                         emptyState
                     } else {
-                        if !orderedActiveAccounts.isEmpty {
+                        if !viewModel.orderedActiveAccounts.isEmpty {
                             listBasedSection
                         }
 
-                        if !archivedAccounts.isEmpty {
-                            accountsSection(title: L10n.Common.archived, accounts: archivedAccounts)
+                        if !viewModel.archivedAccounts.isEmpty {
+                            accountsSection(title: L10n.Common.archived, accounts: viewModel.archivedAccounts)
                         }
                     }
                 }
@@ -83,62 +62,75 @@ struct AccountsSettingsListView: View {
             }
         }
         .navigationTitle(L10n.Settings.accounts)
-        .navigationBarTitleDisplayMode(.inline)  // título reducido y centrado
+        .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
-                    // Logic to pop? usually dismiss works for sheets, but for stack navigation we need environment dismiss
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: DS.Spacing.md) {
-                    YalaToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down")
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar")
                     {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isEditMode.toggle()
+                        dsWithAnimation(reduceMotion) {
+                            viewModel.isEditMode.toggle()
                         }
                     }
 
-                    YalaToolbarButton(systemName: "plus") {
-                        isPresentingCreateAccount = true
+                    YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                        if FeatureGateService.shared.canCreate(.accounts, currentCount: activeAccountsCount) {
+                            viewModel.isPresentingCreateAccount = true
+                        } else {
+                            showUpgradeSheet = true
+                        }
                     }
                 }
             }
         }
-        // Alta de nueva cuenta desde Ajustes (reutiliza el formulario existente)
-        .sheet(isPresented: $isPresentingCreateAccount) {
-            AccountFormView(
-                existingNames: accounts.map { $0.name }
-            )
+        .sheet(isPresented: $viewModel.isPresentingCreateAccount, onDismiss: {
+            viewModel.loadData()
+        }) {
+            AccountFormView(existingNames: viewModel.existingNames)
         }
-        // Edición de cuenta existente reutilizando el mismo formulario
-        .sheet(item: $accountToEdit) { account in
+        .sheet(item: $viewModel.accountToEdit, onDismiss: {
+            viewModel.loadData()
+        }) { account in
             AccountFormView(
-                existingNames: accounts.map { $0.name }.filter { $0 != account.name },
+                existingNames: viewModel.existingNamesExcluding(account),
                 accountToEdit: account
             )
+        }
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradePromptSheet(feature: .accounts, context: .limitReached)
+        }
+        .onAppear {
+            viewModel.setContext(modelContext)
+            viewModel.accountsSortOrderNamesRaw = accountsSortOrderNamesRaw
+        }
+        .onChange(of: accountsSortOrderNamesRaw) { _, newValue in
+            viewModel.accountsSortOrderNamesRaw = newValue
         }
     }
 
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "creditcard")
-                .font(.system(size: 48))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
 
             Text(L10n.Empty.noAccounts)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
 
             Text(L10n.Empty.accountsDescription)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, DS.Spacing.xxxl)
         }
-        .padding(.top, 64)
+        .padding(.top, DS.Spacing.sheetTop)
     }
 
     // Caja blanca de sección para cuentas archivadas
@@ -146,14 +138,14 @@ struct AccountsSettingsListView: View {
     private func accountsSection(title: String, accounts: [Account]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                     Button {
-                        accountToEdit = account
+                        viewModel.accountToEdit = account
                     } label: {
                         accountRow(account)
                     }
@@ -170,7 +162,7 @@ struct AccountsSettingsListView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
         }
@@ -181,16 +173,16 @@ struct AccountsSettingsListView: View {
     private var listBasedSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Common.active)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             List {
-                ForEach(Array(orderedActiveAccounts.enumerated()), id: \.element.id) {
+                ForEach(Array(viewModel.orderedActiveAccounts.enumerated()), id: \.element.id) {
                     index, account in
                     Button {
-                        if !isEditMode {
-                            accountToEdit = account
+                        if !viewModel.isEditMode {
+                            viewModel.accountToEdit = account
                         }
                     } label: {
                         listAccountRow(account)
@@ -199,7 +191,7 @@ struct AccountsSettingsListView: View {
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.yalaCard)
                     .listRowSeparator(
-                        index == 0 || index == orderedActiveAccounts.count - 1 ? .hidden : .visible,
+                        index == 0 || index == viewModel.orderedActiveAccounts.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
                 }
                 .onMove(perform: moveAccountList)
@@ -207,7 +199,7 @@ struct AccountsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(orderedActiveAccounts.count) * 84)  // Tight fit
+            .frame(height: CGFloat(viewModel.orderedActiveAccounts.count) * 84)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
@@ -215,10 +207,10 @@ struct AccountsSettingsListView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
-            .environment(\.editMode, .constant(isEditMode ? .active : .inactive))
+            .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }
     }
 
@@ -226,8 +218,10 @@ struct AccountsSettingsListView: View {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let currencyInfoData = currencyInfo(for: currency)
-        let primaryText =
-            (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
+        let primaryText: String = {
+            if let number = account.accountNumber, !number.isEmpty { return number }
+            return account.name
+        }()
 
         return HStack(spacing: DS.Spacing.md) {
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
@@ -240,15 +234,15 @@ struct AccountsSettingsListView: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(primaryText)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Text(accountTypeText(for: account))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
                 Text(currencyInfoData.name.capitalized)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -257,14 +251,15 @@ struct AccountsSettingsListView: View {
             Spacer()
 
             HStack(spacing: DS.Spacing.xs) {
-                Text(formattedBalance(for: account))
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                if !sessionState.isExpensesOnlyMode {
+                    Text(viewModel.formattedBalance(for: account))
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                }
 
-                // Chevron only in normal mode
-                if !isEditMode {
+                if !viewModel.isEditMode {
                     Image(systemName: "chevron.right")
-                        .font(.footnote)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -273,9 +268,8 @@ struct AccountsSettingsListView: View {
     }
 
     private func moveAccountList(from source: IndexSet, to destination: Int) {
-        var currentOrder = orderedActiveAccounts.map { $0.name }
-        currentOrder.move(fromOffsets: source, toOffset: destination)
-        accountsSortOrderNamesRaw = currentOrder.joined(separator: "|")
+        let newRaw = viewModel.moveAccount(from: source, to: destination)
+        accountsSortOrderNamesRaw = newRaw
     }
 
     // MARK: - Presentación de filas
@@ -287,40 +281,18 @@ struct AccountsSettingsListView: View {
         return account.type.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
-    private func formattedBalance(for account: Account) -> String {
-        let normalizedCode = normalizeCurrencyCode(account.currencyCode)
-        let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
-        let info = currencyInfo(for: currency)
-
-        // Calculamos el saldo actual en Decimal usando el servicio central.
-        let currentDecimal = AccountBalanceCalculator.currentBalance(
-            for: account,
-            allTransactions: transactions
-        )
-        let nsNumber = currentDecimal as NSDecimalNumber
-        let amountDouble = nsNumber.doubleValue
-
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-
-        let formattedAmount = formatter.string(from: NSNumber(value: amountDouble)) ?? "0.00"
-        return "\(info.code) \(formattedAmount)"
-    }
-
     @ViewBuilder
     private func accountRow(_ account: Account) -> some View {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let currencyInfoTuple = currencyInfo(for: currency)
 
-        // Línea principal: número de cuenta si existe, si no el nombre
-        let primaryText =
-            (account.accountNumber?.isEmpty == false) ? account.accountNumber! : account.name
+        let primaryText: String = {
+            if let number = account.accountNumber, !number.isEmpty { return number }
+            return account.name
+        }()
 
         HStack(spacing: DS.Spacing.md) {
-            // Ícono de la cuenta con color de fondo según configuración
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(colorForHex(account.colorHex))
                 .frame(width: 44, height: 44)
@@ -329,31 +301,31 @@ struct AccountsSettingsListView: View {
                         .foregroundStyle(.white)
                 )
 
-            // Texto central (3 líneas)
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(primaryText)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Text(accountTypeText(for: account))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
                 Text(currencyInfoTuple.name.capitalized)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            // Monto + chevron a la derecha
             HStack(spacing: DS.Spacing.xs) {
-                Text(formattedBalance(for: account))
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                if !sessionState.isExpensesOnlyMode {
+                    Text(viewModel.formattedBalance(for: account))
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                }
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -361,5 +333,4 @@ struct AccountsSettingsListView: View {
         .padding(.vertical, DS.Spacing.sm)
         .contentShape(Rectangle())
     }
-
 }

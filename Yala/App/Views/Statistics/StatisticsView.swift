@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StatisticsView: View {
-    private var sessionState = SessionState.shared
+    @Environment(SessionState.self) private var sessionState
 
     var body: some View {
         NavigationStack {

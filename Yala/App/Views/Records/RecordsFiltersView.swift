@@ -11,17 +11,13 @@ import SwiftUI
 struct RecordsFiltersView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SessionState.self) private var sessionState
 
-    // MARK: - Data Queries
-
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Category.sortOrder) private var allCategories: [Category]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var filtersViewModel = RecordsFiltersViewModel()
 
     // MARK: - ViewModel Binding
 
-    @Bindable var viewModel: RecordsViewModel
+    @Bindable var recordsViewModel: RecordsViewModel
 
     // MARK: - Sheet Presentation State
 
@@ -36,16 +32,6 @@ struct RecordsFiltersView: View {
     @State private var hasInitializedTags = false
     @State private var hasInitializedCurrencies = false
     @State private var hasInitializedCategories = false
-
-    // MARK: - Computed Properties
-
-    private var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
-    }
-
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
-    }
 
     // MARK: - Body
 
@@ -75,10 +61,13 @@ struct RecordsFiltersView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 accountsContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                transactionNaturesContent
+                                // Transaction natures (Income/Expense) - hidden in expenses-only mode
+                                if !sessionState.isExpensesOnlyMode {
+                                    Divider().padding(.leading, DS.Spacing.lg)
+                                    transactionNaturesContent
+                                }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
                                 Divider().padding(.leading, DS.Spacing.lg)
@@ -97,15 +86,15 @@ struct RecordsFiltersView: View {
                         // Reset filters button
                         Button {
                             withAnimation {
-                                viewModel.clearFilters()
+                                recordsViewModel.clearFilters()
                             }
                         } label: {
                             Text(L10n.Filters.clearFilters)
-                                .font(.body.weight(.semibold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(Color.electricIndigo)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.white)
+                                .background(Color.yalaCard)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -116,15 +105,19 @@ struct RecordsFiltersView: View {
             }
             .navigationTitle(L10n.Filters.title)
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                filtersViewModel.setContext(modelContext)
+                expandCategoryFiltersToSubcategories()
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Aplicar") {
+                    Button(L10n.Action.apply) {
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
@@ -140,9 +133,9 @@ struct RecordsFiltersView: View {
     private var accountsContent: some View {
         FilterChipsSection(
             icon: "creditcard",
-            title: "Cuentas",
+            title: L10n.Settings.accounts,
             status: selectedAccountsText,
-            items: activeAccounts,
+            items: filtersViewModel.activeAccounts,
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -153,17 +146,17 @@ struct RecordsFiltersView: View {
     }
 
     private func accountChip(_ account: Account) -> some View {
-        let isSelected = viewModel.selectedAccounts.contains(account.persistentModelID)
+        let isSelected = recordsViewModel.selectedAccounts.contains(account.persistentModelID)
 
         return Button {
             if isSelected {
-                viewModel.selectedAccounts.remove(account.persistentModelID)
+                recordsViewModel.selectedAccounts.remove(account.persistentModelID)
             } else {
-                viewModel.selectedAccounts.insert(account.persistentModelID)
+                recordsViewModel.selectedAccounts.insert(account.persistentModelID)
             }
         } label: {
             Text(account.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -184,30 +177,24 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedAccountsText: String {
-        if viewModel.selectedAccounts.isEmpty {
-            return "Todas"
-        }
-        if viewModel.selectedAccounts.count == activeAccounts.count {
-            return "Todas"
-        }
-        return "\(viewModel.selectedAccounts.count)/\(activeAccounts.count)"
+        filtersViewModel.selectedAccountsText(selectedAccounts: recordsViewModel.selectedAccounts)
     }
 
     private var categoriesContent: some View {
         Button {
             showCategoriesSheet = true
         } label: {
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 FilterSectionHeader(
                     icon: "tag",
-                    title: "Categorías",
+                    title: L10n.Filters.categories,
                     status: selectedCategoriesText
                 )
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -225,45 +212,45 @@ struct RecordsFiltersView: View {
         hasInitializedCategories = true
     }
 
-    private var selectedCategoriesText: String {
-        let subCount = viewModel.selectedSubcategories.count
+    /// Expands category-level filters (from pie chart taps) into their visible subcategories
+    /// so the filters sheet correctly reflects the active filter state.
+    /// If specific subcategories are already selected for a category, keeps those instead of expanding.
+    private func expandCategoryFiltersToSubcategories() {
+        let selectedCats = recordsViewModel.selectedCategories
+        guard !selectedCats.isEmpty else { return }
 
-        if subCount == 0 {
-            return "Todas"
-        }
+        let existingSubcategoryIDs = recordsViewModel.selectedSubcategories
 
-        // All selected = no filter (equivalent to "Todas")
-        let allIDs = Set(allSubcategories.map { $0.persistentModelID })
-        if viewModel.selectedSubcategories == allIDs {
-            return "Todas"
-        }
+        for categoryID in selectedCats {
+            let subcategoriesOfCategory = filtersViewModel.allSubcategories
+                .filter { sub in
+                    guard let category = sub.category else { return false }
+                    return category.persistentModelID == categoryID && sub.isVisible
+                }
+                .map { $0.persistentModelID }
 
-        // Count unique categories from selected subcategories
-        let selectedSubs = allSubcategories.filter {
-            viewModel.selectedSubcategories.contains($0.persistentModelID)
-        }
-        if selectedSubs.isEmpty {
-            return "Todas"
-        }
+            // If user already selected specific subcategories of this category, keep those
+            let alreadyHasSpecificSelection = subcategoriesOfCategory.contains { existingSubcategoryIDs.contains($0) }
 
-        if let firstSub = selectedSubs.first {
-            let remainingCount = selectedSubs.count - 1
-            if remainingCount > 0 {
-                return "\(firstSub.name) +\(remainingCount)"
-            } else {
-                return firstSub.name
+            if !alreadyHasSpecificSelection {
+                // No specific subcategory selected — expand all subcategories of this category
+                recordsViewModel.selectedSubcategories.formUnion(subcategoriesOfCategory)
             }
         }
 
-        return "Todas"
+        recordsViewModel.selectedCategories.removeAll()
+    }
+
+    private var selectedCategoriesText: String {
+        filtersViewModel.selectedCategoriesText(selectedSubcategories: recordsViewModel.selectedSubcategories)
     }
 
     private var tagsContent: some View {
         FilterChipsSection(
             icon: "number",
-            title: "Etiquetas",
+            title: L10n.Settings.tags,
             status: selectedTagsText,
-            items: activeTags,
+            items: filtersViewModel.activeTags,
             showEmptyPlaceholder: true
         ) { tag in
             tagChip(tag)
@@ -274,13 +261,13 @@ struct RecordsFiltersView: View {
     }
 
     private func tagChip(_ tag: Tag) -> some View {
-        let isSelected = viewModel.selectedTags.contains(tag.persistentModelID)
+        let isSelected = recordsViewModel.selectedTags.contains(tag.persistentModelID)
 
         return Button {
             if isSelected {
-                viewModel.selectedTags.remove(tag.persistentModelID)
+                recordsViewModel.selectedTags.remove(tag.persistentModelID)
             } else {
-                viewModel.selectedTags.insert(tag.persistentModelID)
+                recordsViewModel.selectedTags.insert(tag.persistentModelID)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
@@ -289,7 +276,7 @@ struct RecordsFiltersView: View {
                     .frame(width: 8, height: 8)
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -309,13 +296,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTagsText: String {
-        if viewModel.selectedTags.isEmpty {
-            return "Todas"
-        }
-        if viewModel.selectedTags.count == activeTags.count {
-            return "Todas"
-        }
-        return "\(viewModel.selectedTags.count)/\(activeTags.count)"
+        filtersViewModel.selectedTagsText(selectedTags: recordsViewModel.selectedTags)
     }
 
     // MARK: - Transaction Natures Content (Income/Expense)
@@ -325,7 +306,7 @@ struct RecordsFiltersView: View {
             // Header
             FilterSectionHeader(
                 icon: "arrow.up.arrow.down",
-                title: "Tipo",
+                title: L10n.Filters.type,
                 status: selectedTransactionNaturesText
             )
             .padding(.horizontal, DS.Spacing.lg)
@@ -337,24 +318,24 @@ struct RecordsFiltersView: View {
                     transactionNatureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
     }
 
     private func transactionNatureChip(_ nature: TransactionNature) -> some View {
-        let isSelected = viewModel.selectedTransactionNatures.contains(nature)
+        let isSelected = recordsViewModel.selectedTransactionNatures.contains(nature)
 
         return Button {
             if isSelected {
-                viewModel.selectedTransactionNatures.remove(nature)
+                recordsViewModel.selectedTransactionNatures.remove(nature)
             } else {
-                viewModel.selectedTransactionNatures.insert(nature)
+                recordsViewModel.selectedTransactionNatures.insert(nature)
             }
         } label: {
             Text(nature.displayName)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -368,11 +349,11 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTransactionNaturesText: String {
-        if viewModel.selectedTransactionNatures.isEmpty { return "Todos" }
-        if viewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
-            return "Todos"
+        if recordsViewModel.selectedTransactionNatures.isEmpty { return L10n.Filters.all }
+        if recordsViewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
+            return L10n.Filters.all
         }
-        return viewModel.selectedTransactionNatures.first?.displayName ?? "Todos"
+        return recordsViewModel.selectedTransactionNatures.first?.displayName ?? L10n.Filters.all
     }
 
     // MARK: - Natures Content
@@ -382,7 +363,7 @@ struct RecordsFiltersView: View {
             // Header
             FilterSectionHeader(
                 icon: "leaf.fill",
-                title: "Naturaleza",
+                title: L10n.Filters.nature,
                 status: selectedNaturesText
             )
             .padding(.horizontal, DS.Spacing.lg)
@@ -394,25 +375,25 @@ struct RecordsFiltersView: View {
                     natureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
     }
 
     private func natureChip(_ nature: SubcategoryNature) -> some View {
-        let isSelected = viewModel.selectedNatures.contains(nature)
+        let isSelected = recordsViewModel.selectedNatures.contains(nature)
 
         return Button {
             if isSelected {
-                viewModel.selectedNatures.remove(nature)
+                recordsViewModel.selectedNatures.remove(nature)
             } else {
-                viewModel.selectedNatures.insert(nature)
+                recordsViewModel.selectedNatures.insert(nature)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Text(nature.displayName)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -427,48 +408,52 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedNaturesText: String {
-        if viewModel.selectedNatures.isEmpty { return "Todas" }
-        return "\(viewModel.selectedNatures.count)"
+        if recordsViewModel.selectedNatures.isEmpty { return L10n.Filters.allNatures }
+        return "\(recordsViewModel.selectedNatures.count)"
     }
 
+    @ViewBuilder
     private var currencyContent: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Header
-            FilterSectionHeader(
-                icon: "arrow.triangle.2.circlepath",
-                title: "Moneda",
-                status: selectedCurrenciesText
-            )
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.top, DS.Spacing.md)
+        // Hide section if no transactions with currencies
+        if !filtersViewModel.currenciesWithTransactions.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Header
+                FilterSectionHeader(
+                    icon: "arrow.triangle.2.circlepath",
+                    title: L10n.Filters.currency,
+                    status: selectedCurrenciesText
+                )
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
 
-            // Chips - aligned after icon
-            FlowLayout(spacing: DS.Spacing.sm) {
-                ForEach(CurrencyCode.allCases) { currency in
-                    currencyChip(currency)
+                // Chips - only currencies with transactions
+                FlowLayout(spacing: DS.Spacing.sm) {
+                    ForEach(filtersViewModel.currenciesWithTransactions) { currency in
+                        currencyChip(currency)
+                    }
                 }
+                .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
+                .padding(.trailing, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.md)
             }
-            .padding(.leading, 52)
-            .padding(.trailing, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.md)
-        }
-        .onAppear {
-            syncCurrenciesSelection()
+            .onAppear {
+                syncCurrenciesSelection()
+            }
         }
     }
 
     private func currencyChip(_ currency: CurrencyCode) -> some View {
-        let isSelected = viewModel.selectedCurrencies.contains(currency)
+        let isSelected = recordsViewModel.selectedCurrencies.contains(currency)
 
         return Button {
             if isSelected {
-                viewModel.selectedCurrencies.remove(currency)
+                recordsViewModel.selectedCurrencies.remove(currency)
             } else {
-                viewModel.selectedCurrencies.insert(currency)
+                recordsViewModel.selectedCurrencies.insert(currency)
             }
         } label: {
             Text(currency.rawValue)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -487,31 +472,32 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedCurrenciesText: String {
-        if viewModel.selectedCurrencies.isEmpty {
-            return "Todas"
+        // If no currencies with transactions, don't show anything
+        guard !filtersViewModel.currenciesWithTransactions.isEmpty else { return "" }
+
+        if recordsViewModel.selectedCurrencies.isEmpty ||
+           recordsViewModel.selectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
+            return L10n.Filters.all
         }
-        if viewModel.selectedCurrencies.count == CurrencyCode.allCases.count {
-            return "Todas"
-        }
-        return "\(viewModel.selectedCurrencies.count)/\(CurrencyCode.allCases.count)"
+        return "\(recordsViewModel.selectedCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
     }
 
     private var amountContent: some View {
         AmountFilterView(
-            condition: $viewModel.amountCondition,
-            currencyCode: viewModel.selectedCurrencies.count == 1
-                ? viewModel.selectedCurrencies.first : nil
+            condition: $recordsViewModel.amountCondition,
+            currencyCode: recordsViewModel.selectedCurrencies.count == 1
+                ? recordsViewModel.selectedCurrencies.first : nil
         )
     }
 
     private var noteContent: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "note.text")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
-                .frame(width: 24)
+                .frame(width: DS.FormRow.iconWidth)
 
-            TextField(L10n.Filters.noteContains, text: $viewModel.searchText)
+            TextField(L10n.Filters.noteContains, text: $recordsViewModel.searchText)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -521,32 +507,54 @@ struct RecordsFiltersView: View {
 
     private var accountsSheetView: some View {
         NavigationStack {
-            List {
-                ForEach(activeAccounts) { account in
-                    Button {
-                        if viewModel.selectedAccounts.contains(account.persistentModelID) {
-                            viewModel.selectedAccounts.remove(account.persistentModelID)
-                        } else {
-                            viewModel.selectedAccounts.insert(account.persistentModelID)
-                        }
-                    } label: {
-                        HStack {
-                            Text(account.name)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if viewModel.selectedAccounts.contains(account.persistentModelID) {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.brandPrimary)
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        SectionBox(title: "") {
+                            VStack(spacing: DS.Spacing.none) {
+                                ForEach(Array(filtersViewModel.activeAccounts.enumerated()), id: \.element.id) { index, account in
+                                    if index > 0 {
+                                        SubsectionDivider()
+                                    }
+
+                                    Button {
+                                        if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
+                                            recordsViewModel.selectedAccounts.remove(account.persistentModelID)
+                                        } else {
+                                            recordsViewModel.selectedAccounts.insert(account.persistentModelID)
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(account.name)
+                                                .font(DS.Typography.body)
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                            if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
+                                                Image(systemName: "checkmark")
+                                                    .foregroundStyle(Color.brandPrimary)
+                                                    .font(DS.Typography.headline)
+                                            }
+                                        }
+                                        .padding(.horizontal, DS.FormRow.paddingH)
+                                        .padding(.vertical, DS.FormRow.paddingV)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                     }
-                    .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Filters.selectAccounts)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
                         showAccountsSheet = false
                     }
                 }
@@ -558,76 +566,78 @@ struct RecordsFiltersView: View {
 
     private var categoriesSheetView: some View {
         CategorySelectorSheet(
-            categories: allCategories,
-            subcategories: allSubcategories,
-            selectedSubcategories: $viewModel.selectedSubcategories
+            categories: filtersViewModel.allCategories,
+            subcategories: filtersViewModel.allSubcategories,
+            selectedSubcategories: $recordsViewModel.selectedSubcategories
         )
     }
 
     private func subcategories(for category: Category) -> [Subcategory] {
-        allSubcategories.filter { sub in
-            sub.category == category && sub.isVisible
-        }
+        filtersViewModel.subcategories(for: category)
     }
 
     private func subcategorySelectionSummary(for category: Category) -> String {
-        let subs = subcategories(for: category)
-        let total = subs.count
-        let selectedCount = subs.filter {
-            viewModel.selectedSubcategories.contains($0.persistentModelID)
-        }.count
-
-        if total == 0 {
-            return L10n.Filters.noSubcategories
-        }
-
-        if selectedCount == 0 {
-            return L10n.Filters.noneSelected
-        }
-
-        if selectedCount == total {
-            return L10n.Filters.allSubcategories
-        }
-
-        return "\(selectedCount) / \(total)"
+        filtersViewModel.subcategorySelectionSummary(for: category, selectedSubcategories: recordsViewModel.selectedSubcategories)
     }
 
     // MARK: - Tags Sheet
 
     private var tagsSheetView: some View {
         NavigationStack {
-            List {
-                ForEach(allTags.filter { $0.isActive }) { tag in
-                    Button {
-                        if viewModel.selectedTags.contains(tag.persistentModelID) {
-                            viewModel.selectedTags.remove(tag.persistentModelID)
-                        } else {
-                            viewModel.selectedTags.insert(tag.persistentModelID)
-                        }
-                    } label: {
-                        HStack {
-                            Circle()
-                                .fill(Color(hex: tag.colorHex))
-                                .frame(width: 10, height: 10)
+            ZStack {
+                PanelBackgroundView()
 
-                            Text(tag.name)
-                                .foregroundStyle(.primary)
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        SectionBox(title: "") {
+                            VStack(spacing: DS.Spacing.none) {
+                                ForEach(Array(filtersViewModel.activeTags.enumerated()), id: \.element.id) { index, tag in
+                                    if index > 0 {
+                                        SubsectionDivider()
+                                    }
 
-                            Spacer()
+                                    Button {
+                                        if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
+                                            recordsViewModel.selectedTags.remove(tag.persistentModelID)
+                                        } else {
+                                            recordsViewModel.selectedTags.insert(tag.persistentModelID)
+                                        }
+                                    } label: {
+                                        HStack(spacing: DS.Spacing.md) {
+                                            Circle()
+                                                .fill(Color(hex: tag.colorHex))
+                                                .frame(width: 10, height: 10)
 
-                            if viewModel.selectedTags.contains(tag.persistentModelID) {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.brandPrimary)
+                                            Text(tag.name)
+                                                .font(DS.Typography.body)
+                                                .foregroundStyle(.primary)
+
+                                            Spacer()
+
+                                            if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
+                                                Image(systemName: "checkmark")
+                                                    .foregroundStyle(Color.brandPrimary)
+                                                    .font(DS.Typography.headline)
+                                            }
+                                        }
+                                        .padding(.horizontal, DS.FormRow.paddingH)
+                                        .padding(.vertical, DS.FormRow.paddingV)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                     }
-                    .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Filters.selectTags)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
                         showTagsSheet = false
                     }
                 }
@@ -641,13 +651,13 @@ struct RecordsFiltersView: View {
         NavigationStack {
             MultiSelectionList(
                 title: L10n.Filters.selectCurrencies,
-                items: CurrencyCode.allCases,
-                selection: $viewModel.selectedCurrencies,
+                items: filtersViewModel.currenciesWithTransactions,
+                selection: $recordsViewModel.selectedCurrencies,
                 label: { $0.rawValue }
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
                         showCurrencySheet = false
                     }
                 }

@@ -27,23 +27,22 @@ struct PanelView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
-    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var transactions: [TransactionItem]
-
-    // Budgets for widget
-    @Query(filter: #Predicate<Budget> { $0.isActive }, sort: \Budget.createdAt, order: .reverse)
-    private var budgets: [Budget]
-
-    // Scheduled payments for widget
-    @Query(sort: \ScheduledPayment.nextDueDate)
-    private var scheduledPayments: [ScheduledPayment]
+    @Environment(ExchangeRateService.self) private var exchangeRateService
+    @Environment(CurrencyConverter.self) private var currencyConverter
 
     @State private var viewModel = PanelViewModel()
+
+    // Convenience accessors for data from ViewModel
+    private var accounts: [Account] { viewModel.accounts }
+    private var tags: [Tag] { viewModel.tags }
+    private var categories: [Category] { viewModel.categories }
+    private var allSubcategories: [Subcategory] { viewModel.allSubcategories }
+    private var transactions: [TransactionItem] { viewModel.transactions }
+    private var budgets: [Budget] { viewModel.budgets }
+    private var scheduledPayments: [ScheduledPayment] { viewModel.scheduledPayments }
+    private var pendingDrafts: [InboxDraft] { viewModel.pendingDrafts }
 
     @State private var isPresentingSettings = false
 
@@ -62,6 +61,9 @@ struct PanelView: View {
     /// Budget Favorites Settings Sheet
     @State private var showBudgetFavoritesSettings = false
 
+    /// Inbox View Sheet
+    @State private var showInbox = false
+
     /// Task for debouncing data recalculations
     @State private var calculationTask: Task<Void, Never>?
 
@@ -69,14 +71,56 @@ struct PanelView: View {
     @State private var showCustomPeriodPicker = false
 
     @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen
-        .rawValue
+    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
+    @AppStorage("showVariations") private var showVariations: Bool = true
     @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+
+    /// Voice recording sheet
+    @State private var showVoiceRecording = false
+    @State private var navigateToInboxAfterVoice = false
+    @State private var switchToImageAfterVoice = false
+
+    /// Image selection sheet
+    @State private var showImageSelection = false
+    @State private var navigateToInboxAfterImage = false
+
+    /// FAB menu expanded state
+    @State private var showFABMenu = false
+
+    /// Upgrade prompt sheets for gated features
+    @State private var showUpgradeForVoice = false
+    @State private var showUpgradeForImage = false
+    @State private var showUpgradeForAccounts = false
+
+    /// Check if accounts limit is reached (Pro feature)
+    private var isAccountsLimitReached: Bool {
+        let activeCount = accounts.filter { !$0.isArchived }.count
+        return !FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount)
+    }
 
     /// Check if Statistics tab is visible
     private var isStatisticsVisible: Bool {
         TabBarConfiguration.fromJSON(tabConfigJSON).activeTabs.contains(.statistics)
+    }
+
+    /// Check if voice input can be used (requires accounts and subcategories)
+    private var canUseVoiceInput: Bool {
+        let hasActiveAccounts = accounts.contains { !$0.isArchived }
+        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
+        return hasActiveAccounts && hasVisibleSubcategories
+    }
+
+    /// Check if voice input is locked (Pro feature)
+    private var isVoiceLocked: Bool {
+        !FeatureGateService.shared.canAccess(.voiceInput)
+    }
+
+    /// Check if image input is locked (Pro feature)
+    private var isImageLocked: Bool {
+        !FeatureGateService.shared.canAccess(.imageInput)
     }
 
     /// Navigate to Statistics detail, setting temporary tab if needed
@@ -88,72 +132,93 @@ struct PanelView: View {
         sessionState.navigateToDetail(detailTab)
     }
 
+    // MARK: - Toolbar Buttons
+
+    private var inboxToolbarButton: some View {
+        Button {
+            showInbox = true
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "tray.fill")
+                    .font(DS.Typography.body).fontWeight(.medium)
+                    .foregroundStyle(Color.toolbarIconColor)
+
+                // Badge with count
+                if pendingDrafts.count > 0 {
+                    Text("\(min(pendingDrafts.count, 99))")
+                        .font(DS.Typography.captionSmall).fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule()
+                                .fill(Color.hotPink)
+                        )
+                        .offset(x: 8, y: -6)
+                }
+            }
+        }
+        .accessibilityLabel("Bandeja de entrada")
+    }
+
+
+    /// Prefill subcategory name for NewTransactionView
+    private var prefillSubcategoryName: String? {
+        viewModel.selectedSubcategoryIDs.first.flatMap { subcategoryID in
+            allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
+        }
+    }
+
     var body: some View {
         NavigationStack {
             mainContent
                 .navigationTitle(L10n.Panel.title(userName))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            isPresentingSettings = true
-                        } label: {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(Color.electricIndigo)
-                        }
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        inboxToolbarButton
                     }
-                }
-                .sheet(item: $accountFormSheet) { sheet in
-                    AccountFormView(
-                        existingNames: existingAccountNames(editingAccount: sheet.account),
-                        accountToEdit: sheet.account
-                    )
-                    .onDisappear {
-                        // Force recalculation when account form closes
-                        // (initial balance changes may not trigger @Query immediately)
-                        recalculateData()
-                    }
-                }
-                .sheet(isPresented: $isPresentingSettings) {
-                    ProfileView()
-                }
-                .sheet(isPresented: $showWidgetPreferences) {
-                    WidgetPreferencesView(viewModel: viewModel)
-                        .presentationDragIndicator(.visible)
-                }
-                .sheet(isPresented: $showNewTransaction) {
-                    // Convert selected subcategory ID back to name for prefill
-                    let prefillSubcategoryName: String? = viewModel.selectedSubcategoryIDs.first.flatMap { subcategoryID in
-                        allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
-                    }
-                    NewTransactionView(
-                        prefillAccountID: viewModel.selectedAccountID,
-                        prefillCategoryID: viewModel.selectedCategoryID,
-                        prefillSubcategoryName: prefillSubcategoryName
-                    )
-                }
-                .sheet(isPresented: $showCustomPeriodPicker) {
-                    CustomPeriodPickerSheet(
-                        minDate: transactionDateRange.start,
-                        maxDate: transactionDateRange.end,
-                        currentRange: sessionState.customDateRange
-                    )
-                }
-                .sheet(isPresented: $showBudgetFavoritesSettings) {
-                    NavigationStack {
-                        BudgetsFavoritesSettingsView()
+                    ProfileToolbarItem {
+                        isPresentingSettings = true
                     }
                 }
         }
+        .modifier(
+            PanelSheetsModifier(
+                accountFormSheet: $accountFormSheet,
+                isPresentingSettings: $isPresentingSettings,
+                showWidgetPreferences: $showWidgetPreferences,
+                showNewTransaction: $showNewTransaction,
+                showVoiceRecording: $showVoiceRecording,
+                showImageSelection: $showImageSelection,
+                showCustomPeriodPicker: $showCustomPeriodPicker,
+                showBudgetFavoritesSettings: $showBudgetFavoritesSettings,
+                showInbox: $showInbox,
+                showUpgradeForVoice: $showUpgradeForVoice,
+                showUpgradeForImage: $showUpgradeForImage,
+                showUpgradeForAccounts: $showUpgradeForAccounts,
+                navigateToInboxAfterVoice: $navigateToInboxAfterVoice,
+                switchToImageAfterVoice: $switchToImageAfterVoice,
+                navigateToInboxAfterImage: $navigateToInboxAfterImage,
+                existingAccountNames: existingAccountNames,
+                prefillAccountID: viewModel.selectedAccountID,
+                prefillCategoryID: viewModel.selectedCategoryID,
+                prefillSubcategoryName: prefillSubcategoryName,
+                transactionDateRange: transactionDateRange,
+                customDateRange: sessionState.customDateRange,
+                viewModel: viewModel,
+                navigateToStatistics: navigateToStatistics,
+                recalculateData: recalculateData
+            )
+        )
         .onAppear {
-            seedCategoriesIfNeeded(in: modelContext)
+            viewModel.setContext(
+                modelContext,
+                exchangeRateService: exchangeRateService,
+                currencyConverter: currencyConverter
+            )
             TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext)
-
-            // Sync all filters from SessionState -> ViewModel
             viewModel.syncFromSessionState(sessionState)
-
-            // Ensure consistency
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
                 accounts: accounts,
                 currentOrderRaw: accountsSortOrderNamesRaw
@@ -161,53 +226,33 @@ struct PanelView: View {
             if newOrder != accountsSortOrderNamesRaw {
                 accountsSortOrderNamesRaw = newOrder
             }
-
-            // Initial Trend Calculation (async to avoid blocking UI)
             recalculateData()
         }
-        .onChange(of: accounts) {
-            let newOrder = viewModel.ensureAccountsSortOrderConsistency(
+        .modifier(
+            PanelDataObservers(
                 accounts: accounts,
-                currentOrderRaw: accountsSortOrderNamesRaw
+                transactions: transactions,
+                budgets: budgets,
+                allSubcategories: allSubcategories,
+                sessionState: sessionState,
+                viewModel: viewModel,
+                showFABMenu: $showFABMenu,
+                accountsSortOrderNamesRaw: $accountsSortOrderNamesRaw,
+                defaultCurrencyCodeRaw: $defaultCurrencyCodeRaw,
+                recalculateData: recalculateData
             )
-            if newOrder != accountsSortOrderNamesRaw {
-                accountsSortOrderNamesRaw = newOrder
-            }
-        }
-        // Note: Filter onChange handlers removed - filters are now SSOT computed properties
-        // that read/write directly to SessionState. PanelSessionObservers handles recalculation.
-        .onChange(of: transactions) {
-            // Recalculate when transactions change
-            recalculateData()
-        }
-        .onChange(of: budgets) {
-            // Recalculate when budgets change (favorites toggled, reordered, etc.)
-            recalculateData()
-        }
-        .onChange(of: allSubcategories) {
-            // Recalculate when subcategories change (nature edited, etc.)
-            recalculateData()
-        }
-        .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in
-            // Recalculate when favorites are modified from any view (Profile, Planning, etc.)
-            if needsRefresh {
-                recalculateData()
-                sessionState.needsBudgetsWidgetRefresh = false
-            }
-        }
-        .onChange(of: defaultCurrencyCodeRaw) {
-            // Recalculate when preferred currency changes
-            recalculateData()
-        }
-        .onChange(of: sessionState.formattingVersion) {
-            // Force recalculation when formatting settings change (rounded amounts, etc.)
-            recalculateData()
-        }
-        .onChange(of: viewModel.trendType) {
-            // Sync trend type to SessionState when it changes
-            viewModel.syncToSessionState(sessionState)
-            recalculateData()
-        }
+        )
+        .modifier(
+            PanelSheetTriggers(
+                sessionState: sessionState,
+                showInbox: $showInbox,
+                showImageSelection: $showImageSelection,
+                showVoiceRecording: $showVoiceRecording,
+                showNewTransaction: $showNewTransaction,
+                showUpgradeForVoice: $showUpgradeForVoice,
+                showUpgradeForImage: $showUpgradeForImage
+            )
+        )
         .modifier(
             PanelSessionObservers(
                 sessionState: sessionState,
@@ -239,30 +284,176 @@ struct PanelView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    Button {
-                        showNewTransaction = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Color.electricIndigo)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive())
-                    .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                    .padding(.trailing, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
+                    newRecordFAB
                 }
             }
+        }
+    }
+
+    // MARK: - New Record FAB
+
+    @ViewBuilder
+    private var newRecordFAB: some View {
+        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+        let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
+                                (voiceInputEnabled && !imageInputEnabled) ||
+                                (!voiceInputEnabled && imageInputEnabled)
+
+        if hasMultipleInputs && canUseVoiceInput {
+            // Custom FAB with popup menu above
+            VStack(alignment: .trailing, spacing: DS.Spacing.md) {
+                // Menu options (shown when expanded)
+                if showFABMenu {
+                    VStack(spacing: DS.Spacing.sm) {
+                        // Voice option (if enabled)
+                        if voiceInputEnabled {
+                            fabMenuButton(
+                                icon: "waveform",
+                                text: L10n.Panel.fabVoice,
+                                color: .hotPink,
+                                isLocked: isVoiceLocked
+                            ) {
+                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                    showFABMenu = false
+                                }
+                                if isVoiceLocked {
+                                    showUpgradeForVoice = true
+                                } else {
+                                    showVoiceRecording = true
+                                }
+                            }
+                        }
+
+                        // Image option (if enabled)
+                        if imageInputEnabled {
+                            fabMenuButton(
+                                icon: "photo",
+                                text: L10n.Panel.fabImage,
+                                color: .teal,
+                                isLocked: isImageLocked
+                            ) {
+                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                    showFABMenu = false
+                                }
+                                if isImageLocked {
+                                    showUpgradeForImage = true
+                                } else {
+                                    showImageSelection = true
+                                }
+                            }
+                        }
+
+                        // Manual option (always shown)
+                        fabMenuButton(
+                            icon: "square.and.pencil",
+                            text: L10n.Panel.fabManual,
+                            color: .electricIndigo
+                        ) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            showNewTransaction = true
+                        }
+                    }
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
+                        removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
+                    ))
+                }
+
+                // FAB button
+                Button {
+                    DS.Haptic.medium()
+                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                        showFABMenu.toggle()
+                    }
+                } label: {
+                    Image(systemName: showFABMenu ? "xmark" : "plus")
+                        .font(DS.Typography.title)
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
+                        .clipShape(Circle())
+                        .rotationEffect(.degrees(showFABMenu ? 90 : 0))
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive())
+                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                .accessibilityLabel(showFABMenu ? "Cerrar menú" : "Nuevo registro")
+            }
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
+        } else {
+            // Simple FAB (no special inputs enabled)
+            Button {
+                if canUseVoiceInput {
+                    showNewTransaction = true
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(DS.Typography.title)
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(fabBackground)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
+            .disabled(!canUseVoiceInput)
+            .accessibilityLabel("Nuevo registro")
+            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
+        }
+    }
+
+    private func fabMenuButton(
+        icon: String,
+        text: String,
+        color: Color,
+        isLocked: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            DS.Haptic.selection()
+            action()
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(DS.Typography.headline)
+                    .frame(width: 24)
+
+                Text(text)
+                    .font(DS.Typography.headline)
+
+                if isLocked {
+                    ProBadge(size: .small)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .frame(width: DS.Button.fabMenuWidth)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(isLocked ? DS.Semantic.disabledForeground : color)
+            .clipShape(Capsule())
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .phaseAnimator([false, true]) { content, phase in
+            content
+                .scaleEffect(phase ? 1.03 : 1.0)
+        } animation: { _ in
+            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
         }
     }
 
     private var accountsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Text(L10n.Panel.accounts)
-                .font(.title2.weight(.semibold))
+                .font(DS.Typography.title)
 
             AccountsCarouselView(
                 viewModel: viewModel,
@@ -271,8 +462,13 @@ struct PanelView: View {
                     sortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
                 ),
                 transactions: transactions,
+                isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
                 onAddAccount: {
-                    accountFormSheet = AccountFormSheet(account: nil)
+                    if isAccountsLimitReached {
+                        showUpgradeForAccounts = true
+                    } else {
+                        accountFormSheet = AccountFormSheet(account: nil)
+                    }
                 },
                 onEditAccount: { account in
                     accountFormSheet = AccountFormSheet(account: account)
@@ -336,7 +532,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     text: "Fecha: \(formattedDate(focusedDate))",
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.focusedDate = nil
                                         }
                                     }
@@ -395,7 +591,7 @@ struct PanelView: View {
                                     let color =
                                         (firstSub.colorHex?.isEmpty == false
                                             ? firstSub.colorHex : nil)
-                                        ?? firstSub.category.colorHex
+                                        ?? firstSub.safeCategory.colorHex
                                     FilterChipView(
                                         subcategoryName: firstSub.name,
                                         iconName: firstSub.iconName,
@@ -414,7 +610,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     nature: nature,
                                     onClear: {
-                                        withAnimation { viewModel.selectedNature = nil }
+                                        dsWithAnimation(reduceMotion) { viewModel.selectedNature = nil }
                                     }
                                 )
                             }
@@ -425,7 +621,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     transactionNature: transactionNature,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             sessionState.selectedTransactionNatures.removeAll()
                                         }
                                     }
@@ -440,7 +636,7 @@ struct PanelView: View {
                                         iconName: tag.iconName,
                                         colorHex: tag.colorHex,
                                         onClear: {
-                                            withAnimation {
+                                            dsWithAnimation(reduceMotion) {
                                                 viewModel.selectedTags.remove(tagID)
                                                 viewModel.syncToSessionState(sessionState)
                                             }
@@ -454,7 +650,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     currencyCode: currency.rawValue,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.selectedCurrencies.remove(currency)
                                             viewModel.syncToSessionState(sessionState)
                                         }
@@ -467,7 +663,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     amountText: viewModel.amountCondition.displayText,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.amountCondition = .any
                                             viewModel.syncToSessionState(sessionState)
                                         }
@@ -480,7 +676,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     noteText: viewModel.searchText,
                                     onClear: {
-                                        withAnimation {
+                                        dsWithAnimation(reduceMotion) {
                                             viewModel.searchText = ""
                                             viewModel.syncToSessionState(sessionState)
                                         }
@@ -491,13 +687,14 @@ struct PanelView: View {
                             // Clear All Button
                             if activeFilterCount > 1 {
                                 Button {
-                                    withAnimation {
+                                    dsWithAnimation(reduceMotion) {
                                         clearAllPanelFilters()
                                     }
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.secondary)
                                 }
+                                .accessibilityLabel("Limpiar filtros")
                                 .buttonStyle(.plain)
                             }
                         }
@@ -510,7 +707,7 @@ struct PanelView: View {
 
             HStack {
                 Text(L10n.Panel.widgets)
-                    .font(.title2.weight(.semibold))
+                    .font(DS.Typography.title)
 
                 Spacer()
 
@@ -518,11 +715,12 @@ struct PanelView: View {
                     showWidgetPreferences = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(Color.primary)
                 }
+                .accessibilityLabel("Preferencias de widgets")
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, DS.Spacing.xxs)
 
             // Custom Grid Layout (VStack of Rows)
             VStack(spacing: DS.Spacing.lg) {
@@ -582,8 +780,11 @@ struct PanelView: View {
 
     /// Recalculate trend data with smooth animation
     private func recalculateData() {
+        // Reload fresh data from SwiftData first
+        viewModel.loadData()
+
         // Direct synchronous call for instant response
-        withAnimation(.easeOut(duration: 0.15)) {
+        dsWithAnimation(reduceMotion, .easeOut(duration: 0.15)) {
             viewModel.calculateTrendData(
                 accounts: accounts,
                 transactions: transactions,
@@ -653,22 +854,13 @@ struct PanelView: View {
             .onChange(of: viewModel.trendType) { _, _ in
                 recalculateData()
             }
-            .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.selectedSubcategoryIDs) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.trendType) { _, _ in
-                recalculateData()
-            }
         } else if config.type == .topSpending {
             TopCategoriesWidget(
                 categories: viewModel.topSpendingCategories,
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
                 onSelectCategory: { id in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
@@ -676,7 +868,7 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-                showVariationHeader: viewModel.selectedPeriod != .allTime
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .topSubcategories {
             TopSubcategoriesWidget(
@@ -685,7 +877,7 @@ struct PanelView: View {
                 globalCategoryFilterID: viewModel.selectedCategoryID,
                 localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
                 onSelectSubcategory: { subcategoryID in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleSubcategoryFilter(
                             subcategoryID,
                             transactions: transactions,
@@ -701,15 +893,15 @@ struct PanelView: View {
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-                showVariationHeader: viewModel.selectedPeriod != .allTime
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .categoriesPie {
             CategoriesPieWidget(
                 categories: viewModel.topSpendingCategories,
                 currencyCode: preferredCurrency.rawValue,
-                selectedCategoryID: viewModel.selectedCategoryID,
+                selectedCategoryIDs: viewModel.selectedCategoryID.map { Set([$0]) } ?? [],
                 onSelectCategory: { id in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleCategoryFilter(id)
                     }
                 },
@@ -717,7 +909,7 @@ struct PanelView: View {
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-                showVariationHeader: true
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .subcategoriesPie {
             SubcategoriesPieWidget(
@@ -726,7 +918,7 @@ struct PanelView: View {
                 selectedCategoryID: viewModel.selectedCategoryID,
                 selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
                 onSelectSubcategory: { subcategoryID in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleSubcategoryFilter(
                             subcategoryID,
                             transactions: transactions,
@@ -741,7 +933,7 @@ struct PanelView: View {
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-                showVariationHeader: true
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
             )
         } else if config.type == .cashFlow {
             if let summary = viewModel.cashFlowSummary {
@@ -753,7 +945,8 @@ struct PanelView: View {
                     interval: viewModel.currentInterval,
                     onShowDetail: { navigateToStatistics(.trends) },
                     displayMode: viewModel.trendType,
-                    selectedTransactionNatures: viewModel.selectedTransactionNatures
+                    selectedTransactionNatures: viewModel.selectedTransactionNatures,
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode
                 )
             } else {
                 EmptyView()
@@ -773,7 +966,7 @@ struct PanelView: View {
                 grouping: viewModel.natureGrouping,
                 interval: viewModel.currentInterval,
                 onSelectNature: { nature in
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         viewModel.toggleNatureFilter(nature)
                     }
                 },
@@ -781,7 +974,7 @@ struct PanelView: View {
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousNatureTotalAmount,
                 previousAmountByNature: viewModel.previousNatureAmounts,
-                showVariationHeader: viewModel.selectedPeriod != .allTime,
+                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
                 isIncomeMode: viewModel.selectedTransactionNatures == [.income]
             )
         } else if config.type == .exchangeRate {
@@ -793,15 +986,20 @@ struct PanelView: View {
                 onShowDetail: nil  // REMOVED CHEVRON
             )
         } else if config.type == .budgets {
+            let selectedBudget = sessionState.selectedBudgetID.flatMap { selectedID in
+                viewModel.topBudgetSummaries.first { $0.budget.persistentModelID == selectedID }?.budget
+            }
+            let displayCurrency = selectedBudget?.currencyCode ?? preferredCurrency.rawValue
+
             BudgetsWidget(
                 budgets: viewModel.topBudgetSummaries,
-                currencyCode: preferredCurrency.rawValue,
+                currencyCode: displayCurrency,
                 hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
                 selectedBudgetID: sessionState.selectedBudgetID,
                 onSelectBudget: { budget in
                     sessionState.applyBudgetFilters(budget)
                 },
-                onShowMore: { sessionState.selectedMainTab = .planning },
+                onShowMore: { sessionState.navigateToBudgets() },
                 onEditFavorites: { showBudgetFavoritesSettings = true },
                 size: mapBudgetsWidgetSize(config.size)
             )
@@ -846,9 +1044,9 @@ struct PanelView: View {
 
     /// Date range of all transactions (for custom period picker limits)
     private var transactionDateRange: (start: Date, end: Date) {
-        let sortedDates = transactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
+        let dates = transactions.map(\.date)
+        let start = dates.min() ?? Date()
+        let end = dates.max() ?? Date()
         return (start, end)
     }
 
@@ -874,6 +1072,265 @@ struct PanelView: View {
 struct AccountFormSheet: Identifiable {
     let id = UUID()
     let account: Account?
+}
+
+// MARK: - Panel Data Observers Modifier
+
+/// Encapsulates data-related onChange observers to reduce body complexity
+private struct PanelDataObservers: ViewModifier {
+    let accounts: [Account]
+    let transactions: [TransactionItem]
+    let budgets: [Budget]
+    let allSubcategories: [Subcategory]
+    let sessionState: SessionState
+    let viewModel: PanelViewModel
+    @Binding var showFABMenu: Bool
+    @Binding var accountsSortOrderNamesRaw: String
+    @Binding var defaultCurrencyCodeRaw: String
+    let recalculateData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: sessionState.selectedMainTab) { _, _ in
+                if showFABMenu {
+                    showFABMenu = false
+                }
+            }
+            .onChange(of: accounts) { _, _ in
+                let newOrder = viewModel.ensureAccountsSortOrderConsistency(
+                    accounts: accounts,
+                    currentOrderRaw: accountsSortOrderNamesRaw
+                )
+                if newOrder != accountsSortOrderNamesRaw {
+                    accountsSortOrderNamesRaw = newOrder
+                }
+            }
+            .onChange(of: transactions) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: budgets) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: allSubcategories) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in
+                if needsRefresh {
+                    recalculateData()
+                    sessionState.needsBudgetsWidgetRefresh = false
+                }
+            }
+            .onChange(of: defaultCurrencyCodeRaw) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: sessionState.formattingVersion) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: sessionState.dataVersion) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: viewModel.trendType) { _, _ in
+                viewModel.syncToSessionState(sessionState)
+                recalculateData()
+            }
+    }
+}
+
+// MARK: - Panel Sheet Triggers Modifier
+
+/// Encapsulates onChange observers that trigger sheet presentations
+private struct PanelSheetTriggers: ViewModifier {
+    let sessionState: SessionState
+    @Binding var showInbox: Bool
+    @Binding var showImageSelection: Bool
+    @Binding var showVoiceRecording: Bool
+    @Binding var showNewTransaction: Bool
+    @Binding var showUpgradeForVoice: Bool
+    @Binding var showUpgradeForImage: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: sessionState.shouldShowInbox) { _, shouldShow in
+                if shouldShow {
+                    showInbox = true
+                    sessionState.shouldShowInbox = false
+                }
+            }
+            .onAppear {
+                // Catch flags set before view mounted (Share Extension cold launch)
+                if sessionState.hasPendingSharedImage && sessionState.pendingSharedImageURL != nil {
+                    showImageSelection = true
+                }
+            }
+            .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
+                if hasPending && sessionState.pendingSharedImageURL != nil {
+                    showImageSelection = true
+                }
+            }
+            .onChange(of: sessionState.shouldShowVoiceEntry) { _, shouldShow in
+                if shouldShow {
+                    showVoiceRecording = true
+                    sessionState.shouldShowVoiceEntry = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowImageEntry) { _, shouldShow in
+                if shouldShow {
+                    showImageSelection = true
+                    sessionState.shouldShowImageEntry = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowNewTransaction) { _, shouldShow in
+                if shouldShow {
+                    showNewTransaction = true
+                    sessionState.shouldShowNewTransaction = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowUpgradeForVoice) { _, shouldShow in
+                if shouldShow {
+                    showUpgradeForVoice = true
+                    sessionState.shouldShowUpgradeForVoice = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowUpgradeForImage) { _, shouldShow in
+                if shouldShow {
+                    showUpgradeForImage = true
+                    sessionState.shouldShowUpgradeForImage = false
+                }
+            }
+    }
+}
+
+// MARK: - Panel Sheets Modifier
+
+/// Encapsulates sheet presentations to reduce body complexity and avoid type-checker limits
+private struct PanelSheetsModifier: ViewModifier {
+    @Binding var accountFormSheet: AccountFormSheet?
+    @Binding var isPresentingSettings: Bool
+    @Binding var showWidgetPreferences: Bool
+    @Binding var showNewTransaction: Bool
+    @Binding var showVoiceRecording: Bool
+    @Binding var showImageSelection: Bool
+    @Binding var showCustomPeriodPicker: Bool
+    @Binding var showBudgetFavoritesSettings: Bool
+    @Binding var showInbox: Bool
+    @Binding var showUpgradeForVoice: Bool
+    @Binding var showUpgradeForImage: Bool
+    @Binding var showUpgradeForAccounts: Bool
+    @Binding var navigateToInboxAfterVoice: Bool
+    @Binding var switchToImageAfterVoice: Bool
+    @Binding var navigateToInboxAfterImage: Bool
+
+    let existingAccountNames: (Account?) -> [String]
+    let prefillAccountID: PersistentIdentifier?
+    let prefillCategoryID: PersistentIdentifier?
+    let prefillSubcategoryName: String?
+    let transactionDateRange: (start: Date, end: Date)
+    let customDateRange: DateInterval?
+    let viewModel: PanelViewModel
+    let navigateToStatistics: (DetailViewTab) -> Void
+    let recalculateData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: $accountFormSheet) { sheet in
+                AccountFormView(
+                    existingNames: existingAccountNames(sheet.account),
+                    accountToEdit: sheet.account
+                )
+                .onDisappear {
+                    recalculateData()
+                }
+            }
+            .sheet(isPresented: $isPresentingSettings, onDismiss: {
+                recalculateData()
+            }) {
+                ProfileView()
+            }
+            .sheet(isPresented: $showWidgetPreferences) {
+                WidgetPreferencesView(viewModel: viewModel)
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showNewTransaction, onDismiss: {
+                recalculateData()
+            }) {
+                NewTransactionView(
+                    prefillAccountID: prefillAccountID,
+                    prefillCategoryID: prefillCategoryID,
+                    prefillSubcategoryName: prefillSubcategoryName
+                )
+            }
+            .sheet(isPresented: $showVoiceRecording, onDismiss: {
+                handleVoiceRecordingDismiss()
+            }) {
+                VoiceRecordingView(
+                    onSavedToInbox: {
+                        navigateToInboxAfterVoice = true
+                    },
+                    onSwitchToImage: {
+                        switchToImageAfterVoice = true
+                    }
+                )
+            }
+            .sheet(isPresented: $showImageSelection, onDismiss: {
+                handleImageSelectionDismiss()
+            }) {
+                ImageSelectionView(onSavedToInbox: {
+                    navigateToInboxAfterImage = true
+                })
+            }
+            .sheet(isPresented: $showCustomPeriodPicker) {
+                CustomPeriodPickerSheet(
+                    minDate: transactionDateRange.start,
+                    maxDate: transactionDateRange.end,
+                    currentRange: customDateRange
+                )
+            }
+            .sheet(isPresented: $showBudgetFavoritesSettings, onDismiss: {
+                recalculateData()
+            }) {
+                NavigationStack {
+                    BudgetsFavoritesSettingsView()
+                }
+            }
+            .sheet(isPresented: $showInbox, onDismiss: {
+                recalculateData()
+            }) {
+                InboxView(onNavigateToRecords: {
+                    navigateToStatistics(.records)
+                })
+            }
+            .sheet(isPresented: $showUpgradeForVoice) {
+                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showUpgradeForImage) {
+                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showUpgradeForAccounts) {
+                UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            }
+    }
+
+    private func handleVoiceRecordingDismiss() {
+        if navigateToInboxAfterVoice {
+            navigateToInboxAfterVoice = false
+            showInbox = true
+        }
+        if switchToImageAfterVoice {
+            switchToImageAfterVoice = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showImageSelection = true
+            }
+        }
+        recalculateData()
+    }
+
+    private func handleImageSelectionDismiss() {
+        if navigateToInboxAfterImage {
+            navigateToInboxAfterImage = false
+            showInbox = true
+        }
+        recalculateData()
+    }
 }
 
 // MARK: - Panel Observers
@@ -922,7 +1379,7 @@ private struct PanelSessionObservers: ViewModifier {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
                     // Only set expense if we found matching subcategories AND all are from expense categories
-                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.category.isIncome }) {
+                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
                 }

@@ -19,7 +19,7 @@ struct SubcategoryNatureSelectorView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
-                        VStack(spacing: 0) {
+                        VStack(spacing: DS.Spacing.none) {
                             ForEach(Array(SubcategoryNature.allCases.enumerated()), id: \.element) {
                                 index, nature in
                                 if index > 0 {
@@ -31,12 +31,12 @@ struct SubcategoryNatureSelectorView: View {
                                     dismiss()
                                 } label: {
                                     HStack(spacing: DS.Spacing.md) {
-                                        VStack(alignment: .leading, spacing: 2) {
+                                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                                             Text(nature.displayName)
-                                                .font(.body)
+                                                .font(DS.Typography.body)
                                                 .foregroundStyle(.primary)
                                             Text(nature.description)
-                                                .font(.caption)
+                                                .font(DS.Typography.caption)
                                                 .foregroundStyle(.secondary)
                                         }
 
@@ -45,11 +45,11 @@ struct SubcategoryNatureSelectorView: View {
                                         if nature == selectedNature {
                                             Image(systemName: "checkmark")
                                                 .foregroundStyle(Color.electricIndigo)
-                                                .font(.body.weight(.semibold))
+                                                .font(DS.Typography.headline)
                                         }
                                     }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
+                                    .padding(.horizontal, DS.Spacing.lg)
+                                    .padding(.vertical, DS.FormRow.paddingV)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
@@ -66,7 +66,7 @@ struct SubcategoryNatureSelectorView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }

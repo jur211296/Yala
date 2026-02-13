@@ -19,16 +19,16 @@ struct ThemeSettingsView: View {
                 // Header / Intro
                 VStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "paintpalette.fill")
-                        .font(.system(size: 48))
+                        .font(.system(size: DS.Spacing.xxxxl))
                         .foregroundStyle(Color.brandPrimary)
                         .padding(.bottom, DS.Spacing.sm)
 
                     Text(L10n.Profile.appearance)
-                        .font(.title2.bold())
+                        .font(DS.Typography.title2)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     Text(L10n.Settings.themeDescription)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .multilineTextAlignment(.center)
                 }
@@ -40,41 +40,38 @@ struct ThemeSettingsView: View {
                         themeRow(for: theme)
                     }
                 }
-                .padding()
+                .padding(DS.Spacing.lg)
                 .background(Color.yalaCard)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .overlay(
                     RoundedRectangle(cornerRadius: DS.Radius.lg)
-                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                        .stroke(Color.primary.opacity(DS.Card.borderOpacity), lineWidth: 1)
                 )
 
                 Spacer()
             }
-            .padding()
+            .padding(DS.Spacing.lg)
         }
         .navigationTitle(L10n.Settings.theme)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
         }
-        .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
     }
 
     @ViewBuilder
     private func themeRow(for theme: AppTheme) -> some View {
         Button {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {
-                userThemeRaw = theme.rawValue
-            }
+            userThemeRaw = theme.rawValue
         } label: {
             HStack {
                 Text(theme.label)
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
@@ -82,11 +79,11 @@ struct ThemeSettingsView: View {
                 if userThemeRaw == theme.rawValue {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.title3)
+                        .font(DS.Typography.title)
                 } else {
                     Image(systemName: "circle")
                         .foregroundStyle(Color.yalaSecondaryText.opacity(0.3))
-                        .font(.title3)
+                        .font(DS.Typography.title)
                 }
             }
             .padding(.vertical, DS.Spacing.md)
@@ -96,7 +93,6 @@ struct ThemeSettingsView: View {
 
         if theme != AppTheme.allCases.last {
             Divider()
-                .padding(.leading, 0)
         }
     }
 }

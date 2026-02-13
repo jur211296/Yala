@@ -31,7 +31,16 @@ enum TransactionUpdateService {
             predicate: #Predicate { $0.isExchangeRateProvisional == true }
         )
 
-        guard let transactions = try? context.fetch(descriptor), !transactions.isEmpty else {
+        let transactions: [TransactionItem]
+        do {
+            transactions = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("TransactionUpdateService: Error fetching provisional transactions: \(error)")
+            #endif
+            return
+        }
+        guard !transactions.isEmpty else {
             return
         }
 
@@ -86,11 +95,15 @@ enum TransactionUpdateService {
         if updatedCount > 0 {
             do {
                 try context.save()
+                #if DEBUG
                 print(
                     "TransactionUpdateService: Updated \(updatedCount) transactions with official exchange rates"
                 )
+                #endif
             } catch {
+                #if DEBUG
                 print("TransactionUpdateService: Failed to save updates: \(error)")
+                #endif
             }
         }
     }

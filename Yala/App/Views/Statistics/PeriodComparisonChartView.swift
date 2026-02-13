@@ -21,6 +21,7 @@ struct PeriodComparisonChartView: View {
     let chartHeight: CGFloat
     let period: DetailPeriod
     let comparisonMode: ComparisonMode
+    var showPreviousPeriod: Bool = true
 
     @Environment(\.colorScheme) var colorScheme
     @State private var draggingDate: Date?  // For transient drag state
@@ -70,16 +71,28 @@ struct PeriodComparisonChartView: View {
             let primaryLineColor = trendType.color
             let previousLineColor = Color.yalaSecondaryText
 
-            // Previous period line - separate series (using clipped points)
-            ForEach(clippedPreviousPoints) { point in
-                LineMark(
-                    x: .value("Date", point.date),  // Already adjusted in clippedPreviousPoints
-                    y: .value("Previous", point.value),
-                    series: .value("Period", "Previous")
-                )
-                .foregroundStyle(previousLineColor.opacity(0.5))
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
-                .interpolationMethod(.monotone)
+            // Previous period line - separate series (using clipped points) - only show when showPreviousPeriod is true
+            if showPreviousPeriod {
+                ForEach(clippedPreviousPoints) { point in
+                    LineMark(
+                        x: .value("Date", point.date),  // Already adjusted in clippedPreviousPoints
+                        y: .value("Previous", point.value),
+                        series: .value("Period", "Previous")
+                    )
+                    .foregroundStyle(previousLineColor.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
+                    .interpolationMethod(.monotone)
+                }
+
+                // Single point: LineMark is invisible with 1 point, show a dot instead
+                if clippedPreviousPoints.count == 1, let singlePoint = clippedPreviousPoints.first {
+                    PointMark(
+                        x: .value("Date", singlePoint.date),
+                        y: .value("Previous", singlePoint.value)
+                    )
+                    .foregroundStyle(previousLineColor.opacity(0.5))
+                    .symbolSize(64)
+                }
             }
 
             // Current period line - separate series
@@ -92,6 +105,16 @@ struct PeriodComparisonChartView: View {
                 .foregroundStyle(primaryLineColor)
                 .lineStyle(StrokeStyle(lineWidth: 2))
                 .interpolationMethod(.monotone)
+            }
+
+            // Single point: LineMark is invisible with 1 point, show a dot instead
+            if filteredCurrentPoints.count == 1, let singlePoint = filteredCurrentPoints.first {
+                PointMark(
+                    x: .value("Date", singlePoint.date),
+                    y: .value("Current", singlePoint.value)
+                )
+                .foregroundStyle(primaryLineColor)
+                .symbolSize(64)
             }
 
             // Zero baseline (for balance metric)
@@ -146,7 +169,7 @@ struct PeriodComparisonChartView: View {
                                 .fill(trendType.color)
                                 .frame(width: 6, height: 6)
                             Text("\(periodLabel(for: selectedCurrentPoint.date)): \(formattedAmount(selectedCurrentPoint.value))")
-                                .font(.caption.bold())
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.yalaPrimaryText)
                         }
 
@@ -158,7 +181,7 @@ struct PeriodComparisonChartView: View {
                                     .fill(Color.yalaSecondaryText.opacity(0.5))
                                     .frame(width: 6, height: 6)
                                 Text("\(periodLabel(for: originalPrevDate)): \(formattedAmount(previousPoint.value))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                             }
                         }
@@ -188,7 +211,7 @@ struct PeriodComparisonChartView: View {
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -202,7 +225,7 @@ struct PeriodComparisonChartView: View {
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatCurrencyShort(value: doubleValue))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -218,18 +241,20 @@ struct PeriodComparisonChartView: View {
                         .fill(trendType.color)
                         .frame(width: 20, height: 3)
                     Text(L10n.Statistics.currentPeriod)
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color.yalaSecondaryText)
                 }
 
-                // Previous period legend
-                HStack(spacing: DS.Spacing.xs) {
-                    Rectangle()
-                        .fill(Color.yalaSecondaryText.opacity(0.5))
-                        .frame(width: 20, height: 3)
-                    Text(L10n.Statistics.previousPeriod)
-                        .font(.caption2)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                // Previous period legend (only show when showPreviousPeriod is true)
+                if showPreviousPeriod {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Rectangle()
+                            .fill(Color.yalaSecondaryText.opacity(0.5))
+                            .frame(width: 20, height: 3)
+                        Text(L10n.Statistics.previousPeriod)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(Color.yalaSecondaryText)
+                    }
                 }
             }
         }
@@ -363,13 +388,22 @@ struct PeriodComparisonChartView: View {
         }
     }
 
-    /// Calculate smart axis dates for chart X-axis (based on actual data)
+    /// Calculate smart axis dates aligned with actual data points
     private var smartAxisDates: [Date] {
         guard !filteredCurrentPoints.isEmpty else { return [] }
-        guard let firstDate = filteredCurrentPoints.first?.date,
-            let lastDate = filteredCurrentPoints.last?.date
-        else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+
+        let calendarUnit: Calendar.Component = {
+            switch grouping {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
+            }
+        }()
+
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: filteredCurrentPoints.map(\.date),
+            grouping: calendarUnit
+        )
     }
 
     /// Format axis label based on data span
@@ -377,7 +411,17 @@ struct PeriodComparisonChartView: View {
         guard let firstDate = filteredCurrentPoints.first?.date,
             let lastDate = filteredCurrentPoints.last?.date
         else { return "" }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil
+            }
+        }()
+
+        return SmartAxisHelper.formatAxisLabel(
+            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
     }
 
     /// Find closest point to given date

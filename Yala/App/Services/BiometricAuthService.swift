@@ -92,22 +92,22 @@ final class BiometricAuthService {
         return context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
     }
 
-    // MARK: - AppStorage keys
+    // MARK: - Secure Storage (Keychain)
 
     private let enabledKey = "biometricEnabled"
     private let timeoutKey = "biometricLockTimeout"
 
     var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: enabledKey) }
-        set { UserDefaults.standard.set(newValue, forKey: enabledKey) }
+        get { KeychainService.getBool(forKey: enabledKey) }
+        set { KeychainService.setBool(newValue, forKey: enabledKey) }
     }
 
     var lockTimeout: LockTimeout {
         get {
-            let raw = UserDefaults.standard.integer(forKey: timeoutKey)
+            let raw = KeychainService.getInt(forKey: timeoutKey)
             return LockTimeout(rawValue: raw) ?? .immediately
         }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: timeoutKey) }
+        set { KeychainService.setInt(newValue.rawValue, forKey: timeoutKey) }
     }
 
     // MARK: - Lock Management

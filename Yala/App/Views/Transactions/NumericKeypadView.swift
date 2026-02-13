@@ -2,7 +2,7 @@
 //  NumericKeypadView.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftUI
@@ -29,9 +29,9 @@ struct NumericKeypadView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             ForEach(0..<buttons.count, id: \.self) { row in
-                HStack(spacing: 0) {
+                HStack(spacing: DS.Spacing.none) {
                     ForEach(buttons[row]) { button in
                         KeypadButtonView(button: button) {
                             handleTap(button)
@@ -41,6 +41,7 @@ struct NumericKeypadView: View {
             }
         }
         .background(Color.yalaCard.opacity(0.95))
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private func handleTap(_ button: KeypadButton) {
@@ -88,6 +89,14 @@ enum KeypadButton: Identifiable {
         default: return nil
         }
     }
+
+    var accessibilityText: String {
+        switch self {
+        case .digit(let value): return value
+        case .decimal: return Locale.current.decimalSeparator ?? "."
+        case .delete: return "Borrar"
+        }
+    }
 }
 
 // MARK: - Keypad Button View
@@ -96,6 +105,9 @@ struct KeypadButtonView: View {
     let button: KeypadButton
     let action: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .title) private var deleteSize: CGFloat = 22
     @State private var isPressed = false
 
     var body: some View {
@@ -110,11 +122,11 @@ struct KeypadButtonView: View {
 
                 if let text = button.displayText {
                     Text(text)
-                        .font(.system(size: 28, weight: .medium, design: .rounded))
+                        .font(.system(size: digitSize, weight: .medium, design: .rounded))
                         .foregroundStyle(.primary)
                 } else if let systemImage = button.systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.system(size: deleteSize, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -123,15 +135,16 @@ struct KeypadButtonView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(button.accessibilityText)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    withAnimation(.easeInOut(duration: 0.1)) {
+                    dsWithAnimation(reduceMotion) {
                         isPressed = true
                     }
                 }
                 .onEnded { _ in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    dsWithAnimation(reduceMotion) {
                         isPressed = false
                     }
                 }

@@ -12,36 +12,45 @@ import SwiftData
 
 @Model
 final class Budget {
-    // Legacy properties (kept for backwards compatibility)
-    var month: Int
-    var year: Int
-    var currencyCode: String
-    var limitAmount: Double
+    // Stable identifier for tracking (e.g., alert notifications)
+    var id: UUID = UUID()
+
+    // Legacy properties (kept for backwards compatibility) - CloudKit: defaults required
+    var month: Int = 0
+    var year: Int = 0
+    var currencyCode: String = "USD"
+    var limitAmount: Double = 0
+    @Relationship(deleteRule: .nullify, inverse: \Category.budgets)
     var category: Category?
 
-    // New properties for enhanced budget system
-    var name: String
-    var periodType: String  // "weekly", "monthly", "yearly", "unique"
+    // New properties for enhanced budget system - CloudKit: defaults required
+    var name: String = ""
+    var periodType: String = "monthly"  // "weekly", "monthly", "yearly", "unique"
     var startDate: Date?    // For unique budgets
     var endDate: Date?      // For unique budgets
     var currentPeriodStart: Date?  // For tracking which week/month/year
 
-    // Many-to-many relationships (explicit inverse for proper SwiftData handling)
-    @Relationship(inverse: \Account.budgets)
-    var accounts: [Account]
+    // Many-to-many relationships - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify, inverse: \Account.budgets)
+    var accounts: [Account]?
 
-    @Relationship(inverse: \Subcategory.budgets)
-    var subcategories: [Subcategory]
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.budgets)
+    var subcategories: [Subcategory]?
 
-    @Relationship(inverse: \Tag.budgets)
-    var tags: [Tag]
+    @Relationship(deleteRule: .nullify, inverse: \Tag.budgets)
+    var tags: [Tag]?
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
-    var isActive: Bool
-    var createdAt: Date
+    var isActive: Bool = true
+    var createdAt: Date = Date()
     var isFavorite: Bool = false
     var favoriteOrder: Int = 0
 
+    // Alert notifications
+    var alertEnabled: Bool = false
+    var alertThresholds: String? = nil  // CSV: "50,75,100"
+
     init(
+        id: UUID = UUID(),
         month: Int = 0,
         year: Int = 0,
         currencyCode: String,
@@ -59,8 +68,11 @@ final class Budget {
         isActive: Bool = true,
         createdAt: Date = Date(),
         isFavorite: Bool = false,
-        favoriteOrder: Int = 0
+        favoriteOrder: Int = 0,
+        alertEnabled: Bool = false,
+        alertThresholds: String? = nil
     ) {
+        self.id = id
         self.month = month
         self.year = year
         self.currencyCode = currencyCode
@@ -79,5 +91,7 @@ final class Budget {
         self.createdAt = createdAt
         self.isFavorite = isFavorite
         self.favoriteOrder = favoriteOrder
+        self.alertEnabled = alertEnabled
+        self.alertThresholds = alertThresholds
     }
 }

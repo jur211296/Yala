@@ -12,15 +12,28 @@ import SwiftData
 
 @Model
 final class TransactionItem {
-    var date: Date
-    var amount: Double
-    var currencyCode: String
+    // CloudKit: defaults required
+    var date: Date = Date()
+    var amount: Double = 0
+    var currencyCode: String = "USD"
     var note: String?
 
+    @Relationship(deleteRule: .nullify, inverse: \Category.transactions)
     var category: Category?
+
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.transactions)
     var subcategory: Subcategory?
+
+    @Relationship(deleteRule: .nullify, inverse: \Account.transactions)
     var account: Account?
-    var tags: [Tag]
+
+    /// CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var tags: [Tag]?
+
+    /// Inverse relationship: draft that created this transaction (CloudKit requirement)
+    @Relationship(deleteRule: .nullify)
+    var approvedDraft: InboxDraft?
 
     // MARK: - Standardized Currency Data
     /// Tasa de cambio aplicada (Moneda Transacción -> Moneda Preferida)
@@ -39,6 +52,10 @@ final class TransactionItem {
     // MARK: - Balance Adjustment Type
     /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | nil (normal)
     var balanceAdjustmentType: String?
+
+    // MARK: - Metadata
+    /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
+    var createdAt: Date = Date()
 
     /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
     var effectiveNature: SubcategoryNature {

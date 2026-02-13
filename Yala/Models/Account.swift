@@ -12,19 +12,37 @@ import SwiftData
 
 @Model
 final class Account {
-    var name: String
-    var currencyCode: String
-    var colorHex: String
-    var iconName: String
+    // CloudKit: defaults required
+    var name: String = ""
+    var currencyCode: String = "USD"
+    var colorHex: String = "#6366F1"
+    var iconName: String = "creditcard"
 
-    var type: String
+    var type: String = "checking"
     var accountNumber: String?
-    var adjustmentMode: String
-    var excludeFromStatistics: Bool
-    var isArchived: Bool
+    var adjustmentMode: String = "manual"
+    var excludeFromStatistics: Bool = false
+    var isArchived: Bool = false
 
-    /// Relación inversa con budgets (muchos-a-muchos)
-    var budgets: [Budget] = []
+    /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var budgets: [Budget]?
+
+    /// Inverse relationship: transactions linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var transactions: [TransactionItem]?
+
+    /// Inverse relationship: favorite payments linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var favoritePayments: [FavoritePayment]?
+
+    /// Inverse relationship: scheduled payments linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var scheduledPayments: [ScheduledPayment]?
+
+    /// Inverse relationship: inbox drafts linked to this account - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var inboxDrafts: [InboxDraft]?
 
     init(
         name: String,

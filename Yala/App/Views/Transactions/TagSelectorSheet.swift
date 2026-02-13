@@ -2,7 +2,7 @@
 //  TagSelectorSheet.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftData
@@ -14,12 +14,11 @@ import SwiftUI
 struct TagSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var viewModel = TagSelectorViewModel()
 
     @Binding var selectedTags: [Tag]
-
-    @State private var showNewTagSheet: Bool = false
-    @State private var tagCountBeforeSheet: Int = 0
 
     var body: some View {
         NavigationStack {
@@ -28,7 +27,7 @@ struct TagSelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        if activeTags.isEmpty {
+                        if viewModel.isEmpty {
                             emptyState
                         } else {
                             tagsList
@@ -42,7 +41,7 @@ struct TagSelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -51,21 +50,26 @@ struct TagSelectorSheet: View {
                     YalaSaveButton(action: { dismiss() })
                 }
             }
-            .sheet(isPresented: $showNewTagSheet, onDismiss: {
+            .sheet(isPresented: $viewModel.showNewTagSheet, onDismiss: {
                 selectNewlyCreatedTag()
+                viewModel.closeNewTagSheet()
             }) {
-                TagFormView(existingTags: tags)
+                TagFormView(existingTags: viewModel.tags)
             }
         }
         .tint(Color.electricIndigo)
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     /// Selecciona automáticamente la etiqueta recién creada
     private func selectNewlyCreatedTag() {
-        let currentCount = activeTags.count
-        if currentCount > tagCountBeforeSheet {
+        viewModel.loadTags()
+        let currentCount = viewModel.activeTags.count
+        if currentCount > viewModel.tagCountBeforeSheet {
             // Hay una nueva etiqueta, seleccionar la última creada (ordenada por nombre)
-            if let newTag = activeTags.last(where: { tag in
+            if let newTag = viewModel.activeTags.last(where: { tag in
                 !selectedTags.contains { $0.persistentModelID == tag.persistentModelID }
             }) {
                 selectedTags.append(newTag)
@@ -73,28 +77,24 @@ struct TagSelectorSheet: View {
         }
     }
 
-    private var activeTags: [Tag] {
-        tags.filter { $0.isActive }
-    }
-
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "tag.slash")
-                    .font(.system(size: 40))
+                    .font(DS.Typography.amountLarge)
                     .foregroundStyle(.secondary)
 
                 Text(L10n.Empty.noTags)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
 
                 Text(L10n.Tag.createFirstDescription)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 40)
+            .padding(.vertical, DS.Spacing.xxxxl)
 
             // Add tag button even when empty
             addTagButton
@@ -104,8 +104,8 @@ struct TagSelectorSheet: View {
     private var tagsList: some View {
         VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: "") {
-                VStack(spacing: 0) {
-                    ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) {
                         index, tag in
                         if index > 0 {
                             SubsectionDivider()
@@ -125,8 +125,7 @@ struct TagSelectorSheet: View {
     private var addTagButton: some View {
         SectionBox(title: "") {
             Button {
-                tagCountBeforeSheet = activeTags.count
-                showNewTagSheet = true
+                viewModel.prepareForNewTag()
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "plus.circle.fill")
@@ -148,7 +147,7 @@ struct TagSelectorSheet: View {
     }
 
     private func toggleTag(_ tag: Tag) {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+        dsWithAnimation(reduceMotion) {
             if isSelected(tag) {
                 selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
             } else {
@@ -174,19 +173,19 @@ struct TagSelectorRow: View {
                     .frame(width: 28, height: 28)
                     .overlay(
                         Image(systemName: tag.iconName)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                     )
 
                 Text(tag.name)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }

@@ -2,7 +2,7 @@
 //  RecordDateSectionView.swift
 //  Yala
 //
-//  Created by Neto - Records Feature.
+//  Created by Yala - Records Feature.
 //
 
 import SwiftUI
@@ -16,13 +16,13 @@ struct RecordDateSectionView: View {
     var body: some View {
         HStack {
             Text(formattedDate)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
 
             Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 4)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
     /// Format: "12 December" or "12 de diciembre" depending on locale
@@ -37,7 +37,7 @@ struct RecordDateSectionView: View {
 // MARK: - Preview
 
 #Preview {
-    VStack(spacing: 0) {
+    VStack(spacing: DS.Spacing.none) {
         RecordDateSectionView(date: Date())
         RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
         RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!)

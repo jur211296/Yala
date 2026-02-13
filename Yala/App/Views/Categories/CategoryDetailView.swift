@@ -12,14 +12,11 @@ import SwiftUI
 struct CategoryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(EntityDeletionService.self) private var deletionService
 
-    let category: Category
-    let isNewCategory: Bool
+    @State private var viewModel: CategoryDetailViewModel
 
-    @State private var name: String
-    @State private var isVisible: Bool
-    @State private var iconName: String
-    @State private var colorHex: String
+    // UI State
     @State private var showVisibilityInfo: Bool = false
     @State private var showDiscardDialog: Bool = false
     @State private var showMissingSubcategoriesAlert: Bool = false
@@ -37,59 +34,20 @@ struct CategoryDetailView: View {
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
 
-    private let initialName: String
-    private let initialIsVisible: Bool
-    private let initialIconName: String
-    private let initialColorHex: String
-
-    @Query(sort: \Subcategory.sortOrder, order: .forward) private var allSubcategories:
-        [Subcategory]
-
     init(category: Category, isNewCategory: Bool = false) {
-        self.category = category
-        self.isNewCategory = isNewCategory
-        self.initialName = category.name
-        self.initialIsVisible = category.isVisible
-        self.initialIconName = category.iconName ?? "tag"
-        self.initialColorHex = category.colorHex
-        _name = State(initialValue: category.name)
-        _isVisible = State(initialValue: category.isVisible)
-        _iconName = State(initialValue: category.iconName ?? "tag")
-        _colorHex = State(initialValue: category.colorHex)
-    }
-
-    /// Subcategorías filtradas solo para esta categoría, ordenadas alfabéticamente A-Z.
-    private var subcategories: [Subcategory] {
-        allSubcategories
-            .filter { $0.category == category }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private var hasUnsavedChanges: Bool {
-        let trimmedCurrentName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedInitialName = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedCurrentName != trimmedInitialName
-            || isVisible != initialIsVisible
-            || iconName != initialIconName
-            || colorHex != initialColorHex
+        _viewModel = State(initialValue: CategoryDetailViewModel(category: category, isNewCategory: isNewCategory))
     }
 
     private func handleBack() {
-        if isNewCategory {
-            if hasUnsavedChanges {
+        if viewModel.isNewCategory {
+            if viewModel.hasUnsavedChanges {
                 showDiscardDialog = true
             } else {
-                // Categoría nueva sin cambios: descartamos directamente
-                modelContext.delete(category)
-                do {
-                    try modelContext.save()
-                } catch {
-                    print("Category: Error al descartar categoría nueva sin cambios: \(error)")
-                }
+                viewModel.discardNewCategory()
                 dismiss()
             }
         } else {
-            if hasUnsavedChanges {
+            if viewModel.hasUnsavedChanges {
                 showDiscardDialog = true
             } else {
                 dismiss()
@@ -117,24 +75,21 @@ struct CategoryDetailView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     handleBack()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 YalaSaveButton(
                     action: { saveCategory() },
-                    isDisabled: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        || !hasUnsavedChanges
+                    isDisabled: !viewModel.canSave
                 )
             }
         }
         .alert(L10n.Category.hiddenTitle, isPresented: $showVisibilityInfo) {
             Button(L10n.Common.understood, role: .cancel) {}
         } message: {
-            Text(
-                L10n.Category.hiddenDescription
-            )
+            Text(L10n.Category.hiddenDescription)
         }
         .alert(L10n.Category.addOneSubcategory, isPresented: $showMissingSubcategoriesAlert) {
             Button(L10n.Common.understood, role: .cancel) {}
@@ -147,19 +102,12 @@ struct CategoryDetailView: View {
             titleVisibility: .visible
         ) {
             Button(L10n.Alert.discardChanges, role: .destructive) {
-                if isNewCategory {
-                    modelContext.delete(category)
-                    do {
-                        try modelContext.save()
-                    } catch {
-                        print("Category: Error al descartar categoría nueva: \(error)")
-                    }
+                if viewModel.isNewCategory {
+                    viewModel.discardNewCategory()
                 }
                 dismiss()
             }
-            Button(L10n.Alert.keepEditing, role: .cancel) {
-                // El usuario decide seguir editando; no hacemos nada.
-            }
+            Button(L10n.Alert.keepEditing, role: .cancel) {}
         } message: {
             Text(L10n.Alert.discardChanges)
         }
@@ -169,7 +117,9 @@ struct CategoryDetailView: View {
             titleVisibility: .visible
         ) {
             Button(L10n.Category.delete, role: .destructive) {
-                deleteCategory()
+                if viewModel.deleteCategory() {
+                    dismiss()
+                }
             }
             Button(L10n.Action.cancel, role: .cancel) {}
         } message: {
@@ -190,7 +140,8 @@ struct CategoryDetailView: View {
         ) {
             Button(L10n.Subcategory.delete, role: .destructive) {
                 if let subcategory = subcategoryToDelete {
-                    deleteSubcategory(subcategory)
+                    _ = viewModel.deleteSubcategory(subcategory)
+                    subcategoryToDelete = nil
                 }
             }
             Button(L10n.Action.cancel, role: .cancel) {
@@ -203,7 +154,7 @@ struct CategoryDetailView: View {
             SubcategoryTransferSheet(
                 subcategoryToDelete: subcategory,
                 onComplete: {
-                    deleteSubcategory(subcategory)
+                    _ = viewModel.deleteSubcategory(subcategory)
                     subcategoryForTransfer = nil
                 }
             )
@@ -214,8 +165,8 @@ struct CategoryDetailView: View {
             if isPresenting { dismissKeyboard() }
         }
         .onAppear {
-            // Auto-focus name field for new categories
-            if isNewCategory {
+            viewModel.setContext(modelContext, deletionService: deletionService)
+            if viewModel.isNewCategory {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     isNameFieldFocused = true
                 }
@@ -231,14 +182,14 @@ struct CategoryDetailView: View {
             } label: {
                 ZStack(alignment: .bottomTrailing) {
                     Circle()
-                        .fill(Color(hex: colorHex))
+                        .fill(Color(hex: viewModel.colorHex))
                         .frame(width: 70, height: 70)
                         .overlay(
-                            Image(systemName: iconName)
-                                .font(.title2)
+                            Image(systemName: viewModel.iconName)
+                                .font(DS.Typography.title)
                                 .foregroundStyle(.white)
                         )
-                        .shadow(color: Color(hex: colorHex).opacity(0.3), radius: 6, x: 0, y: 3)
+                        .shadow(color: Color(hex: viewModel.colorHex).opacity(0.3), radius: 6, x: 0, y: 3)
 
                     // Pencil edit indicator
                     Circle()
@@ -246,7 +197,7 @@ struct CategoryDetailView: View {
                         .frame(width: 24, height: 24)
                         .overlay(
                             Image(systemName: "pencil")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.electricIndigo)
                         )
                         .overlay(
@@ -258,15 +209,15 @@ struct CategoryDetailView: View {
             }
             .buttonStyle(.plain)
 
-            Text(name.isEmpty ? L10n.Category.newCategory : name)
-                .font(.headline)
+            Text(viewModel.displayName)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .sheet(isPresented: $showIconColorPicker) {
             IconColorPickerSheet(
-                selectedIconName: $iconName,
-                selectedColorHex: $colorHex
+                selectedIconName: $viewModel.iconName,
+                selectedColorHex: $viewModel.colorHex
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
@@ -277,11 +228,11 @@ struct CategoryDetailView: View {
     private var detailsSection: some View {
         VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: L10n.Category.details) {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
-                        TextField(L10n.Category.namePlaceholder, text: $name)
+                        TextField(L10n.Category.namePlaceholder, text: $viewModel.name)
                             .textContentType(.name)
                             .focused($isNameFieldFocused)
                     }
@@ -289,12 +240,12 @@ struct CategoryDetailView: View {
 
                     SubsectionDivider()
 
-                    Toggle(isOn: $isVisible) {
+                    Toggle(isOn: $viewModel.isVisible) {
                         Text(L10n.Category.show)
                     }
                     .tint(Color.electricIndigo)
                     .padding()
-                    .onChange(of: isVisible) { _, newValue in
+                    .onChange(of: viewModel.isVisible) { _, newValue in
                         if newValue == false {
                             showVisibilityInfo = true
                         }
@@ -303,12 +254,10 @@ struct CategoryDetailView: View {
             }
 
             // Delete button (only for user-created categories, not system categories)
-            // System categories: Ingresos (isIncome) and Otros (contains transfers/adjustments)
-            let isSystemCategory = category.isIncome || category.name == "Otros"
-            if !isNewCategory && !isSystemCategory {
+            if !viewModel.isNewCategory && !viewModel.isSystemCategory {
                 SectionBox(title: "") {
                     Button {
-                        transactionCount = countTransactionsInCategory()
+                        transactionCount = viewModel.countTransactionsInCategory()
                         if transactionCount > 0 {
                             showCannotDeleteAlert = true
                         } else {
@@ -332,8 +281,8 @@ struct CategoryDetailView: View {
 
     // Sección de subcategorías
     private var subcategoriesSection: some View {
-        let visibles = subcategories.filter { $0.isVisible }
-        let ocultas = subcategories.filter { !$0.isVisible }
+        let visibles = viewModel.visibleSubcategories
+        let ocultas = viewModel.hiddenSubcategories
 
         return VStack(spacing: DS.Spacing.lg) {
             // Active subcategories section
@@ -341,7 +290,7 @@ struct CategoryDetailView: View {
                 // Header with Edit/Done button
                 HStack {
                     Text(L10n.Category.activeSubcategories)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.primary.opacity(0.6))
                     Spacer()
                     if !visibles.isEmpty || !ocultas.isEmpty {
@@ -349,46 +298,45 @@ struct CategoryDetailView: View {
                             isEditingSubcategories.toggle()
                         } label: {
                             Text(isEditingSubcategories ? L10n.Action.done : L10n.Action.edit)
-                                .font(.subheadline)
+                                .font(DS.Typography.subheadline)
                                 .foregroundStyle(Color.electricIndigo)
                         }
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xs)
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     if visibles.isEmpty && ocultas.isEmpty {
                         Text(L10n.Category.noSubcategoriesYet)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
                             .padding()
                     } else if !visibles.isEmpty {
-                        VStack(spacing: 0) {
-                            ForEach(Array(visibles.enumerated()), id: \.element.id) {
-                                index, subcategory in
-                                HStack(spacing: 0) {
-                                    // Hide delete button for system subcategories
+                        VStack(spacing: DS.Spacing.none) {
+                            ForEach(Array(visibles.enumerated()), id: \.element.id) { index, subcategory in
+                                HStack(spacing: DS.Spacing.none) {
                                     if isEditingSubcategories && !subcategory.isSystemSubcategory {
                                         Button {
                                             handleSubcategoryDelete(subcategory)
                                         } label: {
                                             Image(systemName: "minus.circle.fill")
-                                                .font(.title2)
+                                                .font(DS.Typography.title)
                                                 .foregroundStyle(.red)
                                         }
+                                        .accessibilityLabel("Eliminar subcategoría")
                                         .padding(.leading, DS.Spacing.lg)
                                         .padding(.trailing, DS.Spacing.sm)
                                     }
 
                                     NavigationLink {
                                         SubcategoryDetailView(
-                                            parentCategory: category, subcategoryToEdit: subcategory)
+                                            parentCategory: viewModel.category, subcategoryToEdit: subcategory)
                                     } label: {
                                         HStack {
                                             subcategoryRow(subcategory)
                                             Image(systemName: "chevron.right")
-                                                .font(.system(size: 14, weight: .medium))
+                                                .font(DS.Typography.labelSmall)
                                                 .foregroundStyle(.tertiary)
                                         }
                                     }
@@ -410,7 +358,7 @@ struct CategoryDetailView: View {
                         .padding(.horizontal, DS.Spacing.lg)
 
                     NavigationLink {
-                        SubcategoryDetailView(parentCategory: category)
+                        SubcategoryDetailView(parentCategory: viewModel.category)
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "plus.circle.fill")
@@ -430,7 +378,7 @@ struct CategoryDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                        .stroke(DS.Colors.borderDark, lineWidth: 0.8)
                 )
                 .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
             }
@@ -439,35 +387,34 @@ struct CategoryDetailView: View {
             if !ocultas.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(L10n.Category.hiddenSubcategories)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.primary.opacity(0.6))
                         .padding(.leading, DS.Spacing.xs)
 
-                    VStack(spacing: 0) {
-                        ForEach(Array(ocultas.enumerated()), id: \.element.id) {
-                            index, subcategory in
-                            HStack(spacing: 0) {
-                                // Hide delete button for system subcategories
+                    VStack(spacing: DS.Spacing.none) {
+                        ForEach(Array(ocultas.enumerated()), id: \.element.id) { index, subcategory in
+                            HStack(spacing: DS.Spacing.none) {
                                 if isEditingSubcategories && !subcategory.isSystemSubcategory {
                                     Button {
                                         handleSubcategoryDelete(subcategory)
                                     } label: {
                                         Image(systemName: "minus.circle.fill")
-                                            .font(.title2)
+                                            .font(DS.Typography.title)
                                             .foregroundStyle(.red)
                                     }
+                                    .accessibilityLabel("Eliminar subcategoría")
                                     .padding(.leading, DS.Spacing.lg)
                                     .padding(.trailing, DS.Spacing.sm)
                                 }
 
                                 NavigationLink {
                                     SubcategoryDetailView(
-                                        parentCategory: category, subcategoryToEdit: subcategory)
+                                        parentCategory: viewModel.category, subcategoryToEdit: subcategory)
                                 } label: {
                                     HStack {
                                         subcategoryRow(subcategory)
                                         Image(systemName: "chevron.right")
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(DS.Typography.labelSmall)
                                             .foregroundStyle(.tertiary)
                                     }
                                 }
@@ -490,7 +437,7 @@ struct CategoryDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                            .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                            .stroke(DS.Colors.borderDark, lineWidth: 0.8)
                     )
                     .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
                 }
@@ -502,16 +449,16 @@ struct CategoryDetailView: View {
     private func subcategoryRow(_ subcategory: Subcategory) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Circle()
-                .fill(Color(hex: colorHex))
+                .fill(Color(hex: viewModel.colorHex))
                 .frame(width: 36, height: 36)
                 .overlay(
-                    Image(systemName: subcategory.iconName ?? category.iconName ?? "tag")
-                        .font(.subheadline)
+                    Image(systemName: subcategory.iconName ?? viewModel.category.iconName ?? "tag")
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 )
 
             Text(subcategory.name)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -519,97 +466,25 @@ struct CategoryDetailView: View {
         .contentShape(Rectangle())
     }
 
-    /// Counts transactions linked to any subcategory of this category
-    private func countTransactionsInCategory() -> Int {
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { transaction in
-                guard let subcategory = transaction.subcategory else { return false }
-                return subcategory.category == category
-            }.count
-        } catch {
-            print("Category: Error counting transactions for category: \(error)")
-            return 0
-        }
-    }
-
-    private func deleteCategory() {
-        // Delete subcategories first to avoid SwiftUI @Query conflicts
-        for subcategory in subcategories {
-            modelContext.delete(subcategory)
-        }
-        modelContext.delete(category)
-        do {
-            try modelContext.save()
-            modelContext.processPendingChanges()
-        } catch {
-            print("Category: Error deleting category: \(error)")
-        }
-        dismiss()
-    }
+    // MARK: - Actions
 
     private func saveCategory() {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { return }
-
-        if isNewCategory && subcategories.isEmpty {
+        if viewModel.isNewCategory && viewModel.subcategories.isEmpty {
             showMissingSubcategoriesAlert = true
             return
         }
-
-        category.name = trimmedName
-        category.isVisible = isVisible
-        category.iconName = iconName
-        category.colorHex = colorHex
-
-        // Enforce color inheritance for all subcategories
-        for subcategory in category.subcategories {
-            subcategory.colorHex = colorHex
+        if viewModel.saveCategory() {
+            dismiss()
         }
-
-        do {
-            try modelContext.save()
-        } catch {
-            print("Category: Error al guardar categoría: \(error)")
-        }
-
-        dismiss()
     }
 
-    // MARK: - Subcategory Deletion
-
     private func handleSubcategoryDelete(_ subcategory: Subcategory) {
-        let count = countTransactionsForSubcategory(subcategory)
+        let count = viewModel.countTransactionsForSubcategory(subcategory)
         if count > 0 {
             subcategoryForTransfer = subcategory
         } else {
             subcategoryToDelete = subcategory
             showSubcategoryDeleteConfirmation = true
-        }
-    }
-
-    private func deleteSubcategory(_ subcategory: Subcategory) {
-        modelContext.delete(subcategory)
-        do {
-            try modelContext.save()
-            modelContext.processPendingChanges()
-        } catch {
-            print("Category: Error deleting subcategory: \(error)")
-        }
-        subcategoryToDelete = nil
-        subcategoryForTransfer = nil
-    }
-
-    private func countTransactionsForSubcategory(_ subcategory: Subcategory) -> Int {
-        let subcategoryID = subcategory.persistentModelID
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
-        } catch {
-            print("Category: Error counting transactions: \(error)")
-            return 0
         }
     }
 }

@@ -5,6 +5,8 @@
 //  Created by Yala Refactoring.
 //
 
+import AVFoundation
+import Photos
 import StoreKit
 import SwiftData
 import SwiftUI
@@ -17,14 +19,21 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
+
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40
+
+    @State private var viewModel = ProfileViewModel()
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
-
-    @Query private var allTransactions: [TransactionItem]
-    @Query private var accounts: [Account]
-    @Query private var categories: [Category]
+    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+    @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
+    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("userTheme") private var userTheme: Int = AppTheme.system.rawValue
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -33,6 +42,35 @@ struct ProfileView: View {
     // Import result - shown as alert after ImportIntroSheet dismisses
     @State private var importResult: ImportResult?
     @State private var showImportResult: Bool = false
+
+    // Permission denied alert
+    @State private var showPermissionDeniedAlert: Bool = false
+    @State private var permissionDeniedType: String = ""
+
+    // Subscription state
+    @State private var showSubscriptionSheet = false
+    @State private var showUpgradeForVoice = false
+    @State private var showUpgradeForImage = false
+
+    private var isProUser: Bool {
+        FeatureGateService.shared.isProUser
+    }
+
+    private var isVoiceLocked: Bool {
+        !FeatureGateService.shared.canAccess(.voiceInput)
+    }
+
+    private var isImageLocked: Bool {
+        !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
+    private var isInTrial: Bool {
+        StoreKitManager.shared.isInTrial
+    }
+
+    private var trialDaysRemaining: Int {
+        StoreKitManager.shared.trialDaysRemaining
+    }
 
     enum ProfileSheet: Identifiable {
         case personalDetails
@@ -63,6 +101,7 @@ struct ProfileView: View {
         case tips
         case faq
         case placeholder(String)
+        case iCloudSync
     }
 
     var body: some View {
@@ -83,11 +122,16 @@ struct ProfileView: View {
                         ayudaSection
                         legalSection
 
+                        // Developer section (only in Dev build)
+                        if FeatureGateService.isDevBuild {
+                            developerSection
+                        }
+
                         // Version info
                         Text(L10n.Settings.versionInfo)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.tertiary)
-                            .padding(.top, 8)
+                            .padding(.top, DS.Spacing.sm)
                     }
                     .padding(.vertical, DS.Spacing.xxl)
                 }
@@ -96,7 +140,7 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -107,8 +151,8 @@ struct ProfileView: View {
                     PersonalDetailsView()
                 case .importIntro:
                     ImportIntroSheet(
-                        accounts: accounts,
-                        categories: categories,
+                        accounts: viewModel.accounts,
+                        categories: viewModel.categories,
                         onImportCompleted: { result in
                             // Store result and show alert after sheet animation completes
                             activeSheet = nil
@@ -133,6 +177,23 @@ struct ProfileView: View {
             } message: { result in
                 Text(result.message)
             }
+            .alert(
+                permissionDeniedType,
+                isPresented: $showPermissionDeniedAlert
+            ) {
+                Button(L10n.Voice.openSettings) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                if permissionDeniedType == L10n.Settings.voiceInputEnabled {
+                    Text(L10n.Voice.errorMicPermission)
+                } else {
+                    Text(L10n.Image.errorPhotoPermission)
+                }
+            }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
                 case .accounts:
@@ -154,13 +215,13 @@ struct ProfileView: View {
                 case .subscription:
                     SubscriptionView()
                 case .tips:
-                    TipsAndTricksView()
+                    TutorialsListView()
                 case .faq:
                     FAQView()
                 case .placeholder(let title):
                     SettingsPlaceholderView(title: title)
                 case .notifications:
-                    SettingsPlaceholderView(title: L10n.Settings.notifications)
+                    NotificationsSettingsView()
                 case .favorites:
                     FavoritesListView(mode: .manage)
                 case .budgetsFavorites:
@@ -171,13 +232,19 @@ struct ProfileView: View {
                     UserDataResetView(onUserDataWiped: {
                         dismiss()
                     })
+                case .iCloudSync:
+                    iCloudSyncSettingsView()
                 }
+            }
+            .onChange(of: userTheme) { _, _ in
+                // When theme changes, dismiss ProfileView so it reopens with correct theme
+                dismiss()
+            }
+            .onAppear {
+                viewModel.setContext(modelContext)
             }
         }
     }
-
-    // User Theme for dynamic updates
-    @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
     // Default Period Preference
     @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
@@ -187,55 +254,143 @@ struct ProfileView: View {
 
     private var profileHeader: some View {
         VStack(spacing: DS.Spacing.md) {
-            ZStack {
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 4
-                    )
-                    .frame(width: 100, height: 100)
-
-                if let imageData = userProfileImageData,
-                    let uiImage = UIImage(data: imageData)
-                {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 90, height: 90)
-                        .clipShape(Circle())
-                } else {
+            // Avatar - tappable to edit profile
+            Button {
+                activeSheet = .personalDetails
+            } label: {
+                ZStack {
+                    // Pro users get golden gradient ring
                     Circle()
-                        .fill(Color.electricIndigo.opacity(0.1))
-                        .frame(width: 90, height: 90)
+                        .stroke(
+                            LinearGradient(
+                                colors: isProUser
+                                    ? DS.Gradients.proBadge
+                                    : [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 4
+                        )
+                        .frame(width: 100, height: 100)
 
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 40))
-                        .foregroundStyle(Color.electricIndigo)
+                    if let imageData = userProfileImageData,
+                        let uiImage = UIImage(data: imageData)
+                    {
+                        // User photo
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 90, height: 90)
+                            .clipShape(Circle())
+                    } else {
+                        // Custom icon or default
+                        Circle()
+                            .fill(Color.electricIndigo.opacity(0.1))
+                            .frame(width: 90, height: 90)
+
+                        Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
+                            .font(.system(size: avatarIconSize))
+                            .foregroundStyle(Color.electricIndigo)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    }
+
+                    // Spark badge for Pro users
+                    if isProUser {
+                        ZStack {
+                            Circle()
+                                .fill(Color.yalaCard)
+                            YalaSpark(size: .medium, animated: true)
+                        }
+                        .frame(width: 28, height: 28)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .offset(x: 38, y: -38)
+                    }
                 }
             }
+            .buttonStyle(.plain)
 
+            // Name
             Text(userName)
-                .font(.title2.weight(.bold))
+                .font(DS.Typography.title)
                 .foregroundStyle(.primary)
+
+            // Pro badge with cyan spark (only here, so it stands out)
+            if isProUser {
+                proBadgeWithCyanSpark
+            }
 
             Button(L10n.Profile.edit) {
                 activeSheet = .personalDetails
             }
-            .font(.subheadline.weight(.medium))
+            .font(DS.Typography.label)
             .foregroundStyle(Color.electricIndigo)
+
+            // Trial banner
+            if isInTrial {
+                TrialBanner(daysRemaining: trialDaysRemaining) {
+                    showSubscriptionSheet = true
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+            }
         }
-        .padding(.top, 8)
+        .padding(.top, DS.Spacing.sm)
+        .padding(.bottom, isProUser ? DS.Spacing.lg : 0)
+        .background(
+            Group {
+                if isProUser {
+                    LinearGradient(
+                        colors: [Color.yellow.opacity(0.03), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+            }
+        )
+        .sheet(isPresented: $showSubscriptionSheet) {
+            NavigationStack {
+                SubscriptionView()
+            }
+        }
+        .sheet(isPresented: $showUpgradeForVoice) {
+            UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+        }
+        .sheet(isPresented: $showUpgradeForImage) {
+            UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+        }
+    }
+
+    // MARK: - Pro Badge with Cyan Spark
+
+    /// Custom Pro badge with cyan spark so it stands out against the gold background
+    private var proBadgeWithCyanSpark: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            // Cyan spark (instead of gold)
+            YalaSparkShape()
+                .fill(Color.cyan)
+                .frame(width: 12, height: 12)
+
+            Text("PRO")
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .background(
+            LinearGradient(
+                colors: DS.Gradients.proBadge,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(Capsule())
     }
 
     // MARK: - Sections
 
     private var organizacionSection: some View {
         SectionBox(title: L10n.Settings.organization) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: .green,
                     destination: .accounts)
@@ -269,18 +424,14 @@ struct ProfileView: View {
 
     private var preferenciasSection: some View {
         SectionBox(title: L10n.Settings.preferences) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                     iconColor: .indigo, destination: .personalization)
                 SubsectionDivider()
                 profileRow(
-                    icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
-                    destination: .themes)
-                SubsectionDivider()
-                profileRow(
-                    icon: "app.fill", title: L10n.Settings.appIcon,
-                    iconColor: .blue, destination: .appIcon)
+                    icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
+                    destination: .notifications)
                 SubsectionDivider()
                 profileRow(
                     icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
@@ -288,16 +439,201 @@ struct ProfileView: View {
                 )
                 SubsectionDivider()
                 profileRow(
-                    icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
-                    destination: .notifications)
+                    icon: "app.fill", title: L10n.Settings.appIcon,
+                    iconColor: .blue, destination: .appIcon)
+                SubsectionDivider()
+                profileRow(
+                    icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
+                    destination: .themes)
+                SubsectionDivider()
+                voiceInputRow
+                SubsectionDivider()
+                imageInputRow
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
     }
 
+    private var voiceInputRow: some View {
+        VStack(spacing: DS.Spacing.none) {
+            // Toggle row
+            Button {
+                if isVoiceLocked {
+                    showUpgradeForVoice = true
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    if colorfulIcons {
+                        Image(systemName: "waveform.badge.mic")
+                            .font(DS.Typography.subheadline).fontWeight(.medium)
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.hotPink)
+                            )
+                            .opacity(isVoiceLocked ? 0.5 : 1)
+                    } else {
+                        Image(systemName: "waveform.badge.mic")
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28)
+                            .opacity(isVoiceLocked ? 0.5 : 1)
+                    }
+
+                    Text(L10n.Settings.voiceInputEnabled)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(isVoiceLocked ? .secondary : .primary)
+
+                    if isVoiceLocked {
+                        ProBadge(size: .small)
+                    }
+
+                    Spacer()
+
+                    if isVoiceLocked {
+                        Image(systemName: "lock.fill")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Toggle("", isOn: $voiceInputEnabled)
+                            .labelsHidden()
+                            .tint(Color.brandPrimary)
+                            .onChange(of: voiceInputEnabled) { _, isEnabled in
+                                guard isEnabled else { return }
+                                let status = AVAudioApplication.shared.recordPermission
+                                if status == .undetermined {
+                                    AVAudioApplication.requestRecordPermission { _ in }
+                                } else if status == .denied {
+                                    permissionDeniedType = L10n.Settings.voiceInputEnabled
+                                    showPermissionDeniedAlert = true
+                                }
+                            }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Language selector (only visible when enabled and not locked)
+            if voiceInputEnabled && !isVoiceLocked {
+                HStack(spacing: DS.Spacing.md) {
+                    // Empty space to align with icon
+                    Color.clear
+                        .frame(width: 28, height: 28)
+
+                    Text(L10n.Settings.voiceLanguage)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Menu {
+                        ForEach(VoiceLanguage.allCases) { language in
+                            Button {
+                                voiceLanguageRaw = language.rawValue
+                            } label: {
+                                HStack {
+                                    Text(language.displayName)
+                                    if voiceLanguageRaw == language.rawValue {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(VoiceLanguage(rawValue: voiceLanguageRaw)?.displayName ?? L10n.VoiceLanguage.system)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(Color.brandPrimary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(DS.Typography.captionSmall.weight(.medium))
+                                .foregroundStyle(Color.brandPrimary)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+        }
+    }
+
+    private var imageInputRow: some View {
+        Button {
+            if isImageLocked {
+                showUpgradeForImage = true
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                if colorfulIcons {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(DS.Typography.subheadline).fontWeight(.medium)
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.teal)
+                        )
+                        .opacity(isImageLocked ? 0.5 : 1)
+                } else {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                        .frame(width: 28)
+                        .opacity(isImageLocked ? 0.5 : 1)
+                }
+
+                Text(L10n.Settings.imageInputEnabled)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(isImageLocked ? .secondary : .primary)
+
+                if isImageLocked {
+                    ProBadge(size: .small)
+                }
+
+                Spacer()
+
+                if isImageLocked {
+                    Image(systemName: "lock.fill")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Toggle("", isOn: $imageInputEnabled)
+                        .labelsHidden()
+                        .tint(Color.brandPrimary)
+                        .onChange(of: imageInputEnabled) { _, isEnabled in
+                            guard isEnabled else { return }
+                            let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                            if status == .notDetermined {
+                                PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
+                            } else if status == .denied || status == .restricted {
+                                permissionDeniedType = L10n.Settings.imageInputEnabled
+                                showPermissionDeniedAlert = true
+                            }
+                        }
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
+                profileRow(
+                    icon: "icloud.fill",
+                    title: L10n.iCloud.title,
+                    iconColor: .blue,
+                    destination: .iCloudSync
+                )
+
+                SubsectionDivider()
+
                 Button {
                     activeSheet = .importIntro
                 } label: {
@@ -316,9 +652,10 @@ struct ProfileView: View {
                         icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
                         iconColor: .mint
                     )
-                    .opacity(allTransactions.isEmpty ? 0.5 : 1.0)
+                    .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
                 }
-                .disabled(allTransactions.isEmpty)
+                .accessibilityHint(!viewModel.hasTransactions ? "No hay transacciones para exportar" : "")
+                .disabled(!viewModel.hasTransactions)
                 .buttonStyle(.plain)
 
                 SubsectionDivider()
@@ -335,7 +672,7 @@ struct ProfileView: View {
 
     private var seguridadSection: some View {
         SectionBox(title: L10n.Settings.security) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: BiometricAuthService.shared.biometricType.icon,
                     title: BiometricAuthService.shared.biometricType.displayName,
@@ -372,10 +709,10 @@ struct ProfileView: View {
 
     private var ayudaSection: some View {
         SectionBox(title: L10n.Settings.help) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 profileRow(
-                    icon: "lightbulb.fill", title: L10n.Settings.tips,
-                    iconColor: .yellow, destination: .tips)
+                    icon: "book.fill", title: L10n.Settings.tutorials,
+                    iconColor: .electricIndigo, destination: .tips)
                 SubsectionDivider()
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,
@@ -398,7 +735,7 @@ struct ProfileView: View {
 
     private var legalSection: some View {
         SectionBox(title: L10n.Settings.legal) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 Button {
                     if let url = URL(string: "https://yala-app.pe/privacy") {
                         openURL(url)
@@ -420,6 +757,41 @@ struct ProfileView: View {
                         iconColor: .gray)
                 }
                 .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Developer Section (Dev Build Only)
+
+    @ViewBuilder
+    private var developerSection: some View {
+        SectionBox(title: "Developer") {
+            VStack(spacing: DS.Spacing.none) {
+                HStack {
+                    YalaSpark(size: .medium, animated: false)
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text("Simular Pro")
+                            .font(DS.Typography.body)
+                            .foregroundStyle(Color.yalaPrimaryText)
+                        Text("Activar para probar features Pro")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: Binding(
+                        get: { FeatureGateService.shared.devSimulatePro },
+                        set: { FeatureGateService.shared.devSimulatePro = $0 }
+                    ))
+                    .labelsHidden()
+                    .tint(Color.brandPrimary)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -451,7 +823,7 @@ struct ProfileView: View {
             if colorfulIcons {
                 // iOS-style colored icon with rounded square background
                 Image(systemName: icon)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(DS.Typography.subheadline).fontWeight(.medium)
                     .foregroundStyle(.white)
                     .frame(width: 28, height: 28)
                     .background(
@@ -461,19 +833,19 @@ struct ProfileView: View {
             } else {
                 // Plain icon without background
                 Image(systemName: icon)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                     .frame(width: 28)
             }
 
             Text(title)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(textColor)
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .medium))
+                .font(DS.Typography.labelSmall.weight(.medium))
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, DS.Spacing.lg)

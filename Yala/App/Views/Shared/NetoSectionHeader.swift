@@ -41,13 +41,14 @@ struct YalaSectionHeader: View {
                     HStack(spacing: DS.Spacing.xs) {
                         Text(actionTitle)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(DS.Typography.labelSmall)
                     }
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(Color.electricIndigo)
                 }
             }
         }
+        .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -81,11 +82,12 @@ struct YalaSectionHeaderCompact: View {
 
             Spacer()
         }
+        .accessibilityAddTraits(.isHeader)
     }
 }
 
 #Preview {
-    VStack(alignment: .leading, spacing: 30) {
+    VStack(alignment: .leading, spacing: 30) { // DS: intentional non-token value
         // Standard header
         YalaSectionHeader("Categorías", actionTitle: "Ver todas") { }
 

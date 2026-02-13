@@ -2,18 +2,32 @@
 //  NewTransactionViewModel.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import Foundation
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 // MARK: - New Transaction ViewModel
 
 /// ViewModel para el formulario de nuevo registro de transacción
+@MainActor
 @Observable
 final class NewTransactionViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Loaded Data
+
+    private(set) var accounts: [Account] = []
+    private(set) var categories: [Category] = []
+    private(set) var tags: [Tag] = []
+    private(set) var subcategories: [Subcategory] = []
+    private(set) var transactions: [TransactionItem] = []
 
     // MARK: - Form State
 
@@ -90,6 +104,7 @@ final class NewTransactionViewModel {
     // MARK: - Validation State
 
     var showValidationErrors: Bool = false
+    var showFutureDateAlert: Bool = false
     var isSaving: Bool = false
 
     // MARK: - Computed Properties
@@ -142,6 +157,78 @@ final class NewTransactionViewModel {
         return currencyCode
     }
 
+    // MARK: - Context Setup
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadData()
+    }
+
+    func loadData() {
+        guard let context = modelContext else { return }
+
+        // Load accounts
+        let accountsDescriptor = FetchDescriptor<Account>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            accounts = try context.fetch(accountsDescriptor)
+        } catch {
+            #if DEBUG
+            print("NewTransactionViewModel: Error loading accounts: \(error)")
+            #endif
+        }
+
+        // Load categories
+        let categoriesDescriptor = FetchDescriptor<Category>(
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
+        do {
+            categories = try context.fetch(categoriesDescriptor)
+        } catch {
+            #if DEBUG
+            print("NewTransactionViewModel: Error loading categories: \(error)")
+            #endif
+        }
+
+        // Load tags
+        let tagsDescriptor = FetchDescriptor<Tag>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            tags = try context.fetch(tagsDescriptor)
+        } catch {
+            #if DEBUG
+            print("NewTransactionViewModel: Error loading tags: \(error)")
+            #endif
+        }
+
+        // Load visible subcategories
+        let subcategoriesDescriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate<Subcategory> { $0.isVisible },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            subcategories = try context.fetch(subcategoriesDescriptor)
+        } catch {
+            #if DEBUG
+            print("NewTransactionViewModel: Error loading subcategories: \(error)")
+            #endif
+        }
+
+        // Load transactions (for recent suggestions)
+        let transactionsDescriptor = FetchDescriptor<TransactionItem>(
+            sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        do {
+            transactions = try context.fetch(transactionsDescriptor)
+        } catch {
+            #if DEBUG
+            print("NewTransactionViewModel: Error loading transactions: \(error)")
+            #endif
+        }
+    }
+
     // MARK: - Validation
 
     var isAmountValid: Bool {
@@ -165,20 +252,23 @@ final class NewTransactionViewModel {
 
     /// Prepara el estado para una transferencia, seleccionando cuentas por defecto si es necesario
     func prepareForTransfer(allAccounts: [Account]) {
+        // Only use non-archived accounts for auto-selection
+        let eligible = allAccounts.filter { !$0.isArchived }
+
         // Ensure source account is set (use selected if available)
         if sourceAccount == nil {
             sourceAccount = selectedAccount
         }
 
-        // If still nil, try to pick first account
+        // If still nil, try to pick first eligible account
         if sourceAccount == nil {
-            sourceAccount = allAccounts.first
+            sourceAccount = eligible.first
         }
 
         // Auto-select destination if nil
         if destinationAccount == nil, let source = sourceAccount {
-            // Pick first account that is not source
-            destinationAccount = allAccounts.first {
+            // Pick first eligible account that is not source
+            destinationAccount = eligible.first {
                 $0.persistentModelID != source.persistentModelID
             }
         }
@@ -252,7 +342,7 @@ final class NewTransactionViewModel {
         {
             selectedSubcategory = subcategory
             // Ajustar tipo según la categoría
-            if subcategory.category.isIncome {
+            if subcategory.safeCategory.isIncome {
                 transactionType = .income
             } else {
                 transactionType = .expense
@@ -316,13 +406,15 @@ final class NewTransactionViewModel {
     }
 
     /// Carga el tipo de cambio del servicio
-    /// Carga el tipo de cambio del servicio
+    /// Carga el tipo de cambio del servicio (solo para transfers entre cuentas de diferente divisa)
     func loadExchangeRate(context: ModelContext) async {
+        // Only load exchange rate for transfers between accounts with different currencies
+        // For regular transactions, the rate is set during prefill and should not be reset here
         guard needsExchangeRate,
             let source = sourceAccount,
             let dest = destinationAccount
         else {
-            exchangeRate = 1.0
+            // Don't reset exchangeRate here - it may have been set during prefill for display purposes
             return
         }
 
@@ -365,6 +457,12 @@ final class NewTransactionViewModel {
     func save(context: ModelContext) -> [TransactionItem]? {
         showValidationErrors = true
 
+        // Validate: block future dates
+        if transactionDate > Date() {
+            showFutureDateAlert = true
+            return nil
+        }
+
         guard canSave else {
             return nil
         }
@@ -383,10 +481,13 @@ final class NewTransactionViewModel {
                 result = [tx]
             }
             try context.save()
+            WidgetDataCache.updateCache(context: context)
             isSaving = false
             return result
         } catch {
+            #if DEBUG
             print("Error saving transaction: \(error)")
+            #endif
             isSaving = false
             return nil
         }
@@ -424,7 +525,7 @@ final class NewTransactionViewModel {
             transaction.amount = finalAmount
             transaction.currencyCode = account.currencyCode
             transaction.note = note.isEmpty ? nil : note
-            transaction.category = subcategory.category
+            transaction.category = subcategory.safeCategory
             transaction.subcategory = subcategory
             transaction.account = account
             transaction.tags = selectedTags
@@ -506,7 +607,7 @@ final class NewTransactionViewModel {
             outTransaction.amount = outAmount
             outTransaction.currencyCode = source.currencyCode
             outTransaction.note = note.isEmpty ? L10n.Transfer.transferTo(dest.name) : note
-            outTransaction.category = outflowSubcategory.category
+            outTransaction.category = outflowSubcategory.safeCategory
             outTransaction.subcategory = outflowSubcategory
             outTransaction.account = source
             outTransaction.tags = selectedTags
@@ -521,7 +622,7 @@ final class NewTransactionViewModel {
             inTransaction.amount = inAmount
             inTransaction.currencyCode = dest.currencyCode
             inTransaction.note = note.isEmpty ? L10n.Transfer.transferFrom(source.name) : note
-            inTransaction.category = inflowSubcategory.category
+            inTransaction.category = inflowSubcategory.safeCategory
             inTransaction.subcategory = inflowSubcategory
             inTransaction.account = dest
             inTransaction.tags = selectedTags
@@ -578,10 +679,19 @@ final class NewTransactionViewModel {
 
         // Check if subcategory exists within "Otros"
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
         )
 
-        if let existing = try? context.fetch(descriptor).first {
+        let fetchedSubcategories: [Subcategory]
+        do {
+            fetchedSubcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching transfer subcategory in Otros: \(error)")
+            #endif
+            fetchedSubcategories = []
+        }
+        if let existing = fetchedSubcategories.first {
             return existing
         }
 
@@ -590,8 +700,18 @@ final class NewTransactionViewModel {
             predicate: #Predicate { $0.name == parentCategoryName }
         )
 
+        let fetchedOtrosCategories: [Category]
+        do {
+            fetchedOtrosCategories = try context.fetch(catDescriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching Otros category: \(error)")
+            #endif
+            fetchedOtrosCategories = []
+        }
+
         let category: Category
-        if let existingCat = try? context.fetch(catDescriptor).first {
+        if let existingCat = fetchedOtrosCategories.first {
             category = existingCat
         } else {
             // Fallback: create "Otros" if somehow missing
@@ -618,7 +738,9 @@ final class NewTransactionViewModel {
             try context.save()
         } catch {
             // Non-critical: SwiftData will auto-save later
+            #if DEBUG
             print("[NewTransactionViewModel] Warning: Could not save subcategory immediately: \(error)")
+            #endif
         }
 
         return subcategory
@@ -631,10 +753,19 @@ final class NewTransactionViewModel {
 
         // Check if subcategory exists within "Ingresos"
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
         )
 
-        if let existing = try? context.fetch(descriptor).first {
+        let fetchedIncomeSubcategories: [Subcategory]
+        do {
+            fetchedIncomeSubcategories = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching transfer subcategory in Ingresos: \(error)")
+            #endif
+            fetchedIncomeSubcategories = []
+        }
+        if let existing = fetchedIncomeSubcategories.first {
             return existing
         }
 
@@ -643,8 +774,18 @@ final class NewTransactionViewModel {
             predicate: #Predicate { $0.name == parentCategoryName }
         )
 
+        let fetchedIngresosCategories: [Category]
+        do {
+            fetchedIngresosCategories = try context.fetch(catDescriptor)
+        } catch {
+            #if DEBUG
+            print("[NewTransactionViewModel] Error fetching Ingresos category: \(error)")
+            #endif
+            fetchedIngresosCategories = []
+        }
+
         let category: Category
-        if let existingCat = try? context.fetch(catDescriptor).first {
+        if let existingCat = fetchedIngresosCategories.first {
             category = existingCat
         } else {
             // Fallback: create "Ingresos" if somehow missing
@@ -669,7 +810,9 @@ final class NewTransactionViewModel {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("[NewTransactionViewModel] Warning: Could not save income transfer subcategory: \(error)")
+            #endif
         }
 
         return subcategory

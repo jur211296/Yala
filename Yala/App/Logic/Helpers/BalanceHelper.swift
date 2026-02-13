@@ -25,7 +25,7 @@ struct BalanceHelper {
         let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
 
         let eligibleAccounts = accounts.filter { account in
-            !account.isArchived && !account.excludeFromStatistics
+            !account.excludeFromStatistics
         }
 
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
@@ -75,7 +75,6 @@ struct BalanceHelper {
 
         if let selectedID = selectedAccountID,
             let account = accounts.first(where: { $0.persistentModelID == selectedID }),
-            !account.isArchived,
             !account.excludeFromStatistics
         {
             // Sum transactions for single account

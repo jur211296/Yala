@@ -12,25 +12,33 @@ import SwiftData
 
 @Model
 final class Category {
-    // Campos existentes
-    var name: String
-    var colorHex: String
-    var isIncome: Bool
+    // Campos existentes (CloudKit: defaults required)
+    var name: String = ""
+    var colorHex: String = "#6366F1"
+    var isIncome: Bool = false
 
     // Campos adicionales para semilla y gestión en Ajustes
     /// Indica si esta categoría proviene de la semilla inicial de Yala
-    var isDefaultSeed: Bool
+    var isDefaultSeed: Bool = false
     /// Control de visibilidad dentro de la app (para permitir ocultar categorías)
-    var isVisible: Bool
+    var isVisible: Bool = true
     /// Orden de presentación en la lista de categorías
-    var sortOrder: Int
+    var sortOrder: Int = 0
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
 
-    /// Relación 1 -> N con subcategorías
+    /// Relación 1 -> N con subcategorías - CloudKit: must be optional
     /// NOTE: Using nullify instead of cascade - manual deletion handles subcategories to avoid SwiftUI @Query conflicts
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.category)
+    var subcategories: [Subcategory]?
+
+    /// Inverse relationship: transactions linked to this category - CloudKit: must be optional
     @Relationship(deleteRule: .nullify)
-    var subcategories: [Subcategory]
+    var transactions: [TransactionItem]?
+
+    /// Inverse relationship: budgets linked to this category - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var budgets: [Budget]?
 
     init(
         name: String,

@@ -10,6 +10,8 @@ import SwiftUI
 struct BiometricLockOverlay: View {
     private let authService = BiometricAuthService.shared
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
+
     @State private var isAuthenticating = false
 
     var body: some View {
@@ -23,15 +25,16 @@ struct BiometricLockOverlay: View {
 
                 // Lock icon
                 Image(systemName: authService.biometricType.icon)
-                    .font(.system(size: 56))
+                    .font(.system(size: heroSize))
                     .foregroundStyle(Color.brandPrimary)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Biometric.locked)
                     .font(.title2.bold())
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Text(L10n.Biometric.unlockPrompt)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaSecondaryText)
                     .multilineTextAlignment(.center)
 
@@ -43,17 +46,18 @@ struct BiometricLockOverlay: View {
                 } label: {
                     HStack(spacing: DS.Spacing.sm) {
                         Image(systemName: authService.biometricType.icon)
-                            .font(.body.weight(.medium))
+                            .font(DS.Typography.bodyBold)
                         Text(L10n.Biometric.unlock)
-                            .font(.body.weight(.semibold))
+                            .font(DS.Typography.headline)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
                     .background(Color.brandPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .clipShape(Capsule())
                 }
                 .disabled(isAuthenticating)
+                .accessibilityHint(isAuthenticating ? "Autenticando" : "")
                 .padding(.horizontal, DS.Spacing.xxxl)
                 .padding(.bottom, DS.Spacing.xxxl)
             }

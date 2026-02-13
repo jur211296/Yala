@@ -173,44 +173,47 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
 
+        // End of today (start of tomorrow) to include all transactions from today
+        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+
         switch self {
         case .thisWeek:
             let startOfWeek = calendar.date(
-                from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
-            return DateInterval(start: startOfWeek, end: now)
+                from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? startOfToday
+            return DateInterval(start: startOfWeek, end: endOfToday)
 
         case .last7Days:
-            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday)!
-            return DateInterval(start: start, end: now)
+            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday) ?? startOfToday
+            return DateInterval(start: start, end: endOfToday)
 
         case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday)!
-            return DateInterval(start: start, end: now)
+            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday) ?? startOfToday
+            return DateInterval(start: start, end: endOfToday)
 
         case .thisMonth:
             let startOfMonth = calendar.date(
-                from: calendar.dateComponents([.year, .month], from: now))!
-            return DateInterval(start: startOfMonth, end: now)
+                from: calendar.dateComponents([.year, .month], from: now)) ?? startOfToday
+            return DateInterval(start: startOfMonth, end: endOfToday)
 
         case .lastMonth:
             let startOfThisMonth = calendar.date(
-                from: calendar.dateComponents([.year, .month], from: now))!
-            let startOfLastMonth = calendar.date(byAdding: .month, value: -1, to: startOfThisMonth)!
+                from: calendar.dateComponents([.year, .month], from: now)) ?? startOfToday
+            let startOfLastMonth = calendar.date(byAdding: .month, value: -1, to: startOfThisMonth) ?? startOfToday
             return DateInterval(start: startOfLastMonth, end: startOfThisMonth)
 
         case .thisYear:
-            let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now))!
-            return DateInterval(start: startOfYear, end: now)
+            let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
+            return DateInterval(start: startOfYear, end: endOfToday)
 
         case .lastYear:
-            let startOfThisYear = calendar.date(from: calendar.dateComponents([.year], from: now))!
-            let startOfLastYear = calendar.date(byAdding: .year, value: -1, to: startOfThisYear)!
+            let startOfThisYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
+            let startOfLastYear = calendar.date(byAdding: .year, value: -1, to: startOfThisYear) ?? startOfToday
             return DateInterval(start: startOfLastYear, end: startOfThisYear)
 
         case .allTime:
-            // Return a very long interval (10 years back)
-            let start = calendar.date(byAdding: .year, value: -10, to: now)!
-            return DateInterval(start: start, end: now)
+            // Return a very long interval (10 years back to end of today)
+            let start = calendar.date(byAdding: .year, value: -10, to: now) ?? startOfToday
+            return DateInterval(start: start, end: endOfToday)
 
         case .custom:
             // Use provided custom range or fallback to this month
@@ -218,7 +221,7 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
                 return customRange
             } else {
                 let startOfMonth = calendar.date(
-                    from: calendar.dateComponents([.year, .month], from: now))!
+                    from: calendar.dateComponents([.year, .month], from: now)) ?? startOfToday
                 return DateInterval(start: startOfMonth, end: now)
             }
         }

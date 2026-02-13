@@ -14,8 +14,8 @@ struct AccountFormView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-
-    @Query private var allTransactions: [TransactionItem]
+    @Environment(EntityDeletionService.self) private var deletionService
+    @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel: AccountFormViewModel
     @FocusState private var focusedField: Field?
@@ -44,7 +44,9 @@ struct AccountFormView: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         currencySection
-                        adjustmentSection  // Moved above balance per design
+                        if viewModel.isEditing {
+                            adjustmentSection
+                        }
                         balanceSection
                         actionsSection
                     }
@@ -57,7 +59,7 @@ struct AccountFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -91,20 +93,13 @@ struct AccountFormView: View {
                 if isPresenting { focusedField = nil }
             }
             .onAppear {
-                // Pass transactions to view model for balance calculation
-                viewModel.allTransactions = allTransactions
-                // Initialize balance field with existing initial balance (needs transactions loaded)
-                viewModel.initializeBalanceIfNeeded()
+                viewModel.setContext(modelContext)
                 // Auto-focus name field for new accounts
                 if !viewModel.isEditing {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         focusedField = .name
                     }
                 }
-            }
-            .onChange(of: allTransactions) { _, newTransactions in
-                viewModel.allTransactions = newTransactions
-                viewModel.initializeBalanceIfNeeded()
             }
         }
 
@@ -135,7 +130,7 @@ struct AccountFormView: View {
 
     private var generalSection: some View {
         SectionBox(title: L10n.Common.general) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
@@ -157,7 +152,7 @@ struct AccountFormView: View {
                         Text(viewModel.selectedType.localizedName)
                             .foregroundStyle(.secondary)
                         Image(systemName: "chevron.right")
-                            .font(.footnote)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .padding()
@@ -180,17 +175,17 @@ struct AccountFormView: View {
     }
 
     private var currencySection: some View {
-        SectionBox(title: "Moneda") {
+        SectionBox(title: L10n.Account.currency) {
             NavigationLink {
                 CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
                     .swipeBack()
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Text(currencyInfo(for: viewModel.selectedCurrency).flag)
-                        .font(.title3)
+                        .font(DS.Typography.title)
 
                     Text(L10n.Account.currency)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -199,7 +194,7 @@ struct AccountFormView: View {
                         .foregroundStyle(.secondary)
 
                     Image(systemName: "chevron.right")
-                        .font(.footnote)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
                 .padding()
@@ -210,8 +205,8 @@ struct AccountFormView: View {
     }
 
     private var adjustmentSection: some View {
-        SectionBox(title: "Ajuste") {
-            VStack(spacing: 0) {
+        SectionBox(title: L10n.Account.adjustment) {
+            VStack(spacing: DS.Spacing.none) {
                 NavigationLink {
                     AdjustmentModeSelectorView(
                         selectedAdjustmentMode: $viewModel.selectedAdjustmentMode)
@@ -224,7 +219,7 @@ struct AccountFormView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                         Image(systemName: "chevron.right")
-                            .font(.footnote)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .padding()
@@ -235,7 +230,7 @@ struct AccountFormView: View {
                 SubsectionDivider()
 
                 Text(viewModel.selectedAdjustmentMode.description)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -253,6 +248,9 @@ struct AccountFormView: View {
                 }
             }
         }
+        .onChange(of: viewModel.selectedAdjustmentMode) {
+            viewModel.adjustmentModeChanged()
+        }
     }
 
     private var balanceSection: some View {
@@ -261,9 +259,9 @@ struct AccountFormView: View {
                 ? (viewModel.selectedAdjustmentMode == .changeInitialBalance
                     ? L10n.Account.initialBalance : L10n.Account.newBalance) : L10n.Account.initialBalance
         ) {
-            VStack(spacing: 0) {
-                // Show current balance (read-only) when editing
-                if viewModel.isEditing {
+            VStack(spacing: DS.Spacing.none) {
+                // Show current balance (read-only) when editing (hidden in expenses-only mode)
+                if viewModel.isEditing && !sessionState.isExpensesOnlyMode {
                     HStack {
                         Text(L10n.Account.currentBalance)
                             .foregroundStyle(.secondary)
@@ -272,7 +270,7 @@ struct AccountFormView: View {
                             formatAmount(
                                 viewModel.currentBalance, currency: viewModel.selectedCurrency)
                         )
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     }
                     .padding()
@@ -283,7 +281,7 @@ struct AccountFormView: View {
                 // Sign selector
                 HStack(spacing: DS.Spacing.md) {
                     Text(L10n.Account.sign)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                     Spacer()
                     Picker(L10n.Account.sign, selection: $viewModel.isPositive) {
                         Text(L10n.Account.positive).tag(true)
@@ -303,21 +301,21 @@ struct AccountFormView: View {
                             viewModel.selectedAdjustmentMode == .changeInitialBalance
                                 ? L10n.Account.initialBalance : L10n.Account.newBalance
                         )
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
 
                         ZStack(alignment: .trailing) {
                             // Placeholder
                             if viewModel.balanceText.isEmpty {
                                 Text("0.00")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.gray.opacity(0.4))
+                                    .font(DS.Typography.largeTitle)
+                                    .foregroundStyle(.gray.opacity(0.4))
                             }
 
                             TextField("", text: $viewModel.balanceText)
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
-                                .font(.system(size: 28, weight: .bold))
+                                .font(DS.Typography.largeTitle)
                                 .focused($focusedField, equals: .balance)
                         }
                         .onChange(of: focusedField) { _, newField in
@@ -359,8 +357,8 @@ struct AccountFormView: View {
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(formatAmount(finalBalance, currency: viewModel.selectedCurrency))
-                            .font(.headline)
-                            .foregroundColor(finalBalance >= 0 ? Color.primary : Color.red)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(finalBalance >= 0 ? Color.primary : DS.Semantic.errorForeground)
                     }
                     .padding()
                 }
@@ -373,11 +371,11 @@ struct AccountFormView: View {
 
                     HStack {
                         Text(L10n.Account.adjustment + ":")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(formatAdjustment(adjustment, currency: viewModel.selectedCurrency))
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(adjustment >= 0 ? .green : .red)
                     }
                     .padding()
@@ -388,7 +386,7 @@ struct AccountFormView: View {
 
     private var colorSection: some View {
         SectionBox(title: L10n.Common.color) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     HStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.colorOptions, id: \.self) { hex in
@@ -411,11 +409,11 @@ struct AccountFormView: View {
                             viewModel.isPresentingColorPicker = true
                         } label: {
                             Circle()
-                                .fill(Color.black.opacity(0.05))
+                                .fill(DS.Colors.borderDark)
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Image(systemName: "plus")
-                                        .font(.caption.weight(.semibold))
+                                        .font(DS.Typography.labelSmall)
                                         .foregroundStyle(.primary)
                                 )
                         }
@@ -423,7 +421,7 @@ struct AccountFormView: View {
                     }
 
                     Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding()
@@ -433,7 +431,7 @@ struct AccountFormView: View {
 
     private var actionsSection: some View {
         SectionBox(title: L10n.Common.actions) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text(L10n.Account.excludeFromStats)
                 }
@@ -525,8 +523,15 @@ struct AccountFormView: View {
     // MARK: - Eliminación de cuenta
 
     private func handleDeleteTapped() {
-        if viewModel.deleteAccount(context: modelContext) {
+        guard let account = viewModel.accountToEdit else { return }
+        deletionService.setContext(modelContext)
+        do {
+            try deletionService.deleteAccount(account)
             dismiss()
+        } catch {
+            #if DEBUG
+            print("AccountFormView: Error deleting account: \(error)")
+            #endif
         }
     }
 }

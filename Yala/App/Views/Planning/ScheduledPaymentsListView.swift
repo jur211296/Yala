@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct ScheduledPaymentsListView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
+
     @Bindable var viewModel: ScheduledPaymentsViewModel
     let payments: [ScheduledPayment]
     let tab: ScheduledPaymentsTab
@@ -17,6 +19,7 @@ struct ScheduledPaymentsListView: View {
     let onRefresh: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var viewModeNamespace
 
     /// First day of week from app settings (1 = Sunday, 2 = Monday, etc.)
@@ -41,7 +44,7 @@ struct ScheduledPaymentsListView: View {
             }
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, 100) // Space for FAB
+        .padding(.bottom, DS.Spacing.safeBottom) // Space for FAB
     }
 
     // MARK: - Filtered Payments
@@ -55,29 +58,25 @@ struct ScheduledPaymentsListView: View {
     private var summaryCard: some View {
         let monthlyTotal = viewModel.calculateMonthlyTotal(
             subscriptions: activePayments,
-            for: viewModel.calendarDisplayedMonth
+            for: viewModel.calendarDisplayedMonth,
+            preferredCurrencyCode: currencyCode
         )
 
         return VStack(spacing: DS.Spacing.md) {
             // Month label
             Text(monthYearLabel)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
 
             // Amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.electricIndigo, Color.hotPink],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                .foregroundStyle(.primary)
 
             // Payment count
             Text(paymentCountLabel)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -88,17 +87,10 @@ struct ScheduledPaymentsListView: View {
                 .fill(Color.yalaCard)
                 .overlay(
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.electricIndigo.opacity(0.3), Color.hotPink.opacity(0.3)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
+                        .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
                 )
         )
-        .shadow(color: Color.electricIndigo.opacity(0.15), radius: 20, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         .padding(.horizontal, DS.Spacing.lg)
     }
 
@@ -119,7 +111,7 @@ struct ScheduledPaymentsListView: View {
     private var viewModeHeader: some View {
         HStack {
             Text(tab.localizedName)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -130,7 +122,7 @@ struct ScheduledPaymentsListView: View {
     }
 
     private var viewModeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(PaymentsViewMode.allCases) { mode in
                 viewModeButton(for: mode)
             }
@@ -144,12 +136,12 @@ struct ScheduledPaymentsListView: View {
         let isSelected = viewModel.paymentsViewMode == mode
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 viewModel.paymentsViewMode = mode
             }
         } label: {
             Image(systemName: mode.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
@@ -177,24 +169,22 @@ struct ScheduledPaymentsListView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {
                         // Section header
                         HStack(spacing: DS.Spacing.sm) {
-                            Circle()
-                                .fill(sectionColor(for: section.status))
-                                .frame(width: 8, height: 8)
+                            if section.status == .past {
+                                Circle()
+                                    .fill(Color.hotPink)
+                                    .frame(width: 8, height: 8)
+                            }
 
                             Text(section.status.localizedName)
-                                .font(.headline.weight(.semibold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(.primary)
-
-                            Text("(\(section.payments.count))")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
                         }
 
                         // Payment cards
                         ForEach(section.payments) { summary in
                             ScheduledPaymentRowView(
                                 summary: summary,
-                                currencyCode: currencyCode
+                                currencyCode: summary.payment.currencyCode
                             )
                         }
                     }
@@ -204,16 +194,6 @@ struct ScheduledPaymentsListView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    private func sectionColor(for status: DueStatus) -> Color {
-        switch status {
-        case .past:
-            return Color.hotPink
-        case .today:
-            return Color.orange
-        case .upcoming:
-            return Color.electricIndigo
-        }
-    }
 
     // MARK: - Calendar Content
 
@@ -234,40 +214,36 @@ struct ScheduledPaymentsListView: View {
     private var monthNavigationHeader: some View {
         HStack {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     selectedDay = nil
                     viewModel.previousMonth()
                 }
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.electricIndigo)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .background(Color.electricIndigo.opacity(0.1))
-                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
 
             Spacer()
 
             Text(monthYearLabel)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             Spacer()
 
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     selectedDay = nil
                     viewModel.nextMonth()
                 }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.electricIndigo)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .background(Color.electricIndigo.opacity(0.1))
-                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
         }
@@ -279,7 +255,7 @@ struct ScheduledPaymentsListView: View {
         let month = viewModel.calendarDisplayedMonth
         let daysInMonth = calendar.range(of: .day, in: .month, for: month)?.count ?? 30
 
-        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month))!
+        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
 
@@ -305,7 +281,7 @@ struct ScheduledPaymentsListView: View {
         return VStack(spacing: DS.Spacing.sm) {
             weekdayHeaders
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xs), count: 7), spacing: DS.Spacing.xs) {
                 ForEach(Array(cellData.enumerated()), id: \.offset) { _, dayOrNil in
                     if let day = dayOrNil {
                         calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
@@ -326,10 +302,10 @@ struct ScheduledPaymentsListView: View {
         let startIndex = appFirstWeekday - 1
         let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
 
-        return HStack(spacing: 4) {
+        return HStack(spacing: DS.Spacing.xs) {
             ForEach(Array(reorderedSymbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -342,7 +318,7 @@ struct ScheduledPaymentsListView: View {
         let hasPayments = !payments.isEmpty
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion) {
                 if selectedDay == day {
                     selectedDay = nil
                 } else {
@@ -350,20 +326,20 @@ struct ScheduledPaymentsListView: View {
                 }
             }
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text("\(day)")
                     .font(.caption2.weight(isToday || isSelected ? .bold : .medium))
                     .foregroundStyle(isSelected ? .white : (isToday ? Color.electricIndigo : .secondary))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 if hasPayments {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
                             paymentPill(payment, isSelected: isSelected)
                         }
                         if payments.count > 2 {
                             Text("+\(payments.count - 2)")
-                                .font(.system(size: 8, weight: .medium))
+                                .font(DS.Typography.captionSmall).fontWeight(.medium)
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                                 .padding(.leading, 2)
                         }
@@ -372,7 +348,7 @@ struct ScheduledPaymentsListView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(4)
+            .padding(DS.Spacing.xs)
             .frame(minHeight: 70)
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .background(
@@ -400,20 +376,20 @@ struct ScheduledPaymentsListView: View {
     }
 
     private func paymentPill(_ payment: ScheduledPayment, isSelected: Bool = false) -> some View {
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
+        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
 
-        return HStack(spacing: 2) {
+        return HStack(spacing: DS.Spacing.xxs) {
             Circle()
                 .fill(isSelected ? Color.white : Color(hex: color))
                 .frame(width: 6, height: 6)
 
             Text(payment.name)
-                .font(.system(size: 8, weight: .medium))
+                .font(DS.Typography.captionSmall).fontWeight(.medium)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
+        .padding(.horizontal, DS.Spacing.xs)
+        .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
                 .fill(isSelected ? Color.white.opacity(0.2) : Color(hex: color).opacity(0.15))
@@ -455,18 +431,18 @@ struct ScheduledPaymentsListView: View {
             if let day = selectedDay {
                 HStack {
                     Text(selectedDayLabel(day: day))
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     Spacer()
 
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        dsWithAnimation(reduceMotion) {
                             selectedDay = nil
                         }
                     } label: {
                         Text(NSLocalizedString("scheduled.calendar.show.all", comment: ""))
-                            .font(.caption.weight(.medium))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.electricIndigo)
                     }
                     .buttonStyle(.plain)
@@ -477,7 +453,7 @@ struct ScheduledPaymentsListView: View {
                 Text(selectedDay != nil
                      ? NSLocalizedString("scheduled.calendar.day.empty", comment: "")
                      : NSLocalizedString("scheduled.calendar.month.empty", comment: ""))
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.xl)
@@ -505,8 +481,8 @@ struct ScheduledPaymentsListView: View {
     }
 
     private func calendarPaymentRow(payment: ScheduledPayment, dates: [Date]) -> some View {
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
-        let icon = payment.subcategory?.iconName ?? payment.subcategory?.category.iconName ?? "calendar.badge.clock"
+        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
+        let icon = payment.subcategory?.iconName ?? payment.subcategory?.category?.iconName ?? "calendar.badge.clock"
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "d MMM"
@@ -519,70 +495,42 @@ struct ScheduledPaymentsListView: View {
                         .frame(width: 36, height: 36)
 
                     Image(systemName: icon)
-                        .font(.caption.weight(.medium))
+                        .font(DS.Typography.labelSmall)
                         .foregroundStyle(.white)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(payment.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
 
                     Text(dates.map { dateFormatter.string(from: $0) }.joined(separator: ", "))
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
-                Text(YalaFormatter.currency(value: payment.amount, currencyCode: currencyCode))
-                    .font(.subheadline.weight(.bold))
+                Text(YalaFormatter.currency(value: payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(DS.Spacing.md)
             .background(Color.yalaCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: emptyStateIcon)
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.electricIndigo, Color.hotPink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(NSLocalizedString("scheduled.empty.title", comment: ""))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(NSLocalizedString("scheduled.empty.message", comment: ""))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, DS.Spacing.xxxl)
+        YalaEmptyState.noScheduledPayments(icon: emptyStateIcon)
+            .padding(.top, DS.Spacing.xxxl)
     }
 
     private var emptyStateIcon: String {

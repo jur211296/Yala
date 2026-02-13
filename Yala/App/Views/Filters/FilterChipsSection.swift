@@ -52,11 +52,11 @@ struct FilterChipsSection<Item: Identifiable, ChipContent: View>: View {
                         chipContent(item)
                     }
                 }
-                .padding(.leading, 52)
+                .padding(.leading, DS.Spacing.formIndent)
                 .padding(.trailing, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.md)
-            } else if showEmptyPlaceholder {
-                // Minimal spacer to maintain layout consistency
+            } else {
+                // Minimal spacer to maintain layout consistency when empty
                 Color.clear.frame(height: 12)
             }
         }
@@ -76,7 +76,7 @@ struct FilterChipButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -109,7 +109,7 @@ struct FilterChipWithIndicator: View {
                     .frame(width: 8, height: 8)
 
                 Text(title)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }

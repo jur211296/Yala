@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftData
+import WidgetKit
 
 // Clase de utilidad para operaciones de borrado masivo de datos de usuario.
 // Marcada como @MainActor porque ModelContext debe usarse desde el hilo principal.
@@ -19,9 +20,10 @@ final class DataWipeService {
     // 1. Elimina datos de todos los modelos relevantes.
     // 2. Resetea todas las preferencias de usuario a valores por defecto.
     // 3. Opcionalmente vuelve a lanzar la semilla inicial (categorías, etc.).
+    // Note: reseedInitialData defaults to false - the UI should ask the user
     static func wipeAllUserData(
         in context: ModelContext,
-        reseedInitialData: Bool = true
+        reseedInitialData: Bool = false
     ) throws {
         // ============================================================
         // PASO 1: Borrar todos los datos de SwiftData
@@ -45,6 +47,36 @@ final class DataWipeService {
             tag.budgets = []
         }
         try context.save()
+
+        // 1.1b Limpiar relaciones de InboxDraft y eliminar
+        let inboxDraftDescriptor = FetchDescriptor<InboxDraft>()
+        let allDrafts = try context.fetch(inboxDraftDescriptor)
+        for draft in allDrafts {
+            draft.tags = []
+            draft.account = nil
+            draft.subcategory = nil
+            draft.approvedTransaction = nil
+        }
+        try context.save()
+        for draft in allDrafts {
+            context.delete(draft)
+        }
+        try context.save()
+
+        // 1.1c Eliminar MerchantMemory (limpiar relaciones y eliminar)
+        let merchantMemoryDescriptor = FetchDescriptor<MerchantMemory>()
+        let allMerchantMemories = try context.fetch(merchantMemoryDescriptor)
+        for memory in allMerchantMemories {
+            memory.subcategory = nil
+        }
+        try context.save()
+        for memory in allMerchantMemories {
+            context.delete(memory)
+        }
+        try context.save()
+
+        // 1.1d Eliminar notificaciones personalizadas y resetear default
+        NotificationService.shared.deleteAllNotifications(context: context)
 
         // 1.2 Eliminar todas las transacciones
         for transaction in allTransactions {
@@ -141,7 +173,12 @@ final class DataWipeService {
         resetAllUserPreferences()
 
         // ============================================================
-        // PASO 3: Reseed de datos iniciales si corresponde
+        // PASO 3: Limpiar cache de widgets
+        // ============================================================
+        WidgetDataCache.clearCache()
+
+        // ============================================================
+        // PASO 4: Reseed de datos iniciales si corresponde
         // ============================================================
         if reseedInitialData {
             try reseedInitialAppState(in: context)
@@ -160,17 +197,28 @@ final class DataWipeService {
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
         defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: "PEN"
 
+        // --- Visualización ---
+        defaults.removeObject(forKey: "showVariations")         // Default: true
+        defaults.removeObject(forKey: "decimalPlaces")          // Default: 0
+        defaults.removeObject(forKey: "currencyDisplayFormat")  // Default: "code"
+
         // --- Perfil de usuario ---
         defaults.removeObject(forKey: "userName")               // Default: "Usuario"
         defaults.removeObject(forKey: "userAlias")              // Default: ""
         defaults.removeObject(forKey: "userProfileImageData")   // Default: nil
+        defaults.removeObject(forKey: "userProfileIcon")        // Default: "" (sin emoji)
+
+        // --- Features de entrada ---
+        defaults.removeObject(forKey: "voiceInputEnabled")      // Default: false
+        defaults.removeObject(forKey: "voiceLanguage")          // Default: VoiceLanguage.system.rawValue
+        defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
 
         // --- Orden de listas ---
         defaults.removeObject(forKey: "accountsSortOrderNames") // Default: ""
         defaults.removeObject(forKey: "tagsSortOrderNames")     // Default: ""
 
         // --- Configuración de widgets ---
-        defaults.removeObject(forKey: "widgetConfigs")
+        defaults.removeObject(forKey: "panel_widget_configs_v1") // Key real usada por WidgetConfigManager
 
         // --- Estado del servicio de tipos de cambio ---
         defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
@@ -178,10 +226,14 @@ final class DataWipeService {
 
         // --- Preferencias de presupuestos ---
         defaults.removeObject(forKey: "budgets.hideInactive")   // Default: false
+        defaults.removeObject(forKey: "budgetAlertsEnabled")    // Default: false
 
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
+
+        // --- Legacy (compatibilidad) ---
+        defaults.removeObject(forKey: "preferredCurrency")      // Reemplazado por defaultCurrencyCode
 
         // Forzar sincronización inmediata
         defaults.synchronize()
@@ -194,5 +246,9 @@ final class DataWipeService {
         // La función es idempotente: si ya existen categorías, no hace nada.
         // Como acabamos de borrar todo, SIEMPRE sembrará.
         seedCategoriesIfNeeded(in: context)
+
+        // Note: Notifications are NOT seeded here.
+        // They are created during onboarding (step 6) based on user selection.
+        // For existing users upgrading, YalaApp.swift handles the seed.
     }
 }

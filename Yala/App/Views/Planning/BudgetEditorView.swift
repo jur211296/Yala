@@ -11,19 +11,21 @@ import SwiftUI
 struct BudgetEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28
+    @Environment(SessionState.self) private var sessionState
+    @Environment(EntityDeletionService.self) private var deletionService
 
-    @Query(sort: \Category.name) private var categories: [Category]
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var viewModel = BudgetEditorViewModel()
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @AppStorage("budgetAlertsEnabled") private var budgetAlertsGloballyEnabled: Bool = false
 
     let budget: Budget?
 
     // Basic Info
     @State private var name: String = ""
     @State private var limitAmount: String = ""
+    @State private var currencyCode: String = ""
 
     // Period
     @State private var selectedPeriodType: BudgetPeriodType = .monthly
@@ -32,6 +34,10 @@ struct BudgetEditorView: View {
 
     // Active status
     @State private var isActive: Bool = true
+
+    // Alert notifications
+    @State private var alertEnabled: Bool = false
+    @State private var selectedThresholds: Set<Int> = []
 
     // Filters - Using PersistentIdentifier for consistency with RecordsFiltersView
     @State private var selectedAccounts: Set<PersistentIdentifier> = []
@@ -42,7 +48,6 @@ struct BudgetEditorView: View {
     // Sheet states
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
-    @State private var showSaveError = false
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
@@ -64,6 +69,9 @@ struct BudgetEditorView: View {
 
                     // Active Toggle
                     activeToggle
+
+                    // Alert Notifications Section
+                    alertsSection
 
                     // Filters Section
                     filtersSection
@@ -100,7 +108,7 @@ struct BudgetEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -116,6 +124,7 @@ struct BudgetEditorView: View {
                 if isPresenting { dismissKeyboard() }
             }
             .onAppear {
+                viewModel.setContext(modelContext, deletionService: deletionService)
                 loadBudgetData()
                 // Auto-focus name field for new budgets
                 if budget == nil {
@@ -124,9 +133,15 @@ struct BudgetEditorView: View {
                     }
                 }
             }
+            .onChange(of: selectedAccounts) { _, newAccounts in
+                updateCurrencyFromAccounts(newAccounts)
+            }
             .alert(
                 L10n.Common.error,
-                isPresented: $showSaveError,
+                isPresented: Binding(
+                    get: { viewModel.showSaveError },
+                    set: { _ in viewModel.dismissSaveError() }
+                ),
                 actions: {
                     Button(L10n.Common.understood, role: .cancel) {}
                 },
@@ -141,7 +156,7 @@ struct BudgetEditorView: View {
 
     private var basicInfoSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.basic.info", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Name Field
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
@@ -161,13 +176,14 @@ struct BudgetEditorView: View {
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        Text(defaultCurrencyCode)
-                            .font(.caption)
+                        Text(currencyCode)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $limitAmount)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: scaledAmountSize, weight: .bold))
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
                 }
                 .padding()
@@ -194,16 +210,16 @@ struct BudgetEditorView: View {
 
     private var dateRangeSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.date.range", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Start Date
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar")
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
 
                     Text(NSLocalizedString("budgets.editor.start.date", comment: ""))
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -222,12 +238,12 @@ struct BudgetEditorView: View {
                 // End Date
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar")
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
 
                     Text(NSLocalizedString("budgets.editor.end.date", comment: ""))
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
@@ -250,22 +266,98 @@ struct BudgetEditorView: View {
     private var activeToggle: some View {
         Toggle(isOn: $isActive) {
             Text(NSLocalizedString("common.active", comment: ""))
-                .font(.body)
+                .font(DS.Typography.body)
         }
         .tint(Color.brandPrimary)
+    }
+
+    // MARK: - Alerts Section
+
+    private var alertsSection: some View {
+        SectionBox(title: L10n.Budgets.alertsTitle) {
+            VStack(spacing: DS.Spacing.none) {
+                // Toggle
+                Toggle(isOn: $alertEnabled) {
+                    HStack {
+                        Image(systemName: "bell.fill")
+                            .foregroundStyle(.secondary)
+                        Text(L10n.Budgets.alertsEnable)
+                    }
+                }
+                .tint(Color.brandPrimary)
+                .padding()
+
+                // Hint when global notifications are disabled
+                if !budgetAlertsGloballyEnabled {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "info.circle")
+                            .font(DS.Typography.caption)
+                        Text(L10n.Budgets.alertsGlobalDisabledHint)
+                            .font(DS.Typography.caption)
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.md)
+                }
+
+                if alertEnabled {
+                    SubsectionDivider()
+
+                    // Threshold chips
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Text(L10n.Budgets.alertsThresholds)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.top, DS.Spacing.sm)
+
+                        FlowLayout(spacing: DS.Spacing.sm) {
+                            ForEach([50, 75, 90, 100], id: \.self) { threshold in
+                                thresholdChip(threshold)
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.md)
+                    }
+                }
+            }
+        }
+    }
+
+    private func thresholdChip(_ threshold: Int) -> some View {
+        let isSelected = selectedThresholds.contains(threshold)
+
+        return Button {
+            if isSelected {
+                selectedThresholds.remove(threshold)
+            } else {
+                selectedThresholds.insert(threshold)
+            }
+        } label: {
+            Text("\(threshold)%")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Filters Section
 
     private var filtersSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 accountsContent
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, DS.Spacing.lg)
                 categoriesContent
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, DS.Spacing.lg)
                 tagsContent
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, DS.Spacing.lg)
                 naturesContent
             }
         }
@@ -278,7 +370,7 @@ struct BudgetEditorView: View {
             icon: "creditcard",
             title: NSLocalizedString("settings.accounts", comment: ""),
             status: selectedAccountsText,
-            items: activeAccounts,
+            items: viewModel.activeAccounts,
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -296,7 +388,7 @@ struct BudgetEditorView: View {
             }
         } label: {
             Text(account.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -314,10 +406,10 @@ struct BudgetEditorView: View {
         if selectedAccounts.isEmpty {
             return NSLocalizedString("filters.all", comment: "")
         }
-        if selectedAccounts.count == activeAccounts.count {
+        if selectedAccounts.count == viewModel.activeAccounts.count {
             return NSLocalizedString("filters.all", comment: "")
         }
-        return "\(selectedAccounts.count)/\(activeAccounts.count)"
+        return "\(selectedAccounts.count)/\(viewModel.activeAccounts.count)"
     }
 
     // MARK: - Categories Content
@@ -326,7 +418,7 @@ struct BudgetEditorView: View {
         Button {
             showCategoriesSheet = true
         } label: {
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 FilterSectionHeader(
                     icon: "tag",
                     title: NSLocalizedString("subcategories.title", comment: ""),
@@ -336,7 +428,7 @@ struct BudgetEditorView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -347,30 +439,7 @@ struct BudgetEditorView: View {
     }
 
     private var selectedCategoriesText: String {
-        let subCount = selectedSubcategories.count
-
-        if subCount == 0 {
-            return NSLocalizedString("filters.all", comment: "")
-        }
-
-        // Get selected subcategories
-        let selectedSubs = allSubcategories.filter {
-            selectedSubcategories.contains($0.persistentModelID)
-        }
-        if selectedSubs.isEmpty {
-            return NSLocalizedString("filters.all", comment: "")
-        }
-
-        if let firstSub = selectedSubs.first {
-            let remainingCount = selectedSubs.count - 1
-            if remainingCount > 0 {
-                return "\(firstSub.name) +\(remainingCount)"
-            } else {
-                return firstSub.name
-            }
-        }
-
-        return NSLocalizedString("filters.all", comment: "")
+        viewModel.selectedCategoriesText(selectedSubcategories: selectedSubcategories)
     }
 
     // MARK: - Tags Content
@@ -380,7 +449,7 @@ struct BudgetEditorView: View {
             icon: "number",
             title: NSLocalizedString("settings.tags", comment: ""),
             status: selectedTagsText,
-            items: activeTags,
+            items: viewModel.activeTags,
             showEmptyPlaceholder: true
         ) { tag in
             tagChip(tag)
@@ -403,7 +472,7 @@ struct BudgetEditorView: View {
                     .frame(width: 8, height: 8)
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -421,10 +490,10 @@ struct BudgetEditorView: View {
         if selectedTags.isEmpty {
             return NSLocalizedString("filters.all", comment: "")
         }
-        if selectedTags.count == activeTags.count {
+        if selectedTags.count == viewModel.activeTags.count {
             return NSLocalizedString("filters.all", comment: "")
         }
-        return "\(selectedTags.count)/\(activeTags.count)"
+        return "\(selectedTags.count)/\(viewModel.activeTags.count)"
     }
 
     // MARK: - Natures Content
@@ -446,7 +515,7 @@ struct BudgetEditorView: View {
                     natureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.formIndent)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
@@ -464,7 +533,7 @@ struct BudgetEditorView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Text(nature.displayName)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -494,42 +563,32 @@ struct BudgetEditorView: View {
             HStack {
                 Spacer()
                 Text(NSLocalizedString("budgets.delete", comment: ""))
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                 Spacer()
             }
             .padding(.vertical, DS.Spacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.red.opacity(0.1))
+                    .fill(DS.Semantic.errorBackgroundSubtle)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                    .stroke(DS.Semantic.errorBorder, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.red)
-        .padding(.top, 16)
+        .foregroundStyle(DS.Semantic.errorForeground)
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Categories Sheet
 
     private var categoriesSheetView: some View {
         CategorySelectorSheet(
-            categories: categories,
-            subcategories: allSubcategories,
+            categories: viewModel.categories,
+            subcategories: viewModel.allSubcategories,
             selectedSubcategories: $selectedSubcategories
         )
-    }
-
-    // MARK: - Computed Properties
-
-    private var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
-    }
-
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
     }
 
     // MARK: - Validation
@@ -540,10 +599,27 @@ struct BudgetEditorView: View {
 
     // MARK: - Data Management
 
+    /// Update currency based on selected accounts
+    /// - If exactly 1 account is selected, use its currency
+    /// - Otherwise, use the default/preferred currency
+    private func updateCurrencyFromAccounts(_ accountIds: Set<PersistentIdentifier>) {
+        if accountIds.count == 1,
+           let accountId = accountIds.first,
+           let account = viewModel.activeAccounts.first(where: { $0.persistentModelID == accountId }) {
+            currencyCode = account.currencyCode
+        } else {
+            currencyCode = defaultCurrencyCode
+        }
+    }
+
     private func loadBudgetData() {
+        // Initialize currency code
+        currencyCode = defaultCurrencyCode
+
         guard let budget = budget else { return }
 
         name = budget.name
+        currencyCode = budget.currencyCode
         limitAmount = String(format: "%.2f", budget.limitAmount)
         selectedPeriodType = BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
         isActive = budget.isActive
@@ -556,75 +632,57 @@ struct BudgetEditorView: View {
         }
 
         // Convert arrays to sets of PersistentIdentifiers
-        selectedAccounts = Set(budget.accounts.map { $0.persistentModelID })
-        selectedSubcategories = Set(budget.subcategories.map { $0.persistentModelID })
-        selectedTags = Set(budget.tags.map { $0.persistentModelID })
+        selectedAccounts = Set((budget.accounts ?? []).map { $0.persistentModelID })
+        selectedSubcategories = Set((budget.subcategories ?? []).map { $0.persistentModelID })
+        selectedTags = Set((budget.tags ?? []).map { $0.persistentModelID })
 
         // Parse natures string
         if let naturesString = budget.natures {
             let natureStrings = naturesString.components(separatedBy: ",")
             selectedNatures = Set(natureStrings.compactMap { SubcategoryNature(rawValue: $0) })
         }
+
+        // Load alert settings
+        alertEnabled = budget.alertEnabled
+        if let thresholdsString = budget.alertThresholds {
+            selectedThresholds = Set(
+                thresholdsString.split(separator: ",").compactMap { Int($0) }
+            )
+        }
     }
 
     private func saveBudget() {
         guard let amount = Double(limitAmount) else { return }
 
-        // Convert PersistentIdentifiers back to model objects
-        let accountsArray = activeAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
-        let subcategoriesArray = allSubcategories.filter { selectedSubcategories.contains($0.persistentModelID) }
-        let tagsArray = activeTags.filter { selectedTags.contains($0.persistentModelID) }
-        let naturesString = selectedNatures.isEmpty ? nil : selectedNatures.map { $0.rawValue }.joined(separator: ",")
+        let saved = viewModel.saveBudget(
+            existing: budget,
+            name: name,
+            limitAmount: amount,
+            currencyCode: currencyCode,
+            periodType: selectedPeriodType,
+            startDate: startDate,
+            endDate: endDate,
+            isActive: isActive,
+            selectedAccounts: selectedAccounts,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNatures: selectedNatures,
+            alertEnabled: alertEnabled,
+            alertThresholds: selectedThresholds
+        )
 
-        if let existingBudget = budget {
-            // Update existing budget
-            existingBudget.name = name
-            existingBudget.limitAmount = amount
-            existingBudget.periodType = selectedPeriodType.rawValue
-            existingBudget.isActive = isActive
-            existingBudget.startDate = selectedPeriodType == .unique ? startDate : nil
-            existingBudget.endDate = selectedPeriodType == .unique ? endDate : nil
-            existingBudget.accounts = accountsArray
-            existingBudget.subcategories = subcategoriesArray
-            existingBudget.tags = tagsArray
-            existingBudget.natures = naturesString
-        } else {
-            // Create new budget
-            let newBudget = Budget(
-                currencyCode: defaultCurrencyCode,
-                limitAmount: amount,
-                name: name,
-                periodType: selectedPeriodType.rawValue,
-                startDate: selectedPeriodType == .unique ? startDate : nil,
-                endDate: selectedPeriodType == .unique ? endDate : nil,
-                accounts: accountsArray,
-                subcategories: subcategoriesArray,
-                tags: tagsArray,
-                natures: naturesString,
-                isActive: isActive
-            )
-
-            modelContext.insert(newBudget)
-        }
-
-        do {
-            try modelContext.save()
+        if saved {
             dismiss()
-        } catch {
-            showSaveError = true
         }
     }
 
     private func deleteBudget() {
         guard let budget = budget else { return }
-        modelContext.delete(budget)
-        do {
-            try modelContext.save()
+
+        if viewModel.deleteBudget(budget) {
             // Trigger widget refresh
-            SessionState.shared.needsBudgetsWidgetRefresh = true
+            sessionState.needsBudgetsWidgetRefresh = true
             dismiss()
-        } catch {
-            showSaveError = true
         }
     }
 }

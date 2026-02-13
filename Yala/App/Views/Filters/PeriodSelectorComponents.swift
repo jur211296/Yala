@@ -147,26 +147,28 @@ struct CustomPeriodPickerSheet: View {
                     DatePicker(
                         L10n.Period.startDate,
                         selection: $startDate,
-                        in: minDate...endDate,
+                        in: min(minDate, endDate)...max(minDate, endDate),
                         displayedComponents: .date
                     )
+                    .listRowBackground(Color.yalaCard)
 
                     DatePicker(
                         L10n.Period.endDate,
                         selection: $endDate,
-                        in: startDate...maxDate,
+                        in: min(startDate, maxDate)...max(startDate, maxDate),
                         displayedComponents: .date
                     )
+                    .listRowBackground(Color.yalaCard)
                 }
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color.yalaBackground)
+            .background(Color.yalaCard)
             .navigationTitle(L10n.Period.custom)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                         dismiss()
                     }
                 }

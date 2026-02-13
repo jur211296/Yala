@@ -2,59 +2,90 @@
 description: Analiza STATE y ROADMAP para proponer automáticamente el siguiente incremento de trabajo.
 ---
 
-Analiza STATE y ROADMAP para proponer automáticamente el siguiente incremento de trabajo.
+Analiza el estado del proyecto y propone el siguiente trabajo de forma concisa.
 
-PASO 0 - CONFIGURACIÓN DE ENTORNO:
-Pregunta al usuario: "¿En qué Mac estás trabajando? (jur/work)"
+## PASO 1: RESUMEN RÁPIDO
 
-Según la respuesta, usa la ruta base:
-- jur → /Users/jur/Yala
-- work → /Users/work/Yala
+Lee estos archivos en paralelo:
+- STATE.md (secciones: Recent Progress, Session Continuity, Next Steps)
+- Los últimos 5 commits con `git log --oneline -5`
+- Si existe, el último archivo en .claude/sessions/ (ordenado por fecha)
 
-Esta ruta se usará para todos los comandos y referencias a archivos durante la sesión.
+Presenta un resumen compacto:
 
-PASOS OBLIGATORIOS:
-1. CONTEXTO ACTUAL:
-   - Lee ROADMAP.md para identificar la fase actual
-   - Lee STATE.md sección "Completed in Current Phase"
-   - Lee STATE.md sección "Next Steps"
-   - Lee STATE.md sección "Risks" para detectar blockers
+```
+## Resumen
 
-2. ANÁLISIS DE DEPENDENCIAS:
-   - Identifica qué items de "Next Steps" tienen dependencias pendientes
-   - Identifica qué items están bloqueados por "Risks" sin resolver
-   - Identifica qué items son completamente independientes y pueden empezar ahora
+**Última sesión:** [fecha] - [qué se hizo, de Session Continuity o último log]
+**Últimos commits:**
+- [hash] [mensaje]
+- [hash] [mensaje]
+- [hash] [mensaje]
 
-3. PROPUESTA:
-   - Propón el siguiente incremento según esta prioridad:
-     a) Resolver Risks críticos que bloquean múltiples items
-     b) Completar items iniciados pero no terminados
-     c) Empezar el siguiente item independiente según ROADMAP
+**Fase actual:** [fase del ROADMAP]
+**Documento de trabajo:** [si hay uno activo, ej: REFINAMIENTO-8.3-8.4.md]
+```
 
-4. FORMATO DE PROPUESTA:
-   Presenta la propuesta con esta plantilla:
+## PASO 2: OPCIONES DISPONIBLES
 
-   PRÓXIMO INCREMENTO SUGERIDO:
-   Contexto
-   [Fase actual del ROADMAP]
-   [Por qué este incremento ahora]
-   [Dependencias que ya están resueltas]
-   Requisitos
-   [Qué debe lograr este incremento]
-   Definition of Done
-   [Criterios de aceptación específicos]
-   Restricciones
-   [Límites de alcance, archivos a NO tocar, etc.]
-   Plan Sugerido
-   [División en sub-incrementos commiteables si aplica]
+Identifica las opciones de trabajo disponibles según:
+- Next Steps en STATE.md
+- Items pendientes en documento de trabajo activo (si existe)
+- Siguiente fase del ROADMAP si la actual está completa
 
-CONFIRMACIÓN:
-- Pregunta al usuario: "¿Procedo con este incremento o prefieres trabajar en otra cosa?"
-- Si el usuario acepta, marca en STATE que este item pasó de "Next Steps" a "In Progress"
-- Si el usuario rechaza, pide que especifique qué prefiere trabajar
+Presenta máximo 5 opciones numeradas:
+
+```
+## Siguiente trabajo
+
+1. [código/nombre] - [descripción breve de 1 línea]
+2. [código/nombre] - [descripción breve de 1 línea]
+3. [código/nombre] - [descripción breve de 1 línea]
+
+¿Cuál eliges? (1/2/3/otro)
+```
+
+## PASO 3: PLANIFICACIÓN (después de elegir)
+
+Cuando el usuario elija una opción:
+
+1. Investiga brevemente el item elegido (lee archivos relevantes si es necesario)
+
+2. Pregunta:
+   ```
+   ¿Necesitas que planifiquemos este trabajo?
+   - Sí: Divido en incrementos pequeños antes de empezar
+   - No: Empezamos directo con /session-start
+   ```
+
+3. Si el usuario dice "sí" a planificar:
+   - Analiza el alcance del trabajo
+   - Propón división en incrementos commiteables (máximo 1-2 líneas cada uno)
+   - Ejemplo:
+     ```
+     ## Plan para [item elegido]
+
+     1. [Incremento 1] - [qué se logra]
+     2. [Incremento 2] - [qué se logra]
+     3. [Incremento 3] - [qué se logra]
+
+     ¿Listo para empezar? Ejecuto /session-start
+     ```
+
+4. Si el usuario dice "no" o cuando el plan esté listo:
+   - Pregunta: "¿Ejecuto /session-start para comenzar?"
+
+## PASO 4: INICIO DE SESIÓN
+
+Si el usuario confirma, ejecuta automáticamente el flujo de /session-start con:
+- El objetivo ya definido (el item elegido)
+- El plan de incrementos (si se definió)
+- Sin volver a preguntar qué va a trabajar (ya lo sabemos)
+
+---
 
 REGLAS:
-- NUNCA sugieras trabajo que tenga dependencias sin resolver
-- SIEMPRE prioriza resolver risks que bloquean progreso
-- Si hay múltiples opciones equivalentes, explica las razones para elegir una sobre otra
-- El plan sugerido debe respetar la filosofía de incrementos pequeños y verificables
+- Ser CONCISO - máximo 20 líneas por sección
+- NO generar texto innecesario (nada de "Contexto", "Requisitos", "Definition of Done" detallados)
+- Priorizar items según: bugs > UX crítico > features > polish
+- Si hay un documento de trabajo activo (REFINAMIENTO, PLAN, etc.), usarlo como fuente principal

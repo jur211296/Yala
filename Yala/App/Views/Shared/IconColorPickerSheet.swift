@@ -242,7 +242,7 @@ struct IconColorPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                         dismiss()
                     }
                 }
@@ -271,13 +271,13 @@ struct IconColorPickerSheet: View {
                 .frame(width: 80, height: 80)
                 .overlay(
                     Image(systemName: tempIconName)
-                        .font(.system(size: 32, weight: .medium))
+                        .font(DS.Typography.amountLarge)
                         .foregroundStyle(.white)
                 )
                 .shadow(color: Color(hex: tempColorHex).opacity(0.4), radius: 8, x: 0, y: 4)
 
             Text(L10n.IconPicker.preview)
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -289,7 +289,7 @@ struct IconColorPickerSheet: View {
     private var colorSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Common.color)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             LazyVGrid(columns: colorColumns, spacing: DS.Spacing.md) {
@@ -310,7 +310,7 @@ struct IconColorPickerSheet: View {
         } label: {
             Circle()
                 .fill(Color(hex: hex))
-                .frame(width: 36, height: 36)
+                .frame(width: 40, height: 40)
                 .overlay(
                     Circle()
                         .stroke(Color.white, lineWidth: tempColorHex == hex ? 3 : 0)
@@ -329,7 +329,7 @@ struct IconColorPickerSheet: View {
     private var customColorButton: some View {
         ColorPicker("", selection: $customColor, supportsOpacity: false)
             .labelsHidden()
-            .frame(width: 36, height: 36)
+            .frame(width: 40, height: 40)
             .onChange(of: customColor) { _, newColor in
                 tempColorHex = newColor.toHex()
             }
@@ -342,7 +342,7 @@ struct IconColorPickerSheet: View {
             ForEach(iconCategories, id: \.name) { category in
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     Text(category.name)
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     LazyVGrid(columns: iconColumns, spacing: DS.Spacing.md) {
@@ -364,12 +364,12 @@ struct IconColorPickerSheet: View {
                     .fill(
                         tempIconName == name
                             ? Color(hex: tempColorHex).opacity(0.2)
-                            : Color.gray.opacity(0.1)
+                            : DS.Semantic.neutralBackground
                     )
                     .frame(width: 48, height: 48)
 
                 Image(systemName: name)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(DS.Typography.title)
                     .foregroundStyle(
                         tempIconName == name
                             ? Color(hex: tempColorHex)

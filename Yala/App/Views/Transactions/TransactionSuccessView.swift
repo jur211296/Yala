@@ -2,7 +2,7 @@
 //  TransactionSuccessView.swift
 //  Yala
 //
-//  Created by Neto - Success confirmation screen after transaction registration.
+//  Created by Yala - Success confirmation screen after transaction registration.
 //
 
 import SwiftUI
@@ -36,16 +36,38 @@ struct TransactionSuccessData {
 // MARK: - Transaction Success View
 
 struct TransactionSuccessView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36
+
     let data: TransactionSuccessData
     let onAccept: () -> Void
     let onCreateAnother: () -> Void
     let onEdit: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showHero = false
+    @State private var showCheckmark = false
+    @State private var showAmount = false
+    @State private var showDetails = false
+    @State private var showActions = false
+
+    private var typeColor: Color { data.transactionType.color }
+
     var body: some View {
         ZStack {
             Color.yalaBackground.ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            // Subtle background glow
+            RadialGradient(
+                colors: [typeColor.opacity(0.06), .clear],
+                center: .center,
+                startRadius: 0,
+                endRadius: 200
+            )
+            .frame(height: 300)
+            .blur(radius: 40)
+            .offset(y: -60)
+
+            VStack(spacing: DS.Spacing.none) {
                 // Edit button at top right - native iOS style (inverted)
                 HStack {
                     Spacer()
@@ -57,27 +79,82 @@ struct TransactionSuccessView: View {
 
                 Spacer()
 
-                // Success icon and title
+                // Hero area
                 VStack(spacing: DS.Spacing.lg) {
-                    ZStack {
-                        Circle()
-                            .fill(data.transactionType.color.opacity(0.15))
-                            .frame(width: 80, height: 80)
+                    // Title above circle
+                    Text(L10n.Transaction.successTitle)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.secondary)
+                        .opacity(showHero ? 1.0 : 0.0)
 
+                    // Layered circle
+                    ZStack {
+                        // Radiant glow
+                        RadialGradient(
+                            colors: [typeColor.opacity(0.25), .clear],
+                            center: .center,
+                            startRadius: 20,
+                            endRadius: 90
+                        )
+                        .frame(width: 180, height: 180)
+                        .blur(radius: 12)
+                        .opacity(showHero ? 1.0 : 0.0)
+
+                        // Main gradient circle
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [typeColor, typeColor.opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 100, height: 100)
+                            .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
+                            .scaleEffect(showHero ? 1.0 : 0.3)
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // Glass overlay
+                        Circle()
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .mask(
+                                LinearGradient(
+                                    colors: [.white, .clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // White checkmark
                         Image(systemName: "checkmark")
-                            .font(.system(size: 36, weight: .semibold))
-                            .foregroundStyle(data.transactionType.color)
+                            .font(.system(size: heroIconSize, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .scaleEffect(showCheckmark ? 1.0 : 0.0)
+                            .opacity(showCheckmark ? 1.0 : 0.0)
                     }
 
-                    Text(L10n.Transaction.successTitle)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.primary)
+                    // Promoted amount
+                    Text(
+                        YalaFormatter.currency(
+                            value: Double(truncating: data.amount as NSDecimalNumber),
+                            currencyCode: data.currencyCode,
+                            forceFullPrecision: true)
+                    )
+                    .font(DS.Typography.largeTitle)
+                    .foregroundStyle(typeColor)
+                    .scaleEffect(showAmount ? 1.0 : 0.8)
+                    .opacity(showAmount ? 1.0 : 0.0)
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 
                 // Transaction details
                 detailsSection
                     .padding(.horizontal, DS.Spacing.xl)
+                    .opacity(showDetails ? 1.0 : 0.0)
+                    .offset(y: showDetails ? 0 : 15)
 
                 Spacer()
 
@@ -103,6 +180,48 @@ struct TransactionSuccessView: View {
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
+                .opacity(showActions ? 1.0 : 0.0)
+                .offset(y: showActions ? 0 : 10)
+            }
+        }
+        .onAppear {
+            if reduceMotion {
+                showHero = true
+                showCheckmark = true
+                showAmount = true
+                showDetails = true
+                showActions = true
+            } else {
+                Task {
+                    // 0ms — hero circle + glow
+                    withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
+                        showHero = true
+                    }
+
+                    // 150ms — checkmark
+                    try? await Task.sleep(for: .milliseconds(150))
+                    withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
+                        showCheckmark = true
+                    }
+
+                    // 300ms — amount
+                    try? await Task.sleep(for: .milliseconds(150))
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        showAmount = true
+                    }
+
+                    // 500ms — details card
+                    try? await Task.sleep(for: .milliseconds(200))
+                    withAnimation(.easeOut(duration: 0.35)) {
+                        showDetails = true
+                    }
+
+                    // 700ms — action buttons
+                    try? await Task.sleep(for: .milliseconds(200))
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showActions = true
+                    }
+                }
             }
         }
     }
@@ -110,10 +229,7 @@ struct TransactionSuccessView: View {
     // MARK: - Details Section
 
     private var detailsSection: some View {
-        VStack(spacing: 0) {
-            // Amount (prominent)
-            amountRow
-
+        VStack(spacing: DS.Spacing.none) {
             // Transaction type
             typeRow
 
@@ -166,41 +282,21 @@ struct TransactionSuccessView: View {
 
     // MARK: - Row Components
 
-    private var amountRow: some View {
-        HStack {
-            Text(L10n.Transaction.total)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            Text(
-                YalaFormatter.currency(
-                    value: NSDecimalNumber(decimal: data.amount).doubleValue,
-                    currencyCode: data.currencyCode)
-            )
-            .font(.title.weight(.bold))
-            .foregroundStyle(data.transactionType.color)
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.lg)
-    }
-
     private var typeRow: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: data.transactionType.iconName)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(data.transactionType.color)
                 .frame(width: 20)
 
             Text(L10n.Transaction.type)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
             Text(data.transactionType.displayName)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(data.transactionType.color)
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -217,18 +313,18 @@ struct TransactionSuccessView: View {
     private func detailRow(icon: String, label: String, value: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(label)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
@@ -239,12 +335,12 @@ struct TransactionSuccessView: View {
     private var accountRow: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "creditcard")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(L10n.Account.selectAccount)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -254,7 +350,7 @@ struct TransactionSuccessView: View {
                     .fill(Color(hex: data.accountColorHex))
                     .frame(width: 8, height: 8)
                 Text(data.accountName)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
             }
         }
@@ -263,16 +359,16 @@ struct TransactionSuccessView: View {
     }
 
     private var transferAccountsRow: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Source account
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.up.circle")
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(Color.hotPink)
                     .frame(width: 20)
 
                 Text(L10n.Transaction.origin)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
                 Spacer()
@@ -282,7 +378,7 @@ struct TransactionSuccessView: View {
                         .fill(Color(hex: data.accountColorHex))
                         .frame(width: 8, height: 8)
                     Text(data.accountName)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                 }
             }
@@ -295,12 +391,12 @@ struct TransactionSuccessView: View {
             {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "arrow.down.circle")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(Color.electricIndigo)
                         .frame(width: 20)
 
                     Text(L10n.Transaction.destination)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
 
                     Spacer()
@@ -310,7 +406,7 @@ struct TransactionSuccessView: View {
                             .fill(Color(hex: destColor))
                             .frame(width: 8, height: 8)
                         Text(destName)
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(.primary)
 
                         if let destAmount = data.destinationAmount,
@@ -318,9 +414,9 @@ struct TransactionSuccessView: View {
                             destCurrency != data.currencyCode
                         {
                             Text(
-                                "(\(YalaFormatter.currency(value: NSDecimalNumber(decimal: destAmount).doubleValue, currencyCode: destCurrency)))"
+                                "(\(YalaFormatter.currency(value: Double(truncating: destAmount as NSDecimalNumber), currencyCode: destCurrency, forceFullPrecision: true)))"
                             )
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         }
                     }
@@ -334,12 +430,12 @@ struct TransactionSuccessView: View {
     private var categoryRow: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(L10n.Transaction.category)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -355,13 +451,13 @@ struct TransactionSuccessView: View {
                             )
                             .frame(width: 8, height: 8)
                         Text(subcatName)
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(.primary)
                     }
                 }
                 if let catName = data.categoryName {
                     Text(catName)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -373,12 +469,12 @@ struct TransactionSuccessView: View {
     private func natureRow(nature: SubcategoryNature) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "leaf")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(L10n.Category.nature)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -389,7 +485,7 @@ struct TransactionSuccessView: View {
                     .frame(width: 6, height: 6)
 
                 Text(nature.displayName)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
             }
             .padding(.horizontal, DS.Spacing.sm)
@@ -405,12 +501,12 @@ struct TransactionSuccessView: View {
     private var tagsRow: some View {
         HStack(alignment: .center, spacing: DS.Spacing.md) {
             Image(systemName: "number")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
             Text(L10n.Transaction.tags)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -423,7 +519,7 @@ struct TransactionSuccessView: View {
                             .fill(Color(hex: tag.colorHex))
                             .frame(width: 6, height: 6)
                         Text(tag.name)
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.primary)
                     }
                     .padding(.horizontal, DS.Spacing.sm)

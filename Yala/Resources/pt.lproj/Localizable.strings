@@ -111,9 +111,14 @@
 "filters.allNatures" = "Todas";
 "filters.selectedCount" = "%d selecionadas";
 "filters.subcategoriesSelectedCount" = "%d subcategorias selecionadas";
+"filters.categories" = "Categorias";
+"filters.type" = "Tipo";
+"filters.nature" = "Natureza";
+"filters.currency" = "Moeda";
 
 // MARK: - Actions
 
+"action.apply" = "Aplicar";
 "action.cancel" = "Cancelar";
 "action.done" = "Concluido";
 "action.save" = "Salvar";
@@ -135,17 +140,28 @@
 "action.duplicated" = "Duplicado - salve para criar novo";
 "action.select" = "Selecionar";
 "action.retry" = "Tentar novamente";
+"action.later" = "Mais tarde";
 
 // MARK: - Search
 
 "search.noResults" = "Sem resultados";
 "search.tryAnotherTerm" = "Tente outro termo de busca";
+"search.resultsCount" = "%d resultados";
+"search.filter.all" = "Tudo";
+"search.filter.note" = "Nota";
+"search.filter.category" = "Categoria";
+"search.filter.subcategory" = "Subcategoria";
+"search.filter.account" = "Conta";
+"search.filter.nature" = "Natureza";
+"search.filter.tag" = "Etiqueta";
 
 // MARK: - Exchange Rate
 
 "exchangeRate.title" = "Taxa de Cambio";
 "exchangeRate.updated" = "Atualizado";
 "exchangeRate.loadError" = "Nao foi possivel carregar a taxa de cambio para este periodo. Tente novamente mais tarde.";
+"exchangeRate.noSecondaryCurrenciesHint" = "Podes selecionar moedas secundárias em";
+"exchangeRate.noSecondaryCurrenciesPath" = "Perfil > Moeda e câmbio";
 
 // MARK: - Empty States
 
@@ -179,9 +195,9 @@
 "transaction.destination" = "Destino";
 "transaction.exchangeRate" = "Taxa de cambio";
 "transaction.willReceive" = "Recebera";
-"transaction.createAnother" = "Criar outra transacao";
+"transaction.createAnother" = "Registrar outro";
 "transaction.recents" = "Recentes";
-"transaction.successTitle" = "Registro realizado!";
+"transaction.successTitle" = "Pronto!";
 "transaction.type.expense" = "Despesa";
 "transaction.type.income" = "Receita";
 "transaction.type.transfer" = "Transferencia";
@@ -286,6 +302,25 @@
 // MARK: - Scheduled
 
 "scheduled.saveDescription" = "Crie um pagamento agendado para lembrar desta despesa ou receita recorrente. Você o encontrará na seção Pagamentos Agendados no seu perfil, onde poderá editá-lo, ativá-lo ou desativá-lo a qualquer momento.";
+"scheduled.paid" = "Pago";
+"scheduled.overdue" = "Vencido";
+"scheduled.draftCreatedTitle" = "Você tem pagamentos pendentes!";
+"scheduled.draftCreatedMessage" = "%d pagamentos agendados foram adicionados à sua caixa. Confira quando quiser.";
+"scheduled.viewInbox" = "Ver caixa";
+
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "Você tem pagamentos pendentes!";
+"inbox.alert.title.subscriptions" = "Assinaturas para verificar!";
+"inbox.alert.title.automations" = "Novos registros automáticos!";
+"inbox.alert.title.mixed" = "Novos registros na sua caixa!";
+"inbox.alert.message.scheduled" = "%d pagamentos agendados foram adicionados à sua caixa.";
+"inbox.alert.message.subscriptions" = "%d assinaturas foram adicionadas à sua caixa.";
+"inbox.alert.message.automations" = "%d registros automáticos foram adicionados à sua caixa.";
+"inbox.alert.message.mixed.scheduled" = "%d pagamentos";
+"inbox.alert.message.mixed.subscriptions" = "%d assinaturas";
+"inbox.alert.message.mixed.automations" = "%d registros automáticos";
+"inbox.alert.message.mixed.connector" = " e ";
 
 // MARK: - Settings
 
@@ -313,6 +348,8 @@
 "settings.plannedPayments" = "Pagamentos planejados";
 "settings.voiceInputEnabled" = "Entrada por voz";
 "settings.voiceLanguage" = "Idioma da voz";
+"settings.appLanguage" = "Idioma do app";
+"settings.appLanguageRestart" = "Reinicie o app para aplicar a alteração.";
 "settings.imageInputEnabled" = "Entrada por imagem";
 "settings.resetData" = "Apagar dados";
 "settings.version" = "Versao";
@@ -367,6 +404,14 @@
 "budgets.widget.noFavorites.title" = "Sem favoritos";
 "budgets.widget.noFavorites.message" = "Marque orcamentos como favoritos em Configuracoes > Orcamentos para ve-los aqui.";
 "budgets.widget.selectFavorites" = "Selecionar favoritos";
+"budgets.alerts.title" = "Alertas";
+"budgets.alerts.enable" = "Notificar ao atingir limite";
+"budgets.alerts.thresholds" = "Notificar ao atingir:";
+"budgets.alerts.message.50" = "Orcamento \"%@\" em 50%% — %@ de %@ gastos";
+"budgets.alerts.message.75" = "Orcamento \"%@\" em 75%% — %@ de %@ gastos";
+"budgets.alerts.message.90" = "Atencao: \"%@\" quase esgotado — %@ de %@";
+"budgets.alerts.message.100" = "Orcamento \"%@\" esgotado — Voce gastou %@ de %@";
+"budgets.alerts.globalDisabledHint" = "Ative os alertas de orcamento em Perfil > Notificacoes para recebe-los";
 "budgets.new" = "Novo orcamento";
 "budgets.edit" = "Editar orcamento";
 "budgets.delete" = "Eliminar orcamento";
@@ -457,6 +502,22 @@
 "export.subcategoriesSelected" = "%d subcategorias selecionadas";
 "export.allTags" = "Todas as etiquetas";
 "export.allCurrencies" = "Todas";
+"export.column.date" = "Data";
+"export.column.amount" = "Valor";
+"export.column.currency" = "Moeda";
+"export.column.account" = "Conta";
+"export.column.category" = "Categoria";
+"export.column.subcategory" = "Subcategoria";
+"export.column.tags" = "Etiquetas";
+"export.column.note" = "Nota";
+"export.column.date.description" = "Data no formato yyyy-MM-dd.";
+"export.column.amount.description" = "Valor da transação com 2 casas decimais.";
+"export.column.currency.description" = "Código da moeda (PEN, USD, EUR).";
+"export.column.account.description" = "Nome da conta associada.";
+"export.column.category.description" = "Categoria principal da transação.";
+"export.column.subcategory.description" = "Subcategoria específica.";
+"export.column.tags.description" = "Etiquetas associadas, separadas por ';'.";
+"export.column.note.description" = "Nota livre associada à transação.";
 "common.next" = "Próximo";
 "settings.versionInfo" = "Versao 1.0.0 (Build 1)";
 "tab.panel" = "Inicio";
@@ -464,6 +525,7 @@
 "tab.planning" = "Planejamento";
 "tab.more" = "Mais";
 "tab.search" = "Buscar";
+"tab.records" = "Registros";
 "common.moreOptions" = "Mais opcoes";
 "common.comingSoon" = "Em breve";
 "panel.greeting" = "Olá, %@";
@@ -471,6 +533,7 @@
 "panel.fabVoice" = "Voz";
 "panel.fabImage" = "Imagem";
 "panel.fabManual" = "Manual";
+"panel.spent" = "Gasto";
 
 "widget.today" = "Hoje";
 
@@ -649,7 +712,7 @@
 "settings.permissions" = "Permissoes";
 "settings.subscriptions" = "Gerenciar assinaturas";
 "settings.rateApp" = "Avaliar e recomendar";
-"settings.tips" = "Dicas e truques";
+"settings.tutorials" = "Tutoriais";
 "settings.faq" = "Perguntas frequentes";
 "settings.contact" = "Entre em contato";
 "settings.privacy" = "Politica de privacidade";
@@ -695,12 +758,19 @@
 "profile.privacyTitle" = "Seus dados nunca saem do seu dispositivo";
 "profile.privacyDesc" = "Yala armazena seus dados pessoais apenas no seu dispositivo. Nao temos acesso a eles nem os compartilhamos com terceiros. Se voce excluir o app, todos os seus dados serao apagados.";
 "profile.aliasFutureNote" = "Nota: A validacao de unicidade do alias estara disponivel quando a funcionalidade de despesas compartilhadas for implementada.";
+"profile.proMember" = "Membro PRO";
+"profile.choosePhoto" = "Escolher foto";
+"profile.chooseIcon" = "Escolher ícone";
+"profile.removeAvatar" = "Remover";
+"profile.editAvatar" = "Editar avatar";
 
 "settings.currencyDescription" = "Escolha sua moeda principal e consulte as taxas de cambio atualizadas.";
 "settings.preferredCurrency" = "Moeda preferida";
 "settings.exchangeRate" = "Taxa de cambio";
 "settings.secondaryCurrencies" = "Moedas secundarias";
 "settings.secondaryCurrenciesHint" = "Selecione ate 2 moedas para comparar com sua moeda preferida no widget de taxas de cambio.";
+"settings.showMoreCurrencies" = "Ver mais moedas";
+"settings.recommendedCurrencies" = "Recomendadas";
 "common.lastUpdate" = "Ultima atualizacao:";
 
 
@@ -722,6 +792,10 @@
 "settings.appIconDescription" = "Escolha o icone que melhor se adapta ao seu estilo.";
 "settings.personalization" = "Personalizacao";
 "settings.personalizationDescription" = "Ajuste como o Yala funciona de acordo com suas preferencias.";
+"settings.sectionInterface" = "Interface";
+"settings.sectionCalendar" = "Calendario";
+"settings.sectionIndicators" = "Indicadores";
+"settings.sectionFormat" = "Formato de numeros";
 "settings.defaultPeriod" = "Periodo padrao";
 "settings.defaultPeriodDescription" = "Este periodo sera aplicado por padrao cada vez que voce abrir o app. Voce pode altera-lo temporariamente no seletor de periodo a qualquer momento.";
 "settings.colorfulIcons" = "Icones coloridos";
@@ -753,6 +827,7 @@
 "transaction.newTransaction" = "Novo registro";
 "transaction.editTransaction" = "Editar registro";
 "transaction.description" = "Descricao";
+"transaction.descriptionHint" = "Use @ conta, ! categoria, # etiqueta";
 "transaction.sourceAccount" = "Conta de origem";
 "transaction.destinationAccount" = "Conta de destino";
 "transaction.account" = "Conta";
@@ -765,13 +840,142 @@
 "tag.colorSelected" = "Selecionado: %@";
 
 // MARK: - Currency Names
+// América Latina
 "currency.pen" = "sol peruano";
-"currency.usd" = "dolar americano";
-"currency.eur" = "euro";
+"currency.usd" = "dólar americano";
 "currency.mxn" = "peso mexicano";
 "currency.cop" = "peso colombiano";
 "currency.brl" = "real brasileiro";
+"currency.ars" = "peso argentino";
+"currency.clp" = "peso chileno";
+"currency.uyu" = "peso uruguaio";
+"currency.bob" = "boliviano boliviano";
+"currency.pyg" = "guarani paraguaio";
+"currency.crc" = "colón costarriquenho";
+"currency.gtq" = "quetzal guatemalteco";
+"currency.hnl" = "lempira hondurenho";
+"currency.nio" = "córdoba nicaraguense";
+"currency.pab" = "balboa panamenho";
+"currency.dop" = "peso dominicano";
+// Europa
+"currency.eur" = "euro";
 "currency.gbp" = "libra esterlina";
+"currency.chf" = "franco suíço";
+"currency.sek" = "coroa sueca";
+"currency.nok" = "coroa norueguesa";
+"currency.dkk" = "coroa dinamarquesa";
+"currency.pln" = "zloty polonês";
+"currency.czk" = "coroa checa";
+"currency.huf" = "florim húngaro";
+"currency.ron" = "leu romeno";
+"currency.rub" = "rublo russo";
+"currency.uah" = "hryvnia ucraniana";
+"currency.try" = "lira turca";
+// Ásia
+"currency.jpy" = "iene japonês";
+"currency.cny" = "yuan chinês";
+"currency.krw" = "won sul-coreano";
+"currency.inr" = "rupia indiana";
+"currency.idr" = "rupia indonésia";
+"currency.php" = "peso filipino";
+"currency.thb" = "baht tailandês";
+"currency.myr" = "ringgit malaio";
+"currency.sgd" = "dólar de Singapura";
+"currency.hkd" = "dólar de Hong Kong";
+"currency.twd" = "novo dólar taiwanês";
+"currency.vnd" = "dong vietnamita";
+// Oceania
+"currency.aud" = "dólar australiano";
+"currency.nzd" = "dólar neozelandês";
+// Oriente Médio
+"currency.aed" = "dirrã dos Emirados";
+"currency.sar" = "rial saudita";
+"currency.ils" = "novo shekel israelense";
+"currency.qar" = "rial catariano";
+"currency.kwd" = "dinar kuwaitiano";
+// África
+"currency.zar" = "rand sul-africano";
+"currency.egp" = "libra egípcia";
+"currency.ngn" = "naira nigeriana";
+"currency.kes" = "xelim queniano";
+"currency.mad" = "dirrã marroquino";
+// América do Norte
+"currency.cad" = "dólar canadense";
+
+// MARK: - Currency Plural Names (short, no country)
+// América Latina
+"currency.plural.pen" = "soles";
+"currency.plural.usd" = "dólares";
+"currency.plural.mxn" = "pesos";
+"currency.plural.cop" = "pesos";
+"currency.plural.brl" = "reais";
+"currency.plural.ars" = "pesos";
+"currency.plural.clp" = "pesos";
+"currency.plural.uyu" = "pesos";
+"currency.plural.bob" = "bolivianos";
+"currency.plural.pyg" = "guaranis";
+"currency.plural.crc" = "colones";
+"currency.plural.gtq" = "quetzais";
+"currency.plural.hnl" = "lempiras";
+"currency.plural.nio" = "córdobas";
+"currency.plural.pab" = "balboas";
+"currency.plural.dop" = "pesos";
+// Europa
+"currency.plural.eur" = "euros";
+"currency.plural.gbp" = "libras";
+"currency.plural.chf" = "francos";
+"currency.plural.sek" = "coroas";
+"currency.plural.nok" = "coroas";
+"currency.plural.dkk" = "coroas";
+"currency.plural.pln" = "zlotys";
+"currency.plural.czk" = "coroas";
+"currency.plural.huf" = "forints";
+"currency.plural.ron" = "lei";
+"currency.plural.rub" = "rublos";
+"currency.plural.uah" = "hryvnias";
+"currency.plural.try" = "liras";
+// Ásia
+"currency.plural.jpy" = "ienes";
+"currency.plural.cny" = "yuans";
+"currency.plural.krw" = "wons";
+"currency.plural.inr" = "rupias";
+"currency.plural.idr" = "rupias";
+"currency.plural.php" = "pesos";
+"currency.plural.thb" = "bahts";
+"currency.plural.myr" = "ringgits";
+"currency.plural.sgd" = "dólares";
+"currency.plural.hkd" = "dólares";
+"currency.plural.twd" = "dólares";
+"currency.plural.vnd" = "dongs";
+// Oceania
+"currency.plural.aud" = "dólares";
+"currency.plural.nzd" = "dólares";
+// Oriente Médio
+"currency.plural.aed" = "dirhams";
+"currency.plural.sar" = "riais";
+"currency.plural.ils" = "shekels";
+"currency.plural.qar" = "riais";
+"currency.plural.kwd" = "dinares";
+// África
+"currency.plural.zar" = "rands";
+"currency.plural.egp" = "libras";
+"currency.plural.ngn" = "nairas";
+"currency.plural.kes" = "xelins";
+"currency.plural.mad" = "dirhams";
+// América do Norte
+"currency.plural.cad" = "dólares";
+
+// MARK: - Continents
+"continent.latinAmerica" = "América Latina";
+"continent.europe" = "Europa";
+"continent.asia" = "Ásia";
+"continent.oceania" = "Oceania";
+"continent.middleEast" = "Oriente Médio";
+"continent.africa" = "África";
+"continent.northAmerica" = "América do Norte";
+
+"common.seeAll" = "Ver tudo";
+"common.none" = "Nenhum";
 
 "common.selectColor" = "Selecione uma cor";
 "common.useThisColor" = "Usar esta cor";
@@ -898,6 +1102,8 @@
 "validation.accountsMustBeDifferent" = "As contas devem ser diferentes";
 "validation.selectAccount" = "Selecione uma conta";
 "validation.selectSubcategory" = "Selecione uma subcategoria";
+"validation.futureDateTitle" = "Data futura não permitida";
+"validation.futureDateMessage" = "Não podes registar transações com uma data futura. Usa os pagamentos agendados para despesas recorrentes.";
 
 // MARK: - Transfer
 
@@ -1044,6 +1250,8 @@
 
 "settings.widgetHints" = "Textos de ajuda";
 "settings.widgetHintsDescription" = "Mostra botoes de info nos widgets com explicacoes sobre cada grafico.";
+"settings.showVariations" = "Comparações";
+"settings.showVariationsDescription" = "Mostra variações percentuais e gráficos comparativos vs o período anterior.";
 "settings.decimalPlaces" = "Casas decimais";
 "settings.decimalPlacesDescription" = "Aplica-se apenas a totais e gráficos. Os registros individuais sempre mostram 2 decimais.";
 "settings.decimalsNone" = "Sem decimais";
@@ -1053,6 +1261,18 @@
 "settings.currencyFormatDescription" = "Escolha se mostra o código da moeda (BRL) ou o símbolo (R$).";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencySymbol" = "Símbolo (S/, $)";
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Modo de uso";
+"settings.expensesOnlyMode" = "Apenas despesas";
+"settings.expensesOnlyModeDescription" = "Oculta receitas, transferências e saldos. Seus dados não são apagados, apenas ocultados.";
+"settings.expensesOnlyActivateTitle" = "Ativar modo apenas despesas?";
+"settings.expensesOnlyActivateMessage" = "Receitas, transferências e saldos serão ocultados em todo o app. Você pode reverter isso a qualquer momento.";
+"settings.expensesOnlyActivateConfirm" = "Sim, ativar";
+"settings.expensesOnlyDeactivateTitle" = "Desativar modo apenas despesas?";
+"settings.expensesOnlyDeactivateMessage" = "Receitas, transferências e saldos serão exibidos novamente.";
+"settings.expensesOnlyDeactivateConfirm" = "Sim, desativar";
+"settings.expensesOnlyActive" = "Ativo";
+"settings.categoryHidden" = "(oculta)";
 
 "widget.hint.trend" = "Mostra a evolução do seu saldo, receitas ou despesas no período selecionado.";
 "widget.hint.topCategories" = "As categorias onde mais gastou neste periodo.";
@@ -1071,8 +1291,8 @@
 
 // MARK: - Onboarding
 
-"onboarding.welcomeTitle" = "Bem-vindo ao Yala";
-"onboarding.welcomeSubtitle" = "Configure seu aplicativo de finanças pessoais em segundos.";
+"onboarding.welcomeTitle" = "Vamos organizar seu dinheiro";
+"onboarding.welcomeSubtitle" = "Só alguns passos para personalizar o Yala para você.";
 "onboarding.nameLabel" = "Qual é o seu nome?";
 "onboarding.namePlaceholder" = "Seu nome";
 "onboarding.currencyTitle" = "Moeda principal";
@@ -1083,6 +1303,32 @@
 "onboarding.periodTitle" = "Período padrão";
 "onboarding.periodSubtitle" = "Qual intervalo de tempo você prefere ver ao abrir o aplicativo?";
 "onboarding.finish" = "Começar";
+"onboarding.categoriesTitle" = "Categorias para começar";
+"onboarding.categoriesSubtitle" = "Preparamos categorias comuns para ajudar a organizar suas despesas desde o primeiro dia.";
+"onboarding.categoriesYes" = "Começar com estas categorias";
+"onboarding.categoriesNo" = "Começar do zero";
+"onboarding.categoriesRecommended" = "Recomendado";
+"onboarding.categoriesInfo" = "Cada categoria inclui subcategorias mais detalhadas. Você pode vê-las e personalizá-las em Perfil > Categorias.";
+"onboarding.notificationsTitle" = "Te avisamos?";
+"onboarding.notificationsSubtitle" = "Ative os lembretes que te ajudam. Você pode mudá-los quando quiser.";
+"onboarding.notificationsSkip" = "Agora não, obrigado";
+"onboarding.notificationsSelectAll" = "Ativar tudo";
+"onboarding.notificationsDeselectAll" = "Desativar tudo";
+"onboarding.recommended" = "Recomendada";
+"onboarding.languageTitle" = "Escolha seu idioma";
+"onboarding.languageSubtitle" = "Detectamos que seu idioma ainda não é suportado. Não se preocupe, escolha entre estas opções!";
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "O que você quer registrar?";
+"onboarding.expensesOnlySubtitle" = "Você pode mudar isso a qualquer momento em Configurações.";
+"onboarding.expensesOnlyOptionAll" = "Quero registrar tudo";
+"onboarding.expensesOnlyOptionExpenses" = "Quero registrar apenas despesas";
+"onboarding.privacyTitle" = "Tudo pronto";
+"onboarding.privacySubtitle" = "Já podes começar a usar o Yala";
+"onboarding.privacyLocal" = "Os teus dados ficam no teu dispositivo";
+"onboarding.privacyNoTracking" = "Sem rastreamento nem anúncios";
+"onboarding.privacyIcloud" = "Só tu tens acesso aos teus dados";
+"onboarding.privacyNoSharing" = "Não partilhamos a tua informação";
+"onboarding.privacyTutorialsHint" = "Descobre os tutoriais e dicas do Yala";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";
@@ -1105,15 +1351,15 @@
 "voice.tapToRecord" = "Toque para gravar";
 "voice.youCanSay" = "Você pode dizer:";
 "voice.hintTypeExample" = "Despesa/Receita/Transferência";
-"voice.hintAmountExample" = "50 reais";
+"voice.hintAmountExample" = "50 %@";
 "voice.hintSubcategoryExample" = "Restaurantes";
 "voice.hintMerchantExample" = "Starbucks";
 "voice.hintTagExample" = "Trabalho";
 "voice.hintDateExample" = "Hoje/Ontem";
 "voice.exampleLabel" = "Exemplos";
-"voice.example1" = "Gastei 50 reais no Starbucks para café";
-"voice.example2" = "Receita de 1000 reais de trabalho freelance";
-"voice.example3" = "Transferência de 200 reais para conta poupança";
+"voice.example1" = "Gasto de 50 %@ no Starbucks para café";
+"voice.example2" = "Renda de 1000 %@ por trabalho freelance";
+"voice.example3" = "Transferência de 200 %@ para conta poupança";
 "voice.processingAudio" = "Processando áudio...";
 "voice.analyzing" = "Analisando...";
 "voice.parsing" = "Extraindo dados...";
@@ -1151,9 +1397,14 @@
 "inbox.sourceScreenshot" = "Screenshot";
 "inbox.sourceScreenshotList" = "List";
 "inbox.sourceReceipt" = "Receipt";
+"inbox.sourceScheduledPayment" = "Pagamento agendado";
+"inbox.sourceSubscription" = "Assinatura";
+"inbox.sourceApplePay" = "Apple Pay";
+"inbox.sourceAutomation" = "Automação";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
+"inbox.errorArchivedAccount" = "Esta conta está arquivada. Edite o rascunho e mude a conta para aprovar.";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";
@@ -1201,6 +1452,17 @@
 "image.transactionsDetectedMessage" = "Detectamos %d transações. Você pode revisá-las e aprová-las na caixa de entrada.";
 "image.analyzingIn" = "Analisando em %d...";
 "image.imagesSelected" = "%d imagens selecionadas";
+"image.youCanUpload" = "Você pode enviar:";
+"image.hintReceipts" = "Recibos de compra";
+"image.hintBankScreenshots" = "Capturas bancárias";
+"image.hintRestaurantTickets" = "Tickets de restaurante";
+"image.hintStatements" = "Extratos de conta";
+"image.hintPaymentProofs" = "Comprovantes de pagamento";
+"image.hintMultiple" = "Múltiplas de uma vez";
+"image.exampleLabel" = "Exemplos";
+"image.example1" = "Foto de um recibo do supermercado";
+"image.example2" = "Captura de uma transferência bancária";
+"image.example3" = "Foto de vários tickets de uma viagem";
 
 // MARK: - Subscription
 "subscription.title" = "Yala Pro";
@@ -1221,6 +1483,7 @@
 "subscription.feature.themes" = "Temas e ícones exclusivos";
 "subscription.feature.export" = "Exportação em Excel e CSV";
 "subscription.legalFooter" = "O pagamento é cobrado na sua conta Apple. A assinatura se renova automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período atual.";
+"subscription.termsLink" = "Termos de Uso e Política de Privacidade";
 "subscription.errorTitle" = "Erro na compra";
 "subscription.activeTitle" = "Você é Yala Pro";
 "subscription.activeSubtitle" = "Você tem acesso a todas as funcionalidades premium";
@@ -1273,3 +1536,576 @@
 "faq.whatIsPro.a" = "Yala Pro desbloqueia funções premium como entrada por voz, escaneamento de recibos com câmera, temas exclusivos e mais. Veja todos os benefícios em Ajustes > Assinatura.";
 "faq.cancelSub.q" = "Como cancelo minha assinatura?";
 "faq.cancelSub.a" = "Você pode gerenciar ou cancelar sua assinatura a qualquer momento em Ajustes > Assinatura > Gerenciar na App Store. Seu acesso Pro continua até o final do período pago.";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "Registro rápido";
+"shortcut.quickExpense.description" = "Crie um novo registro no Yala com valor, conta, categoria e tag.";
+"shortcut.quickExpense.shortTitle" = "Registro rápido";
+
+// Parameters
+"shortcut.param.type" = "Tipo";
+"shortcut.param.type.description" = "Despesa ou receita";
+"shortcut.param.amount" = "Valor";
+"shortcut.param.amount.description" = "O valor a registrar";
+"shortcut.param.note" = "Descrição";
+"shortcut.param.note.description" = "Uma nota ou descrição";
+"shortcut.param.account" = "Conta";
+"shortcut.param.account.description" = "A conta para registrar";
+"shortcut.param.subcategory" = "Subcategoria";
+"shortcut.param.subcategory.description" = "A subcategoria";
+"shortcut.param.tag" = "Tag";
+"shortcut.param.tag.description" = "Uma tag opcional";
+
+// Dialogs
+"shortcut.dialog.askType" = "Despesa ou receita?";
+"shortcut.dialog.askAmount" = "Quanto?";
+"shortcut.dialog.askNote" = "Descrição (opcional)";
+"shortcut.dialog.askAccount" = "Qual conta?";
+"shortcut.dialog.askSubcategory" = "Qual categoria?";
+"shortcut.dialog.askTag" = "Tag (opcional)";
+
+// Entities
+"shortcut.entity.transactionType" = "Tipo";
+"shortcut.type.expense" = "Despesa";
+"shortcut.type.income" = "Receita";
+"shortcut.entity.account" = "Conta";
+"shortcut.entity.subcategory" = "Subcategoria";
+
+// Errors
+"shortcut.error.database" = "Não foi possível acessar o banco de dados";
+"shortcut.error.noAccount" = "Nenhuma conta disponível. Crie uma conta primeiro.";
+"shortcut.error.noSubcategory" = "Subcategoria não encontrada";
+"shortcut.error.save" = "Não foi possível salvar o registro";
+"shortcut.error.voiceNotEnabled" = "A entrada por voz não está ativada. Ative em Configurações > Personalização.";
+"shortcut.error.imageNotEnabled" = "A entrada por imagem não está ativada. Ative em Configurações > Personalização.";
+
+// Results
+"shortcut.result.noTag" = "Sem tag";
+"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Registrado em %@: %@ - %@ - %@ - %@";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "Entrada por voz";
+"shortcut.voiceEntry.description" = "Abre a gravação de voz para ditar despesas";
+"shortcut.voiceEntry.shortTitle" = "Entrada por voz";
+"shortcut.voiceEntry.opening" = "Abrindo entrada por voz...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "Entrada por imagem";
+"shortcut.imageEntry.description" = "Abre o seletor de imagens para registrar despesas de fotos";
+"shortcut.imageEntry.shortTitle" = "Entrada por imagem";
+"shortcut.imageEntry.opening" = "Abrindo entrada por imagem...";
+
+// MARK: - Apple Pay Intent
+
+"shortcut.applePay.title" = "Registro Apple Pay";
+"shortcut.applePay.description" = "Cria um rascunho na caixa de entrada a partir de um pagamento Apple Pay";
+"shortcut.applePay.shortTitle" = "Apple Pay";
+"shortcut.applePay.param.amount" = "Valor";
+"shortcut.applePay.param.amount.description" = "O valor da transação (do Wallet)";
+"shortcut.applePay.param.merchant" = "Comerciante";
+"shortcut.applePay.param.merchant.description" = "O nome do comerciante";
+"shortcut.applePay.param.name" = "Nome";
+"shortcut.applePay.param.name.description" = "Nome limpo do comerciante (do Wallet)";
+"shortcut.applePay.summaryTitle" = "Registrar pagamento Wallet";
+"shortcut.applePay.dialog.amount" = "Qual é o valor?";
+"shortcut.applePay.dialog.merchant" = "Qual é o comerciante?";
+"shortcut.applePay.error.noAmount" = "O valor é obrigatório. Atribua o valor da transação do Wallet.";
+"shortcut.applePay.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
+
+// Automation Shortcut
+"shortcut.automation.title" = "Entrada por automação";
+"shortcut.automation.description" = "Cria um rascunho a partir de dados JSON de automação externa";
+"shortcut.automation.shortTitle" = "Automação";
+"shortcut.automation.summaryTitle" = "Registrar por automação";
+"shortcut.automation.param.json" = "Dados JSON";
+"shortcut.automation.param.json.description" = "JSON com amount, currency, merchant (opcional), date (opcional)";
+"shortcut.automation.error.invalidJSON" = "Formato JSON inválido. Esperado: {\"amount\": 100, \"currency\": \"USD\"}";
+"shortcut.automation.error.noAmount" = "É necessário um valor maior que zero.";
+"shortcut.automation.error.noCurrency" = "Uma moeda é necessária (ex: USD, PEN, EUR).";
+"shortcut.automation.error.noJSON" = "Os dados JSON da transação são necessários.";
+"shortcut.automation.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
+
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "Gasto rápido";
+"control.quickExpense.displayName" = "Gasto rápido";
+"control.quickExpense.description" = "Registre um gasto rapidamente";
+"control.quickExpense.intentTitle" = "Abrir Yala";
+"control.quickExpense.intentDescription" = "Abre o Yala para registrar um gasto";
+
+"control.voiceEntry.label" = "Registro por voz";
+"control.voiceEntry.displayName" = "Registro por voz";
+"control.voiceEntry.description" = "Dite seu registro";
+"control.voiceEntry.intentTitle" = "Abrir registro por voz";
+"control.voiceEntry.intentDescription" = "Abre o Yala em modo de gravação de voz";
+
+"control.imageEntry.label" = "Registro por imagem";
+"control.imageEntry.displayName" = "Registro por imagem";
+"control.imageEntry.description" = "Registre com uma imagem ou foto";
+"control.imageEntry.intentTitle" = "Abrir registro por imagem";
+"control.imageEntry.intentDescription" = "Abre o Yala em modo câmera para registrar";
+
+// MARK: - Notifications
+"notifications.title" = "Notificações";
+"notifications.addNew" = "Nova notificação";
+"notifications.edit" = "Editar notificação";
+"notifications.delete" = "Excluir";
+"notifications.deleteConfirm" = "Tem certeza que deseja excluir esta notificação?";
+"notifications.permissionRequired" = "Permissão necessária";
+"notifications.permissionMessage" = "Ative as notificações nas Configurações para receber lembretes.";
+"notifications.openSettings" = "Abrir Configurações";
+
+// Form fields
+"notifications.name" = "Nome";
+"notifications.namePlaceholder" = "Ex: Lembrete diário";
+"notifications.text" = "Mensagem";
+"notifications.textPlaceholder" = "Ex: Você registrou seus gastos?";
+"notifications.time" = "Horário";
+"notifications.active" = "Ativa";
+
+// Weekly report config
+"notifications.weeklyReportConfig" = "O que incluir no relatório?";
+"notifications.includeBalance" = "Saldo atual";
+"notifications.includeExpenses" = "Total de gastos";
+"notifications.includeIncome" = "Total de receitas";
+"notifications.includeTopCategory" = "Categoria com mais gastos";
+
+// Default notifications
+"notifications.endOfDay.name" = "Fim do dia";
+"notifications.endOfDay.text" = "Como foi seu dia? 👋 Conta pra gente seus gastos";
+"notifications.lunchTime.name" = "Hora do almoço";
+"notifications.lunchTime.text" = "O que você comeu? 🍽️ Anota enquanto está fresco";
+"notifications.weeklyReport.name" = "Relatório semanal";
+"notifications.weeklyReport.text" = "Veja como foi sua semana 📊";
+"notifications.scheduledPayments.name" = "Pagamentos agendados";
+"notifications.scheduledPayments.text" = "Você tem pagamentos próximos";
+"notifications.announcements.name" = "Novidades do Yala";
+"notifications.announcements.text" = "Confira as últimas funcionalidades";
+
+// Empty state
+"notifications.empty.title" = "Sem notificações";
+"notifications.empty.message" = "Crie notificações para receber lembretes";
+
+// Character count
+"notifications.charactersRemaining" = "%d caracteres restantes";
+"notifications.testNotification" = "Testar lembrete";
+
+// Report data types
+"notifications.data.balance" = "saldo";
+"notifications.data.expenses" = "gastos";
+"notifications.data.income" = "receitas";
+"notifications.data.topCategory" = "categoria com mais gastos";
+"notifications.selectData" = "O que você quer ver?";
+
+// Day preferences
+"notifications.day.sunday" = "domingo";
+"notifications.day.monday" = "segunda";
+"notifications.day.lastOfMonth" = "último dia do mês";
+"notifications.day.firstOfMonth" = "primeiro dia do mês";
+"notifications.selectDay" = "Quando receber?";
+"notifications.allDays" = "Todos os dias";
+"notifications.selectWeekdays" = "Quais dias?";
+
+// Reports
+"notifications.dailyReport.name" = "Resumo do dia";
+"notifications.dailyReport.hint" = "Toda noite você verá seu %@ do dia";
+"notifications.weeklyReport.hint" = "Toda %2$@ você receberá seu %1$@ da semana";
+"notifications.monthlyReport.name" = "Resumo mensal";
+"notifications.monthlyReport.hint" = "No %2$@ você verá seu %1$@ do mês";
+
+// System
+"notifications.scheduledPayments.hint" = "Te avisamos quando você tiver pagamentos próximos";
+"notifications.announcements.hint" = "Compartilhamos as novidades e melhorias ✨";
+
+// Section headers
+"notifications.section.reminders" = "Lembretes";
+"notifications.section.reports" = "Relatórios";
+"notifications.section.system" = "Sistema";
+"notifications.section.custom" = "Personalizados";
+"notifications.budgetAlerts.title" = "Alertas de orcamento";
+"notifications.budgetAlerts.hint" = "Receba avisos ao se aproximar dos limites";
+
+// Scheduled Payment Notifications (personalized)
+"notifications.scheduledPayment.dueToday" = "Hoje vence: %@ por %@";
+"notifications.scheduledPayment.dueSoon" = "Em %d dia(s) vence: %@ por %@";
+"notifications.scheduledPayment.overdue" = "Pagamento vencido: %@ por %@";
+"notifications.scheduledPayment.dueToday.income" = "Hoje voce recebe: %@ de %@";
+"notifications.scheduledPayment.dueSoon.income" = "Em %d dia(s) voce recebe: %@ de %@";
+"notifications.scheduledPayment.overdue.income" = "Receita pendente: %@ de %@";
+
+// Report Notifications (with real data)
+"notifications.report.balance" = "Seu saldo atual: %@";
+"notifications.report.expenses" = "Voce gastou: %@";
+"notifications.report.income" = "Voce recebeu: %@";
+"notifications.report.topCategory" = "Seu maior gasto: %@";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "Dia tranquilo! Sem gastos ✨";
+"notifications.report.empty.expenses.weekly" = "Semana tranquila! Sem gastos registrados ✨";
+"notifications.report.empty.expenses.monthly" = "Mês tranquilo! Sem gastos registrados ✨";
+"notifications.report.empty.income" = "Sem receitas registradas neste período";
+"notifications.report.empty.topCategory" = "Sem gastos! Sua carteira descansou 😊";
+
+// Test report samples
+"notifications.testReport.balance" = "Seu saldo atual: R$ 1.250,00";
+"notifications.testReport.expenses" = "Você gastou R$ 350,00 neste período";
+"notifications.testReport.income" = "Você recebeu R$ 2.500,00 neste período";
+"notifications.testReport.topCategory" = "Seu maior gasto: Alimentação (R$ 180,00)";
+"notifications.testReport.balance.daily" = "Seu saldo hoje: $1.250,00";
+"notifications.testReport.balance.weekly" = "Seu saldo esta semana: $1.250,00";
+"notifications.testReport.balance.monthly" = "Seu saldo este mês: $1.250,00";
+"notifications.testReport.expenses.daily" = "Você gastou $85,00 hoje";
+"notifications.testReport.expenses.weekly" = "Você gastou $350,00 esta semana";
+"notifications.testReport.expenses.monthly" = "Você gastou $1.200,00 este mês";
+"notifications.testReport.income.daily" = "Você recebeu $500,00 hoje";
+"notifications.testReport.income.weekly" = "Você recebeu $2.500,00 esta semana";
+"notifications.testReport.income.monthly" = "Você recebeu $8.500,00 este mês";
+"notifications.testReport.topCategory.daily" = "Sua maior despesa hoje: Alimentação ($45,00)";
+"notifications.testReport.topCategory.weekly" = "Sua maior despesa da semana: Alimentação ($180,00)";
+"notifications.testReport.topCategory.monthly" = "Sua maior despesa do mês: Alimentação ($650,00)";
+"notifications.testReport.scheduledPayment" = "Você tem um pagamento em 3 dias: \"Netflix\" por USD 14,99";
+
+// MARK: - iCloud
+
+"icloud.title" = "Sincronização iCloud";
+"icloud.description" = "Seus dados sincronizam automaticamente com o iCloud e estão disponíveis em todos os seus dispositivos Apple com a mesma conta.";
+"icloud.privacyNote" = "Seus dados são armazenados de forma privada na sua conta pessoal do iCloud. Yala não tem acesso a eles.";
+"icloud.statusSynced" = "Sincronizado";
+"icloud.statusSyncing" = "Sincronizando...";
+"icloud.statusNoAccount" = "Sem conta iCloud";
+"icloud.statusError" = "Erro de sincronização";
+"icloud.lastSync" = "Última sincronização: %@";
+"icloud.noAccountWarning" = "Entre no iCloud em Ajustes para ativar a sincronização.";
+"icloud.syncingData" = "Sincronizando seus dados...";
+"icloud.syncingDescription" = "Estamos recuperando suas informações do iCloud.";
+"icloud.syncing.skip" = "Configurar como novo";
+"icloud.dataFoundTitle" = "Dados encontrados!";
+"icloud.dataFoundMessage" = "Encontramos seus dados no iCloud. Não é preciso configurar novamente.";
+"icloud.dataFoundAction" = "Continuar";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "Contas";
+"featureGate.budgets" = "Orçamentos";
+"featureGate.voiceInput" = "Entrada por voz";
+"featureGate.imageInput" = "Entrada por imagem";
+"featureGate.premiumIcons" = "Ícones premium";
+
+// Titles
+"featureGate.limitReachedTitle" = "Limite atingido";
+"featureGate.proFeatureTitle" = "Função Pro";
+"featureGate.trialExpiredTitle" = "Teste encerrado";
+
+// Messages
+"featureGate.limitReachedMessage" = "Você atingiu o limite de %@ no plano gratuito. Atualize para Pro para criar mais.";
+"featureGate.proFeatureMessage" = "%@ é uma função exclusiva do Yala Pro.";
+"featureGate.trialExpiredMessage" = "Seu período de teste terminou. Assine para continuar aproveitando todas as funções.";
+
+// Actions
+"featureGate.upgradeToPro" = "Atualizar para Pro";
+"featureGate.upgrade" = "Atualizar";
+"featureGate.upgradeForMore" = "Atualize para Pro para mais";
+
+// Limit info
+"featureGate.limitInfo" = "%d de %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "Bem-vindo ao Yala Pro!";
+"subscription.success.subtitle" = "Agora você tem acesso a todas as funções";
+"subscription.success.continue" = "Começar";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "Contas ilimitadas";
+"subscription.feature.unlimitedBudgets" = "Orçamentos ilimitados";
+"subscription.feature.premiumIcons" = "Ícones de app premium";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "Teste gratuito";
+"subscription.trial.endsToday" = "Termina hoje";
+"subscription.trial.endsTomorrow" = "Termina amanhã";
+"subscription.trial.daysRemaining" = "%d dias restantes";
+"subscription.trial.subscribe" = "Assinar";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "Sua assinatura terminou";
+"subscription.downgrade.subtitle" = "Escolha quais contas e orçamentos manter";
+"subscription.downgrade.selectAccounts" = "Selecione %d contas para manter";
+"subscription.downgrade.selectBudgets" = "Selecione %d orçamentos para manter";
+"subscription.downgrade.confirm" = "Confirmar seleção";
+"subscription.downgrade.reactivate" = "Reativar Pro";
+
+// MARK: - Shortcut Notifications
+
+"shortcut.notification.title" = "Novo registro automático";
+"shortcut.notification.expense" = "despesa";
+"shortcut.notification.income" = "receita";
+"shortcut.notification.body" = "Foi registrado(a) um(a) %@ de %@%@. Abra o app para aprovar.";
+
+// MARK: - Category Seeds
+
+"category.food" = "Alimentação";
+"category.shopping" = "Compras";
+"category.transport" = "Transporte";
+"category.finance" = "Finanças";
+"category.housing" = "Moradia";
+"category.entertainment" = "Entretenimento";
+"category.personal" = "Pessoal";
+"category.pets" = "Animais de estimação";
+"category.vehicle" = "Veículo";
+"category.income" = "Receitas";
+"category.other" = "Outros";
+
+// MARK: - Subcategory Seeds
+
+"subcategory.delivery" = "Delivery";
+"subcategory.restaurants" = "Restaurantes";
+"subcategory.supplements" = "Suplementos alimentares";
+"subcategory.supermarkets" = "Supermercados & mercearias";
+"subcategory.personalCare" = "Cuidados pessoais & beleza";
+"subcategory.pharmacy" = "Farmácia & primeiros socorros";
+"subcategory.homeDecor" = "Casa & decoração";
+"subcategory.otherShopping" = "Outros";
+"subcategory.gifts" = "Presentes";
+"subcategory.clothing" = "Roupas & calçados";
+"subcategory.tech" = "Tecnologia & acessórios";
+"subcategory.occasionalMobility" = "Mobilidade ocasional";
+"subcategory.rideshare" = "Táxis & apps de transporte";
+"subcategory.publicTransport" = "Transporte público";
+"subcategory.fees" = "Taxas & tarifas";
+"subcategory.taxes" = "Impostos";
+"subcategory.pensions" = "Previdência & contribuições";
+"subcategory.loans" = "Empréstimos & créditos";
+"subcategory.insurance" = "Seguros";
+"subcategory.rent" = "Aluguel ou hipoteca";
+"subcategory.maintenance" = "Manutenção & reparos";
+"subcategory.otherHousing" = "Outros";
+"subcategory.supportStaff" = "Funcionários domésticos";
+"subcategory.homeInsurance" = "Seguro residencial";
+"subcategory.utilities" = "Serviços da casa";
+"subcategory.bars" = "Bares & saídas";
+"subcategory.sports" = "Esportes & recreação";
+"subcategory.shows" = "Shows & eventos";
+"subcategory.nightlife" = "Vida noturna & festas";
+"subcategory.hobbies" = "Hobbies & games";
+"subcategory.coupleDates" = "Saídas a dois";
+"subcategory.streaming" = "Streaming & plataformas";
+"subcategory.travel" = "Viagens & férias";
+"subcategory.consulting" = "Consultorias & trâmites";
+"subcategory.beauty" = "Beleza & estética";
+"subcategory.education" = "Educação & desenvolvimento";
+"subcategory.fitness" = "Fitness & atividade física";
+"subcategory.health" = "Saúde & cuidados médicos";
+"subcategory.leisureSubs" = "Assinaturas de lazer";
+"subcategory.utilitySubs" = "Assinaturas utilitárias";
+"subcategory.phone" = "Telefone & comunicações";
+"subcategory.petAccessories" = "Acessórios & brinquedos";
+"subcategory.petFood" = "Ração & alimentação";
+"subcategory.vet" = "Saúde veterinária";
+"subcategory.petServices" = "Serviços & cuidados";
+"subcategory.fuel" = "Combustível";
+"subcategory.parking" = "Estacionamento";
+
+// MARK: - Tips & Tricks
+// MARK: - Tutorials
+"tutorials.subtitle" = "Aprende a tirar o máximo proveito do Yala";
+"tutorials.stepsCount" = "%d passos";
+"tutorials.next" = "Seguinte";
+"tutorials.previous" = "Anterior";
+"tutorials.done" = "Concluído";
+"tutorials.start" = "Começar";
+"tutorials.understood" = "Entendido";
+"tutorials.nextTutorial" = "Próximo tutorial";
+
+// Categories
+"tutorials.category.gettingStarted" = "Primeiros passos";
+"tutorials.category.dailyUse" = "Uso diário";
+"tutorials.category.personalization" = "Personalização";
+"tutorials.category.advanced" = "Avançado";
+"tutorials.category.powerUser" = "Utilizador avançado";
+
+// 1. createAccount (3 steps)
+"tutorials.createAccount.title" = "Criar uma conta";
+"tutorials.createAccount.intro.title" = "O que é uma conta?";
+"tutorials.createAccount.intro.desc" = "Uma conta representa onde guardas o teu dinheiro: o teu banco, carteira, cartão ou poupanças. Organizar as tuas contas ajuda-te a saber exatamente quanto tens e onde.";
+"tutorials.createAccount.step0.title" = "Cria uma nova conta";
+"tutorials.createAccount.step0.desc" = "No teu perfil, seleciona a secção de Contas e toca em criar nova conta.";
+"tutorials.createAccount.step1.title" = "Também desde o Painel";
+"tutorials.createAccount.step1.desc" = "Podes criar uma conta diretamente desde o Painel tocando na caixa de Adicionar nova conta.";
+"tutorials.createAccount.step2.title" = "Preenche os dados";
+"tutorials.createAccount.step2.desc" = "Preenche os dados para a tua nova conta e toca em Guardar.";
+"tutorials.createAccount.completion.title" = "A tua conta está pronta!";
+"tutorials.createAccount.completion.desc" = "Manter as tuas contas organizadas e bem separadas é fundamental para organizar as tuas finanças. Cada conta permite-te filtrar os teus dados e visualizar melhor as tuas tendências. Podes editá-las quando quiseres e modificar o seu saldo inicial ou fazer um ajuste do saldo atual.";
+
+// 2. createCategories (4 steps)
+"tutorials.createCategories.title" = "Criar categorias";
+"tutorials.createCategories.intro.title" = "O que são as categorias?";
+"tutorials.createCategories.intro.desc" = "As categorias organizam as tuas despesas por tipo: comida, transporte, entretenimento... Assim podes ver num instante para onde vai o teu dinheiro.";
+"tutorials.createCategories.step0.title" = "Vai a Categorias";
+"tutorials.createCategories.step0.desc" = "No teu perfil, seleciona a secção de Categorias e cria uma nova categoria.";
+"tutorials.createCategories.step1.title" = "Adiciona subcategorias";
+"tutorials.createCategories.step1.desc" = "Lembra-te que deve sempre haver subcategorias associadas a uma categoria para a poderes criar.";
+"tutorials.createCategories.step2.title" = "Cria subcategorias";
+"tutorials.createCategories.step2.desc" = "Criar subcategorias é tão fácil como criar categorias: dá-lhe um nome, seleciona a sua natureza e se quiseres modifica o seu ícone.";
+"tutorials.createCategories.step3.title" = "Personaliza a tua categoria";
+"tutorials.createCategories.step3.desc" = "Personaliza a teu gosto o ícone e cor da tua categoria quando quiseres.";
+"tutorials.createCategories.completion.title" = "Categoria criada!";
+"tutorials.createCategories.completion.desc" = "Umas boas categorias fazem com que os teus relatórios sejam muito mais úteis. Podes editá-las ou adicionar mais a qualquer momento.";
+
+// 3. createTags (2 steps)
+"tutorials.createTags.title" = "Criar etiquetas";
+"tutorials.createTags.intro.title" = "O que são as etiquetas?";
+"tutorials.createTags.intro.desc" = "As etiquetas agrupam despesas que atravessam categorias. Por exemplo, \"Férias\" pode incluir comida, transporte e hotel, tudo num único grupo.";
+"tutorials.createTags.step0.title" = "Vai a Etiquetas";
+"tutorials.createTags.step0.desc" = "No teu perfil, seleciona a secção de Etiquetas e cria uma nova etiqueta.";
+"tutorials.createTags.step1.title" = "Personaliza a tua etiqueta";
+"tutorials.createTags.step1.desc" = "Personaliza a teu gosto a etiqueta: dá-lhe nome, ícone e cor.";
+"tutorials.createTags.completion.title" = "Etiqueta criada!";
+"tutorials.createTags.completion.desc" = "Usa etiquetas para agrupar despesas de projetos, viagens ou eventos. São perfeitas para análises que vão além das categorias.";
+
+// 4. createRecord (4 steps)
+"tutorials.createRecord.title" = "Registar uma despesa";
+"tutorials.createRecord.intro.title" = "Registo manual";
+"tutorials.createRecord.intro.desc" = "Registar as tuas despesas é o coração do Yala. Cada registo aproxima-te de compreender melhor as tuas finanças e tomar melhores decisões.";
+"tutorials.createRecord.step0.title" = "Toca no botão +";
+"tutorials.createRecord.step0.desc" = "No painel, toca no botão +. Se és utilizador Yala Pro, seleciona Manual.";
+"tutorials.createRecord.step1.title" = "Escolhe o tipo de registo";
+"tutorials.createRecord.step1.desc" = "Podes registar despesas, receitas e inclusive transferências entre contas. As taxas de câmbio são calculadas automaticamente em tempo real.";
+"tutorials.createRecord.step2.title" = "Preenche os campos";
+"tutorials.createRecord.step2.desc" = "Preenche os campos obrigatórios: montante, conta e subcategoria. Também podes adicionar uma descrição e as etiquetas que quiseres.";
+"tutorials.createRecord.step3.title" = "Usa atalhos rápidos";
+"tutorials.createRecord.step3.desc" = "Usa os atalhos rápidos: @ para conta, ! para categoria e # para etiqueta. Começa a escrever para afinar a pesquisa dentro de cada atalho.";
+"tutorials.createRecord.completion.title" = "Despesa registada!";
+"tutorials.createRecord.completion.desc" = "Registar despesas no momento é a chave. Quanto mais registares, melhores serão as tuas análises e relatórios para entender as tuas finanças.";
+
+// 5. importData (2 steps)
+"tutorials.importData.title" = "Importar dados";
+"tutorials.importData.intro.title" = "Importa os teus dados";
+"tutorials.importData.intro.desc" = "Se já acompanhas as tuas despesas numa folha de cálculo ou noutra app, podes trazê-las para o Yala em segundos sem perder o teu histórico.";
+"tutorials.importData.step0.title" = "Seleciona Importar dados";
+"tutorials.importData.step0.desc" = "No teu perfil, seleciona a secção Importar dados.";
+"tutorials.importData.step1.title" = "Importa o teu ficheiro";
+"tutorials.importData.step1.desc" = "Podes importar CSV ou Excel quantas vezes quiseres seguindo o modelo predeterminado, que podes descarregar ali mesmo. Se houver dados em diversas moedas, pedir-te-á para selecionar as contas para cada uma.";
+"tutorials.importData.completion.title" = "Dados importados!";
+"tutorials.importData.completion.desc" = "O teu histórico já está no Yala. Se houve erros receberás uma mensagem clara com o detalhe, senão verás a mensagem de sucesso. Revê os teus registos para confirmar que tudo foi importado corretamente.";
+
+// 6. createBudgets (4 steps)
+"tutorials.createBudgets.title" = "Criar orçamentos";
+"tutorials.createBudgets.intro.title" = "O que é um orçamento?";
+"tutorials.createBudgets.intro.desc" = "Um orçamento ajuda-te a pôr limites às tuas despesas. Define quanto queres gastar e o Yala avisa-te quando estiveres perto do limite.";
+"tutorials.createBudgets.step0.title" = "Abre Planeamento";
+"tutorials.createBudgets.step0.desc" = "No menu seleciona Planeamento e assegura-te de estar no separador de Orçamentos. Usa o botão + para criar um novo.";
+"tutorials.createBudgets.step1.title" = "Configura o teu orçamento";
+"tutorials.createBudgets.step1.desc" = "Dá-lhe nome, montante e define o período: diário, mensal, anual ou único (para uma viagem, evento, etc). Personaliza que contas, categorias, etiquetas e naturezas queres acompanhar. Ativa as notificações se quiseres avisos em certos limiares.";
+"tutorials.createBudgets.step2.title" = "Adiciona-o a Favoritos";
+"tutorials.createBudgets.step2.desc" = "Podes adicionar orçamentos a Favoritos para os visualizar no widget do Painel. Escolhe até 3 na ordem que preferires.";
+"tutorials.createBudgets.step3.title" = "Edita-o quando quiseres";
+"tutorials.createBudgets.step3.desc" = "Lembra-te que sempre poderás voltar para editar o teu orçamento tocando nele.";
+"tutorials.createBudgets.completion.title" = "Orçamento ativo!";
+"tutorials.createBudgets.completion.desc" = "Agora verás em tempo real como vai o teu consumo e poderás decidir melhor se continuas a fazer essas despesas ou não. Revê-o frequentemente para manter o controlo.";
+
+// 7. createScheduledPayments (5 steps)
+"tutorials.createScheduledPayments.title" = "Pagamentos planeados";
+"tutorials.createScheduledPayments.intro.title" = "O que são os pagamentos planeados?";
+"tutorials.createScheduledPayments.intro.desc" = "Os pagamentos planeados automatizam as tuas despesas recorrentes: renda, serviços, subscrições. O Yala regista-os por ti na data indicada.";
+"tutorials.createScheduledPayments.step0.title" = "Abre Planeamento";
+"tutorials.createScheduledPayments.step0.desc" = "No menu seleciona Planeamento e assegura-te de estar no separador de Pagamentos Planeados. Usa o botão + para criar um novo.";
+"tutorials.createScheduledPayments.step1.title" = "Preenche os dados";
+"tutorials.createScheduledPayments.step1.desc" = "Preenche o nome do teu pagamento, montante, nota (opcional), conta, subcategoria e etiquetas (opcional).";
+"tutorials.createScheduledPayments.step2.title" = "Define a recorrência";
+"tutorials.createScheduledPayments.step2.desc" = "Seleciona o dia do pagamento e a periodicidade. Escolhe quando será o primeiro pagamento e ativa as notificações se quiseres que te avise no mesmo dia ou dias antes.";
+"tutorials.createScheduledPayments.step3.title" = "Marca se é subscrição";
+"tutorials.createScheduledPayments.step3.desc" = "Não te esqueças de ativar o botão de subscrição se se tratar de uma subscrição recorrente.";
+"tutorials.createScheduledPayments.step4.title" = "Gere os teus pagamentos";
+"tutorials.createScheduledPayments.step4.desc" = "Ao tocar num pagamento planeado poderás ver os futuros pagamentos, os já realizados e editá-lo quando quiseres.";
+"tutorials.createScheduledPayments.completion.title" = "Pagamento planeado!";
+"tutorials.createScheduledPayments.completion.desc" = "Os teus pagamentos recorrentes agora registam-se sozinhos. Receberás uma notificação cada vez que um for executado.";
+
+// 8. createFavorites (2 steps)
+"tutorials.createFavorites.title" = "Pagamentos favoritos";
+"tutorials.createFavorites.intro.title" = "O que são os favoritos?";
+"tutorials.createFavorites.intro.desc" = "Os favoritos são atalhos para as despesas que fazes frequentemente. Guarda um café, o transporte ou a compra do supermercado e regista-os com um único toque.";
+"tutorials.createFavorites.step0.title" = "Cria um favorito";
+"tutorials.createFavorites.step0.desc" = "Vai ao ecrã de nova transação e toca na estrela na parte superior para criar um novo favorito.";
+"tutorials.createFavorites.step1.title" = "Usa-o rapidamente";
+"tutorials.createFavorites.step1.desc" = "Preenche os campos que queiras que sejam pré-preenchidos. Da próxima vez, simplesmente toca no favorito e verás como todos os campos se completam automaticamente.";
+"tutorials.createFavorites.completion.title" = "Favorito guardado!";
+"tutorials.createFavorites.completion.desc" = "Os favoritos poupam-te tempo em despesas repetitivas. Podes ter tantos quantos quiseres e editá-los quando precisares.";
+
+// 9. editPanel (3 steps)
+"tutorials.editPanel.title" = "Personalizar o painel";
+"tutorials.editPanel.intro.title" = "O teu painel, à tua maneira";
+"tutorials.editPanel.intro.desc" = "No painel terás todos os widgets que te podem ser úteis para fazer uma melhor gestão das tuas finanças. Personaliza-os a teu gosto.";
+"tutorials.editPanel.step0.title" = "Abre o painel";
+"tutorials.editPanel.step0.desc" = "Vai ao ecrã principal onde vês o teu resumo de despesas com todos os widgets disponíveis.";
+"tutorials.editPanel.step1.title" = "Personaliza os widgets";
+"tutorials.editPanel.step1.desc" = "Podes modificar que widgets ver e em que ordem tocando no botão de personalização no painel.";
+"tutorials.editPanel.step2.title" = "Restabelece se quiseres";
+"tutorials.editPanel.step2.desc" = "Lembra-te que sempre podes voltar à ordem predeterminada tocando em \"Restabelecer\" dentro da personalização.";
+"tutorials.editPanel.completion.title" = "Painel personalizado!";
+"tutorials.editPanel.completion.desc" = "O teu painel agora mostra exatamente o que precisas. Podes alterá-lo a qualquer momento para o adaptar à tua forma de gerir.";
+
+// 10. panelFiltering (5 steps)
+"tutorials.panelFiltering.title" = "Filtros do painel";
+"tutorials.panelFiltering.intro.title" = "Filtra para encontrar";
+"tutorials.panelFiltering.intro.desc" = "Os filtros permitem-te ver só as despesas que te interessam: por conta, categoria, etiqueta ou período. Perfeito para análises detalhadas.";
+"tutorials.panelFiltering.step0.title" = "Gráficos interativos";
+"tutorials.panelFiltering.step0.desc" = "Tira o máximo proveito dos gráficos interativos do Yala. Quase todos os painéis são filtráveis por categoria, natureza, entre outros. Brinca com eles e encontra o que mais te servir.";
+"tutorials.panelFiltering.step1.title" = "Barra de filtros";
+"tutorials.panelFiltering.step1.desc" = "Contas com uma barra de filtros onde irás vendo todos os filtros aplicados. Podes removê-los individualmente ou todos de uma vez quando quiseres.";
+"tutorials.panelFiltering.step2.title" = "Filtra em cada vista";
+"tutorials.panelFiltering.step2.desc" = "Nas diferentes vistas da aplicação verás que podes ir filtrando a teu gosto com os gráficos.";
+"tutorials.panelFiltering.step3.title" = "Filtros que se propagam";
+"tutorials.panelFiltering.step3.desc" = "Os filtros propagam-se a todas as vistas por igual, assim podes ver todo o tipo de métricas para o que quer que queiras filtrar.";
+"tutorials.panelFiltering.step4.title" = "Filtros rápidos";
+"tutorials.panelFiltering.step4.desc" = "Em algumas vistas também contarás com uma secção de filtros na parte superior para que filtres a teu gosto ou remova todos com um único botão.";
+"tutorials.panelFiltering.completion.title" = "Filtros dominados!";
+"tutorials.panelFiltering.completion.desc" = "Os filtros são a tua melhor ferramenta para entender as tuas finanças em profundidade. Combina-os para obter análises cada vez mais precisas.";
+
+// 11. inboxApproval (4 steps)
+"tutorials.inboxApproval.title" = "Caixa de entrada";
+"tutorials.inboxApproval.intro.title" = "A tua caixa inteligente";
+"tutorials.inboxApproval.intro.desc" = "A caixa de entrada recebe despesas automáticas: desde Apple Pay, voz, câmara ou notificações. Tu decides quais aprovar antes de que contem.";
+"tutorials.inboxApproval.step0.title" = "Registos automáticos";
+"tutorials.inboxApproval.step0.desc" = "Se és utilizador Yala Pro, quando fizeres um registo por voz ou imagem, automaticamente levar-te-á ao rascunho. O mesmo se usaste o atalho de Registo Apple Pay.";
+"tutorials.inboxApproval.step1.title" = "Preenche e aprova";
+"tutorials.inboxApproval.step1.desc" = "Simplesmente preenche os campos obrigatórios e aprova. Criar-se-á a transação com normalidade.";
+"tutorials.inboxApproval.step2.title" = "Múltiplas transações";
+"tutorials.inboxApproval.step2.desc" = "Também podes fazer registos de voz ou imagem com múltiplas transações. Dir-te-á quantos rascunhos foram criados e guiar-te-á à caixa para os rever.";
+"tutorials.inboxApproval.step3.title" = "Gere a tua caixa";
+"tutorials.inboxApproval.step3.desc" = "Na tua caixa poderás aprovar transações, selecionar Aprovar depois para as ver depois ou rejeitá-las diretamente.";
+"tutorials.inboxApproval.completion.title" = "Caixa dominada!";
+"tutorials.inboxApproval.completion.desc" = "As tuas transações na caixa não têm data de validade, poderás aprová-las ou rejeitá-las quando quiseres. Os rascunhos não afetam os teus totais até que os aproves.";
+
+// 12. applePay (4 steps)
+"tutorials.applePay.title" = "Registar com Apple Pay";
+"tutorials.applePay.intro.title" = "Apple Pay + Yala";
+"tutorials.applePay.intro.desc" = "Cada vez que pagas com Apple Pay, o Yala pode registar a despesa automaticamente. Só precisas de configurar uma automatização na app Atalhos.";
+"tutorials.applePay.step0.title" = "Abre Atalhos";
+"tutorials.applePay.step0.desc" = "Abre a app Atalhos e vai à secção de Automatizações.";
+"tutorials.applePay.step1.title" = "Cria a automatização";
+"tutorials.applePay.step1.desc" = "Toca em Nova automatização, seleciona a opção de Wallet, escolhe os cartões que queiras usar e seleciona Executar imediatamente.";
+"tutorials.applePay.step2.title" = "Seleciona o atalho do Yala";
+"tutorials.applePay.step2.desc" = "Seleciona Criar novo atalho e procura Yala ao fundo do todo. No Yala seleciona o atalho Registo Apple Pay.";
+"tutorials.applePay.step3.title" = "Configura os parâmetros";
+"tutorials.applePay.step3.desc" = "Em Montante seleciona Entrada do atalho e depois Quantidade. Faz o mesmo para Comerciante e Nome respetivamente. Desativa o botão de \"Mostrar ao executar\".";
+"tutorials.applePay.completion.title" = "Apple Pay conectado!";
+"tutorials.applePay.completion.desc" = "Com isto já terás registos automáticos cada vez que uses Apple Pay com os cartões selecionados. Cada pagamento criará um rascunho na tua caixa de entrada.";
+"subcategory.leasing" = "Leasing";
+"subcategory.vehicleMaintenance" = "Manutenção do veículo";
+"subcategory.vehicleLoan" = "Financiamento veicular";
+"subcategory.vehicleInsurance" = "Seguro veicular";
+"subcategory.rentalIncome" = "Renda de aluguel";
+"subcategory.subsidies" = "Subsídios & auxílios";
+"subcategory.freelance" = "Freelance & faturamento";
+"subcategory.dividends" = "Juros & dividendos";
+"subcategory.refunds" = "Reembolsos";
+"subcategory.giftIncome" = "Presentes & outras receitas";
+"subcategory.salary" = "Salário";
+"subcategory.sales" = "Vendas";
+"subcategory.accountTransfer" = "Transferência entre contas";
+"subcategory.balanceAdjustment" = "Ajuste de saldo";
+"subcategory.accountTransferOther" = "Transferência entre contas";

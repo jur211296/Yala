@@ -10,6 +10,8 @@ import SwiftData
 import SwiftUI
 
 struct TrendWidget: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     @Bindable var viewModel: PanelViewModel
     @Bindable var sessionState: SessionState
     var currencyCode: String
@@ -73,13 +75,13 @@ struct TrendWidget: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(chartTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 // Prominent KPI Value - only show when we have data
                 if !hasNoData {
                     Text(currentKPIValue)
-                        .font(.title2.weight(.bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(Color.yalaPrimaryText)
                         .padding(.top, DS.Spacing.xs)
                 }
@@ -92,8 +94,10 @@ struct TrendWidget: View {
 
             Spacer()
 
-            // Metric selector
-            metricSelector
+            // Metric selector (hidden in expenses-only mode)
+            if !sessionState.isExpensesOnlyMode {
+                metricSelector
+            }
         }
     }
 
@@ -101,10 +105,11 @@ struct TrendWidget: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -113,7 +118,7 @@ struct TrendWidget: View {
     }
 
     private var metricSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             // Always show all options - user can switch freely
             ForEach(TrendType.allCases) { type in
                 metricButton(for: type)
@@ -152,8 +157,8 @@ struct TrendWidget: View {
         } label: {
             // Icon only (compact version like TrendsTabView)
             Image(systemName: type.iconName)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 14)
+                .font(DS.Typography.labelSmall)
+                .padding(.horizontal, DS.FormRow.paddingV)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))
                 .background(

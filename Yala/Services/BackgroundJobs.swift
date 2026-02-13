@@ -11,7 +11,9 @@ import SwiftData
             let request = BGAppRefreshTaskRequest(identifier: dailyId)
             request.earliestBeginDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())
             do { try BGTaskScheduler.shared.submit(request) } catch {
+                #if DEBUG
                 print("BG submit error: " + String(describing: error))
+                #endif
             }
         }
 

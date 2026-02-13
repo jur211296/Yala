@@ -12,6 +12,7 @@ import SwiftUI
 struct SubcategoryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(EntityDeletionService.self) private var deletionService
 
     let parentCategory: Category
     let subcategoryToEdit: Subcategory?
@@ -116,7 +117,7 @@ struct SubcategoryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     handleBack()
                 }
             }
@@ -199,7 +200,7 @@ struct SubcategoryDetailView: View {
                         .frame(width: 70, height: 70)
                         .overlay(
                             Image(systemName: selectedIconName)
-                                .font(.title2)
+                                .font(DS.Typography.title)
                                 .foregroundStyle(.white)
                         )
                         .shadow(
@@ -211,7 +212,7 @@ struct SubcategoryDetailView: View {
                         .frame(width: 24, height: 24)
                         .overlay(
                             Image(systemName: "pencil")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.electricIndigo)
                         )
                         .overlay(
@@ -224,7 +225,7 @@ struct SubcategoryDetailView: View {
             .buttonStyle(.plain)
 
             Text(parentCategory.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -243,7 +244,7 @@ struct SubcategoryDetailView: View {
     private var detailsSection: some View {
         VStack(spacing: DS.Spacing.lg) {
             SectionBox(title: L10n.Subcategory.details) {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
@@ -267,12 +268,12 @@ struct SubcategoryDetailView: View {
                                     Text(L10n.Category.nature)
                                         .foregroundStyle(.primary)
                                     Text(selectedNature.displayName)
-                                        .font(.subheadline)
+                                        .font(DS.Typography.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.footnote)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(.tertiary)
                             }
                             .padding()
@@ -319,27 +320,21 @@ struct SubcategoryDetailView: View {
     /// Counts transactions linked to this subcategory
     private func countTransactions() -> Int {
         guard let subcategory = subcategoryToEdit else { return 0 }
-        let subcategoryID = subcategory.persistentModelID
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try modelContext.fetch(descriptor)
-            return allTransactions.filter { $0.subcategory?.persistentModelID == subcategoryID }.count
-        } catch {
-            print("Subcategory: Error counting transactions for subcategory: \(error)")
-            return 0
-        }
+        deletionService.setContext(modelContext)
+        return deletionService.transactionCount(forSubcategory: subcategory)
     }
 
     private func deleteSubcategory() {
         guard let subcategory = subcategoryToEdit else { return }
-        modelContext.delete(subcategory)
+        deletionService.setContext(modelContext)
         do {
-            try modelContext.save()
-            modelContext.processPendingChanges()
+            try deletionService.deleteSubcategory(subcategory)
+            dismiss()
         } catch {
-            print("Subcategory: Error deleting subcategory: \(error)")
+            #if DEBUG
+            print("SubcategoryDetailView: Error deleting subcategory: \(error)")
+            #endif
         }
-        dismiss()
     }
 
     private func saveSubcategory() {
@@ -378,7 +373,9 @@ struct SubcategoryDetailView: View {
         do {
             try modelContext.save()
         } catch {
+            #if DEBUG
             print("Subcategory: Error al guardar subcategoría: \(error)")
+            #endif
         }
 
         dismiss()
@@ -397,7 +394,9 @@ struct SubcategoryDetailView: View {
                 subcategory.sortOrder = index
             }
         } catch {
+            #if DEBUG
             print("Subcategory: Error reordering subcategories: \(error)")
+            #endif
         }
     }
 }

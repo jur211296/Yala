@@ -2,7 +2,7 @@
 //  RecordsViewModel.swift
 //  Yala
 //
-//  Created by Neto - Records Feature.
+//  Created by Yala - Records Feature.
 //
 
 import Foundation
@@ -13,6 +13,7 @@ import SwiftUI
 
 /// ViewModel for the Records list view
 /// Manages filter state, selection, and computed data
+@MainActor
 @Observable
 final class RecordsViewModel: Filterable {
 
@@ -190,6 +191,10 @@ final class RecordsViewModel: Filterable {
         categories: [Category],
         tags: [Tag]
     ) {
+        // In expenses-only mode, force expense transaction nature filter
+        let effectiveTransactionNatures: Set<TransactionNature> =
+            SessionState.shared.isExpensesOnlyMode ? [.expense] : selectedTransactionNatures
+
         // Build FilterCriteria from current state
         let criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
@@ -197,7 +202,7 @@ final class RecordsViewModel: Filterable {
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
             selectedNatures: selectedNatures,
-            selectedTransactionNatures: selectedTransactionNatures,
+            selectedTransactionNatures: effectiveTransactionNatures,
             selectedCurrencies: selectedCurrencies,
             transactionTypeFilter: transactionTypeFilter,
             amountCondition: amountCondition,
@@ -205,9 +210,15 @@ final class RecordsViewModel: Filterable {
             dateInterval: effectiveDateInterval()
         )
 
+        // Pre-filter: hide transactions from accounts excluded from statistics
+        let eligibleTransactions = transactions.filter { tx in
+            guard let account = tx.account else { return true }
+            return !account.excludeFromStatistics
+        }
+
         // Use FilterService for filtering and grouping
         groupedRecords = FilterService.filterAndGroup(
-            transactions: transactions,
+            transactions: eligibleTransactions,
             criteria: criteria
         )
 
@@ -224,7 +235,7 @@ final class RecordsViewModel: Filterable {
         for group in groupedRecords {
             for record in group.records {
                 guard let account = record.account else { continue }
-                if account.isArchived || account.excludeFromStatistics { continue }
+                if account.excludeFromStatistics { continue }
 
                 // Exclude balance adjustments and transfers from summary
                 let isBalanceAdjustment = record.balanceAdjustmentType != nil
@@ -307,8 +318,12 @@ final class RecordsViewModel: Filterable {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
+            #if DEBUG
             print("Error deleting records: \(error)")
+            #endif
         }
 
         exitSelectionMode()
@@ -322,7 +337,12 @@ final class RecordsViewModel: Filterable {
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
         selectedNatures.removeAll()
-        selectedTransactionNatures.removeAll()
+        // In expenses-only mode, keep expense filter forced
+        if SessionState.shared.isExpensesOnlyMode {
+            selectedTransactionNatures = [.expense]
+        } else {
+            selectedTransactionNatures.removeAll()
+        }
         selectedTags.removeAll()
         transactionTypeFilter = .all
         amountCondition = .any
@@ -380,7 +400,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk account update: \(error)")
+            #endif
         }
     }
 
@@ -389,12 +411,14 @@ final class RecordsViewModel: Filterable {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
             transaction.subcategory = subcategory
-            transaction.category = subcategory.category
+            transaction.category = subcategory.safeCategory
         }
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk subcategory update: \(error)")
+            #endif
         }
     }
 
@@ -402,16 +426,20 @@ final class RecordsViewModel: Filterable {
     func bulkAddTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
+            var currentTags = transaction.tags ?? []
             for tag in tags {
-                if !transaction.tags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                    transaction.tags.append(tag)
+                if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
+                    currentTags.append(tag)
                 }
             }
+            transaction.tags = currentTags
         }
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk tags update: \(error)")
+            #endif
         }
     }
 
@@ -420,12 +448,16 @@ final class RecordsViewModel: Filterable {
         let transactions = getSelectedTransactions(context: context)
         let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
         for transaction in transactions {
-            transaction.tags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+            var currentTags = transaction.tags ?? []
+            currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+            transaction.tags = currentTags
         }
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk tags removal: \(error)")
+            #endif
         }
     }
 
@@ -438,7 +470,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk note update: \(error)")
+            #endif
         }
     }
 
@@ -451,7 +485,9 @@ final class RecordsViewModel: Filterable {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Error saving bulk amount update: \(error)")
+            #endif
         }
     }
 
@@ -461,6 +497,35 @@ final class RecordsViewModel: Filterable {
         return selectedRecordIDs.compactMap { id in
             flatTransactions.first { $0.persistentModelID == id }?.tags
         }
+    }
+
+    /// Detect the transaction type of selected records for bulk edit filtering
+    /// Returns .income if all non-transfer selections are income,
+    /// .expense if all are expense, nil if mixed or only transfers
+    func getSelectedTransactionType() -> TransactionType? {
+        let flatTransactions = groupedRecords.flatMap { $0.records }
+        let selected = flatTransactions.filter { selectedRecordIDs.contains($0.persistentModelID) }
+
+        var hasIncome = false
+        var hasExpense = false
+
+        for transaction in selected {
+            // Skip transactions without subcategory and transfers (system subcategory)
+            guard let subcategory = transaction.subcategory else { continue }
+            if subcategory.isSystemSubcategory { continue }
+
+            if subcategory.safeCategory.isIncome {
+                hasIncome = true
+            } else {
+                hasExpense = true
+            }
+            // Early exit if mixed
+            if hasIncome && hasExpense { return nil }
+        }
+
+        if hasIncome && !hasExpense { return .income }
+        if hasExpense && !hasIncome { return .expense }
+        return nil  // Mixed or only transfers
     }
 
     /// Helper to fetch selected transactions from context

@@ -2,15 +2,36 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.jurgenschmidt.yala</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(URL_SCHEME)</string>
+			</array>
+		</dict>
+	</array>
+	<key>APP_GROUP_IDENTIFIER</key>
+	<string>$(APP_GROUP_IDENTIFIER)</string>
+	<key>URL_SCHEME</key>
+	<string>$(URL_SCHEME)</string>
 	<key>OPENAI_API_KEY</key>
 	<string>$(OPENAI_API_KEY)</string>
+	<key>EXCHANGE_RATE_API_KEY</key>
+	<string>$(EXCHANGE_RATE_API_KEY)</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Neto uses the microphone to record voice input for creating transactions. Your audio is processed to extract expense details.</string>
+	<string>Yala uses the microphone to record voice input for creating transactions. Your audio is processed to extract expense details.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Yala uses your photos to extract transaction details from screenshots and receipts.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Neto uses Face ID to protect your financial information.</string>
+	<string>Yala uses Face ID to protect your financial information.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.jurgenschmidt.yala.daily</string>
+		<string>com.jurgenschmidt.yala.widget-refresh</string>
+		<string>com.jurgenschmidt.yala.report-notification</string>
+		<string>com.jurgenschmidt.yala.report-backup</string>
 	</array>
 	<key>CFBundleIcons</key>
 	<dict>
@@ -83,6 +104,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>

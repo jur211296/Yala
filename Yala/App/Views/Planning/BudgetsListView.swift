@@ -10,16 +10,7 @@ import SwiftUI
 
 struct BudgetsListView: View {
     @Environment(\.modelContext) private var modelContext
-
-    // Data Queries
-    @Query(sort: \Budget.createdAt, order: .reverse)
-    private var allBudgets: [Budget]
-
-    @Query(sort: \TransactionItem.date, order: .reverse)
-    private var allTransactions: [TransactionItem]
-
-    @Query(sort: \Account.name)
-    private var accounts: [Account]
+    @Environment(SessionState.self) private var sessionState
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
@@ -28,14 +19,35 @@ struct BudgetsListView: View {
     @State private var viewModel = BudgetsViewModel()
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
+    @State private var showUpgradeSheet = false
     @AppStorage("budgets.hideInactive") private var hideInactive: Bool = false
+
+    private var activeBudgetsCount: Int {
+        viewModel.activeBudgetsCount
+    }
+
+    private var isAtLimit: Bool {
+        FeatureGateService.shared.isAtLimit(.budgets, currentCount: activeBudgetsCount)
+    }
 
     var body: some View {
         ZStack {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
+                    // Limit reached banner
+                    if isAtLimit {
+                        LimitReachedBanner(
+                            feature: .budgets,
+                            currentCount: activeBudgetsCount
+                        ) {
+                            showUpgradeSheet = true
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.md)
+                    }
+
                     controlsBar
 
                     listContent
@@ -62,13 +74,20 @@ struct BudgetsListView: View {
         .sheet(isPresented: $showPeriodSelector) {
             BudgetPeriodSelectorSheet(
                 viewModel: viewModel,
-                transactions: allTransactions,
+                transactions: viewModel.allTransactions,
                 onPeriodChange: { refreshData() }
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradePromptSheet(feature: .budgets, context: .limitReached)
+        }
         .onAppear {
+            viewModel.setContext(modelContext)
+            refreshData()
+        }
+        .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
     }
@@ -76,7 +95,7 @@ struct BudgetsListView: View {
     // MARK: - Controls Bar
 
     private var controlsBar: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Period type segmented control
             periodTypeSegmentedControl
                 .padding(.horizontal, DS.Spacing.lg)
@@ -152,11 +171,11 @@ struct BudgetsListView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Text(currentPeriodText)
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
 
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
+                    .font(DS.Typography.indicator)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -237,65 +256,25 @@ struct BudgetsListView: View {
             refreshData()
         } label: {
             Image(systemName: hideInactive ? "eye" : "eye.slash")
-                .font(.body.weight(.medium))
+                .font(DS.Typography.bodyBold)
                 .foregroundStyle(.secondary)
                 .frame(width: 32, height: 32)
         }
         .buttonStyle(.plain)
         .opacity(hasInactiveBudgets ? 1 : 0)
+        .accessibilityHint(!hasInactiveBudgets ? "No hay presupuestos inactivos" : "")
         .disabled(!hasInactiveBudgets)
     }
 
     private var hasInactiveBudgets: Bool {
-        // Check if there are any inactive budgets in the current period type
-        let budgets = allBudgets.filter { budget in
-            if selectedSegment == 3 {
-                // Unique mode: show all unique budgets
-                return budget.periodType == BudgetPeriodType.unique.rawValue
-            } else {
-                // Other modes: filter by selected period type
-                return budget.periodType == viewModel.selectedPeriodType.rawValue
-            }
-        }
-
-        // Check if any budget is inactive (isActive == false)
-        return budgets.contains { !$0.isActive }
+        viewModel.hasInactiveBudgets(forPeriodTypeIndex: selectedSegment)
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "chart.pie.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.electricIndigo, Color.hotPink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(NSLocalizedString("budgets.empty.title", comment: ""))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(NSLocalizedString("budgets.empty.message", comment: ""))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, DS.Spacing.xxxl * 2)
+        YalaEmptyState.noBudgets()
+            .padding(.top, DS.Spacing.xxxl * 2)
     }
 
     // MARK: - Budgets List
@@ -306,7 +285,7 @@ struct BudgetsListView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     // Section header
                     Text(section.status.localizedName)
-                        .font(.headline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .padding(.horizontal, DS.Spacing.lg)
 
@@ -314,7 +293,7 @@ struct BudgetsListView: View {
                     ForEach(section.budgets) { summary in
                         BudgetRowView(
                             summary: summary,
-                            currencyCode: defaultCurrencyCode
+                            currencyCode: summary.budget.currencyCode
                         ) {
                             viewModel.editingBudget = summary.budget
                             viewModel.showBudgetEditor = true
@@ -325,7 +304,7 @@ struct BudgetsListView: View {
             }
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, 100)  // Space for FAB
+        .padding(.bottom, DS.Spacing.safeBottom)  // Space for FAB
     }
 
     // MARK: - New Budget FAB
@@ -338,11 +317,15 @@ struct BudgetsListView: View {
                 Spacer()
 
                 Button {
-                    viewModel.editingBudget = nil
-                    viewModel.showBudgetEditor = true
+                    if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
+                        viewModel.editingBudget = nil
+                        viewModel.showBudgetEditor = true
+                    } else {
+                        showUpgradeSheet = true
+                    }
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
                         .background(Color.electricIndigo)
@@ -352,29 +335,17 @@ struct BudgetsListView: View {
                 .glassEffect(.regular.interactive())
                 .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
-            .padding(.trailing, 20)
-            .padding(.bottom, 24)
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
     }
 
     // MARK: - Data Management
 
     private func refreshData() {
-        // Filter budgets based on selected period type
-        var filteredBudgets = allBudgets.filter {
-            $0.periodType == viewModel.selectedPeriodType.rawValue
-        }
-
-        // Apply hideInactive filter if enabled
-        if hideInactive {
-            filteredBudgets = filteredBudgets.filter { $0.isActive }
-        }
-
-        // Calculate budget data
-        viewModel.calculateBudgetData(
-            budgets: filteredBudgets,
-            transactions: allTransactions,
-            accounts: accounts,
+        viewModel.loadData()
+        viewModel.refreshBudgetData(
+            hideInactive: hideInactive,
             defaultCurrencyCode: defaultCurrencyCode
         )
     }
@@ -383,17 +354,6 @@ struct BudgetsListView: View {
 
 // MARK: - Calendar Extension
 
-private extension Calendar {
-    func startOfWeek(for date: Date) -> Date {
-        let components = dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        return self.date(from: components) ?? date
-    }
-
-    func startOfMonth(for date: Date) -> Date {
-        let components = dateComponents([.year, .month], from: date)
-        return self.date(from: components) ?? date
-    }
-}
 
 // MARK: - Preview
 

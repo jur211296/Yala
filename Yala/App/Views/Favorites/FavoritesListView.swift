@@ -25,15 +25,10 @@ struct FavoritesListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.editMode) private var editMode
 
-    @Query(sort: \FavoritePayment.displayOrder, order: .forward)
-    private var favorites: [FavoritePayment]
+    @State private var viewModel = FavoritesListViewModel()
 
     let mode: FavoritesListMode
     var onSelect: ((FavoritePayment) -> Void)?
-
-    @State private var showEditor = false
-    @State private var favoriteToEdit: FavoritePayment?
-    @State private var showSaveError = false
 
     init(mode: FavoritesListMode = .manage, onSelect: ((FavoritePayment) -> Void)? = nil) {
         self.mode = mode
@@ -55,7 +50,7 @@ struct FavoritesListView: View {
     @ViewBuilder
     private var content: some View {
         Group {
-            if favorites.isEmpty {
+            if viewModel.isEmpty {
                 emptyState
             } else {
                 favoritesList
@@ -68,7 +63,7 @@ struct FavoritesListView: View {
             // Leading button only for select mode (sheet)
             if mode == .select {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -78,7 +73,7 @@ struct FavoritesListView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: DS.Spacing.lg) {
                     // Edit/Done button
-                    if mode == .manage && !favorites.isEmpty {
+                    if mode == .manage && !viewModel.isEmpty {
                         if editMode?.wrappedValue.isEditing == true {
                             YalaSaveButton(action: {
                                 editMode?.wrappedValue = .inactive
@@ -88,7 +83,7 @@ struct FavoritesListView: View {
                                 editMode?.wrappedValue = .active
                             } label: {
                                 Text(L10n.Action.edit)
-                                    .font(.system(size: 17, weight: .semibold))
+                                    .font(DS.Typography.headline)
                                     .foregroundStyle(Color.primary)
                             }
                             .frame(height: 32)
@@ -97,22 +92,20 @@ struct FavoritesListView: View {
 
                     // Add button (hide in edit mode)
                     if !(editMode?.wrappedValue.isEditing == true) {
-                        YalaToolbarButton(systemName: "plus") {
-                            favoriteToEdit = nil
-                            showEditor = true
+                        YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                            viewModel.openEditor(for: nil)
                         }
                     }
                 }
             }
         }
         .sheet(
-            isPresented: $showEditor,
+            isPresented: $viewModel.showEditor,
             onDismiss: {
-                // Reset favoriteToEdit when sheet closes
-                favoriteToEdit = nil
+                viewModel.closeEditor()
             }
         ) {
-            if let favorite = favoriteToEdit {
+            if let favorite = viewModel.favoriteToEdit {
                 FavoriteEditorView(favorite: favorite)
             } else {
                 FavoriteEditorView(favorite: nil)
@@ -120,7 +113,7 @@ struct FavoritesListView: View {
         }
         .alert(
             L10n.Common.error,
-            isPresented: $showSaveError,
+            isPresented: $viewModel.showSaveError,
             actions: {
                 Button(L10n.Common.understood, role: .cancel) {}
             },
@@ -128,42 +121,17 @@ struct FavoritesListView: View {
                 Text(L10n.Common.saveError)
             }
         )
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.xxl) {
+        VStack {
             Spacer()
-
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "star.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.electricIndigo, Color.hotPink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Favorites.noFavorites)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Favorites.createTemplate)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-
+            YalaEmptyState.noFavorites()
             Spacer()
         }
     }
@@ -172,7 +140,7 @@ struct FavoritesListView: View {
 
     private var favoritesList: some View {
         List {
-            ForEach(favorites, id: \.persistentModelID) { favorite in
+            ForEach(viewModel.displayedFavorites, id: \.persistentModelID) { favorite in
                 FavoriteRowView(favorite: favorite) {
                     handleFavoriteTap(favorite)
                 }
@@ -180,8 +148,8 @@ struct FavoritesListView: View {
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .onDelete(perform: deleteFavorites)
-            .onMove(perform: moveFavorites)
+            .onDelete(perform: viewModel.deleteFavorites)
+            .onMove(perform: viewModel.moveFavorites)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -192,41 +160,10 @@ struct FavoritesListView: View {
     private func handleFavoriteTap(_ favorite: FavoritePayment) {
         switch mode {
         case .manage:
-            // Open for editing
-            favoriteToEdit = favorite
-            showEditor = true
+            viewModel.openEditor(for: favorite)
         case .select:
-            // Return selection to caller
             onSelect?(favorite)
             dismiss()
-        }
-    }
-
-    private func deleteFavorites(at offsets: IndexSet) {
-        for index in offsets {
-            let favorite = favorites[index]
-            modelContext.delete(favorite)
-        }
-        do {
-            try modelContext.save()
-        } catch {
-            showSaveError = true
-        }
-    }
-
-    private func moveFavorites(from source: IndexSet, to destination: Int) {
-        var orderedFavorites = favorites
-        orderedFavorites.move(fromOffsets: source, toOffset: destination)
-
-        // Update display order
-        for (index, favorite) in orderedFavorites.enumerated() {
-            favorite.displayOrder = index
-        }
-
-        do {
-            try modelContext.save()
-        } catch {
-            showSaveError = true
         }
     }
 }

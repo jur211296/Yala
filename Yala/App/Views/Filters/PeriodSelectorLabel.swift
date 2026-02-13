@@ -15,9 +15,9 @@ struct PeriodSelectorLabel: View {
     var body: some View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: "calendar")
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
             Text(title)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
         }
         .padding(.horizontal, DS.Spacing.md)
         .padding(.vertical, DS.Spacing.sm)

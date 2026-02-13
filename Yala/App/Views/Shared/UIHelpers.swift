@@ -144,8 +144,8 @@ extension Color {
     /// Hot Pink: Corta el ruido visual. Urgencia y placer culposo.
     static let hotPink = Color(hex: "FF0080")
 
-    /// Deep Slate: El lienzo infinito (Principal Dark Mode).
-    static let deepSlate = Color(hex: "0F172A")
+    /// Deep Slate: Negro puro OLED (Principal Dark Mode).
+    static let deepSlate = Color(hex: "000000")
 
     /// Priority Nature: Softer Cyan for „Priority" expenses.
     static let priorityNature = Color(hex: "00C2CB")
@@ -189,6 +189,11 @@ extension Color {
         #endif
     }
 
+    /// Toolbar Icon Color: electricIndigo in both modes.
+    static var toolbarIconColor: Color {
+        return Color.electricIndigo
+    }
+
     // MARK: - Semantic Colors (Adaptive)
 
     /// Color de fondo principal de la aplicación.
@@ -197,9 +202,10 @@ extension Color {
         #if canImport(UIKit)
             return Color(
                 UIColor { traitCollection in
-                    return traitCollection.userInterfaceStyle == .dark
-                        ? UIColor(Color.deepSlate)
-                        : UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1.0)
+                    if traitCollection.userInterfaceStyle == .dark {
+                        return UIColor(Color.deepSlate)
+                    }
+                    return UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1.0)
                 })
         #else
             return Color.gray.opacity(0.1)  // Fallback
@@ -212,8 +218,10 @@ extension Color {
         #if canImport(UIKit)
             return Color(
                 UIColor { traitCollection in
-                    return traitCollection.userInterfaceStyle == .dark
-                        ? UIColor(red: 0.11, green: 0.16, blue: 0.28, alpha: 1.0) : UIColor.white
+                    if traitCollection.userInterfaceStyle == .dark {
+                        return UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)  // #1C1C1E
+                    }
+                    return UIColor.white
                 })
         #else
             return Color.white  // Fallback

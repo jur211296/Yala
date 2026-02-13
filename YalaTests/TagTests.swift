@@ -1,6 +1,6 @@
 //
 //  TagTests.swift
-//  NetoTests
+//  YalaTests
 //
 //  Unit tests for Tag model static methods (pure functions, no SwiftData).
 //

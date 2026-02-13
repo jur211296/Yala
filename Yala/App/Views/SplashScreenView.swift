@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct SplashScreenView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     // Animation states
     // Logo starts at same size as launch screen (120px) then grows to 280px
     // 120/280 ≈ 0.43
@@ -75,12 +77,12 @@ struct SplashScreenView: View {
                 generateParticles(in: geometry.size)
 
                 // Smooth scale animation from launch size to full size
-                withAnimation(.easeInOut(duration: 0.8)) {
+                dsWithAnimation(reduceMotion, .easeInOut(duration: 0.8)) {
                     logoScale = 1
                 }
 
                 // Glow fades in after logo grows
-                withAnimation(.easeOut(duration: 0.6).delay(0.4)) {
+                dsWithAnimation(reduceMotion, .easeOut(duration: 0.6).delay(0.4)) {
                     glowOpacity = 1
                     glowScale = 1
                 }
@@ -97,7 +99,7 @@ struct SplashScreenView: View {
     // MARK: - Animations
 
     private func startPulseAnimation() {
-        withAnimation(
+        dsWithAnimation(reduceMotion,
             .easeInOut(duration: 1.2)
             .repeatForever(autoreverses: true)
         ) {
@@ -105,7 +107,7 @@ struct SplashScreenView: View {
         }
 
         // Glow pulse
-        withAnimation(
+        dsWithAnimation(reduceMotion,
             .easeInOut(duration: 1.5)
             .repeatForever(autoreverses: true)
         ) {
@@ -129,7 +131,7 @@ struct SplashScreenView: View {
     private func startParticleAnimation(in size: CGSize) {
         // Animate particles floating upward
         Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
-            withAnimation(.linear(duration: 0.05)) {
+            dsWithAnimation(reduceMotion, .linear(duration: 0.05)) {
                 for i in particles.indices {
                     particles[i].y -= particles[i].speed
                     particles[i].x += CGFloat.random(in: -0.5...0.5)

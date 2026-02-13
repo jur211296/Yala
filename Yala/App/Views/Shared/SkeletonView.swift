@@ -152,30 +152,34 @@ struct CategoriesPieSkeleton: View {
 // MARK: - Shimmer Modifier
 
 struct ShimmerModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase: CGFloat = 0
 
     func body(content: Content) -> some View {
         content
             .overlay(
                 GeometryReader { geometry in
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    .clear,
-                                    .white.opacity(0.2),
-                                    .clear,
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                    if !reduceMotion {
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        .clear,
+                                        .white.opacity(0.2),
+                                        .clear,
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .frame(width: geometry.size.width * 0.5)
-                        .offset(x: phase * geometry.size.width * 1.5 - geometry.size.width * 0.25)
+                            .frame(width: geometry.size.width * 0.5)
+                            .offset(x: phase * geometry.size.width * 1.5 - geometry.size.width * 0.25)
+                    }
                 }
                 .mask(content)
             )
             .onAppear {
+                guard !reduceMotion else { return }
                 withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                     phase = 1
                 }

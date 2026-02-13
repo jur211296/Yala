@@ -20,7 +20,7 @@ struct BudgetProgressBar: View {
             ZStack(alignment: .leading) {
                 // Background capsule
                 Capsule()
-                    .fill(Color.gray.opacity(0.1))
+                    .fill(DS.Semantic.neutralBackground)
                     .frame(height: 6)
 
                 // Foreground capsule (progress)
@@ -30,5 +30,6 @@ struct BudgetProgressBar: View {
             }
         }
         .frame(height: 6)
+        .accessibilityValue(isExceeded ? "Excedido" : "\(Int(percentage))%")
     }
 }

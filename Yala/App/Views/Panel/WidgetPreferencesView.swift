@@ -16,7 +16,7 @@ struct WidgetPreferencesView: View {
             List {
                 Section {
                     Text(L10n.Widget.preferencesDescription)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
@@ -93,34 +93,34 @@ private struct WidgetRow: View {
             // Header: Icon, Name, Toggle
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: config.type.iconName)
-                    .font(.title3)
+                    .font(DS.Typography.title)
                     .foregroundStyle(Color.electricIndigo)
                     .frame(width: 32, height: 32)
                     .background(
                         Circle().fill(Color.electricIndigo.opacity(0.1))
                     )
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(config.type.displayName)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(.primary)
 
                     if config.isLocked {
                         Text("\(L10n.Widget.alwaysVisible) • \(L10n.Widget.fixedPosition)")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                     } else if !config.isVisible {
                         Text(L10n.Common.hidden)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                     } else if config.type == .scheduledPayments {
                         // Show mode name for scheduled payments
                         Text(String(format: L10n.Widget.size, config.scheduledPaymentsMode.displayName))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                     } else if let sizeName = config.type.displaySizeName(for: config.size) {
                         Text(String(format: L10n.Widget.size, sizeName))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -137,6 +137,7 @@ private struct WidgetRow: View {
                 )
                 .labelsHidden()
                 .disabled(config.isLocked)
+                .accessibilityHint(config.isLocked ? "Widget fijo, siempre visible" : "")
                 .opacity(config.isLocked ? 0.6 : 1.0)
                 .tint(Color.electricIndigo)
             }
@@ -175,7 +176,7 @@ private struct WidgetRow: View {
                 .padding(.leading, 44)  // Indent to align with text
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
     private func availableSizes(for type: WidgetType) -> [WidgetSize] {

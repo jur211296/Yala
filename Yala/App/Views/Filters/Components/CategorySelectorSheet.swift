@@ -36,14 +36,14 @@ struct CategorySelectorSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.selectCategories) {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 selectAllRow
 
                                 SubsectionDivider()
 
                                 ForEach(Array(categories.enumerated()), id: \.element.id) {
                                     index, category in
-                                    VStack(spacing: 0) {
+                                    VStack(spacing: DS.Spacing.none) {
                                         categoryRow(category)
 
                                         if expandedCategories.contains(category) {
@@ -70,7 +70,7 @@ struct CategorySelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                         dismiss()
                     }
                 }
@@ -97,7 +97,7 @@ struct CategorySelectorSheet: View {
             HStack {
                 // Show "Deselect" only when everything is explicitly selected
                 Text(isEverythingSelected ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
-                    .font(.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -108,8 +108,8 @@ struct CategorySelectorSheet: View {
                             ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.4)
                     )
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
         }
         .buttonStyle(.plain)
     }
@@ -123,17 +123,17 @@ struct CategorySelectorSheet: View {
                 .frame(width: 36, height: 36)
                 .overlay(
                     Image(systemName: category.iconName ?? "tag")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(category.name)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Text(selectionSummary(for: category))
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -162,8 +162,8 @@ struct CategorySelectorSheet: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle())
         .onTapGesture {
             toggleExpanded(category)
@@ -186,13 +186,13 @@ struct CategorySelectorSheet: View {
                     .frame(width: 36, height: 36)
                     .overlay(
                         Image(systemName: subcategory.iconName ?? "tag")
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.white)
                     )
 
                 Text(subcategory.name)
                     .foregroundStyle(.primary)
-                    .font(.body)
+                    .font(DS.Typography.body)
 
                 Spacer()
 
@@ -202,9 +202,9 @@ struct CategorySelectorSheet: View {
                         isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.4)
                     )
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .padding(.leading, 48)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Chip.paddingH)
+            .padding(.leading, DS.Spacing.xxxxl)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }

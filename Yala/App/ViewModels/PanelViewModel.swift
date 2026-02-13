@@ -2,8 +2,30 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+@MainActor
 @Observable
 final class PanelViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    /// Exchange rate service - injected or falls back to shared singleton
+    private var exchangeRateService: ExchangeRateService = .shared
+
+    /// Currency converter - injected or falls back to shared singleton
+    private var currencyConverter: CurrencyConverter = .shared
+
+    // MARK: - Loaded Data
+
+    private(set) var accounts: [Account] = []
+    private(set) var tags: [Tag] = []
+    private(set) var categories: [Category] = []
+    private(set) var allSubcategories: [Subcategory] = []
+    private(set) var transactions: [TransactionItem] = []
+    private(set) var budgets: [Budget] = []
+    private(set) var scheduledPayments: [ScheduledPayment] = []
+    private(set) var pendingDrafts: [InboxDraft] = []
 
     // MARK: - State
 
@@ -51,6 +73,124 @@ final class PanelViewModel {
     private let movingAverageWindowSize = 14
 
     // Note: Widget config persistence now handled by WidgetConfigManager
+
+    // MARK: - Context Setup
+
+    /// Sets the model context and optionally injects services.
+    /// - Parameters:
+    ///   - context: The SwiftData ModelContext
+    ///   - exchangeRateService: Optional service injection (defaults to .shared)
+    ///   - currencyConverter: Optional service injection (defaults to .shared)
+    func setContext(
+        _ context: ModelContext,
+        exchangeRateService: ExchangeRateService? = nil,
+        currencyConverter: CurrencyConverter? = nil
+    ) {
+        self.modelContext = context
+        if let service = exchangeRateService {
+            self.exchangeRateService = service
+        }
+        if let converter = currencyConverter {
+            self.currencyConverter = converter
+        }
+        loadData()
+    }
+
+    func loadData() {
+        guard let context = modelContext else { return }
+
+        // Load accounts
+        let accountsDesc = FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)])
+        do {
+            accounts = try context.fetch(accountsDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading accounts: \(error)")
+            #endif
+        }
+
+        // Load tags
+        let tagsDesc = FetchDescriptor<Tag>(sortBy: [SortDescriptor(\.name)])
+        do {
+            tags = try context.fetch(tagsDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading tags: \(error)")
+            #endif
+        }
+
+        // Load categories
+        let categoriesDesc = FetchDescriptor<Category>(sortBy: [SortDescriptor(\.sortOrder)])
+        do {
+            categories = try context.fetch(categoriesDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading categories: \(error)")
+            #endif
+        }
+
+        // Load subcategories
+        let subcategoriesDesc = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
+        do {
+            allSubcategories = try context.fetch(subcategoriesDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading subcategories: \(error)")
+            #endif
+        }
+
+        // Load transactions
+        let transactionsDesc = FetchDescriptor<TransactionItem>(
+            sortBy: [
+                SortDescriptor(\.date, order: .reverse),
+                SortDescriptor(\.createdAt, order: .reverse)
+            ]
+        )
+        do {
+            transactions = try context.fetch(transactionsDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading transactions: \(error)")
+            #endif
+        }
+
+        // Load active budgets
+        let budgetsDesc = FetchDescriptor<Budget>(
+            predicate: #Predicate<Budget> { $0.isActive },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        do {
+            budgets = try context.fetch(budgetsDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading budgets: \(error)")
+            #endif
+        }
+
+        // Load scheduled payments
+        let paymentsDesc = FetchDescriptor<ScheduledPayment>(
+            sortBy: [SortDescriptor(\.nextDueDate)]
+        )
+        do {
+            scheduledPayments = try context.fetch(paymentsDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading scheduled payments: \(error)")
+            #endif
+        }
+
+        // Load pending inbox drafts
+        let draftsDesc = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" }
+        )
+        do {
+            pendingDrafts = try context.fetch(draftsDesc)
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading pending drafts: \(error)")
+            #endif
+        }
+    }
 
     var topSpendingCategories: [CategorySpendingSummary] = []
     var chartTransactions: [ChartTransaction] = []
@@ -123,16 +263,11 @@ final class PanelViewModel {
     // MARK: - Exchange Rate Widget State
     var exchangeRateWidgetData: ExchangeRateWidgetData?
     var exchangeRateGrouping: TrendGrouping = .day
-    private let exchangeRateCurrencySelectionKey = "panel_exchange_rate_currencies_v1"
     /// Tracks the last period for which exchange rate was calculated (to avoid redundant recalculations)
     private var lastExchangeRatePeriod: DetailPeriod?
 
     /// Selected currencies to compare against the preferred currency (max 2).
-    var selectedComparisonCurrencies: [CurrencyCode] = [] {
-        didSet {
-            saveExchangeRateCurrencySelection()
-        }
-    }
+    var selectedComparisonCurrencies: [CurrencyCode] = []
 
     // MARK: - Processed Chart Data
     typealias BarPoint = Yala.BarPoint
@@ -161,6 +296,11 @@ final class PanelViewModel {
     /// Note: Auto-expense logic for category/subcategory filters is handled in PanelView onChange handlers
     /// which properly check if categories are expense-only before setting the filter.
     private func enforceTrendLock(sessionState: SessionState) {
+        // In expenses-only mode, always force expense
+        if sessionState.isExpensesOnlyMode {
+            trendType = .expense
+            return
+        }
         // Derive trendType from chip (single source of truth)
         if sessionState.selectedTransactionNatures.count == 1 {
             if sessionState.selectedTransactionNatures.contains(.income) {
@@ -343,6 +483,25 @@ final class PanelViewModel {
         return chartTransactions.reduce(0) { $0 + $1.expense }
     }
 
+    /// Calculates total expenses for a specific account in the current period.
+    /// Used in expenses-only mode to show "Spent" instead of balance.
+    func expenseForPeriod(
+        for account: Account,
+        allTransactions: [TransactionItem]
+    ) -> Double {
+        let interval = panelDateInterval
+        let total = allTransactions
+            .filter { transaction in
+                guard transaction.account?.persistentModelID == account.persistentModelID else { return false }
+                guard interval.contains(transaction.date) else { return false }
+                guard transaction.balanceAdjustmentType == nil else { return false }
+                guard transaction.category?.isIncome == false else { return false }
+                return true
+            }
+            .reduce(0.0) { $0 + abs($1.amount) }
+        return total
+    }
+
     /// Returns transactions filtered by the focused date, or all transactions if no focus.
     func transactions(filteredBy focusedDate: Date?, from allTransactions: [TransactionItem])
         -> [TransactionItem]
@@ -392,7 +551,7 @@ final class PanelViewModel {
         }
 
         // Use CurrencyConverter with API rates for consistency with chart calculations
-        return CurrencyConverter.shared.convertWithLatestRate(
+        return currencyConverter.convertWithLatestRate(
             amount,
             from: source.rawValue,
             to: target.rawValue,
@@ -536,6 +695,8 @@ final class PanelViewModel {
             lastExchangeRatePeriod = selectedPeriod
             if needsRefresh {
                 SessionState.shared.needsExchangeRateWidgetRefresh = false
+                // Reload currencies from secondaryCurrencies when settings change
+                reloadCurrenciesFromSettings()
             }
             calculateExchangeRateData(
                 preferredCurrencyCode: defaultCurrencyCode,
@@ -570,9 +731,9 @@ final class PanelViewModel {
             }
         }()
 
-        // Determine eligible accounts
+        // Determine eligible accounts (archived accounts still count for calculations)
         let eligibleAccounts = accounts.filter { account in
-            !account.isArchived && !account.excludeFromStatistics
+            !account.excludeFromStatistics
                 && (selectedAccountID == nil || account.persistentModelID == selectedAccountID)
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
@@ -605,21 +766,14 @@ final class PanelViewModel {
                 if let sub = transaction.subcategory {
                     if sub.nature != nature { return false }
                 } else {
-                    if nature == .unclassified {
-                        if transaction.subcategory != nil
-                            && transaction.subcategory!.nature != .unclassified
-                        {
-                            return false
-                        }
-                    } else {
-                        return false
-                    }
+                    // No subcategory - only pass if looking for unclassified
+                    if nature != .unclassified { return false }
                 }
             }
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -662,7 +816,7 @@ final class PanelViewModel {
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -714,21 +868,14 @@ final class PanelViewModel {
                 if let sub = transaction.subcategory {
                     if sub.nature != nature { return false }
                 } else {
-                    if nature == .unclassified {
-                        if transaction.subcategory != nil
-                            && transaction.subcategory!.nature != .unclassified
-                        {
-                            return false
-                        }
-                    } else {
-                        return false
-                    }
+                    // No subcategory - only pass if looking for unclassified
+                    if nature != .unclassified { return false }
                 }
             }
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -769,7 +916,7 @@ final class PanelViewModel {
                 effectiveInterval = DateInterval(start: start, end: Date())
             } else {
                 let startOfYear = calendar.date(
-                    from: calendar.dateComponents([.year], from: Date()))!
+                    from: calendar.dateComponents([.year], from: Date())) ?? Date()
                 effectiveInterval = DateInterval(start: startOfYear, end: Date())
             }
         } else {
@@ -817,7 +964,7 @@ final class PanelViewModel {
 
             // Tag Filter
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
             }
 
@@ -1117,12 +1264,22 @@ final class PanelViewModel {
     }
 
     /// Calculate latest records (excludes adjustments/initial balances)
+    /// In expenses-only mode, also excludes income transactions.
     private func calculateLatestRecordsWidget(context: PanelCalculationContext) -> [TransactionItem]
     {
+        var filtered = context.expenseFilteredTransactions
+            .filter { context.effectiveInterval.contains($0.date) }
+
+        // In expenses-only mode, exclude income transactions
+        if SessionState.shared.isExpensesOnlyMode {
+            filtered = filtered.filter { $0.category?.isIncome != true }
+        }
+
         return Array(
-            context.expenseFilteredTransactions
-                .filter { context.effectiveInterval.contains($0.date) }
-                .sorted { $0.date > $1.date }
+            filtered
+                .sorted {
+                    return $0.createdAt > $1.createdAt
+                }
                 .prefix(5)
         )
     }
@@ -1257,55 +1414,26 @@ final class PanelViewModel {
 
     // MARK: - Exchange Rate Widget Logic
 
-    /// Loads persisted currency selection or sets defaults based on preferred currency.
+    /// Loads currency selection from secondaryCurrencies (onboarding/settings).
+    /// This is the single source of truth for which currencies to display.
     private func loadExchangeRateCurrencySelection() {
-        if let data = UserDefaults.standard.data(forKey: exchangeRateCurrencySelectionKey),
-            let decoded = try? JSONDecoder().decode([String].self, from: data)
-        {
-            // Convert string codes back to CurrencyCode enum (case-insensitive)
-            var currencies = decoded.compactMap { code -> CurrencyCode? in
-                CurrencyCode(rawValue: code.uppercased())
-            }
+        if let secondaryCurrenciesRaw = UserDefaults.standard.string(forKey: "secondaryCurrencies"),
+           !secondaryCurrenciesRaw.isEmpty {
+            let currencies = secondaryCurrenciesRaw
+                .split(separator: ",")
+                .compactMap { CurrencyCode(rawValue: String($0)) }
 
-            // Remove duplicates while preserving order
-            var seen = Set<CurrencyCode>()
-            currencies = currencies.filter { seen.insert($0).inserted }
-
-            // Limit to max 2
             selectedComparisonCurrencies = Array(currencies.prefix(2))
-        }
-        // Note: Defaults are set when calculating data if selection is empty
-    }
-
-    /// Saves the current currency selection.
-    private func saveExchangeRateCurrencySelection() {
-        let codes = selectedComparisonCurrencies.map { $0.rawValue }
-        if let encoded = try? JSONEncoder().encode(codes) {
-            UserDefaults.standard.set(encoded, forKey: exchangeRateCurrencySelectionKey)
+        } else {
+            selectedComparisonCurrencies = []
         }
     }
 
-    /// Sets default comparison currencies based on preferred currency.
-    func setDefaultComparisonCurrencies(preferredCurrency: CurrencyCode) {
-        guard selectedComparisonCurrencies.isEmpty else { return }
-
-        switch preferredCurrency {
-        case .pen:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .usd:
-            selectedComparisonCurrencies = [.pen, .eur]
-        case .eur:
-            selectedComparisonCurrencies = [.usd, .pen]
-        case .mxn:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .cop:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .brl:
-            selectedComparisonCurrencies = [.usd, .eur]
-        case .gbp:
-            selectedComparisonCurrencies = [.usd, .eur]
-        }
+    /// Reloads currencies from secondaryCurrencies when settings change
+    private func reloadCurrenciesFromSettings() {
+        loadExchangeRateCurrencySelection()
     }
+
 
     /// Calculates exchange rate data for the widget.
     func calculateExchangeRateData(
@@ -1314,11 +1442,9 @@ final class PanelViewModel {
     ) {
         let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
 
-        // Ensure defaults are set
-        setDefaultComparisonCurrencies(preferredCurrency: preferredCurrency)
-
         // Calculate rates for ALL possible comparison currencies (so selection changes are instant)
-        let allCurrencies: [CurrencyCode] = [.pen, .usd, .eur]
+        // Use all supported currencies so COP, BRL, MXN, GBP work correctly
+        let allCurrencies = CurrencyCode.allCases
         let allComparisonCurrencies = allCurrencies.filter { $0 != preferredCurrency }
 
         // Determine grouping based on period
@@ -1335,7 +1461,7 @@ final class PanelViewModel {
         // This prevents iterating through years of dates with no data
         let interval: DateInterval
         if selectedPeriod == .allTime {
-            if let storedRange = ExchangeRateService.shared.getStoredDateRange(context: context) {
+            if let storedRange = exchangeRateService.getStoredDateRange(context: context) {
                 interval = storedRange
             } else {
                 interval = panelDateInterval
@@ -1345,7 +1471,7 @@ final class PanelViewModel {
         }
 
         // Get the latest rate for current display
-        let latestRate = ExchangeRateService.shared.getLatestRate(context: context)
+        let latestRate = exchangeRateService.getLatestRate(context: context)
 
         guard let latestRate = latestRate else {
             // No data available
@@ -1439,8 +1565,8 @@ final class PanelViewModel {
         // Apply budget filters
 
         // Account filter
-        if !budget.accounts.isEmpty {
-            let accountIDs = Set(budget.accounts.map { $0.persistentModelID })
+        if let accounts = budget.accounts, !accounts.isEmpty {
+            let accountIDs = Set(accounts.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let accountID = transaction.account?.persistentModelID {
                     return accountIDs.contains(accountID)
@@ -1450,8 +1576,8 @@ final class PanelViewModel {
         }
 
         // Subcategory filter
-        if !budget.subcategories.isEmpty {
-            let subIDs = Set(budget.subcategories.map { $0.persistentModelID })
+        if let subcategories = budget.subcategories, !subcategories.isEmpty {
+            let subIDs = Set(subcategories.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let subID = transaction.subcategory?.persistentModelID {
                     return subIDs.contains(subID)
@@ -1461,10 +1587,10 @@ final class PanelViewModel {
         }
 
         // Tag filter
-        if !budget.tags.isEmpty {
-            let tagIDs = Set(budget.tags.map { $0.persistentModelID })
+        if let budgetTags = budget.tags, !budgetTags.isEmpty {
+            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 return !transactionTagIDs.isDisjoint(with: tagIDs)
             }
         }
@@ -1482,10 +1608,10 @@ final class PanelViewModel {
         // Only count expenses (not income)
         filtered = filtered.filter { $0.category?.isIncome == false }
 
-        // Sum amounts
+        // Sum amounts in budget's currency
         let spent = filtered.reduce(0.0) { sum, transaction in
             let amount: Double
-            if transaction.preferredCurrencyCode == defaultCurrencyCode {
+            if transaction.preferredCurrencyCode == budget.currencyCode {
                 amount = transaction.amountInPreferredCurrency
             } else {
                 amount = transaction.amount
@@ -1569,20 +1695,21 @@ final class PanelViewModel {
 
     /// Get display properties for budget
     private func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
-        guard !budget.subcategories.isEmpty else {
+        let subcategories = budget.subcategories ?? []
+        guard !subcategories.isEmpty else {
             return ("chart.pie.fill", "#6366F1")
         }
 
-        if budget.subcategories.count == 1, let subcategory = budget.subcategories.first {
-            let icon = subcategory.iconName ?? subcategory.category.iconName ?? "tag.fill"
-            let color = subcategory.colorHex ?? subcategory.category.colorHex
+        if subcategories.count == 1, let subcategory = subcategories.first {
+            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "tag.fill"
+            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
             return (icon, color)
         }
 
-        let uniqueCategories = Set(budget.subcategories.map { $0.category.persistentModelID })
+        let uniqueCategories = Set(subcategories.map { $0.safeCategory.persistentModelID })
 
-        if uniqueCategories.count == 1, let firstSubcategory = budget.subcategories.first {
-            let category = firstSubcategory.category
+        if uniqueCategories.count == 1, let firstSubcategory = subcategories.first {
+            let category = firstSubcategory.safeCategory
             let icon = category.iconName ?? "tag.fill"
             let color = category.colorHex
             return (icon, color)
@@ -1594,14 +1721,3 @@ final class PanelViewModel {
 
 // MARK: - Calendar Extension for Budget Calculations
 
-private extension Calendar {
-    func startOfWeek(for date: Date) -> Date {
-        let components = dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        return self.date(from: components) ?? date
-    }
-
-    func startOfMonth(for date: Date) -> Date {
-        let components = dateComponents([.year, .month], from: date)
-        return self.date(from: components) ?? date
-    }
-}

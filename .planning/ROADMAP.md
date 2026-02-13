@@ -1,4 +1,4 @@
-# Roadmap: Neto
+# Roadmap: Yala
 
 ## Overview
 
@@ -7,8 +7,14 @@ App iOS de finanzas personales. Registrar y entender gastos, cuentas, presupuest
 ### V1.0 (Release actual)
 Features completas + preparación para beta pública en TestFlight.
 
-### V1.1 (Siguiente release)
-Registro inteligente con IA, widgets iOS, notificaciones y polish final.
+### V1.1 (En desarrollo)
+Registro inteligente con IA, iCloud Sync, Widgets iOS, modo Solo Gastos, modelo Pro/Free.
+
+### V1.2 (App Store Release)
+Sistema de temas PRO, Watch, iPad/Mac, Smart Insights y reportes financieros.
+
+### V2.0 (Futuro)
+Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 
 ## Domain Expertise
 
@@ -30,10 +36,18 @@ Registro inteligente con IA, widgets iOS, notificaciones y polish final.
 
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
-- [ ] **Fase 10: Refinamiento & Notificaciones** - Modo solo gastos, notificaciones, permisos, correcciones
+- [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT) ✅
+- [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría (corrección de bugs en curso)
 
-### V1.2
-- [ ] **Fase 11: Plataforma Avanzada** - Widgets, Smart Insights, Watch, iPad, reportes
+### V1.2 (App Store Release)
+- [ ] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (negro, rosa, cyan)
+- [ ] **Fase 12: Plataforma Extendida** - Watch, iPad/Mac, Smart Insights, reportes
+
+### V2.0
+- [ ] **Fase 13: Features Avanzadas** - Splitwise, predicciones, perfiles, metas de ahorro
+
+### Futuro
+- [ ] **Multiplataforma** - Integración opcional Android/Web
 
 ## Phase Details
 
@@ -165,7 +179,6 @@ DoD:
 **Goal**: Preparar V1.0 para release público en TestFlight
 **Depends on**: Fase 6
 **Research**: Unlikely
-**Spec**: .planning/PHASE7-BETAPREP-SPEC.md
 **Plans**: TBD
 
 Subfases:
@@ -251,7 +264,6 @@ DoD:
 **Goal**: Automatizar entrada de transacciones con IA
 **Depends on**: Fase 7
 **Research**: Done
-**Spec**: .planning/PHASE8-REGISTRO-SPEC.md
 
 Subfases:
 - [x] 8.1: Infraestructura Base (InboxDraft model, vista bandeja, navegación) ✅
@@ -297,56 +309,249 @@ DoD:
 
 ---
 
-### Fase 10: Refinamiento & Notificaciones
-**Goal**: Modo solo gastos, correcciones de registro inteligente y notificaciones
+### Fase 10: Refinamiento & Polish
+**Goal**: Corregir bugs, mejorar widgets, consistencia visual y UX antes de V1.2
 **Depends on**: Fase 9
-**Research**: Likely (UNNotificationCenter, permisos iOS)
+**Research**: Unlikely
 **Plans**: TBD
 
-Incluye:
-- [ ] Modo "Solo gastos" — ocultar todo rastro de ingresos y saldos en toda la app
-- [ ] Notificaciones: recordatorio de registro, reporte semanal/mensual, pagos planificados, anuncios y ofertas
-- [ ] Pagos planificados crean transacción en bandeja de entrada
-- [ ] Integración Share Sheet para enviar imágenes directamente
-- [ ] Integración con atajos y automatización con Apple Pay
-- [ ] Revisar prompts voz: tildes crean etiquetas duplicadas en vez de reusar existentes
-- [ ] FAB fuera de PanelView no tiene opción de registro de imagen
-- [ ] Pedir permiso de micrófono al activar toggle
-- [ ] Pedir permiso de fotos al activar toggle
-- [ ] Mejorar onboarding: preguntar si cargar seed de categorías predeterminadas
-- [ ] Vaciar datos: preguntar si cargar seed de categorías predeterminadas
+**Completados:**
+- [x] Pagos planificados crean transacción en bandeja de entrada ✅
+- [x] Integración Share Sheet ✅
+- [x] Prompts voz sin duplicar tags ✅
+- [x] FAB imagen en todas las vistas ✅
+- [x] Permisos micrófono/fotos al activar toggle ✅
+- [x] Onboarding seed de categorías ✅
+- [x] Notificaciones configurables ✅
+- [x] Atajos Siri/Shortcuts ✅
+- [x] Automatización Apple Pay ✅
+- [x] Automatización externa ✅
+
+**Completados (21/21 items UAT 2026-01-30):** ✅
+
+**10.A: Bugs Críticos (4)** ✅
+- [x] A.1: PanelView no reacciona inmediatamente (crear cuenta/importar/crear registros)
+- [x] A.2: Filtro texto SearchBar no se quita/propaga correctamente
+- [x] A.3: FAB no se cierra al navegar a otra pestaña
+- [x] A.4: Vista FaceID bloqueado no aparece desde sheet perfil
+
+**10.B: Lógica de Negocio (3)** ✅
+- [x] B.1: Definir comportamiento transacciones futuras
+- [x] B.2: Orden registros mismo día por creación/aprobación
+- [x] B.3: Widget pagos planificados solo gastos (no ingresos)
+
+**10.C: Widgets (4)** ✅
+- [x] C.1: Hover widget presupuestos no fuerza vista correcta
+- [x] C.2: Widget Presupuestos usa divisa correcta del presupuesto
+- [x] C.3: Iconos informativos en pieCategories/pieSubcategories
+- [x] C.4: Posición icono informativo en Pagos planificados
+
+**10.D: Consistencia Visual (5)** ✅
+- [x] D.1: Label "hoy" no sobrepasa eje Y en tendencias
+- [x] D.2: Iconos toolbar no filled (outline)
+- [x] D.3: Indicador filtros en TrendsTabView/CategoriesTabView
+- [x] D.4: Icono informativo CashFlow en título único
+- [x] D.5: Botones capsule (onboarding, FaceID, auditar todos)
+
+**10.E: Settings y Preferencias (4)** ✅
+- [x] E.1: Alineación derecha selectores Recurrencia
+- [x] E.2: Tema Sistema fuerza sheet correctamente
+- [x] E.3: Reordenar Preferencias + renombrar registros
+- [x] E.4: Listas expansibles para divisas
+
+**10.F: Desarrollo (1)** ✅
+- [x] F.1: Seed Dev completa para pruebas (solo bundle dev)
 
 DoD:
-- Modo solo gastos oculta ingresos/saldos globalmente
-- Notificaciones configurables por tipo
-- Pagos planificados generan drafts automáticamente
-- Share Sheet e imagen accesible desde cualquier FAB
-- Permisos se solicitan en el momento correcto
-- Onboarding y data wipe ofrecen carga de categorías seed
+- 0 bugs críticos (sección A completa)
+- Widgets muestran datos correctos
+- UI consistente en toda la app
+- Settings reorganizado y usable
 
 ---
 
-### Fase 11: Plataforma Avanzada
-**Goal**: Widgets, insights, Watch y plataformas extendidas
+### Fase 10.5: Mejoras Pre-Release
+**Goal**: Completar V1.1 con sync, widgets, personalización y modelo de suscripción
 **Depends on**: Fase 10
-**Research**: Likely (WidgetKit, WatchKit, App Intents, ML/heurísticas)
+**Research**: Likely (CloudKit, WidgetKit, Control Center APIs)
+**Plans**: TBD
+
+**10.5.A: Bugs Críticos** ✅
+- [x] A.1: Share Sheet envía imagen a app incorrecta → App Group dinámico
+- [x] A.2: Atajo de automatización no lee JSON → DecodingError detallado
+- [x] A.3: Notificación in-app no aparece con sheet → fullScreenCover
+- [x] A.4: Cambio de tema no se aplica → themeRefreshKey
+
+**10.5.B: Consistencia Visual** ✅
+- [x] B.1: UI de Pagos Planificados alineada con Presupuestos
+
+**10.5.C: UX y Personalización** ✅
+- [x] C.1: Ejemplo voz usa moneda preferida (shortPluralName)
+- [x] C.2: Filtro monedas solo con transacciones
+- [x] C.3: Onboarding divisas por continente con recomendada
+- [x] C.4: Settings divisas secundarias con continentes + recomendadas (USD, EUR, GBP)
+
+**10.5.D: Features** ✅
+- [x] D.1: Notificaciones de presupuestos (umbrales configurables)
+- [x] D.2: Toggle global en Notificaciones para alertas de presupuestos
+
+**10.5.E: Aislamiento Yala/Dev** ✅
+- [x] E.1: SwiftData aislado (YalaModel vs YalaModel-Dev)
+
+**10.5.F: Modal Unificado Inbox** ✅
+- [x] F.1: Modal para pagos planificados/suscripciones/automatizaciones
+
+**10.5.G: Sincronización y Widgets** ✅
+- [x] G.1: iCloud Sync (CloudKit private database)
+- [x] G.2: Widgets iOS (WidgetKit) — rediseñado completo
+- [x] G.3: Control Center — intents funcionales
+- [x] G.4: Personalización de Widgets (tema, selección)
+
+---
+
+**Bugs Urgentes** ✅ RESUELTOS
+- [x] BUG-1: Orden notificaciones presupuesto ✅
+- [x] BUG-2: Control Center intents ✅
+- [x] BUG-3: WidgetKit rediseño completo (15 issues) ✅
+- [x] BUG-4: Divisas recomendadas en Onboarding ✅
+
+---
+
+**10.5.H: Notificaciones Personalizadas** ✅
+- [x] H.1: Notificaciones con datos reales (pagos, presupuestos, reportes)
+
+**10.5.I: Toggle Comparativas** ✅
+- [x] I.1: Toggle para ocultar variaciones vs periodo anterior
+
+**10.5.J: Tab Registros Standalone** ✅
+- [x] J.1: Nueva tab "Registros" independiente con FAB completo
+
+**10.5.K: Animaciones y Haptics** ✅
+- [x] K.1: DS.Haptic helpers centralizados, DS.Animation springs
+- [x] K.2: Haptics en FAB, save, delete, selection
+
+**10.5.L: Sistema Pro/Free** ✅
+- [x] L.1: FeatureGateService con límites Free (2 cuentas, 3 presupuestos)
+- [x] L.2: ProBadge, UpgradePromptSheet, gates en vistas
+
+**10.5.M-N: Fix Notificaciones y Sync** ✅
+- [x] M.1: Deep links en notificaciones, contenido dinámico
+- [x] N.1: Fix sincronización al eliminar transacciones
+
+**10.5.O: Auditoría Pre-Launch** ✅
+- [x] O.1: PrivacyInfo.xcprivacy, prints en #if DEBUG, try? → do/catch
+
+**10.5.P: Mejoras Onboarding** ✅
+- [x] P.1: LanguageManager, idioma pre-onboarding, brand voice
+
+**10.5.Q: Fix Dark Mode** ✅
+- [x] Q.1: List→ScrollView+SectionBox en 4 vistas
+
+**10.5.S: Deep Scan Pre-Launch** (28 issues, 293 archivos escaneados)
+- [x] S.1 Críticos (5): ✅ 171a0ce — DS-1 key legacy, DS-2/DS-3 div/zero, DS-4/DS-5 force unwraps
+- [ ] S.2 Altos (7): Error silenciado en CurrencyConverter/ExchangeRateService (DS-6, DS-7), fetches sin límite (DS-8, DS-9), try? en AudioRecorderService (DS-10), force unwraps en ImportIntroSheet (DS-11) y SharedModels (DS-12)
+- [ ] S.3 Medios (10): .cornerRadius deprecated (DS-13), Calendar extension duplicada (DS-14), @MainActor faltante (DS-15), try? en regex (DS-16), Subcategory.safeCategory (DS-17), DS.Typography/DS.Spacing (DS-18, DS-19), DispatchQueue (DS-20), force unwraps en PreviousPeriodHelper (DS-21) y CSVImport (DS-22)
+- [ ] S.4 Bajos (6): @Relationship inconsistente (DS-23), prints sin #if DEBUG (DS-24), código duplicado (DS-25), @MainActor minor (DS-26), try? en Task.sleep (DS-27), InboxDraft.tags inverse (DS-28)
+
+DoD (actualizado):
+- iCloud Sync funcional con datos privados ✅
+- Widgets en pantalla de inicio con datos actualizados ✅
+- Atajos accesibles desde centro de control ✅
+- Tab de Registros independiente ✅
+- Animaciones y haptics consistentes ✅
+- Modelo Pro/Free claramente definido ✅
+- Deep Scan: 0 issues críticos/altos pendientes
+- Deep Scan: issues medios y bajos resueltos o documentados como aceptados
+
+---
+
+### Fase 11: Sistema de Temas Independientes (V1.2)
+**Goal**: Refactorizar el sistema de colores para soportar temas completamente independientes (no solo light/dark)
+**Depends on**: Fase 10.5
+**Research**: Done (ShapeStyle.resolve(in:), @Observable ThemeManager, Environment injection)
+**Plans**: `.planning/THEME-REFACTOR-PLAN.md`
+
+**Problema actual:**
+- Solo existen 2 ColorScheme en SwiftUI (.light/.dark)
+- El tema "Negro" es un hack: dark + UserDefaults check dentro de UIColor closures
+- `.id(userThemeRaw)` destruye toda la jerarquía de vistas (reinicio visual)
+- No escala para nuevos temas PRO (rosa, cyan, etc.)
+
+**Arquitectura nueva:**
+- `YalaTheme` struct con paleta completa por tema
+- `ThemeColor: ShapeStyle` con `resolve(in:)` — colores se resuelven del Environment
+- `@Observable ThemeManager` — sin `.id()`, sin destrucción de vistas
+- Las vistas usan `.foregroundStyle(.thBackground)` en vez de `Color.yalaBackground`
+
+Incluye:
+- [ ] Infraestructura: YalaTheme, ThemeColor, ThemeManager (3 archivos nuevos)
+- [ ] Integración en YalaApp (eliminar `.id(userThemeRaw)`)
+- [ ] Migrar PanelBackgroundView y componentes compartidos
+- [ ] Migrar vistas: Panel, Statistics, Settings, Transactions, Planning (~60 archivos)
+- [ ] Rediseño ThemeSettingsView para mostrar todos los temas
+- [ ] Limpieza: eliminar colores legacy de UIHelpers.swift
+- [ ] Definir paletas para temas PRO futuros (rosa, cyan)
+- [ ] Localizaciones y escenarios QA
+
+DoD:
+- Cambiar de tema NO reinicia la app (sin `.id()`, sin splash)
+- Cada tema define paleta completa independiente
+- Añadir un tema nuevo = 1 static let + 1 case en enum (0 cambios en vistas)
+- Tema Negro funciona como tema propio, no como hack de Dark
+- Widgets iOS no se afectan (mantienen sistema propio)
+- 0 usos de colores legacy (yalaBackground, yalaCard, etc.)
+
+---
+
+### Fase 12: Plataforma Extendida (V1.2 - App Store)
+**Goal**: Watch, iPad/Mac, Smart Insights y reportes
+**Depends on**: Fase 11
+**Research**: Likely (WatchKit, iPadOS/macOS adaptations, ML/heurísticas)
 **Plans**: TBD
 
 Incluye:
-- [ ] Acciones rápidas en centro de control y pantalla de bloqueo
-- [ ] Widgets iOS (WidgetKit)
-- [ ] Predicciones de saldo en gráficas de tendencia
-- [ ] Integración con Apple Watch
-- [ ] Refinamiento versión iPad
-- [ ] Vista de Smart Insights
-- [ ] Integrar Smart Insights a lo largo de la app
-- [ ] Vista de reporte financiero
+- [ ] Integración con Apple Watch (registro rápido, balance, widgets)
+- [ ] Refinamiento versión iPad/Mac (layouts adaptados, sidebar)
+- [ ] Vista de Smart Insights (patrones de gasto, alertas inteligentes)
+- [ ] Integrar Smart Insights a lo largo de la app (contextuales)
+- [ ] Vista de reporte financiero (exportable PDF/Excel)
+- [ ] Filtros avanzados: excluir/incluir en DetailContainerView
 
 DoD:
-- Widgets funcionales en pantalla de inicio
+- App funcional en Watch con registro y balance
+- Layouts optimizados para iPad y Mac
 - Insights visibles en contexto relevante
-- App funcional en Watch y iPad
 - Reportes financieros exportables
+- Filtros con exclusión/inclusión
+
+---
+
+### Fase 13: Features Avanzadas (V2.0)
+**Goal**: Splitwise, predicciones y perfiles de usuario
+**Depends on**: Fase 12
+**Research**: Likely (APIs Splitwise, ML para predicciones)
+**Plans**: TBD
+
+Incluye:
+- [ ] Splitwise integrado (gastos compartidos, deudas)
+- [ ] Predicción de saldo en gráficas de tendencia
+- [ ] Integración BD multiplataforma para Splitwise (sin exponer datos innecesarios)
+- [ ] Perfil para Smart Insights: ahorrador, justo, sobrado
+- [ ] Visualizador de ahorros (metas amarradas a cuentas de ahorro)
+- [ ] Split de transacción (dividir en múltiples partes/personas)
+
+DoD:
+- Splitwise sincronizado con gastos compartidos
+- Predicciones de saldo visibles en tendencias
+- Perfiles de usuario influyen en insights
+- Metas de ahorro con progreso visual
+
+---
+
+### Futuro (Post V2.0)
+
+Ideas capturadas para evaluación posterior:
+- [ ] Integración multiplataforma opcional (Android, Web) — sync completo para usuarios que lo deseen
 
 ## Progress
 
@@ -368,12 +573,24 @@ DoD:
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
-| 10 | Refinamiento & Notificaciones | Not started | - |
+| 10 | Refinamiento & Polish | ✅ Done | 2026-01-30 |
+| 10.5 | Mejoras Pre-Release | In Progress | - |
 
-### V1.2
+### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 11 | Plataforma Avanzada | Not started | - |
+| 11 | Sistema de Temas Independientes | Not started | - |
+| 12 | Plataforma Extendida | Not started | - |
+
+### V2.0
+| Fase | Nombre | Status | Completed |
+|------|--------|--------|-----------|
+| 13 | Features Avanzadas | Not started | - |
+
+### Futuro
+| Tema | Status |
+|------|--------|
+| Multiplataforma opcional | Backlog |
 
 ---
 

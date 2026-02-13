@@ -13,10 +13,10 @@ struct BalanceStatusIndicator: View {
     var body: some View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: iconName)
-                .font(.system(size: 12, weight: .bold))
+                .font(DS.Typography.labelTiny).fontWeight(.bold)
 
             Text(statusText)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
         }
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)

@@ -17,15 +17,20 @@ struct CategoriesTabView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 48
 
-    // MARK: - Data Queries
+    // MARK: - Settings
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Category.name, order: .forward) private var categories: [Category]
-    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(sort: \TransactionItem.date, order: .reverse) private var allTransactions:
-        [TransactionItem]
+    @AppStorage("showVariations") private var showVariations: Bool = true
+
+    // MARK: - Data (passed from parent)
+
+    let accounts: [Account]
+    let categories: [Category]
+    let allSubcategories: [Subcategory]
+    let tags: [Tag]
+    let allTransactions: [TransactionItem]
 
     // MARK: - External Dependencies
 
@@ -39,16 +44,13 @@ struct CategoriesTabView: View {
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var tagSpending: [TagSpendingSummary] = []
     @State private var natureTrendPoints: [NatureTrendPoint] = []
-    @State private var selectedCategoryID: PersistentIdentifier?
-    @State private var selectedSubcategoryID: PersistentIdentifier?
-    @State private var selectedTagID: PersistentIdentifier?
     @State private var selectedNature: SubcategoryNature?
     @State private var chartsCarouselPosition: String? = "category"
     @State private var listViewType: ListViewType = .categories
     @State private var isListExpanded: Bool = false
     @State private var isSubcategoriesAutomatic: Bool = false  // Track if switch was automatic
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
-    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for sync functions
+    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for Nature sync functions only
     @Namespace private var listSelectorNamespace
     @Namespace private var comparisonSelectorNamespace
 
@@ -62,9 +64,28 @@ struct CategoriesTabView: View {
     // Nature Carousel State
     @State private var natureCarouselIndex: Int? = 0
 
-    /// Effective category ID combining local selection and SessionState sync
+    /// Effective category ID for subcategory filtering (uses first selected category or derives parent from subcategory)
     private var effectiveCategoryID: PersistentIdentifier? {
-        selectedCategoryID ?? viewModel.selectedCategories.first
+        if let catID = viewModel.selectedCategories.first {
+            return catID
+        }
+        // Derive parent category from selected subcategories
+        if let subID = viewModel.selectedSubcategories.first,
+           let subcategory = allSubcategories.first(where: { $0.persistentModelID == subID }) {
+            return subcategory.category?.persistentModelID
+        }
+        return nil
+    }
+
+    /// Category IDs to use for visual dimming (includes derived parent from subcategory selection)
+    private var effectiveCategoryIDsForDim: Set<PersistentIdentifier> {
+        if !viewModel.selectedCategories.isEmpty {
+            return viewModel.selectedCategories
+        }
+        if let catID = effectiveCategoryID {
+            return [catID]
+        }
+        return []
     }
 
     // MARK: - List View Type
@@ -115,9 +136,6 @@ struct CategoriesTabView: View {
             .yalaSafeBottomPadding()
         }
         .onAppear {
-            // Sync local selection state from viewModel filters (may come from SessionState)
-            syncCategoryFilterToSelection()
-            syncSubcategoryFilterToSelection()
             calculateData()
         }
         .onChange(of: viewModel.detailPeriod) {
@@ -128,14 +146,11 @@ struct CategoriesTabView: View {
         }
         .onChange(of: viewModel.selectedCategories) {
             calculateData()
-            syncCategoryFilterToSelection()
         }
         .onChange(of: viewModel.selectedSubcategories) {
             calculateData()
-            syncSubcategoryFilterToSelection()
         }
         .onChange(of: viewModel.selectedTags) {
-            syncTagFilterToSelection()
             calculateData()
         }
         .onChange(of: viewModel.selectedNatures) {
@@ -146,19 +161,6 @@ struct CategoriesTabView: View {
             calculateData()
         }
         .onChange(of: allSubcategories) {
-            // Recalculate when subcategories change (nature edited, etc.)
-            calculateData()
-        }
-        .onChange(of: selectedCategoryID) {
-            syncSelectionToCategoryFilter()
-            calculateData()
-        }
-        .onChange(of: selectedSubcategoryID) {
-            syncSelectionToSubcategoryFilter()
-            calculateData()
-        }
-        .onChange(of: selectedTagID) {
-            syncSelectionToTagFilter()
             calculateData()
         }
         .onChange(of: selectedNature) {
@@ -233,24 +235,10 @@ struct CategoriesTabView: View {
                                 onClear: {
                                     viewModel.selectedCategories.removeAll()
                                     viewModel.selectedSubcategories.removeAll()
-                                    selectedCategoryID = nil
-                                }
-                            )
-                        } else if let categoryID = selectedCategoryID,
-                                  let category = categories.first(where: { $0.persistentModelID == categoryID }) {
-                            // Chip from direct category selection (pie chart)
-                            FilterChipView(
-                                categoryName: category.name,
-                                iconName: category.iconName,
-                                colorHex: category.colorHex,
-                                count: 1,
-                                onClear: {
-                                    viewModel.selectedCategories.removeAll()
-                                    selectedCategoryID = nil
                                 }
                             )
                         } else if !viewModel.selectedCategories.isEmpty {
-                            // Chip from external filter (SessionState sync)
+                            // Chip from category selection (pie chart or SessionState)
                             let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
                             if let firstCat = selectedCats.first {
                                 FilterChipView(
@@ -260,7 +248,6 @@ struct CategoriesTabView: View {
                                     count: selectedCats.count,
                                     onClear: {
                                         viewModel.selectedCategories.removeAll()
-                                        selectedCategoryID = nil
                                     }
                                 )
                             }
@@ -279,20 +266,6 @@ struct CategoriesTabView: View {
                                 count: subChip.count,
                                 onClear: {
                                     viewModel.selectedSubcategories.removeAll()
-                                    selectedSubcategoryID = nil
-                                }
-                            )
-                        } else if let subcategoryID = selectedSubcategoryID,
-                                  let subcategory = subcategorySpending.first(where: { $0.persistentID == subcategoryID })?.subcategory {
-                            // Chip from direct subcategory selection (pie chart)
-                            FilterChipView(
-                                subcategoryName: subcategory.name,
-                                iconName: subcategory.iconName,
-                                colorHex: subcategory.colorHex,
-                                count: 1,
-                                onClear: {
-                                    viewModel.selectedSubcategories.removeAll()
-                                    selectedSubcategoryID = nil
                                 }
                             )
                         }
@@ -320,8 +293,9 @@ struct CategoriesTabView: View {
                         }
 
                         // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected
-                        if viewModel.selectedTransactionNatures.count == 1,
+                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
+                        if !sessionState.isExpensesOnlyMode,
+                            viewModel.selectedTransactionNatures.count == 1,
                             let nature = viewModel.selectedTransactionNatures.first
                         {
                             FilterChipView(
@@ -369,7 +343,7 @@ struct CategoriesTabView: View {
                         // Clear all button
                         if activeFilterCount > 1 {
                             Button {
-                                withAnimation {
+                                dsWithAnimation(reduceMotion) {
                                     clearAllFilters()
                                 }
                             } label: {
@@ -407,7 +381,7 @@ struct CategoriesTabView: View {
     private var spendingAnalysisHeader: some View {
         HStack {
             Text(isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             InfoHintButton(
@@ -424,14 +398,14 @@ struct CategoriesTabView: View {
         }
     }
 
-    /// Determines if comparison selector should be visible
+    /// Determines if comparison selector should be visible (only when showVariations is ON)
     private var showComparisonSelector: Bool {
-        PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
+        showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
     }
 
     /// Comparison mode selector (M/A toggle)
     private var comparisonModeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ComparisonMode.allCases) { mode in
                 comparisonSelectorButton(for: mode)
             }
@@ -445,14 +419,14 @@ struct CategoriesTabView: View {
         let isSelected = sessionState.comparisonMode == mode
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 sessionState.comparisonMode = mode
             }
         } label: {
             Text(mode.shortName)
-                .font(.caption2.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .font(DS.Typography.indicator)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {
@@ -534,7 +508,7 @@ struct CategoriesTabView: View {
     // MARK: - Category Chart Card
 
     private var categoryChartCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if categorySpending.isEmpty {
                 emptyState(
                     icon: "chart.pie",
@@ -546,22 +520,21 @@ struct CategoriesTabView: View {
                 CategoriesPieWidget(
                     categories: categorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryID: effectiveCategoryID,
+                    selectedCategoryIDs: effectiveCategoryIDsForDim,
                     onSelectCategory: { categoryID in
-                        if effectiveCategoryID == categoryID {
-                            selectedCategoryID = nil
-                            viewModel.selectedCategories.removeAll()
+                        if viewModel.selectedCategories.contains(categoryID) {
+                            viewModel.selectedCategories.remove(categoryID)
                         } else {
-                            selectedCategoryID = categoryID
                             viewModel.selectedCategories = [categoryID]
                         }
+                        viewModel.selectedSubcategories.removeAll()
                     },
                     size: .large,
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: viewModel.detailPeriod != .allTime
+                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -569,7 +542,7 @@ struct CategoriesTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
@@ -577,7 +550,7 @@ struct CategoriesTabView: View {
     // MARK: - Subcategory Chart Card
 
     private var subcategoryChartCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if subcategorySpending.isEmpty {
                 emptyState(
                     icon: "chart.pie",
@@ -590,20 +563,22 @@ struct CategoriesTabView: View {
                     subcategories: subcategorySpending,
                     currencyCode: defaultCurrencyCode,
                     selectedCategoryID: effectiveCategoryID,
-                    selectedSubcategoryIDs: selectedSubcategoryID.map { Set([$0]) } ?? [],
+                    selectedSubcategoryIDs: viewModel.selectedSubcategories,
                     onSelectSubcategory: { subcategoryID in
-                        if selectedSubcategoryID == subcategoryID {
-                            selectedSubcategoryID = nil
+                        if viewModel.selectedSubcategories.contains(subcategoryID) {
+                            viewModel.selectedSubcategories.remove(subcategoryID)
                         } else {
-                            selectedSubcategoryID = subcategoryID
+                            viewModel.selectedSubcategories = [subcategoryID]
                         }
+                        // Clear category filter — subcategory selection is more specific
+                        viewModel.selectedCategories.removeAll()
                     },
                     size: .large,
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: viewModel.detailPeriod != .allTime
+                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -611,7 +586,7 @@ struct CategoriesTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
@@ -619,7 +594,7 @@ struct CategoriesTabView: View {
     // MARK: - Tag Chart Card
 
     private var tagChartCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if tagSpending.isEmpty {
                 emptyState(
                     icon: "tag",
@@ -631,12 +606,12 @@ struct CategoriesTabView: View {
                 TagsPieWidget(
                     tags: tagSpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedTagID: selectedTagID,
+                    selectedTagIDs: viewModel.selectedTags,
                     onSelectTag: { tagID in
-                        if selectedTagID == tagID {
-                            selectedTagID = nil
+                        if viewModel.selectedTags.contains(tagID) {
+                            viewModel.selectedTags.remove(tagID)
                         } else {
-                            selectedTagID = tagID
+                            viewModel.selectedTags = [tagID]
                         }
                     },
                     size: .large,
@@ -644,7 +619,7 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: viewModel.detailPeriod != .allTime
+                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
@@ -652,7 +627,7 @@ struct CategoriesTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
@@ -714,7 +689,7 @@ struct CategoriesTabView: View {
                 .frame(width: totalWidth)
             }
             .frame(height: natureCarouselHeight)
-            .animation(.easeInOut(duration: 0.3), value: natureCarouselIndex)
+            .dsAnimation(.easeInOut(duration: 0.3), value: natureCarouselIndex, reduceMotion: reduceMotion)
 
             // Page indicator
             HStack(spacing: DS.Spacing.sm) {
@@ -741,7 +716,7 @@ struct CategoriesTabView: View {
             grouping: natureGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNature: { nature in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     if selectedNature == nature {
                         selectedNature = nil
                     } else {
@@ -753,7 +728,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
-            showVariationHeader: viewModel.detailPeriod != .allTime,
+            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
@@ -768,7 +743,7 @@ struct CategoriesTabView: View {
             grouping: natureGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNature: { nature in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                dsWithAnimation(reduceMotion) {
                     if selectedNature == nature {
                         selectedNature = nil
                     } else {
@@ -780,7 +755,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNatureTotal,
             previousAmountByNature: previousNatureAmounts,
-            showVariationHeader: viewModel.detailPeriod != .allTime,
+            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
@@ -802,14 +777,14 @@ struct CategoriesTabView: View {
     // MARK: - Categories List Section
 
     private var categoriesListSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Header with title and selector
             HStack(alignment: .center) {
                 Text(
                     listViewType == .categories
                         ? L10n.Statistics.topCategories : L10n.Statistics.topSubcategories
                 )
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
                 Spacer()
@@ -833,18 +808,17 @@ struct CategoriesTabView: View {
                     AllCategoriesListContent(
                         categories: categorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryID: effectiveCategoryID,
+                        selectedCategoryIDs: effectiveCategoryIDsForDim,
                         isExpanded: isListExpanded,
-                        showVariation: viewModel.detailPeriod != .allTime,
+                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectCategory: { categoryID in
-                            if effectiveCategoryID == categoryID {
-                                selectedCategoryID = nil
-                                viewModel.selectedCategories.removeAll()
+                            if viewModel.selectedCategories.contains(categoryID) {
+                                viewModel.selectedCategories.remove(categoryID)
                             } else {
-                                selectedCategoryID = categoryID
                                 viewModel.selectedCategories = [categoryID]
                             }
+                            viewModel.selectedSubcategories.removeAll()
                         }
                     )
                 }
@@ -860,17 +834,19 @@ struct CategoriesTabView: View {
                     AllSubcategoriesListContent(
                         subcategories: subcategorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryID: effectiveCategoryID,
-                        selectedSubcategoryID: selectedSubcategoryID,
+                        selectedCategoryIDs: effectiveCategoryIDsForDim,
+                        selectedSubcategoryIDs: viewModel.selectedSubcategories,
                         isExpanded: isListExpanded,
-                        showVariation: viewModel.detailPeriod != .allTime,
+                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectSubcategory: { subcategoryID in
-                            if selectedSubcategoryID == subcategoryID {
-                                selectedSubcategoryID = nil
+                            if viewModel.selectedSubcategories.contains(subcategoryID) {
+                                viewModel.selectedSubcategories.remove(subcategoryID)
                             } else {
-                                selectedSubcategoryID = subcategoryID
+                                viewModel.selectedSubcategories = [subcategoryID]
                             }
+                            // Clear category filter — subcategory selection is more specific
+                            viewModel.selectedCategories.removeAll()
                         }
                     )
                 }
@@ -880,13 +856,13 @@ struct CategoriesTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     private var listViewSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ListViewType.allCases) { viewType in
                 listViewButton(for: viewType)
             }
@@ -905,12 +881,12 @@ struct CategoriesTabView: View {
             // OR if trying to switch to subcategories (always allowed)
             guard !isLocked || viewType == .subcategories else { return }
 
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 setListViewManually(viewType)
             }
         } label: {
             Image(systemName: viewType.iconName)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
@@ -936,7 +912,7 @@ struct CategoriesTabView: View {
     /// - When a category filter is applied (show only subcategories of that category)
     /// - When income mode is active (category breakdown not useful for income)
     private var shouldLockToSubcategories: Bool {
-        !viewModel.selectedCategories.isEmpty || isIncomeMode
+        !viewModel.selectedCategories.isEmpty || !viewModel.selectedSubcategories.isEmpty || isIncomeMode
     }
 
     /// Enforce list view lock logic based on current category filter
@@ -968,13 +944,14 @@ struct CategoriesTabView: View {
     private func emptyState(icon: String, title: String, subtitle: String) -> some View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 48))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(title)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
             Text(subtitle)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
         }
@@ -1253,105 +1230,6 @@ struct CategoriesTabView: View {
 
     // MARK: - Filter Synchronization
 
-    /// Sync chart selection to ViewModel filters (chart -> top filters)
-    private func syncSelectionToCategoryFilter() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if let categoryID = selectedCategoryID {
-            // Add to ViewModel's selected categories if not already there
-            if !viewModel.selectedCategories.contains(categoryID) {
-                viewModel.selectedCategories.insert(categoryID)
-            }
-            // Clear subcategory selection when category changes
-            selectedSubcategoryID = nil
-            viewModel.selectedSubcategories.removeAll()
-        } else {
-            // If deselected, remove from ViewModel
-            // But only if it was the only one selected
-            if viewModel.selectedCategories.count == 1 {
-                viewModel.selectedCategories.removeAll()
-            }
-        }
-    }
-
-    private func syncSelectionToSubcategoryFilter() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if let subcategoryID = selectedSubcategoryID {
-            // Find the subcategory by persistentID
-            if let subcategory = subcategorySpending.first(where: { $0.persistentID == subcategoryID })?
-                .subcategory
-            {
-                if !viewModel.selectedSubcategories.contains(subcategory.persistentModelID) {
-                    viewModel.selectedSubcategories.insert(subcategory.persistentModelID)
-                }
-                // Also ensure parent category is selected
-                let parentCategory = subcategory.category
-                if !viewModel.selectedCategories.contains(parentCategory.persistentModelID) {
-                    viewModel.selectedCategories.insert(parentCategory.persistentModelID)
-                }
-                selectedCategoryID = parentCategory.persistentModelID
-            }
-        } else {
-            // If deselected subcategory, remove from ViewModel
-            if viewModel.selectedSubcategories.count == 1 {
-                viewModel.selectedSubcategories.removeAll()
-            }
-        }
-    }
-
-    private func syncSelectionToTagFilter() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if let tagID = selectedTagID {
-            if !viewModel.selectedTags.contains(tagID) {
-                viewModel.selectedTags.insert(tagID)
-            }
-        } else {
-            if viewModel.selectedTags.count == 1 {
-                viewModel.selectedTags.removeAll()
-            }
-        }
-    }
-
-    /// Sync ViewModel filters to chart selection (top filters -> chart)
-    private func syncCategoryFilterToSelection() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if viewModel.selectedCategories.count == 1 {
-            selectedCategoryID = viewModel.selectedCategories.first
-        } else if viewModel.selectedCategories.isEmpty {
-            selectedCategoryID = nil
-        }
-    }
-
-    private func syncSubcategoryFilterToSelection() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if viewModel.selectedSubcategories.count == 1 {
-            // Find the subcategory name from the ID
-            if let subcategoryID = viewModel.selectedSubcategories.first,
-                let subcategory = subcategorySpending.first(where: {
-                    $0.subcategory?.persistentModelID == subcategoryID
-                })
-            {
-                selectedSubcategoryID = subcategory.persistentID
-            }
-        } else if viewModel.selectedSubcategories.isEmpty {
-            selectedSubcategoryID = nil
-        }
-    }
-
     private func syncSelectionToNatureFilter() {
         guard !isSyncingFilters else { return }
         isSyncingFilters = true
@@ -1378,24 +1256,12 @@ struct CategoriesTabView: View {
         }
     }
 
-    private func syncTagFilterToSelection() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if viewModel.selectedTags.count == 1 {
-            selectedTagID = viewModel.selectedTags.first
-        } else if viewModel.selectedTags.isEmpty {
-            selectedTagID = nil
-        }
-    }
-
     // MARK: - Recent Records Section
 
     private var recentRecordsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             if viewModel.recentRecords.isEmpty {
@@ -1412,9 +1278,9 @@ struct CategoriesTabView: View {
                 HStack {
                     Spacer()
                     Text(L10n.Action.viewAll)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
@@ -1429,7 +1295,7 @@ struct CategoriesTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
@@ -1437,10 +1303,10 @@ struct CategoriesTabView: View {
     private var emptyRecordsState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
             Text(L10n.Statistics.noRecords)
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -1449,8 +1315,6 @@ struct CategoriesTabView: View {
 
     private func clearAllFilters() {
         viewModel.clearFilters()
-        selectedCategoryID = nil
-        selectedSubcategoryID = nil
         selectedNature = nil
     }
 
@@ -1470,60 +1334,24 @@ struct CategoriesTabView: View {
     }
 
     private var selectedCategoryChips: [CategoryChip] {
-        var chips: [CategoryChip] = []
-
-        // From ViewModel
-        for categoryID in viewModel.selectedCategories {
-            chips.append(CategoryChip(categoryID: categoryID))
-        }
-
-        // From local selection (if not already in ViewModel)
-        if let localCategoryID = selectedCategoryID,
-            !viewModel.selectedCategories.contains(localCategoryID)
-        {
-            chips.append(CategoryChip(categoryID: localCategoryID))
-        }
-
-        return chips
+        viewModel.selectedCategories.map { CategoryChip(categoryID: $0) }
     }
 
     private var selectedSubcategoryChips: [SubcategoryChip] {
-        var chips: [SubcategoryChip] = []
-
-        // From ViewModel - use allSubcategories Query to find details
-        for subcategoryID in viewModel.selectedSubcategories {
-            if let subcategory = allSubcategories.first(where: {
+        viewModel.selectedSubcategories.compactMap { subcategoryID in
+            guard let subcategory = allSubcategories.first(where: {
                 $0.persistentModelID == subcategoryID
-            }) {
-                let categoryColor = subcategory.category.colorHex
-                chips.append(
-                    SubcategoryChip(
-                        id: subcategory.name,
-                        name: subcategory.name,
-                        iconName: subcategory.iconName,
-                        colorHex: (subcategory.colorHex?.isEmpty == false
-                            ? subcategory.colorHex : nil) ?? categoryColor,
-                        subcategoryID: subcategoryID
-                    ))
-            }
+            }) else { return nil }
+            let categoryColor = subcategory.safeCategory.colorHex
+            return SubcategoryChip(
+                id: subcategory.name,
+                name: subcategory.name,
+                iconName: subcategory.iconName,
+                colorHex: (subcategory.colorHex?.isEmpty == false
+                    ? subcategory.colorHex : nil) ?? categoryColor,
+                subcategoryID: subcategoryID
+            )
         }
-
-        // From local selection (if not already added via ViewModel)
-        if let localSubcategoryID = selectedSubcategoryID,
-            !viewModel.selectedSubcategories.contains(localSubcategoryID),
-            let summary = subcategorySpending.first(where: { $0.persistentID == localSubcategoryID })
-        {
-            chips.append(
-                SubcategoryChip(
-                    id: summary.id,
-                    name: summary.subcategoryName,
-                    iconName: summary.subcategory?.iconName,
-                    colorHex: summary.colorHex,
-                    subcategoryID: summary.subcategory?.persistentModelID
-                ))
-        }
-
-        return chips
     }
 
     // MARK: - Tag Chip Data
@@ -1552,14 +1380,14 @@ struct CategoriesTabView: View {
     // MARK: - Filter Helpers
 
     private var hasActiveFilters: Bool {
-        viewModel.hasActiveFilters || selectedCategoryID != nil || selectedSubcategoryID != nil
+        viewModel.hasActiveFilters
     }
 
     private var activeFilterCount: Int {
         var count = 0
         if !viewModel.selectedAccounts.isEmpty { count += 1 }
-        if !viewModel.selectedCategories.isEmpty || selectedCategoryID != nil { count += 1 }
-        if !viewModel.selectedSubcategories.isEmpty || selectedSubcategoryID != nil { count += 1 }
+        if !viewModel.selectedCategories.isEmpty { count += 1 }
+        if !viewModel.selectedSubcategories.isEmpty { count += 1 }
         if !viewModel.selectedTags.isEmpty { count += 1 }
         if !viewModel.selectedNatures.isEmpty { count += 1 }
         return count
@@ -1609,7 +1437,7 @@ struct CategoriesTabView: View {
 private struct AllCategoriesListContent: View {
     let categories: [CategorySpendingSummary]
     let currencyCode: String
-    var selectedCategoryID: PersistentIdentifier?
+    var selectedCategoryIDs: Set<PersistentIdentifier> = []
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
@@ -1627,8 +1455,8 @@ private struct AllCategoriesListContent: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if let maxAmount = categories.first?.amount {
                 ForEach(displayedCategories) { summary in
-                    let isSelected = selectedCategoryID == summary.category.persistentModelID
-                    let isAnySelected = selectedCategoryID != nil
+                    let isSelected = selectedCategoryIDs.contains(summary.category.persistentModelID)
+                    let isAnySelected = !selectedCategoryIDs.isEmpty
                     let shouldDim = isAnySelected && !isSelected
 
                     CategoryRowView(
@@ -1651,14 +1479,14 @@ private struct AllCategoriesListContent: View {
                         HStack {
                             Spacer()
                             Text(isExpanded ? L10n.Action.viewLess : L10n.Action.viewAll)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DS.Typography.headline)
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
                         .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(0.1))
+                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -1677,8 +1505,8 @@ private struct AllCategoriesListContent: View {
 private struct AllSubcategoriesListContent: View {
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
-    var selectedCategoryID: PersistentIdentifier?
-    var selectedSubcategoryID: PersistentIdentifier?
+    var selectedCategoryIDs: Set<PersistentIdentifier> = []
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
@@ -1696,13 +1524,13 @@ private struct AllSubcategoriesListContent: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if let maxAmount = subcategories.first?.amount {
                 ForEach(displayedSubcategories) { summary in
-                    let isSelected = selectedSubcategoryID == summary.persistentID
-                    let isAnySelected = selectedSubcategoryID != nil
+                    let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
+                    let isAnySelected = !selectedSubcategoryIDs.isEmpty
 
-                    // Check if this subcategory belongs to the selected category
+                    // Check if this subcategory belongs to a selected category
                     let belongsToSelectedCategory =
-                        selectedCategoryID == nil
-                        || summary.category?.persistentModelID == selectedCategoryID
+                        selectedCategoryIDs.isEmpty
+                        || (summary.category?.persistentModelID).map { selectedCategoryIDs.contains($0) } ?? false
 
                     // Dim if:
                     // 1. There's a subcategory selected and this isn't it, OR
@@ -1731,14 +1559,14 @@ private struct AllSubcategoriesListContent: View {
                         HStack {
                             Spacer()
                             Text(isExpanded ? L10n.Action.viewLess : L10n.Action.viewAll)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DS.Typography.headline)
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
                         .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(0.1))
+                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -1768,7 +1596,7 @@ private struct CategoryRowView: View {
                     .frame(width: 40, height: 40)
 
                 Image(systemName: summary.category.iconName ?? "tag.fill")
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
             }
 
@@ -1776,13 +1604,13 @@ private struct CategoryRowView: View {
                 // Name and Amount
                 HStack {
                     Text(summary.category.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     Spacer()
 
                     Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(.subheadline.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
 
@@ -1791,7 +1619,7 @@ private struct CategoryRowView: View {
                     // Percentage Text + Variation Chip (inline, chip aligned right)
                     HStack(spacing: DS.Spacing.sm) {
                         Text("\(formattedPercentage(summary.percentage)) \(L10n.Statistics.ofExpense)")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
 
                         Spacer()
@@ -1809,7 +1637,7 @@ private struct CategoryRowView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color.gray.opacity(0.1))
+                                .fill(DS.Semantic.neutralBackground)
                                 .frame(height: 6)
 
                             Capsule()
@@ -1849,11 +1677,11 @@ private struct SubcategoryRowView: View {
 
                 if let subcategory = summary.subcategory {
                     Image(systemName: subcategory.iconName ?? "list.bullet.indent")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 } else {
                     Image(systemName: "list.bullet.indent")
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 }
             }
@@ -1862,13 +1690,13 @@ private struct SubcategoryRowView: View {
                 // Name and Amount
                 HStack {
                     Text(summary.subcategoryName)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
                     Spacer()
 
                     Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(.subheadline.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
 
@@ -1877,7 +1705,7 @@ private struct SubcategoryRowView: View {
                     // Percentage Text + Variation Chip (inline, chip aligned right)
                     HStack(spacing: DS.Spacing.sm) {
                         Text("\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Statistics.ofExpense)")
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
 
                         Spacer()
@@ -1895,7 +1723,7 @@ private struct SubcategoryRowView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color.gray.opacity(0.1))
+                                .fill(DS.Semantic.neutralBackground)
                                 .frame(height: 6)
 
                             Capsule()

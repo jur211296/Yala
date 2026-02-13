@@ -15,53 +15,58 @@ import SwiftData
 final class ScheduledPayment {
     // MARK: - Identification
 
-    /// Display name for the scheduled payment (required)
-    var name: String
+    /// Unique identifier (stable across sessions)
+    var id: UUID = UUID()
+
+    /// Display name for the scheduled payment (required) - CloudKit: default required
+    var name: String = ""
 
     /// Optional description/note
     var note: String?
 
-    // MARK: - Amount & Currency
+    // MARK: - Amount & Currency (CloudKit: defaults required)
 
     /// Payment amount (required)
-    var amount: Double
+    var amount: Double = 0
 
     /// Currency code (ISO 4217)
-    var currencyCode: String
+    var currencyCode: String = "USD"
 
-    // MARK: - Type (income/expense)
+    // MARK: - Type (income/expense) (CloudKit: default required)
 
     /// Transaction type: "income" or "expense"
-    var transactionType: String
+    var transactionType: String = "expense"
 
     // MARK: - Classification
 
     /// Linked account (required for context)
+    @Relationship(deleteRule: .nullify, inverse: \Account.scheduledPayments)
     var account: Account?
 
     /// Linked subcategory for categorization
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.scheduledPayments)
     var subcategory: Subcategory?
 
-    /// Linked tags (many-to-many)
-    @Relationship(inverse: \Tag.scheduledPayments)
-    var tags: [Tag]
+    /// Linked tags (many-to-many) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify, inverse: \Tag.scheduledPayments)
+    var tags: [Tag]?
 
     /// Optional nature override (nil = use subcategory's nature)
     var natureOverride: String?
 
-    // MARK: - Recurrence
+    // MARK: - Recurrence (CloudKit: defaults required)
 
     /// Whether this is a recurring payment (false = one-time)
-    var isRecurring: Bool
+    var isRecurring: Bool = true
 
     /// Recurrence type: "daily", "weekly", "monthly", "yearly" (only if isRecurring)
-    var recurrenceType: String
+    var recurrenceType: String = "monthly"
 
     /// Recurrence interval: "every X days/weeks/months/years" (default 1)
-    var recurrenceInterval: Int
+    var recurrenceInterval: Int = 1
 
     /// Payment date (for one-time) or next due date (for recurring)
-    var nextDueDate: Date
+    var nextDueDate: Date = Date()
 
     /// Day of month for monthly recurrence (1-31)
     var dayOfMonth: Int?
@@ -76,29 +81,32 @@ final class ScheduledPayment {
     /// Optional end date for recurring payments
     var endDate: Date?
 
-    // MARK: - Payment Category
+    // MARK: - Payment Category (CloudKit: default required)
 
     /// Category: "recurring" or "subscription"
-    var paymentCategory: String
+    var paymentCategory: String = "recurring"
 
-    // MARK: - Notifications
+    // MARK: - Notifications (CloudKit: defaults required)
 
     /// Whether to notify on due date
-    var notifyOnDueDate: Bool
+    var notifyOnDueDate: Bool = true
 
     /// Days before due date to notify (0 = disabled, 1-30 = days before)
-    var notifyDaysBefore: Int
+    var notifyDaysBefore: Int = 0
 
-    // MARK: - Metadata
+    // MARK: - Metadata (CloudKit: defaults required)
 
     /// Whether this payment is active
-    var isActive: Bool
+    var isActive: Bool = true
 
     /// Creation timestamp
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// Last date a notification was sent (to avoid duplicates)
     var lastNotifiedDate: Date?
+
+    /// Last date this payment was marked as paid (from inbox approval)
+    var lastPaidDate: Date?
 
     // MARK: - Init
 
@@ -165,5 +173,33 @@ final class ScheduledPayment {
             return SubcategoryNature(rawValue: override)
         }
         return subcategory?.nature
+    }
+
+    /// Whether this payment has been paid for the current billing cycle
+    /// Returns true if lastPaidDate is within the current period (since last due date)
+    var isPaidForCurrentCycle: Bool {
+        guard let paidDate = lastPaidDate else { return false }
+
+        let calendar = Calendar.current
+
+        // Calculate the previous due date based on recurrence
+        guard let recurrence = RecurrenceType(rawValue: recurrenceType) else { return false }
+
+        let previousDueDate: Date?
+        switch recurrence {
+        case .daily:
+            previousDueDate = calendar.date(byAdding: .day, value: -recurrenceInterval, to: nextDueDate)
+        case .weekly:
+            previousDueDate = calendar.date(byAdding: .weekOfYear, value: -recurrenceInterval, to: nextDueDate)
+        case .monthly:
+            previousDueDate = calendar.date(byAdding: .month, value: -recurrenceInterval, to: nextDueDate)
+        case .yearly:
+            previousDueDate = calendar.date(byAdding: .year, value: -recurrenceInterval, to: nextDueDate)
+        }
+
+        guard let prevDate = previousDueDate else { return false }
+
+        // Payment is considered paid if lastPaidDate >= previousDueDate
+        return paidDate >= calendar.startOfDay(for: prevDate)
     }
 }

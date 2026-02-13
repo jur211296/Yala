@@ -13,6 +13,10 @@ import SwiftUI
 /// - Comparison period text (right, below chip)
 struct PieChartVariationHeader: View {
 
+    // MARK: - Settings
+
+    @AppStorage("showVariations") private var showVariations: Bool = true
+
     // MARK: - Properties
 
     let title: String
@@ -50,22 +54,22 @@ struct PieChartVariationHeader: View {
             // Left: Title and Amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(title)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-                    .padding(.bottom, 2)
+                    .padding(.bottom, DS.Spacing.xxs)
 
                 // KPI with "vs previous amount"
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(formattedCurrency(totalAmount))
-                        .font(.callout.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 
-                    // Show previous period value for comparison
-                    if let prevAmount = previousAmount {
+                    // Show previous period value for comparison (only when showVariations is ON)
+                    if showVariations, let prevAmount = previousAmount {
                         Text("vs \(YalaFormatter.number(value: prevAmount))")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -75,8 +79,8 @@ struct PieChartVariationHeader: View {
 
             Spacer()
 
-            // Right: Variation chip and comparison text (show when previousAmount exists)
-            if previousAmount != nil {
+            // Right: Variation chip and comparison text (show when previousAmount exists and showVariations is ON)
+            if showVariations && previousAmount != nil {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     // Variation chip
                     VariationChip(
@@ -90,7 +94,7 @@ struct PieChartVariationHeader: View {
                     // Comparison period text
                     if !comparisonText.isEmpty {
                         Text(comparisonText)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -104,7 +108,7 @@ struct PieChartVariationHeader: View {
                     onShowDetail?()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.headline)
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.gray.opacity(0.7))
                 }
                 .buttonStyle(.plain)
@@ -136,7 +140,7 @@ struct PieChartVariationHeader: View {
         )
         .padding()
         .background(Color.yalaCard)
-        .cornerRadius(DS.Radius.xl)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
 
         // Without previous data (N/A)
         PieChartVariationHeader(
@@ -150,7 +154,7 @@ struct PieChartVariationHeader: View {
         )
         .padding()
         .background(Color.yalaCard)
-        .cornerRadius(DS.Radius.xl)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
     }
     .padding()
     .background(Color.yalaBackground)

@@ -12,44 +12,10 @@ import SwiftUI
 struct BudgetsFavoritesSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SessionState.self) private var sessionState
 
-    @Query(filter: #Predicate<Budget> { $0.isActive })
-    private var activeBudgets: [Budget]
-
-    @State private var isEditMode = false
-    @State private var showSaveError = false
-
-    // Group budgets by period type
-    private var budgetsByPeriod: [(periodType: BudgetPeriodType, budgets: [Budget])] {
-        let grouped = Dictionary(grouping: activeBudgets) { budget in
-            BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
-        }
-
-        // Return in consistent order: weekly, monthly, yearly, unique
-        return BudgetPeriodType.allCases.compactMap { periodType in
-            guard let budgets = grouped[periodType], !budgets.isEmpty else { return nil }
-            // Sort: favorites first by favoriteOrder, then non-favorites by name
-            let sorted = budgets.sorted { a, b in
-                if a.isFavorite && b.isFavorite {
-                    return a.favoriteOrder < b.favoriteOrder
-                } else if a.isFavorite {
-                    return true
-                } else if b.isFavorite {
-                    return false
-                } else {
-                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-                }
-            }
-            return (periodType, sorted)
-        }
-    }
-
-    // Only favorite budgets for reordering
-    private var favoriteBudgets: [Budget] {
-        activeBudgets
-            .filter { $0.isFavorite }
-            .sorted { $0.favoriteOrder < $1.favoriteOrder }
-    }
+    @State private var viewModel = BudgetsFavoritesSettingsViewModel()
 
     var body: some View {
         ZStack {
@@ -60,14 +26,14 @@ struct BudgetsFavoritesSettingsView: View {
                     // Info header
                     infoHeader
 
-                    if activeBudgets.isEmpty {
+                    if viewModel.isEmpty {
                         emptyState
-                    } else if isEditMode {
+                    } else if viewModel.isEditMode {
                         // Edit mode: show only favorites for reordering
                         reorderSection
                     } else {
                         // Normal mode: show all budgets grouped by period
-                        ForEach(budgetsByPeriod, id: \.periodType) { group in
+                        ForEach(viewModel.budgetsByPeriod, id: \.periodType) { group in
                             periodSection(periodType: group.periodType, budgets: group.budgets)
                         }
                     }
@@ -81,15 +47,15 @@ struct BudgetsFavoritesSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if !favoriteBudgets.isEmpty {
-                    YalaToolbarButton(systemName: isEditMode ? "checkmark" : "arrow.up.arrow.down") {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isEditMode.toggle()
+                if viewModel.hasFavorites {
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar") {
+                        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
+                            viewModel.isEditMode.toggle()
                         }
                     }
                 }
@@ -97,7 +63,7 @@ struct BudgetsFavoritesSettingsView: View {
         }
         .alert(
             L10n.Common.error,
-            isPresented: $showSaveError,
+            isPresented: $viewModel.showSaveError,
             actions: {
                 Button(L10n.Common.understood, role: .cancel) {}
             },
@@ -105,6 +71,9 @@ struct BudgetsFavoritesSettingsView: View {
                 Text(L10n.Common.saveError)
             }
         )
+        .onAppear {
+            viewModel.setContext(modelContext, sessionState: sessionState)
+        }
     }
 
     // MARK: - Info Header
@@ -112,11 +81,11 @@ struct BudgetsFavoritesSettingsView: View {
     private var infoHeader: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
 
             Text(L10n.Settings.budgetsFavoritesInfo)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .padding(DS.Spacing.lg)
@@ -132,20 +101,20 @@ struct BudgetsFavoritesSettingsView: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "chart.pie")
-                .font(.system(size: 48))
+                .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
 
             Text(NSLocalizedString("budgets.empty.title", comment: ""))
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
 
             Text(L10n.Settings.budgetsFavoritesEmptyHint)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, DS.Spacing.xxxl)
         }
-        .padding(.top, 64)
+        .padding(.top, DS.Spacing.sheetTop)
     }
 
     // MARK: - Period Section
@@ -153,17 +122,17 @@ struct BudgetsFavoritesSettingsView: View {
     private func periodSection(periodType: BudgetPeriodType, budgets: [Budget]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(periodType.localizedName)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(budgets.enumerated()), id: \.element.persistentModelID) { index, budget in
                     budgetRow(budget)
 
                     if index < budgets.count - 1 {
                         Divider()
-                            .padding(.leading, 52)
+                            .padding(.leading, DS.Spacing.formIndent)
                     }
                 }
             }
@@ -174,7 +143,7 @@ struct BudgetsFavoritesSettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
         }
@@ -186,11 +155,13 @@ struct BudgetsFavoritesSettingsView: View {
         HStack(spacing: DS.Spacing.md) {
             // Favorite toggle
             Button {
-                toggleFavorite(budget)
+                dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
+                    viewModel.toggleFavorite(budget)
+                }
             } label: {
                 Image(systemName: budget.isFavorite ? "star.fill" : "star")
-                    .font(.body)
-                    .foregroundStyle(budget.isFavorite ? Color.yellow : Color.secondary)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(budget.isFavorite ? DS.Semantic.favoriteIcon : Color.secondary)
                     .frame(width: 28, height: 28)
             }
             .buttonStyle(.plain)
@@ -198,12 +169,12 @@ struct BudgetsFavoritesSettingsView: View {
             // Budget info
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(budget.name)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(formatAmount(budget.limitAmount, currency: budget.currencyCode))
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -212,7 +183,7 @@ struct BudgetsFavoritesSettingsView: View {
             // Order indicator for favorites
             if budget.isFavorite {
                 Text("#\(budget.favoriteOrder + 1)")
-                    .font(.caption.monospacedDigit())
+                    .font(DS.Typography.captionMono)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -226,26 +197,26 @@ struct BudgetsFavoritesSettingsView: View {
     private var reorderSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Settings.budgetsFavoritesReorder)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Chip.paddingV)
 
             List {
-                ForEach(Array(favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in
+                ForEach(Array(viewModel.favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in
                     reorderRow(budget, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowBackground(Color.yalaCard)
                         .listRowSeparator(
-                            index == 0 || index == favoriteBudgets.count - 1 ? .hidden : .visible,
+                            index == 0 || index == viewModel.favoriteBudgets.count - 1 ? .hidden : .visible,
                             edges: index == 0 ? .top : .bottom
                         )
                 }
-                .onMove(perform: moveBudget)
+                .onMove(perform: viewModel.moveBudget)
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(favoriteBudgets.count) * 52)
+            .frame(height: CGFloat(viewModel.favoriteBudgets.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
@@ -253,7 +224,7 @@ struct BudgetsFavoritesSettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
             .environment(\.editMode, .constant(.active))
@@ -263,73 +234,22 @@ struct BudgetsFavoritesSettingsView: View {
     private func reorderRow(_ budget: Budget, position: Int) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Text("#\(position)")
-                .font(.caption.monospacedDigit().bold())
+                .font(DS.Typography.captionMonoBold)
                 .foregroundStyle(Color.electricIndigo)
                 .frame(width: 28)
 
             Text(budget.name)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
             Spacer()
 
             Text(BudgetPeriodType(rawValue: budget.periodType)?.localizedName ?? "")
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
-    }
-
-    // MARK: - Actions
-
-    private func toggleFavorite(_ budget: Budget) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            if budget.isFavorite {
-                // Remove from favorites
-                budget.isFavorite = false
-                budget.favoriteOrder = 0
-                // Reindex remaining favorites
-                reindexFavorites()
-            } else {
-                // Add to favorites at the end
-                let maxOrder = favoriteBudgets.map { $0.favoriteOrder }.max() ?? -1
-                budget.isFavorite = true
-                budget.favoriteOrder = maxOrder + 1
-            }
-            do {
-                try modelContext.save()
-            } catch {
-                showSaveError = true
-            }
-            // Trigger widget refresh in PanelView
-            SessionState.shared.needsBudgetsWidgetRefresh = true
-        }
-    }
-
-    private func moveBudget(from source: IndexSet, to destination: Int) {
-        var ordered = favoriteBudgets
-        ordered.move(fromOffsets: source, toOffset: destination)
-
-        // Update favorite order
-        for (index, budget) in ordered.enumerated() {
-            budget.favoriteOrder = index
-        }
-
-        do {
-            try modelContext.save()
-        } catch {
-            showSaveError = true
-        }
-        // Trigger widget refresh in PanelView
-        SessionState.shared.needsBudgetsWidgetRefresh = true
-    }
-
-    private func reindexFavorites() {
-        let sorted = favoriteBudgets.sorted { $0.favoriteOrder < $1.favoriteOrder }
-        for (index, budget) in sorted.enumerated() {
-            budget.favoriteOrder = index
-        }
     }
 
     // MARK: - Helpers

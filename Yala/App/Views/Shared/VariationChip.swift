@@ -10,6 +10,10 @@ import SwiftUI
 /// Compact chip showing percentage variation (e.g., "+12.5%", "-3.2%", "N/A")
 struct VariationChip: View {
 
+    // MARK: - Settings
+
+    @AppStorage("showVariations") private var showVariations: Bool = true
+
     // MARK: - Properties
 
     /// The variation percentage (nil shows "N/A" or hides based on showNAWhenNil)
@@ -77,7 +81,10 @@ struct VariationChip: View {
 
     @ViewBuilder
     var body: some View {
-        if let variation = variation {
+        // Hide entirely when showVariations is OFF
+        if !showVariations {
+            EmptyView()
+        } else if let variation = variation {
             // Show formatted variation percentage
             Text(PreviousPeriodHelper.formatVariationValue(variation))
                 .font(size.font)
@@ -88,6 +95,7 @@ struct VariationChip: View {
                     Capsule()
                         .fill(variationColor.opacity(0.1))
                 )
+                .accessibilityLabel(variation >= 0 ? "Aumento \(PreviousPeriodHelper.formatVariationValue(variation))" : "Disminución \(PreviousPeriodHelper.formatVariationValue(variation))")
         } else if showNAWhenNil {
             // Show "N/A" for items without previous data (when comparison is active)
             Text("N/A")
@@ -97,7 +105,7 @@ struct VariationChip: View {
                 .padding(.vertical, size.verticalPadding)
                 .background(
                     Capsule()
-                        .fill(Color.gray.opacity(0.1))
+                        .fill(DS.Semantic.neutralBackground)
                 )
         }
         // When variation is nil and showNAWhenNil is false, show nothing (for headers)

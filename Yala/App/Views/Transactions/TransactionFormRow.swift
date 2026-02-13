@@ -2,7 +2,7 @@
 //  TransactionFormRow.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftUI
@@ -31,12 +31,12 @@ struct TransactionFormRow<Trailing: View>: View {
     var body: some View {
         HStack(spacing: DS.FormRow.iconSpacing) {
             Image(systemName: icon)
-                .font(.system(size: 18))
+                .font(DS.Typography.body)
                 .foregroundStyle(hasError ? .red : .secondary)
                 .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(hasError ? .red : .primary)
 
             Spacer()
@@ -44,7 +44,7 @@ struct TransactionFormRow<Trailing: View>: View {
             trailing()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, DS.FormRow.paddingH)
@@ -72,34 +72,34 @@ struct AccountFormRow: View {
                         .frame(width: 28, height: 28)
                         .overlay(
                             Image(systemName: displayIconName(for: account))
-                                .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.white)
                         )
                 } else {
                     Image(systemName: "building.columns.fill")
-                        .font(.system(size: 18))
+                        .font(DS.Typography.body)
                         .foregroundStyle(hasError ? .red : .secondary)
                         .frame(width: DS.FormRow.iconWidth)
                 }
 
                 Text(title)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(hasError ? .red : .primary)
 
                 Spacer()
 
                 if let account = account {
                     Text(account.name)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
                     Text(L10n.Transaction.select)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(hasError ? .red.opacity(0.8) : .secondary)
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -128,24 +128,24 @@ struct SubcategoryFormRow: View {
                         .frame(width: 28, height: 28)
                         .overlay(
                             Image(systemName: "tag.fill")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.white)
                         )
                 } else {
                     Image(systemName: "tag.fill")
-                        .font(.system(size: 18))
+                        .font(DS.Typography.body)
                         .foregroundStyle(hasError ? .red : .secondary)
                         .frame(width: DS.FormRow.iconWidth)
                 }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Transaction.subcategory)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(hasError ? .red : .primary)
 
                     if let subcategory = subcategory {
-                        Text(subcategory.category.name)
-                            .font(.caption)
+                        Text(subcategory.safeCategory.name)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -158,17 +158,17 @@ struct SubcategoryFormRow: View {
                         NatureChip(nature: subcategory.nature)
 
                         Text(subcategory.name)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 } else {
                     Text(L10n.Transaction.select)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(hasError ? .red.opacity(0.8) : .secondary)
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -180,7 +180,7 @@ struct SubcategoryFormRow: View {
     }
 
     private func effectiveColor(for subcategory: Subcategory) -> String {
-        subcategory.colorHex ?? subcategory.category.colorHex
+        subcategory.colorHex ?? subcategory.safeCategory.colorHex
     }
 }
 
@@ -192,7 +192,7 @@ struct NatureChip: View {
 
     var body: some View {
         Text(nature.displayName)
-            .font(.caption2.weight(.medium))
+            .font(DS.Typography.labelTiny)
             .foregroundStyle(nature.color)
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xxs)
@@ -214,22 +214,22 @@ struct DateFormRow: View {
         Button(action: action) {
             HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: "calendar")
-                    .font(.system(size: 18))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: DS.FormRow.iconWidth)
 
                 Text(L10n.Transaction.date)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 Text(formattedDate)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -262,25 +262,25 @@ struct TagsFormRow: View {
         Button(action: action) {
             HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: "tag")
-                    .font(.system(size: 18))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: DS.FormRow.iconWidth)
 
                 Text(L10n.Transaction.tags)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 if tags.isEmpty {
                     Text(L10n.Transaction.addTags)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
                     HStack(spacing: DS.Chip.spacing) {
                         ForEach(tags.prefix(3)) { tag in
                             Text(tag.name)
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, DS.Spacing.sm)
                                 .padding(.vertical, DS.Spacing.xs)
@@ -291,14 +291,14 @@ struct TagsFormRow: View {
                         }
                         if tags.count > 3 {
                             Text("+\(tags.count - 3)")
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: DS.FormRow.chevronSize, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
@@ -319,12 +319,12 @@ struct NoteFormRow: View {
     var body: some View {
         HStack(spacing: DS.FormRow.iconSpacing) {
             Image(systemName: "note.text")
-                .font(.system(size: 18))
+                .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
                 .frame(width: DS.FormRow.iconWidth)
 
             TextField(L10n.Transaction.notePlaceholder, text: $note)
-                .font(.body)
+                .font(DS.Typography.body)
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -333,7 +333,7 @@ struct NoteFormRow: View {
 }
 
 #Preview {
-    VStack(spacing: 0) {
+    VStack(spacing: DS.Spacing.none) {
         AccountFormRow(
             title: "Cuenta",
             account: nil,

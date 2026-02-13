@@ -11,14 +11,17 @@ import SwiftUI
 struct ScheduledPaymentEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28
+    @Environment(EntityDeletionService.self) private var deletionService
+    @Environment(SessionState.self) private var sessionState
 
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
+    @State private var viewModel = ScheduledPaymentEditorViewModel()
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
 
     let payment: ScheduledPayment?
     let defaultCategory: String?
+    var onDelete: (() -> Void)?
 
     // Basic Info
     @State private var name: String = ""
@@ -38,7 +41,7 @@ struct ScheduledPaymentEditorView: View {
     @State private var isRecurring: Bool = true
     @State private var recurrenceType: RecurrenceType = .monthly
     @State private var recurrenceInterval: Int = 1
-    @State private var paymentDate: Date = Date()  // For one-time or start date
+    @State private var paymentDate: Date = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()  // For one-time or start date
     @State private var dayOfMonth: Int = 1
     @State private var selectedWeekdays: Set<Int> = [2]  // Default Monday (2)
     @State private var yearlyMonth: Int = 1
@@ -57,14 +60,18 @@ struct ScheduledPaymentEditorView: View {
     @State private var showAccountSheet = false
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
-    @State private var showSaveError = false
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
 
-    init(payment: ScheduledPayment?, defaultCategory: String? = nil) {
+    private var tomorrow: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
+    }
+
+    init(payment: ScheduledPayment?, defaultCategory: String? = nil, onDelete: (() -> Void)? = nil) {
         self.payment = payment
         self.defaultCategory = defaultCategory
+        self.onDelete = onDelete
     }
 
     var body: some View {
@@ -118,13 +125,14 @@ struct ScheduledPaymentEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton(action: savePayment, isDisabled: !canSave)
+                        .accessibilityHint(!canSave ? "Crea una cuenta primero" : "")
                 }
             }
             .sheet(isPresented: $showCategoriesSheet) {
@@ -137,7 +145,11 @@ struct ScheduledPaymentEditorView: View {
                 if isPresenting { dismissKeyboard() }
             }
             .onAppear {
+                viewModel.setContext(modelContext, deletionService: deletionService)
                 loadPaymentData()
+                if sessionState.isExpensesOnlyMode {
+                    transactionType = "expense"
+                }
                 // Auto-focus name field for new payments
                 if payment == nil {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -147,7 +159,10 @@ struct ScheduledPaymentEditorView: View {
             }
             .alert(
                 L10n.Common.error,
-                isPresented: $showSaveError,
+                isPresented: Binding(
+                    get: { viewModel.showSaveError },
+                    set: { _ in viewModel.dismissSaveError() }
+                ),
                 actions: {
                     Button(L10n.Common.understood, role: .cancel) {}
                 },
@@ -162,14 +177,16 @@ struct ScheduledPaymentEditorView: View {
 
     private var basicInfoSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.basic.info", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Transaction Type (Income/Expense)
-                Picker("", selection: $transactionType) {
-                    Text(NSLocalizedString("transaction.type.expense", comment: "")).tag("expense")
-                    Text(NSLocalizedString("transaction.type.income", comment: "")).tag("income")
+                if !sessionState.isExpensesOnlyMode {
+                    Picker("", selection: $transactionType) {
+                        Text(NSLocalizedString("transaction.type.expense", comment: "")).tag("expense")
+                        Text(NSLocalizedString("transaction.type.income", comment: "")).tag("income")
+                    }
+                    .pickerStyle(.segmented)
+                    .padding()
                 }
-                .pickerStyle(.segmented)
-                .padding()
 
                 SubsectionDivider()
 
@@ -192,13 +209,16 @@ struct ScheduledPaymentEditorView: View {
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        Text(defaultCurrencyCode)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        if let account = selectedAccount {
+                            Text(account.currencyCode)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                        }
                         TextField("0.00", text: $amount)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: scaledAmountSize, weight: .bold))
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .foregroundStyle(transactionType == "income" ? Color.teal : .primary)
                     }
                 }
@@ -224,7 +244,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var togglesSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.options", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Active Toggle
                 Toggle(isOn: $isActive) {
                     HStack(spacing: DS.Spacing.md) {
@@ -265,7 +285,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var classificationSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.classification", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Account selector
                 accountRow
 
@@ -284,7 +304,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var accountRow: some View {
         Menu {
-            ForEach(activeAccounts) { account in
+            ForEach(viewModel.activeAccounts) { account in
                 Button {
                     selectedAccount = account
                 } label: {
@@ -320,14 +340,18 @@ struct ScheduledPaymentEditorView: View {
                         .foregroundStyle(Color.hotPink.opacity(0.8))
                 }
 
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                if !viewModel.activeAccounts.isEmpty {
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(DS.Typography.indicator)
+                        .foregroundStyle(.tertiary)
+                }
             }
             .padding()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint(viewModel.activeAccounts.isEmpty ? "Crea una cuenta primero" : "")
+        .disabled(viewModel.activeAccounts.isEmpty)
     }
 
     private var subcategoryRow: some View {
@@ -347,8 +371,8 @@ struct ScheduledPaymentEditorView: View {
                 if let subcategory = selectedSubcategory {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: subcategory.iconName ?? "tag.fill")
-                            .font(.caption)
-                            .foregroundStyle(Color(hex: subcategory.colorHex ?? subcategory.category.colorHex))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(Color(hex: subcategory.colorHex ?? subcategory.safeCategory.colorHex))
                         Text(subcategory.name)
                             .foregroundStyle(.secondary)
                     }
@@ -358,7 +382,7 @@ struct ScheduledPaymentEditorView: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
+                    .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
             }
             .padding()
@@ -372,7 +396,7 @@ struct ScheduledPaymentEditorView: View {
             icon: "number",
             title: NSLocalizedString("settings.tags", comment: ""),
             status: selectedTagsText,
-            items: activeTags,
+            items: viewModel.activeTags,
             showEmptyPlaceholder: true
         ) { tag in
             tagChip(tag)
@@ -391,11 +415,11 @@ struct ScheduledPaymentEditorView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: tag.iconName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(isSelected ? .white : Color(hex: tag.colorHex))
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -420,7 +444,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var recurrenceSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.recurrence", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // One-time vs Recurring toggle
                 Picker("", selection: $isRecurring) {
                     Text(NSLocalizedString("scheduled.recurrence.onetime", comment: "")).tag(false)
@@ -479,12 +503,22 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            DatePicker(
-                "",
-                selection: $paymentDate,
-                displayedComponents: .date
-            )
-            .labelsHidden()
+            if payment == nil {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    in: tomorrow...,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            } else {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            }
         }
         .padding()
     }
@@ -497,6 +531,8 @@ struct ScheduledPaymentEditorView: View {
 
             Text(NSLocalizedString("scheduled.every", comment: ""))
                 .foregroundStyle(.primary)
+
+            Spacer()
 
             Picker("", selection: $recurrenceInterval) {
                 ForEach(1...30, id: \.self) { num in
@@ -513,8 +549,6 @@ struct ScheduledPaymentEditorView: View {
                 }
             }
             .pickerStyle(.menu)
-
-            Spacer()
         }
         .padding()
     }
@@ -566,7 +600,7 @@ struct ScheduledPaymentEditorView: View {
             }
         } label: {
             Text(weekday.short)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -653,18 +687,28 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            DatePicker(
-                "",
-                selection: $paymentDate,
-                displayedComponents: .date
-            )
-            .labelsHidden()
+            if payment == nil {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    in: tomorrow...,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            } else {
+                DatePicker(
+                    "",
+                    selection: $paymentDate,
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+            }
         }
         .padding()
     }
 
     private var endDateSection: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Toggle for end date
             Toggle(isOn: $hasEndDate) {
                 HStack(spacing: DS.Spacing.md) {
@@ -710,7 +754,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var notificationsSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.notifications", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Notify on due date
                 Toggle(isOn: $notifyOnDueDate) {
                     HStack(spacing: DS.Spacing.md) {
@@ -763,32 +807,22 @@ struct ScheduledPaymentEditorView: View {
             HStack {
                 Spacer()
                 Text(NSLocalizedString("scheduled.delete", comment: ""))
-                    .font(.body.weight(.medium))
+                    .font(DS.Typography.bodyBold)
                 Spacer()
             }
             .padding(.vertical, DS.Spacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.red.opacity(0.1))
+                    .fill(DS.Semantic.errorBackgroundSubtle)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                    .stroke(DS.Semantic.errorBorder, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.red)
-        .padding(.top, 16)
-    }
-
-    // MARK: - Computed Properties
-
-    private var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
-    }
-
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
+        .foregroundStyle(DS.Semantic.errorForeground)
+        .padding(.top, DS.Spacing.lg)
     }
 
     // MARK: - Validation
@@ -818,7 +852,7 @@ struct ScheduledPaymentEditorView: View {
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
         selectedAccount = payment.account
         selectedSubcategory = payment.subcategory
-        selectedTags = Set(payment.tags.map { $0.persistentModelID })
+        selectedTags = Set((payment.tags ?? []).map { $0.persistentModelID })
 
         // Recurrence
         isRecurring = payment.isRecurring
@@ -851,86 +885,44 @@ struct ScheduledPaymentEditorView: View {
     private func savePayment() {
         guard let amountValue = Double(amount) else { return }
 
-        // Get tags array
-        let tagsArray = activeTags.filter { selectedTags.contains($0.persistentModelID) }
-
-        // Convert selectedWeekdays set to comma-separated string
-        let weekdaysStr = selectedWeekdays.sorted().map { String($0) }.joined(separator: ",")
-
-        // Determine the effective end date
         let effectiveEndDate = hasEndDate ? endDate : nil
 
-        if let existingPayment = payment {
-            // Update existing
-            existingPayment.name = name
-            existingPayment.amount = amountValue
-            existingPayment.note = note.isEmpty ? nil : note
-            existingPayment.currencyCode = defaultCurrencyCode
-            existingPayment.transactionType = transactionType
-            existingPayment.paymentCategory = paymentCategory.rawValue
-            existingPayment.account = selectedAccount
-            existingPayment.subcategory = selectedSubcategory
-            existingPayment.tags = tagsArray
+        let saved = viewModel.savePayment(
+            existing: payment,
+            name: name,
+            amount: amountValue,
+            note: note,
+            currencyCode: selectedAccount?.currencyCode ?? defaultCurrencyCode,
+            transactionType: transactionType,
+            paymentCategory: paymentCategory,
+            account: selectedAccount,
+            subcategory: selectedSubcategory,
+            selectedTags: selectedTags,
+            isRecurring: isRecurring,
+            recurrenceType: recurrenceType,
+            recurrenceInterval: recurrenceInterval,
+            paymentDate: paymentDate,
+            dayOfMonth: dayOfMonth,
+            selectedWeekdays: selectedWeekdays,
+            yearlyMonth: yearlyMonth,
+            yearlyDay: yearlyDay,
+            endDate: effectiveEndDate,
+            notifyOnDueDate: notifyOnDueDate,
+            notifyDaysBefore: notifyDaysBefore,
+            isActive: isActive
+        )
 
-            // Recurrence
-            existingPayment.isRecurring = isRecurring
-            existingPayment.recurrenceType = recurrenceType.rawValue
-            existingPayment.recurrenceInterval = recurrenceInterval
-            existingPayment.nextDueDate = paymentDate
-            existingPayment.dayOfMonth = recurrenceType == .monthly ? dayOfMonth : nil
-            existingPayment.selectedWeekdays = recurrenceType == .weekly ? weekdaysStr : nil
-            existingPayment.yearlyMonth = recurrenceType == .yearly ? yearlyMonth : nil
-            existingPayment.yearlyDay = recurrenceType == .yearly ? yearlyDay : nil
-            existingPayment.endDate = isRecurring ? effectiveEndDate : nil
-
-            existingPayment.notifyOnDueDate = notifyOnDueDate
-            existingPayment.notifyDaysBefore = notifyDaysBefore
-            existingPayment.isActive = isActive
-        } else {
-            // Create new
-            let newPayment = ScheduledPayment(
-                name: name,
-                note: note.isEmpty ? nil : note,
-                amount: amountValue,
-                currencyCode: defaultCurrencyCode,
-                transactionType: transactionType,
-                account: selectedAccount,
-                subcategory: selectedSubcategory,
-                tags: tagsArray,
-                isRecurring: isRecurring,
-                recurrenceType: recurrenceType.rawValue,
-                recurrenceInterval: recurrenceInterval,
-                nextDueDate: paymentDate,
-                dayOfMonth: recurrenceType == .monthly ? dayOfMonth : nil,
-                selectedWeekdays: recurrenceType == .weekly ? weekdaysStr : nil,
-                yearlyMonth: recurrenceType == .yearly ? yearlyMonth : nil,
-                yearlyDay: recurrenceType == .yearly ? yearlyDay : nil,
-                endDate: isRecurring ? effectiveEndDate : nil,
-                paymentCategory: paymentCategory.rawValue,
-                notifyOnDueDate: notifyOnDueDate,
-                notifyDaysBefore: notifyDaysBefore,
-                isActive: isActive
-            )
-
-            modelContext.insert(newPayment)
-        }
-
-        do {
-            try modelContext.save()
+        if saved {
             dismiss()
-        } catch {
-            showSaveError = true
         }
     }
 
     private func deletePayment() {
         guard let payment = payment else { return }
-        modelContext.delete(payment)
-        do {
-            try modelContext.save()
+
+        if viewModel.deletePayment(payment) {
             dismiss()
-        } catch {
-            showSaveError = true
+            onDelete?()
         }
     }
 }

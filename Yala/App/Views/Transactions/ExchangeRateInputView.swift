@@ -2,7 +2,7 @@
 //  ExchangeRateInputView.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftUI
@@ -31,27 +31,27 @@ struct ExchangeRateInputView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             // Tipo de cambio
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 18))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
                 Text(L10n.Settings.exchangeRate)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 HStack(spacing: DS.Spacing.xs) {
                     Text("1 \(sourceCurrency) =")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
 
                     TextField("0.00", text: $exchangeRateText)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 80)
@@ -65,7 +65,7 @@ struct ExchangeRateInputView: View {
                         }
 
                     Text(destinationCurrency)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -78,19 +78,19 @@ struct ExchangeRateInputView: View {
             // Monto destino
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "banknote")
-                    .font(.system(size: 18))
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
 
                 Text(L10n.Transaction.willReceive)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 HStack(spacing: DS.Spacing.xs) {
                     TextField("0.00", text: $destinationAmountText)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 100)
@@ -105,7 +105,7 @@ struct ExchangeRateInputView: View {
                         }
 
                     Text(destinationCurrency)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }

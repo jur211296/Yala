@@ -12,23 +12,32 @@ import SwiftData
 
 @Model
 final class Tag {
-    var name: String
-    var colorHex: String
+    // CloudKit: defaults required
+    var name: String = ""
+    var colorHex: String = "#FF9F0A"
     var iconName: String = "tag.fill"
-    var isActive: Bool
-    var createdAt: Date
+    var isActive: Bool = true
+    var createdAt: Date = Date()
 
+    /// CloudKit: all relationships must be optional
     @Relationship(deleteRule: .nullify, inverse: \TransactionItem.tags)
-    var transactions: [TransactionItem]
+    var transactions: [TransactionItem]?
 
-    /// Relación inversa con budgets (muchos-a-muchos)
-    var budgets: [Budget] = []
+    /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var budgets: [Budget]?
 
-    /// Relación inversa con pagos favoritos (muchos-a-muchos)
-    var favoritePayments: [FavoritePayment] = []
+    /// Relación inversa con pagos favoritos (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var favoritePayments: [FavoritePayment]?
 
-    /// Relación inversa con pagos planificados (muchos-a-muchos)
-    var scheduledPayments: [ScheduledPayment] = []
+    /// Relación inversa con pagos planificados (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var scheduledPayments: [ScheduledPayment]?
+
+    /// Relación inversa con borradores de bandeja (muchos-a-muchos) - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var inboxDrafts: [InboxDraft]?
 
     /// Paleta de 15 colores visibles en light y dark mode (evita negros/blancos)
     static let defaultColors: [String] = [

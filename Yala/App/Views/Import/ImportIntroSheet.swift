@@ -8,6 +8,7 @@
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
+import WidgetKit
 
 // MARK: - Import Result Model
 
@@ -24,6 +25,8 @@ struct ImportResult: Identifiable {
 /// Overlay view for showing import results - displayed on top of content in ZStack
 /// This approach avoids the nested sheet presentation bug in SwiftUI
 struct ImportResultOverlay: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 80
+
     let result: ImportResult
     let onDismiss: () -> Void
 
@@ -39,8 +42,9 @@ struct ImportResultOverlay: View {
 
                 // Icon
                 Image(systemName: result.isSuccess ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(result.isSuccess ? Color.financeGreen : Color.red)
+                    .font(.system(size: heroSize))
+                    .foregroundStyle(result.isSuccess ? Color.financeGreen : DS.Semantic.errorForeground)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 // Title
                 Text(result.isSuccess ? L10n.Import.completed : L10n.Import.importError)
@@ -68,8 +72,8 @@ struct ImportResultOverlay: View {
                         .background(result.isSuccess ? Color.financeGreen : Color.brandPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                 }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 40)
+                .padding(.horizontal, DS.Spacing.xxxxl)
+                .padding(.bottom, DS.Spacing.xxxxl)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.yalaCard)
@@ -84,13 +88,16 @@ struct ImportIntroSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(ExchangeRateService.self) private var exchangeRateService
+    @Environment(SessionState.self) private var sessionState
+
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
 
     // Data passed from parent view (no @Query = no view reconstruction on save)
     let accounts: [Account]
     let categories: [Category]
 
-    // Query subcategories directly to ensure they're loaded for template generation
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var viewModel = ImportIntroViewModel()
 
     @State private var allowCreatingNewCategories: Bool = false
     @State private var isShowingAccountPicker: Bool = false
@@ -175,6 +182,7 @@ struct ImportIntroSheet: View {
                         .tint(Color.brandPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .disabled(isImporting)
+                        .accessibilityHint(isImporting ? "Importación en proceso" : "")
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.lg)
@@ -182,9 +190,12 @@ struct ImportIntroSheet: View {
             }
             .navigationTitle(L10n.Import.title)
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                viewModel.setContext(modelContext)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -194,9 +205,8 @@ struct ImportIntroSheet: View {
         // Sheets & Alerts
         .sheet(isPresented: $isShowingAccountPicker) {
             ImportAccountPickerSheet(
-                accounts: filteredCurrencyForAccountPicker != nil
-                    ? accountsForCurrency(filteredCurrencyForAccountPicker!)
-                    : activeAccounts,
+                accounts: filteredCurrencyForAccountPicker.map { accountsForCurrency($0) }
+                    ?? activeAccounts,
                 selectedAccount: $selectedAccount
             ) { account in
                 selectedAccount = account
@@ -249,8 +259,9 @@ struct ImportIntroSheet: View {
     private var introSection: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "square.and.arrow.down")
-                .font(.system(size: 48))
+                .font(.system(size: heroIconSize))
                 .foregroundStyle(Color.brandPrimary)
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)
@@ -288,7 +299,7 @@ struct ImportIntroSheet: View {
                     Spacer()
 
                     Image(systemName: "arrow.down.circle")
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.brandPrimary)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -304,7 +315,7 @@ struct ImportIntroSheet: View {
             Text(L10n.Import.templateDescription)
             .font(Typography.label)
             .foregroundStyle(Color.yalaSecondaryText)
-            .padding(.horizontal, 4)
+            .padding(.horizontal, DS.Spacing.xs)
         }
     }
 
@@ -335,7 +346,7 @@ struct ImportIntroSheet: View {
             Text(L10n.Import.categoriesDescription)
             .font(Typography.label)
             .foregroundStyle(Color.yalaSecondaryText)
-            .padding(.horizontal, 4)
+            .padding(.horizontal, DS.Spacing.xs)
         }
     }
 
@@ -376,11 +387,11 @@ struct ImportIntroSheet: View {
         // Headers (English lowercase as expected by import service)
         let headers = ["date", "amount", "currency", "category", "subcategory", "tags", "note"]
 
-        // Generate one example row per subcategory (using @Query to ensure data is loaded)
+        // Generate one example row per subcategory
         var dataRows = [[String]]()
 
         // Group subcategories by category and sort
-        let subcategoriesByCategory = Dictionary(grouping: allSubcategories) { $0.category }
+        let subcategoriesByCategory = Dictionary(grouping: viewModel.allSubcategories) { $0.category }
         let sortedCategories = subcategoriesByCategory.keys
             .compactMap { $0 }
             .sorted { $0.sortOrder < $1.sortOrder }
@@ -486,10 +497,10 @@ struct ImportIntroSheet: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             self.onImportCompleted?(errorResult)
                         }
-                    } else if matchingAccounts.count == 1 {
+                    } else if matchingAccounts.count == 1, let account = matchingAccounts.first {
                         // Only one account matches - import directly
-                        selectedAccount = matchingAccounts.first
-                        performImport(from: url, into: matchingAccounts.first!)
+                        selectedAccount = account
+                        performImport(from: url, into: account)
                     } else {
                         // Multiple accounts - show picker filtered by currency
                         filteredCurrencyForAccountPicker = singleCurrency
@@ -524,178 +535,214 @@ struct ImportIntroSheet: View {
         }
     }
     private func performImport(from url: URL, into account: Account) {
+        #if DEBUG
         print("🔵 [IMPORT] Starting import, setting isImporting = true")
+        #endif
         isImporting = true
+        #if DEBUG
         print("🔵 [IMPORT] isImporting is now: \(isImporting)")
+        #endif
 
         // Small delay to allow SwiftUI to render the button change before heavy work starts
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            Task { @MainActor in
-                do {
-                    let isXLSX = url.pathExtension.lowercased() == "xlsx"
-                    print("🔵 [IMPORT] Calling import for \(isXLSX ? "XLSX" : "CSV")")
+        Task {
+            try? await Task.sleep(for: .milliseconds(100))
+            do {
+                let isXLSX = url.pathExtension.lowercased() == "xlsx"
+                #if DEBUG
+                print("🔵 [IMPORT] Calling import for \(isXLSX ? "XLSX" : "CSV")")
+                #endif
 
-                    let result: TransactionImportResult
-                    if isXLSX {
-                        result = try await TransactionCSVImportService.importXLSX(
-                            from: url,
-                            into: account,
-                            in: modelContext,
-                            allowCreatingNewCategories: allowCreatingNewCategories
-                        )
-                    } else {
-                        result = try await TransactionCSVImportService.importCSV(
-                            from: url,
-                            into: account,
-                            in: modelContext,
-                            allowCreatingNewCategories: allowCreatingNewCategories
-                        )
-                    }
-
-                    let createdCount = result.createdCount
-                    print("🔵 [IMPORT] Import complete, count = \(createdCount)")
-
-                    // Save to persist transactions
-                    try modelContext.save()
-                    print("🔵 [IMPORT] Save complete")
-
-                    // Calculate date range of imported transactions for exchange rate fetch
-                    let importedDates = result.drafts.map { $0.date }
-                    let dateRange: DateInterval? = {
-                        guard let minDate = importedDates.min(),
-                              let maxDate = importedDates.max() else { return nil }
-                        return DateInterval(start: minDate, end: maxDate)
-                    }()
-
-                    // Fire background task to fetch exchange rates for imported date range
-                    // This runs after the main import is complete to avoid @Query issues
-                    if let dateRange = dateRange {
-                        Task.detached { @MainActor in
-                            print("🔵 [IMPORT] Fetching exchange rates for date range: \(dateRange)")
-                            await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
-                            // Update any transactions with provisional rates
-                            await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
-                            // Trigger widget refresh so Panel recalculates with new data
-                            SessionState.shared.needsExchangeRateWidgetRefresh = true
-                            print("🔵 [IMPORT] Exchange rate fetch complete")
-                        }
-                    }
-
-                    // Create result and dismiss (keep button in "Importando" state until sheet closes)
-                    let importResult = ImportResult(
-                        isSuccess: true,
-                        message: "\(createdCount) registros importados correctamente.",
-                        count: createdCount
+                let result: TransactionImportResult
+                if isXLSX {
+                    result = try await TransactionCSVImportService.importXLSX(
+                        from: url,
+                        into: account,
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories
                     )
-                    print("🔵 [IMPORT] Dismissing sheet and notifying parent")
-
-                    // Dismiss sheet first, then notify parent
-                    dismiss()
-
-                    // Notify parent with result after small delay for sheet to close
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.onImportCompleted?(importResult)
-                    }
-
-                } catch {
-                    print("🔴 [IMPORT] ERROR: \(error.localizedDescription)")
-                    isImporting = false
-                    let errorResult = ImportResult(
-                        isSuccess: false,
-                        message: error.localizedDescription,
-                        count: 0
+                } else {
+                    result = try await TransactionCSVImportService.importCSV(
+                        from: url,
+                        into: account,
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories
                     )
-                    dismiss()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.onImportCompleted?(errorResult)
+                }
+
+                let createdCount = result.createdCount
+                #if DEBUG
+                print("🔵 [IMPORT] Import complete, count = \(createdCount)")
+                #endif
+
+                // Save to persist transactions
+                try modelContext.save()
+                WidgetDataCache.updateCache(context: modelContext)
+                SessionState.shared.incrementDataVersion()
+                #if DEBUG
+                print("🔵 [IMPORT] Save complete")
+                #endif
+
+                // Calculate date range of imported transactions for exchange rate fetch
+                let importedDates = result.drafts.map { $0.date }
+                let dateRange: DateInterval? = {
+                    guard let minDate = importedDates.min(),
+                          let maxDate = importedDates.max() else { return nil }
+                    return DateInterval(start: minDate, end: maxDate)
+                }()
+
+                // Fire background task to fetch exchange rates for imported date range
+                // This runs after the main import is complete to avoid @Query issues
+                if let dateRange = dateRange {
+                    Task {
+                        #if DEBUG
+                        print("🔵 [IMPORT] Fetching exchange rates for date range: \(dateRange)")
+                        #endif
+                        await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
+                        // Update any transactions with provisional rates
+                        await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+                        // Trigger widget refresh so Panel recalculates with new data
+                        sessionState.needsExchangeRateWidgetRefresh = true
+                        #if DEBUG
+                        print("🔵 [IMPORT] Exchange rate fetch complete")
+                        #endif
                     }
                 }
+
+                // Create result and dismiss (keep button in "Importando" state until sheet closes)
+                let importResult = ImportResult(
+                    isSuccess: true,
+                    message: "\(createdCount) registros importados correctamente.",
+                    count: createdCount
+                )
+                #if DEBUG
+                print("🔵 [IMPORT] Dismissing sheet and notifying parent")
+                #endif
+
+                // Dismiss sheet first, then notify parent
+                dismiss()
+
+                // Notify parent with result after small delay for sheet to close
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.onImportCompleted?(importResult)
+                }
+
+            } catch {
+                #if DEBUG
+                print("🔴 [IMPORT] ERROR: \(error.localizedDescription)")
+                #endif
+                isImporting = false
+                let errorResult = ImportResult(
+                    isSuccess: false,
+                    message: error.localizedDescription,
+                    count: 0
+                )
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.onImportCompleted?(errorResult)
+                }
             }
-        }  // End DispatchQueue.asyncAfter
+        }
     }
 
     // MARK: - Multi-Currency Import
 
     private func performMultiCurrencyImport(from url: URL, with currencyAccountMap: [String: Account]) {
+        #if DEBUG
         print("🔵 [IMPORT-MULTI] Starting multi-currency import, setting isImporting = true")
+        #endif
         isImporting = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            Task { @MainActor in
-                do {
-                    let isXLSX = url.pathExtension.lowercased() == "xlsx"
-                    print("🔵 [IMPORT-MULTI] Calling import for \(isXLSX ? "XLSX" : "CSV") multi-currency")
+        Task {
+            try? await Task.sleep(for: .milliseconds(100))
+            do {
+                let isXLSX = url.pathExtension.lowercased() == "xlsx"
+                #if DEBUG
+                print("🔵 [IMPORT-MULTI] Calling import for \(isXLSX ? "XLSX" : "CSV") multi-currency")
+                #endif
 
-                    let result: TransactionImportResult
-                    if isXLSX {
-                        result = try await TransactionCSVImportService.importXLSXMultiCurrency(
-                            from: url,
-                            currencyAccountMap: currencyAccountMap,
-                            in: modelContext,
-                            allowCreatingNewCategories: allowCreatingNewCategories
-                        )
-                    } else {
-                        result = try await TransactionCSVImportService.importCSVMultiCurrency(
-                            from: url,
-                            currencyAccountMap: currencyAccountMap,
-                            in: modelContext,
-                            allowCreatingNewCategories: allowCreatingNewCategories
-                        )
-                    }
-
-                    let createdCount = result.createdCount
-                    let currencyCount = currencyAccountMap.count
-                    print("🔵 [IMPORT-MULTI] Import complete, count = \(createdCount) in \(currencyCount) currencies")
-
-                    // Save to persist transactions
-                    try modelContext.save()
-                    print("🔵 [IMPORT-MULTI] Save complete")
-
-                    // Calculate date range for exchange rate fetch
-                    let importedDates = result.drafts.map { $0.date }
-                    let dateRange: DateInterval? = {
-                        guard let minDate = importedDates.min(),
-                              let maxDate = importedDates.max() else { return nil }
-                        return DateInterval(start: minDate, end: maxDate)
-                    }()
-
-                    // Fire background task to fetch exchange rates
-                    if let dateRange = dateRange {
-                        Task.detached { @MainActor in
-                            print("🔵 [IMPORT-MULTI] Fetching exchange rates for date range: \(dateRange)")
-                            await ExchangeRateService.shared.ensureRates(for: dateRange, context: modelContext)
-                            await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
-                            SessionState.shared.needsExchangeRateWidgetRefresh = true
-                            print("🔵 [IMPORT-MULTI] Exchange rate fetch complete")
-                        }
-                    }
-
-                    // Create result with multi-currency message
-                    let importResult = ImportResult(
-                        isSuccess: true,
-                        message: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
-                        count: createdCount
+                let result: TransactionImportResult
+                if isXLSX {
+                    result = try await TransactionCSVImportService.importXLSXMultiCurrency(
+                        from: url,
+                        currencyAccountMap: currencyAccountMap,
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories
                     )
-                    print("🔵 [IMPORT-MULTI] Dismissing sheet and notifying parent")
-
-                    dismiss()
-
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.onImportCompleted?(importResult)
-                    }
-
-                } catch {
-                    print("🔴 [IMPORT-MULTI] ERROR: \(error.localizedDescription)")
-                    isImporting = false
-                    let errorResult = ImportResult(
-                        isSuccess: false,
-                        message: error.localizedDescription,
-                        count: 0
+                } else {
+                    result = try await TransactionCSVImportService.importCSVMultiCurrency(
+                        from: url,
+                        currencyAccountMap: currencyAccountMap,
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories
                     )
-                    dismiss()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.onImportCompleted?(errorResult)
+                }
+
+                let createdCount = result.createdCount
+                let currencyCount = currencyAccountMap.count
+                #if DEBUG
+                print("🔵 [IMPORT-MULTI] Import complete, count = \(createdCount) in \(currencyCount) currencies")
+                #endif
+
+                // Save to persist transactions
+                try modelContext.save()
+                WidgetDataCache.updateCache(context: modelContext)
+                SessionState.shared.incrementDataVersion()
+                #if DEBUG
+                print("🔵 [IMPORT-MULTI] Save complete")
+                #endif
+
+                // Calculate date range for exchange rate fetch
+                let importedDates = result.drafts.map { $0.date }
+                let dateRange: DateInterval? = {
+                    guard let minDate = importedDates.min(),
+                          let maxDate = importedDates.max() else { return nil }
+                    return DateInterval(start: minDate, end: maxDate)
+                }()
+
+                // Fire background task to fetch exchange rates
+                if let dateRange = dateRange {
+                    Task {
+                        #if DEBUG
+                        print("🔵 [IMPORT-MULTI] Fetching exchange rates for date range: \(dateRange)")
+                        #endif
+                        await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
+                        await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+                        sessionState.needsExchangeRateWidgetRefresh = true
+                        #if DEBUG
+                        print("🔵 [IMPORT-MULTI] Exchange rate fetch complete")
+                        #endif
                     }
+                }
+
+                // Create result with multi-currency message
+                let importResult = ImportResult(
+                    isSuccess: true,
+                    message: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
+                    count: createdCount
+                )
+                #if DEBUG
+                print("🔵 [IMPORT-MULTI] Dismissing sheet and notifying parent")
+                #endif
+
+                dismiss()
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.onImportCompleted?(importResult)
+                }
+
+            } catch {
+                #if DEBUG
+                print("🔴 [IMPORT-MULTI] ERROR: \(error.localizedDescription)")
+                #endif
+                isImporting = false
+                let errorResult = ImportResult(
+                    isSuccess: false,
+                    message: error.localizedDescription,
+                    count: 0
+                )
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.onImportCompleted?(errorResult)
                 }
             }
         }

@@ -13,33 +13,15 @@ struct ScheduledPaymentsSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \ScheduledPayment.name)
-    private var allPayments: [ScheduledPayment]
-
-    @State private var showEditor = false
-    @State private var paymentToEdit: ScheduledPayment?
-    @State private var selectedTab: ScheduledPaymentsTab = .all
-    @State private var showDeleteError = false
-
-    /// Payments filtered by selected tab
-    private var filteredPayments: [ScheduledPayment] {
-        switch selectedTab {
-        case .all:
-            return allPayments
-        case .recurring:
-            return allPayments.filter { $0.paymentCategory == PaymentCategory.recurring.rawValue }
-        case .subscriptions:
-            return allPayments.filter { $0.paymentCategory == PaymentCategory.subscription.rawValue }
-        }
-    }
+    @State private var viewModel = ScheduledPaymentsSettingsViewModel()
 
     var body: some View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Tab selector
-                Picker("Tab", selection: $selectedTab) {
+                Picker("Tab", selection: $viewModel.selectedTab) {
                     ForEach(ScheduledPaymentsTab.allCases) { tab in
                         Text(tab.localizedName).tag(tab)
                     }
@@ -50,7 +32,7 @@ struct ScheduledPaymentsSettingsView: View {
                 .padding(.bottom, DS.Spacing.md)
 
                 // Content
-                if filteredPayments.isEmpty {
+                if viewModel.isEmpty {
                     emptyState
                 } else {
                     paymentsList
@@ -62,26 +44,25 @@ struct ScheduledPaymentsSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left") {
+                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "plus") {
-                    paymentToEdit = nil
-                    showEditor = true
+                YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                    viewModel.openEditor(for: nil)
                 }
             }
         }
-        .sheet(isPresented: $showEditor) {
+        .sheet(isPresented: $viewModel.showEditor, onDismiss: { viewModel.closeEditor() }) {
             ScheduledPaymentEditorView(
-                payment: paymentToEdit,
-                defaultCategory: selectedTab.categoryFilter
+                payment: viewModel.paymentToEdit,
+                defaultCategory: viewModel.selectedTab.categoryFilter
             )
         }
         .alert(
             L10n.Common.error,
-            isPresented: $showDeleteError,
+            isPresented: $viewModel.showDeleteError,
             actions: {
                 Button(L10n.Common.understood, role: .cancel) {}
             },
@@ -89,42 +70,17 @@ struct ScheduledPaymentsSettingsView: View {
                 Text(L10n.Common.deleteError)
             }
         )
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.xxl) {
+        VStack {
             Spacer()
-
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.1))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.electricIndigo, Color.cyan],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(NSLocalizedString("scheduled.empty.title", comment: ""))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(NSLocalizedString("scheduled.empty.settings.hint", comment: ""))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-
+            YalaEmptyState.noScheduledPayments()
             Spacer()
         }
     }
@@ -133,13 +89,13 @@ struct ScheduledPaymentsSettingsView: View {
 
     private var paymentsList: some View {
         List {
-            ForEach(filteredPayments, id: \.persistentModelID) { payment in
+            ForEach(viewModel.filteredPayments, id: \.persistentModelID) { payment in
                 paymentRow(payment)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .onDelete(perform: deletePayments)
+            .onDelete(perform: viewModel.deletePayments)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -147,36 +103,35 @@ struct ScheduledPaymentsSettingsView: View {
 
     private func paymentRow(_ payment: ScheduledPayment) -> some View {
         // Get icon and color from subcategory
-        let iconName = payment.subcategory?.iconName ?? payment.subcategory?.category.iconName ?? "creditcard.fill"
-        let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category.colorHex ?? "#6366F1"
+        let iconName = payment.subcategory?.iconName ?? payment.subcategory?.category?.iconName ?? "creditcard.fill"
+        let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
 
         return Button {
-            paymentToEdit = payment
-            showEditor = true
+            viewModel.openEditor(for: payment)
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 // Icon from subcategory
                 ZStack {
                     Circle()
-                        .fill(payment.isActive ? Color(hex: colorHex).opacity(0.15) : Color.gray.opacity(0.1))
+                        .fill(payment.isActive ? Color(hex: colorHex).opacity(0.15) : DS.Semantic.neutralBackground)
                         .frame(width: 44, height: 44)
 
                     Image(systemName: iconName)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(payment.isActive ? Color(hex: colorHex) : Color.gray)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(payment.isActive ? Color(hex: colorHex) : DS.Semantic.disabledForeground)
                 }
 
                 // Info
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(payment.name)
-                        .font(.body.weight(.medium))
+                        .font(DS.Typography.bodyBold)
                         .foregroundStyle(payment.isActive ? .primary : .secondary)
                         .lineLimit(1)
 
                     HStack(spacing: DS.Spacing.sm) {
                         // Amount
                         Text(formatAmount(payment.amount, currency: payment.currencyCode))
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 
                         // Recurrence info
@@ -184,7 +139,7 @@ struct ScheduledPaymentsSettingsView: View {
                             Text("•")
                                 .foregroundStyle(.tertiary)
                             Text(recurrenceDescription(payment))
-                                .font(.caption)
+                                .font(DS.Typography.caption)
                                 .foregroundStyle(.tertiary)
                         }
                     }
@@ -195,7 +150,7 @@ struct ScheduledPaymentsSettingsView: View {
                 // Status badge
                 if !payment.isActive {
                     Text(NSLocalizedString("scheduled.inactive", comment: ""))
-                        .font(.caption2.weight(.medium))
+                        .font(DS.Typography.labelTiny)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.sm)
                         .padding(.vertical, DS.Spacing.xxs)
@@ -206,7 +161,7 @@ struct ScheduledPaymentsSettingsView: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
+                    .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
             }
             .padding(DS.Spacing.md)
@@ -216,24 +171,10 @@ struct ScheduledPaymentsSettingsView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Actions
-
-    private func deletePayments(at offsets: IndexSet) {
-        for index in offsets {
-            let payment = filteredPayments[index]
-            modelContext.delete(payment)
-        }
-        do {
-            try modelContext.save()
-        } catch {
-            showDeleteError = true
-        }
     }
 
     // MARK: - Helpers

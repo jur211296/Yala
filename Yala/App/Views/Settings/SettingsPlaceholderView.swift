@@ -10,6 +10,8 @@ import SwiftUI
 // MARK: - Vista placeholder genérica para opciones futuras de Ajustes
 
 struct SettingsPlaceholderView: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 44
+
     let title: String
     let message: String
 
@@ -24,14 +26,15 @@ struct SettingsPlaceholderView: View {
 
             VStack(spacing: DS.Spacing.lg) {
                 Image(systemName: "clock.badge.exclamationmark")
-                    .font(.system(size: 44, weight: .regular))
+                    .font(.system(size: heroIconSize, weight: .regular))
                     .foregroundStyle(.secondary)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(title)
                     .font(.title3.weight(.semibold))
 
                 Text(message)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)

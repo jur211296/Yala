@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 #if canImport(UIKit)
     import UIKit
@@ -14,13 +15,15 @@ import SwiftUI
     import AppKit
 #endif
 
+@MainActor
 @Observable
 final class AccountFormViewModel {
 
     // MARK: - Dependencies
+    private var modelContext: ModelContext?
     var accountToEdit: Account?
     var existingNames: [String] = []
-    var allTransactions: [TransactionItem] = []
+    private(set) var allTransactions: [TransactionItem] = []
 
     // MARK: - Form State
     var name: String = ""
@@ -152,14 +155,53 @@ final class AccountFormViewModel {
         }
     }
 
+    // MARK: - Context Injection
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadTransactions()
+        initializeBalanceIfNeeded()
+    }
+
+    func loadTransactions() {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<TransactionItem>()
+        do {
+            allTransactions = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("AccountFormViewModel: Error loading transactions: \(error)")
+            #endif
+            allTransactions = []
+        }
+    }
+
     /// Call this after transactions are loaded to pre-fill the initial balance
     func initializeBalanceIfNeeded() {
         guard isEditing, !hasInitializedBalance, !allTransactions.isEmpty else { return }
 
-        let existingInitial = existingInitialBalance
-        isPositive = existingInitial >= 0
-        balanceText = String(format: "%.2f", abs(existingInitial))
+        if selectedAdjustmentMode == .changeInitialBalance {
+            let existingInitial = existingInitialBalance
+            isPositive = existingInitial >= 0
+            balanceText = String(format: "%.2f", abs(existingInitial))
+        }
+        // .byEntry: balanceText stays empty — user must explicitly enter target
+
         hasInitializedBalance = true
+    }
+
+    /// Handle adjustment mode change — reset balanceText based on new mode semantics
+    func adjustmentModeChanged() {
+        guard isEditing else { return }
+        if selectedAdjustmentMode == .changeInitialBalance {
+            let existingInitial = existingInitialBalance
+            isPositive = existingInitial >= 0
+            balanceText = String(format: "%.2f", abs(existingInitial))
+        } else {
+            // .byEntry: clear to require explicit user input
+            balanceText = ""
+            isPositive = true
+        }
     }
 
     // MARK: - Computed Properties (Validation)
@@ -289,6 +331,8 @@ final class AccountFormViewModel {
         // Force save to ensure @Query observers are notified of changes
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             isShowingSaveError = true
             return false

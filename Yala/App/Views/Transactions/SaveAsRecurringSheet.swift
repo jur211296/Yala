@@ -12,8 +12,7 @@ struct SaveAsRecurringSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
+    @State private var viewModel = SaveAsRecurringViewModel()
 
     // Initial values from transaction
     let transactionType: TransactionType
@@ -93,18 +92,15 @@ struct SaveAsRecurringSheet: View {
         self._amountString = State(initialValue: amount > 0 ? String(format: "%.2f", amount) : "")
         self._note = State(initialValue: note)
         self._includeNote = State(initialValue: !note.isEmpty)
-        self._startDate = State(initialValue: transactionDate)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
+        self._startDate = State(initialValue: max(tomorrow, transactionDate))
         self._dayOfMonth = State(initialValue: Calendar.current.component(.day, from: transactionDate))
         self._yearlyMonth = State(initialValue: Calendar.current.component(.month, from: transactionDate))
         self._yearlyDay = State(initialValue: Calendar.current.component(.day, from: transactionDate))
     }
 
-    private var activeTags: [Tag] {
-        allTags.filter { $0.isActive }
-    }
-
-    private var selectedTagObjects: [Tag] {
-        activeTags.filter { selectedTags.contains($0.persistentModelID) }
+    private var tomorrow: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
     }
 
     private var parsedAmount: Double {
@@ -148,7 +144,7 @@ struct SaveAsRecurringSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -167,6 +163,7 @@ struct SaveAsRecurringSheet: View {
             }
         }
         .onAppear {
+            viewModel.setContext(modelContext)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isNameFocused = true
             }
@@ -190,7 +187,7 @@ struct SaveAsRecurringSheet: View {
             }
 
             Text(L10n.Scheduled.saveDescription)
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -199,7 +196,7 @@ struct SaveAsRecurringSheet: View {
 
     private var fieldsSection: some View {
         SectionBox(title: L10n.Common.details) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Amount (required - editable)
                 amountRow
 
@@ -222,7 +219,7 @@ struct SaveAsRecurringSheet: View {
                     icon: "tag",
                     label: L10n.Transaction.subcategory,
                     value: selectedSubcategory?.name,
-                    color: selectedSubcategory.map { Color(hex: $0.colorHex ?? $0.category.colorHex) },
+                    color: selectedSubcategory.map { Color(hex: $0.colorHex ?? $0.safeCategory.colorHex) },
                     onTap: { showSubcategorySelector = true },
                     onClear: { selectedSubcategory = nil }
                 )
@@ -384,7 +381,7 @@ struct SaveAsRecurringSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        if activeTags.isEmpty {
+                        if viewModel.activeTags.isEmpty {
                             YalaEmptyState(
                                 icon: "tag.slash",
                                 title: L10n.Empty.noTags,
@@ -392,8 +389,8 @@ struct SaveAsRecurringSheet: View {
                             )
                         } else {
                             SectionBox(title: "") {
-                                VStack(spacing: 0) {
-                                    ForEach(Array(activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
+                                VStack(spacing: DS.Spacing.none) {
+                                    ForEach(Array(viewModel.activeTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
                                         }
@@ -410,19 +407,19 @@ struct SaveAsRecurringSheet: View {
                                                     .frame(width: 28, height: 28)
                                                     .overlay(
                                                         Image(systemName: tag.iconName)
-                                                            .font(.system(size: 12, weight: .semibold))
+                                                            .font(DS.Typography.labelSmall)
                                                             .foregroundStyle(.white)
                                                     )
 
                                                 Text(tag.name)
-                                                    .font(.body)
+                                                    .font(DS.Typography.body)
                                                     .foregroundStyle(.primary)
 
                                                 Spacer()
 
                                                 if selectedTags.contains(tag.persistentModelID) {
                                                     Image(systemName: "checkmark")
-                                                        .font(.body.weight(.semibold))
+                                                        .font(DS.Typography.headline)
                                                         .foregroundStyle(Color.electricIndigo)
                                                 }
                                             }
@@ -444,7 +441,7 @@ struct SaveAsRecurringSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         showTagSelector = false
                     }
                 }
@@ -485,7 +482,7 @@ struct SaveAsRecurringSheet: View {
 
     private var recurrenceSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.recurrence", comment: "")) {
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 Picker("", selection: $isRecurring) {
                     Text(NSLocalizedString("scheduled.recurrence.onetime", comment: "")).tag(false)
                     Text(NSLocalizedString("scheduled.recurrence.recurring", comment: "")).tag(true)
@@ -537,7 +534,7 @@ struct SaveAsRecurringSheet: View {
 
             Spacer()
 
-            DatePicker("", selection: $startDate, displayedComponents: .date)
+            DatePicker("", selection: $startDate, in: tomorrow..., displayedComponents: .date)
                 .labelsHidden()
         }
         .padding()
@@ -618,7 +615,7 @@ struct SaveAsRecurringSheet: View {
             }
         } label: {
             Text(weekday.short)
-                .font(.caption.weight(.medium))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -703,14 +700,14 @@ struct SaveAsRecurringSheet: View {
 
             Spacer()
 
-            DatePicker("", selection: $startDate, displayedComponents: .date)
+            DatePicker("", selection: $startDate, in: tomorrow..., displayedComponents: .date)
                 .labelsHidden()
         }
         .padding()
     }
 
     private var endDateSection: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             Toggle(isOn: $hasEndDate) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "calendar.badge.minus")
@@ -760,7 +757,7 @@ struct SaveAsRecurringSheet: View {
             transactionType: transactionType.rawValue,
             account: selectedAccount,
             subcategory: selectedSubcategory,
-            tags: selectedTagObjects,
+            tags: viewModel.selectedTagObjects(from: selectedTags),
             natureOverride: natureOverride?.rawValue,
             isRecurring: isRecurring,
             recurrenceType: recurrenceType.rawValue,
@@ -797,7 +794,9 @@ struct SaveAsRecurringSheet: View {
             onSaved(L10n.Action.savedAsRecurring)
             dismiss()
         } catch {
+            #if DEBUG
             print("Error saving recurring payment: \(error)")
+            #endif
         }
     }
 }

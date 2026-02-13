@@ -18,27 +18,27 @@ App iOS de finanzas personales (SwiftUI) para registrar y entender gastos, cuent
 - Atajos de iOS (Shortcuts/Siri)
 - Importación CSV/Excel
 - Personalización completa
-- Privacidad real (100% local)
+- Privacidad real (datos locales + iCloud privado cifrado)
 
 Ver `.planning/MARKETING.md` para estrategia completa.
 
 ## Stack
 
 - **Persistencia:** SwiftData
-- **ModelContainer:** `YalaApp.swift`
-- **Entidades:** Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
+- **ModelContainer:** `SwiftDataConfiguration.swift` (inicializado en `YalaApp.swift`)
+- **Entidades:** Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem
 - **Design System:** `DesignTokens.swift` — namespace DS con tokens de spacing, radius, typography
 
 ## Proyecto
 
-- **Archivo:** `Neto.xcodeproj`
-- **Scheme:** Neto
+- **Archivo:** `Yala.xcodeproj`
+- **Scheme:** Yala
 - **Unit Tests:** YalaTests
 - **UI Tests:** YalaUITests
 
 ## Design System (DS)
 
-Tokens centralizados en `Neto/Design/DesignTokens.swift`:
+Tokens centralizados en `Yala/App/Theme/DesignTokens.swift`:
 
 ```swift
 DS.Spacing.xxs  // 2
@@ -79,7 +79,7 @@ Antes de commit:
 
 ## Deuda Tecnica Conocida
 
-Ver `.planning/codebase/CONCERNS.md` y `.planning/TECH_DEBT.md`
+Ver `.planning/codebase/CONCERNS.md`
 
 ---
 
@@ -150,11 +150,11 @@ static func calculateNextOccurrence(from: Date, frequency: String, customDays: I
 
 #### Archivos a crear
 
-- `Neto/Models/ScheduledPayment.swift`
-- `Neto/Services/ScheduledPaymentService.swift`
-- `Neto/App/Views/Planning/ScheduledPaymentsListView.swift`
-- `Neto/App/Views/Planning/ScheduledPaymentEditorView.swift`
-- `Neto/App/ViewModels/ScheduledPaymentsViewModel.swift`
+- `Yala/Models/ScheduledPayment.swift`
+- `Yala/Services/ScheduledPaymentService.swift`
+- `Yala/App/Views/Planning/ScheduledPaymentsListView.swift`
+- `Yala/App/Views/Planning/ScheduledPaymentEditorView.swift`
+- `Yala/App/ViewModels/ScheduledPaymentsViewModel.swift`
 
 #### Consideraciones
 
@@ -211,10 +211,10 @@ speechRecognizer.recognitionTask(with: request) { result, error in
 
 #### Archivos a crear
 
-- `Neto/Services/ReceiptOCRService.swift`
-- `Neto/Services/SpeechTranscriptionService.swift`
-- `Neto/App/Views/Transactions/SmartEntryView.swift`
-- `Neto/App/Models/RecognizedReceipt.swift`
+- `Yala/Services/ReceiptOCRService.swift`
+- `Yala/Services/SpeechTranscriptionService.swift`
+- `Yala/App/Views/Transactions/SmartEntryView.swift`
+- `Yala/App/Models/RecognizedReceipt.swift`
 
 #### Decision On-Device vs Cloud
 
@@ -330,21 +330,21 @@ func schedulePaymentReminder(for payment: ScheduledPayment) {
 #### Archivos a crear
 
 **Widgets:**
-- `NetoWidgets/` (nuevo target)
-- `NetoWidgets/ScheduledPaymentWidget.swift`
-- `NetoWidgets/BalanceWidget.swift`
+- `YalaWidgets/` (nuevo target)
+- `YalaWidgets/ScheduledPaymentWidget.swift`
+- `YalaWidgets/BalanceWidget.swift`
 
 **Intents:**
-- `Neto/Intents/QuickExpenseIntent.swift`
-- `Neto/Intents/ExecutePaymentIntent.swift`
-- `Neto/Intents/AppShortcuts.swift`
+- `Yala/Intents/QuickExpenseIntent.swift`
+- `Yala/Intents/ExecutePaymentIntent.swift`
+- `Yala/Intents/AppShortcuts.swift`
 
 **Notificaciones:**
-- `Neto/Services/NotificationScheduler.swift`
-- `Neto/App/NotificationDelegate.swift`
+- `Yala/Services/NotificationScheduler.swift`
+- `Yala/App/NotificationDelegate.swift`
 
 **Autenticacion:**
-- `Neto/Services/AuthenticationService.swift` (LocalAuthentication framework)
+- `Yala/Services/AuthenticationService.swift` (LocalAuthentication framework)
 
 #### Permisos requeridos (Info.plist)
 

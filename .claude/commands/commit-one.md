@@ -77,6 +77,7 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
 5. PROPUESTA DE COMMIT:
    - Determinar prefijo correcto: feat:, fix:, refactor:, chore:, docs:
    - Proponer mensaje descriptivo
+   - ❌ NUNCA incluir línea "Co-Authored-By: Claude..." en el mensaje
    - Listar archivos específicos para `git add`
    - Preguntar: "¿Procedo con este commit?"
 
@@ -86,52 +87,88 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
    git commit -m "[prefijo]: [mensaje]"
 ```
 
-7. POST-COMMIT: ACTUALIZACIÓN AUTOMÁTICA DE STATE:
+7. POST-COMMIT: ACTUALIZACIÓN DE DOCUMENTACIÓN
+
+   PRINCIPIO: Todo trabajo debe dejar rastro para futuras sesiones.
+
    Después de crear el commit exitosamente:
-   
-   a) Obtener hash del commit recién creado:
+
+   a) Obtener datos del commit:
 ```bash
       COMMIT_HASH=$(git log -1 --format=%h)
       COMMIT_MSG=$(git log -1 --format=%s)
-      TIMESTAMP=$(date -Iseconds)
+      TODAY=$(date +%Y-%m-%d)
 ```
-   
-   b) Leer .planning/STATE.md actual
-   
-   c) Localizar o crear la sección "## Recent Progress"
-   
-   d) Agregar nueva entrada:
-      - Formato: `- [$TIMESTAMP] $COMMIT_HASH $COMMIT_MSG`
-      - Ejemplo: `- [2025-01-16T14:30:00-05:00] a3f8b2c feat: Add category filtering`
-   
-   e) Mantener solo las últimas 10 entradas en Recent Progress
-   
-   f) Si el commit completa un item de "Next Steps", moverlo a "Completed in Current Phase"
-   
-   g) Escribir STATE.md actualizado
-   
-   h) Informar: "✓ Commit $COMMIT_HASH creado\n✓ STATE.md actualizado automáticamente"
+
+   b) ACTUALIZAR STATE.md:
+
+      En "## Recent Progress":
+      - Agregar: `- [$TODAY] $COMMIT_HASH $COMMIT_MSG`
+      - Mantener solo las últimas 10 entradas
+
+      En "## Completed in Current Phase":
+      - Si el commit completa un item de "Next Steps", moverlo aquí
+      - Ser ESPECÍFICO: no solo "Bug fix" sino "Bug 7.6: Contador archivados corregido"
+
+      En "## Session Continuity":
+      - Actualizar "Last session:" con fecha actual
+      - Actualizar "Stopped at:" con descripción del último trabajo
+      - Actualizar "Next step:" con el siguiente item lógico
+
+   c) ACTUALIZAR DOCUMENTOS DE TRABAJO CONSULTADOS:
+
+      Revisar TODOS los documentos .md en .planning/ que se leyeron durante
+      esta sesión para implementar el trabajo. Ejemplos comunes:
+
+      - REFINAMIENTO-*.md → Marcar items completados con ✅
+      - PLAN.md → Marcar pasos ejecutados
+      - PHASE*-SPEC.md → Marcar subfases/items completados
+      - QA-SCENARIOS.md → Agregar escenarios si aplica
+      - Cualquier otro documento con checklists o items pendientes
+
+      Para cada documento consultado:
+      - Buscar el item específico que el commit completó
+      - Cambiar "[ ]" a "[x]" o "Pendiente" a "✅ Completado"
+      - Agregar fecha o hash del commit si el formato lo permite
+
+   d) VERIFICACIÓN FINAL:
+      - Confirmar que STATE.md refleja el progreso real
+      - Confirmar que documentos de trabajo están sincronizados
+      - Listar documentos actualizados al usuario
+
+   e) INFORMAR AL USUARIO:
+      ```
+      ✓ Commit $COMMIT_HASH creado
+      ✓ STATE.md actualizado (Recent Progress + Session Continuity)
+      ✓ Documentos actualizados: [lista de archivos .md modificados]
+      ```
 
 FORMATO ESPERADO DE STATE.md:
 ```markdown
 # Project State
 
 ## Recent Progress
-- [timestamp ISO] [hash] [mensaje]
-- [timestamp ISO] [hash] [mensaje]
-...
+<!-- Últimos 10 commits con formato: -->
+- [YYYY-MM-DD] hash mensaje
+- [YYYY-MM-DD] hash mensaje
 
 ## Completed in Current Phase
-- [item completado]
-...
+<!-- Items específicos completados, no solo commits: -->
+- **Feature/Bug X**: Descripción detallada de qué se logró
+- **Item Y del documento Z**: Completado (hash)
 
 ## Next Steps
-- [item pendiente]
-...
+<!-- Items pendientes con referencias a documentos fuente: -->
+- [ ] Item pendiente (ver DOCUMENTO.md #sección)
 
-## Parking Lot
-- [idea] (Tipo: X, Prioridad: Y)
-...
+## Session Continuity
+<!-- Para retomar trabajo en próxima sesión: -->
+Last session: YYYY-MM-DD
+Stopped at: Descripción específica del último trabajo
+Next step: Siguiente item lógico a trabajar
+Resume context:
+- Punto importante 1
+- Punto importante 2
 ```
 
 RECORDATORIO FINAL:

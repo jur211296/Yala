@@ -24,10 +24,10 @@ struct FavoriteRowView: View {
                 favoriteIcon
 
                 // Text content
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
                     // Line 1: Favorite name
                     Text(favorite.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -35,7 +35,7 @@ struct FavoriteRowView: View {
                     secondaryLine
 
                     // Line 3: Tags (if any)
-                    if !favorite.tags.isEmpty {
+                    if !(favorite.tags ?? []).isEmpty {
                         tagsRow
                     }
                 }
@@ -46,7 +46,7 @@ struct FavoriteRowView: View {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     if let amount = favorite.amount, amount > 0 {
                         Text(formattedAmount)
-                            .font(.subheadline.weight(.semibold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(amountColor)
                     }
 
@@ -80,12 +80,12 @@ struct FavoriteRowView: View {
 
     private var favoriteIcon: some View {
         let colorHex =
-            favorite.subcategory?.category.colorHex
+            favorite.subcategory?.category?.colorHex
             ?? favorite.subcategory?.colorHex
             ?? "#6366F1"
         let iconName =
             favorite.subcategory?.iconName
-            ?? favorite.subcategory?.category.iconName
+            ?? favorite.subcategory?.category?.iconName
             ?? "star.fill"
 
         return ZStack {
@@ -94,7 +94,7 @@ struct FavoriteRowView: View {
                 .frame(width: 40, height: 40)
 
             Image(systemName: iconName)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
@@ -108,28 +108,28 @@ struct FavoriteRowView: View {
         let text = parts.isEmpty ? L10n.Favorites.notConfigured : parts.joined(separator: " • ")
 
         return Text(text)
-            .font(.caption)
+            .font(DS.Typography.caption)
             .foregroundStyle(.secondary)
             .lineLimit(1)
     }
 
     private var tagsRow: some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array(favorite.tags.prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array((favorite.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, DS.Chip.paddingV)
+                    .padding(.vertical, DS.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color(hex: tag.colorHex))
                     )
             }
 
-            if favorite.tags.count > 3 {
-                Text("+\(favorite.tags.count - 3)")
-                    .font(.caption2.weight(.medium))
+            if (favorite.tags ?? []).count > 3 {
+                Text("+\((favorite.tags ?? []).count - 3)")
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
         }
@@ -142,11 +142,11 @@ struct FavoriteRowView: View {
                 .frame(width: 6, height: 6)
 
             Text(nature.displayName)
-                .font(.caption2.weight(.medium))
+                .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
+        .padding(.horizontal, DS.Chip.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
                 .fill(nature.color.opacity(0.1))
@@ -158,7 +158,7 @@ struct FavoriteRowView: View {
     private var formattedAmount: String {
         guard let amount = favorite.amount else { return "" }
         let code = favorite.currencyCode ?? CurrencyDefaults.defaultCode
-        return YalaFormatter.currency(value: amount, currencyCode: code)
+        return YalaFormatter.currency(value: amount, currencyCode: code, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

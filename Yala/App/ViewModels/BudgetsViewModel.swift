@@ -3,14 +3,26 @@
 //  Yala
 //
 //  ViewModel for managing budgets, calculations, and UI state
+//  Fase D: Arquitectura - @Query → ViewModels
 //
 
 import Foundation
 import SwiftData
 import SwiftUI
 
+@MainActor
 @Observable
 final class BudgetsViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Data
+
+    private(set) var allBudgets: [Budget] = []
+    private(set) var allTransactions: [TransactionItem] = []
+    private(set) var accounts: [Account] = []
 
     // MARK: - Filter State
 
@@ -42,6 +54,11 @@ final class BudgetsViewModel {
     /// Budgets grouped by status
     var groupedBudgets: [(status: BudgetStatus, budgets: [BudgetSummary])] = []
 
+    /// Count of active budgets (for Pro tier limit checking)
+    var activeBudgetsCount: Int {
+        allBudgets.filter { $0.isActive }.count
+    }
+
     // MARK: - Initialization
 
     init() {
@@ -50,6 +67,82 @@ final class BudgetsViewModel {
         self.selectedWeek = calendar.startOfWeek(for: Date())
         self.selectedMonth = calendar.startOfMonth(for: Date())
         self.selectedYear = calendar.component(.year, from: Date())
+    }
+
+    // MARK: - Context Injection
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadData()
+    }
+
+    // MARK: - Data Loading
+
+    func loadData() {
+        guard let context = modelContext else { return }
+
+        // Load budgets
+        let budgetDescriptor = FetchDescriptor<Budget>(sortBy: [SortDescriptor(\Budget.createdAt, order: .reverse)])
+        do {
+            allBudgets = try context.fetch(budgetDescriptor)
+        } catch {
+            #if DEBUG
+            print("BudgetsViewModel: Error loading budgets: \(error)")
+            #endif
+            allBudgets = []
+        }
+
+        // Load transactions
+        let transactionDescriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)])
+        do {
+            allTransactions = try context.fetch(transactionDescriptor)
+        } catch {
+            #if DEBUG
+            print("BudgetsViewModel: Error loading transactions: \(error)")
+            #endif
+            allTransactions = []
+        }
+
+        // Load accounts
+        let accountDescriptor = FetchDescriptor<Account>(sortBy: [SortDescriptor(\Account.name)])
+        do {
+            accounts = try context.fetch(accountDescriptor)
+        } catch {
+            #if DEBUG
+            print("BudgetsViewModel: Error loading accounts: \(error)")
+            #endif
+            accounts = []
+        }
+    }
+
+    /// Check if there are inactive budgets for current period type
+    func hasInactiveBudgets(forPeriodTypeIndex segment: Int) -> Bool {
+        let budgets = allBudgets.filter { budget in
+            if segment == 3 {
+                return budget.periodType == BudgetPeriodType.unique.rawValue
+            } else {
+                return budget.periodType == selectedPeriodType.rawValue
+            }
+        }
+        return budgets.contains { !$0.isActive }
+    }
+
+    /// Refresh budget data with current filters
+    func refreshBudgetData(hideInactive: Bool, defaultCurrencyCode: String) {
+        var filteredBudgets = allBudgets.filter {
+            $0.periodType == selectedPeriodType.rawValue
+        }
+
+        if hideInactive {
+            filteredBudgets = filteredBudgets.filter { $0.isActive }
+        }
+
+        calculateBudgetData(
+            budgets: filteredBudgets,
+            transactions: allTransactions,
+            accounts: accounts,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
     }
 
     // MARK: - Budget Calculation
@@ -118,8 +211,8 @@ final class BudgetsViewModel {
         // Apply budget filters
 
         // Account filter
-        if !budget.accounts.isEmpty {
-            let accountIDs = Set(budget.accounts.map { $0.persistentModelID })
+        if let accounts = budget.accounts, !accounts.isEmpty {
+            let accountIDs = Set(accounts.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let accountID = transaction.account?.persistentModelID {
                     return accountIDs.contains(accountID)
@@ -129,8 +222,8 @@ final class BudgetsViewModel {
         }
 
         // Subcategory filter
-        if !budget.subcategories.isEmpty {
-            let subIDs = Set(budget.subcategories.map { $0.persistentModelID })
+        if let subcategories = budget.subcategories, !subcategories.isEmpty {
+            let subIDs = Set(subcategories.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
                 if let subID = transaction.subcategory?.persistentModelID {
                     return subIDs.contains(subID)
@@ -140,10 +233,10 @@ final class BudgetsViewModel {
         }
 
         // Tag filter
-        if !budget.tags.isEmpty {
-            let tagIDs = Set(budget.tags.map { $0.persistentModelID })
+        if let budgetTags = budget.tags, !budgetTags.isEmpty {
+            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
             filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set(transaction.tags.map { $0.persistentModelID })
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
                 return !transactionTagIDs.isDisjoint(with: tagIDs)
             }
         }
@@ -163,14 +256,13 @@ final class BudgetsViewModel {
             transaction.category?.isIncome == false
         }
 
-        // Sum amounts (use preferred currency amount if available, otherwise use transaction amount)
+        // Sum amounts based on budget account configuration:
+        // - If exactly 1 account: use transaction.amount (same currency as budget)
+        // - If 0 or multiple accounts: use amountInPreferredCurrency (normalized)
+        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
+
         let total = filtered.reduce(0.0) { sum, transaction in
-            let amount: Double
-            if transaction.preferredCurrencyCode == defaultCurrencyCode {
-                amount = transaction.amountInPreferredCurrency
-            } else {
-                amount = transaction.amount
-            }
+            let amount = useBudgetCurrency ? transaction.amount : transaction.amountInPreferredCurrency
             return sum + abs(amount)
         }
 
@@ -181,13 +273,18 @@ final class BudgetsViewModel {
 
     /// Determine budget status based on isActive property and spending
     func getBudgetStatus(budget: Budget, spending: Double) -> BudgetStatus {
+        calculateBudgetStatus(isActive: budget.isActive, spending: spending, limit: budget.limitAmount)
+    }
+
+    /// Pure logic for budget status calculation (testable without SwiftData)
+    func calculateBudgetStatus(isActive: Bool, spending: Double, limit: Double) -> BudgetStatus {
         // If budget is manually set to inactive, it goes to inactive section regardless of spending
-        guard budget.isActive else {
+        guard isActive else {
             return .inactive
         }
 
         // For active budgets, determine status based on spending
-        let isExceeded = spending >= budget.limitAmount
+        let isExceeded = spending >= limit
 
         if isExceeded {
             return .exceeded
@@ -265,26 +362,49 @@ final class BudgetsViewModel {
 
     /// Determine display icon and color for a budget
     func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
+        // Extract data for pure logic function
+        let subcategories = budget.subcategories ?? []
+        let subcategoryCount = subcategories.count
+        let firstSubcategory = subcategories.first
+        let firstSubcategoryIcon = firstSubcategory?.iconName ?? firstSubcategory?.safeCategory.iconName
+        let firstCategoryColor = firstSubcategory?.colorHex ?? firstSubcategory?.safeCategory.colorHex
+        let firstCategoryIcon = firstSubcategory?.safeCategory.iconName
+        let uniqueCategoryCount = Set(subcategories.map { $0.safeCategory.persistentModelID }).count
+
+        return calculateDisplayProperties(
+            subcategoryCount: subcategoryCount,
+            firstSubcategoryIcon: firstSubcategoryIcon,
+            firstCategoryColor: firstCategoryColor,
+            uniqueCategoryCount: uniqueCategoryCount,
+            firstCategoryIcon: firstCategoryIcon
+        )
+    }
+
+    /// Pure logic for display properties calculation (testable without SwiftData)
+    func calculateDisplayProperties(
+        subcategoryCount: Int,
+        firstSubcategoryIcon: String?,
+        firstCategoryColor: String?,
+        uniqueCategoryCount: Int,
+        firstCategoryIcon: String? = nil
+    ) -> (icon: String, color: String) {
         // No subcategories: use neutral app icon/color
-        guard !budget.subcategories.isEmpty else {
+        guard subcategoryCount > 0 else {
             return ("chart.pie.fill", "#6366F1") // Electric indigo
         }
 
         // Single subcategory: use subcategory icon/color
-        if budget.subcategories.count == 1, let subcategory = budget.subcategories.first {
-            let icon = subcategory.iconName ?? subcategory.category.iconName ?? "tag.fill"
-            let color = subcategory.colorHex ?? subcategory.category.colorHex
+        if subcategoryCount == 1 {
+            let icon = firstSubcategoryIcon ?? "tag.fill"
+            let color = firstCategoryColor ?? "#6366F1"
             return (icon, color)
         }
 
         // Multiple subcategories: check if they're from the same category
-        let uniqueCategories = Set(budget.subcategories.map { $0.category.persistentModelID })
-
-        if uniqueCategories.count == 1, let firstSubcategory = budget.subcategories.first {
+        if uniqueCategoryCount == 1 {
             // All from same category: use category icon/color
-            let category = firstSubcategory.category
-            let icon = category.iconName ?? "tag.fill"
-            let color = category.colorHex
+            let icon = firstCategoryIcon ?? "tag.fill"
+            let color = firstCategoryColor ?? "#6366F1"
             return (icon, color)
         } else {
             // Multiple categories: use app icon + electric indigo
@@ -303,16 +423,3 @@ extension BudgetStatus: CaseIterable {
 
 // MARK: - Calendar Extension
 
-private extension Calendar {
-    /// Get start of week for a given date (Monday as first day of week)
-    func startOfWeek(for date: Date) -> Date {
-        let components = dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        return self.date(from: components) ?? date
-    }
-
-    /// Get start of month for a given date
-    func startOfMonth(for date: Date) -> Date {
-        let components = dateComponents([.year, .month], from: date)
-        return self.date(from: components) ?? date
-    }
-}

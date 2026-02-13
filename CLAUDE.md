@@ -1,120 +1,230 @@
 # Yala (iOS)
 
-## Decisiones Recientes (TTL: hasta cierre de fase)
+## Quick Reference
 
-Esta sección contiene decisiones de diseño tomadas en la fase actual del ROADMAP.
-Al cerrar la fase, este contenido se archiva en DECISIONS.md.
+### SwiftData Models (12)
+Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem
 
-[Aquí irán decisiones temporales con formato: [FECHA] Decisión breve]
+### Key Services
+| Service | Path | Purpose |
+|---------|------|---------|
+| FilterService | Services/FilterService.swift | SSOT filtros de transacciones |
+| CurrencyConverter | Services/CurrencyConverter.swift | Conversión central de divisas |
+| ExchangeRateService | Services/ExchangeRateService.swift | Persistencia y API tipos de cambio |
+| TransactionService | Services/TransactionService.swift | CRUD transacciones + widgets |
+| DraftService | Services/DraftService.swift | Operaciones InboxDraft |
+| EntityDeletionService | Services/EntityDeletionService.swift | Eliminación estandarizada |
+| BudgetAlertService | Services/BudgetAlertService.swift | Alertas de umbrales presupuestos |
+| NotificationService | Services/NotificationService.swift | Notificaciones locales |
+| ScheduledPaymentNotificationService | Services/ScheduledPaymentNotificationService.swift | Notifs pagos planificados |
+| ReportNotificationService | Services/ReportNotificationService.swift | Notifs reportes financieros |
+| FeatureGateService | App/Services/FeatureGateService.swift | Gates Pro/Free |
+| StoreKitManager | App/Services/StoreKitManager.swift | Suscripciones StoreKit 2 |
+| MerchantMemoryService | App/Services/MerchantMemoryService.swift | Auto-categorización merchants |
+| iCloudSyncService | Services/iCloudSyncService.swift | Monitor estado sync iCloud |
 
-## Producto
+### Key ViewModels (34)
+| ViewModel | Tests |
+|-----------|-------|
+| NewTransactionViewModel | 35 |
+| BudgetsViewModel | 11 |
+| InboxViewModel | 10 |
+| PanelViewModel, RecordsViewModel, StatisticsViewModel | — |
+| ScheduledPaymentsViewModel | 6 |
+| ProfileViewModel | — |
+| RecordsFiltersViewModel | 3 |
+| BudgetEditorViewModel | 1 |
+| CategoryDetailViewModel | 9 |
+| AccountFormViewModel | 20 |
+| TagFormViewModel | 8 |
+| AccountSelectorViewModel | — |
+| SubcategorySelectorViewModel, TagSelectorViewModel | — |
+| + 18 ViewModels más en App/ViewModels/ | — |
+
+### Test Suites (28 suites, 260 tests)
+FilterServiceTests (10), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (35), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (20), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (1), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (6), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (3), YalaTests (1)
+
+## Product & Stack
 Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, presupuestos y reportes con claridad.
 
-## Stack
-- Swift, SwiftUI
-- Persistencia: SwiftData
-- Proyecto: .xcodeproj
-- Scheme principal: Yala
-- Unit tests: YalaTests
-- UI tests: YalaUITests
-- **Simulador estándar: iPhone 17 Pro** (SIEMPRE usar este para builds, tests y simulación)
+- Swift, SwiftUI, SwiftData (.xcodeproj)
+- Scheme: Yala | Tests: YalaTests
+- **Target iOS 26+** — SIEMPRE usar APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
+- **Simulador: iPhone 17 Pro** (builds, tests, simulación)
+- ModelContainer via `SwiftDataConfiguration` (12 entidades arriba)
+- **Divisas SSOT:** `Yala/Utils/CurrencyUtils.swift` → enum `CurrencyCode` (48 divisas, 7 continentes)
 
-## SwiftData (fuente de verdad)
-El ModelContainer se configura en YalaApp.swift con estas entidades:
-Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
+## iOS 26 Liquid Glass (OBLIGATORIO)
+- `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO
+- `.glassEffect()` para chips, barras flotantes, elementos translúcidos
+- Si existe una API de iOS 26 que mejore la integración con el sistema, USARLA
 
-## Flujo de trabajo obligatorio (para ahorrar tokens y reducir retrabajo)
-1) Plan corto antes de editar (qué cambias y por qué)
-2) Implementar mínimo que compila
-3) Ejecutar /verify-ios
-4) Si aplica, ejecutar tests (ver estrategia abajo)
-5) Commit pequeño con /commit-one
-6) **Actualizar QA-SCENARIOS.md** con escenarios de prueba para la funcionalidad nueva
+## Workflow
+**Referencia completa:** `.planning/WORKFLOW.md`
 
-**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener sus escenarios de prueba documentados en `.planning/QA-SCENARIOS.md` ANTES del commit. Esto asegura que las validaciones manuales estén siempre listas.
+### Flujo estándar (feature)
+```
+/clear → /next → Plan Mode (Shift+Tab) → /review-plan → Accept edits
+→ implementar → /verify-ios → /test-smart → /swift-audit
+→ /commit-one → /clear
+```
 
-## Estrategia de Testing
-Usar el comando apropiado según el tipo de cambio:
+### Flujo rápido (bug fix)
+```
+/next → implementar → /verify-ios → /commit-one
+```
 
-| Tipo de cambio | Comando | Cuándo |
-|----------------|---------|--------|
-| Cambio puntual en modelo/servicio | `/test-smart` | Detecta y corre solo tests relevantes |
-| Cambio en UI (Views) | No hay tests UI | Solo /verify-ios |
-| Trabajo completo antes de commit | `/test-ios` | Corre todos los tests |
-| Después de merge o refactor grande | `/test-ios` + `/uitest-ios` | Validación completa |
+### Flujo autónomo (tarea mecánica con plan claro)
+```
+/clear → /next → Plan Mode → /review-plan → /yolo
+```
 
-**Tests disponibles:**
-- `FilterServiceTests` - Lógica de filtrado
-- `CalculatorTests` - Cálculos financieros
-- `TagTests` - Operaciones con tags
-- `TrendProcessingTests` - Procesamiento de tendencias
-- `TrendGroupingTests` - Agrupación de tendencias
+### Flujo complejo (modelo core, multi-archivo)
+```
+/clear → /next → /analyze-impact → Plan Mode → /review-plan → Accept
+→ implementar → /verify-ios → /test-smart → /review-session → aplicar
+→ /swift-audit → /commit-one → /context-snapshot → /clear
+```
 
-## Reglas de cambio
+### Skills por categoría
+| Fase | Skills |
+|------|--------|
+| Orientación | `/next` |
+| Planificación | Plan Mode (Shift+Tab), `/review-plan` |
+| Análisis | `/analyze-impact`, `/parallel-search` |
+| Verificación | `/verify-ios`, `/verify-quick`, `/test-smart`, `/test-ios` |
+| Calidad Swift | `/swift-audit`, `/swiftdata-check`, `/swift-modernize` |
+| Review | `/review-code`, `/review-session`, `/pre-deploy-check` |
+| Auditoría periódica | `/deep-scan`, `/a11y-audit`, `/ds-compliance`, `/test-coverage`, `/pre-launch` |
+| Commits | `/commit-one`, `/checkpoint` |
+| Generación tests | `/generate-tests` |
+| Contexto | `/context-snapshot`, `/compact`, `/clear` |
+| Captura | `/idea` |
+| Autónomo | `/yolo` |
+
+**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener escenarios en `.planning/QA-SCENARIOS.md` ANTES del commit.
+
+## Testing
+| Tipo de cambio | Comando |
+|----------------|---------|
+| Cambio en modelo/servicio | `/test-smart` (solo tests relevantes) |
+| Cambio en UI (Views) | Solo `/verify-ios` |
+| Antes de commit | `/test-smart` siempre |
+| Después de merge o refactor grande | `/test-ios` (todos los tests) |
+
+## Self-Maintenance Rule
+Después de crear o modificar modelos, servicios o ViewModels:
+- Actualizar las tablas de Quick Reference de este archivo
+- Actualizar conteo de tests si se agregaron nuevos
+- Agregar gotchas descubiertos a la sección Code Rules
+- Mantener este archivo como fuente de verdad para cada sesión AI
+
+## Code Rules
+
+### Reglas de cambio
 - Evitar refactors grandes si no son necesarios para el feature actual
 - No introducir dependencias nuevas sin justificación
 - Mantener separación clara entre UI, lógica y capa SwiftData
 
-## Control de Ejecución de Comandos
+### Corrección de errores
+- SIEMPRE buscar TODAS las instancias del mismo patrón antes de declarar fix completo
+- NO confiar ciegamente en "BUILD SUCCEEDED" — verificar todos los casos
+- Si el usuario reporta errores después de build exitoso, limpiar cache: `xcodebuild clean`
 
-**CRÍTICO:** Consultar EXECUTION-RULES.md para saber qué comandos requieren instrucción explícita del usuario vs cuáles pueden ejecutarse automáticamente.
+### Manejo de Errores (NUNCA silenciar)
+```swift
+// ❌ try? context.save()
+// ✅ do { try context.save() } catch { print("Service: Error: \(error)") }
+```
 
-**Patrón fundamental después de implementar código:**
-1. Mostrar resumen de cambios realizados
-2. Sugerir el siguiente paso (típicamente /verify-ios)
+### Force Unwraps (NUNCA sin validación)
+```swift
+// ❌ let x = text.first!
+// ✅ guard let x = text.first else { return }
+```
+
+### API Keys
+- NUNCA hardcodear — usar `Secrets.xcconfig` + `Info.plist` via `Bundle.main.object(forInfoDictionaryKey:)`
+
+### Logs
+- SIEMPRE dentro de `#if DEBUG` — nunca datos sensibles en producción
+
+### SwiftData
+- SIEMPRE `@Relationship(inverse:)` en relaciones bidireccionales
+- Verificar `deleteRule` en cada relación
+- `@MainActor` en servicios que manipulan `ModelContext`
+
+### ViewModel Pattern
+```swift
+@MainActor @Observable
+final class MiViewModel {
+    private var modelContext: ModelContext?
+    private(set) var items: [MiModelo] = []
+    func setContext(_ ctx: ModelContext) { modelContext = ctx; loadData() }
+    func loadData() { /* FetchDescriptor + do/catch */ }
+}
+// Vista: @State private var viewModel = MiViewModel()
+// .onAppear { viewModel.setContext(modelContext) }
+// Refresh: .onDismiss { viewModel.loadData() }
+```
+Vistas hijas simples reciben datos como `let` parameters del padre.
+
+## Control de Ejecución
+
+**Después de implementar código:**
+1. Mostrar resumen de cambios
+2. Sugerir siguiente paso
 3. DETENERSE y esperar instrucción del usuario
 4. NO ejecutar verificaciones o commits automáticamente
 
-**Optimización de comandos Git:**
-- Ejecutar cada comando git de lectura (status, diff, log) UNA SOLA VEZ
-- Guardar el output en variable
-- Reutilizar ese output para todo el análisis posterior
-- NUNCA ejecutar el mismo comando git múltiples veces
-- NUNCA ejecutar comandos git en paralelo
-- SIEMPRE ejecutar comandos git de forma secuencial
-
-**Prevención de corrupción de git index:**
-- Un solo comando git a la vez
-- Esperar que termine completamente antes del siguiente
-- No crear shells en background para operaciones git
-- No matar shells que están ejecutando comandos git
+**Git:** Ejecutar cada comando de lectura UNA SOLA VEZ, secuencialmente, nunca en paralelo. No matar shells con git en curso.
 
 ## Design System (OBLIGATORIO para cambios UI)
-**Antes de modificar cualquier vista, LEER:** `.planning/UI-PATTERNS.md`
+**Leer antes de modificar vistas:** `.planning/UI-PATTERNS.md`
+- SIEMPRE `DS.Spacing`, `DS.Radius`, `DS.Typography` — NUNCA valores hardcodeados
+- SIEMPRE filas clicables con `Button` + `contentShape(Rectangle())`
+- SIEMPRE colores semánticos y componentes estándar (YalaPrimaryButton, YalaEmptyState, etc.)
+- SIEMPRE `DS.Semantic.*` para colores de estado (success/warning/error/info/neutral/disabled)
+- SIEMPRE `DS.Gradients.*` para gradientes de marca (proBadge/subscription/success/warning)
+- Proponer agregar reglas nuevas a UI-PATTERNS.md cuando surjan
 
-Reglas críticas:
-- SIEMPRE usar tokens de `DS.Spacing`, `DS.Radius`, `DS.Typography` - NUNCA valores hardcodeados
-- SIEMPRE hacer filas completas clicables con `Button` + `contentShape(Rectangle())`
-- SIEMPRE usar colores semánticos (`Color.yalaCard`, `Color.electricIndigo`, etc.)
-- SIEMPRE usar componentes estándar: `YalaPrimaryButton`, `YalaEmptyState`, `YalaSectionHeader`, etc.
+### DS.Semantic (colores de estado)
+| Token | Uso |
+|-------|-----|
+| `successBackground/Foreground` | Confirmaciones, checks verdes |
+| `warningBackground/Foreground` | Alertas, límites excedidos |
+| `errorBackground/Foreground` | Errores, balances negativos |
+| `errorBackgroundSubtle/errorBorder` | Validación de formularios |
+| `infoBackground` | Banners informativos |
+| `neutralBackground` | Fondos neutros (chips, barras) |
+| `favoriteIcon` | Estrellas de favorito |
+| `disabledForeground` | Estados deshabilitados |
 
-**Mantenimiento de UI-PATTERNS.md:**
-- Cuando el usuario mencione una regla o patrón UI importante, PROPONER agregarlo a UI-PATTERNS.md
-- Preguntar: "¿Quieres que agregue esta regla a UI-PATTERNS.md para que siempre se respete?"
-- Si el usuario confirma, actualizar el archivo en la sección correspondiente
+### DS.Gradients (gradientes de marca)
+| Token | Uso |
+|-------|-----|
+| `proBadge` | Badge Pro [yellow→orange] |
+| `subscription` | Suscripción [orange→hotPink] |
+| `success` | Éxito [green→green85%] |
+| `warning` | Advertencia [orange→red] |
 
 ## Brand Voice (OBLIGATORIO para textos)
-**Antes de escribir cualquier texto visible al usuario, LEER:** `.planning/BRAND-VOICE.md`
+**Leer antes de escribir textos:** `.planning/BRAND-VOICE.md`
+- Tono cercano ("tú"), español neutro, nunca negativo
+- Términos simples: "gasto" no "transacción"
+- Proponer actualizaciones a BRAND-VOICE.md cuando se defina nuevo copy
 
-Reglas críticas:
-- SIEMPRE usar tono cercano y conversacional ("tú"), como un amigo experto
-- SIEMPRE usar español neutro (evitar regionalismos muy locales)
-- NUNCA usar tono negativo o regañar - proponer soluciones y celebrar logros
-- SIEMPRE preferir términos simples: "gasto" no "transacción", "dinero" no "plata"
-- Emojis moderados (1-2 máx) solo cuando aporten significado positivo
+## Project Files
+| Archivo | Propósito |
+|---------|-----------|
+| CLAUDE.md | Memoria operativa (este archivo) |
+| .planning/PROJECT.md | Definición de producto |
+| .planning/ROADMAP.md | Plan de entrega por fases |
+| .planning/STATE.md | Progreso y decisiones |
+| .planning/DECISIONS.md | Registro decisiones arquitectura |
+| .planning/UI-PATTERNS.md | Reglas Design System |
+| .planning/BRAND-VOICE.md | Tono y estilo de marca |
+| .planning/QA-SCENARIOS.md | Escenarios de prueba |
 
-**Mantenimiento de BRAND-VOICE.md:**
-- Cuando el usuario defina nuevo copy o ajuste el tono, PROPONER actualizarlo
-- Mantener el glosario de términos sincronizado con la UI
-
-## System Files Structure
-- CLAUDE.md: Operational memory (current context)
-- .planning/PROJECT.md: Product definition and constraints
-- .planning/ROADMAP.md: Phased delivery plan
-- .planning/STATE.md: Living memory of progress and decisions
-- .planning/DECISIONS.md: Architectural decisions record
-- .planning/UI-PATTERNS.md: Design system rules and UI patterns (OBLIGATORIO para UI)
-- .planning/BRAND-VOICE.md: Tono, estilo y mensajes de marca (OBLIGATORIO para textos)
-- .planning/MARKETING.md: Estrategia de marketing y posicionamiento
-- .claude/commands/: Automation macros
-- .claude/sessions/: Session logs (git-ignored)
+## Decisiones Recientes (TTL: hasta cierre de fase)
+[Formato: [FECHA] Decisión breve — se archiva en DECISIONS.md al cerrar fase]

@@ -21,7 +21,7 @@ struct FilterBlockedPopover: ViewModifier {
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     HStack {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 14))
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(.orange)
                         Text(title)
                             .font(DS.Typography.labelSmall)

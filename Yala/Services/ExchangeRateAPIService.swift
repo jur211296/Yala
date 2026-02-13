@@ -63,21 +63,24 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
 
     // MARK: - API Key
 
-    private var apiKey: String {
-        // First try Info.plist (set via Build Settings from xcconfig)
-        if let key = Bundle.main.object(forInfoDictionaryKey: "EXCHANGE_RATE_API_KEY") as? String,
-            !key.isEmpty, key != "$(EXCHANGE_RATE_API_KEY)"
-        {
-            return key
+    private var apiKey: String? {
+        // Read from Info.plist (set via Build Settings from xcconfig)
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "EXCHANGE_RATE_API_KEY") as? String,
+              !key.isEmpty,
+              key != "$(EXCHANGE_RATE_API_KEY)"
+        else {
+            return nil
         }
-
-        // Fallback to hardcoded key for development
-        return "c06401ad1af737edd8345b27b5304c36"
+        return key
     }
 
     // MARK: - ExchangeRateProviderProtocol
 
     func fetchLatest(base: String, symbols: [String]) async throws -> LiveRateResult {
+        guard let apiKey = apiKey else {
+            throw ExchangeRateProviderError.apiError("Exchange rate API key not configured. Add EXCHANGE_RATE_API_KEY to Secrets.xcconfig")
+        }
+
         let currenciesString = symbols.joined(separator: ",")
 
         // exchangerate.host uses 'source' instead of 'base' and 'currencies' instead of 'symbols'
@@ -120,7 +123,9 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
         do {
             decoded = try JSONDecoder().decode(LiveRateResponse.self, from: data)
         } catch {
+            #if DEBUG
             print("ExchangeRateAPI Decode Error: \(error)")
+            #endif
             throw ExchangeRateProviderError.invalidResponse
         }
 
@@ -157,6 +162,10 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
         startDate: Date,
         endDate: Date
     ) async throws -> [String: [String: Double]] {
+        guard let apiKey = apiKey else {
+            throw ExchangeRateProviderError.apiError("Exchange rate API key not configured. Add EXCHANGE_RATE_API_KEY to Secrets.xcconfig")
+        }
+
         let currenciesString = symbols.joined(separator: ",")
         let startDateString = dateFormatter.string(from: startDate)
         let endDateString = dateFormatter.string(from: endDate)
@@ -194,7 +203,9 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
         do {
             decoded = try JSONDecoder().decode(TimeframeResponse.self, from: data)
         } catch {
+            #if DEBUG
             print("ExchangeRateAPI Timeseries Decode Error: \(error)")
+            #endif
             throw ExchangeRateProviderError.invalidResponse
         }
 

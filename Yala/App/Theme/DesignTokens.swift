@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - DS (Design System)
 
@@ -45,8 +46,17 @@ enum DS {
         /// 48pt - Page margins, large gaps
         static let xxxxl: CGFloat = 48
 
+        /// 0pt - Explicit zero spacing
+        static let none: CGFloat = 0
+
         /// 100pt - Safe bottom padding for scrollable content
         static let safeBottom: CGFloat = 100
+
+        /// 64pt - Safe area offset for Settings sheets
+        static let sheetTop: CGFloat = 64
+
+        /// 52pt - Form/filter leading indentation
+        static let formIndent: CGFloat = 52
     }
 
     // MARK: - Corner Radius
@@ -107,6 +117,90 @@ enum DS {
 
         /// 0.4s - Emphasis, modals, sheets
         static let slow: Double = 0.4
+
+        // MARK: Spring Parameters
+
+        /// Spring response time (matches FAB animation)
+        static let springResponse: Double = 0.25
+
+        /// Spring damping (matches FAB animation)
+        static let springDamping: Double = 0.8
+
+        /// Bouncy spring damping for success states
+        static let springBouncy: Double = 0.65
+
+        /// Delay between staggered items
+        static let staggerDelay: Double = 0.05
+    }
+
+    // MARK: - Haptic Feedback
+
+    /// Centralized haptic feedback helpers.
+    /// Usage: `DS.Haptic.success()`, `DS.Haptic.selection()`
+    enum Haptic {
+        /// Success feedback - use after completing important actions (save, confirm)
+        static func success() {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+
+        /// Selection feedback - use for toggle/selection changes
+        static func selection() {
+            UISelectionFeedbackGenerator().selectionChanged()
+        }
+
+        /// Medium impact - use for opening menus, primary actions
+        static func medium() {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+
+        /// Light impact - use for subtle interactions
+        static func light() {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+
+        /// Warning/rigid impact - use for destructive actions (delete)
+        static func warning() {
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        }
+    }
+
+    // MARK: - Colors
+
+    /// Semantic colors for consistent styling.
+    /// Use these instead of hardcoded Color.white.opacity() values.
+    enum Colors {
+        /// Subtle border for cards on dark backgrounds (0.1 opacity white)
+        static let borderSubtle = Color.white.opacity(Card.borderOpacity)
+
+        /// Very subtle background for hover/selection states (0.1 opacity white)
+        static let backgroundSubtle = Color.white.opacity(Opacity.subtle)
+
+        /// Faint background for very subtle effects (0.05 opacity white)
+        static let backgroundFaint = Color.white.opacity(Opacity.faint)
+
+        /// Light mode card borders/strokes (0.05 opacity black)
+        static let borderDark = Color.black.opacity(0.05)
+    }
+
+    // MARK: - Semantic
+
+    /// Status/state colors for success, warning, error, info states.
+    /// Usage: `DS.Semantic.successBackground`, `DS.Semantic.errorForeground`
+    enum Semantic {
+        // Backgrounds
+        static let successBackground = Color.green.opacity(0.15)
+        static let warningBackground = Color.orange.opacity(0.15)
+        static let errorBackground = Color.red.opacity(0.15)
+        static let errorBackgroundSubtle = Color.red.opacity(0.1)
+        static let errorBorder = Color.red.opacity(0.2)
+        static let infoBackground = Color.blue.opacity(0.1)
+        static let neutralBackground = Color.gray.opacity(0.1)
+        // Foregrounds
+        static let successForeground = Color.green
+        static let warningForeground = Color.orange
+        static let errorForeground = Color.red
+        static let favoriteIcon = Color.yellow
+        static let disabledForeground = Color.gray
     }
 
     // MARK: - Shadow
@@ -127,6 +221,17 @@ enum DS {
         static let large: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
             .black.opacity(0.20), 20, 0, 10
         )
+    }
+
+    // MARK: - Gradients
+
+    /// Pre-defined gradient color arrays for consistent branding.
+    /// Usage: `LinearGradient(colors: DS.Gradients.proBadge, ...)`
+    enum Gradients {
+        static let proBadge: [Color] = [.yellow, .orange]
+        static let subscription: [Color] = [.orange, .hotPink]
+        static let success: [Color] = [.green, .green.opacity(0.85)]
+        static let warning: [Color] = [.orange, .red]
     }
 
     // MARK: - Chip Dimensions
@@ -176,6 +281,23 @@ enum DS {
 
         /// White overlay opacity for borders
         static let borderOpacity: Double = 0.1
+    }
+
+    // MARK: - Button Dimensions
+
+    /// Standard button size tokens
+    enum Button {
+        /// FAB (Floating Action Button) diameter - 56pt standard
+        static let fabSize: CGFloat = 56
+
+        /// Action button size (toolbar, selection bar) - 44pt HIG minimum
+        static let actionSize: CGFloat = 44
+
+        /// FAB menu pill width (sized to fit PRO badge)
+        static let fabMenuWidth: CGFloat = 170
+
+        /// Icon size inside FAB menu buttons
+        static let fabMenuIconSize: CGFloat = 24
     }
 
     // MARK: - Icon Badge Dimensions
@@ -283,6 +405,28 @@ enum DS {
         /// Smallest text
         static let captionSmall = Font.caption2
 
+        // MARK: Badges & Indicators
+        /// Badge labels ("PRO", "New", "Overdue")
+        static let badgeLabel = Font.caption2.weight(.bold)
+        /// Sort/dropdown indicators (chevrons, arrows)
+        static let indicator = Font.caption2.weight(.semibold)
+        /// Monospaced digits for counters
+        static let captionMono = Font.caption.monospacedDigit()
+        /// Monospaced digits for counters, bold
+        static let captionMonoBold = Font.caption.monospacedDigit().bold()
+
+        // MARK: Icon Fonts
+        /// Form row chevrons
+        static let chevron = Font.system(size: DS.FormRow.chevronSize, weight: .semibold)
+        /// Chip close button
+        static let chipClose = Font.system(size: DS.Chip.closeButtonSize, weight: .semibold)
+        /// Chip icon
+        static let chipIcon = Font.system(size: DS.Chip.iconSize, weight: .semibold)
+        /// Chip icon-only variant
+        static let chipIconOnly = Font.system(size: DS.Chip.iconOnlySize, weight: .medium)
+        /// Icon inside medium badge
+        static let iconMedium = Font.system(size: DS.Icon.sizeMedium, weight: .semibold)
+
         // MARK: Numbers
         /// Large amounts (hero numbers)
         static let amountLarge = Font.system(.title, design: .rounded).weight(.bold)
@@ -307,6 +451,30 @@ extension View {
         let s = DS.Shadow.large
         return self.shadow(color: s.color, radius: s.radius, x: s.x, y: s.y)
     }
+
+    /// Apply animation respecting accessibility reduce motion preference
+    @ViewBuilder
+    func dsAnimation(_ animation: Animation?, value: some Equatable, reduceMotion: Bool) -> some View {
+        if reduceMotion {
+            self
+        } else {
+            self.animation(animation, value: value)
+        }
+    }
+}
+
+// MARK: - Conditional Animation Helper
+
+/// Executes animation respecting accessibility reduce motion preference
+/// Usage: `dsWithAnimation(reduceMotion) { state = newValue }`
+func dsWithAnimation(_ reduceMotion: Bool, _ animation: Animation? = .easeInOut(duration: DS.Animation.normal), _ body: () -> Void) {
+    if reduceMotion {
+        body()
+    } else {
+        withAnimation(animation) {
+            body()
+        }
+    }
 }
 
 // MARK: - Global Typealias
@@ -314,39 +482,4 @@ extension View {
 /// Allows using `Typography.title` instead of `DS.Typography.title`
 typealias Typography = DS.Typography
 
-// MARK: - Legacy Aliases (Deprecated)
-
-// These provide backwards compatibility during migration.
-// Will be removed in a future version.
-
-/// Legacy DesignSystem namespace - use DS instead
-@available(*, deprecated, message: "Use DS instead")
-enum DesignSystem {
-
-    @available(*, deprecated, message: "Use DS.Spacing instead")
-    enum Spacing {
-        static var two: CGFloat { DS.Spacing.xxs }
-        static var four: CGFloat { DS.Spacing.xs }
-        static var standard: CGFloat { DS.Spacing.sm }
-        static var medium: CGFloat { DS.Spacing.md }
-        static var large: CGFloat { DS.Spacing.lg }
-        static var xLarge: CGFloat { DS.Spacing.xl }
-        static var xxLarge: CGFloat { DS.Spacing.xxl }
-        static var triple: CGFloat { DS.Spacing.xxxl }
-    }
-
-    @available(*, deprecated, message: "Use DS.Radius instead")
-    enum Radius {
-        static var small: CGFloat { DS.Radius.sm }
-        static var standard: CGFloat { DS.Radius.md }
-        static var large: CGFloat { DS.Radius.lg }
-        static var xLarge: CGFloat { DS.Radius.xl }
-    }
-
-    @available(*, deprecated, message: "Use DS.Opacity instead")
-    enum Opacity {
-        static var glass: Double { DS.Opacity.glass }
-        static var subtle: Double { DS.Opacity.subtle }
-    }
-}
 

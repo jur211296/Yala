@@ -10,7 +10,7 @@ import SwiftUI
 
 /// Manages widget configurations including persistence, visibility, and ordering.
 /// Extracted from PanelViewModel for better separation of concerns.
-@Observable
+@MainActor @Observable
 final class WidgetConfigManager {
 
     // MARK: - State
@@ -51,9 +51,18 @@ final class WidgetConfigManager {
 
     /// Loads widget configs from UserDefaults
     func load() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-            var decoded = try? JSONDecoder().decode([WidgetConfig].self, from: data)
-        {
+        if let data = UserDefaults.standard.data(forKey: storageKey) {
+            var decoded: [WidgetConfig]
+            do {
+                decoded = try JSONDecoder().decode([WidgetConfig].self, from: data)
+            } catch {
+                #if DEBUG
+                print("WidgetConfigManager: Error decoding widget configs: \(error)")
+                #endif
+                self.configs = WidgetConfig.defaultConfigs()
+                self.layoutRows = computeLayoutRows()
+                return
+            }
             // Migration: Add missing new widgets
             let defaults = WidgetConfig.defaultConfigs()
             let existingTypes = Set(decoded.map { $0.type })
@@ -75,8 +84,13 @@ final class WidgetConfigManager {
 
     /// Saves widget configs to UserDefaults
     func save() {
-        if let encoded = try? JSONEncoder().encode(configs) {
+        do {
+            let encoded = try JSONEncoder().encode(configs)
             UserDefaults.standard.set(encoded, forKey: storageKey)
+        } catch {
+            #if DEBUG
+            print("WidgetConfigManager: Error encoding widget configs: \(error)")
+            #endif
         }
     }
 

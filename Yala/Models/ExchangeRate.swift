@@ -12,9 +12,10 @@ import SwiftData
 
 @Model
 final class ExchangeRate {
-    @Attribute(.unique) var dateKey: String
-    var base: String
-    var rates: Data
+    // CloudKit: defaults required
+    var dateKey: String = ""
+    var base: String = "USD"
+    var rates: Data = Data()
     /// Unix timestamp from the API response (when the rate was recorded)
     var timestamp: Date?
 
@@ -41,6 +42,13 @@ final class ExchangeRate {
     }
 
     func decodedRates() -> [String: Double] {
-        (try? JSONDecoder().decode([String: Double].self, from: rates)) ?? [:]
+        do {
+            return try JSONDecoder().decode([String: Double].self, from: rates)
+        } catch {
+            #if DEBUG
+            print("ExchangeRate: Error decoding rates for \(dateKey): \(error)")
+            #endif
+            return [:]
+        }
     }
 }

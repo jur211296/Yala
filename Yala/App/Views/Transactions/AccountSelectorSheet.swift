@@ -2,7 +2,7 @@
 //  AccountSelectorSheet.swift
 //  Yala
 //
-//  Created by Neto - New Transaction Form.
+//  Created by Yala - New Transaction Form.
 //
 
 import SwiftData
@@ -13,7 +13,9 @@ import SwiftUI
 /// Sheet para seleccionar una cuenta
 struct AccountSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var viewModel = AccountSelectorViewModel()
 
     @Binding var selectedAccount: Account?
     let title: String
@@ -31,9 +33,9 @@ struct AccountSelectorSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: "") {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 ForEach(
-                                    Array(activeAccounts.enumerated()),
+                                    Array(viewModel.activeAccounts.enumerated()),
                                     id: \.element.persistentModelID
                                 ) { index, account in
                                     if index > 0 {
@@ -59,17 +61,16 @@ struct AccountSelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
             }
         }
         .tint(Color.electricIndigo)
-    }
-
-    private var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived }
+        .onAppear {
+            viewModel.setContext(modelContext)
+        }
     }
 
     private func isSelected(_ account: Account) -> Bool {
@@ -93,17 +94,17 @@ struct AccountSelectorRow: View {
                     .frame(width: 36, height: 36)
                     .overlay(
                         Image(systemName: displayIconName(for: account))
-                            .font(.system(size: 16, weight: .medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(.white)
                     )
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(account.name)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Text(account.currencyCode)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -111,7 +112,7 @@ struct AccountSelectorRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(Color.electricIndigo)
                 }
             }

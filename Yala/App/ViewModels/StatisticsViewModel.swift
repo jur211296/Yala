@@ -11,6 +11,7 @@ import SwiftUI
 
 /// ViewModel for the Trends Detail View
 /// Manages filter state, metric selection, and data calculations
+@MainActor
 @Observable
 final class StatisticsViewModel: Filterable {
 
@@ -47,6 +48,12 @@ final class StatisticsViewModel: Filterable {
     /// Enforce metric logic based on filters
     /// Simple rule: chip is source of truth, category/nature filters auto-create expense chip
     private func enforceMetricLock() {
+        // In expenses-only mode, always force expense metric
+        if SessionState.shared.isExpensesOnlyMode {
+            selectedMetric = .expense
+            return
+        }
+
         // Derive selectedMetric from selectedTransactionNatures (single source of truth)
         if selectedTransactionNatures.count == 1 {
             if selectedTransactionNatures.contains(.income) {
@@ -337,10 +344,9 @@ final class StatisticsViewModel: Filterable {
             criteria: criteria
         )
 
-        // Get eligible accounts for trend calculations
+        // Get eligible accounts for trend calculations (archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
-            !account.isArchived
-                && !account.excludeFromStatistics
+            !account.excludeFromStatistics
                 && (selectedAccounts.isEmpty
                     || selectedAccounts.contains(account.persistentModelID))
         }
@@ -412,7 +418,9 @@ final class StatisticsViewModel: Filterable {
             }
         }
         recentRecords = Array(
-            metricFiltered.sorted { $0.date > $1.date }.prefix(maxRecentRecords)
+            metricFiltered.sorted {
+                return $0.createdAt > $1.createdAt
+            }.prefix(maxRecentRecords)
         )
     }
 

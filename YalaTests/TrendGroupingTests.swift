@@ -1,6 +1,6 @@
 //
 //  TrendGroupingTests.swift
-//  NetoTests
+//  YalaTests
 //
 //  Unit tests for TrendGrouping extension methods.
 //
@@ -98,9 +98,9 @@ struct CurrencyDefaultsTests {
 
 struct CurrencyCodeTests {
 
-    @Test func allCases_containsSevenCurrencies() {
-        // PEN, USD, EUR, MXN, COP, BRL, GBP
-        #expect(CurrencyCode.allCases.count == 7)
+    @Test func allCases_containsMultipleCurrencies() {
+        // 54 currencies organized by 7 continents
+        #expect(CurrencyCode.allCases.count == 54)
     }
 
     @Test func pen_hasCorrectRawValue() {

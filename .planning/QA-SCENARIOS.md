@@ -1,4 +1,4 @@
-# QA Scenarios - Neto V1.0
+# QA Scenarios - Yala V1.0/V1.1
 
 Documento exhaustivo de escenarios de prueba manual para validación pre-release.
 Ordenado por dependencias de datos para ejecución secuencial.
@@ -82,11 +82,12 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ### Vista: OnboardingView
 
-**Flujo completo de 4 pasos:**
+**Flujo completo de 5 pasos:**
 1. Bienvenida + Nombre de usuario
 2. Moneda principal
 3. Monedas secundarias
 4. Periodo por defecto
+5. Categorías iniciales (semilla)
 
 ### Campos por Paso
 
@@ -110,9 +111,14 @@ Ordenado por dependencias de datos para ejecución secuencial.
 |-------|------|-------------|----------|
 | Periodo | Single select | Sí | thisWeek, last7Days, last30Days, thisMonth, lastMonth, thisYear, lastYear, allTime |
 
+**Paso 5 - Categorías iniciales:**
+| Campo | Tipo | Obligatorio | Opciones |
+|-------|------|-------------|----------|
+| Cargar categorías | Single select | Sí | "Empezar con estas categorías" (recomendado), "Empezar desde cero" |
+
 ### Escenarios de Onboarding
 
-#### Escenario 1.1: Completar onboarding mínimo
+#### Escenario 1.1: Completar onboarding mínimo con categorías
 **Precondiciones:** App recién instalada o datos vaciados
 **Pasos:**
 1. Abrir app por primera vez
@@ -124,15 +130,20 @@ Ordenado por dependencias de datos para ejecución secuencial.
 7. No seleccionar monedas secundarias
 8. Tap "Siguiente"
 9. Seleccionar periodo (default: Este mes)
-10. Tap "Finalizar"
+10. Tap "Siguiente"
+11. Verificar grid visual de categorías con animación
+12. Dejar seleccionado "Empezar con estas categorías" (default)
+13. Tap "Empezar"
 **Resultado esperado:**
 - [ ] Nombre guardado como "Usuario"
 - [ ] Moneda PEN configurada
 - [ ] Sin monedas secundarias
 - [ ] Periodo "Este mes" activo
+- [ ] 11 categorías semilla creadas (Alimentación, Compras, Transporte, etc.)
+- [ ] Subcategorías correspondientes creadas
 - [ ] Navega a Panel principal
 
-#### Escenario 1.2: Completar onboarding completo
+#### Escenario 1.2: Completar onboarding sin categorías
 **Precondiciones:** App recién instalada
 **Pasos:**
 1. Ingresar nombre "Juan"
@@ -142,22 +153,28 @@ Ordenado por dependencias de datos para ejecución secuencial.
 5. Seleccionar EUR y GBP como secundarias
 6. Tap "Siguiente"
 7. Seleccionar "Últimos 30 días"
-8. Tap "Finalizar"
+8. Tap "Siguiente"
+9. Seleccionar "Empezar desde cero"
+10. Tap "Empezar"
 **Resultado esperado:**
 - [ ] Nombre "Juan" visible en Panel
 - [ ] Moneda USD configurada
 - [ ] EUR y GBP disponibles como secundarias
 - [ ] Periodo "Últimos 30 días" activo
+- [ ] 0 categorías creadas
+- [ ] Panel muestra empty state para categorías
 
 #### Escenario 1.3: Navegación entre pasos
 **Precondiciones:** En onboarding
 **Pasos:**
-1. Avanzar al paso 3
+1. Avanzar al paso 4
 2. Tap "Atrás"
-3. Verificar que vuelve al paso 2 con datos intactos
-4. Avanzar nuevamente
+3. Verificar que vuelve al paso 3 con datos intactos
+4. Avanzar hasta paso 5
+5. Tap "Atrás"
+6. Verificar que vuelve al paso 4
 **Resultado esperado:**
-- [ ] Navegación bidireccional funciona
+- [ ] Navegación bidireccional funciona en 5 pasos
 - [ ] Datos persisten entre navegaciones
 
 #### Escenario 1.4: Límite de monedas secundarias
@@ -169,6 +186,18 @@ Ordenado por dependencias de datos para ejecución secuencial.
 **Resultado esperado:**
 - [ ] MXN no se puede seleccionar (máximo 2)
 - [ ] Contador muestra "2/2"
+
+#### Escenario 1.5: Animación de categorías
+**Precondiciones:** En paso 4 de onboarding
+**Pasos:**
+1. Tap "Siguiente" para ir al paso 5
+2. Observar la pantalla de categorías
+**Resultado esperado:**
+- [ ] Grid de 11 iconos de categorías aparece
+- [ ] Animación staggered (iconos aparecen uno por uno)
+- [ ] Cada icono muestra color correcto de la categoría
+- [ ] Nombre corto debajo de cada icono
+- [ ] Badge "Recomendado" en opción de cargar categorías
 
 ---
 
@@ -1929,27 +1958,70 @@ Ordenado por dependencias de datos para ejecución secuencial.
 - [ ] Panel muestra "Hola, Juan"
 - [ ] Cambio persiste
 
-#### Escenario 13.2: Cambiar moneda preferida
+#### Escenario 13.2: Cambiar moneda preferida via CurrencyPickerSheet
 **Precondiciones:** Moneda actual PEN
 **Pasos:**
-1. Profile → Moneda
-2. Seleccionar USD
-3. Confirmar
+1. Profile → Divisa y cambio
+2. Tap en fila de "Divisa preferida" (muestra PEN actual)
+3. Se abre CurrencyPickerSheet con divisas agrupadas por continente
+4. Verificar que divisas están ordenadas A-Z dentro de cada sección
+5. Seleccionar USD (en sección "Norteamérica")
+6. Sheet se cierra automáticamente
+7. Observar indicador de progreso (recalculando conversiones)
 **Resultado esperado:**
-- [ ] Totales muestran símbolo $
-- [ ] Conversiones automáticas
+- [ ] Sheet muestra divisas agrupadas por continente (Latinoamérica, Norteamérica, Europa, Asia, Oceanía, Medio Oriente, África)
+- [ ] Divisa actual (PEN) tiene checkmark visible
+- [ ] Al seleccionar otra divisa, sheet se cierra automáticamente
+- [ ] Indicador de progreso aparece mientras se actualizan transacciones
+- [ ] Totales ahora muestran símbolo $ (USD)
 - [ ] Nuevas transacciones default USD
 
-#### Escenario 13.3: Configurar divisas secundarias
-**Precondiciones:** Ninguna
+#### Escenario 13.3: Configurar divisas secundarias via SecondaryCurrencyPickerSheet
+**Precondiciones:** Sin divisas secundarias configuradas
 **Pasos:**
-1. Profile → Divisas secundarias
-2. Activar EUR
-3. Activar GBP
+1. Profile → Divisa y cambio
+2. Tap en fila de "Divisas secundarias" (muestra "Ninguna")
+3. Se abre SecondaryCurrencyPickerSheet
+4. Tap en EUR (sección Europa) - aparece estrella llena
+5. Tap en GBP (sección Europa) - aparece estrella llena
+6. Intentar tap en CHF - debe estar deshabilitado (límite de 2)
+7. Cerrar sheet con X
 **Resultado esperado:**
-- [ ] Tipo de cambio visible en Panel
-- [ ] Disponibles en transferencias
-- [ ] Máximo 2
+- [ ] Sheet muestra divisas agrupadas por continente (sin incluir la preferida)
+- [ ] Al seleccionar, aparece sección "Seleccionados" al tope con las divisas marcadas
+- [ ] Icono de estrella llena para seleccionadas, vacía para no seleccionadas
+- [ ] Después de 2 selecciones, las demás aparecen con opacity 0.5 y deshabilitadas
+- [ ] Sheet NO se cierra al seleccionar (permite múltiples toggle)
+- [ ] Fila de divisas secundarias ahora muestra "🇪🇺 EUR 🇬🇧 GBP"
+- [ ] Widget de tipo de cambio refleja las nuevas divisas
+
+#### Escenario 13.3.1: Ver todas las tasas de cambio via ExchangeRatesSheet
+**Precondiciones:** Divisas secundarias configuradas (EUR, GBP)
+**Pasos:**
+1. Profile → Divisa y cambio
+2. En sección "Tipo de cambio", verificar que muestra EUR y GBP inline
+3. Tap en "Ver todas"
+4. Se abre ExchangeRatesSheet
+5. Scroll para ver todas las divisas
+**Resultado esperado:**
+- [ ] Sheet muestra todas las divisas excepto la preferida
+- [ ] Divisas agrupadas por continente
+- [ ] Cada fila muestra: Bandera + "1 [código]" + nombre + tasa actual
+- [ ] Footer muestra última actualización
+- [ ] Filas son de solo lectura (no hay interacción)
+
+#### Escenario 13.3.2: Quitar divisa secundaria
+**Precondiciones:** Divisas secundarias: EUR, GBP
+**Pasos:**
+1. Profile → Divisa y cambio
+2. Tap en fila de divisas secundarias
+3. En sección "Seleccionados", tap en EUR para quitarla
+4. Estrella de EUR cambia a vacía
+5. Cerrar sheet
+**Resultado esperado:**
+- [ ] EUR ya no aparece en sección "Seleccionados"
+- [ ] Fila de divisas secundarias ahora muestra solo "🇬🇧 GBP"
+- [ ] Otras divisas vuelven a estar habilitadas (ya no hay límite de 2)
 
 #### Escenario 13.4: Cambiar tema
 **Precondiciones:** Tema actual "Sistema"
@@ -1977,12 +2049,83 @@ Ordenado por dependencias de datos para ejecución secuencial.
 **Pasos:**
 1. Profile → Vaciar datos
 2. Primera confirmación
-3. Segunda confirmación (escribir texto)
+3. Segunda confirmación
 4. Confirmar
 **Resultado esperado:**
 - [ ] Todos los datos eliminados
-- [ ] Categorías semilla restauradas
-- [ ] Vuelve a onboarding
+- [ ] Vuelve a onboarding (5 pasos)
+- [ ] En paso 5 del onboarding puede elegir cargar categorías o no
+
+#### Escenario 13.7: Agregar divisa secundaria carga tipos de cambio históricos
+**Precondiciones:**
+- Moneda preferida: PEN
+- Sin divisas secundarias configuradas
+**Pasos:**
+1. Profile → Divisa y cambio
+2. Agregar USD como divisa secundaria
+3. Observar indicador de carga (isUpdating)
+4. Esperar a que termine la carga (~10-30 segundos)
+5. Ir a Panel → Widget Tipo de Cambio
+**Resultado esperado:**
+- [ ] Indicador de progreso visible durante carga
+- [ ] Widget muestra gráfica de 1 año de USD→PEN
+- [ ] Gráfica tiene datos completos (no vacía ni plana)
+- [ ] Tipos de cambio actuales visibles en Settings
+
+#### Escenario 13.8: Cambiar divisa secundaria por otra
+**Precondiciones:**
+- Divisas secundarias: USD, EUR
+- Widget muestra gráficas de ambas
+**Pasos:**
+1. Profile → Divisa y cambio
+2. Quitar EUR
+3. Agregar GBP
+4. Esperar carga de datos históricos
+5. Volver a Panel → Widget Tipo de Cambio
+**Resultado esperado:**
+- [ ] Widget ahora muestra USD y GBP (no EUR)
+- [ ] Gráfica de GBP tiene datos históricos de 1 año
+- [ ] Selector de divisas en widget refleja cambio
+
+#### Escenario 13.9: Onboarding con divisas secundarias carga datos históricos
+**Precondiciones:** App sin datos (data wipe)
+**Pasos:**
+1. Completar onboarding hasta paso de divisas secundarias
+2. Seleccionar PEN como preferida
+3. Seleccionar USD y EUR como secundarias
+4. Completar onboarding (elegir periodo, categorías, notificaciones)
+5. Esperar 5-10 segundos después de dismiss (carga en background)
+6. Ir a Panel → Widget Tipo de Cambio
+**Resultado esperado:**
+- [ ] Widget muestra gráfica de 1 año para USD y EUR
+- [ ] Datos históricos completos (no solo punto actual)
+- [ ] Usuario no experimentó retraso en onboarding (carga fue en background)
+
+#### Escenario 13.10: Widget sin divisas secundarias muestra todas disponibles
+**Precondiciones:**
+- Moneda preferida: PEN
+- Sin divisas secundarias
+**Pasos:**
+1. Ir a Panel → Widget Tipo de Cambio
+2. Abrir selector de divisas (botón círculo con flechas)
+**Resultado esperado:**
+- [ ] Selector muestra todas las 6 divisas (USD, EUR, MXN, COP, BRL, GBP)
+- [ ] Puede seleccionar hasta 2 para comparar
+- [ ] Gráfica muestra las divisas seleccionadas
+
+#### Escenario 13.11: Tipos de cambio se actualizan diariamente
+**Precondiciones:**
+- App con datos
+- Último update de tipos de cambio fue hace 24+ horas
+**Pasos:**
+1. Abrir app después de 24 horas de inactividad
+2. Esperar 2-3 segundos (carga automática en background)
+3. Ir a Settings → Divisa y cambio
+4. Verificar "Última actualización" al final de la sección
+**Resultado esperado:**
+- [ ] Fecha de actualización es "hoy"
+- [ ] Tipos de cambio reflejan valores actuales
+- [ ] Widget en Panel muestra datos actualizados
 
 ---
 
@@ -2668,7 +2811,1681 @@ Nueva funcionalidad: procesamiento de imágenes usando GPT-4o Vision para mejor 
 
 ---
 
+## Sección 21: Refinamiento Registro Inteligente (Fase 10)
+
+### Escenario 21.1: Tildes no crean etiquetas duplicadas (voz)
+1. Crear manualmente una etiqueta llamada "cafe"
+2. Activar entrada por voz y decir: "gasto de 5 soles con etiqueta café" (con tilde)
+3. **Verificar:** Se reutiliza la etiqueta existente "cafe", no se crea "Café" como duplicada
+4. Verificar en Perfil → Etiquetas que solo existe una etiqueta
+
+### Escenario 21.2: Tildes no crean subcategorías duplicadas (voz)
+1. Tener subcategoría existente "Transporte publico"
+2. Dictar por voz: "gasto de 3 soles en transporte público" (con tilde)
+3. **Verificar:** Se asigna la subcategoría existente, no se crea match fallido
+
+### Escenario 21.3: Matching parcial con tildes (voz)
+1. Tener etiqueta "viaje"
+2. Dictar: "gasto con etiqueta viáje" (con tilde en la a)
+3. **Verificar:** Match correcto con etiqueta "viaje" existente
+
+### Escenario 21.4: FAB con imagen en Statistics (DetailContainerView)
+1. Activar entrada de imagen en Perfil → Preferencias
+2. Ir a Statistics → Records tab
+3. Tocar el FAB (+)
+4. **Verificar:** Menú muestra opciones: Voz (si habilitada), Imagen (teal), Manual (rosa)
+5. Tocar "Imagen"
+6. **Verificar:** Se abre ImageSelectionView correctamente
+
+### Escenario 21.5: FAB solo imagen en Statistics
+1. Activar solo imagen (desactivar voz) en Preferencias
+2. Ir a Statistics → Records tab
+3. Tocar FAB
+4. **Verificar:** Menú muestra: Imagen (teal) y Manual (rosa), sin opción de Voz
+
+### Escenario 21.6: FAB sin inputs especiales en Statistics
+1. Desactivar voz e imagen en Preferencias
+2. Ir a Statistics → Records tab
+3. **Verificar:** FAB es botón simple (+) que abre transacción manual directamente
+
+### Escenario 21.7: Permiso micrófono al activar toggle
+1. Ir a Perfil → Preferencias
+2. Activar toggle "Entrada de voz" (primera vez, permiso no determinado)
+3. **Verificar:** iOS muestra diálogo de permiso de micrófono
+4. Aceptar permiso
+5. **Verificar:** Toggle queda activado
+
+### Escenario 21.8: Permiso micrófono denegado
+1. Denegar permiso de micrófono desde Ajustes del sistema
+2. Ir a Perfil → Preferencias
+3. Activar toggle "Entrada de voz"
+4. **Verificar:** Aparece alerta con mensaje de permiso denegado
+5. **Verificar:** Botón "Abrir Ajustes" redirige a Settings del sistema
+6. **Verificar:** Botón "Cancelar" cierra la alerta
+
+### Escenario 21.9: Permiso fotos al activar toggle
+1. Ir a Perfil → Preferencias
+2. Activar toggle "Entrada de imagen" (primera vez)
+3. **Verificar:** iOS muestra diálogo de permiso de fotos
+4. Aceptar permiso
+5. **Verificar:** Toggle queda activado
+
+### Escenario 21.10: Permiso fotos denegado
+1. Denegar permiso de fotos desde Ajustes del sistema
+2. Ir a Perfil → Preferencias
+3. Activar toggle "Entrada de imagen"
+4. **Verificar:** Aparece alerta con mensaje de permiso denegado
+5. **Verificar:** Botón "Abrir Ajustes" redirige a Settings del sistema
+
+---
+
+## Sección 22: Atajos de iOS (App Intents)
+
+### Escenario 22.1: Shortcut visible en app Atajos
+1. Abrir la app Atajos de iOS
+2. Ir a pestaña "Galería" o buscar "Yala"
+3. **Verificar:** Aparece el atajo "Gasto rápido" (o "Quick expense" en inglés)
+4. **Verificar:** Icono del atajo muestra símbolo de minus en círculo
+
+### Escenario 22.2: Flujo completo de gasto rápido
+1. En app Atajos, crear nuevo atajo
+2. Buscar "Yala" y seleccionar "Registrar gasto rápido"
+3. Ejecutar el atajo
+4. **Verificar:** Pregunta "¿Cuánto gastaste?" - ingresar 50
+5. **Verificar:** Pregunta "¿Qué compraste?" - ingresar "Starbucks"
+6. **Verificar:** Pregunta "¿En qué cuenta?" - seleccionar cuenta
+7. **Verificar:** Pregunta "¿Qué tipo de gasto?" - seleccionar subcategoría
+8. **Verificar:** Pregunta "¿Quieres añadir una etiqueta?" - seleccionar o saltar
+9. **Verificar:** Mensaje final muestra: "Gasto registrado en [cuenta]: [divisa] 50.00 - Starbucks - [subcategoría] - [etiqueta o Sin etiqueta]"
+10. Abrir Yala → Records
+11. **Verificar:** Transacción existe con todos los datos correctos
+
+### Escenario 22.3: Atajo con etiqueta
+1. Crear atajo y completar flujo hasta etiqueta
+2. Seleccionar una etiqueta existente
+3. **Verificar:** Mensaje final incluye nombre de la etiqueta
+4. **Verificar:** Transacción en Yala tiene la etiqueta asignada
+
+### Escenario 22.4: Atajo sin etiqueta
+1. Crear atajo y completar flujo
+2. En paso de etiqueta, no seleccionar ninguna (skip)
+3. **Verificar:** Mensaje final muestra "Sin etiqueta"
+4. **Verificar:** Transacción en Yala no tiene etiquetas
+
+### Escenario 22.5: Descripción vacía
+1. En paso "¿Qué compraste?" dejar vacío
+2. Completar resto del flujo
+3. **Verificar:** Mensaje final muestra "-" en lugar de descripción
+4. **Verificar:** Transacción en Yala tiene nota vacía
+
+### Escenario 22.6: Error si no hay cuentas
+1. Eliminar o archivar todas las cuentas
+2. Ejecutar atajo de gasto rápido
+3. **Verificar:** Mensaje de error indica que no hay cuentas disponibles
+
+### Escenario 22.7: Frases Siri español
+1. Activar Siri
+2. Decir: "Registra un gasto en Yala"
+3. **Verificar:** Siri inicia el flujo de preguntas
+4. Responder las preguntas de forma conversacional
+5. **Verificar:** Transacción creada exitosamente con mensaje detallado
+
+### Escenario 22.8: Frases Siri inglés
+1. Configurar Siri en inglés
+2. Decir: "Record an expense in Yala"
+3. **Verificar:** Siri reconoce el comando y procesa el flujo
+
+### Escenario 22.9: Multimoneda en atajos
+1. Tener cuentas en diferentes monedas (ej: PEN, USD)
+2. Ejecutar atajo y seleccionar cuenta en USD
+3. **Verificar:** Mensaje final muestra divisa correcta (USD)
+4. **Verificar:** amountInPreferredCurrency se calcula correctamente
+
+### Escenario 22.10: Subcategorías solo de gastos
+1. Crear atajo y llegar al paso de subcategoría
+2. **Verificar:** Lista muestra solo subcategorías de categorías de gasto
+3. **Verificar:** No aparecen subcategorías de categorías de ingreso
+
+### Escenario 22.11: Atajo "Registro por voz" con toggle activo
+1. Activar toggle "Entrada por voz" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por voz"
+3. **Verificar:** App se abre y muestra VoiceRecordingSheet
+4. **Verificar:** Puedo dictar y registrar transacción
+
+### Escenario 22.12: Atajo "Registro por voz" con toggle desactivado
+1. Desactivar toggle "Entrada por voz" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por voz"
+3. **Verificar:** Mensaje: "No has activado la entrada por voz..."
+4. **Verificar:** App NO se abre
+
+### Escenario 22.13: Atajo "Registro por imagen" con toggle activo
+1. Activar toggle "Entrada por imagen" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por imagen"
+3. **Verificar:** App se abre y muestra ImageSelectionView
+4. **Verificar:** Puedo seleccionar imagen y procesarla
+
+### Escenario 22.14: Atajo "Registro por imagen" con toggle desactivado
+1. Desactivar toggle "Entrada por imagen" en Ajustes > Personalización
+2. Abrir app Shortcuts y ejecutar "Registro por imagen"
+3. **Verificar:** Mensaje: "No has activado la entrada por imagen..."
+4. **Verificar:** App NO se abre
+
+### Escenario 22.15: Búsqueda inteligente de etiquetas
+1. Tener etiqueta "Devolución" creada
+2. Ejecutar atajo "Registro rápido"
+3. En paso de etiqueta, escribir "devolucion" (sin tilde, minúscula)
+4. **Verificar:** Encuentra y asigna etiqueta "Devolución"
+
+---
+
+## Sección 23: Automatización Apple Pay (App Intent)
+
+### Escenario 23.1: Atajo visible en app Atajos
+1. Abrir la app Atajos de iOS
+2. Buscar "Yala" en la galería o crear nuevo atajo
+3. **Verificar:** Aparece acción "Registro Apple Pay" (o "Apple Pay Entry")
+4. **Verificar:** Descripción indica que crea borrador en bandeja de entrada
+
+### Escenario 23.2: Flujo básico - comercio nuevo
+1. Crear atajo con acción "Registro Apple Pay"
+2. Configurar parámetros: Monto=50, Comercio="Starbucks"
+3. Ejecutar el atajo
+4. **Verificar:** Mensaje confirma creación del borrador
+5. Abrir Yala → Panel → Bandeja de entrada
+6. **Verificar:** Existe draft con monto -50, nota "Starbucks"
+7. **Verificar:** Icono Apple logo junto al draft
+8. **Verificar:** Subcategoría vacía (comercio nuevo, sin memoria)
+9. **Verificar:** Campo account puede estar vacío si hay múltiples cuentas
+
+### Escenario 23.3: Auto-asignación de cuenta por divisa única
+1. Tener solo UNA cuenta en USD
+2. Ejecutar atajo con Monto=25, Comercio="Amazon", Divisa="USD"
+3. Abrir bandeja de entrada
+4. **Verificar:** Draft tiene cuenta USD asignada automáticamente
+5. **Verificar:** needsUserInput NO incluye "account"
+
+### Escenario 23.4: Múltiples cuentas misma divisa - sin auto-asignar
+1. Tener DOS cuentas en PEN (ej: "Efectivo PEN" y "BCP PEN")
+2. Ejecutar atajo con Monto=100, Comercio="Wong", Divisa="PEN"
+3. Abrir bandeja de entrada
+4. **Verificar:** Draft NO tiene cuenta asignada
+5. **Verificar:** needsUserInput incluye "account"
+6. **Verificar:** Usuario puede seleccionar cuenta al aprobar
+
+### Escenario 23.5: Auto-categorización con Merchant Memory
+**Precondición:** Tener MerchantMemory para "Starbucks" con ≥5 aprobaciones
+1. Ejecutar atajo con Monto=30, Comercio="STARBUCKS LIMA"
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft tiene subcategoría asignada automáticamente
+4. **Verificar:** confidenceSubcategory = 0.8
+5. Aprobar draft sin cambiar subcategoría
+6. **Verificar:** MerchantMemory.countApproved incrementa
+
+### Escenario 23.6: Sugerencia con Merchant Memory (confianza media)
+**Precondición:** Tener MerchantMemory para "McDonalds" con 3-4 aprobaciones
+1. Ejecutar atajo con Monto=20, Comercio="McDonalds"
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft tiene subcategoría sugerida
+4. **Verificar:** needsUserInput aún incluye "subcategory" (requiere confirmación)
+5. Aprobar confirmando la subcategoría
+
+### Escenario 23.7: Fecha opcional - con fecha
+1. Ejecutar atajo con Monto=75, Comercio="Ripley", Fecha=ayer
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft.date = fecha de ayer
+4. **Verificar:** confidenceDate = 1.0
+
+### Escenario 23.8: Fecha opcional - sin fecha
+1. Ejecutar atajo con Monto=40, Comercio="Plaza Vea" (sin fecha)
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft.date = ahora (momento de ejecución)
+4. **Verificar:** confidenceDate = nil
+
+### Escenario 23.9: Monto siempre negativo
+1. Ejecutar atajo con Monto=100 (positivo)
+2. Abrir bandeja de entrada
+3. **Verificar:** Draft.amount = -100 (se convierte a gasto)
+4. **Verificar:** Al aprobar, transacción es gasto
+
+### Escenario 23.10: Notificación al abrir app
+1. Ejecutar atajo Apple Pay con pantalla bloqueada
+2. **Verificar:** Atajo completa sin abrir la app
+3. Desbloquear y abrir Yala
+4. **Verificar:** Badge en Inbox o notificación visible (igual que pagos planificados)
+
+### Escenario 23.11: Error de base de datos
+1. Simular error de acceso a BD (difícil de reproducir manualmente)
+2. **Verificar:** Mensaje de error indica problema de base de datos
+
+---
+
 *Documento creado: 2026-01-20*
-*Última actualización: 2026-01-27*
-*Total escenarios: ~292*
-*Total verificaciones: ~530+*
+*Última actualización: 2026-01-28 - Sección 23 (Apple Pay)*
+*Última actualización: 2026-01-28*
+*Total escenarios: ~410*
+*Total verificaciones: ~780+*
+
+---
+
+## Sección 24: Sistema de Notificaciones
+
+**Objetivo:** Verificar el sistema de notificaciones personalizables
+
+### Escenario 24.1: Primer inicio - Seed de notificaciones default
+**Precondición:** App recién instalada o datos borrados
+1. Abrir la app por primera vez
+2. Ir a Perfil > Notificaciones
+3. **Verificar:** Hay 5 notificaciones predefinidas:
+   - Al final del día (20:00, activa)
+   - Hora de almuerzo (12:30, inactiva)
+   - Reporte semanal (09:00, inactiva)
+   - Pagos planificados (09:00, activa)
+   - Novedades de Yala (10:00, inactiva)
+4. **Verificar:** Cada notificación muestra icono, nombre, hora y texto
+
+### Escenario 24.2: Activar notificación - Solicita permiso
+**Precondición:** Permisos de notificación no otorgados
+1. Ir a Perfil > Notificaciones
+2. Activar toggle de una notificación inactiva
+3. **Verificar:** Sistema solicita permiso de notificaciones
+4. Aceptar permiso
+5. **Verificar:** Toggle queda activo
+6. **Verificar:** Notificación programada (verificar en Configuración > Notificaciones)
+
+### Escenario 24.3: Activar notificación - Permiso denegado
+**Precondición:** Permisos de notificación previamente denegados
+1. Ir a Perfil > Notificaciones
+2. Activar toggle de una notificación
+3. **Verificar:** Aparece alerta indicando que debe activar permisos en Configuración
+4. **Verificar:** Toggle vuelve a inactivo automáticamente
+
+### Escenario 24.4: Editar notificación default
+1. Ir a Perfil > Notificaciones
+2. Tocar "Al final del día"
+3. Cambiar nombre a "Cierre del día"
+4. Cambiar texto a "¿Cómo te fue hoy?"
+5. Cambiar hora a 21:00
+6. Guardar
+7. **Verificar:** Card muestra nuevos valores
+8. **Verificar:** Si estaba activa, notificación reprogramada
+
+### Escenario 24.5: Crear notificación personalizada
+1. Ir a Perfil > Notificaciones
+2. Tocar botón "+" en toolbar
+3. Completar:
+   - Nombre: "Recordatorio mañana"
+   - Texto: "Anota tu café matutino"
+   - Hora: 08:00
+4. Guardar
+5. **Verificar:** Nueva notificación aparece en la lista
+6. **Verificar:** Tiene icono cyan (color default de custom)
+7. **Verificar:** Toggle activo por defecto
+
+### Escenario 24.6: Eliminar notificación personalizada
+1. Crear notificación personalizada (escenario 24.5)
+2. Hacer swipe izquierda en la card
+3. **Verificar:** Aparece botón "Eliminar" rojo
+4. Tocar "Eliminar"
+5. **Verificar:** Notificación desaparece de la lista
+6. **Verificar:** Notificación cancelada del sistema
+
+### Escenario 24.7: No se pueden eliminar notificaciones default
+1. Ir a Perfil > Notificaciones
+2. Hacer swipe izquierda en "Al final del día"
+3. **Verificar:** NO aparece botón de eliminar
+4. **Verificar:** Solo se puede editar (tocando la card)
+
+### Escenario 24.8: Límite de caracteres en nombre
+1. Crear/editar notificación
+2. Escribir nombre de más de 30 caracteres
+3. **Verificar:** Se trunca a 30 caracteres
+4. **Verificar:** Contador muestra "0 caracteres restantes"
+5. **Verificar:** Contador cambia a naranja cuando quedan < 10
+
+### Escenario 24.9: Límite de caracteres en texto
+1. Crear/editar notificación
+2. Escribir texto de más de 100 caracteres
+3. **Verificar:** Se trunca a 100 caracteres
+4. **Verificar:** Contador muestra "0 caracteres restantes"
+5. **Verificar:** Contador cambia a naranja cuando quedan < 20
+
+### Escenario 24.10: Configuración de Reporte semanal
+1. Ir a Perfil > Notificaciones
+2. Tocar "Reporte semanal"
+3. **Verificar:** Aparece sección "¿Qué incluir en el reporte?"
+4. **Verificar:** 4 opciones con toggle:
+   - Saldo actual
+   - Total de gastos
+   - Total de ingresos
+   - Categoría con más gasto
+5. Desactivar "Saldo actual" y "Total de ingresos"
+6. Guardar
+7. Volver a abrir
+8. **Verificar:** Configuración persiste
+
+### Escenario 24.11: Desactivar notificación activa
+1. Tener una notificación activa y programada
+2. Ir a Perfil > Notificaciones
+3. Desactivar el toggle
+4. **Verificar:** Toggle queda inactivo
+5. **Verificar:** Notificación cancelada del sistema
+
+### Escenario 24.12: Empty state
+**Precondición:** Eliminar todas las notificaciones personalizadas y desactivar todas las default
+1. Ir a Perfil > Notificaciones
+2. **Verificar:** Muestra lista de notificaciones (default no se eliminan)
+3. Nota: El empty state solo aparece si por algún motivo no hay notificaciones (raro)
+
+### Escenario 24.13: Persistencia tras cierre de app
+1. Configurar varias notificaciones con diferentes horarios
+2. Cerrar la app completamente
+3. Reabrir la app
+4. Ir a Perfil > Notificaciones
+5. **Verificar:** Todas las configuraciones persisten
+6. **Verificar:** Notificaciones activas siguen programadas
+
+### Escenario 24.14: Recibir notificación
+**Precondición:** Notificación "Al final del día" activa a una hora próxima
+1. Activar notificación con hora en 1-2 minutos
+2. Cerrar la app
+3. Esperar a la hora programada
+4. **Verificar:** Recibir notificación push
+5. **Verificar:** Título = "Yala"
+6. **Verificar:** Texto = el configurado
+
+### Escenario 24.15: Vaciar datos - Notificaciones se recrean
+1. Ir a Perfil > Vaciar datos
+2. Confirmar borrado
+3. Ir a Perfil > Notificaciones
+4. **Verificar:** 5 notificaciones default recreadas
+5. **Verificar:** Notificaciones personalizadas eliminadas
+
+---
+
+## Sección 25: Fase 10.5.B y 10.5.C - Pendiente de Validación Manual
+
+> **Estado:** PENDIENTE DE VALIDACIÓN
+> **Fecha implementación:** 2026-02-01
+> **Build:** Compilación exitosa
+
+### 25.1 Consistencia Visual Pagos Planificados (10.5.B)
+
+#### Escenario 25.1.1: Summary Card sin gradientes
+**Precondición:** Tener al menos 1 pago planificado activo
+
+1. Ir a Planning > Pagos Planificados
+2. **Verificar:** El monto total en el summary card usa color primario (texto normal), NO gradiente electricIndigo→hotPink
+3. **Verificar:** El borde del card es gris sutil (secondary.opacity(0.15)), NO gradiente
+4. **Verificar:** La sombra es neutra (negra sutil), NO coloreada en índigo
+
+#### Escenario 25.1.2: Section headers simplificados
+**Precondición:** Tener pagos en diferentes estados (vencidos, hoy, próximos)
+
+1. Ir a Planning > Pagos Planificados (vista lista)
+2. **Verificar:** Solo la sección "Vencidos" tiene círculo rojo (hotPink) junto al título
+3. **Verificar:** Secciones "Hoy" y "Próximos" NO tienen círculo de color
+4. **Verificar:** NO hay contador "(N)" después del título de sección
+
+#### Escenario 25.1.3: Due status en cards simplificado
+**Precondición:** Tener pagos vencidos y próximos
+
+1. Observar las cards de pagos individuales
+2. **Verificar:** Pagos vencidos muestran texto en hotPink con círculo rojo
+3. **Verificar:** Pagos "Hoy" y "Próximos" muestran texto en color secundario (gris), SIN círculo
+4. **Verificar:** Ingresos planificados siguen mostrando monto en teal (esto NO cambió)
+
+#### Escenario 25.1.4: Botones navegación calendario
+**Precondición:** Estar en vista calendario de pagos
+
+1. Ir a Planning > Pagos Planificados > Vista calendario
+2. **Verificar:** Botones chevron izquierda/derecha son solo iconos grises
+3. **Verificar:** NO tienen fondo coloreado (antes tenían fondo índigo claro)
+
+#### Escenario 25.1.5: Comparación con Presupuestos
+1. Ir a Planning > Presupuestos y observar el diseño
+2. Ir a Planning > Pagos Planificados
+3. **Verificar:** Ambas vistas tienen estilo visual consistente (sobrio, sin gradientes llamativos)
+
+---
+
+### 25.2 Onboarding Divisas con Continentes (10.5.C.3)
+
+#### Escenario 25.2.1: Sección Recomendada
+**Precondición:** Datos vacíos (data wipe) para ver onboarding
+
+1. Ir a Perfil > Vaciar datos > Confirmar
+2. Reiniciar la app para ver onboarding
+3. Avanzar hasta el paso "Tu moneda principal"
+4. **Verificar:** Hay una sección "RECOMENDADA" al inicio
+5. **Verificar:** La moneda recomendada está destacada (fondo índigo claro)
+6. **Verificar:** La moneda mostrada coincide con la región del dispositivo (ej: PEN para Perú)
+
+#### Escenario 25.2.2: Agrupación por continentes
+1. En el paso de moneda del onboarding
+2. Hacer scroll hacia abajo
+3. **Verificar:** Las monedas están agrupadas por continente (Latinoamérica, Europa, Asia, etc.)
+4. **Verificar:** Cada continente tiene su header en mayúsculas
+5. **Verificar:** Las monedas dentro de cada continente están ordenadas alfabéticamente
+
+#### Escenario 25.2.3: No duplicación de moneda recomendada
+**Precondición:** Región del dispositivo = Perú (o cualquier otra)
+
+1. En el paso de moneda del onboarding
+2. Verificar que PEN aparece en sección "RECOMENDADA"
+3. Hacer scroll a la sección "LATINOAMÉRICA"
+4. **Verificar:** PEN NO aparece duplicado en Latinoamérica
+5. **Verificar:** El resto de monedas latinoamericanas SÍ aparecen
+
+---
+
+### 25.3 Filtro Monedas Solo con Transacciones (10.5.C.2)
+
+#### Escenario 25.3.1: Filtro muestra solo monedas usadas
+**Precondición:** Tener transacciones solo en PEN y USD
+
+1. Ir a Statistics > Filtros
+2. Buscar la sección "Moneda"
+3. **Verificar:** Solo aparecen PEN y USD como opciones
+4. **Verificar:** NO aparecen las 48 monedas soportadas
+
+#### Escenario 25.3.2: Nueva moneda aparece al usarla
+**Precondición:** Tener transacciones solo en PEN
+
+1. Verificar que en Filtros > Moneda solo aparece PEN
+2. Crear una cuenta en EUR
+3. Crear una transacción en esa cuenta EUR
+4. Ir a Statistics > Filtros > Moneda
+5. **Verificar:** Ahora aparecen PEN y EUR
+
+#### Escenario 25.3.3: Sección oculta sin transacciones
+**Precondición:** Datos vacíos (sin transacciones)
+
+1. Ir a Perfil > Vaciar datos > Confirmar (o usar app recién instalada)
+2. Completar onboarding
+3. Ir a Statistics > Filtros
+4. **Verificar:** La sección "Moneda" NO aparece (está oculta)
+5. Crear una transacción
+6. Volver a Statistics > Filtros
+7. **Verificar:** Ahora SÍ aparece la sección "Moneda"
+
+---
+
+### 25.4 Ejemplos Voz con Moneda Dinámica (10.5.C.1)
+
+#### Escenario 25.4.1: Ejemplos con moneda preferida
+**Precondición:** Moneda preferida = Sol peruano (PEN)
+
+1. Ir a Settings > Moneda preferida, verificar que es PEN
+2. Abrir FAB > Voz
+3. Observar la sección de hints y ejemplos
+4. **Verificar:** El hint de monto dice "50 soles" (plural, sin país)
+5. **Verificar:** Ejemplo 1: "Gasto de 50 soles en Starbucks para café"
+6. **Verificar:** Ejemplo 2: "Ingreso de 1000 soles por trabajo freelance"
+7. **Verificar:** Ejemplo 3: "Transferencia de 200 soles a cuenta de ahorros"
+
+#### Escenario 25.4.2: Ejemplos cambian con otra moneda
+1. Ir a Settings > Moneda preferida > Cambiar a Euro (EUR)
+2. Abrir FAB > Voz
+3. **Verificar:** El hint de monto dice "50 euros"
+4. **Verificar:** Los ejemplos dicen "euros" en lugar de "soles"
+
+#### Escenario 25.4.3: Ejemplos con dólar
+1. Ir a Settings > Moneda preferida > Cambiar a Dólar estadounidense (USD)
+2. Abrir FAB > Voz
+3. **Verificar:** El hint dice "50 dólares" (sin "estadounidenses")
+4. **Verificar:** Los ejemplos dicen "dólares"
+
+#### Escenario 25.4.4: Ejemplos con pesos (múltiples países)
+1. Ir a Settings > Moneda preferida > Cambiar a Peso mexicano (MXN)
+2. Abrir FAB > Voz
+3. **Verificar:** El hint dice "50 pesos" (sin "mexicanos")
+4. Cambiar a Peso colombiano (COP)
+5. **Verificar:** También dice "50 pesos" (igual que mexicano)
+
+#### Escenario 25.4.5: Validar en otros idiomas
+1. Cambiar idioma del dispositivo a English
+2. Abrir FAB > Voz
+3. **Verificar:** Ejemplos en inglés con la moneda correcta (ej: "50 dollars")
+4. Repetir con alemán, francés, italiano, portugués
+
+### 25.5 Divisas Secundarias con Recomendadas (10.5.C.4)
+
+#### Escenario 25.5.1: Sección Recomendadas visible
+**Precondición:** Moneda preferida = PEN (o cualquier no-USD/EUR/GBP)
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección "RECOMENDADAS" aparece antes de los continentes
+3. **Verificar:** Muestra USD, EUR, GBP con fondo índigo claro
+4. **Verificar:** Las 3 monedas NO aparecen en sus continentes (Norteamérica/Europa)
+
+#### Escenario 25.5.2: Excluye moneda preferida
+**Precondición:** Moneda preferida = USD
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección Recomendadas muestra solo EUR y GBP (sin USD)
+
+#### Escenario 25.5.3: Excluye monedas ya seleccionadas
+**Precondición:** EUR ya seleccionada como secundaria
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección Recomendadas muestra USD y GBP (sin EUR)
+3. **Verificar:** EUR aparece en sección "Seleccionadas"
+
+#### Escenario 25.5.4: Sección oculta si no hay recomendadas disponibles
+**Precondición:** Preferida = USD, Secundarias = EUR y GBP
+
+1. Ir a Settings > Divisas > Divisas secundarias
+2. **Verificar:** Sección "RECOMENDADAS" NO aparece (las 3 están en uso)
+
+---
+
+### Checklist de Validación Rápida
+
+- [ ] 25.1.1 Summary card sin gradientes
+- [ ] 25.1.2 Section headers solo vencidos con círculo
+- [ ] 25.1.3 Due status simplificado
+- [ ] 25.1.4 Botones calendario sin fondo
+- [ ] 25.1.5 Consistencia con Presupuestos
+- [ ] 25.2.1 Sección Recomendada en onboarding
+- [ ] 25.2.2 Agrupación por continentes
+- [ ] 25.2.3 No duplicación de moneda recomendada
+- [ ] 25.3.1 Filtro solo monedas usadas
+- [ ] 25.3.2 Nueva moneda aparece al usarla
+- [ ] 25.3.3 Sección oculta sin transacciones
+- [ ] 25.4.1 Ejemplos voz con moneda preferida
+- [ ] 25.4.2 Ejemplos cambian con otra moneda
+- [ ] 25.4.3 Dólar sin país
+- [ ] 25.4.4 Pesos sin país
+- [ ] 25.4.5 Validar otros idiomas
+- [ ] 25.5.1 Sección Recomendadas visible
+- [ ] 25.5.2 Excluye moneda preferida
+- [ ] 25.5.3 Excluye monedas ya seleccionadas
+- [ ] 25.5.4 Sección oculta si no hay recomendadas
+
+---
+
+## Sección 26: Modal Unificado para Nuevos Items en Bandeja (10.5.F)
+
+Esta sección cubre la validación del modal que notifica al usuario cuando hay nuevos items en su bandeja de entrada que no ha visto.
+
+### 26.1 Modal para Pagos Planificados
+
+#### Escenario 26.1.1: Modal aparece para pagos planificados vencidos
+**Precondición:** App cerrada, pago planificado con fecha de hoy o pasada
+
+1. Crear un pago planificado con fecha = ayer
+2. Cerrar la app completamente
+3. Abrir la app
+4. **Verificar:** Aparece modal con título "¡Tienes pagos pendientes!"
+5. **Verificar:** El mensaje dice "Se añadieron X pagos planificados a tu bandeja."
+6. **Verificar:** El icono es una campana (bell.badge.fill)
+
+#### Escenario 26.1.2: Acción "Ver bandeja" navega correctamente
+1. Desde el modal de pagos planificados, tocar "Ver bandeja"
+2. **Verificar:** El modal se cierra con animación
+3. **Verificar:** Se navega a la vista de Inbox
+4. **Verificar:** Los drafts de pagos planificados son visibles
+
+#### Escenario 26.1.3: Acción "Más tarde" cierra sin perder datos
+1. Desde el modal de pagos planificados, tocar "Más tarde"
+2. **Verificar:** El modal se cierra
+3. **Verificar:** La app permanece en la vista principal
+4. Navegar manualmente a Inbox
+5. **Verificar:** Los drafts siguen ahí (no se perdieron)
+
+---
+
+### 26.2 Modal para Suscripciones
+
+#### Escenario 26.2.1: Modal para suscripciones vencidas
+**Precondición:** Suscripción configurada con fecha de renovación vencida
+
+1. Crear una suscripción con fecha de renovación = ayer
+2. Cerrar y abrir la app
+3. **Verificar:** Modal con título "¡Suscripciones por revisar!"
+4. **Verificar:** Mensaje "Se añadieron X suscripciones a tu bandeja."
+5. **Verificar:** Icono de tarjeta (creditcard.and.123)
+
+---
+
+### 26.3 Modal para Automatizaciones
+
+#### Escenario 26.3.1: Modal para registros de Apple Pay
+**Precondición:** Shortcut de Apple Pay configurado
+
+1. Ejecutar shortcut de Apple Pay (genera un draft automático)
+2. Cerrar la app (o enviar a background y volver)
+3. **Verificar:** Modal con título "¡Nuevos registros automáticos!"
+4. **Verificar:** Mensaje "Se añadieron X registros automáticos a tu bandeja."
+5. **Verificar:** Icono de engranaje (gearshape.badge.checkmark)
+
+#### Escenario 26.3.2: Modal para automatizaciones externas
+**Precondición:** Shortcut de automatización externa configurado
+
+1. Ejecutar shortcut de automatización
+2. Cerrar y abrir la app
+3. **Verificar:** Mismo comportamiento que Apple Pay (tipo automations)
+
+---
+
+### 26.4 Modal Mixto
+
+#### Escenario 26.4.1: Modal con múltiples tipos
+**Precondición:** Pagos planificados Y suscripciones vencidas
+
+1. Crear pago planificado con fecha vencida
+2. Crear suscripción con fecha vencida
+3. Cerrar y abrir la app
+4. **Verificar:** Modal con título "¡Nuevos registros en tu bandeja!"
+5. **Verificar:** Mensaje con desglose: "X pagos y Y suscripciones"
+6. **Verificar:** Icono de bandeja llena (tray.full.fill)
+
+#### Escenario 26.4.2: Desglose incluye todos los tipos
+**Precondición:** Los 3 tipos de fuentes activos
+
+1. Crear pago planificado vencido
+2. Crear suscripción vencida
+3. Ejecutar shortcut de Apple Pay
+4. Cerrar y abrir la app
+5. **Verificar:** Mensaje muestra los 3 tipos: "X pagos, Y suscripciones y Z registros automáticos"
+
+---
+
+### 26.5 Comportamiento "Solo Nuevos"
+
+#### Escenario 26.5.1: No reaparece para drafts ya vistos
+1. Abrir app, ver modal, tocar "Más tarde"
+2. Cerrar y abrir la app inmediatamente
+3. **Verificar:** El modal NO reaparece (ya se mostró para esos drafts)
+
+#### Escenario 26.5.2: Reaparece solo para drafts nuevos
+1. Abrir app, ver modal para 2 pagos, tocar "Más tarde"
+2. Crear NUEVO pago planificado vencido
+3. Cerrar y abrir la app
+4. **Verificar:** Modal aparece solo para el nuevo pago (count = 1)
+
+---
+
+### 26.6 Exclusiones (No Deben Mostrar Modal)
+
+#### Escenario 26.6.1: Voz no dispara modal
+1. Abrir FAB > Voz
+2. Grabar gasto por voz, generar draft
+3. Cerrar y abrir la app
+4. **Verificar:** NO aparece modal (voz está excluida)
+
+#### Escenario 26.6.2: Foto de recibo no dispara modal
+1. Abrir FAB > Foto
+2. Capturar recibo, generar draft
+3. Cerrar y abrir la app
+4. **Verificar:** NO aparece modal (foto está excluida)
+
+#### Escenario 26.6.3: Screenshot no dispara modal
+1. Compartir screenshot desde galería a Yala
+2. Generar draft
+3. Cerrar y abrir la app
+4. **Verificar:** NO aparece modal (screenshot está excluida)
+
+---
+
+### 26.7 Verificación Multi-Idioma
+
+#### Escenario 26.7.1: Mensajes correctos en cada idioma
+Para cada idioma (es, en, de, fr, it, pt):
+1. Cambiar idioma del dispositivo
+2. Generar un pago planificado vencido
+3. Abrir la app
+4. **Verificar:** Título, mensaje y botones en el idioma correcto
+
+---
+
+### Checklist de Validación Rápida 26.x
+
+- [ ] 26.1.1 Modal pagos planificados aparece
+- [ ] 26.1.2 "Ver bandeja" navega correctamente
+- [ ] 26.1.3 "Más tarde" cierra sin perder datos
+- [ ] 26.2.1 Modal suscripciones aparece
+- [ ] 26.3.1 Modal Apple Pay aparece
+- [ ] 26.3.2 Modal automatización aparece
+- [ ] 26.4.1 Modal mixto con desglose
+- [ ] 26.4.2 Desglose incluye 3 tipos
+- [ ] 26.5.1 No reaparece para vistos
+- [ ] 26.5.2 Reaparece solo para nuevos
+- [ ] 26.6.1 Voz excluida
+- [ ] 26.6.2 Foto excluida
+- [ ] 26.6.3 Screenshot excluido
+- [ ] 26.7.1 Verificar 6 idiomas
+
+---
+
+## Sección 27: Alertas de Presupuestos (10.5.D.1)
+
+Esta sección cubre la validación de notificaciones push cuando los presupuestos alcanzan umbrales configurados.
+
+### 27.1 Configuración de Alertas
+
+#### Escenario 27.1.1: Activar alertas en presupuesto nuevo
+**Precondición:** Crear nuevo presupuesto
+
+1. Ir a Presupuestos > Crear nuevo
+2. Completar nombre, límite ($100), período (mensual)
+3. **Verificar:** Sección "Alertas" visible después de "Activo"
+4. Activar toggle "Notificar al alcanzar límite"
+5. **Verificar:** Aparecen chips de umbrales: 50%, 75%, 90%, 100%
+6. Seleccionar 50% y 90%
+7. Guardar presupuesto
+8. Editar el mismo presupuesto
+9. **Verificar:** Toggle activado y chips 50%, 90% seleccionados
+
+#### Escenario 27.1.2: Desactivar alertas
+1. Editar presupuesto con alertas activas
+2. Desactivar toggle "Notificar al alcanzar límite"
+3. **Verificar:** Los chips de umbrales desaparecen
+4. Guardar
+5. Crear gasto que cruce el 50%
+6. **Verificar:** NO llega notificación push
+
+---
+
+### 27.2 Notificaciones por Umbral
+
+#### Escenario 27.2.1: Umbral 50%
+**Precondición:** Presupuesto $100, alertas [50%]
+
+1. Crear gasto de $50 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Presupuesto \"[nombre]\" al 50%"
+
+#### Escenario 27.2.2: Umbral 75%
+**Precondición:** Presupuesto $100, alertas [75%]
+
+1. Crear gasto de $75 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Presupuesto \"[nombre]\" al 75%"
+
+#### Escenario 27.2.3: Umbral 90%
+**Precondición:** Presupuesto $100, alertas [90%]
+
+1. Crear gasto de $90 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Cuidado: \"[nombre]\" casi agotado"
+
+#### Escenario 27.2.4: Umbral 100%
+**Precondición:** Presupuesto $100, alertas [100%]
+
+1. Crear gasto de $100 en categoría del presupuesto
+2. **Verificar:** Notificación push: "Presupuesto \"[nombre]\" agotado"
+
+---
+
+### 27.3 Múltiples Umbrales
+
+#### Escenario 27.3.1: Cruzar múltiples umbrales con un gasto
+**Precondición:** Presupuesto $100, alertas [50%, 75%]
+
+1. Crear gasto de $80 (cruza 50% y 75% a la vez)
+2. **Verificar:** Llegan 2 notificaciones (50% y 75%)
+
+#### Escenario 27.3.2: No duplicar notificaciones ya enviadas
+**Precondición:** Ya se notificó 50%
+
+1. Crear otro gasto pequeño ($5)
+2. **Verificar:** NO llega nueva notificación de 50%
+3. Crear gasto que cruce 75%
+4. **Verificar:** Solo llega notificación de 75%
+
+---
+
+### 27.4 Diferentes Fuentes de Transacciones
+
+#### Escenario 27.4.1: Via Registro Manual
+1. Crear presupuesto con alertas [50%]
+2. Ir a FAB > Registro manual
+3. Crear gasto que cruce 50%
+4. **Verificar:** Notificación push aparece
+
+#### Escenario 27.4.2: Via Shortcuts (Siri)
+**Precondición:** Shortcut configurado para agregar gasto
+
+1. Crear presupuesto $100, alertas [50%]
+2. Usar Siri: "Agregar gasto $50 en [categoría]"
+3. **Verificar:** Notificación push aparece (sin abrir la app)
+
+#### Escenario 27.4.3: Via Inbox (aprobar draft)
+1. Crear presupuesto con alertas [50%]
+2. Crear draft pendiente en Inbox
+3. Aprobar draft con monto que cruce 50%
+4. **Verificar:** Notificación push aparece
+
+#### Escenario 27.4.4: Via Bulk Approve
+1. Crear presupuesto con alertas [50%, 75%]
+2. Crear múltiples drafts pendientes
+3. Seleccionar todos > Aprobar
+4. **Verificar:** Notificaciones para umbrales cruzados
+
+---
+
+### 27.5 Casos Edge
+
+#### Escenario 27.5.1: Presupuesto inactivo no notifica
+1. Crear presupuesto con alertas activas
+2. Desactivar el presupuesto (toggle Activo = off)
+3. Crear gasto que cruce umbral
+4. **Verificar:** NO llega notificación
+
+#### Escenario 27.5.2: Reset de período mensual
+**Precondición:** Presupuesto mensual, ya notificado 50% en enero
+
+1. Cambiar fecha del dispositivo a 1 de febrero
+2. Crear gasto que cruce 50%
+3. **Verificar:** Notificación SÍ llega (nuevo período)
+
+#### Escenario 27.5.3: Editar umbrales después de notificado
+1. Presupuesto con [50%] ya notificado
+2. Editar presupuesto, agregar umbral 75%
+3. Presupuesto ya está al 60%
+4. **Verificar:** NO notifica 75% automáticamente
+5. Crear gasto que cruce 75%
+6. **Verificar:** Notificación de 75% llega
+
+### 27.6 Toggle Global de Alertas (10.5.D.2)
+
+#### Escenario 27.6.1: Toggle en onboarding
+1. Iniciar onboarding (data wipe o primera instalación)
+2. Avanzar hasta paso 6 (Notificaciones)
+3. **Verificar:** En sección "Sistema", hay opción "Alertas de presupuesto" con icono rosa
+4. Activar toggle de alertas de presupuesto
+5. Completar onboarding
+6. Ir a Settings > Notificaciones
+7. **Verificar:** Toggle está ON (guardó preferencia del onboarding)
+
+#### Escenario 27.6.1b: Toggle global visible y OFF por defecto
+1. Completar onboarding SIN activar alertas de presupuesto
+2. Ir a Settings > Notificaciones
+3. **Verificar:** Sección "Alertas de presupuesto" visible AL INICIO
+4. **Verificar:** Toggle está OFF (respeta preferencia del onboarding)
+5. **Verificar:** Icono rosa (hotPink) con chart.bar.fill
+6. **Verificar:** Hint: "Recibe avisos cuando..."
+
+#### Escenario 27.6.2: Toggle global OFF bloquea alertas
+**Precondición:** Presupuesto con alertas activas y umbral próximo a cruzar
+
+1. Ir a Settings > Notificaciones > Desactivar toggle de alertas
+2. Crear transacción que cruce umbral del presupuesto
+3. **Verificar:** NO se recibe notificación push
+4. Ir a editar el presupuesto
+5. **Verificar:** alertEnabled del presupuesto sigue siendo true (no se modificó)
+
+#### Escenario 27.6.3: Toggle global ON permite alertas
+**Precondición:** Toggle global ON, presupuesto con alertas activas
+
+1. Crear transacción que cruce umbral del presupuesto
+2. **Verificar:** Se recibe notificación push
+
+#### Escenario 27.6.4: Persistencia del toggle
+1. Desactivar toggle global
+2. Forzar cierre de app (kill desde multitarea)
+3. Reabrir app > Settings > Notificaciones
+4. **Verificar:** Toggle sigue OFF
+
+#### Escenario 27.6.5: Independencia de configuración individual
+1. Toggle global ON
+2. Editar presupuesto A > Desactivar alertas de ESE presupuesto
+3. **Verificar:** Toggle global permanece ON
+4. Crear transacción que cruce umbral de presupuesto A
+5. **Verificar:** NO se recibe notificación (respeta config individual)
+6. Crear transacción que cruce umbral de presupuesto B (con alertas ON)
+7. **Verificar:** SÍ se recibe notificación
+
+#### Escenario 27.6.6: Sección visible sin notificaciones
+1. Sin notificaciones configuradas (lista vacía)
+2. Ir a Settings > Notificaciones
+3. **Verificar:** Sección "Alertas de presupuesto" VISIBLE arriba del empty state
+4. **Verificar:** Toggle funcional
+
+---
+
+### Checklist de Validación Rápida 27.x
+
+- [ ] 27.1.1 Config alertas se guarda y persiste
+- [ ] 27.1.2 Desactivar alertas previene notificaciones
+- [ ] 27.2.1 Umbral 50% notifica
+- [ ] 27.2.2 Umbral 75% notifica
+- [ ] 27.2.3 Umbral 90% notifica
+- [ ] 27.2.4 Umbral 100% notifica
+- [ ] 27.3.1 Múltiples umbrales en un gasto
+- [ ] 27.3.2 No duplica notificaciones
+- [ ] 27.4.1 Via registro manual
+- [ ] 27.4.2 Via Shortcuts/Siri
+- [ ] 27.4.3 Via aprobar draft
+- [ ] 27.4.4 Via bulk approve
+- [ ] 27.5.1 Presupuesto inactivo no notifica
+- [ ] 27.5.2 Reset de período funciona
+- [ ] 27.5.3 Nuevos umbrales funcionan
+- [ ] 27.6.1 Toggle en onboarding (sección Sistema)
+- [ ] 27.6.1b Toggle global visible y OFF por defecto
+- [ ] 27.6.2 Toggle OFF bloquea alertas
+- [ ] 27.6.3 Toggle ON permite alertas
+- [ ] 27.6.4 Persistencia del toggle
+- [ ] 27.6.5 Independencia config individual
+- [ ] 27.6.6 Sección visible sin notificaciones
+
+---
+
+*Última actualización: 2026-02-02 - Sección 27 (Fase 10.5.D.1)*
+*Total escenarios: ~410*
+*Total verificaciones: ~780+*
+
+---
+
+## Sección 28: Widgets iOS (WidgetKit) - Fase 10.5.G.2
+
+### Prerrequisitos
+- iPhone con iOS 17+
+- App Yala instalada
+- Al menos 1 cuenta creada
+- Al menos 5 transacciones registradas
+- Al menos 1 presupuesto activo
+- Al menos 1 pago planificado
+
+---
+
+### 28.1 Instalación y Configuración de Widgets
+
+#### Escenario 28.1.1: Agregar widget Balance (Small)
+1. Mantener presionada la pantalla de inicio
+2. Tocar (+) para agregar widget
+3. Buscar "Yala"
+4. Seleccionar widget "Balance" tamaño pequeño
+5. **Verificar:** Widget muestra balance total formateado
+6. **Verificar:** Widget muestra indicador ▲ o ▼ según tendencia
+
+#### Escenario 28.1.2: Agregar widget Balance (Medium)
+1. Agregar widget "Balance" tamaño mediano
+2. **Verificar:** Widget muestra balance total
+3. **Verificar:** Widget muestra mini gráfico de tendencia
+4. **Verificar:** Gráfico tiene área coloreada bajo la línea
+
+#### Escenario 28.1.3: Configurar período del widget Balance
+1. Mantener presionado el widget Balance (Medium)
+2. Tocar "Editar widget"
+3. **Verificar:** Opción "Período" visible
+4. Seleccionar "Mes" (por defecto)
+5. Seleccionar "Semana"
+6. **Verificar:** Gráfico actualiza a tendencia semanal
+
+#### Escenario 28.1.4: Agregar widget Últimos Registros
+1. Agregar widget "Últimos Registros" (medium)
+2. **Verificar:** Lista de 3-5 transacciones recientes
+3. **Verificar:** Cada fila muestra icono, nombre, monto
+4. **Verificar:** Montos negativos en color diferente a positivos
+
+#### Escenario 28.1.5: Agregar widget Pagos Planificados
+1. Agregar widget "Pagos Planificados" (medium)
+2. **Verificar:** Lista de pagos próximos
+3. **Verificar:** Fechas en formato relativo ("Hoy", "Mañana", "3 días")
+
+#### Escenario 28.1.6: Configurar filtro del widget Pagos Planificados
+1. Editar widget "Pagos Planificados"
+2. **Verificar:** Opciones: "Todos", "Recurrentes", "Suscripciones"
+3. Seleccionar "Suscripciones"
+4. **Verificar:** Solo muestra suscripciones
+
+#### Escenario 28.1.7: Agregar widget Presupuestos
+1. Agregar widget "Presupuestos" (medium)
+2. **Verificar:** Barras de progreso de presupuestos
+3. **Verificar:** Colores: verde (< 75%), amarillo (75-90%), rojo (> 90%)
+
+#### Escenario 28.1.8: Configurar modo del widget Presupuestos
+1. Editar widget "Presupuestos"
+2. **Verificar:** Opciones: "Todos", "Críticos (> 75%)"
+3. Seleccionar "Críticos"
+4. **Verificar:** Solo muestra presupuestos con consumo > 75%
+
+---
+
+### 28.2 Actualización de Datos en Widgets
+
+#### Escenario 28.2.1: Actualizar tras nuevo registro
+1. Agregar widget Balance (visible en home)
+2. Abrir app > Crear nuevo gasto de $100
+3. Volver a pantalla de inicio
+4. **Verificar:** Balance actualizado en widget (puede tardar 1-2 segundos)
+
+#### Escenario 28.2.2: Actualizar tras aprobar draft
+1. Tener draft pendiente en Inbox
+2. Widget Balance visible
+3. Aprobar draft
+4. **Verificar:** Balance actualizado
+
+#### Escenario 28.2.3: Actualizar tras bulk approve
+1. Múltiples drafts pendientes
+2. Seleccionar todos > Aprobar
+3. **Verificar:** Widgets se actualizan
+
+#### Escenario 28.2.4: Actualizar tras eliminar transacción
+1. Eliminar una transacción existente
+2. **Verificar:** Balance y Últimos Registros actualizados
+
+#### Escenario 28.2.5: Actualizar en background (>4 horas)
+**Nota:** Difícil de probar manualmente, requiere esperar
+
+1. No abrir la app por 4+ horas
+2. **Verificar:** Widgets aún muestran datos recientes (background refresh)
+
+---
+
+### 28.3 Deep Links desde Widgets
+
+#### Escenario 28.3.1: Tap en widget Balance → Panel
+1. Tocar el widget Balance
+2. **Verificar:** App abre en tab Panel
+
+#### Escenario 28.3.2: Tap en widget Últimos Registros → Records
+1. Tocar el widget "Últimos Registros"
+2. **Verificar:** App abre en Statistics > Records
+
+#### Escenario 28.3.3: Tap en widget Pagos Planificados → Planning
+1. Tocar el widget "Pagos Planificados"
+2. **Verificar:** App abre en tab Planning
+
+#### Escenario 28.3.4: Tap en widget Presupuestos → Budgets
+1. Tocar el widget "Presupuestos"
+2. **Verificar:** App abre en Planning > Presupuestos
+
+#### Escenario 28.3.5: Deep link con app en background
+1. App Yala en background (no cerrada)
+2. Tocar widget Balance
+3. **Verificar:** App viene al frente y navega a Panel
+
+#### Escenario 28.3.6: Deep link con app cerrada
+1. Cerrar app Yala completamente (force quit)
+2. Tocar widget Últimos Registros
+3. **Verificar:** App inicia y navega a Records
+
+---
+
+### 28.4 Estados Vacíos y Edge Cases
+
+#### Escenario 28.4.1: Widget Balance sin cuentas
+**Precondición:** Usuario nuevo, sin cuentas
+
+1. Agregar widget Balance
+2. **Verificar:** Muestra "$0" o mensaje vacío elegante
+
+#### Escenario 28.4.2: Widget Últimos Registros sin transacciones
+1. Usuario sin transacciones
+2. Agregar widget
+3. **Verificar:** Mensaje "Sin registros" o similar
+
+#### Escenario 28.4.3: Widget Pagos Planificados sin pagos
+1. Sin pagos planificados creados
+2. Agregar widget
+3. **Verificar:** Mensaje vacío apropiado
+
+#### Escenario 28.4.4: Widget Presupuestos sin presupuestos
+1. Sin presupuestos creados
+2. Agregar widget
+3. **Verificar:** Mensaje vacío apropiado
+
+#### Escenario 28.4.5: Pago planificado vencido muestra indicador
+1. Crear pago planificado con fecha pasada
+2. Widget Pagos Planificados
+3. **Verificar:** Indicador rojo de "Vencido"
+
+#### Escenario 28.4.6: Data wipe actualiza widgets
+1. Widgets visibles en home
+2. Settings > Borrar todos los datos
+3. **Verificar:** Widgets muestran estados vacíos tras wipe
+
+---
+
+### 28.5 Múltiples Widgets
+
+#### Escenario 28.5.1: Varios widgets del mismo tipo
+1. Agregar 2 widgets Balance (uno small, uno medium)
+2. **Verificar:** Ambos muestran datos consistentes
+
+#### Escenario 28.5.2: Todos los tipos de widgets a la vez
+1. Agregar los 4 tipos de widgets
+2. Crear transacción
+3. **Verificar:** Todos se actualizan correctamente
+
+#### Escenario 28.5.3: Configuraciones independientes
+1. Widget Presupuestos A: modo "Todos"
+2. Widget Presupuestos B: modo "Críticos"
+3. **Verificar:** Cada uno respeta su configuración
+
+---
+
+### 28.6 App Groups y Persistencia
+
+#### Escenario 28.6.1: Datos persisten tras reinicio
+1. Configurar widgets
+2. Reiniciar dispositivo
+3. **Verificar:** Widgets muestran datos correctos sin abrir app
+
+#### Escenario 28.6.2: Datos compartidos entre app y widget
+1. Agregar transacción en app
+2. Sin cerrar app, ver widgets
+3. **Verificar:** Datos sincronizados
+
+---
+
+### Checklist de Validación Rápida 28.x
+
+- [ ] 28.1.1 Widget Balance Small se agrega
+- [ ] 28.1.2 Widget Balance Medium muestra gráfico
+- [ ] 28.1.3 Configurar período funciona
+- [ ] 28.1.4 Widget Últimos Registros lista transacciones
+- [ ] 28.1.5 Widget Pagos Planificados lista pagos
+- [ ] 28.1.6 Filtro de pagos funciona
+- [ ] 28.1.7 Widget Presupuestos muestra barras
+- [ ] 28.1.8 Modo críticos funciona
+- [ ] 28.2.1 Actualiza tras nuevo registro
+- [ ] 28.2.2 Actualiza tras aprobar draft
+- [ ] 28.2.3 Actualiza tras bulk approve
+- [ ] 28.2.4 Actualiza tras eliminar
+- [ ] 28.3.1 Deep link Balance → Panel
+- [ ] 28.3.2 Deep link Registros → Records
+- [ ] 28.3.3 Deep link Pagos → Planning
+- [ ] 28.3.4 Deep link Presupuestos → Budgets
+- [ ] 28.3.5 Deep link con app en background
+- [ ] 28.3.6 Deep link con app cerrada
+- [ ] 28.4.1 Estado vacío Balance
+- [ ] 28.4.2 Estado vacío Registros
+- [ ] 28.4.3 Estado vacío Pagos
+- [ ] 28.4.4 Estado vacío Presupuestos
+- [ ] 28.4.5 Indicador vencido
+- [ ] 28.4.6 Data wipe actualiza widgets
+- [ ] 28.5.1 Múltiples widgets consistentes
+- [ ] 28.5.2 Todos los tipos a la vez
+- [ ] 28.5.3 Configuraciones independientes
+- [ ] 28.6.1 Persiste tras reinicio
+- [ ] 28.6.2 Datos compartidos
+
+---
+
+## Sección 29: Control Center y Lock Screen (10.5.G.3)
+
+Esta sección cubre la validación de los controles de Yala en el Centro de Control de iOS 18+.
+
+**Requisitos:**
+- iOS 18.0 o superior
+- Widget Extension configurada en Xcode (ver `YalaWidgets/SETUP.md`)
+
+### 29.1 Configuración de Controles
+
+#### Escenario 29.1.1: Añadir controles de Yala al Control Center
+**Precondición:** iOS 18+ device o simulador, Widget Extension instalada
+
+1. Ir a Settings > Control Center
+2. Scroll hasta "More Controls"
+3. Buscar "Yala"
+4. **Verificar:** Aparecen 3 controles disponibles:
+   - "Gasto rápido" (plus.circle.fill)
+   - "Por voz" (mic.fill)
+   - "Escanear" (camera.fill)
+5. Añadir los 3 controles al Control Center
+6. **Verificar:** Los 3 aparecen en el Control Center
+
+#### Escenario 29.1.2: Reorganizar controles
+1. En Settings > Control Center, mover un control de Yala
+2. **Verificar:** El control se mueve correctamente
+3. Abrir Control Center
+4. **Verificar:** El orden refleja los cambios
+
+---
+
+### 29.2 Funcionalidad de Controles
+
+#### Escenario 29.2.1: Control "Gasto rápido"
+**Precondición:** Control añadido al Control Center
+
+1. Deslizar para abrir Control Center
+2. Tocar el control "Gasto rápido"
+3. **Verificar:** Yala se abre
+4. **Verificar:** Se muestra la pantalla de nuevo registro
+
+#### Escenario 29.2.2: Control "Por voz"
+**Precondición:** Control añadido, entrada por voz activada en Settings
+
+1. Deslizar para abrir Control Center
+2. Tocar el control "Por voz"
+3. **Verificar:** Yala se abre
+4. **Verificar:** Se muestra la interfaz de grabación de voz
+
+#### Escenario 29.2.3: Control "Escanear"
+**Precondición:** Control añadido, entrada por imagen activada en Settings
+
+1. Deslizar para abrir Control Center
+2. Tocar el control "Escanear"
+3. **Verificar:** Yala se abre
+4. **Verificar:** Se muestra la interfaz de cámara/galería
+
+---
+
+### 29.3 Control Center desde Lock Screen
+
+#### Escenario 29.3.1: Usar control desde pantalla bloqueada
+**Precondición:** Controles añadidos, dispositivo con Face ID/Touch ID
+
+1. Bloquear dispositivo
+2. Deslizar para abrir Control Center desde Lock Screen
+3. Tocar control "Gasto rápido"
+4. **Verificar:** Se solicita autenticación (Face ID/Touch ID)
+5. Autenticar
+6. **Verificar:** Yala se abre en el registro
+
+#### Escenario 29.3.2: Control desde Lock Screen - Sin biometría activa
+**Precondición:** Biometría desactivada en Settings > Seguridad
+
+1. Bloquear dispositivo
+2. Deslizar para abrir Control Center desde Lock Screen
+3. Tocar control "Gasto rápido"
+4. **Verificar:** Yala se abre directamente (sin solicitar autenticación)
+
+---
+
+### 29.4 Localización
+
+#### Escenario 29.4.1: Labels en español
+1. Cambiar idioma del dispositivo a Español
+2. Ir a Settings > Control Center
+3. **Verificar:** Labels:
+   - "Gasto rápido"
+   - "Registro por voz"
+   - "Escanear recibo"
+
+#### Escenario 29.4.2: Labels en inglés
+1. Cambiar idioma del dispositivo a English
+2. Ir a Settings > Control Center
+3. **Verificar:** Labels:
+   - "Quick expense"
+   - "Voice entry"
+   - "Scan receipt"
+
+---
+
+### 29.5 Casos Edge
+
+#### Escenario 29.5.1: Voz desactivada - Usar control "Por voz"
+**Precondición:** Entrada por voz desactivada en Yala Settings
+
+1. Tocar control "Por voz" desde Control Center
+2. **Verificar:** Yala se abre
+3. **Verificar:** Muestra mensaje indicando que la voz no está activada
+
+#### Escenario 29.5.2: Imagen desactivada - Usar control "Escanear"
+**Precondición:** Entrada por imagen desactivada en Yala Settings
+
+1. Tocar control "Escanear" desde Control Center
+2. **Verificar:** Yala se abre
+3. **Verificar:** Muestra mensaje indicando que la imagen no está activada
+
+#### Escenario 29.5.3: iOS 17 - Sin controles disponibles
+**Precondición:** Dispositivo con iOS 17 o anterior
+
+1. Ir a Settings > Control Center
+2. Buscar "Yala"
+3. **Verificar:** NO aparece Yala en la lista (requiere iOS 18)
+
+---
+
+### Checklist de Validación Rápida 29.x
+
+- [ ] 29.1.1 Controles aparecen en Settings > Control Center
+- [ ] 29.1.2 Se pueden reorganizar
+- [ ] 29.2.1 "Gasto rápido" abre registro
+- [ ] 29.2.2 "Por voz" abre grabación
+- [ ] 29.2.3 "Escanear" abre cámara
+- [ ] 29.3.1 Funciona desde Lock Screen con auth
+- [ ] 29.3.2 Funciona sin biometría
+- [ ] 29.4.1 Localización ES correcta
+- [ ] 29.4.2 Localización EN correcta
+- [ ] 29.5.1 Maneja voz desactivada
+- [ ] 29.5.2 Maneja imagen desactivada
+- [ ] 29.5.3 iOS 17 no muestra controles
+
+---
+
+## 30. iCloud Sync (10.5.G.1)
+
+### 30.1 Primera activación
+1. Ir a Perfil > Sincronización iCloud
+2. Verificar estado "Desactivado"
+3. Activar toggle
+4. Verificar alert de reinicio
+5. Confirmar → app se cierra
+6. Reabrir → verificar estado "Sincronizado" o "Sincronizando"
+
+### 30.2 Sin cuenta iCloud
+1. Cerrar sesión de iCloud en Ajustes del sistema
+2. Abrir Yala > Perfil > Sincronización iCloud
+3. Verificar toggle deshabilitado
+4. Verificar mensaje de advertencia
+5. Verificar estado "Sin cuenta iCloud"
+
+### 30.3 Sync entre dispositivos
+1. Device A: Activar iCloud sync
+2. Device B: Instalar Yala con misma cuenta iCloud, activar sync
+3. Device A: Crear transacción
+4. Device B: Verificar transacción aparece (puede tomar 1-2 min)
+5. Verificar categorías y cuentas sincronizadas
+
+### 30.4 Desactivar sync
+1. Con iCloud activo y datos sincronizados
+2. Desactivar toggle
+3. Confirmar reinicio
+4. Verificar datos locales preservados
+5. Crear nueva transacción
+6. Verificar NO sincroniza a otro device
+
+### 30.5 Conflicto (last-write-wins)
+1. Device A: Editar descripción de transacción a "AAA"
+2. Inmediatamente Device B: Editar misma transacción a "BBB"
+3. Esperar sync
+4. Ambos devices: Verificar que tienen el mismo valor (el último en sincronizar gana)
+
+### 30.6 ExchangeRate sin duplicados
+1. Verificar que tipos de cambio funcionan normalmente
+2. Forzar recarga de tipos de cambio
+3. Verificar no hay duplicados en la base de datos
+
+---
+
+### Checklist de Validación Rápida 30.x
+
+- [ ] 30.1.1 Estado inicial "Desactivado"
+- [ ] 30.1.2 Toggle muestra alert de reinicio
+- [ ] 30.1.3 App reinicia correctamente
+- [ ] 30.2.1 Sin cuenta: toggle deshabilitado
+- [ ] 30.2.2 Sin cuenta: mensaje de advertencia visible
+- [ ] 30.3.1 Transacciones sincronizan entre devices
+- [ ] 30.3.2 Categorías/cuentas sincronizan
+- [ ] 30.4.1 Desactivar preserva datos locales
+- [ ] 30.4.2 Nuevos datos no sincronizan después de desactivar
+- [ ] 30.5.1 Conflictos se resuelven (last-write-wins)
+- [ ] 30.6.1 ExchangeRate no tiene duplicados
+
+### 30.7 Dispositivo nuevo con datos existentes en iCloud (BUG-22)
+1. Device A: Tiene datos (cuentas, transacciones)
+2. Device B (nuevo): Instalar Yala desde TestFlight con misma cuenta iCloud
+3. Verificar: splash → pantalla "Sincronizando tus datos..." aparece
+4. Esperar hasta que datos lleguen (< 15s normalmente)
+5. Verificar: app navega automáticamente a MainTabView con datos
+
+### 30.8 Dispositivo nuevo — timeout sync (BUG-22)
+1. Simular sync lento (o sin datos en iCloud)
+2. Instalar en dispositivo nuevo
+3. Verificar: sync screen aparece tras splash
+4. Esperar 15s sin datos
+5. Verificar: se muestra onboarding normal después del timeout
+6. Si datos llegan durante onboarding → alert "Datos encontrados" aparece
+
+### 30.9 Dispositivo nuevo sin iCloud (BUG-22)
+1. Cerrar sesión de iCloud en Ajustes
+2. Instalar Yala
+3. Verificar: splash → onboarding directo (SIN pantalla de sync)
+
+### 30.10 Skip manual durante sync (BUG-22)
+1. Device nuevo con iCloud y datos existentes
+2. Pantalla de sync aparece
+3. Tocar "Configurar como nuevo"
+4. Verificar: navega a onboarding (o language selection si aplica)
+5. Si datos llegan después del skip → alert "Datos encontrados"
+
+### 30.11 Usuario existente no ve sync screen (BUG-22)
+1. Usuario que ya completó onboarding (hasCompletedOnboarding = true)
+2. Cerrar y reabrir app
+3. Verificar: splash → MainTabView directo (NUNCA pantalla de sync)
+
+- [ ] 30.7.1 Device nuevo: sync screen aparece tras splash
+- [ ] 30.7.2 Device nuevo: datos llegan → navega a app automáticamente
+- [ ] 30.8.1 Timeout 15s → onboarding normal
+- [ ] 30.8.2 Alert fallback funciona si datos llegan durante onboarding
+- [ ] 30.9.1 Sin iCloud → onboarding directo sin sync screen
+- [ ] 30.10.1 Skip manual → onboarding
+- [ ] 30.10.2 Alert fallback funciona después de skip
+- [ ] 30.11.1 Usuario existente nunca ve sync screen
+
+---
+
+## Sección 31: Modo Solo Gastos (Expenses Only Mode)
+
+### 31.1 Activación / Desactivación
+- [ ] 31.1.1 Settings > Personalización: toggle "Modo solo gastos" visible
+- [ ] 31.1.2 Activar: muestra diálogo de confirmación antes de cambiar
+- [ ] 31.1.3 Desactivar: muestra diálogo de confirmación antes de cambiar
+- [ ] 31.1.4 Preferencia persiste entre relanzamientos de la app
+- [ ] 31.1.5 Activar limpia estado incompatible (selectedTrendMetric forzado a .expense)
+
+### 31.2 Creación de Transacciones
+- [ ] 31.2.1 NewTransactionView: selector de tipo muestra solo "Gasto" (oculta income/transfer)
+- [ ] 31.2.2 Si solo 1 tipo disponible, selector completo se oculta
+- [ ] 31.2.3 FavoriteEditorView: tipos income/transfer ocultos
+- [ ] 31.2.4 ScheduledPaymentEditorView: tipo income oculto
+- [ ] 31.2.5 InboxDraftEditSheet: forzado a expense
+
+### 31.3 Panel
+- [ ] 31.3.1 Cuentas muestran "Gastado" (gasto del periodo) en vez de saldo
+- [ ] 31.3.2 Cambiar periodo actualiza montos de gasto por cuenta
+- [ ] 31.3.3 Saldo total del header se oculta
+- [ ] 31.3.4 CashFlowWidget: solo muestra barras de gasto (sin income)
+- [ ] 31.3.5 TrendWidget: forzado a métrica "Gastos", selector oculto
+- [ ] 31.3.6 RecentRecordsWidget: no muestra transacciones de ingreso
+- [ ] 31.3.7 BalanceStatusIndicator: oculto
+
+### 31.4 Estadísticas
+- [ ] 31.4.1 TrendsTab: solo métrica "Gastos", botones balance/income ocultos
+- [ ] 31.4.2 CategoriesTab: sin categorías de ingreso
+- [ ] 31.4.3 RecordsTab: sin transacciones income, balance summary oculto
+- [ ] 31.4.4 DetailContainerView: métrica inicial es .expense (no .balance)
+- [ ] 31.4.5 Chips de nature ocultos (siempre expense, no clearable)
+- [ ] 31.4.6 RecordsFiltersView: sección "Naturaleza" (income/expense) oculta
+
+### 31.5 Settings
+- [ ] 31.5.1 Cuentas: saldos ocultos en lista de cuentas activas
+- [ ] 31.5.2 Cuentas: saldos ocultos en lista de cuentas archivadas
+- [ ] 31.5.3 Editar cuenta: preview de saldo actual oculto
+- [ ] 31.5.4 Categorías: categorías income dimmed (opacidad 0.5) con badge "(oculta)"
+- [ ] 31.5.5 Categorías income siguen siendo editables (no se bloquean)
+
+### 31.6 Búsqueda y Records
+- [ ] 31.6.1 Búsqueda global: no encuentra transacciones income
+- [ ] 31.6.2 RecordsStandaloneView: solo muestra gastos
+
+### 31.7 Favoritos y Planificación
+- [ ] 31.7.1 FavoritesListView: favoritos income ocultos
+- [ ] 31.7.2 Empty state si solo hay favoritos income
+- [ ] 31.7.3 ScheduledPayments lista: pagos income filtrados
+- [ ] 31.7.4 ScheduledPayments subscriptions: income filtrados
+- [ ] 31.7.5 ScheduledPayments recurring: income filtrados
+
+### 31.8 Notificaciones
+- [ ] 31.8.1 NotificationEditorSheet: tipos "Ingresos" y "Balance" ocultos
+- [ ] 31.8.2 Editar notificación existente con tipo income: se fuerza a "Gastos"
+- [ ] 31.8.3 Reporte diario/semanal/mensual solo muestra gastos (sin income)
+
+### 31.9 Widgets iOS
+- [ ] 31.9.1 CashFlowWidget small: solo muestra gastos
+- [ ] 31.9.2 CashFlowWidget medium: barra income oculta
+- [ ] 31.9.3 CashFlowWidget large: income legend oculto, chart solo expense
+- [ ] 31.9.4 LatestRecordsWidget: sin transacciones income
+- [ ] 31.9.5 ScheduledPaymentsWidget: sin pagos income
+- [ ] 31.9.6 Desactivar modo: widgets se refrescan mostrando todo
+
+### 31.10 Siri / Shortcuts
+- [ ] 31.10.1 QuickExpenseIntent: forzado a tipo expense (no pregunta tipo)
+- [ ] 31.10.2 Desactivar modo: QuickExpenseIntent permite elegir tipo again
+
+### 31.11 Onboarding
+- [ ] 31.11.1 Nuevo paso "¿Qué quieres registrar?" aparece después de periodo
+- [ ] 31.11.2 Opción "Todo" seleccionada por defecto
+- [ ] 31.11.3 Seleccionar "Solo gastos" y completar onboarding: app abre en modo solo gastos
+- [ ] 31.11.4 Seleccionar "Todo": app abre en modo normal
+
+### 31.12 Reversibilidad
+- [ ] 31.12.1 Activar modo: datos income siguen en base de datos (no se eliminan)
+- [ ] 31.12.2 Desactivar modo: todos los income/saldos reaparecen inmediatamente
+- [ ] 31.12.3 Crear gastos en modo activo, desactivar: gastos siguen visibles con income
+- [ ] 31.12.4 Importar CSV con income en modo activo: income queda oculto pero existe
+
+---
+
+---
+
+## Sección 32: Waterfall Chart en CashFlow (EXP-1)
+
+### 32.1 Waterfall con días mixtos (EXP-1.1)
+- [ ] 32.1.1 Statistics > periodo "Esta semana" o "Este mes" con datos mixtos (ingreso y gasto)
+- [ ] 32.1.2 Barras individuales por día: teal (neto positivo), pink (neto negativo)
+- [ ] 32.1.3 Línea cero dashed visible como referencia
+- [ ] 32.1.4 NO aparece legend (colores auto-evidentes con línea cero)
+
+### 32.2 Solo gastos + eje diario (EXP-1.2)
+- [ ] 32.2.1 Seleccionar métrica "Gastos" con periodo diario
+- [ ] 32.2.2 Barras normales pink hacia ARRIBA (NO waterfall)
+- [ ] 32.2.3 Sin línea cero (solo barras positivas)
+
+### 32.3 Solo ingresos + eje diario (EXP-1.3)
+- [ ] 32.3.1 Seleccionar métrica "Ingresos" con periodo diario
+- [ ] 32.3.2 Barras normales teal hacia ARRIBA (NO waterfall)
+- [ ] 32.3.3 Sin línea cero (solo barras positivas)
+
+### 32.4 Vista mensual sin cambios (EXP-1.4)
+- [ ] 32.4.1 Seleccionar "Este año" — barras bidireccionales (income arriba, expense abajo)
+- [ ] 32.4.2 Línea neta morada visible con puntos
+- [ ] 32.4.3 Legend visible con Income, Expense, Net
+
+### 32.5 Cambio de periodo (EXP-1.5)
+- [ ] 32.5.1 Cambiar de periodo semanal → anual: chart cambia de waterfall a bidireccional
+- [ ] 32.5.2 Cambiar de periodo anual → mensual: chart cambia de bidireccional a waterfall
+- [ ] 32.5.3 Legend aparece/desaparece correctamente al cambiar modo
+
+### 32.6 Tooltip en waterfall (EXP-1.6)
+- [ ] 32.6.1 Tocar barra en waterfall: tooltip muestra desglose ingreso/gasto/neto
+- [ ] 32.6.2 Tooltip formateado correctamente con colores indicativos
+
+### 32.7 Widget iOS large con periodo diario (EXP-1.7)
+- [ ] 32.7.1 Widget large con periodo thisWeek/thisMonth: muestra waterfall (si hay ingreso y gasto)
+- [ ] 32.7.2 Barras teal (neto positivo) y pink (neto negativo)
+- [ ] 32.7.3 Línea cero dashed visible
+
+### 32.8 Widget iOS large con periodo mensual (EXP-1.8)
+- [ ] 32.8.1 Widget large con periodo thisYear/allTime: muestra bidireccional
+- [ ] 32.8.2 Barras income arriba, expense abajo, línea neta morada
+
+### 32.9 Día con neto exactamente 0 (EXP-1.9)
+- [ ] 32.9.1 Día donde ingreso == gasto exacto: NO muestra barra fantasma en waterfall
+- [ ] 32.9.2 Eje X no desperdicia espacio en barras invisibles
+
+---
+
+---
+
+## Sección 33: TransactionSuccessView Modernizada (BUG-19)
+
+### 33.1 Hero visual (BUG-19.1)
+- [ ] 33.1.1 Crear gasto → círculo con gradiente del color de gasto (rojo/rosa) + glow radiante detrás
+- [ ] 33.1.2 Crear ingreso → círculo con gradiente del color de ingreso (verde) + glow radiante
+- [ ] 33.1.3 Crear transferencia → círculo con gradiente del color de transferencia (índigo) + glow radiante
+- [ ] 33.1.4 Checkmark aparece en blanco sobre el gradiente (no coloreado sobre transparente)
+- [ ] 33.1.5 Glass overlay visible como reflejo sutil en parte superior del círculo
+- [ ] 33.1.6 Monto formateado aparece debajo del círculo en bold con color del tipo
+- [ ] 33.1.7 Título "¡Listo!" aparece encima del círculo en estilo headline secondary
+
+### 33.2 Animación escalonada (BUG-19.2)
+- [ ] 33.2.1 Hero (glow + círculo) aparece primero con efecto spring bouncy
+- [ ] 33.2.2 Checkmark aparece ~150ms después con spring bouncy
+- [ ] 33.2.3 Monto aparece ~300ms después con scale 0.8→1 + fade-in
+- [ ] 33.2.4 Details card aparece ~500ms después con slide-up 15pt + fade-in
+- [ ] 33.2.5 Botones aparecen ~700ms después con slide-up 10pt + fade-in (separados del card)
+- [ ] 33.2.6 Reduce Motion ON → todo aparece instantáneamente sin animación
+
+### 33.3 Details card (BUG-19.3)
+- [ ] 33.3.1 Card NO contiene fila de monto (monto está en hero)
+- [ ] 33.3.2 Card empieza con fila de tipo de transacción
+- [ ] 33.3.3 Fondo del card es Color.yalaCard (NO material)
+
+### 33.4 Brand Voice (BUG-19.4)
+- [ ] 33.4.1 ES: título dice "¡Listo!", botón secundario dice "Registrar otro"
+- [ ] 33.4.2 EN: título dice "Done!", botón secundario dice "Add another"
+- [ ] 33.4.3 DE: título dice "Fertig!", botón secundario dice "Weitere erfassen"
+- [ ] 33.4.4 FR: título dice "C'est fait !", botón secundario dice "En ajouter un autre"
+- [ ] 33.4.5 IT: título dice "Fatto!", botón secundario dice "Registra un altro"
+- [ ] 33.4.6 PT: título dice "Pronto!", botón secundario dice "Registrar outro"
+
+### 33.5 Accesibilidad (BUG-19.5)
+- [ ] 33.5.1 Dynamic Type accessibility1 → hero icon escala correctamente con @ScaledMetric
+- [ ] 33.5.2 Dark mode → gradientes y glass overlay se ven correctos sobre fondo oscuro
+- [ ] 33.5.3 Background gradient sutil visible sin dominar la vista
+
+---
+
+*Última actualización: 2026-02-11 - Sección 34 (Pantalla Privacy Onboarding)*
+*Total escenarios: ~517*
+*Total verificaciones: ~960+*
+
+---
+
+## Sección 34: Pantalla de Privacidad (Onboarding Step 7)
+
+### 34.1 Flujo completo 8 pasos
+- [ ] Completar onboarding del paso 0 al 7 → pantalla de privacidad aparece después de notificaciones
+- [ ] Verificar que son 8 pasos en total (0-7)
+
+### 34.2 Botón "Empezar" en paso correcto
+- [ ] Step 6 (Notificaciones) muestra botón "Siguiente", NO "Empezar"
+- [ ] Step 7 (Privacidad) muestra botón "Empezar"
+- [ ] Botón "Empezar" cierra onboarding correctamente (guarda preferencias)
+
+### 34.3 Progress capsules
+- [ ] Pasos 0-6: se muestran 7 capsulas de progreso
+- [ ] Paso 7 (Privacidad): capsulas de progreso ocultas
+
+### 34.4 Contenido pantalla de privacidad
+- [ ] Icono checkmark grande visible
+- [ ] Título "Todo listo" y subtítulo visibles
+- [ ] 4 puntos de privacidad con iconos (dispositivo, sin rastreo, iCloud, sin compartir)
+
+### 34.5 Link tutoriales
+- [ ] Botón "Descubre los tutoriales..." visible
+- [ ] Tap abre sheet con TutorialsListView
+- [ ] Sheet funciona correctamente dentro del fullScreenCover
+- [ ] Al cerrar sheet, se regresa a pantalla de privacidad
+- [ ] Después de cerrar sheet, botón "Empezar" sigue funcionando
+
+### 34.6 Rename a "Tutoriales"
+- [ ] Perfil > Ayuda muestra "Tutoriales" (no "Tutoriales y consejos")
+- [ ] Verificar en al menos 2 idiomas (ES, EN)
+
+---
+
+## Sección 35: Tutoriales (TutorialsListView + TutorialDetailView)
+
+### 35.1 Lista de tutoriales desde Perfil
+- [ ] Perfil > Ayuda > Tutoriales abre TutorialsListView
+- [ ] Header con icono de libro y subtítulo visible
+- [ ] 5 secciones visibles: Primeros pasos, Uso diario, Personalización, Avanzado, Usuario experto
+- [ ] 19 tutoriales en total distribuidos en las 5 secciones
+- [ ] Cada fila muestra: icono con color, título, conteo de pasos, chevron derecho
+- [ ] Scroll funciona correctamente con todo el contenido
+
+### 35.2 Detalle de tutorial (carousel)
+- [ ] Tap en tutorial abre TutorialDetailView (push navigation)
+- [ ] Indicador de progreso con cápsulas animadas (activa = color del tutorial)
+- [ ] Swipe horizontal entre pasos funciona
+- [ ] Placeholder visible cuando no hay screenshot (rectángulo con icono)
+- [ ] Título y descripción del paso visibles y centrados
+- [ ] Botón "Siguiente" avanza al siguiente paso
+- [ ] Botón "Anterior" aparece a partir del segundo paso
+- [ ] Botón "Listo" en último paso cierra la vista (dismiss)
+
+### 35.3 Tutoriales desde Onboarding
+- [ ] Onboarding > Privacidad > Tutoriales abre sheet con TutorialsListView
+- [ ] NavigationStack funciona correctamente dentro del sheet
+- [ ] Push a TutorialDetailView funciona dentro del sheet
+- [ ] Cerrar sheet regresa a pantalla de privacidad
+
+### 35.4 Idiomas
+- [ ] Tutoriales muestran strings en español (idioma principal)
+- [ ] Cambiar a inglés muestra strings en English
+- [ ] Los otros 4 idiomas (fr, de, it, pt) muestran placeholder en español

@@ -10,15 +10,15 @@ import SwiftData
 import SwiftUI
 
 struct SubcategoriesPieWidget: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 
     // Filter State
     var selectedCategoryID: PersistentIdentifier?
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
-
-    // Convenience for single-selection logic (pie chart needs one item)
-    private var selectedSubcategoryID: PersistentIdentifier? { selectedSubcategoryIDs.first }
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
 
@@ -41,14 +41,12 @@ struct SubcategoriesPieWidget: View {
         subcategories.reduce(0) { $0 + $1.amount }
     }
 
-    // Filtered total based on selected subcategory
+    // Filtered total based on selected subcategories
     private var filteredTotalExpense: Double {
-        if let selectedID = selectedSubcategoryID,
-            let selectedSubcategory = subcategories.first(where: { $0.persistentID == selectedID })
-        {
-            return selectedSubcategory.amount
-        }
-        return totalExpense
+        guard !selectedSubcategoryIDs.isEmpty else { return totalExpense }
+        return subcategories
+            .filter { guard let id = $0.persistentID else { return false }; return selectedSubcategoryIDs.contains(id) }
+            .reduce(0) { $0 + $1.amount }
     }
 
     private var chartData: [PieChartData] {
@@ -65,7 +63,7 @@ struct SubcategoriesPieWidget: View {
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Guard against empty chartData (Charts framework crashes on empty array)
             if chartData.isEmpty {
                 emptyState
@@ -88,11 +86,11 @@ struct SubcategoriesPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Header (same as content)
             HStack {
                 Text(L10n.Widget.subcategories)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -110,10 +108,11 @@ struct SubcategoriesPieWidget: View {
             VStack(spacing: DS.Spacing.md) {
                 Spacer()
                 Image(systemName: "list.bullet.indent")
-                    .font(.system(size: 32))
+                    .font(.system(size: scaledEmptyIconSize))
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(.secondary)
                 Text(L10n.Empty.noExpenses)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
             }
@@ -138,7 +137,7 @@ struct SubcategoriesPieWidget: View {
     private var headerSection: some View {
         HStack {
             Text(L10n.Widget.subcategories)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
@@ -149,8 +148,8 @@ struct SubcategoriesPieWidget: View {
 
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.headline)
-                .foregroundStyle(Color.gray.opacity(0.7))
+                .font(DS.Typography.headline)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -160,7 +159,6 @@ struct SubcategoriesPieWidget: View {
         VStack(spacing: DS.Spacing.sm) {
             // Header
             headerView
-                .padding(.horizontal, 0)
 
             // Chart (2/3) on left, Legend (1/3) on right
             HStack(alignment: .center, spacing: DS.Spacing.lg) {
@@ -222,7 +220,7 @@ struct SubcategoriesPieWidget: View {
                 // Color dot
                 Circle()
                     .fill(Color(hex: item.colorHex))
-                    .frame(width: 8, height: 8)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
 
                 // Subcategory name
                 Text(item.name)
@@ -238,8 +236,8 @@ struct SubcategoriesPieWidget: View {
                     .foregroundStyle(.secondary)
             }
             .opacity(isDimmedItem ? 0.4 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
-            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)
         }
         .buttonStyle(.plain)
     }
@@ -311,7 +309,7 @@ struct SubcategoriesPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
                         hoveredItem = isPressing ? item : nil
                     }
                 }, perform: {})
@@ -336,8 +334,9 @@ struct SubcategoriesPieWidget: View {
 
     // Logic: If selection exists, ONLY show selected. Else, show all > threshold.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if let selectedID = selectedSubcategoryID {
-            return item.persistentID == selectedID
+        if !selectedSubcategoryIDs.isEmpty {
+            guard let id = item.persistentID else { return false }
+            return selectedSubcategoryIDs.contains(id)
         } else {
             return item.percentage > 4.0
         }
@@ -350,9 +349,9 @@ struct SubcategoriesPieWidget: View {
             headerView
 
             // 1. Subcategory Labels
-            HStack(alignment: .top, spacing: 0) {
-                if let selectedID = selectedSubcategoryID,
-                    let selectedItem = chartData.first(where: { $0.persistentID == selectedID })
+            HStack(alignment: .top, spacing: DS.Spacing.none) {
+                if !selectedSubcategoryIDs.isEmpty,
+                    let selectedItem = chartData.first(where: { guard let id = $0.persistentID else { return false }; return selectedSubcategoryIDs.contains(id) })
                 {
                     // Filtered: Show only selected subcategory (centered)
                     Spacer()
@@ -368,14 +367,14 @@ struct SubcategoriesPieWidget: View {
                             Circle()
                                 .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
                             Image(systemName: selectedItem.iconName)
-                                .font(.system(size: 12, weight: .bold))
+                                .font(DS.Typography.labelTiny).fontWeight(.bold)
                                 .foregroundStyle(Color(hex: selectedItem.colorHex))
                         }
-                        .frame(width: 32, height: 32)
+                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
                         // Percentage + Amount (on same line)
                         Text(
-                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedAmountCompact(selectedItem.amount)))"
+                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
                         )
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
@@ -403,10 +402,10 @@ struct SubcategoriesPieWidget: View {
                                 Circle()
                                     .fill(Color(hex: item.colorHex).opacity(0.15))
                                 Image(systemName: item.iconName)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(DS.Typography.captionSmall).fontWeight(.bold)
                                     .foregroundStyle(Color(hex: item.colorHex))
                             }
-                            .frame(width: 24, height: 24)
+                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
                             // Percentage
                             Text(formattedPercentage(item.percentage))
@@ -426,7 +425,7 @@ struct SubcategoriesPieWidget: View {
 
             // 2. Stacked Bar (with segment separation)
             GeometryReader { geo in
-                let segmentSpacing: CGFloat = 2
+                let segmentSpacing: CGFloat = DS.Spacing.xxs
                 let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
                 let availableWidth = geo.size.width - totalSpacing
 
@@ -436,8 +435,8 @@ struct SubcategoriesPieWidget: View {
                             .fill(Color(hex: item.colorHex))
                             .frame(width: availableWidth * CGFloat(item.percentage / 100))
                             .opacity(isDimmed(item) ? 0.3 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)
-                            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)
                             .onTapGesture {
                                 handleTap(item)
                             }
@@ -468,14 +467,21 @@ struct SubcategoriesPieWidget: View {
                 // Original header without comparison
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(L10n.Widget.distributionBySubcategory)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .padding(.bottom, 2)
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Text(L10n.Widget.distributionBySubcategory)
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            InfoHintButton(
+                                title: L10n.WidgetType.subcategoriesPie,
+                                message: L10n.Widget.Hint.subcategoriesPie
+                            )
+                        }
+                        .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -486,8 +492,8 @@ struct SubcategoriesPieWidget: View {
                             onShowDetail?()
                         } label: {
                             Image(systemName: "chevron.right")
-                                .font(.headline)
-                                .foregroundStyle(Color.gray.opacity(0.7))
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                     }
@@ -519,7 +525,7 @@ struct SubcategoriesPieWidget: View {
 
                             // Icon
                             Image(systemName: centerItem.iconName)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color(hex: centerItem.colorHex))
 
                             // Percentage
@@ -528,7 +534,7 @@ struct SubcategoriesPieWidget: View {
                                 .foregroundStyle(.primary)
 
                             // Amount - truncated to fit
-                            Text(formattedAmountCompact(centerItem.amount))
+                            Text(formattedCurrency(centerItem.amount))
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -569,8 +575,8 @@ struct SubcategoriesPieWidget: View {
             .id(dataHash)  // Force complete rebuild when data changes
             .chartLegend(.hidden)
             .chartAngleSelection(value: $selectedAngle)
-            .animation(.easeInOut(duration: 0.2), value: selectedCategoryID)  // Smooth dimming
-            .animation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs)  // Smooth dimming
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)  // Smooth dimming
+            .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)  // Smooth dimming
             .animation(nil, value: dataHash)  // Disable animation to prevent interpolation crashes
             .onChange(of: selectedAngle) {
                 if let angle = selectedAngle {
@@ -582,10 +588,6 @@ struct SubcategoriesPieWidget: View {
     }
 
     // MARK: - Helpers
-
-    private func formattedAmountCompact(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
-    }
 
     private func formattedCurrency(_ value: Double) -> String {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
@@ -618,20 +620,15 @@ struct SubcategoriesPieWidget: View {
         }
     }
 
-    private func isSelected(_ item: PieChartData) -> Bool {
-        guard let itemPersistentID = item.persistentID else { return false }
-        return selectedSubcategoryID == itemPersistentID
-    }
-
     private func isDimmed(_ item: PieChartData) -> Bool {
-        guard let selected = selectedSubcategoryID else { return false }
+        guard !selectedSubcategoryIDs.isEmpty else { return false }
         guard let itemPersistentID = item.persistentID else { return true }  // Dim "Restante" when something is selected
-        return itemPersistentID != selected
+        return !selectedSubcategoryIDs.contains(itemPersistentID)
     }
 
     private func currentCenterItem() -> PieChartData? {
-        if let persistentID = selectedSubcategoryID {
-            return chartData.first { $0.persistentID == persistentID }
+        if let firstID = selectedSubcategoryIDs.first {
+            return chartData.first { $0.persistentID == firstID }
         }
         return chartData.first
     }

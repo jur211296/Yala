@@ -2,7 +2,7 @@
 //  DescriptionAutocomplete.swift
 //  Yala
 //
-//  Created by Neto - Autocomplete suggestions for description field.
+//  Created by Yala - Autocomplete suggestions for description field.
 //
 
 import SwiftData
@@ -60,9 +60,7 @@ struct MentionState: Equatable {
         guard searchStartIndex < text.endIndex else { return nil }
 
         let currentWord = String(text[searchStartIndex...])
-        guard !currentWord.isEmpty else { return nil }
-
-        let firstChar = currentWord.first!
+        guard let firstChar = currentWord.first else { return nil }
 
         let mentionType: MentionType?
         switch firstChar {
@@ -120,7 +118,7 @@ struct AutocompleteSuggestionsView: View {
                                     .frame(width: 8, height: 8)
 
                                 Text(suggestion.name)
-                                    .font(.subheadline.weight(.medium))
+                                    .font(DS.Typography.label)
                                     .lineLimit(1)
                             }
                             .padding(.horizontal, DS.Spacing.md)
@@ -162,7 +160,7 @@ struct AutocompleteHelper {
         // Sort by recent usage
         var tagUsage: [PersistentIdentifier: Date] = [:]
         for transaction in recentTransactions.prefix(100) {
-            for tag in transaction.tags {
+            for tag in transaction.tags ?? [] {
                 if tagUsage[tag.persistentModelID] == nil {
                     tagUsage[tag.persistentModelID] = transaction.date
                 }
@@ -215,7 +213,7 @@ struct AutocompleteHelper {
 
         // Filter subcategories by transaction type using the category relationship
         let filteredSubcategories = allSubcategories.filter { subcategory in
-            let category = subcategory.category
+            let category = subcategory.safeCategory
             switch transactionType {
             case .expense: return !category.isIncome
             case .income: return category.isIncome
@@ -251,7 +249,7 @@ struct AutocompleteHelper {
         }
 
         return filtered.prefix(8).map { subcategory in
-            let colorHex = subcategory.colorHex ?? subcategory.category.colorHex
+            let colorHex = subcategory.colorHex ?? subcategory.safeCategory.colorHex
             return AutocompleteSuggestion(
                 id: "subcat-\(subcategory.persistentModelID.hashValue)",
                 name: subcategory.name,

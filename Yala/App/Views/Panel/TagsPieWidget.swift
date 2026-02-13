@@ -10,11 +10,14 @@ import SwiftData
 import SwiftUI
 
 struct TagsPieWidget: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
     let tags: [TagSpendingSummary]
     let currencyCode: String
 
     // Filter State
-    var selectedTagID: PersistentIdentifier?
+    var selectedTagIDs: Set<PersistentIdentifier> = []
     var onSelectTag: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
 
@@ -38,12 +41,10 @@ struct TagsPieWidget: View {
     }
 
     private var filteredTotalExpense: Double {
-        if let selectedID = selectedTagID,
-            let selectedTag = tags.first(where: { $0.tag.persistentModelID == selectedID })
-        {
-            return selectedTag.amount
-        }
-        return totalExpense
+        guard !selectedTagIDs.isEmpty else { return totalExpense }
+        return tags
+            .filter { selectedTagIDs.contains($0.tag.persistentModelID) }
+            .reduce(0) { $0 + $1.amount }
     }
 
     private var chartData: [PieChartData] {
@@ -56,7 +57,7 @@ struct TagsPieWidget: View {
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if chartData.isEmpty {
                 emptyState
             } else {
@@ -80,10 +81,11 @@ struct TagsPieWidget: View {
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag.fill")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -106,7 +108,6 @@ struct TagsPieWidget: View {
     private var largeLayout: some View {
         VStack(spacing: DS.Spacing.sm) {
             headerView
-                .padding(.horizontal, 0)
 
             HStack(alignment: .center, spacing: DS.Spacing.lg) {
                 GeometryReader { geo in
@@ -158,7 +159,7 @@ struct TagsPieWidget: View {
             HStack(spacing: DS.Spacing.sm) {
                 Circle()
                     .fill(Color(hex: item.colorHex))
-                    .frame(width: 8, height: 8)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
 
                 Text(item.name)
                     .font(DS.Typography.labelTiny)
@@ -239,7 +240,7 @@ struct TagsPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
                         hoveredItem = isPressing ? item : nil
                     }
                 }, perform: {})
@@ -263,8 +264,9 @@ struct TagsPieWidget: View {
     }
 
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if let selectedID = selectedTagID {
-            return item.id == selectedID
+        if !selectedTagIDs.isEmpty {
+            guard let id = item.id else { return false }
+            return selectedTagIDs.contains(id)
         } else {
             return item.percentage > 4.0
         }
@@ -276,9 +278,9 @@ struct TagsPieWidget: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerView
 
-            HStack(alignment: .top, spacing: 0) {
-                if let selectedID = selectedTagID,
-                    let selectedItem = chartData.first(where: { $0.id == selectedID })
+            HStack(alignment: .top, spacing: DS.Spacing.none) {
+                if !selectedTagIDs.isEmpty,
+                    let selectedItem = chartData.first(where: { guard let id = $0.id else { return false }; return selectedTagIDs.contains(id) })
                 {
                     Spacer()
                     VStack(alignment: .center, spacing: DS.Spacing.xs) {
@@ -291,13 +293,13 @@ struct TagsPieWidget: View {
                             Circle()
                                 .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
                             Image(systemName: selectedItem.iconName)
-                                .font(.system(size: 12, weight: .bold))
+                                .font(DS.Typography.labelTiny).fontWeight(.bold)
                                 .foregroundStyle(Color(hex: selectedItem.colorHex))
                         }
-                        .frame(width: 32, height: 32)
+                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
                         Text(
-                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedAmountCompact(selectedItem.amount)))"
+                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
                         )
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
@@ -322,10 +324,10 @@ struct TagsPieWidget: View {
                                 Circle()
                                     .fill(Color(hex: item.colorHex).opacity(0.15))
                                 Image(systemName: item.iconName)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(DS.Typography.captionSmall).fontWeight(.bold)
                                     .foregroundStyle(Color(hex: item.colorHex))
                             }
-                            .frame(width: 24, height: 24)
+                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
                             Text(formattedPercentage(item.percentage))
                                 .font(DS.Typography.label)
@@ -343,7 +345,7 @@ struct TagsPieWidget: View {
             }
 
             GeometryReader { geo in
-                let segmentSpacing: CGFloat = 2
+                let segmentSpacing: CGFloat = DS.Spacing.xxs
                 let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
                 let availableWidth = geo.size.width - totalSpacing
 
@@ -389,15 +391,15 @@ struct TagsPieWidget: View {
             } else {
                 // Original header without comparison
                 HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(L10n.Widget.distributionByTag)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .padding(.bottom, 2)
+                            .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
-                            .font(.callout.weight(.bold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -414,8 +416,8 @@ struct TagsPieWidget: View {
                             onShowDetail?()
                         } label: {
                             Image(systemName: "chevron.right")
-                                .font(.headline)
-                                .foregroundStyle(Color.gray.opacity(0.7))
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                     }
@@ -461,10 +463,6 @@ struct TagsPieWidget: View {
 
     // MARK: - Helpers
 
-    private func formattedAmountCompact(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
-    }
-
     private func formattedCurrency(_ value: Double) -> String {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
@@ -495,8 +493,9 @@ struct TagsPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
-        guard let selected = selectedTagID else { return false }
-        return item.id != selected
+        guard !selectedTagIDs.isEmpty else { return false }
+        guard let id = item.id else { return true }
+        return !selectedTagIDs.contains(id)
     }
 
     // MARK: - Data Processing
@@ -553,13 +552,13 @@ struct TagsPieWidget: View {
             }
 
             let othersAmount = others.reduce(0) { $0 + $1.amount }
-            let othersPercentage = (othersAmount / totalExpense) * 100
+            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
 
             if othersAmount > 0 {
                 finalItems.append(
                     PieChartData(
                         id: nil,
-                        name: "Otros",
+                        name: L10n.Common.others,
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,

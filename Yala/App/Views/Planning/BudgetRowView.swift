@@ -26,7 +26,7 @@ struct BudgetRowView: View {
                     // Budget name
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(summary.budget.name)
-                            .font(.subheadline.weight(.semibold))
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
@@ -38,12 +38,20 @@ struct BudgetRowView: View {
 
                     // Amount (right-aligned)
                     VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        Text(formattedSpent)
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                        HStack(spacing: DS.Spacing.xxs) {
+                            if summary.status == .exceeded {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(Color.hotPink)
+                                    .accessibilityHidden(true)
+                            }
+                            Text(formattedSpent)
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                        }
 
                         Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), formattedLimit))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -86,7 +94,7 @@ struct BudgetRowView: View {
                 .frame(width: 40, height: 40)
 
             Image(systemName: summary.icon)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
@@ -104,17 +112,17 @@ struct BudgetRowView: View {
             daysText = String(format: daysKey, "\(summary.daysRemaining)")
         }
 
-        return HStack(spacing: 4) {
+        return HStack(spacing: DS.Spacing.xs) {
             Text(spentText)
-                .font(.caption2.weight(.medium))
+                .font(DS.Typography.labelTiny)
                 .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .secondary)
 
             Text("•")
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary.opacity(0.5))
 
             Text(daysText)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
         }
     }

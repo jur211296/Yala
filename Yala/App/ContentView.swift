@@ -13,56 +13,109 @@ import SwiftUI
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding: Bool = false
+    @State private var showLanguageSelection: Bool = false
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
+    @State private var showICloudDataFound: Bool = false
+    @State private var isWaitingForSync: Bool = false
     @Environment(\.scenePhase) private var scenePhase
+
+    /// Query to detect existing data (for iCloud sync detection)
+    @Query private var accounts: [Account]
 
     private let authService = BiometricAuthService.shared
 
     /// Minimum splash duration (2.5 seconds to enjoy the animation)
     private let minimumSplashDuration: Double = 2.5
 
+    /// Check if there's existing data (accounts synced from iCloud or local)
+    private var hasExistingData: Bool {
+        !accounts.isEmpty
+    }
+
     var body: some View {
         ZStack {
-            // Main content (always rendered underneath)
-            MainTabView()
-                .onAppear {
-                    // Show onboarding if not completed
-                    if !hasCompletedOnboarding {
-                        showOnboarding = true
-                    }
-                }
-                .onChange(of: hasCompletedOnboarding) { _, newValue in
-                    // React to data wipe: show onboarding when flag is reset
-                    if !newValue {
-                        showOnboarding = true
-                    }
-                }
-                .fullScreenCover(isPresented: $showOnboarding) {
-                    OnboardingView {
-                        showOnboarding = false
-                    }
-                }
+            // Main content only when onboarding is done; static background otherwise
+            if hasCompletedOnboarding {
+                MainTabView()
+            } else if isWaitingForSync {
+                iCloudSyncWaitingView
+            } else {
+                Color.yalaBackground
+                    .ignoresSafeArea()
+            }
 
             // Splash screen overlay
             if showSplash {
                 SplashScreenView()
                     .opacity(splashOpacity)
                     .ignoresSafeArea()
-                    .onAppear {
+                    .task {
                         // Dismiss splash after minimum duration
-                        DispatchQueue.main.asyncAfter(deadline: .now() + minimumSplashDuration) {
-                            dismissSplash()
-                        }
+                        try? await Task.sleep(for: .seconds(minimumSplashDuration))
+                        dismissSplash()
                     }
             }
-
-            // Biometric lock overlay (above everything except splash)
-            if authService.isLocked && !showSplash {
-                BiometricLockOverlay()
-                    .transition(.opacity)
-                    .zIndex(10)
+        }
+        .task {
+            await checkInitialSyncState()
+        }
+        .onChange(of: accounts.count) { _, newCount in
+            // iCloud data arrived while user is in onboarding — notify them
+            if (showOnboarding || isWaitingForSync) && newCount > 0 {
+                showICloudDataFound = true
             }
+        }
+        .onChange(of: hasCompletedOnboarding) { _, newValue in
+            // React to data wipe: show onboarding when flag is reset
+            if !newValue {
+                showOnboarding = true
+            }
+        }
+        .alert(L10n.iCloud.dataFoundTitle, isPresented: $showICloudDataFound) {
+            Button(L10n.iCloud.dataFoundAction) {
+                showOnboarding = false
+                hasCompletedOnboarding = true
+            }
+        } message: {
+            Text(L10n.iCloud.dataFoundMessage)
+        }
+        .fullScreenCover(isPresented: $showLanguageSelection) {
+            LanguageSelectionView {
+                showLanguageSelection = false
+                // Only show onboarding if the user hasn't completed it before
+                if !hasCompletedOnboarding {
+                    showOnboarding = true
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                showOnboarding = false
+            }
+        }
+        // Biometric lock as fullScreenCover (covers everything including sheets)
+        .fullScreenCover(isPresented: Binding(
+            get: { authService.isLocked && !showSplash },
+            set: { _ in }  // Dismiss handled by BiometricLockOverlay.authenticate()
+        )) {
+            BiometricLockOverlay()
+        }
+        // Inbox alert as fullScreenCover (appears over any sheet)
+        .fullScreenCover(isPresented: Binding(
+            get: { !SessionState.shared.pendingInboxNotification.isEmpty },
+            set: { _ in }
+        )) {
+            InboxAlertModal(
+                notification: SessionState.shared.pendingInboxNotification,
+                onViewInbox: {
+                    SessionState.shared.shouldShowInbox = true
+                },
+                onDismiss: {
+                    SessionState.shared.pendingInboxNotification = .init()
+                }
+            )
+            .background(ClearBackgroundView())
         }
         .onAppear {
             // Lock on initial launch if biometric is enabled
@@ -78,6 +131,15 @@ struct ContentView: View {
                 break
             }
         }
+        .onChange(of: authService.isLocked) { _, isLocked in
+            if !isLocked, let deferred = AppBootstrapper.shared.deferredInboxNotification {
+                AppBootstrapper.shared.deferredInboxNotification = nil
+                Task {
+                    try? await Task.sleep(for: .seconds(0.3))
+                    SessionState.shared.pendingInboxNotification = deferred
+                }
+            }
+        }
     }
 
     private func dismissSplash() {
@@ -88,6 +150,101 @@ struct ContentView: View {
             showSplash = false
         }
     }
+
+    /// Whether the device language needs an in-app override
+    private var needsLanguageSelection: Bool {
+        !LanguageManager.deviceLanguageIsSupported && LanguageManager.overrideLanguage == nil
+    }
+
+    /// Check initial state and decide whether to show language selection, onboarding, or go straight to app.
+    /// Runs during splash so the wait is invisible to the user.
+    private func checkInitialSyncState() async {
+        // Wait during splash to give iCloud time to deliver data
+        do {
+            try await Task.sleep(for: .seconds(2))
+        } catch {
+            // Task cancelled, continue with state check
+        }
+
+        if hasCompletedOnboarding || hasExistingData {
+            // Returning user (data from iCloud or previous install)
+            if hasExistingData {
+                hasCompletedOnboarding = true
+            }
+            // Still check if language selection is needed (new feature, per-device)
+            if needsLanguageSelection {
+                showLanguageSelection = true
+            }
+            return
+        }
+
+        // No data yet — if iCloud is available, wait for sync before showing onboarding
+        if SwiftDataConfiguration.isICloudAvailable() {
+            isWaitingForSync = true
+
+            for _ in 0..<7 { // 7 × 2s = 14s max
+                do {
+                    try await Task.sleep(for: .seconds(2))
+                } catch {
+                    break // Task cancelled
+                }
+                if hasExistingData {
+                    hasCompletedOnboarding = true
+                    isWaitingForSync = false
+                    return
+                }
+            }
+
+            // Timeout: proceed to onboarding
+            isWaitingForSync = false
+        }
+
+        if needsLanguageSelection {
+            showLanguageSelection = true
+        } else {
+            showOnboarding = true
+        }
+    }
+
+    /// Inline view shown while waiting for iCloud sync on a new device
+    private var iCloudSyncWaitingView: some View {
+        ZStack {
+            Color.yalaBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: DS.Spacing.xl) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.electricIndigo)
+
+                VStack(spacing: DS.Spacing.sm) {
+                    Text(L10n.iCloud.syncingData)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+
+                    Text(L10n.iCloud.syncingDescription)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                Button {
+                    isWaitingForSync = false
+                    if needsLanguageSelection {
+                        showLanguageSelection = true
+                    } else {
+                        showOnboarding = true
+                    }
+                } label: {
+                    Text(L10n.iCloud.syncingSkip)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, DS.Spacing.lg)
+            }
+            .padding(.horizontal, DS.Spacing.xxl)
+        }
+    }
 }
 
 // MARK: - TabView Principal con Search Role (iOS 18+)
@@ -96,6 +253,11 @@ struct MainTabView: View {
     @Bindable private var sessionState: SessionState
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+
+    // Queries for downgrade resolution
+    @Query private var allAccounts: [Account]
+    @Query private var allBudgets: [Budget]
+    @State private var showDowngradeResolution = false
 
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
@@ -141,6 +303,67 @@ struct MainTabView: View {
             }
             .tint(Color.electricIndigo)
             .transaction { $0.animation = nil }
+            .onAppear {
+                // Catch flags set before view mounted (Share Extension cold launch)
+                if sessionState.hasPendingSharedImage && sessionState.selectedMainTab != .panel {
+                    sessionState.selectedMainTab = .panel
+                }
+            }
+            .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
+                // Navigate to Panel when shared image is pending (from Share Extension)
+                if hasPending && sessionState.selectedMainTab != .panel {
+                    sessionState.selectedMainTab = .panel
+                }
+            }
+            .onChange(of: sessionState.deepLinkDestination) { _, destination in
+                // Handle deep links from widgets
+                guard let destination = destination else { return }
+
+                switch destination {
+                case .panel:
+                    sessionState.selectedMainTab = .panel
+                case .statistics:
+                    sessionState.selectedMainTab = .statistics
+                case .records:
+                    sessionState.selectedDetailTab = .records
+                    sessionState.selectedMainTab = .statistics
+                case .categories:
+                    sessionState.selectedDetailTab = .categories
+                    sessionState.selectedMainTab = .statistics
+                case .planning:
+                    sessionState.selectedMainTab = .planning
+                case .budgets:
+                    sessionState.selectedPlanningTab = .budgets
+                    sessionState.selectedMainTab = .planning
+                case .inbox:
+                    sessionState.selectedMainTab = .panel
+                    sessionState.shouldShowInbox = true
+                }
+
+                // Clear after handling
+                sessionState.deepLinkDestination = nil
+            }
+            .onChange(of: sessionState.shouldShowDowngradeResolution) { _, shouldShow in
+                // Show downgrade resolution sheet when triggered by AppBootstrapper
+                if shouldShow {
+                    // Check if there's actual excess before showing
+                    let activeAccounts = allAccounts.filter { !$0.isArchived }
+                    let activeBudgets = allBudgets.filter { $0.isActive }
+
+                    if activeAccounts.count > 2 || activeBudgets.count > 3 {
+                        showDowngradeResolution = true
+                    }
+                    sessionState.shouldShowDowngradeResolution = false
+                }
+            }
+            .sheet(isPresented: $showDowngradeResolution) {
+                DowngradeResolutionSheet(
+                    accounts: allAccounts,
+                    budgets: allBudgets
+                ) {
+                    showDowngradeResolution = false
+                }
+            }
         }
     }
 
@@ -153,6 +376,8 @@ struct MainTabView: View {
             StatisticsView()
         case .planning:
             PlanningView()
+        case .records:
+            RecordsStandaloneView()
         }
     }
 
@@ -161,12 +386,12 @@ struct MainTabView: View {
             Color(.systemBackground)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: DS.Spacing.xl) {
                 ProgressView()
                     .scaleEffect(1.5)
 
                 Text(L10n.Settings.deletingData)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
             }
         }
@@ -181,6 +406,7 @@ enum AppTab: Hashable {
     case planning
     case more
     case search
+    case records
 }
 
 // MARK: - More View
@@ -199,7 +425,7 @@ struct MorePlaceholderView: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: DS.Spacing.lg) {
                         // Hidden tabs section
                         if !tabConfig.inactiveTabs.isEmpty {
                             hiddenTabsSection
@@ -208,8 +434,8 @@ struct MorePlaceholderView: View {
                         // Profile button
                         profileButton
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
             }
             .navigationTitle(L10n.Tab.more)
@@ -224,32 +450,32 @@ struct MorePlaceholderView: View {
     // MARK: - Hidden Tabs Section
 
     private var hiddenTabsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.More.sections)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
-                .padding(.leading, 6)
+                .padding(.leading, DS.Spacing.xs)
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(tabConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
                     hiddenTabRow(tab)
 
                     if index < tabConfig.inactiveTabs.count - 1 {
                         Divider()
-                            .padding(.leading, 52)
+                            .padding(.leading, DS.FormRow.iconWidth + DS.FormRow.iconSpacing + DS.FormRow.paddingH)
                     }
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(Color.yalaCard)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .shadow(color: Color.black.opacity(0.04), radius: DS.Radius.md, x: 0, y: 6)
         }
     }
 
@@ -262,28 +488,28 @@ struct MorePlaceholderView: View {
                 SessionState.shared.selectedMainTab = tab.appTab
             }
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: tab.iconName)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
+                    .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .fill(Color.electricIndigo)
                     )
 
                 Text(tab.displayName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(DS.Typography.chevron)
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -292,46 +518,46 @@ struct MorePlaceholderView: View {
     // MARK: - Profile Button
 
     private var profileButton: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DS.Spacing.none) {
             Button {
                 showProfile = true
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.FormRow.iconSpacing) {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
+                        .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(Color.gray)
                         )
 
                     Text(L10n.Profile.title)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(DS.Typography.chevron)
                         .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .fill(Color.yalaCard)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+        .shadow(color: Color.black.opacity(0.04), radius: DS.Radius.md, x: 0, y: 6)
     }
 }
 
@@ -356,11 +582,11 @@ struct GlobalSearchView: View {
                     SearchContentView(searchText: $searchText, transactions: allTransactions)
                 } else {
                     // Loading state - subtle animation
-                    VStack(spacing: 16) {
+                    VStack(spacing: DS.Spacing.lg) {
                         ProgressView()
                             .scaleEffect(1.2)
                         Text(L10n.Common.loading)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -376,7 +602,11 @@ struct GlobalSearchView: View {
         )
         .task {
             // Delay to let Query load, then reveal content smoothly
-            try? await Task.sleep(for: .milliseconds(300))
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+            } catch {
+                // Task cancelled - continue with animation anyway
+            }
             await MainActor.run {
                 withAnimation(.easeIn(duration: 0.2)) {
                     isDataReady = true
@@ -390,26 +620,34 @@ struct GlobalSearchView: View {
 // MARK: - Search Content View
 
 struct SearchContentView: View {
+    @Environment(SessionState.self) private var sessionState
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
 
     @State private var selectedFilter: SearchFilter = .all
     @State private var editingTransaction: TransactionItem?
-    @State private var navigateToRecords: Bool = false
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = "PEN"
 
     // MARK: - Filtered Results
 
     private var filteredResults: [TransactionItem] {
+        // Pre-filter: exclude income transactions in expenses-only mode
+        let baseTransactions: [TransactionItem]
+        if sessionState.isExpensesOnlyMode {
+            baseTransactions = transactions.filter { $0.category?.isIncome != true }
+        } else {
+            baseTransactions = transactions
+        }
+
         // If no search text, show all (limited to 20)
         guard !searchText.isEmpty else {
-            return Array(transactions.prefix(20))
+            return Array(baseTransactions.prefix(20))
         }
 
         let lowercasedSearch = searchText.lowercased()
 
-        return transactions.filter { transaction in
+        return baseTransactions.filter { transaction in
             switch selectedFilter {
             case .all:
                 // Search in all fields
@@ -420,7 +658,7 @@ struct SearchContentView: View {
                     transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
                 let accountMatch =
                     transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = transaction.tags.contains {
+                let tagMatch = (transaction.tags ?? []).contains {
                     $0.name.lowercased().contains(lowercasedSearch)
                 }
                 return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
@@ -437,7 +675,7 @@ struct SearchContentView: View {
                 return transaction.subcategory?.nature.displayName.lowercased()
                     .contains(lowercasedSearch) ?? false
             case .tag:
-                return transaction.tags.contains { $0.name.lowercased().contains(lowercasedSearch) }
+                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
             }
         }
         .prefix(20)
@@ -446,11 +684,19 @@ struct SearchContentView: View {
 
     // Total count for "Ver todo" (without limit)
     private var totalMatchingCount: Int {
-        guard !searchText.isEmpty else { return transactions.count }
+        // Pre-filter: exclude income transactions in expenses-only mode
+        let baseTransactions: [TransactionItem]
+        if sessionState.isExpensesOnlyMode {
+            baseTransactions = transactions.filter { $0.category?.isIncome != true }
+        } else {
+            baseTransactions = transactions
+        }
+
+        guard !searchText.isEmpty else { return baseTransactions.count }
 
         let lowercasedSearch = searchText.lowercased()
 
-        return transactions.filter { transaction in
+        return baseTransactions.filter { transaction in
             switch selectedFilter {
             case .all:
                 let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
@@ -460,7 +706,7 @@ struct SearchContentView: View {
                     transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
                 let accountMatch =
                     transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = transaction.tags.contains {
+                let tagMatch = (transaction.tags ?? []).contains {
                     $0.name.lowercased().contains(lowercasedSearch)
                 }
                 return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
@@ -477,7 +723,7 @@ struct SearchContentView: View {
                 return transaction.subcategory?.nature.displayName.lowercased().contains(
                     lowercasedSearch) ?? false
             case .tag:
-                return transaction.tags.contains { $0.name.lowercased().contains(lowercasedSearch) }
+                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
             }
         }.count
     }
@@ -497,11 +743,11 @@ struct SearchContentView: View {
         ZStack {
             PanelBackgroundView()
 
-            VStack(spacing: 0) {
+            VStack(spacing: DS.Spacing.none) {
                 // Filter chips (only show when searching)
                 if !searchText.isEmpty {
                     filterChipsBar
-                        .padding(.top, 8)
+                        .padding(.top, DS.Spacing.sm)
                 }
 
                 // Always show results (all or filtered)
@@ -511,29 +757,19 @@ struct SearchContentView: View {
         .sheet(item: $editingTransaction) { transaction in
             NewTransactionView(transactionToEdit: transaction)
         }
-        .navigationDestination(isPresented: $navigateToRecords) {
-            DetailContainerView(
-                context: RecordsFilterContext(
-                    period: .allTime,
-                    searchText: searchText,
-                    isFromSearch: true
-                ),
-                initialTab: .records
-            )
-        }
     }
 
     // MARK: - Filter Chips Bar
 
     private var filterChipsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: DS.Spacing.sm) {
                 ForEach(SearchFilter.allCases) { filter in
                     filterChip(for: filter)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
         }
     }
 
@@ -545,11 +781,11 @@ struct SearchContentView: View {
                 selectedFilter = filter
             }
         } label: {
-            Text(filter.rawValue)
+            Text(filter.displayName)
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
                         .fill(isSelected ? Color.electricIndigo : Color.clear)
@@ -566,30 +802,35 @@ struct SearchContentView: View {
 
     private var searchResultsView: some View {
         ScrollView {
-            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(spacing: DS.Spacing.none, pinnedViews: [.sectionHeaders]) {
                 // Header with count and Ver todo
                 if !filteredResults.isEmpty && !searchText.isEmpty {
                     HStack {
-                        Text("\(totalMatchingCount) resultados")
-                            .font(.caption)
+                        Text(L10n.Search.resultsCount(totalMatchingCount))
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 
                         Spacer()
 
                         Button {
-                            navigateToRecords = true
+                            // Navigate to Statistics > Records with search filter applied
+                            sessionState.searchText = searchText
+                            sessionState.selectedPeriod = .allTime
+                            sessionState.navigateToDetail(.records)
+                            // Clear local state - SessionState is now the source of truth
+                            searchText = ""
                         } label: {
-                            HStack(spacing: 4) {
+                            HStack(spacing: DS.Spacing.xs) {
                                 Text(L10n.Action.viewAll)
                                 Image(systemName: "arrow.right")
                             }
-                            .font(.subheadline.weight(.medium))
+                            .font(DS.Typography.label)
                             .foregroundStyle(Color.electricIndigo)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.top, DS.Spacing.sm)
+                    .padding(.bottom, DS.Spacing.md)
                 }
 
                 // Grouped results by date
@@ -599,8 +840,8 @@ struct SearchContentView: View {
                             SearchResultRow(record: record, currencyCode: defaultCurrencyCode) {
                                 editingTransaction = record
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.Spacing.xs)
                         }
                     } header: {
                         SearchDateSectionHeader(date: group.date)
@@ -609,24 +850,24 @@ struct SearchContentView: View {
 
                 // No results message
                 if filteredResults.isEmpty && !searchText.isEmpty {
-                    VStack(spacing: 12) {
+                    VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 40))
+                            .font(DS.Typography.amountLarge)
                             .foregroundStyle(.tertiary)
 
                         Text(L10n.Search.noResults)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
 
                         Text(L10n.Search.tryAnotherTerm)
-                            .font(.subheadline)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 60)
                 }
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, DS.Spacing.xl)
         }
         .scrollDismissesKeyboard(.immediately)
     }
@@ -655,29 +896,41 @@ struct SearchDateSectionHeader: View {
     var body: some View {
         HStack {
             Text(formattedDate)
-                .font(.caption.weight(.semibold))
+                .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
             Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.vertical, DS.Spacing.sm)
     }
 }
 
 // MARK: - Search Filter Enum
 
 enum SearchFilter: String, CaseIterable, Identifiable {
-    case all = "Todo"
-    case note = "Nota"
-    case category = "Categoría"
-    case subcategory = "Subcategoría"
-    case account = "Cuenta"
-    case nature = "Naturaleza"
-    case tag = "Etiqueta"
+    case all
+    case note
+    case category
+    case subcategory
+    case account
+    case nature
+    case tag
 
     var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .all: return L10n.Search.Filter.all
+        case .note: return L10n.Search.Filter.note
+        case .category: return L10n.Search.Filter.category
+        case .subcategory: return L10n.Search.Filter.subcategory
+        case .account: return L10n.Search.Filter.account
+        case .nature: return L10n.Search.Filter.nature
+        case .tag: return L10n.Search.Filter.tag
+        }
+    }
 }
 
 // MARK: - Search Result Row
@@ -693,17 +946,17 @@ struct SearchResultRow: View {
         Button {
             onTap()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.md) {
                 // Icon
                 subcategoryIcon
 
                 // Content
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
                     Text(
                         record.note ?? record.subcategory?.name ?? record.category?.name
                             ?? L10n.Common.uncategorized
                     )
-                    .font(.subheadline.weight(.medium))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -712,7 +965,7 @@ struct SearchResultRow: View {
 
                     if !categoryName.isEmpty || !accountName.isEmpty {
                         Text("\(categoryName) • \(accountName)")
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -722,13 +975,13 @@ struct SearchResultRow: View {
 
                 // Amount
                 Text(formattedAmount)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(amountColor)
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 14)
+            .padding(.vertical, DS.Spacing.md)
+            .padding(.horizontal, DS.Spacing.md)
             .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         }
         .buttonStyle(.plain)
     }
@@ -743,13 +996,13 @@ struct SearchResultRow: View {
                 .frame(width: 40, height: 40)
 
             Image(systemName: iconName)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 14)
+        RoundedRectangle(cornerRadius: DS.Radius.card)
             .fill(Color.yalaCard)
             .shadow(
                 color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.06),
@@ -760,7 +1013,7 @@ struct SearchResultRow: View {
     }
 
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode)
+        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

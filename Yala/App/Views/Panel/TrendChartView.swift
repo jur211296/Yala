@@ -92,7 +92,7 @@ struct TrendChartView: View {
                     .symbolSize(0)  // Invisible point just for annotation context
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
                         Text(formattedAmountShort(point.value))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -109,13 +109,23 @@ struct TrendChartView: View {
                 .foregroundStyle(Color.yalaSecondaryText)  // Explicit Gray for distinction
             }
 
+            // Single point: LineMark is invisible with 1 point, show a dot instead
+            if trendPoints.count == 1, let singlePoint = trendPoints.first {
+                PointMark(
+                    x: .value(L10n.Common.date, singlePoint.date),
+                    y: .value(L10n.Common.amount, singlePoint.value)
+                )
+                .foregroundStyle(primaryLineColor)
+                .symbolSize(64)
+            }
+
             // Marker for "Today"
             RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 .foregroundStyle(Color.yalaSecondaryText.opacity(0.5))
-                .annotation(position: .top, alignment: .center) {
+                .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
                     Text(L10n.Widget.today)
-                        .font(.caption2.bold())
+                        .font(DS.Typography.labelTiny)
                         .foregroundStyle(Color.yalaPrimaryText)
                         .padding(.horizontal, DS.Spacing.xs)
                         .padding(.vertical, DS.Spacing.xs)
@@ -161,10 +171,10 @@ struct TrendChartView: View {
                 ) {
                     VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         Text(periodLabel(for: activeDate))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                         Text("\(formattedAmount(rawValue)) \(currencyCode)")
-                            .font(.caption.bold())
+                            .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.yalaPrimaryText)
                     }
                     .padding(.horizontal, DS.Spacing.sm)
@@ -185,7 +195,7 @@ struct TrendChartView: View {
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatK(doubleValue))
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -209,7 +219,7 @@ struct TrendChartView: View {
 
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
-                            .font(.caption2.bold())
+                            .font(DS.Typography.labelTiny)
                             .foregroundStyle(Color.yalaSecondaryText)
                     }
                 }
@@ -239,53 +249,20 @@ struct TrendChartView: View {
 
     // MARK: - Smart Axis Labels
 
-    /// Maximum number of axis labels to show (to avoid crowding)
-    private let maxAxisLabels = 5
-
-    /// Calculate smart axis dates based on actual data range
+    /// Calculate smart axis dates aligned with actual data points
     private var smartAxisDates: [Date] {
-        guard let firstDate = trendPoints.first?.date,
-            let lastDate = trendPoints.last?.date
-        else {
-            return []
-        }
-
-        // If only one point, return just that date
-        if firstDate == lastDate {
-            return [firstDate]
-        }
-
-        let calendar = Calendar.current
-        let span = lastDate.timeIntervalSince(firstDate)
-        let days = span / 86400
-
-        // Always include first and last dates
-        var dates: [Date] = [firstDate]
-
-        // Calculate how many middle labels we can fit
-        let middleLabelsCount = maxAxisLabels - 2  // minus first and last
-
-        if middleLabelsCount > 0 && days > 1 {
-            // Calculate step based on data range
-            let step = span / Double(maxAxisLabels - 1)
-
-            for i in 1..<(maxAxisLabels - 1) {
-                let middleDate = firstDate.addingTimeInterval(step * Double(i))
-
-                // Normalize to start of day for cleaner alignment
-                let normalizedDate = calendar.startOfDay(for: middleDate)
-
-                // Avoid duplicate if too close to first or last
-                if normalizedDate > firstDate && normalizedDate < lastDate {
-                    dates.append(normalizedDate)
-                }
+        let calendarUnit: Calendar.Component = {
+            switch grouping {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
             }
-        }
+        }()
 
-        dates.append(lastDate)
-
-        // Sort and remove duplicates
-        return Array(Set(dates)).sorted()
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: trendPoints.map(\.date),
+            grouping: calendarUnit
+        )
     }
 
     /// Format axis label based on data span (include year if multiple years)
@@ -295,7 +272,17 @@ struct TrendChartView: View {
         else {
             return formatDayNumber(date)
         }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil
+            }
+        }()
+
+        return SmartAxisHelper.formatAxisLabel(
+            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
     }
 
     private func formattedAmountShort(_ value: Double) -> String {

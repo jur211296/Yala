@@ -9,6 +9,9 @@ import SwiftData
 import SwiftUI
 
 struct ScheduledPaymentsWidget: View {
+    @Environment(\.modelContext) private var modelContext
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 32
+
     let payments: [ScheduledPayment]
     let currencyCode: String
     let period: DetailPeriod
@@ -89,22 +92,24 @@ struct ScheduledPaymentsWidget: View {
 
     private var headerSection: some View {
         HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.WidgetType.scheduledPayments)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                HStack(spacing: DS.Spacing.xxs) {
+                    Text(L10n.WidgetType.scheduledPayments)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    InfoHintButton(
+                        title: L10n.WidgetType.scheduledPayments,
+                        message: L10n.Widget.Hint.scheduledPayments
+                    )
+                }
 
                 // Period label
                 Text(periodLabel)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
-
-            InfoHintButton(
-                title: L10n.WidgetType.scheduledPayments,
-                message: L10n.Widget.Hint.scheduledPayments
-            )
 
             Spacer()
 
@@ -118,9 +123,9 @@ struct ScheduledPaymentsWidget: View {
                         onShowMore?()
                     } label: {
                         Image(systemName: "chevron.right")
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.gray.opacity(0.7))
-                            .padding(.leading, 4)
+                            .padding(.leading, DS.Spacing.xs)
                     }
                     .buttonStyle(.plain)
                 }
@@ -136,7 +141,7 @@ struct ScheduledPaymentsWidget: View {
     }
 
     private var filterSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ScheduledPaymentsWidgetFilter.allCases) { filterOption in
                 filterButton(for: filterOption)
             }
@@ -155,9 +160,9 @@ struct ScheduledPaymentsWidget: View {
             }
         } label: {
             Image(systemName: filterOption.iconName)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .font(DS.Typography.labelSmall)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {
@@ -181,18 +186,13 @@ struct ScheduledPaymentsWidget: View {
         return VStack(spacing: DS.Spacing.md) {
             // Amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.electricIndigo, Color.hotPink],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                .foregroundStyle(.primary)
 
             // Payment count
             Text(paymentCountLabel(activeCount))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -211,10 +211,27 @@ struct ScheduledPaymentsWidget: View {
         }
 
         var total: Double = 0
+        let converter = CurrencyConverter.shared
 
-        for payment in filteredPayments {
+        // Only count expenses (exclude income payments)
+        let expensePayments = filteredPayments.filter { $0.transactionType != "income" }
+
+        for payment in expensePayments {
             let occurrences = getPaymentDatesInMonth(payment: payment, month: displayMonth)
-            total += payment.amount * Double(occurrences.count)
+            let rawAmount = payment.amount * Double(occurrences.count)
+
+            // Convert currency if needed
+            if payment.currencyCode != currencyCode, rawAmount > 0 {
+                let converted = converter.convertWithLatestRate(
+                    Decimal(rawAmount),
+                    from: payment.currencyCode,
+                    to: currencyCode,
+                    context: modelContext
+                )
+                total += NSDecimalNumber(decimal: converted).doubleValue
+            } else {
+                total += rawAmount
+            }
         }
 
         return total
@@ -239,17 +256,17 @@ struct ScheduledPaymentsWidget: View {
     private var emptyListState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "calendar.badge.clock")
-                .font(.largeTitle)
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
                 .padding(.bottom, DS.Spacing.xs)
 
             Text(NSLocalizedString("scheduled.widget.empty.title", comment: ""))
-                .font(.subheadline.weight(.medium))
+                .font(DS.Typography.label)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.primary)
 
             Text(NSLocalizedString("scheduled.widget.empty.message", comment: ""))
-                .font(.caption)
+                .font(DS.Typography.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
@@ -266,27 +283,27 @@ struct ScheduledPaymentsWidget: View {
                     .frame(width: 36, height: 36)
 
                 Image(systemName: item.icon)
-                    .font(.caption.weight(.medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.white)
             }
 
             // Info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(item.payment.name)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(item.dueDateLabel)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(item.dueStatus == .past ? Color.hotPink : .secondary)
             }
 
             Spacer()
 
             // Amount
-            Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode))
-                .font(.subheadline.weight(.bold))
+            Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
         }
     }
@@ -322,10 +339,10 @@ struct ScheduledPaymentsWidget: View {
                 }
 
                 let icon = payment.subcategory?.iconName
-                    ?? payment.subcategory?.category.iconName
+                    ?? payment.subcategory?.category?.iconName
                     ?? "creditcard.fill"
                 let color = payment.subcategory?.colorHex
-                    ?? payment.subcategory?.category.colorHex
+                    ?? payment.subcategory?.category?.colorHex
                     ?? "#6366F1"
 
                 let dueDateLabel = formatDueDate(days: days, date: payment.nextDueDate)
@@ -378,10 +395,10 @@ struct ScheduledPaymentsWidget: View {
         let startIndex = appFirstWeekday - 1
         let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
 
-        return HStack(spacing: 2) {
+        return HStack(spacing: DS.Spacing.xxs) {
             ForEach(Array(reorderedSymbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
-                    .font(.caption2.weight(.medium))
+                    .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -392,7 +409,7 @@ struct ScheduledPaymentsWidget: View {
         let calendar = Calendar.current
         let daysInMonth = calendar.range(of: .day, in: .month, for: displayMonth)?.count ?? 30
 
-        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: displayMonth))!
+        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: displayMonth)) ?? displayMonth
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
 
@@ -415,7 +432,7 @@ struct ScheduledPaymentsWidget: View {
             cellData.append(day)
         }
 
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 2) {
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xxs), count: 7), spacing: DS.Spacing.xxs) {
             ForEach(Array(cellData.enumerated()), id: \.offset) { _, dayOrNil in
                 if let day = dayOrNil {
                     calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
@@ -440,17 +457,17 @@ struct ScheduledPaymentsWidget: View {
 
             // Payment names (show up to 2 with truncation)
             if hasPayments {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
                         Text(payment.name)
-                            .font(.system(size: 9, weight: .medium))
+                            .font(DS.Typography.captionSmall).fontWeight(.medium)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
                     if payments.count > 2 {
                         Text("+\(payments.count - 2)")
-                            .font(.system(size: 9, weight: .medium))
+                            .font(DS.Typography.captionSmall).fontWeight(.medium)
                             .foregroundStyle(.secondary)
                     }
                 }

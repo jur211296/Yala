@@ -23,7 +23,7 @@ struct ScheduledPaymentRowView: View {
                 // Payment info
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(summary.payment.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -36,7 +36,7 @@ struct ScheduledPaymentRowView: View {
                 // Amount (right-aligned)
                 VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     Text(formattedAmount)
-                        .font(.subheadline.weight(.bold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(amountColor)
 
                     // Recurrence badge
@@ -57,7 +57,9 @@ struct ScheduledPaymentRowView: View {
                 x: 0,
                 y: 3
             )
+            .opacity(summary.payment.isPaidForCurrentCycle ? 0.6 : 1.0)
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Components
@@ -73,29 +75,47 @@ struct ScheduledPaymentRowView: View {
                 .frame(width: 40, height: 40)
 
             Image(systemName: summary.icon)
-                .font(.callout.weight(.medium))
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
 
     private var dueInfo: some View {
-        HStack(spacing: 4) {
-            // Due status indicator
-            Circle()
-                .fill(dueStatusColor)
-                .frame(width: 6, height: 6)
+        HStack(spacing: DS.Spacing.xs) {
+            // Paid badge (if paid for current cycle)
+            if summary.payment.isPaidForCurrentCycle {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.green)
 
-            Text(dueText)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(dueStatusColor)
+                Text(L10n.Scheduled.paid)
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(.green)
+            } else {
+                // Due status indicator (only for past due)
+                if summary.dueStatus == .past {
+                    Circle()
+                        .fill(Color.hotPink)
+                        .frame(width: 6, height: 6)
+                        .accessibilityHidden(true)
+
+                    Text(NSLocalizedString("scheduled.overdue", comment: "Overdue label"))
+                        .font(DS.Typography.badgeLabel)
+                        .foregroundStyle(Color.hotPink)
+                }
+
+                Text(dueText)
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(summary.dueStatus == .past ? Color.hotPink : .secondary)
+            }
 
             if let accountName = summary.payment.account?.name {
                 Text("•")
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary.opacity(0.5))
 
                 Text(accountName)
-                    .font(.caption2)
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -111,7 +131,7 @@ struct ScheduledPaymentRowView: View {
         }
 
         return Text(recurrenceText)
-            .font(.caption2)
+            .font(DS.Typography.captionSmall)
             .foregroundStyle(.secondary)
     }
 
@@ -137,27 +157,14 @@ struct ScheduledPaymentRowView: View {
         }
     }
 
-    private var dueStatusColor: Color {
-        switch summary.dueStatus {
-        case .past:
-            return Color.hotPink
-        case .today:
-            return Color.orange
-        case .upcoming:
-            return Color.electricIndigo
-        }
-    }
 
     private var amountColor: Color {
-        if summary.payment.transactionType == "income" {
-            return Color.teal
-        } else {
-            return summary.dueStatus == .past ? Color.hotPink : .primary
-        }
+        // Only highlight past due payments in hotPink, everything else is neutral
+        summary.dueStatus == .past ? Color.hotPink : .primary
     }
 
     private var formattedAmount: String {
         let prefix = summary.payment.transactionType == "income" ? "+" : "-"
-        return prefix + YalaFormatter.currency(value: summary.payment.amount, currencyCode: currencyCode)
+        return prefix + YalaFormatter.currency(value: summary.payment.amount, currencyCode: currencyCode, forceFullPrecision: true)
     }
 }

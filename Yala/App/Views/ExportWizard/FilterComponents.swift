@@ -18,16 +18,16 @@ struct FilterSectionHeader: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
-                .frame(width: 24)
+                .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Text("(\(status))")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
@@ -43,22 +43,22 @@ struct FilterSelectionRow: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
-                .frame(width: 24)
+                .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Text("(\(subtitle))")
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -135,14 +135,14 @@ struct AmountFilterView: View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let code = currencyCode {
                 Text(code.rawValue)
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
             }
 
             TextField("0.00", text: text)
                 .keyboardType(.decimalPad)
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .font(DS.Typography.amountLarge)
                 .multilineTextAlignment(.trailing)
                 .onChange(of: text.wrappedValue) {
                     updateCondition(newType: selectedType)
@@ -158,10 +158,10 @@ struct AmountFilterView: View {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
                     Text(L10n.Export.selectSingleCurrency)
-                        .font(.subheadline)
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, DS.Spacing.sm)
             } else {
                 // Selector superior (Cualquiera / Mayor a / Menor a / Entre)
                 Picker(L10n.Export.condition, selection: $selectedType) {
@@ -177,7 +177,7 @@ struct AmountFilterView: View {
                 // Zona inferior con los montos en grande
                 if selectedType != .any {
                     Divider()
-                        .padding(.top, 4)
+                        .padding(.top, DS.Spacing.xs)
 
                     switch selectedType {
                     case .between:
@@ -220,145 +220,6 @@ struct AmountFilterView: View {
     }
 }
 
-// MARK: - Date Filter View
-
-struct DateFilterView: View {
-    @Binding var period: ExportPeriod
-    @Binding var customDateFrom: Date?
-    @Binding var customDateTo: Date?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Menu para seleccionar el periodo
-            Menu {
-                Section("Periodos") {
-                    Button("Este año") { period = .thisYear }
-                    Button("Este mes") { period = .thisMonth }
-                    Button("Esta semana") { period = .thisWeek }
-                }
-
-                Section("Antelación") {
-                    Button("Últimos 90 días") { period = .last90Days }
-                    Button("Últimos 30 días") { period = .last30Days }
-                    Button("Últimos 7 días") { period = .last7Days }
-                }
-
-                Section {
-                    Button("Personalizado") { period = .custom }
-                }
-            } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(displayName(for: period))
-                            .foregroundStyle(.primary)
-
-                        if let subtitle = dateRangeSubtitle {
-                            Text(subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            // Rango personalizado solo si está seleccionado
-            if period == .custom {
-                Divider()
-                    .padding(.leading, 16)
-
-                customRangeRow()
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-            }
-        }
-        .onChange(of: customDateFrom) {
-            period = .custom
-        }
-        .onChange(of: customDateTo) {
-            period = .custom
-        }
-    }
-
-    // MARK: - Subvistas
-
-    private var dateRangeSubtitle: String? {
-        guard period != .custom else { return nil }
-        guard let interval = period.standardDateInterval() else { return nil }
-
-        let calendar = Calendar(identifier: .gregorian)
-
-        // Mostramos el día inclusive final: end exclusivo - 1 día
-        // (si por alguna razón falla el cálculo, usamos end tal cual)
-        let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")  // Asegurar español
-        formatter.dateFormat = "d MMM yyyy"
-
-        return "\(formatter.string(from: interval.start)) - \(formatter.string(from: displayEnd))"
-    }
-
-    private func customRangeRow() -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            let fromBinding = Binding<Date>(
-                get: { customDateFrom ?? Date() },
-                set: { customDateFrom = $0 }
-            )
-
-            let toBinding = Binding<Date>(
-                get: { customDateTo ?? Date() },
-                set: { customDateTo = $0 }
-            )
-
-            datePill(label: "Desde", date: fromBinding)
-
-            Text("-")
-                .foregroundStyle(.secondary)
-
-            datePill(label: "Hasta", date: toBinding)
-        }
-    }
-
-    private func datePill(label: String, date: Binding<Date>) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            DatePicker(
-                "",
-                selection: date,
-                displayedComponents: .date
-            )
-            .labelsHidden()
-        }
-    }
-
-    private func displayName(for period: ExportPeriod) -> String {
-        switch period {
-        case .today: return "Hoy"
-        case .thisYear: return "Este año"
-        case .thisMonth: return "Este mes"
-        case .thisWeek: return "Esta semana"
-        case .last7Days: return "Últimos 7 días"
-        case .last30Days: return "Últimos 30 días"
-        case .last90Days: return "Últimos 90 días"
-        case .last180Days: return "Últimos 180 días"
-        case .custom: return "Personalizado"
-        }
-    }
-}
-
 // MARK: - Multi Selection List
 
 struct MultiSelectionList<T: Identifiable & Hashable>: View {
@@ -368,30 +229,52 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
     let label: (T) -> String
 
     var body: some View {
-        List {
-            ForEach(items) { item in
-                Button {
-                    if selection.contains(item) {
-                        selection.remove(item)
-                    } else {
-                        selection.insert(item)
-                    }
-                } label: {
-                    HStack {
-                        Text(label(item))
-                            .foregroundStyle(.primary)
+        ZStack {
+            PanelBackgroundView()
 
-                        Spacer()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    SectionBox(title: "") {
+                        VStack(spacing: DS.Spacing.none) {
+                            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                                if index > 0 {
+                                    SubsectionDivider()
+                                }
 
-                        if selection.contains(item) {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
+                                Button {
+                                    if selection.contains(item) {
+                                        selection.remove(item)
+                                    } else {
+                                        selection.insert(item)
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(label(item))
+                                            .font(DS.Typography.body)
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+
+                                        if selection.contains(item) {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(Color.brandPrimary)
+                                                .font(DS.Typography.headline)
+                                        }
+                                    }
+                                    .padding(.horizontal, DS.FormRow.paddingH)
+                                    .padding(.vertical, DS.FormRow.paddingV)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
-                .foregroundStyle(.primary)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
         }
         .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

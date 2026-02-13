@@ -14,13 +14,10 @@ import SwiftUI
 struct FavoriteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SessionState.self) private var sessionState
 
-    @Query(sort: \Account.name, order: .forward) private var accounts: [Account]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(filter: #Predicate<Subcategory> { $0.isVisible }) private var subcategories:
-        [Subcategory]
-    @Query(sort: \FavoritePayment.displayOrder, order: .forward) private var existingFavorites:
-        [FavoritePayment]
+    @State private var viewModel = FavoriteEditorViewModel()
 
     // Editing mode
     let favorite: FavoritePayment?
@@ -50,7 +47,9 @@ struct FavoriteEditorView: View {
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showNatureSelector = false
-    @State private var showSaveError = false
+
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .title) private var currencySymbolSize: CGFloat = 28
 
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -66,10 +65,10 @@ struct FavoriteEditorView: View {
                     .ignoresSafeArea()
                     .dismissKeyboardOnTap()
 
-                VStack(spacing: 0) {
+                VStack(spacing: DS.Spacing.none) {
                     // Transaction type selector (without transfer)
                     transactionTypeSelector
-                        .padding(.top, 8)
+                        .padding(.top, DS.Spacing.sm)
 
                     Spacer()
 
@@ -80,14 +79,14 @@ struct FavoriteEditorView: View {
 
                     // Bottom selection chips
                     bottomChips
-                        .padding(.bottom, 16)
+                        .padding(.bottom, DS.Spacing.lg)
                 }
             }
             .navigationTitle(favorite != nil ? L10n.Favorites.editTitle : L10n.Favorites.newTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -149,7 +148,10 @@ struct FavoriteEditorView: View {
             }
             .alert(
                 L10n.Common.error,
-                isPresented: $showSaveError,
+                isPresented: Binding(
+                    get: { viewModel.showSaveError },
+                    set: { _ in viewModel.dismissSaveError() }
+                ),
                 actions: {
                     Button(L10n.Common.understood, role: .cancel) {}
                 },
@@ -160,6 +162,7 @@ struct FavoriteEditorView: View {
         }
         .tint(Color.electricIndigo)
         .onAppear {
+            viewModel.setContext(modelContext)
             loadFavoriteData()
             // Auto-focus name field for new favorites
             if favorite == nil {
@@ -179,20 +182,24 @@ struct FavoriteEditorView: View {
 
     // MARK: - Transaction Type Selector (No Transfer)
 
+    private var availableTransactionTypes: [TransactionType] {
+        sessionState.isExpensesOnlyMode ? [.expense] : [.expense, .income]
+    }
+
     private var transactionTypeSelector: some View {
-        HStack(spacing: 0) {
-            ForEach([TransactionType.expense, TransactionType.income], id: \.self) { type in
+        HStack(spacing: DS.Spacing.none) {
+            ForEach(availableTransactionTypes, id: \.self) { type in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    dsWithAnimation(reduceMotion) {
                         transactionType = type
                         selectedSubcategory = nil
                     }
                 } label: {
                     Text(type == .expense ? L10n.Transaction.expense : L10n.Transaction.income)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                         .foregroundStyle(transactionType == type ? .white : .secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, DS.Chip.paddingH)
                         .background {
                             if transactionType == type {
                                 Capsule()
@@ -208,7 +215,7 @@ struct FavoriteEditorView: View {
             Capsule()
                 .fill(Color(UIColor.label).opacity(0.08))
         )
-        .padding(.horizontal, 60)
+        .padding(.horizontal, DS.Spacing.xxxxl + DS.Spacing.md)
     }
 
     // MARK: - Central Content
@@ -217,16 +224,16 @@ struct FavoriteEditorView: View {
         VStack(spacing: DS.Spacing.xxl) {
             // Name field
             TextField(L10n.Favorites.namePlaceholder, text: $name)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .focused($isNameFieldFocused)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, DS.Spacing.xxxxl)
                 .tint(Color(UIColor.label))
 
             // Description field
             TextField(L10n.Favorites.descriptionPlaceholder, text: $note)
-                .font(.title2.weight(.semibold))
+                .font(DS.Typography.title)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 280)
@@ -242,19 +249,19 @@ struct FavoriteEditorView: View {
                 ) {
                     showNatureSelector = true
                 }
-                .padding(.top, 8)
+                .padding(.top, DS.Spacing.sm)
             }
         }
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             Text(currencySymbol)
-                .font(.system(size: 28, weight: .medium, design: .rounded))
+                .font(.system(size: currencySymbolSize, weight: .medium, design: .rounded))
                 .foregroundStyle(amountColor.opacity(0.7))
 
             TextField("0.00", text: $amountString)
-                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(amountColor)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
@@ -279,6 +286,7 @@ struct FavoriteEditorView: View {
                     }
                 }
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private var currencySymbol: String {
@@ -293,13 +301,13 @@ struct FavoriteEditorView: View {
 
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: 10) { // DS: intentional non-token value
                 // Account chip
                 SelectionChip(
                     icon: "creditcard",
                     text: selectedAccount?.name ?? L10n.Transaction.account,
                     isSelected: selectedAccount != nil,
-                    color: selectedAccount != nil ? Color(hex: selectedAccount!.colorHex) : nil
+                    color: selectedAccount.map { Color(hex: $0.colorHex) }
                 ) {
                     showAccountSelector = true
                 }
@@ -337,13 +345,13 @@ struct FavoriteEditorView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, DS.Spacing.xl)
         }
     }
 
     private var subcategoryChipColor: Color? {
         guard let subcategory = selectedSubcategory else { return nil }
-        let colorHex = subcategory.colorHex ?? subcategory.category.colorHex
+        let colorHex = subcategory.colorHex ?? subcategory.safeCategory.colorHex
         return Color(hex: colorHex)
     }
 
@@ -381,7 +389,7 @@ struct FavoriteEditorView: View {
         note = favorite.note ?? ""
         selectedAccount = favorite.account
         selectedSubcategory = favorite.subcategory
-        selectedTags = favorite.tags
+        selectedTags = favorite.tags ?? []
         if let natureRaw = favorite.natureOverride {
             selectedNature = SubcategoryNature(rawValue: natureRaw)
         }
@@ -398,48 +406,19 @@ struct FavoriteEditorView: View {
     }
 
     private func saveFavorite() {
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty else { return }
-
-        let amount: Double? = amountString.isEmpty ? nil : Double(amountString)
-        let natureOverride: String? =
-            selectedNature != selectedSubcategory?.nature
-            ? selectedNature?.rawValue
-            : nil
-
-        if let existing = favorite {
-            // Update existing
-            existing.name = trimmedName
-            existing.transactionType = transactionType.rawValue
-            existing.amount = amount
-            existing.note = note.isEmpty ? nil : note
-            existing.account = selectedAccount
-            existing.subcategory = selectedSubcategory
-            existing.tags = selectedTags
-            existing.natureOverride = natureOverride
-            existing.currencyCode = selectedAccount?.currencyCode
-        } else {
-            // Create new
-            let newFavorite = FavoritePayment(
-                name: trimmedName,
-                transactionType: transactionType.rawValue,
-                amount: amount,
-                note: note.isEmpty ? nil : note,
-                account: selectedAccount,
-                subcategory: selectedSubcategory,
-                tags: selectedTags,
-                natureOverride: natureOverride,
-                currencyCode: selectedAccount?.currencyCode,
-                displayOrder: existingFavorites.count
-            )
-            modelContext.insert(newFavorite)
-        }
-
-        do {
-            try modelContext.save()
+        let saved = viewModel.saveFavorite(
+            existing: favorite,
+            name: name,
+            transactionType: transactionType,
+            amountString: amountString,
+            note: note,
+            account: selectedAccount,
+            subcategory: selectedSubcategory,
+            tags: selectedTags,
+            natureOverride: selectedNature
+        )
+        if saved {
             dismiss()
-        } catch {
-            showSaveError = true
         }
     }
 

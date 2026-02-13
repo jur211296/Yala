@@ -18,15 +18,20 @@ struct TrendsTabView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
-    // MARK: - Data Queries
+    // MARK: - Data (passed from parent)
 
-    @Query private var accounts: [Account]
-    @Query(sort: \Category.name, order: .forward) private var categories: [Category]
-    @Query(sort: \Subcategory.name, order: .forward) private var allSubcategories: [Subcategory]
-    @Query(sort: \Tag.name, order: .forward) private var tags: [Tag]
-    @Query(sort: \TransactionItem.date, order: .reverse) private var allTransactions:
-        [TransactionItem]
+    let accounts: [Account]
+    let categories: [Category]
+    let allSubcategories: [Subcategory]
+    let tags: [Tag]
+    let allTransactions: [TransactionItem]
+
+    // MARK: - Settings
+
+    @AppStorage("showVariations") private var showVariations: Bool = true
 
     // MARK: - Persistent Sort Order (matches Profile/Accounts view)
 
@@ -190,8 +195,12 @@ struct TrendsTabView: View {
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
-        // NOTE: Removed .onChange(of: allTransactions) - it caused crashes during data wipe
-        // CashFlow updates via other onChange triggers (period, filters, etc.)
+        // Use count instead of full array to avoid crashes during data wipe
+        // while still detecting when transactions are added/deleted
+        .onChange(of: allTransactions.count) {
+            calculateCashFlowData()
+            calculatePeriodComparisonData()
+        }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -300,8 +309,9 @@ struct TrendsTabView: View {
                         }
 
                         // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected
-                        if trendsViewModel.selectedTransactionNatures.count == 1,
+                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
+                        if !sessionState.isExpensesOnlyMode,
+                            trendsViewModel.selectedTransactionNatures.count == 1,
                             let nature = trendsViewModel.selectedTransactionNatures.first
                         {
                             FilterChipView(
@@ -348,7 +358,7 @@ struct TrendsTabView: View {
 
                         if trendsViewModel.activeFilterCount > 1 {
                             Button {
-                                withAnimation { trendsViewModel.clearFilters() }
+                                dsWithAnimation(reduceMotion) { trendsViewModel.clearFilters() }
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -384,7 +394,7 @@ struct TrendsTabView: View {
     private var trendsHeader: some View {
         HStack {
             Text(L10n.Trend.title)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 
             InfoHintButton(
@@ -394,10 +404,13 @@ struct TrendsTabView: View {
 
             Spacer()
 
-            metricSelector
+            // Metric selector (hidden in expenses-only mode)
+            if !sessionState.isExpensesOnlyMode {
+                metricSelector
+            }
 
-            // Comparison mode selector (hidden for periods where only one mode makes sense)
-            if PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
+            // Comparison mode selector (hidden when showVariations is OFF or for periods where only one mode makes sense)
+            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
                 comparisonModeSelector
             }
         }
@@ -406,7 +419,7 @@ struct TrendsTabView: View {
     // MARK: - Comparison Mode Selector
 
     private var comparisonModeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(ComparisonMode.allCases) { mode in
                 comparisonSelectorButton(for: mode)
             }
@@ -422,14 +435,14 @@ struct TrendsTabView: View {
         let isSelected = sessionState.comparisonMode == mode
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 sessionState.comparisonMode = mode
             }
         } label: {
             Text(mode.shortName)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .font(DS.Typography.labelSmall)
+                .padding(.horizontal, DS.Chip.paddingH)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {
@@ -453,8 +466,8 @@ struct TrendsTabView: View {
                 chartCard
                     .tag(0)
 
-                // Period Comparison Card (Page 1) - only if not All Time
-                if trendsViewModel.detailPeriod != .allTime {
+                // Period Comparison Card (Page 1) - only if not All Time AND showVariations is ON
+                if showVariations && trendsViewModel.detailPeriod != .allTime {
                     periodComparisonCard
                         .tag(1)
                 }
@@ -462,8 +475,8 @@ struct TrendsTabView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 330)
 
-            // Page indicators (centered)
-            if trendsViewModel.detailPeriod != .allTime {
+            // Page indicators (centered) - only show when there are 2 pages
+            if showVariations && trendsViewModel.detailPeriod != .allTime {
                 HStack(spacing: DS.Spacing.sm) {
                     ForEach(0..<2, id: \.self) { index in
                         Circle()
@@ -500,8 +513,8 @@ struct TrendsTabView: View {
 
                     Spacer()
 
-                    // Variation chip with "vs period" text below (hidden for All Time)
-                    if trendsViewModel.detailPeriod != .allTime {
+                    // Variation chip with "vs period" text below (hidden for All Time or when showVariations is OFF)
+                    if showVariations && trendsViewModel.detailPeriod != .allTime {
                         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                             VariationChip(
                                 currentAmount: currentPeriodTotal,
@@ -512,7 +525,7 @@ struct TrendsTabView: View {
                             )
 
                             Text(comparisonPeriodText)
-                                .font(.caption2)
+                                .font(DS.Typography.captionSmall)
                                 .foregroundStyle(Color.yalaSecondaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -522,7 +535,7 @@ struct TrendsTabView: View {
             } else {
                 // Simple title when no data
                 Text(chartTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
             }
 
@@ -549,7 +562,7 @@ struct TrendsTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
@@ -558,10 +571,11 @@ struct TrendsTabView: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -573,10 +587,11 @@ struct TrendsTabView: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -601,26 +616,26 @@ struct TrendsTabView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(periodComparisonTitle)
-                            .font(.headline)
+                            .font(DS.Typography.headline)
                             .foregroundStyle(Color.yalaPrimaryText)
 
                         // KPI value with "vs" previous
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(currentKPIValue)
-                                .font(.callout.weight(.bold))
+                                .font(DS.Typography.headline)
                                 .foregroundStyle(Color.yalaPrimaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
 
                             if let prevTotal = previousPeriodTotal {
                                 Text("vs \(YalaFormatter.number(value: prevTotal))")
-                                    .font(.caption)
+                                    .font(DS.Typography.caption)
                                     .foregroundStyle(Color.yalaSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
                             }
                         }
-                        .padding(.top, 4)
+                        .padding(.top, DS.Spacing.xs)
                     }
 
                     Spacer()
@@ -636,7 +651,7 @@ struct TrendsTabView: View {
                         )
 
                         Text(comparisonPeriodText)
-                            .font(.caption2)
+                            .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.yalaSecondaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -645,7 +660,7 @@ struct TrendsTabView: View {
             } else {
                 // Simple title when no data
                 Text(periodComparisonTitle)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
             }
 
@@ -678,7 +693,7 @@ struct TrendsTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
@@ -703,27 +718,27 @@ struct TrendsTabView: View {
     private var chartHeader: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(chartTitle)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                 Text(currentKPIValue)
-                    .font(.callout.weight(.bold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(Color.yalaPrimaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                // Show previous period value for comparison (hidden for All Time)
-                if trendsViewModel.detailPeriod != .allTime,
+                // Show previous period value for comparison (hidden for All Time or when showVariations is OFF)
+                if showVariations && trendsViewModel.detailPeriod != .allTime,
                    let prevTotal = previousPeriodTotal {
                     Text("vs \(YalaFormatter.number(value: prevTotal))")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(Color.yalaSecondaryText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
             }
-            .padding(.top, 4)
+            .padding(.top, DS.Spacing.xs)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -736,7 +751,7 @@ struct TrendsTabView: View {
     }
 
     private var metricSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             // Always show all options - user can switch freely
             ForEach(TrendMetric.allCases) { metric in
                 metricButton(for: metric)
@@ -778,9 +793,9 @@ struct TrendsTabView: View {
         } label: {
             // Icon only (compact version for TrendsTabView header)
             Image(systemName: metric.iconName)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .font(DS.Typography.labelSmall)
+                .padding(.horizontal, DS.FormRow.paddingV)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? metric.color.opacity(0.4) : metric.color))
                 .background(
                     Group {
@@ -803,8 +818,13 @@ struct TrendsTabView: View {
             // Header with selector
             HStack {
                 Text(L10n.CashFlow.title)
-                    .font(.headline)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
+
+                InfoHintButton(
+                    title: L10n.WidgetType.cashFlow,
+                    message: L10n.Widget.Hint.cashFlow
+                )
 
                 Spacer()
 
@@ -848,10 +868,11 @@ struct TrendsTabView: View {
         VStack(spacing: DS.Spacing.md) {
             Spacer()
             Image(systemName: "chart.bar.fill")
-                .font(.system(size: 32))
+                .font(.system(size: scaledEmptyIconSize))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.secondary)
             Text(L10n.Empty.noData)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -862,13 +883,13 @@ struct TrendsTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     private var cashFlowViewSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DS.Spacing.none) {
             ForEach(CashFlowViewType.allCases) { viewType in
                 cashFlowViewButton(for: viewType)
             }
@@ -882,7 +903,7 @@ struct TrendsTabView: View {
         let isSelected = cashFlowViewType == viewType
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion) {
                 cashFlowViewType = viewType
                 // Reset carousel positions when switching view type
                 if viewType == .byAccount,
@@ -909,9 +930,9 @@ struct TrendsTabView: View {
             }
         } label: {
             Image(systemName: viewType.iconName)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .font(DS.Typography.labelSmall)
+                .padding(.horizontal, DS.Chip.paddingH)
+                .padding(.vertical, DS.Spacing.sm)
                 .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
                 .background(
                     Group {
@@ -935,7 +956,7 @@ struct TrendsTabView: View {
         if !accountIDs.isEmpty {
             VStack(spacing: DS.Spacing.sm) {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 0) {
+                    LazyHStack(alignment: .top, spacing: DS.Spacing.none) {
                         ForEach(accountIDs, id: \.self) { accountID in
                             if let account = accounts.first(where: {
                                 $0.persistentModelID == accountID
@@ -1003,7 +1024,7 @@ struct TrendsTabView: View {
         if !currencyCodes.isEmpty {
             VStack(spacing: DS.Spacing.sm) {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 0) {
+                    LazyHStack(alignment: .top, spacing: DS.Spacing.none) {
                         ForEach(currencyCodes, id: \.self) { currencyCode in
                             if let summary = cashFlowByCurrency[currencyCode] {
                                 cashFlowCard(
@@ -1053,8 +1074,9 @@ struct TrendsTabView: View {
         title: String,
         currencyCode: String
     ) -> some View {
-        // Calculate previous total based on selected metric
+        // Calculate previous total based on selected metric (only when showVariations is ON)
         let previousTotal: Double? = {
+            guard showVariations else { return nil }
             guard trendsViewModel.detailPeriod != .allTime else { return nil }
             guard let prev = previousSummary else { return nil }
             switch trendsViewModel.selectedMetric {
@@ -1077,7 +1099,8 @@ struct TrendsTabView: View {
             customTitle: title,
             displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric),
             previousAmount: previousTotal,
-            comparisonPeriodText: trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil
+            comparisonPeriodText: showVariations && trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
+            showInfoHint: false
         )
     }
 
@@ -1108,7 +1131,7 @@ struct TrendsTabView: View {
     private var recentRecordsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
-                .font(.headline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(Color.yalaPrimaryText)
 
             if trendsViewModel.recentRecords.isEmpty {
@@ -1126,9 +1149,9 @@ struct TrendsTabView: View {
                 HStack {
                     Spacer()
                     Text(L10n.Action.viewAll)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DS.Typography.headline)
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
@@ -1146,14 +1169,14 @@ struct TrendsTabView: View {
     private var emptyRecordsState: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
             Text(L10n.Records.noRecords)
-                .font(.footnote)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, DS.Spacing.xl)
     }
 
     // MARK: - Helpers
@@ -1254,7 +1277,7 @@ struct TrendsTabView: View {
                 $0.persistentModelID == subcategoryID
             }) {
                 // Get parent category color as fallback
-                let categoryColor = subcategory.category.colorHex
+                let categoryColor = subcategory.safeCategory.colorHex
                 chips.append(
                     SubcategoryChip(
                         name: subcategory.name,
@@ -1315,10 +1338,10 @@ struct TrendsTabView: View {
         let baseInterval = trendsViewModel.panelDateInterval
 
         // For All Time, calculate effective interval based on actual transactions
-        let fetchedTransactions = try? modelContext.fetch(FetchDescriptor<TransactionItem>())
+        let fetchedTransactions = allTransactions
         let effectiveInterval: DateInterval
         if trendsViewModel.detailPeriod == .allTime {
-            let dates = (fetchedTransactions ?? []).map(\.date)
+            let dates = fetchedTransactions.map(\.date)
             if let firstDate = dates.min(), let lastDate = dates.max() {
                 let calendar = Calendar.current
                 let start = calendar.startOfDay(for: firstDate)
@@ -1348,7 +1371,7 @@ struct TrendsTabView: View {
 
         // Filter transactions (reuse fetchedTransactions from above)
         let filtered = FilterService.filterForTrends(
-            transactions: fetchedTransactions ?? [],
+            transactions: fetchedTransactions,
             accounts: accounts,
             criteria: criteria
         )
@@ -1394,7 +1417,7 @@ struct TrendsTabView: View {
         cashFlowByCurrency = byCurrency
 
         // 4. Calculate PREVIOUS period cash flow for variation chip
-        calculatePreviousCashFlow(fetchedTransactions: fetchedTransactions ?? [])
+        calculatePreviousCashFlow(fetchedTransactions: fetchedTransactions)
     }
 
     /// Calculate previous period cash flow summary for VariationChip
@@ -1495,10 +1518,9 @@ struct TrendsTabView: View {
             customRange: sessionState.customDateRange
         )
 
-        // Get eligible accounts (same as StatisticsViewModel)
+        // Get eligible accounts (archived accounts still count; same as StatisticsViewModel)
         let eligibleAccounts = accounts.filter { account in
-            !account.isArchived
-                && !account.excludeFromStatistics
+            !account.excludeFromStatistics
                 && (trendsViewModel.selectedAccounts.isEmpty
                     || trendsViewModel.selectedAccounts.contains(account.persistentModelID))
         }
@@ -1632,24 +1654,24 @@ struct CompactRecordRow: View {
                 // Line 1: Note (bold) or Subcategory as fallback
                 if let note = record.note, !note.isEmpty {
                     Text(note)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     // Line 2: Subcategory • Date
                     Text(secondaryLine)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 } else {
                     Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
-                        .font(.subheadline.weight(.medium))
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     // Date as secondary
                     Text(shortDateFormat)
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -1660,7 +1682,7 @@ struct CompactRecordRow: View {
             // Right column: Amount + Nature
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                 Text(formattedAmount)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(amountColor)
 
                 // Nature indicator (if available)
@@ -1680,7 +1702,7 @@ struct CompactRecordRow: View {
                 .frame(width: 6, height: 6)
 
             Text(nature.displayName)
-                .font(.caption2.weight(.medium))
+                .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, DS.Spacing.xs)
@@ -1742,12 +1764,12 @@ struct CompactRecordRow: View {
 
     private var shortDateFormat: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = Locale.current
         formatter.dateFormat = "d MMM"
         return formatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
     }
 
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode)
+        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 }

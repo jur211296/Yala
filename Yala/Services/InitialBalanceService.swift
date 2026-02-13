@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 
 /// Service for managing initial balance and adjustment transactions
-struct InitialBalanceService {
+@MainActor struct InitialBalanceService {
 
     // MARK: - Balance Adjustment Types
 
@@ -35,7 +35,9 @@ struct InitialBalanceService {
             let transactions = try context.fetch(descriptor)
             return transactions.first { $0.account?.persistentModelID == accountID }
         } catch {
+            #if DEBUG
             print("Error fetching initial balance transaction: \(error)")
+            #endif
             return nil
         }
     }
@@ -164,7 +166,9 @@ struct InitialBalanceService {
             let subcategories = try context.fetch(descriptor)
             return subcategories.first
         } catch {
+            #if DEBUG
             print("Error fetching balance adjustment subcategory: \(error)")
+            #endif
             return nil
         }
     }

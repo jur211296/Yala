@@ -12,12 +12,7 @@ struct ExportFiltersStepView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    // MARK: - Data Queries
-
-    @Query(sort: \Account.name) private var allAccounts: [Account]
-    @Query(sort: \Category.sortOrder) private var allCategories: [Category]
-    @Query(sort: \Tag.name) private var allTags: [Tag]
-    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @State private var viewModel = ExportFiltersStepViewModel()
 
     // MARK: - Local State
 
@@ -71,44 +66,15 @@ struct ExportFiltersStepView: View {
     }
 
     private var exportFilters: ExportFilters {
-        // Resolve subcategory objects from PersistentIdentifiers
-        let selectedSubcategoryObjects = allSubcategories.filter {
-            selectedSubcategories.contains($0.persistentModelID)
-        }
-
-        // Derive categories from the selected subcategories
-        let finalCategories = Set(selectedSubcategoryObjects.compactMap { $0.category })
-
-        let selectedTagObjects = allTags.filter { selectedTags.contains($0.persistentModelID) }
-
-        let selectedTagNames: [String]
-        if !allTags.isEmpty && selectedTagObjects.count == allTags.count {
-            // Interpretar "todas seleccionadas" como "sin filtro por etiquetas"
-            selectedTagNames = []
-        } else {
-            selectedTagNames = selectedTagObjects.map { $0.name }
-        }
-
-        // Convert DetailPeriod to date interval (use custom range if selected)
-        let dateInterval: DateInterval
-        if selectedPeriod == .custom, let customRange = customDateRange {
-            dateInterval = customRange
-        } else {
-            dateInterval = selectedPeriod.dateInterval()
-        }
-
-        return ExportFilters(
-            selectedAccounts: allAccounts.filter {
-                selectedAccounts.contains($0.persistentModelID)
-            },
-            selectedCategories: Array(finalCategories),
-            selectedSubcategories: selectedSubcategoryObjects,
-            selectedTagNames: selectedTagNames,
-            selectedCurrencies: Array(selectedCurrencies),
+        viewModel.buildExportFilters(
+            selectedAccounts: selectedAccounts,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedCurrencies: selectedCurrencies,
             amountCondition: amountCondition,
-            dateFrom: dateInterval.start,
-            dateTo: dateInterval.end,
-            noteContains: noteContains.isEmpty ? nil : noteContains
+            selectedPeriod: selectedPeriod,
+            customDateRange: customDateRange,
+            noteContains: noteContains
         )
     }
 
@@ -116,6 +82,9 @@ struct ExportFiltersStepView: View {
 
     var body: some View {
         mainContent
+            .onAppear {
+                viewModel.setContext(modelContext)
+            }
             .sheet(isPresented: $showCategoriesSheet) {
                 categoriesSheetView
             }
@@ -140,21 +109,21 @@ struct ExportFiltersStepView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         SectionBox(title: L10n.Filters.filterOptions) {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DS.Spacing.none) {
                                 periodRow
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 accountsContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 tagsContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 naturesContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 amountContent
-                                Divider().padding(.leading, 16)
+                                Divider().padding(.leading, DS.Spacing.lg)
                                 noteContent
                             }
                         }
@@ -167,7 +136,7 @@ struct ExportFiltersStepView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -182,6 +151,7 @@ struct ExportFiltersStepView: View {
                         Text(L10n.Common.next)
                     }
                     .disabled(!isValid)
+                    .accessibilityHint(!isValid ? "Completa los filtros requeridos" : "")
                 }
             }
         }
@@ -191,14 +161,14 @@ struct ExportFiltersStepView: View {
 
     private var categoriesSheetView: some View {
         CategorySelectorSheet(
-            categories: allCategories,
-            subcategories: allSubcategories,
+            categories: viewModel.allCategories,
+            subcategories: viewModel.allSubcategories,
             selectedSubcategories: $selectedSubcategories
         )
         .onAppear {
             // Initialize with all selected if empty
             if selectedSubcategories.isEmpty {
-                let visibleSubs = allSubcategories.filter { $0.isVisible }
+                let visibleSubs = viewModel.allSubcategories.filter { $0.isVisible }
                 selectedSubcategories = Set(visibleSubs.map { $0.persistentModelID })
             }
         }
@@ -207,52 +177,27 @@ struct ExportFiltersStepView: View {
     // MARK: - Sections
 
     private var selectedAccountsText: String {
-        if selectedAccounts.isEmpty {
-            return L10n.Filters.noneSelected
-        }
-        if selectedAccounts.count == allAccounts.count {
-            return L10n.Filters.allAccounts
-        }
-        return L10n.Filters.selectedCount(selectedAccounts.count)
+        viewModel.selectedAccountsText(selectedAccounts: selectedAccounts)
     }
 
     private func syncAccountsSelection() {
-        if !hasInitializedAccounts && !allAccounts.isEmpty {
-            selectedAccounts = Set(allAccounts.map { $0.persistentModelID })
+        if !hasInitializedAccounts && !viewModel.allAccounts.isEmpty {
+            selectedAccounts = Set(viewModel.allAccounts.map { $0.persistentModelID })
             hasInitializedAccounts = true
         }
     }
 
     private var selectedCategoriesText: String {
-        let visibleSubs = allSubcategories.filter { $0.isVisible }
-
-        // Empty = all selected
-        if selectedSubcategories.isEmpty {
-            return L10n.Filters.allCategories
-        }
-
-        // All visible subcategories selected
-        if selectedSubcategories.count == visibleSubs.count {
-            return L10n.Filters.allCategories
-        }
-
-        // Partial selection
-        return L10n.Filters.subcategoriesSelectedCount(selectedSubcategories.count)
+        viewModel.selectedCategoriesText(selectedSubcategories: selectedSubcategories)
     }
 
     private var selectedTagsText: String {
-        if allTags.isEmpty {
-            return L10n.Filters.noTags
-        }
-        if selectedTags.isEmpty || selectedTags.count == allTags.count {
-            return L10n.Filters.allTags
-        }
-        return L10n.Filters.selectedCount(selectedTags.count)
+        viewModel.selectedTagsText(selectedTags: selectedTags)
     }
 
     private func syncTagsSelection() {
-        if selectedTags.isEmpty && !allTags.isEmpty {
-            selectedTags = Set(allTags.map { $0.persistentModelID })
+        if selectedTags.isEmpty && !viewModel.allTags.isEmpty {
+            selectedTags = Set(viewModel.allTags.map { $0.persistentModelID })
         }
     }
 
@@ -268,7 +213,7 @@ struct ExportFiltersStepView: View {
             icon: "creditcard",
             title: L10n.Settings.accounts,
             status: selectedAccountsText,
-            items: allAccounts,
+            items: viewModel.allAccounts,
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -280,7 +225,7 @@ struct ExportFiltersStepView: View {
             if newAccountIDs.isEmpty {
                 selectedCurrencies = Set(CurrencyCode.allCases)
             } else {
-                let selected = allAccounts.filter { newAccountIDs.contains($0.persistentModelID) }
+                let selected = viewModel.allAccounts.filter { newAccountIDs.contains($0.persistentModelID) }
                 let available = Set(
                     selected.map { CurrencyCode(rawValue: $0.currencyCode) ?? .pen })
                 selectedCurrencies = available
@@ -299,7 +244,7 @@ struct ExportFiltersStepView: View {
             }
         } label: {
             Text(account.name)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -317,7 +262,7 @@ struct ExportFiltersStepView: View {
         Button {
             showCategoriesSheet = true
         } label: {
-            HStack(spacing: 0) {
+            HStack(spacing: DS.Spacing.none) {
                 FilterSectionHeader(
                     icon: "tag",
                     title: L10n.Settings.categories,
@@ -327,7 +272,7 @@ struct ExportFiltersStepView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -338,9 +283,7 @@ struct ExportFiltersStepView: View {
     }
 
     private func subcategories(for category: Category) -> [Subcategory] {
-        allSubcategories.filter { sub in
-            sub.category == category && sub.isVisible
-        }
+        viewModel.subcategories(for: category)
     }
 
     private var tagsContent: some View {
@@ -348,7 +291,7 @@ struct ExportFiltersStepView: View {
             icon: "number",
             title: L10n.Settings.tags,
             status: selectedTagsText,
-            items: allTags,
+            items: viewModel.allTags,
             showEmptyPlaceholder: true
         ) { tag in
             tagChip(tag)
@@ -374,7 +317,7 @@ struct ExportFiltersStepView: View {
                     .frame(width: 8, height: 8)
 
                 Text(tag.name)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -405,7 +348,7 @@ struct ExportFiltersStepView: View {
                     currencyChip(currency)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.formIndent)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
@@ -422,7 +365,7 @@ struct ExportFiltersStepView: View {
             }
         } label: {
             Text(currency.rawValue)
-                .font(.subheadline)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
@@ -436,13 +379,7 @@ struct ExportFiltersStepView: View {
     }
 
     private var availableCurrencies: [CurrencyCode] {
-        if selectedAccounts.isEmpty {
-            return CurrencyCode.allCases
-        }
-        let selected = allAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
-        let accountCurrencies = Set(
-            selected.map { CurrencyCode(rawValue: $0.currencyCode) ?? .pen })
-        return CurrencyCode.allCases.filter { accountCurrencies.contains($0) }
+        viewModel.availableCurrencies(selectedAccounts: selectedAccounts)
     }
 
     // MARK: - Natures Content
@@ -464,7 +401,7 @@ struct ExportFiltersStepView: View {
                     natureChip(nature)
                 }
             }
-            .padding(.leading, 52)
+            .padding(.leading, DS.Spacing.formIndent)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
@@ -482,7 +419,7 @@ struct ExportFiltersStepView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Text(nature.displayName)
-                    .font(.subheadline)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
             }
@@ -515,7 +452,7 @@ struct ExportFiltersStepView: View {
         let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
 
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
+        formatter.locale = Locale.current
         formatter.dateFormat = "d MMM yyyy"
 
         return "\(formatter.string(from: interval.start)) - \(formatter.string(from: displayEnd))"
@@ -539,22 +476,22 @@ struct ExportFiltersStepView: View {
         } label: {
             HStack {
                 Image(systemName: "calendar")
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                     .frame(width: 24)
 
                 Text(L10n.Export.period)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
 
                 Text(periodDisplayText)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -567,7 +504,7 @@ struct ExportFiltersStepView: View {
     private var noteContent: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "note.text")
-                .font(.body)
+                .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .frame(width: 24)
 
@@ -599,7 +536,7 @@ private struct ExportPeriodPickerSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.none) {
                         // Standard periods
                         ForEach(standardPeriods) { period in
                             periodRow(for: period)
@@ -622,7 +559,7 @@ private struct ExportPeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark") {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
                         dismiss()
                     }
                 }
@@ -647,7 +584,7 @@ private struct ExportPeriodPickerSheet: View {
         } label: {
             HStack {
                 Text(period.displayName)
-                    .font(.body)
+                    .font(DS.Typography.body)
                     .foregroundStyle(Color.yalaPrimaryText)
 
                 Spacer()
@@ -655,7 +592,7 @@ private struct ExportPeriodPickerSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -670,14 +607,14 @@ private struct ExportPeriodPickerSheet: View {
             showCustomPicker = true
         } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Period.custom)
-                        .font(.body)
+                        .font(DS.Typography.body)
                         .foregroundStyle(Color.yalaPrimaryText)
 
                     if let range = customDateRange {
                         Text(formattedRange(range))
-                            .font(.caption)
+                            .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -687,11 +624,11 @@ private struct ExportPeriodPickerSheet: View {
                 if selectedPeriod == .custom {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.brandPrimary)
-                        .font(.body.weight(.semibold))
+                        .font(DS.Typography.headline)
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -745,6 +682,7 @@ private struct ExportCustomPeriodPickerSheet: View {
                         in: ...endDate,
                         displayedComponents: .date
                     )
+                    .listRowBackground(Color.yalaCard)
 
                     DatePicker(
                         L10n.Period.endDate,
@@ -752,16 +690,17 @@ private struct ExportCustomPeriodPickerSheet: View {
                         in: startDate...,
                         displayedComponents: .date
                     )
+                    .listRowBackground(Color.yalaCard)
                 }
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color.yalaBackground)
+            .background(Color.yalaCard)
             .navigationTitle(L10n.Period.custom)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    YalaToolbarButton(systemName: "chevron.left") {
+                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
                         dismiss()
                     }
                 }
