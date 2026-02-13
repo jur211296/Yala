@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-12] ed93611 fix: initialize BudgetAlertService context so threshold notifications actually fire
+- [2026-02-12] 9e38af9 fix: preserve specific subcategory selection when opening filters sheet
+- [2026-02-12] 78bd427 fix: propagate category chart filters to filters sheet as subcategories
 - [2026-02-12] 329f3f8 feat: replicate improved success screen to inbox approvals
 - [2026-02-12] 177d8b7 chore: remove redundant notes from avatar editing screen
 - [2026-02-12] 52e1a6c fix: apply category dimming when subcategory filter is active in statistics
@@ -31,15 +34,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-12] ad63797 refactor: remove personalization and power user tutorial categories
 - [2026-02-12] e0d0555 feat: redesign tutorials with categorized list, detail carousel and video support
 - [2026-02-11] d5aefea feat: add privacy screen to onboarding + rename tips to tutorials
-- [2026-02-11] 13cff73 style: migrate hardcoded spacing to DS tokens (DS-19)
-- [2026-02-11] 89b204c style: migrate widget foregroundColor to foregroundStyle (18 sites)
-- [2026-02-11] 0aa5597 refactor: replace DispatchQueue.main.asyncAfter with Task.sleep
-- [2026-02-11] ae162e2 refactor: migrate NetworkMonitor + AudioRecorderService to @Observable
-- [2026-02-11] eac4749 chore: SwiftData hardening — @MainActor + explicit deleteRules
-- [2026-02-11] ba2aca0 style: migrate hardcoded fonts to DS.Typography tokens (DS-18)
-- [2026-02-11] 328efbb chore: pre-launch fixes — terms link, widget i18n, a11y labels, weak self
-- [2026-02-11] 101fbb6 style: migrate hardcoded spacing to DS tokens + update docs (DS-COMPLIANCE)
-- [2026-02-11] 0a2edec style: migrate hardcoded colors to DS.Semantic/Gradients/Colors tokens (DS-COMPLIANCE)
 - [2026-02-11] 96ad324 style: add DS.Semantic, DS.Gradients and DS.Colors.borderDark tokens (DS-COMPLIANCE)
 - [2026-02-11] 4cbc40c fix: add iCloud sync waiting screen for new device setup (BUG-22)
 - [2026-02-09] af56040 fix: reduce inbox modal delay and defer when biometric locked (BUG-17)
@@ -447,8 +441,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Replicated improved success screen to inbox approvals
+Stopped at: Fix budget alert notifications — BudgetAlertService context was never initialized
 Next step: Siguiente item de /next
 Resume context:
-- InboxApproveSuccessView now matches TransactionSuccessView design (animations, gradient hero, glow, promoted amount)
-- Data struct and callbacks unchanged — no breaking changes in call sites
+- BudgetAlertService.shared.setContext() was never called, so checkBudgetsAndNotify() silently returned nil
+- Added setContext + check + cleanup in AppBootstrapper alongside ScheduledPaymentNotificationService
+- Notifications now fire on app launch (catch-up) and on each transaction save (real-time)
