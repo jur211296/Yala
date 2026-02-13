@@ -570,6 +570,8 @@ struct CategoriesTabView: View {
                         } else {
                             viewModel.selectedSubcategories = [subcategoryID]
                         }
+                        // Clear category filter — subcategory selection is more specific
+                        viewModel.selectedCategories.removeAll()
                     },
                     size: .large,
                     period: viewModel.detailPeriod,
@@ -843,6 +845,8 @@ struct CategoriesTabView: View {
                             } else {
                                 viewModel.selectedSubcategories = [subcategoryID]
                             }
+                            // Clear category filter — subcategory selection is more specific
+                            viewModel.selectedCategories.removeAll()
                         }
                     )
                 }

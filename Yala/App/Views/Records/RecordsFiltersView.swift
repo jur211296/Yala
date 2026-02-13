@@ -214,18 +214,30 @@ struct RecordsFiltersView: View {
 
     /// Expands category-level filters (from pie chart taps) into their visible subcategories
     /// so the filters sheet correctly reflects the active filter state.
+    /// If specific subcategories are already selected for a category, keeps those instead of expanding.
     private func expandCategoryFiltersToSubcategories() {
         let selectedCats = recordsViewModel.selectedCategories
         guard !selectedCats.isEmpty else { return }
 
-        let subcategoryIDs = filtersViewModel.allSubcategories
-            .filter { sub in
-                guard let category = sub.category else { return false }
-                return selectedCats.contains(category.persistentModelID) && sub.isVisible
-            }
-            .map { $0.persistentModelID }
+        let existingSubcategoryIDs = recordsViewModel.selectedSubcategories
 
-        recordsViewModel.selectedSubcategories.formUnion(subcategoryIDs)
+        for categoryID in selectedCats {
+            let subcategoriesOfCategory = filtersViewModel.allSubcategories
+                .filter { sub in
+                    guard let category = sub.category else { return false }
+                    return category.persistentModelID == categoryID && sub.isVisible
+                }
+                .map { $0.persistentModelID }
+
+            // If user already selected specific subcategories of this category, keep those
+            let alreadyHasSpecificSelection = subcategoriesOfCategory.contains { existingSubcategoryIDs.contains($0) }
+
+            if !alreadyHasSpecificSelection {
+                // No specific subcategory selected — expand all subcategories of this category
+                recordsViewModel.selectedSubcategories.formUnion(subcategoriesOfCategory)
+            }
+        }
+
         recordsViewModel.selectedCategories.removeAll()
     }
 
