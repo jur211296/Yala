@@ -107,6 +107,7 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 filtersViewModel.setContext(modelContext)
+                expandCategoryFiltersToSubcategories()
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -209,6 +210,23 @@ struct RecordsFiltersView: View {
     private func syncCategoriesSelection() {
         // Empty selection = no filter (show all)
         hasInitializedCategories = true
+    }
+
+    /// Expands category-level filters (from pie chart taps) into their visible subcategories
+    /// so the filters sheet correctly reflects the active filter state.
+    private func expandCategoryFiltersToSubcategories() {
+        let selectedCats = recordsViewModel.selectedCategories
+        guard !selectedCats.isEmpty else { return }
+
+        let subcategoryIDs = filtersViewModel.allSubcategories
+            .filter { sub in
+                guard let category = sub.category else { return false }
+                return selectedCats.contains(category.persistentModelID) && sub.isVisible
+            }
+            .map { $0.persistentModelID }
+
+        recordsViewModel.selectedSubcategories.formUnion(subcategoryIDs)
+        recordsViewModel.selectedCategories.removeAll()
     }
 
     private var selectedCategoriesText: String {

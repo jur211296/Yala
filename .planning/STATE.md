@@ -24,6 +24,9 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-12] 329f3f8 feat: replicate improved success screen to inbox approvals
+- [2026-02-12] 177d8b7 chore: remove redundant notes from avatar editing screen
+- [2026-02-12] 52e1a6c fix: apply category dimming when subcategory filter is active in statistics
 - [2026-02-12] 7065e73 fix: sort same-day transactions by createdAt instead of date hour
 - [2026-02-12] ad63797 refactor: remove personalization and power user tutorial categories
 - [2026-02-12] e0d0555 feat: redesign tutorials with categorized list, detail carousel and video support
@@ -444,10 +447,8 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Fix same-day transaction sorting (createdAt over date hour)
+Stopped at: Replicated improved success screen to inbox approvals
 Next step: Siguiente item de /next
 Resume context:
-- Fix aplicado en 3 archivos: FilterService, PanelViewModel, StatisticsViewModel
-- Within-day sort ahora usa createdAt (drafts aprobados se ordenan por momento de aprobación)
-- FetchDescriptors no tocados (date como primario entre días sigue correcto)
-- Build limpio, 260 tests pasan
+- InboxApproveSuccessView now matches TransactionSuccessView design (animations, gradient hero, glow, promoted amount)
+- Data struct and callbacks unchanged — no breaking changes in call sites
