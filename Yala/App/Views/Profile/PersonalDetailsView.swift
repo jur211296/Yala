@@ -130,9 +130,6 @@ struct PersonalDetailsView: View {
                 avatarDisplay
             }
 
-            Text(L10n.Profile.editAvatar)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(Color.electricIndigo)
         }
         .padding(.vertical, DS.Spacing.sm)
         .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItem, matching: .images)
@@ -287,11 +284,6 @@ struct PersonalDetailsView: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
 
-            Text(L10n.Profile.aliasFutureNote)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.tertiary)
-                .italic()
-                .padding(.top, DS.Spacing.sm)
         }
         .padding(.horizontal, DS.Spacing.sm)
     }
