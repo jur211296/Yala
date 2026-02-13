@@ -702,14 +702,16 @@ struct BidirectionalCashFlowChart: View {
         .chartXScale(domain: xDomain)
         .chartYScale(domain: yDomain)
         .chartXAxis {
-            AxisMarks(values: smartAxisDates) { value in
+            // Center axis dates within calendar unit to align with BarMark centers
+            let centeredDates = SmartAxisHelper.centerDatesInCalendarUnit(smartAxisDates, unit: grouping.calendarUnit)
+
+            AxisMarks(values: centeredDates) { value in
                 AxisGridLine()
                     .foregroundStyle(Color.secondary.opacity(0.1))
                 if let date = value.as(Date.self) {
-                    // Smart anchoring based on data point count
                     let anchor = SmartAxisHelper.axisLabelAnchor(
                         for: date,
-                        in: smartAxisDates,
+                        in: centeredDates,
                         dataPointCount: groupedPoints.count
                     )
 

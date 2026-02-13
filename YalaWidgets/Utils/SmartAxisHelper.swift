@@ -183,6 +183,22 @@ enum SmartAxisHelper {
         return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }
 
+    // MARK: - Calendar Unit Centering
+
+    /// Center a date within its calendar unit for axis alignment with BarMark(unit:)
+    /// BarMark with `unit:` spans the entire calendar unit, so the bar's visual center
+    /// is at the midpoint. Axis labels must also be centered to align properly.
+    static func centerInCalendarUnit(_ date: Date, unit: Calendar.Component) -> Date {
+        let calendar = Calendar.current
+        guard let interval = calendar.dateInterval(of: unit, for: date) else { return date }
+        return interval.start.addingTimeInterval(interval.duration / 2)
+    }
+
+    /// Center an array of dates within their calendar units
+    static func centerDatesInCalendarUnit(_ dates: [Date], unit: Calendar.Component) -> [Date] {
+        dates.map { centerInCalendarUnit($0, unit: unit) }
+    }
+
     // MARK: - Bar Chart Domain Helpers
 
     /// Calculate extended X domain for bar charts to prevent overly wide bars with few data points

@@ -388,13 +388,22 @@ struct PeriodComparisonChartView: View {
         }
     }
 
-    /// Calculate smart axis dates for chart X-axis (based on actual data)
+    /// Calculate smart axis dates aligned with actual data points
     private var smartAxisDates: [Date] {
         guard !filteredCurrentPoints.isEmpty else { return [] }
-        guard let firstDate = filteredCurrentPoints.first?.date,
-            let lastDate = filteredCurrentPoints.last?.date
-        else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+
+        let calendarUnit: Calendar.Component = {
+            switch grouping {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
+            }
+        }()
+
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: filteredCurrentPoints.map(\.date),
+            grouping: calendarUnit
+        )
     }
 
     /// Format axis label based on data span
@@ -402,7 +411,17 @@ struct PeriodComparisonChartView: View {
         guard let firstDate = filteredCurrentPoints.first?.date,
             let lastDate = filteredCurrentPoints.last?.date
         else { return "" }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil
+            }
+        }()
+
+        return SmartAxisHelper.formatAxisLabel(
+            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
     }
 
     /// Find closest point to given date

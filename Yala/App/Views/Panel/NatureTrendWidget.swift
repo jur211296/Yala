@@ -431,15 +431,18 @@ struct NatureTrendChartView: View {
         .chartLegend(.hidden)
         // X-Axis: Smart dynamic labels matching TrendChartView
         .chartXAxis {
-            AxisMarks(values: smartAxisDates) { value in
+            // Center axis dates within calendar unit to align with BarMark centers
+            let unit = mapGroupingToUnit(grouping)
+            let centeredDates = SmartAxisHelper.centerDatesInCalendarUnit(smartAxisDates, unit: unit)
+
+            AxisMarks(values: centeredDates) { value in
                 AxisGridLine()
                     .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
 
                 if let date = value.as(Date.self) {
-                    // Use smart anchor based on data count
                     let anchor = SmartAxisHelper.axisLabelAnchor(
                         for: date,
-                        in: smartAxisDates,
+                        in: centeredDates,
                         dataPointCount: points.count
                     )
 

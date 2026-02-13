@@ -455,16 +455,18 @@ struct CashFlowWidget: View {
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {
-                    // Smart dynamic X-axis labels (matching TrendChartView)
-                    AxisMarks(values: smartAxisDates) { value in
+                    // Center axis dates within calendar unit to align with BarMark centers
+                    let unit = calendarUnit(for: grouping)
+                    let centeredDates = SmartAxisHelper.centerDatesInCalendarUnit(smartAxisDates, unit: unit)
+
+                    AxisMarks(values: centeredDates) { value in
                         AxisGridLine()
                             .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
 
                         if let date = value.as(Date.self) {
-                            // Use smart anchor based on data count
                             let anchor = SmartAxisHelper.axisLabelAnchor(
                                 for: date,
-                                in: smartAxisDates,
+                                in: centeredDates,
                                 dataPointCount: activeChartData.count
                             )
 

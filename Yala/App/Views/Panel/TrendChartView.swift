@@ -249,53 +249,20 @@ struct TrendChartView: View {
 
     // MARK: - Smart Axis Labels
 
-    /// Maximum number of axis labels to show (to avoid crowding)
-    private let maxAxisLabels = 5
-
-    /// Calculate smart axis dates based on actual data range
+    /// Calculate smart axis dates aligned with actual data points
     private var smartAxisDates: [Date] {
-        guard let firstDate = trendPoints.first?.date,
-            let lastDate = trendPoints.last?.date
-        else {
-            return []
-        }
-
-        // If only one point, return just that date
-        if firstDate == lastDate {
-            return [firstDate]
-        }
-
-        let calendar = Calendar.current
-        let span = lastDate.timeIntervalSince(firstDate)
-        let days = span / 86400
-
-        // Always include first and last dates
-        var dates: [Date] = [firstDate]
-
-        // Calculate how many middle labels we can fit
-        let middleLabelsCount = maxAxisLabels - 2  // minus first and last
-
-        if middleLabelsCount > 0 && days > 1 {
-            // Calculate step based on data range
-            let step = span / Double(maxAxisLabels - 1)
-
-            for i in 1..<(maxAxisLabels - 1) {
-                let middleDate = firstDate.addingTimeInterval(step * Double(i))
-
-                // Normalize to start of day for cleaner alignment
-                let normalizedDate = calendar.startOfDay(for: middleDate)
-
-                // Avoid duplicate if too close to first or last
-                if normalizedDate > firstDate && normalizedDate < lastDate {
-                    dates.append(normalizedDate)
-                }
+        let calendarUnit: Calendar.Component = {
+            switch grouping {
+            case .day: return .day
+            case .week: return .weekOfYear
+            case .month: return .month
             }
-        }
+        }()
 
-        dates.append(lastDate)
-
-        // Sort and remove duplicates
-        return Array(Set(dates)).sorted()
+        return SmartAxisHelper.calculateSmartAxisDates(
+            forDataDates: trendPoints.map(\.date),
+            grouping: calendarUnit
+        )
     }
 
     /// Format axis label based on data span (include year if multiple years)
@@ -305,7 +272,17 @@ struct TrendChartView: View {
         else {
             return formatDayNumber(date)
         }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
+
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil
+            }
+        }()
+
+        return SmartAxisHelper.formatAxisLabel(
+            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
     }
 
     private func formattedAmountShort(_ value: Double) -> String {
