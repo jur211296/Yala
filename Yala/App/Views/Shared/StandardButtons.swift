@@ -27,7 +27,7 @@ struct YalaToolbarButton: View {
             Image(systemName: systemName)
                 .font(DS.Typography.label)
                 .foregroundStyle(Color.primary)
-                .frame(width: 32, height: 32)
+                .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(label)

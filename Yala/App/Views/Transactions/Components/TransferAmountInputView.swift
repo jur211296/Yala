@@ -43,6 +43,7 @@ struct TransferAmountInputView: View {
             // Exchange Rate (Clean, Explicit, No Box)
             exchangeRateField
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: - Source Amount Field

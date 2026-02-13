@@ -797,6 +797,7 @@ struct NewTransactionView: View {
                                         .font(DS.Typography.label)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Eliminar etiqueta")
                             }
                             .foregroundStyle(Color.tagChipColor)
                             .padding(.horizontal, DS.FormRow.paddingV)

@@ -54,6 +54,7 @@ struct TransactionAmountInputView: View {
             }
         }
         .padding(.top, DS.Spacing.xxl)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .onAppear {
             isAmountFocused = true
         }

@@ -147,6 +147,7 @@ struct RecordsStandaloneView: View {
                         .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(Color.toolbarIconColor)
                 }
+                .accessibilityLabel("Seleccionar")
 
                 // Filters button
                 Button {
@@ -156,6 +157,7 @@ struct RecordsStandaloneView: View {
                         .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(Color.toolbarIconColor)
                 }
+                .accessibilityLabel("Filtros")
                 .overlay(alignment: .topTrailing) {
                     if recordsViewModel.activeFilterCount > 0 {
                         Circle()

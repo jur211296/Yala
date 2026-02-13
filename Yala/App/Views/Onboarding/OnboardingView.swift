@@ -16,6 +16,7 @@ struct OnboardingView: View {
     @Environment(SessionState.self) private var sessionState
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var completionIconSize: CGFloat = 56
 
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
@@ -845,7 +846,7 @@ struct OnboardingView: View {
                     .frame(width: 100, height: 100)
 
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 56))
+                    .font(.system(size: completionIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }

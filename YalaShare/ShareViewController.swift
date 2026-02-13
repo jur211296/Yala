@@ -52,7 +52,9 @@ class ShareViewController: UIViewController {
 
             DispatchQueue.main.async {
                 if let error = error {
+                    #if DEBUG
                     print("Error loading image: \(error)")
+                    #endif
                     self.completeWithError()
                     return
                 }
@@ -97,7 +99,9 @@ class ShareViewController: UIViewController {
 
             completeSuccessfully()
         } catch {
+            #if DEBUG
             print("Error saving image: \(error)")
+            #endif
             completeWithError()
         }
     }

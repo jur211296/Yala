@@ -310,7 +310,7 @@ struct IconColorPickerSheet: View {
         } label: {
             Circle()
                 .fill(Color(hex: hex))
-                .frame(width: 36, height: 36)
+                .frame(width: 40, height: 40)
                 .overlay(
                     Circle()
                         .stroke(Color.white, lineWidth: tempColorHex == hex ? 3 : 0)
@@ -329,7 +329,7 @@ struct IconColorPickerSheet: View {
     private var customColorButton: some View {
         ColorPicker("", selection: $customColor, supportsOpacity: false)
             .labelsHidden()
-            .frame(width: 36, height: 36)
+            .frame(width: 40, height: 40)
             .onChange(of: customColor) { _, newColor in
                 tempColorHex = newColor.toHex()
             }

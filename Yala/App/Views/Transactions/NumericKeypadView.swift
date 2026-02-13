@@ -41,6 +41,7 @@ struct NumericKeypadView: View {
             }
         }
         .background(Color.yalaCard.opacity(0.95))
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private func handleTap(_ button: KeypadButton) {
@@ -88,6 +89,14 @@ enum KeypadButton: Identifiable {
         default: return nil
         }
     }
+
+    var accessibilityText: String {
+        switch self {
+        case .digit(let value): return value
+        case .decimal: return Locale.current.decimalSeparator ?? "."
+        case .delete: return "Borrar"
+        }
+    }
 }
 
 // MARK: - Keypad Button View
@@ -126,6 +135,7 @@ struct KeypadButtonView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(button.accessibilityText)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in

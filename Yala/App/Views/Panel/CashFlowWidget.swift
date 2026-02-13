@@ -347,6 +347,7 @@ struct CashFlowWidget: View {
                             .foregroundStyle(Color.gray.opacity(0.7))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Ver detalles")
                 }
             }
             .padding([.horizontal, .top], DS.Spacing.lg)
