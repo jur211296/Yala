@@ -109,6 +109,16 @@ struct TrendChartView: View {
                 .foregroundStyle(Color.yalaSecondaryText)  // Explicit Gray for distinction
             }
 
+            // Single point: LineMark is invisible with 1 point, show a dot instead
+            if trendPoints.count == 1, let singlePoint = trendPoints.first {
+                PointMark(
+                    x: .value(L10n.Common.date, singlePoint.date),
+                    y: .value(L10n.Common.amount, singlePoint.value)
+                )
+                .foregroundStyle(primaryLineColor)
+                .symbolSize(64)
+            }
+
             // Marker for "Today"
             RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))

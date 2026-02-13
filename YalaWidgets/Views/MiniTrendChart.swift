@@ -35,6 +35,12 @@ struct MiniTrendChart: View {
                     linePath(in: geometry.size)
                         .stroke(lineColor, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                 }
+            } else if dataPoints.count == 1 {
+                // Single point: centered dot
+                Circle()
+                    .fill(lineColor)
+                    .frame(width: 6, height: 6)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             } else {
                 // Empty state - flat line
                 Path { path in

@@ -83,6 +83,16 @@ struct PeriodComparisonChartView: View {
                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
                     .interpolationMethod(.monotone)
                 }
+
+                // Single point: LineMark is invisible with 1 point, show a dot instead
+                if clippedPreviousPoints.count == 1, let singlePoint = clippedPreviousPoints.first {
+                    PointMark(
+                        x: .value("Date", singlePoint.date),
+                        y: .value("Previous", singlePoint.value)
+                    )
+                    .foregroundStyle(previousLineColor.opacity(0.5))
+                    .symbolSize(64)
+                }
             }
 
             // Current period line - separate series
@@ -95,6 +105,16 @@ struct PeriodComparisonChartView: View {
                 .foregroundStyle(primaryLineColor)
                 .lineStyle(StrokeStyle(lineWidth: 2))
                 .interpolationMethod(.monotone)
+            }
+
+            // Single point: LineMark is invisible with 1 point, show a dot instead
+            if filteredCurrentPoints.count == 1, let singlePoint = filteredCurrentPoints.first {
+                PointMark(
+                    x: .value("Date", singlePoint.date),
+                    y: .value("Current", singlePoint.value)
+                )
+                .foregroundStyle(primaryLineColor)
+                .symbolSize(64)
             }
 
             // Zero baseline (for balance metric)
