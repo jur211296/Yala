@@ -24,6 +24,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-13] 5b9038a fix: align X-axis labels with bar centers and data points in all charts
+- [2026-02-13] d7b2970 fix: show visible point on trend charts when period has single data point
 - [2026-02-12] ed93611 fix: initialize BudgetAlertService context so threshold notifications actually fire
 - [2026-02-12] 9e38af9 fix: preserve specific subcategory selection when opening filters sheet
 - [2026-02-12] 78bd427 fix: propagate category chart filters to filters sheet as subcategories
@@ -221,6 +223,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - ✅ Dark mode de deep slate blue a negro puro (#000000 + #1C1C1E) — 15565d1
 
 **Bugs pendientes:**
+- ✅ **BUG-23: Gráfica de tendencias no muestra punto cuando solo hay un valor** — Resuelto (d7b2970)
+- ✅ **BUG-24: Ejes X de gráficas desalineados con barras y puntos** — Resuelto (5b9038a)
 - ✅ **BUG-13: Archivar/desarchivar cuenta fuerza ajuste de saldo** — Resuelto (e8a6844)
 - ✅ **BUG-14: Eliminar transacción no actualiza cache de widgets** — Resuelto (4577ddf)
 - ✅ **A11Y: Accesibilidad completa** — VoiceOver, Dynamic Type, Reduce Motion (0fdf436)
@@ -440,10 +444,11 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: Fix budget alert notifications — BudgetAlertService context was never initialized
+Last session: 2026-02-13
+Stopped at: Fix BUG-24 — X-axis labels aligned with bar centers and data points in all charts
 Next step: Siguiente item de /next
 Resume context:
-- BudgetAlertService.shared.setContext() was never called, so checkBudgetsAndNotify() silently returned nil
-- Added setContext + check + cleanup in AppBootstrapper alongside ScheduledPaymentNotificationService
-- Notifications now fire on app launch (catch-up) and on each transaction save (real-time)
+- SmartAxisHelper: centerInCalendarUnit() centers dates at midpoint of calendar unit
+- Bar charts (CashFlow, NatureTrend): axis marks now centered within calendar units
+- Line charts (TrendChart, PeriodComparison): use actual data dates instead of linear interpolation
+- Both app and widget targets updated
