@@ -456,6 +456,11 @@ final class AppBootstrapper {
 
         // Cleanup old tracker entries
         ScheduledPaymentNotificationTracker.shared.cleanupOldEntries()
+
+        // Check budget alert notifications
+        BudgetAlertService.shared.setContext(context)
+        await BudgetAlertService.shared.checkBudgetsAndNotify()
+        BudgetAlertTracker.shared.cleanupOldEntries()
     }
 
     /// Fetches active NotificationItems from database
