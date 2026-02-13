@@ -13,11 +13,18 @@ struct TutorialDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var currentStep = 0
+    @State private var currentPage = 0
 
     private var steps: [TutorialStep] { tutorial.steps }
-    private var isLastStep: Bool { currentStep == steps.count - 1 }
-    private var isFirstStep: Bool { currentStep == 0 }
+    /// Total pages: intro (1) + video steps (N) + completion (1)
+    private var totalPages: Int { 1 + steps.count + 1 }
+    private var isIntroPage: Bool { currentPage == 0 }
+    private var isCompletionPage: Bool { currentPage == totalPages - 1 }
+    /// The step index for pages 1...N
+    private var currentStepIndex: Int? {
+        let idx = currentPage - 1
+        return idx >= 0 && idx < steps.count ? idx : nil
+    }
 
     var body: some View {
         ZStack {
@@ -27,18 +34,33 @@ struct TutorialDetailView: View {
                 progressIndicator
                     .padding(.top, DS.Spacing.md)
 
-                TabView(selection: $currentStep) {
+                TabView(selection: $currentPage) {
+                    // Page 0: Intro
+                    introView
+                        .tag(0)
+
+                    // Pages 1...N: Steps with video
                     ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
                         stepView(step)
-                            .tag(index)
+                            .tag(index + 1)
                     }
+
+                    // Last page: Completion
+                    TutorialCompletionView(
+                        tutorial: tutorial,
+                        onDismiss: { dismiss() },
+                        onNextTutorial: nil
+                    )
+                    .tag(totalPages - 1)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
+                .dsAnimation(.easeInOut(duration: 0.3), value: currentPage, reduceMotion: reduceMotion)
 
-                navigationButtons
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxxl)
+                if !isCompletionPage {
+                    navigationButtons
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxxl)
+                }
             }
         }
         .navigationTitle(tutorial.title)
@@ -57,13 +79,56 @@ struct TutorialDetailView: View {
 
     private var progressIndicator: some View {
         HStack(spacing: DS.Spacing.sm) {
-            ForEach(0..<steps.count, id: \.self) { step in
+            ForEach(0..<totalPages, id: \.self) { page in
+                let isCurrent = page == currentPage
+                let isPast = page < currentPage
+                let isEdge = page == 0 || page == totalPages - 1
+
                 Capsule()
-                    .fill(step <= currentStep ? tutorial.color : Color.yalaSecondaryText.opacity(0.2))
-                    .frame(width: step == currentStep ? 24 : 8, height: 8)
-                    .dsAnimation(.spring(response: 0.3), value: currentStep, reduceMotion: reduceMotion)
+                    .fill(isPast || isCurrent ? Color.electricIndigo : Color.yalaSecondaryText.opacity(0.2))
+                    .frame(
+                        width: isCurrent ? 24 : (isEdge ? 6 : 8),
+                        height: isEdge ? 6 : 8
+                    )
+                    .dsAnimation(.spring(response: 0.3), value: currentPage, reduceMotion: reduceMotion)
             }
         }
+    }
+
+    // MARK: - Intro View
+
+    private var introView: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            Spacer()
+
+            // Large icon
+            Image(systemName: tutorial.icon)
+                .font(.system(size: 60))
+                .foregroundStyle(tutorial.color)
+                .padding(DS.Spacing.xl)
+                .background(
+                    Circle()
+                        .fill(tutorial.color.opacity(0.1))
+                )
+
+            VStack(spacing: DS.Spacing.sm) {
+                Text(tutorial.introTitle)
+                    .font(DS.Typography.largeTitle)
+                    .foregroundStyle(Color.yalaPrimaryText)
+                    .multilineTextAlignment(.center)
+
+                Text(tutorial.introDescription)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(Color.yalaSecondaryText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+
+            Spacer()
+            Spacer()
+        }
+        .padding(.top, DS.Spacing.md)
     }
 
     // MARK: - Step View
@@ -73,10 +138,6 @@ struct TutorialDetailView: View {
         VStack(spacing: DS.Spacing.lg) {
             // Text content
             VStack(spacing: DS.Spacing.xs) {
-                Text("\(step.id + 1)/\(steps.count)")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(tutorial.color)
-
                 Text(step.title)
                     .font(.title3.bold())
                     .foregroundStyle(Color.yalaPrimaryText)
@@ -141,10 +202,10 @@ struct TutorialDetailView: View {
 
     private var navigationButtons: some View {
         HStack(spacing: DS.Spacing.md) {
-            if !isFirstStep {
+            if !isIntroPage {
                 Button {
                     dsWithAnimation(reduceMotion) {
-                        currentStep -= 1
+                        currentPage -= 1
                     }
                 } label: {
                     Text(L10n.Tutorials.previous)
@@ -162,20 +223,16 @@ struct TutorialDetailView: View {
             }
 
             Button {
-                if isLastStep {
-                    dismiss()
-                } else {
-                    dsWithAnimation(reduceMotion) {
-                        currentStep += 1
-                    }
+                dsWithAnimation(reduceMotion) {
+                    currentPage += 1
                 }
             } label: {
-                Text(isLastStep ? L10n.Tutorials.done : L10n.Tutorials.next)
+                Text(isIntroPage ? L10n.Tutorials.start : L10n.Tutorials.next)
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
-                    .background(tutorial.color)
+                    .background(Color.electricIndigo)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             }
         }

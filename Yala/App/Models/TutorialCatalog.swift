@@ -109,79 +109,166 @@ enum Tutorial: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    // MARK: - Intro
+
+    var introTitle: String {
+        switch self {
+        case .createAccount: return L10n.Tutorials.createAccountIntroTitle
+        case .createCategories: return L10n.Tutorials.createCategoriesIntroTitle
+        case .createTags: return L10n.Tutorials.createTagsIntroTitle
+        case .createRecord: return L10n.Tutorials.createRecordIntroTitle
+        case .importData: return L10n.Tutorials.importDataIntroTitle
+        case .createBudgets: return L10n.Tutorials.createBudgetsIntroTitle
+        case .createScheduledPayments: return L10n.Tutorials.createScheduledPaymentsIntroTitle
+        case .createFavorites: return L10n.Tutorials.createFavoritesIntroTitle
+        case .editPanel: return L10n.Tutorials.editPanelIntroTitle
+        case .panelFiltering: return L10n.Tutorials.panelFilteringIntroTitle
+        case .inboxApproval: return L10n.Tutorials.inboxApprovalIntroTitle
+        case .applePay: return L10n.Tutorials.applePayIntroTitle
+        }
+    }
+
+    var introDescription: String {
+        switch self {
+        case .createAccount: return L10n.Tutorials.createAccountIntroDesc
+        case .createCategories: return L10n.Tutorials.createCategoriesIntroDesc
+        case .createTags: return L10n.Tutorials.createTagsIntroDesc
+        case .createRecord: return L10n.Tutorials.createRecordIntroDesc
+        case .importData: return L10n.Tutorials.importDataIntroDesc
+        case .createBudgets: return L10n.Tutorials.createBudgetsIntroDesc
+        case .createScheduledPayments: return L10n.Tutorials.createScheduledPaymentsIntroDesc
+        case .createFavorites: return L10n.Tutorials.createFavoritesIntroDesc
+        case .editPanel: return L10n.Tutorials.editPanelIntroDesc
+        case .panelFiltering: return L10n.Tutorials.panelFilteringIntroDesc
+        case .inboxApproval: return L10n.Tutorials.inboxApprovalIntroDesc
+        case .applePay: return L10n.Tutorials.applePayIntroDesc
+        }
+    }
+
+    // MARK: - Completion
+
+    var completionTitle: String {
+        switch self {
+        case .createAccount: return L10n.Tutorials.createAccountCompletionTitle
+        case .createCategories: return L10n.Tutorials.createCategoriesCompletionTitle
+        case .createTags: return L10n.Tutorials.createTagsCompletionTitle
+        case .createRecord: return L10n.Tutorials.createRecordCompletionTitle
+        case .importData: return L10n.Tutorials.importDataCompletionTitle
+        case .createBudgets: return L10n.Tutorials.createBudgetsCompletionTitle
+        case .createScheduledPayments: return L10n.Tutorials.createScheduledPaymentsCompletionTitle
+        case .createFavorites: return L10n.Tutorials.createFavoritesCompletionTitle
+        case .editPanel: return L10n.Tutorials.editPanelCompletionTitle
+        case .panelFiltering: return L10n.Tutorials.panelFilteringCompletionTitle
+        case .inboxApproval: return L10n.Tutorials.inboxApprovalCompletionTitle
+        case .applePay: return L10n.Tutorials.applePayCompletionTitle
+        }
+    }
+
+    var completionDescription: String {
+        switch self {
+        case .createAccount: return L10n.Tutorials.createAccountCompletionDesc
+        case .createCategories: return L10n.Tutorials.createCategoriesCompletionDesc
+        case .createTags: return L10n.Tutorials.createTagsCompletionDesc
+        case .createRecord: return L10n.Tutorials.createRecordCompletionDesc
+        case .importData: return L10n.Tutorials.importDataCompletionDesc
+        case .createBudgets: return L10n.Tutorials.createBudgetsCompletionDesc
+        case .createScheduledPayments: return L10n.Tutorials.createScheduledPaymentsCompletionDesc
+        case .createFavorites: return L10n.Tutorials.createFavoritesCompletionDesc
+        case .editPanel: return L10n.Tutorials.editPanelCompletionDesc
+        case .panelFiltering: return L10n.Tutorials.panelFilteringCompletionDesc
+        case .inboxApproval: return L10n.Tutorials.inboxApprovalCompletionDesc
+        case .applePay: return L10n.Tutorials.applePayCompletionDesc
+        }
+    }
+
+    /// Next tutorial in the same category, if available
+    var nextTutorial: Tutorial? {
+        let siblings = category.tutorials
+        guard let idx = siblings.firstIndex(of: self), idx + 1 < siblings.count else { return nil }
+        return siblings[idx + 1]
+    }
+
+    // MARK: - Steps (aligned to real video counts)
+
     var steps: [TutorialStep] {
         switch self {
-        case .createAccount:
+        case .createAccount: // 3 videos (step0, step1, step2)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.createAccountStep0Title, L10n.Tutorials.createAccountStep0Desc),
                 (L10n.Tutorials.createAccountStep1Title, L10n.Tutorials.createAccountStep1Desc),
                 (L10n.Tutorials.createAccountStep2Title, L10n.Tutorials.createAccountStep2Desc),
             ])
-        case .createCategories:
+        case .createCategories: // 4 videos (step0..step3)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.createCategoriesStep0Title, L10n.Tutorials.createCategoriesStep0Desc),
                 (L10n.Tutorials.createCategoriesStep1Title, L10n.Tutorials.createCategoriesStep1Desc),
                 (L10n.Tutorials.createCategoriesStep2Title, L10n.Tutorials.createCategoriesStep2Desc),
+                (L10n.Tutorials.createCategoriesStep3Title, L10n.Tutorials.createCategoriesStep3Desc),
             ])
-        case .createTags:
+        case .createTags: // 2 videos (step0, step1)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.createTagsStep0Title, L10n.Tutorials.createTagsStep0Desc),
                 (L10n.Tutorials.createTagsStep1Title, L10n.Tutorials.createTagsStep1Desc),
-                (L10n.Tutorials.createTagsStep2Title, L10n.Tutorials.createTagsStep2Desc),
             ])
-        case .createRecord:
+        case .createRecord: // 4 videos (step0..step3)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.createRecordStep0Title, L10n.Tutorials.createRecordStep0Desc),
                 (L10n.Tutorials.createRecordStep1Title, L10n.Tutorials.createRecordStep1Desc),
                 (L10n.Tutorials.createRecordStep2Title, L10n.Tutorials.createRecordStep2Desc),
+                (L10n.Tutorials.createRecordStep3Title, L10n.Tutorials.createRecordStep3Desc),
             ])
-        case .importData:
+        case .importData: // 2 videos (step0, step1)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.importDataStep0Title, L10n.Tutorials.importDataStep0Desc),
                 (L10n.Tutorials.importDataStep1Title, L10n.Tutorials.importDataStep1Desc),
-                (L10n.Tutorials.importDataStep2Title, L10n.Tutorials.importDataStep2Desc),
             ])
-        case .createBudgets:
+        case .createBudgets: // 4 videos (step0..step3)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.createBudgetsStep0Title, L10n.Tutorials.createBudgetsStep0Desc),
                 (L10n.Tutorials.createBudgetsStep1Title, L10n.Tutorials.createBudgetsStep1Desc),
                 (L10n.Tutorials.createBudgetsStep2Title, L10n.Tutorials.createBudgetsStep2Desc),
+                (L10n.Tutorials.createBudgetsStep3Title, L10n.Tutorials.createBudgetsStep3Desc),
             ])
-        case .createScheduledPayments:
+        case .createScheduledPayments: // 5 videos (step0..step4)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.createScheduledPaymentsStep0Title, L10n.Tutorials.createScheduledPaymentsStep0Desc),
                 (L10n.Tutorials.createScheduledPaymentsStep1Title, L10n.Tutorials.createScheduledPaymentsStep1Desc),
                 (L10n.Tutorials.createScheduledPaymentsStep2Title, L10n.Tutorials.createScheduledPaymentsStep2Desc),
+                (L10n.Tutorials.createScheduledPaymentsStep3Title, L10n.Tutorials.createScheduledPaymentsStep3Desc),
+                (L10n.Tutorials.createScheduledPaymentsStep4Title, L10n.Tutorials.createScheduledPaymentsStep4Desc),
             ])
-        case .createFavorites:
+        case .createFavorites: // 2 videos (step0, step1)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.createFavoritesStep0Title, L10n.Tutorials.createFavoritesStep0Desc),
                 (L10n.Tutorials.createFavoritesStep1Title, L10n.Tutorials.createFavoritesStep1Desc),
-                (L10n.Tutorials.createFavoritesStep2Title, L10n.Tutorials.createFavoritesStep2Desc),
             ])
-        case .editPanel:
+        case .editPanel: // 3 videos (step0..step2)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.editPanelStep0Title, L10n.Tutorials.editPanelStep0Desc),
                 (L10n.Tutorials.editPanelStep1Title, L10n.Tutorials.editPanelStep1Desc),
                 (L10n.Tutorials.editPanelStep2Title, L10n.Tutorials.editPanelStep2Desc),
             ])
-        case .panelFiltering:
+        case .panelFiltering: // 5 videos (step0..step4)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.panelFilteringStep0Title, L10n.Tutorials.panelFilteringStep0Desc),
                 (L10n.Tutorials.panelFilteringStep1Title, L10n.Tutorials.panelFilteringStep1Desc),
                 (L10n.Tutorials.panelFilteringStep2Title, L10n.Tutorials.panelFilteringStep2Desc),
+                (L10n.Tutorials.panelFilteringStep3Title, L10n.Tutorials.panelFilteringStep3Desc),
+                (L10n.Tutorials.panelFilteringStep4Title, L10n.Tutorials.panelFilteringStep4Desc),
             ])
-        case .inboxApproval:
+        case .inboxApproval: // 4 videos (step0..step3)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.inboxApprovalStep0Title, L10n.Tutorials.inboxApprovalStep0Desc),
                 (L10n.Tutorials.inboxApprovalStep1Title, L10n.Tutorials.inboxApprovalStep1Desc),
                 (L10n.Tutorials.inboxApprovalStep2Title, L10n.Tutorials.inboxApprovalStep2Desc),
+                (L10n.Tutorials.inboxApprovalStep3Title, L10n.Tutorials.inboxApprovalStep3Desc),
             ])
-        case .applePay:
+        case .applePay: // 4 videos (step0..step3)
             return TutorialStep.make(tutorial: self, items: [
                 (L10n.Tutorials.applePayStep0Title, L10n.Tutorials.applePayStep0Desc),
                 (L10n.Tutorials.applePayStep1Title, L10n.Tutorials.applePayStep1Desc),
                 (L10n.Tutorials.applePayStep2Title, L10n.Tutorials.applePayStep2Desc),
+                (L10n.Tutorials.applePayStep3Title, L10n.Tutorials.applePayStep3Desc),
             ])
         }
     }

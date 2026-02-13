@@ -1487,6 +1487,9 @@
 "tutorials.next" = "Siguiente";
 "tutorials.previous" = "Anterior";
 "tutorials.done" = "Listo";
+"tutorials.start" = "Empezar";
+"tutorials.understood" = "Entendido";
+"tutorials.nextTutorial" = "Siguiente tutorial";
 
 // Categories
 "tutorials.category.gettingStarted" = "Primeros pasos";
@@ -1495,170 +1498,173 @@
 "tutorials.category.advanced" = "Avanzado";
 "tutorials.category.powerUser" = "Usuario experto";
 
-// 1. createAccount
+// 1. createAccount (3 steps)
 "tutorials.createAccount.title" = "Crear una cuenta";
-"tutorials.createAccount.step0.title" = "Abre el perfil";
-"tutorials.createAccount.step0.desc" = "Toca tu avatar en la esquina superior y ve a la sección de Cuentas.";
-"tutorials.createAccount.step1.title" = "Toca \"Agregar cuenta\"";
-"tutorials.createAccount.step1.desc" = "Elige el tipo de cuenta: efectivo, banco, tarjeta de crédito o ahorro.";
+"tutorials.createAccount.intro.title" = "¿Qué es una cuenta?";
+"tutorials.createAccount.intro.desc" = "Una cuenta representa donde guardas tu dinero: tu banco, billetera, tarjeta o ahorros. Organizar tus cuentas te ayuda a saber exactamente cuánto tienes y dónde.";
+"tutorials.createAccount.step0.title" = "Crea una nueva cuenta";
+"tutorials.createAccount.step0.desc" = "En tu perfil, selecciona la sección de Cuentas y toca crear nueva cuenta.";
+"tutorials.createAccount.step1.title" = "También desde el Panel";
+"tutorials.createAccount.step1.desc" = "Puedes crear una cuenta directamente desde el Panel tocando la caja de Agregar nueva cuenta.";
 "tutorials.createAccount.step2.title" = "Completa los datos";
-"tutorials.createAccount.step2.desc" = "Dale un nombre, elige un icono, color y la moneda. Puedes definir un saldo inicial.";
+"tutorials.createAccount.step2.desc" = "Completa los datos para tu nueva cuenta y toca Guardar.";
+"tutorials.createAccount.completion.title" = "¡Tu cuenta está lista!";
+"tutorials.createAccount.completion.desc" = "Mantener tus cuentas ordenadas y bien separadas es fundamental para organizar tus finanzas. Cada cuenta te permite filtrar tus datos y visualizar mejor tus tendencias. Puedes editarlas cuando quieras y modificar su saldo inicial o hacer un ajuste del saldo actual.";
 
-// 2. createCategories
+// 2. createCategories (4 steps)
 "tutorials.createCategories.title" = "Crear categorías";
+"tutorials.createCategories.intro.title" = "¿Qué son las categorías?";
+"tutorials.createCategories.intro.desc" = "Las categorías organizan tus gastos por tipo: comida, transporte, entretenimiento... Así puedes ver en qué se va tu dinero de un vistazo.";
 "tutorials.createCategories.step0.title" = "Ve a Categorías";
-"tutorials.createCategories.step0.desc" = "Desde el perfil, abre la sección de Categorías.";
-"tutorials.createCategories.step1.title" = "Agrega una categoría";
-"tutorials.createCategories.step1.desc" = "Toca el botón + y elige un nombre, icono y color para tu nueva categoría.";
-"tutorials.createCategories.step2.title" = "Agrega subcategorías";
-"tutorials.createCategories.step2.desc" = "Dentro de cada categoría puedes crear subcategorías para más detalle en tus registros.";
+"tutorials.createCategories.step0.desc" = "En tu perfil, selecciona la sección de Categorías y crea una nueva categoría.";
+"tutorials.createCategories.step1.title" = "Agrega subcategorías";
+"tutorials.createCategories.step1.desc" = "Recuerda que siempre debe haber subcategorías asociadas a una categoría para poder crearla.";
+"tutorials.createCategories.step2.title" = "Crea subcategorías";
+"tutorials.createCategories.step2.desc" = "Crear subcategorías es tan fácil como crear categorías: ponle nombre, selecciona su naturaleza y si quieres modifica su icono.";
+"tutorials.createCategories.step3.title" = "Personaliza tu categoría";
+"tutorials.createCategories.step3.desc" = "Personaliza a tu gusto el icono y color de tu categoría cuando quieras.";
+"tutorials.createCategories.completion.title" = "¡Categoría creada!";
+"tutorials.createCategories.completion.desc" = "Unas buenas categorías hacen que tus reportes sean mucho más útiles. Puedes editarlas o agregar más en cualquier momento.";
 
-// 3. createTags
+// 3. createTags (2 steps)
 "tutorials.createTags.title" = "Crear etiquetas";
+"tutorials.createTags.intro.title" = "¿Qué son las etiquetas?";
+"tutorials.createTags.intro.desc" = "Las etiquetas agrupan gastos que cruzan categorías. Por ejemplo, \"Vacaciones\" puede incluir comida, transporte y hotel, todo en un solo grupo.";
 "tutorials.createTags.step0.title" = "Ve a Etiquetas";
-"tutorials.createTags.step0.desc" = "Desde el perfil, abre la sección de Etiquetas.";
-"tutorials.createTags.step1.title" = "Crea una etiqueta";
-"tutorials.createTags.step1.desc" = "Toca + y dale un nombre y color. Las etiquetas agrupan gastos entre categorías.";
-"tutorials.createTags.step2.title" = "Úsalas en tus registros";
-"tutorials.createTags.step2.desc" = "Al crear un gasto, toca el campo de etiquetas para asociar una o más a tu registro.";
+"tutorials.createTags.step0.desc" = "En tu perfil, selecciona la sección de Etiquetas y crea una nueva etiqueta.";
+"tutorials.createTags.step1.title" = "Personaliza tu etiqueta";
+"tutorials.createTags.step1.desc" = "Personaliza a tu gusto la etiqueta: ponle nombre, icono y color.";
+"tutorials.createTags.completion.title" = "¡Etiqueta creada!";
+"tutorials.createTags.completion.desc" = "Usa etiquetas para agrupar gastos de proyectos, viajes o eventos. Son perfectas para análisis que van más allá de las categorías.";
 
-// 4. createRecord
+// 4. createRecord (4 steps)
 "tutorials.createRecord.title" = "Registrar un gasto";
+"tutorials.createRecord.intro.title" = "Registro manual";
+"tutorials.createRecord.intro.desc" = "Registrar tus gastos es el corazón de Yala. Cada registro te acerca a entender mejor tus finanzas y tomar mejores decisiones.";
 "tutorials.createRecord.step0.title" = "Toca el botón +";
-"tutorials.createRecord.step0.desc" = "Desde cualquier pantalla, toca el botón + en la barra inferior.";
-"tutorials.createRecord.step1.title" = "Ingresa el monto";
-"tutorials.createRecord.step1.desc" = "Escribe el monto, elige la categoría y cuenta. También puedes dictar o pegar texto.";
-"tutorials.createRecord.step2.title" = "Guarda el registro";
-"tutorials.createRecord.step2.desc" = "Revisa los detalles y toca Guardar. Tu gasto aparecerá en el panel principal.";
+"tutorials.createRecord.step0.desc" = "En el panel, toca el botón +. Si eres usuario Yala Pro, selecciona Manual.";
+"tutorials.createRecord.step1.title" = "Elige el tipo de registro";
+"tutorials.createRecord.step1.desc" = "Puedes registrar gastos, ingresos e inclusive transferencias entre cuentas. Los tipos de cambio se calculan automáticamente en tiempo real.";
+"tutorials.createRecord.step2.title" = "Completa los campos";
+"tutorials.createRecord.step2.desc" = "Completa los campos obligatorios: monto, cuenta y subcategoría. También puedes agregar una descripción y las etiquetas que quieras.";
+"tutorials.createRecord.step3.title" = "Usa atajos rápidos";
+"tutorials.createRecord.step3.desc" = "Usa los atajos rápidos: @ para cuenta, ! para categoría y # para etiqueta. Empieza a escribir para afinar la búsqueda dentro de cada atajo.";
+"tutorials.createRecord.completion.title" = "¡Gasto registrado!";
+"tutorials.createRecord.completion.desc" = "Registrar gastos al momento es la clave. Cuanto más registres, mejores serán tus análisis y reportes para entender tus finanzas.";
 
-// 5. importData
+// 5. importData (2 steps)
 "tutorials.importData.title" = "Importar datos";
-"tutorials.importData.step0.title" = "Ve a Importar";
-"tutorials.importData.step0.desc" = "Desde el perfil, busca la opción Importar datos.";
-"tutorials.importData.step1.title" = "Selecciona el archivo";
-"tutorials.importData.step1.desc" = "Elige un archivo CSV o Excel con tus gastos. Yala te guiará para mapear las columnas.";
-"tutorials.importData.step2.title" = "Revisa y confirma";
-"tutorials.importData.step2.desc" = "Verifica que los datos se vean correctos y confirma la importación.";
+"tutorials.importData.intro.title" = "Importa tus datos";
+"tutorials.importData.intro.desc" = "Si ya llevas tus gastos en una hoja de cálculo o en otra app, puedes traerlos a Yala en segundos sin perder tu historial.";
+"tutorials.importData.step0.title" = "Selecciona Importar datos";
+"tutorials.importData.step0.desc" = "En tu perfil, selecciona la sección Importar datos.";
+"tutorials.importData.step1.title" = "Importa tu archivo";
+"tutorials.importData.step1.desc" = "Puedes importar CSV o Excel cuantas veces quieras siguiendo la plantilla predeterminada, que puedes descargar ahí mismo. Si hay datos en diversas divisas, te pedirá seleccionar las cuentas para cada una.";
+"tutorials.importData.completion.title" = "¡Datos importados!";
+"tutorials.importData.completion.desc" = "Tu historial ya está en Yala. Si hubo errores recibirás un mensaje claro con el detalle, sino verás el mensaje de éxito. Revisa tus registros para confirmar que todo se importó correctamente.";
 
-// 6. createBudgets
+// 6. createBudgets (4 steps)
 "tutorials.createBudgets.title" = "Crear presupuestos";
-"tutorials.createBudgets.step0.title" = "Abre Presupuestos";
-"tutorials.createBudgets.step0.desc" = "Ve a la pestaña de Presupuestos desde la barra inferior.";
-"tutorials.createBudgets.step1.title" = "Crea un presupuesto";
-"tutorials.createBudgets.step1.desc" = "Toca + y elige la categoría, monto límite y periodo (semanal, mensual, etc.).";
-"tutorials.createBudgets.step2.title" = "Recibe alertas";
-"tutorials.createBudgets.step2.desc" = "Yala te avisará cuando estés cerca del límite o lo hayas superado.";
+"tutorials.createBudgets.intro.title" = "¿Qué es un presupuesto?";
+"tutorials.createBudgets.intro.desc" = "Un presupuesto te ayuda a poner límites a tus gastos. Define cuánto quieres gastar y Yala te avisa cuando estés cerca del límite.";
+"tutorials.createBudgets.step0.title" = "Abre Planificación";
+"tutorials.createBudgets.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Presupuestos. Usa el botón + para crear uno nuevo.";
+"tutorials.createBudgets.step1.title" = "Configura tu presupuesto";
+"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: diario, mensual, anual o único (para un viaje, evento, etc). Personaliza qué cuentas, categorías, etiquetas y naturalezas quieres trackear. Activa las notificaciones si quieres avisos en ciertos umbrales.";
+"tutorials.createBudgets.step2.title" = "Añádelo a Favoritos";
+"tutorials.createBudgets.step2.desc" = "Puedes añadir presupuestos a Favoritos para visualizarlos en el widget del Panel. Elige hasta 3 en el orden que prefieras.";
+"tutorials.createBudgets.step3.title" = "Edítalo cuando quieras";
+"tutorials.createBudgets.step3.desc" = "Recuerda que siempre podrás volver para editar tu presupuesto tocándolo.";
+"tutorials.createBudgets.completion.title" = "¡Presupuesto activo!";
+"tutorials.createBudgets.completion.desc" = "Ahora verás en tiempo real cómo va tu consumo y podrás decidir mejor si seguir haciendo esos gastos o no. Revísalo seguido para mantener el control.";
 
-// 7. createScheduledPayments
+// 7. createScheduledPayments (5 steps)
 "tutorials.createScheduledPayments.title" = "Pagos planificados";
-"tutorials.createScheduledPayments.step0.title" = "Ve a Planificados";
-"tutorials.createScheduledPayments.step0.desc" = "Desde el perfil, abre la sección de Pagos planificados.";
-"tutorials.createScheduledPayments.step1.title" = "Crea un pago";
-"tutorials.createScheduledPayments.step1.desc" = "Define el monto, categoría, frecuencia y fecha de inicio.";
-"tutorials.createScheduledPayments.step2.title" = "Gestiona tus pagos";
-"tutorials.createScheduledPayments.step2.desc" = "Los pagos se crean automáticamente. Puedes pausarlos o editarlos cuando quieras.";
+"tutorials.createScheduledPayments.intro.title" = "¿Qué son los pagos planificados?";
+"tutorials.createScheduledPayments.intro.desc" = "Los pagos planificados automatizan tus gastos recurrentes: renta, servicios, suscripciones. Yala los registra por ti en la fecha indicada.";
+"tutorials.createScheduledPayments.step0.title" = "Abre Planificación";
+"tutorials.createScheduledPayments.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Pagos Planificados. Usa el botón + para crear uno nuevo.";
+"tutorials.createScheduledPayments.step1.title" = "Completa los datos";
+"tutorials.createScheduledPayments.step1.desc" = "Completa el nombre de tu pago, monto, nota (opcional), cuenta, subcategoría y etiquetas (opcional).";
+"tutorials.createScheduledPayments.step2.title" = "Define la recurrencia";
+"tutorials.createScheduledPayments.step2.desc" = "Selecciona el día del pago y la periodicidad. Elige cuándo será el primer pago y activa las notificaciones si quieres que te avise el mismo día o días antes.";
+"tutorials.createScheduledPayments.step3.title" = "Marca si es suscripción";
+"tutorials.createScheduledPayments.step3.desc" = "No olvides activar el toggle de suscripción si se trata de una suscripción recurrente.";
+"tutorials.createScheduledPayments.step4.title" = "Gestiona tus pagos";
+"tutorials.createScheduledPayments.step4.desc" = "Al tocar un pago planificado podrás ver los futuros pagos, los ya realizados y editarlo cuando quieras.";
+"tutorials.createScheduledPayments.completion.title" = "¡Pago planificado!";
+"tutorials.createScheduledPayments.completion.desc" = "Tus pagos recurrentes ahora se registran solos. Recibirás una notificación cada vez que uno se ejecute.";
 
-// 8. createFavorites
+// 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "Pagos favoritos";
-"tutorials.createFavorites.step0.title" = "Registra un gasto";
-"tutorials.createFavorites.step0.desc" = "Crea un gasto como lo harías normalmente con todos los detalles.";
-"tutorials.createFavorites.step1.title" = "Márcalo como favorito";
-"tutorials.createFavorites.step1.desc" = "Al guardar, toca la estrella para marcarlo como favorito.";
-"tutorials.createFavorites.step2.title" = "Úsalo rápidamente";
-"tutorials.createFavorites.step2.desc" = "La próxima vez, toca + y elige tu favorito para registrarlo con un solo tap.";
+"tutorials.createFavorites.intro.title" = "¿Qué son los favoritos?";
+"tutorials.createFavorites.intro.desc" = "Los favoritos son atajos para los gastos que haces seguido. Guarda un café, el transporte o la compra del súper y regístralos con un solo toque.";
+"tutorials.createFavorites.step0.title" = "Crea un favorito";
+"tutorials.createFavorites.step0.desc" = "Ve a la pantalla de nueva transacción y toca la estrella en la parte superior para crear un nuevo favorito.";
+"tutorials.createFavorites.step1.title" = "Úsalo rápidamente";
+"tutorials.createFavorites.step1.desc" = "Completa los campos que quieras que se pre-llenen. La próxima vez, simplemente toca el favorito y verás cómo se completan todos los campos automáticamente.";
+"tutorials.createFavorites.completion.title" = "¡Favorito guardado!";
+"tutorials.createFavorites.completion.desc" = "Los favoritos te ahorran tiempo en gastos repetitivos. Puedes tener tantos como quieras y editarlos cuando necesites.";
 
-// 9. editAvatar
-"tutorials.editAvatar.title" = "Cambiar avatar";
-"tutorials.editAvatar.step0.title" = "Toca tu avatar";
-"tutorials.editAvatar.step0.desc" = "En la pantalla de perfil, toca tu imagen de avatar actual.";
-"tutorials.editAvatar.step1.title" = "Elige un nuevo diseño";
-"tutorials.editAvatar.step1.desc" = "Selecciona entre los avatares disponibles o sube una foto desde tu galería.";
-
-// 10. changeIcon
-"tutorials.changeIcon.title" = "Cambiar ícono de la app";
-"tutorials.changeIcon.step0.title" = "Ve a Ícono de la app";
-"tutorials.changeIcon.step0.desc" = "Desde el perfil, busca la opción Ícono de la app.";
-"tutorials.changeIcon.step1.title" = "Elige tu favorito";
-"tutorials.changeIcon.step1.desc" = "Explora los íconos disponibles y toca el que más te guste. Se cambiará al instante.";
-
-// 11. changeCurrency
-"tutorials.changeCurrency.title" = "Cambiar moneda";
-"tutorials.changeCurrency.step0.title" = "Ve a Moneda";
-"tutorials.changeCurrency.step0.desc" = "Desde el perfil, abre la sección de Moneda principal.";
-"tutorials.changeCurrency.step1.title" = "Elige tu moneda";
-"tutorials.changeCurrency.step1.desc" = "Busca y selecciona la moneda que usas en el día a día.";
-"tutorials.changeCurrency.step2.title" = "Configura monedas extra";
-"tutorials.changeCurrency.step2.desc" = "Agrega monedas secundarias si manejas gastos en diferentes divisas.";
-
-// 12. editPanel
+// 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Personalizar el panel";
+"tutorials.editPanel.intro.title" = "Tu panel, a tu manera";
+"tutorials.editPanel.intro.desc" = "En el panel tendrás todos los widgets que te pueden ser útiles para hacer una mejor gestión de tus finanzas. Personalízalos a tu gusto.";
 "tutorials.editPanel.step0.title" = "Abre el panel";
-"tutorials.editPanel.step0.desc" = "Ve a la pantalla principal donde ves tu resumen de gastos.";
-"tutorials.editPanel.step1.title" = "Mantén presionado";
-"tutorials.editPanel.step1.desc" = "Mantén presionada cualquier tarjeta del panel para ver las opciones de edición.";
-"tutorials.editPanel.step2.title" = "Reorganiza y oculta";
-"tutorials.editPanel.step2.desc" = "Arrastra las tarjetas para cambiar el orden o desactiva las que no necesites.";
+"tutorials.editPanel.step0.desc" = "Ve a la pantalla principal donde ves tu resumen de gastos con todos los widgets disponibles.";
+"tutorials.editPanel.step1.title" = "Personaliza los widgets";
+"tutorials.editPanel.step1.desc" = "Puedes modificar qué widgets ver y en qué orden tocando el botón de personalización en el panel.";
+"tutorials.editPanel.step2.title" = "Restablece si quieres";
+"tutorials.editPanel.step2.desc" = "Recuerda que siempre puedes volver al orden predeterminado tocando \"Restablecer\" dentro de la personalización.";
+"tutorials.editPanel.completion.title" = "¡Panel personalizado!";
+"tutorials.editPanel.completion.desc" = "Tu panel ahora muestra exactamente lo que necesitas. Puedes cambiarlo en cualquier momento para adaptarlo a tu forma de gestionar.";
 
-// 13. panelFiltering
+// 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "Filtros del panel";
-"tutorials.panelFiltering.step0.title" = "Abre los filtros";
-"tutorials.panelFiltering.step0.desc" = "En el panel principal, toca el ícono de filtros en la parte superior.";
-"tutorials.panelFiltering.step1.title" = "Elige tus filtros";
-"tutorials.panelFiltering.step1.desc" = "Filtra por cuenta, categoría, etiqueta o periodo para ver exactamente lo que necesitas.";
-"tutorials.panelFiltering.step2.title" = "Compara periodos";
-"tutorials.panelFiltering.step2.desc" = "Activa la comparación para ver cómo cambian tus gastos mes a mes.";
+"tutorials.panelFiltering.intro.title" = "Filtra para encontrar";
+"tutorials.panelFiltering.intro.desc" = "Los filtros te permiten ver solo los gastos que te interesan: por cuenta, categoría, etiqueta o periodo. Perfecto para análisis detallados.";
+"tutorials.panelFiltering.step0.title" = "Gráficos interactivos";
+"tutorials.panelFiltering.step0.desc" = "Saca el máximo provecho a los gráficos interactivos de Yala. Casi todos los paneles son filtrables por categoría, naturaleza, entre otros. Juega con ellos y encuentra lo que más te sirva.";
+"tutorials.panelFiltering.step1.title" = "Barra de filtros";
+"tutorials.panelFiltering.step1.desc" = "Cuentas con una barra de filtros donde irás viendo todos los filtros aplicados. Puedes removerlos individualmente o todos a la vez cuando quieras.";
+"tutorials.panelFiltering.step2.title" = "Filtra en cada vista";
+"tutorials.panelFiltering.step2.desc" = "En las distintas vistas de la aplicación verás que puedes ir filtrando a tu gusto con los gráficos.";
+"tutorials.panelFiltering.step3.title" = "Filtros que se propagan";
+"tutorials.panelFiltering.step3.desc" = "Los filtros se propagan a todas las vistas por igual, así puedes ver todo tipo de métricas para lo que sea que quieras filtrar.";
+"tutorials.panelFiltering.step4.title" = "Filtros rápidos";
+"tutorials.panelFiltering.step4.desc" = "En algunas vistas también contarás con una sección de filtros en la parte superior para que filtres a tu gusto o remuevas todos con un solo botón.";
+"tutorials.panelFiltering.completion.title" = "¡Filtros dominados!";
+"tutorials.panelFiltering.completion.desc" = "Los filtros son tu mejor herramienta para entender tus finanzas en profundidad. Combínalos para obtener análisis cada vez más precisos.";
 
-// 14. inboxApproval
+// 11. inboxApproval (4 steps)
 "tutorials.inboxApproval.title" = "Bandeja de entrada";
-"tutorials.inboxApproval.step0.title" = "Abre la bandeja";
-"tutorials.inboxApproval.step0.desc" = "Toca el ícono de bandeja en la barra inferior para ver tus borradores.";
-"tutorials.inboxApproval.step1.title" = "Revisa los borradores";
-"tutorials.inboxApproval.step1.desc" = "Los gastos importados por voz, cámara o notificaciones llegan aquí como borradores.";
-"tutorials.inboxApproval.step2.title" = "Aprueba o edita";
-"tutorials.inboxApproval.step2.desc" = "Desliza para aprobar rápido, o toca para editar los detalles antes de confirmar.";
+"tutorials.inboxApproval.intro.title" = "Tu bandeja inteligente";
+"tutorials.inboxApproval.intro.desc" = "La bandeja de entrada recibe gastos automáticos: desde Apple Pay, voz, cámara o notificaciones. Tú decides cuáles aprobar antes de que cuenten.";
+"tutorials.inboxApproval.step0.title" = "Registros automáticos";
+"tutorials.inboxApproval.step0.desc" = "Si eres usuario Yala Pro, cuando hagas un registro por voz o imagen, automáticamente te llevará al borrador. Lo mismo si usaste el atajo de Registro Apple Pay.";
+"tutorials.inboxApproval.step1.title" = "Completa y aprueba";
+"tutorials.inboxApproval.step1.desc" = "Simplemente completa los campos obligatorios y aprueba. Se creará la transacción con normalidad.";
+"tutorials.inboxApproval.step2.title" = "Múltiples transacciones";
+"tutorials.inboxApproval.step2.desc" = "También puedes hacer registros de voz o imagen con múltiples transacciones. Te dirá cuántos borradores se crearon y te guiará a la bandeja para revisarlos.";
+"tutorials.inboxApproval.step3.title" = "Gestiona tu bandeja";
+"tutorials.inboxApproval.step3.desc" = "En tu bandeja podrás aprobar transacciones, seleccionar Aprobar luego para verlas después o rechazarlas directamente.";
+"tutorials.inboxApproval.completion.title" = "¡Bandeja dominada!";
+"tutorials.inboxApproval.completion.desc" = "Tus transacciones en bandeja no tienen fecha de expiración, podrás aprobarlas o rechazarlas cuando quieras. Los borradores no afectan tus totales hasta que los apruebes.";
 
-// 15. applePay
+// 12. applePay (4 steps)
 "tutorials.applePay.title" = "Registrar con Apple Pay";
-"tutorials.applePay.step0.title" = "Activa notificaciones";
-"tutorials.applePay.step0.desc" = "Asegúrate de tener las notificaciones de Yala activadas en Ajustes del iPhone.";
-"tutorials.applePay.step1.title" = "Paga con Apple Pay";
-"tutorials.applePay.step1.desc" = "Cuando pagues con Apple Pay, Yala recibirá la notificación automáticamente.";
-"tutorials.applePay.step2.title" = "Revisa en la bandeja";
-"tutorials.applePay.step2.desc" = "El gasto aparecerá como borrador en tu bandeja de entrada listo para aprobar.";
-
-// 16. controlCenter
-"tutorials.controlCenter.title" = "Widget de Centro de Control";
-"tutorials.controlCenter.step0.title" = "Abre Centro de Control";
-"tutorials.controlCenter.step0.desc" = "Desliza desde la esquina superior derecha de tu iPhone.";
-"tutorials.controlCenter.step1.title" = "Agrega el widget de Yala";
-"tutorials.controlCenter.step1.desc" = "Mantén presionado, toca + y busca Yala para agregar el acceso rápido.";
-"tutorials.controlCenter.step2.title" = "Registra al instante";
-"tutorials.controlCenter.step2.desc" = "Toca el widget para abrir Yala directamente en el registro rápido.";
-
-// 17. notifications
-"tutorials.notifications.title" = "Configurar notificaciones";
-"tutorials.notifications.step0.title" = "Ve a Notificaciones";
-"tutorials.notifications.step0.desc" = "Desde el perfil, abre la sección de Notificaciones.";
-"tutorials.notifications.step1.title" = "Elige qué recibir";
-"tutorials.notifications.step1.desc" = "Activa recordatorios diarios, alertas de presupuesto y reportes semanales.";
-"tutorials.notifications.step2.title" = "Personaliza los horarios";
-"tutorials.notifications.step2.desc" = "Define a qué hora quieres recibir cada tipo de notificación.";
-
-// 18. faceID
-"tutorials.faceID.title" = "Activar Face ID";
-"tutorials.faceID.step0.title" = "Ve a Seguridad";
-"tutorials.faceID.step0.desc" = "Desde el perfil, abre la sección de Seguridad biométrica.";
-"tutorials.faceID.step1.title" = "Activa Face ID";
-"tutorials.faceID.step1.desc" = "Activa el bloqueo y elige cuándo se activa: al salir o después de un tiempo.";
-
-// 19. goPro
-"tutorials.goPro.title" = "Activar Yala Pro";
-"tutorials.goPro.step0.title" = "Ve a Suscripción";
-"tutorials.goPro.step0.desc" = "Desde el perfil, toca la opción de Yala Pro o el badge Pro.";
-"tutorials.goPro.step1.title" = "Elige tu plan";
-"tutorials.goPro.step1.desc" = "Compara los planes mensual y anual. El anual tiene mejor precio.";
-"tutorials.goPro.step2.title" = "Disfruta las ventajas";
-"tutorials.goPro.step2.desc" = "Desbloquea cuentas ilimitadas, presupuestos, exportación y más funciones.";
+"tutorials.applePay.intro.title" = "Apple Pay + Yala";
+"tutorials.applePay.intro.desc" = "Cada vez que pagues con Apple Pay, Yala puede registrar el gasto automáticamente. Solo necesitas configurar una automatización en la app Atajos.";
+"tutorials.applePay.step0.title" = "Abre Atajos";
+"tutorials.applePay.step0.desc" = "Abre la app Atajos y ve a la sección de Automatizaciones.";
+"tutorials.applePay.step1.title" = "Crea la automatización";
+"tutorials.applePay.step1.desc" = "Toca Nueva automatización, selecciona la opción de Wallet, elige las tarjetas que quieras usar y selecciona Ejecutar de inmediato.";
+"tutorials.applePay.step2.title" = "Selecciona el atajo de Yala";
+"tutorials.applePay.step2.desc" = "Selecciona Crear nuevo atajo y busca Yala al fondo del todo. En Yala selecciona el atajo Registro Apple Pay.";
+"tutorials.applePay.step3.title" = "Configura los parámetros";
+"tutorials.applePay.step3.desc" = "En Monto selecciona Entrada de atajo y luego Cantidad. Haz lo mismo para Comercio y Nombre respectivamente. Desactiva el toggle de \"Mostrar al ejecutar\".";
+"tutorials.applePay.completion.title" = "¡Apple Pay conectado!";
+"tutorials.applePay.completion.desc" = "Con esto ya tendrás registros automáticos cada vez que uses Apple Pay con las tarjetas seleccionadas. Cada pago creará un borrador en tu bandeja de entrada.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Respuestas a las dudas más comunes";
