@@ -31,9 +31,29 @@ struct InboxApproveSuccessView: View {
     let onAccept: () -> Void
     let onApproveNext: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showHero = false
+    @State private var showCheckmark = false
+    @State private var showAmount = false
+    @State private var showDetails = false
+    @State private var showActions = false
+
+    private var typeColor: Color { data.isExpense ? Color.hotPink : Color.electricIndigo }
+
     var body: some View {
         ZStack {
             Color.yalaBackground.ignoresSafeArea()
+
+            // Subtle background glow
+            RadialGradient(
+                colors: [typeColor.opacity(0.06), .clear],
+                center: .center,
+                startRadius: 0,
+                endRadius: 200
+            )
+            .frame(height: 300)
+            .blur(radius: 40)
+            .offset(y: -60)
 
             VStack(spacing: DS.Spacing.none) {
                 // Edit button at top right
@@ -44,31 +64,81 @@ struct InboxApproveSuccessView: View {
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, DS.Spacing.lg)
+                .opacity(showActions ? 1.0 : 0.0)
 
                 Spacer()
 
-                // Success icon and title
+                // Hero area
                 VStack(spacing: DS.Spacing.lg) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.electricIndigo.opacity(0.15))
-                            .frame(width: 80, height: 80)
+                    // Title above circle
+                    Text(L10n.Inbox.approveSuccess)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.secondary)
+                        .opacity(showHero ? 1.0 : 0.0)
 
+                    // Layered circle
+                    ZStack {
+                        // Radiant glow
+                        RadialGradient(
+                            colors: [typeColor.opacity(0.25), .clear],
+                            center: .center,
+                            startRadius: 20,
+                            endRadius: 90
+                        )
+                        .frame(width: 180, height: 180)
+                        .blur(radius: 12)
+                        .opacity(showHero ? 1.0 : 0.0)
+
+                        // Main gradient circle
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [typeColor, typeColor.opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 100, height: 100)
+                            .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
+                            .scaleEffect(showHero ? 1.0 : 0.3)
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // Glass overlay
+                        Circle()
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .mask(
+                                LinearGradient(
+                                    colors: [.white, .clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // White checkmark
                         Image(systemName: "checkmark")
                             .font(.system(size: heroIconSize, weight: .semibold))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(.white)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .scaleEffect(showCheckmark ? 1.0 : 0.0)
+                            .opacity(showCheckmark ? 1.0 : 0.0)
                     }
 
-                    Text(L10n.Inbox.approveSuccess)
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.primary)
+                    // Promoted amount
+                    Text(YalaFormatter.currency(value: data.amount, currencyCode: data.currencyCode, forceFullPrecision: true))
+                        .font(DS.Typography.largeTitle)
+                        .foregroundStyle(typeColor)
+                        .scaleEffect(showAmount ? 1.0 : 0.8)
+                        .opacity(showAmount ? 1.0 : 0.0)
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 
                 // Transaction details
                 detailsSection
                     .padding(.horizontal, DS.Spacing.xl)
+                    .opacity(showDetails ? 1.0 : 0.0)
+                    .offset(y: showDetails ? 0 : 15)
 
                 Spacer()
 
@@ -76,6 +146,48 @@ struct InboxApproveSuccessView: View {
                 actionButtons
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxxl)
+                    .opacity(showActions ? 1.0 : 0.0)
+                    .offset(y: showActions ? 0 : 10)
+            }
+        }
+        .onAppear {
+            if reduceMotion {
+                showHero = true
+                showCheckmark = true
+                showAmount = true
+                showDetails = true
+                showActions = true
+            } else {
+                Task {
+                    // 0ms — hero circle + glow
+                    withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
+                        showHero = true
+                    }
+
+                    // 150ms — checkmark
+                    try? await Task.sleep(for: .milliseconds(150))
+                    withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
+                        showCheckmark = true
+                    }
+
+                    // 300ms — amount
+                    try? await Task.sleep(for: .milliseconds(150))
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        showAmount = true
+                    }
+
+                    // 500ms — details card
+                    try? await Task.sleep(for: .milliseconds(200))
+                    withAnimation(.easeOut(duration: 0.35)) {
+                        showDetails = true
+                    }
+
+                    // 700ms — action buttons
+                    try? await Task.sleep(for: .milliseconds(200))
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showActions = true
+                    }
+                }
             }
         }
     }
@@ -84,9 +196,6 @@ struct InboxApproveSuccessView: View {
 
     private var detailsSection: some View {
         VStack(spacing: DS.Spacing.none) {
-            // Amount (prominent)
-            amountRow
-
             // Date
             detailRow(
                 icon: "calendar",
@@ -114,22 +223,6 @@ struct InboxApproveSuccessView: View {
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(Color.yalaCard)
         )
-    }
-
-    private var amountRow: some View {
-        HStack {
-            Text(L10n.Transaction.total)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            Text(YalaFormatter.currency(value: data.amount, currencyCode: data.currencyCode, forceFullPrecision: true))
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(data.isExpense ? Color.hotPink : Color.electricIndigo)
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.lg)
     }
 
     private var formattedDate: String {
