@@ -42,6 +42,94 @@
     @apply max-w-7xl mx-auto px-6;
   }
 
+  /* iPhone 17 Pro Mockup */
+  .iphone-mockup {
+    position: relative;
+    border-radius: 3rem;
+    padding: 0.6rem;
+    background: linear-gradient(145deg, #4a6a8a, #3a5a7a, #2d4a6a);
+    box-shadow:
+      0 0 0 1px rgba(74, 106, 138, 0.3),
+      0 25px 50px -12px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+  }
+
+  .iphone-mockup::before {
+    content: '';
+    position: absolute;
+    top: 0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35%;
+    height: 1.8rem;
+    background: #1a1a1a;
+    border-radius: 0 0 1rem 1rem;
+    z-index: 10;
+  }
+
+  body.light .iphone-mockup {
+    background: linear-gradient(145deg, #7a9aba, #6a8aaa, #5a7a9a);
+    box-shadow:
+      0 0 0 1px rgba(122, 154, 186, 0.4),
+      0 25px 50px -12px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  body.light .iphone-mockup::before {
+    background: #f0f0f0;
+  }
+
+  .iphone-mockup img {
+    border-radius: 2.4rem;
+    display: block;
+    width: 100%;
+  }
+
+  /* Small mockup variant for how-it-works */
+  .iphone-mockup-sm {
+    position: relative;
+    border-radius: 1.5rem;
+    padding: 0.35rem;
+    background: linear-gradient(145deg, #4a6a8a, #3a5a7a, #2d4a6a);
+    box-shadow:
+      0 0 0 1px rgba(74, 106, 138, 0.3),
+      0 10px 25px -5px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+  }
+
+  .iphone-mockup-sm::before {
+    content: '';
+    position: absolute;
+    top: 0.35rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30%;
+    height: 1rem;
+    background: #1a1a1a;
+    border-radius: 0 0 0.6rem 0.6rem;
+    z-index: 10;
+  }
+
+  body.light .iphone-mockup-sm {
+    background: linear-gradient(145deg, #7a9aba, #6a8aaa, #5a7a9a);
+    box-shadow:
+      0 0 0 1px rgba(122, 154, 186, 0.4),
+      0 10px 25px -5px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  body.light .iphone-mockup-sm::before {
+    background: #f0f0f0;
+  }
+
+  .iphone-mockup-sm img {
+    border-radius: 1.2rem;
+    display: block;
+    width: 100%;
+  }
+
   /* Logo switching */
   .logo-dark { display: block; }
   .logo-light { display: none; }
@@ -49,12 +137,7 @@
   body.light .logo-dark { display: none; }
   body.light .logo-light { display: block; }
 
-  /* Screenshot switching (dark default, light on body.light) */
-  .screenshot-dark { display: block; }
-  .screenshot-light { display: none; }
-
-  body.light .screenshot-dark { display: none; }
-  body.light .screenshot-light { display: block; }
+  /* Screenshot switching — see below @layer for rules */
 
   /* Yala Brand Buttons */
   .btn-primary {
@@ -330,3 +413,10 @@ body.light .bg-yala-cyan\/5 {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Screenshot dark/light switching (outside @layer to avoid Tailwind purge) */
+.screenshot-dark { display: block !important; }
+.screenshot-light { display: none !important; }
+
+body.light .screenshot-dark { display: none !important; }
+body.light .screenshot-light { display: block !important; }
