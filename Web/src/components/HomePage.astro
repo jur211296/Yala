@@ -137,7 +137,8 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
     <!-- Hero Screenshot - Panel Principal -->
     <div class="mt-16 flex justify-center">
       <div class="w-64 sm:w-72 md:w-80 rounded-[2.5rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-2 shadow-2xl shadow-yala-indigo/20 overflow-hidden animate-float">
-        <img src="/images/screenshots/panel-principal.png" alt="Yala - Panel Principal" class="w-full rounded-[2rem]" />
+        <img src="/images/screenshots/panel-principal-dark.png" alt="Yala - Panel Principal" class="w-full rounded-[2rem] screenshot-dark" />
+        <img src="/images/screenshots/panel-principal-light.png" alt="Yala - Panel Principal" class="w-full rounded-[2rem] screenshot-light" />
       </div>
     </div>
   </section>
@@ -216,9 +217,9 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
 
         <!-- Problem Card 3 -->
         <div class="card p-8 animate-on-scroll stagger-3">
-          <div class="w-14 h-14 rounded-2xl bg-nature-priority/10 flex items-center justify-center mb-6">
-            <svg class="w-7 h-7 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18M3 6h18M3 18h18M9 6v12M15 6v12"/>
             </svg>
           </div>
           <h3 class="text-xl font-semibold mb-3">{t.problemCard3Title}</h3>
@@ -443,7 +444,8 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <h3 class="text-xl font-semibold mb-3">{t.howStep1Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep1Desc}</p>
         <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
-          <img src="/images/screenshots/paso1.png" alt="Registrar gastos" class="w-full" loading="lazy" />
+          <img src="/images/screenshots/paso1-dark.png" alt="Registrar gastos" class="w-full screenshot-dark" loading="lazy" />
+          <img src="/images/screenshots/paso1-light.png" alt="Registrar gastos" class="w-full screenshot-light" loading="lazy" />
         </div>
       </div>
 
@@ -453,7 +455,8 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <h3 class="text-xl font-semibold mb-3">{t.howStep2Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep2Desc}</p>
         <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
-          <img src="/images/screenshots/categorias.png" alt="Categorías organizadas" class="w-full" loading="lazy" />
+          <img src="/images/screenshots/categorias-dark.png" alt="Categorías organizadas" class="w-full screenshot-dark" loading="lazy" />
+          <img src="/images/screenshots/categorias-light.png" alt="Categorías organizadas" class="w-full screenshot-light" loading="lazy" />
         </div>
       </div>
 
@@ -463,7 +466,8 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <h3 class="text-xl font-semibold mb-3">{t.howStep3Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep3Desc}</p>
         <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
-          <img src="/images/screenshots/tendencias.png" alt="Gráficos y tendencias" class="w-full" loading="lazy" />
+          <img src="/images/screenshots/tendencias-dark.png" alt="Gráficos y tendencias" class="w-full screenshot-dark" loading="lazy" />
+          <img src="/images/screenshots/tendencias-light.png" alt="Gráficos y tendencias" class="w-full screenshot-light" loading="lazy" />
         </div>
       </div>
     </div>
@@ -502,7 +506,8 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <!-- Analytics Screenshot - Estadísticas -->
         <div class="animate-on-scroll stagger-2">
           <div class="max-w-xs mx-auto rounded-[2rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-2 shadow-2xl shadow-yala-indigo/20 overflow-hidden">
-            <img src="/images/screenshots/estadisticas-categorias.png" alt="Estadísticas y análisis" class="w-full rounded-[1.5rem]" loading="lazy" />
+            <img src="/images/screenshots/estadisticas-categorias-dark.png" alt="Estadísticas y análisis" class="w-full rounded-[1.5rem] screenshot-dark" loading="lazy" />
+            <img src="/images/screenshots/estadisticas-categorias-light.png" alt="Estadísticas y análisis" class="w-full rounded-[1.5rem] screenshot-light" loading="lazy" />
           </div>
         </div>
       </div>
@@ -597,59 +602,59 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <p class="text-xl text-neutral-400">{t.pricingSubtitle}</p>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
         <!-- Free Plan -->
-        <div class="card p-8 animate-on-scroll stagger-1">
+        <div class="card p-8 animate-on-scroll stagger-1 flex flex-col">
           <h3 class="text-2xl font-bold mb-2">{t.pricingFreeTitle}</h3>
           <div class="flex items-baseline gap-1 mb-6">
             <span class="text-4xl font-bold">{t.pricingFreePrice}</span>
             <span class="text-neutral-500">{t.pricingFreePeriod}</span>
           </div>
-          <ul class="space-y-3 mb-8">
+          <ul class="space-y-3 mb-8 flex-1">
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree1}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree2}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree3}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree4}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree5}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree6}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree7}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree8}</span>
@@ -659,7 +664,7 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         </div>
 
         <!-- Pro Plan -->
-        <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2">
+        <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2 flex flex-col">
           <div class="absolute top-0 right-0 bg-yala-indigo text-white text-xs font-bold px-4 py-1 rounded-bl-xl">PRO</div>
           <h3 class="text-2xl font-bold mb-2">{t.pricingProTitle}</h3>
           <div class="flex items-baseline gap-1 mb-1">
@@ -667,46 +672,54 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
             <span class="text-neutral-500">{t.pricingProPeriod}</span>
           </div>
           <p class="text-sm text-neutral-500 mb-6">{t.pricingProAnnual}</p>
-          <ul class="space-y-3 mb-8">
+          <ul class="space-y-3 mb-8 flex-1">
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span class="text-sm text-neutral-400 italic">{t.pricingPro0}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro1}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro2}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro3}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro4}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro5}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro6}</span>
             </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro7}</span>
+            </li>
           </ul>
           <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-primary w-full text-center">{t.pricingProCta}</a>
-          <p class="text-center text-sm text-neutral-500 mt-4">{t.pricingProBadge}</p>
         </div>
       </div>
   </section>

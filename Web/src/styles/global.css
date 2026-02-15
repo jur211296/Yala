@@ -49,6 +49,13 @@
   body.light .logo-dark { display: none; }
   body.light .logo-light { display: block; }
 
+  /* Screenshot switching (dark default, light on body.light) */
+  .screenshot-dark { display: block; }
+  .screenshot-light { display: none; }
+
+  body.light .screenshot-dark { display: none; }
+  body.light .screenshot-light { display: block; }
+
   /* Yala Brand Buttons */
   .btn-primary {
     @apply px-6 py-3 rounded-xl font-semibold;
