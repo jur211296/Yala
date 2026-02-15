@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SupportPage from '../../components/SupportPage.astro';
+import { getTranslations } from '../../i18n/translations';
+
+const t = getTranslations('pt');
+---
+
+<Layout title={t.supportPageTitle} lang="pt">
+  <SupportPage lang="pt" />
+</Layout>

@@ -1,0 +1,195 @@
+---
+import type { Language } from '../i18n/translations';
+import { getTranslation } from '../i18n/translations';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = getTranslation(lang);
+const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
+---
+
+<main class="min-h-screen bg-yala-slate">
+  <div class="max-w-3xl mx-auto px-6 py-24">
+    <a href={homeUrl} class="text-yala-indigo hover:text-yala-cyan transition-colors mb-8 inline-flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      {t.supportBackHome}
+    </a>
+
+    <div class="prose-container p-8 rounded-3xl mt-8">
+      <h1 class="text-3xl font-bold text-white mb-6">{t.supportH1}</h1>
+
+      <!-- Intro -->
+      <section class="mb-8">
+        <p class="text-neutral-300 leading-relaxed">{t.supportIntro}</p>
+      </section>
+
+      <!-- Quick Contact -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-4">{t.supportContactTitle}</h2>
+        <div class="bg-yala-slate rounded-2xl p-6 border border-neutral-700">
+          <p class="text-neutral-300 mb-3">{t.supportContactText}</p>
+          <a href="mailto:admin@yala-app.pe" class="text-yala-cyan hover:text-yala-indigo transition-colors font-medium">
+            {t.supportEmail}
+          </a>
+        </div>
+      </section>
+
+      <!-- Help Topics -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-4">{t.supportTopicsTitle}</h2>
+        <div class="space-y-4">
+          <div class="bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors">
+            <h3 class="text-white font-semibold mb-2">{t.supportTopic1Title}</h3>
+            <p class="text-neutral-400 text-sm">{t.supportTopic1Text}</p>
+          </div>
+          <div class="bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors">
+            <h3 class="text-white font-semibold mb-2">{t.supportTopic2Title}</h3>
+            <p class="text-neutral-400 text-sm">{t.supportTopic2Text}</p>
+          </div>
+          <div class="bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors">
+            <h3 class="text-white font-semibold mb-2">{t.supportTopic3Title}</h3>
+            <p class="text-neutral-400 text-sm">{t.supportTopic3Text}</p>
+          </div>
+          <div class="bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors">
+            <h3 class="text-white font-semibold mb-2">{t.supportTopic4Title}</h3>
+            <p class="text-neutral-400 text-sm">{t.supportTopic4Text}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ Section -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-4">{t.supportFaqTitle}</h2>
+        <div class="space-y-4">
+          <!-- FAQ 1 -->
+          <details class="group bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors cursor-pointer">
+            <summary class="flex items-center justify-between font-semibold text-white group-open:text-yala-cyan transition-colors">
+              {t.faq1Q}
+              <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </summary>
+            <p class="text-neutral-300 mt-3">{t.faq1A}</p>
+          </details>
+
+          <!-- FAQ 2 -->
+          <details class="group bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors cursor-pointer">
+            <summary class="flex items-center justify-between font-semibold text-white group-open:text-yala-cyan transition-colors">
+              {t.faq2Q}
+              <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </summary>
+            <p class="text-neutral-300 mt-3">{t.faq2A}</p>
+          </details>
+
+          <!-- FAQ 3 -->
+          <details class="group bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors cursor-pointer">
+            <summary class="flex items-center justify-between font-semibold text-white group-open:text-yala-cyan transition-colors">
+              {t.faq3Q}
+              <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </summary>
+            <p class="text-neutral-300 mt-3">{t.faq3A}</p>
+          </details>
+
+          <!-- FAQ 4 -->
+          <details class="group bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors cursor-pointer">
+            <summary class="flex items-center justify-between font-semibold text-white group-open:text-yala-cyan transition-colors">
+              {t.faq4Q}
+              <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </summary>
+            <p class="text-neutral-300 mt-3">{t.faq4A}</p>
+          </details>
+
+          <!-- FAQ 5 -->
+          <details class="group bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors cursor-pointer">
+            <summary class="flex items-center justify-between font-semibold text-white group-open:text-yala-cyan transition-colors">
+              {t.faq5Q}
+              <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </summary>
+            <p class="text-neutral-300 mt-3">{t.faq5A}</p>
+          </details>
+
+          <!-- FAQ 6 -->
+          <details class="group bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors cursor-pointer">
+            <summary class="flex items-center justify-between font-semibold text-white group-open:text-yala-cyan transition-colors">
+              {t.faq6Q}
+              <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </summary>
+            <p class="text-neutral-300 mt-3">{t.faq6A}</p>
+          </details>
+
+          <!-- FAQ 7 -->
+          <details class="group bg-yala-slate rounded-2xl p-6 border border-neutral-700 hover:border-yala-cyan transition-colors cursor-pointer">
+            <summary class="flex items-center justify-between font-semibold text-white group-open:text-yala-cyan transition-colors">
+              {t.faq7Q}
+              <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </summary>
+            <p class="text-neutral-300 mt-3">{t.faq7A}</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- Still need help? -->
+      <section class="mt-12 pt-8 border-t border-neutral-700">
+        <div class="bg-gradient-to-r from-yala-indigo/10 to-yala-cyan/10 rounded-2xl p-8 border border-yala-indigo/20">
+          <h2 class="text-xl font-semibold text-white mb-3">{t.supportStillNeedTitle}</h2>
+          <p class="text-neutral-300 mb-6">{t.supportStillNeedText}</p>
+          <a href="mailto:admin@yala-app.pe" class="inline-block px-6 py-2 bg-yala-cyan text-yala-slate rounded-lg font-semibold hover:bg-yala-indigo transition-colors">
+            {t.supportContactUs}
+          </a>
+        </div>
+      </section>
+
+      <!-- Trust badges -->
+      <div class="mt-12 pt-8 border-t border-neutral-700">
+        <div class="flex flex-wrap gap-6 justify-center text-neutral-400 text-sm">
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>{t.supportTrustBadge1}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>{t.supportTrustBadge2}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <span>{t.supportTrustBadge3}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<style>
+  .prose-container {
+    background: rgba(28, 41, 71, 0.6);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+  }
+
+  .prose-container:hover {
+    border-color: rgba(71, 85, 105, 1);
+  }
+</style>
