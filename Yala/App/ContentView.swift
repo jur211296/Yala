@@ -338,6 +338,14 @@ struct MainTabView: View {
                 case .inbox:
                     sessionState.selectedMainTab = .panel
                     sessionState.shouldShowInbox = true
+                case .scheduledPayments:
+                    sessionState.selectedPlanningTab = .scheduledPayments
+                    sessionState.selectedMainTab = .planning
+                case .recordsStandalone:
+                    sessionState.temporaryTab = .records
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        sessionState.selectedMainTab = .records
+                    }
                 }
 
                 // Clear after handling

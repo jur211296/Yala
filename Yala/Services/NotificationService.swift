@@ -57,6 +57,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                     SessionState.shared.deepLinkDestination = .categories
                 case "inbox":
                     SessionState.shared.deepLinkDestination = .inbox
+                case "scheduledPayments":
+                    SessionState.shared.deepLinkDestination = .scheduledPayments
+                case "recordsStandalone":
+                    SessionState.shared.deepLinkDestination = .recordsStandalone
                 default:
                     #if DEBUG
                     print("NotificationService: Unknown deep link destination: \(destination)")
@@ -128,6 +132,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         content.title = item.name
         content.body = item.displayText
         content.sound = .default
+
+        // Deep link for static reminder notifications
+        switch item.notificationType {
+        case .endOfDay, .lunchTime, .custom:
+            content.userInfo = ["deepLink": "recordsStandalone"]
+        default:
+            break
+        }
 
         // Check if notification has specific weekdays selected
         let selectedWeekdays = item.selectedWeekdays

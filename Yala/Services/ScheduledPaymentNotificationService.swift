@@ -156,7 +156,7 @@ final class ScheduledPaymentNotificationService {
         await NotificationService.shared.sendNotification(
             title: payment.name,
             body: message,
-            deepLink: "planning"
+            deepLink: "scheduledPayments"
         )
     }
 
