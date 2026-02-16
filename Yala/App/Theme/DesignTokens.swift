@@ -323,6 +323,27 @@ enum DS {
         static let sizeLarge: CGFloat = 20
     }
 
+    // MARK: - Adaptive Layout
+
+    /// Size class helpers for iPad/iPhone adaptive layouts.
+    /// Usage: `DS.Adaptive.isWideScreen(sizeClass)`, `DS.Adaptive.columns(sizeClass)`
+    enum Adaptive {
+        /// Returns true when horizontal size class is `.regular` (iPad, iPhone landscape)
+        static func isWideScreen(_ sizeClass: UserInterfaceSizeClass?) -> Bool {
+            sizeClass == .regular
+        }
+
+        /// Number of widget columns: 2 on wide screens, 1 on compact
+        static func columns(_ sizeClass: UserInterfaceSizeClass?) -> Int {
+            isWideScreen(sizeClass) ? 2 : 1
+        }
+
+        /// Horizontal padding: 32pt on wide screens, 16pt on compact
+        static func horizontalPadding(_ sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+            isWideScreen(sizeClass) ? DS.Spacing.xxxl : DS.Spacing.lg
+        }
+    }
+
     // MARK: - Form Row Dimensions
 
     /// Standard dimensions for form rows (TransactionFormRow, settings rows, etc.)

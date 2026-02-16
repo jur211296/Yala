@@ -27,6 +27,7 @@ struct PanelView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(ExchangeRateService.self) private var exchangeRateService
@@ -212,6 +213,7 @@ struct PanelView: View {
             )
         )
         .onAppear {
+            viewModel.widgetConfig.columns = DS.Adaptive.columns(sizeClass)
             viewModel.setContext(
                 modelContext,
                 exchangeRateService: exchangeRateService,
@@ -227,6 +229,9 @@ struct PanelView: View {
                 accountsSortOrderNamesRaw = newOrder
             }
             recalculateData()
+        }
+        .onChange(of: sizeClass) { _, newValue in
+            viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
         }
         .modifier(
             PanelDataObservers(
@@ -272,7 +277,7 @@ struct PanelView: View {
                     accountsSection
                     totalBalanceSection
                 }
-                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxxl)
                 // Force complete re-render when formatting settings change
@@ -730,17 +735,16 @@ struct PanelView: View {
                         widgetView(for: config)
                             .clipped()  // Prevent content overflow
                     case .halfWidthPair(let left, let right):
-                        HStack(spacing: DS.Spacing.lg) {
+                        HStack(alignment: .top, spacing: DS.Spacing.lg) {
                             widgetView(for: left)
                                 .frame(maxWidth: .infinity)
-                                .clipped()  // Prevent content overflow
+                                .clipped()
 
                             if let right = right {
                                 widgetView(for: right)
                                     .frame(maxWidth: .infinity)
-                                    .clipped()  // Prevent content overflow
+                                    .clipped()
                             } else {
-                                // Spacer for empty slot
                                 Color.clear
                                     .frame(maxWidth: .infinity)
                             }

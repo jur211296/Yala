@@ -16,6 +16,7 @@ struct CategoriesTabView: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 48
@@ -444,17 +445,25 @@ struct CategoriesTabView: View {
 
     // MARK: - Charts Carousel
 
-    /// Number of pages in carousel (2 when income mode, 3 otherwise)
+    /// Number of pages in carousel (varies by income mode and iPad layout)
     private var carouselPageCount: Int {
-        isIncomeMode ? 2 : 3
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        if isWide {
+            // iPad: tags moved to nature row, only category + subcategory (or just subcategory in income)
+            return isIncomeMode ? 1 : 2
+        }
+        return isIncomeMode ? 2 : 3
     }
 
+    @ViewBuilder
     private var chartsCarousel: some View {
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+
         VStack(spacing: DS.Spacing.sm) {
             GeometryReader { geo in
                 let totalWidth = geo.size.width
                 let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = totalWidth
+                let cardWidth = isWide ? (totalWidth - spacing) / 2 : totalWidth
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: spacing) {
@@ -470,10 +479,12 @@ struct CategoriesTabView: View {
                             .frame(width: cardWidth)
                             .id("subcategory")
 
-                        // Tags Chart
-                        tagChartCard
-                            .frame(width: cardWidth)
-                            .id("tags")
+                        // Tags Chart - on iPad, tags moves next to nature
+                        if !isWide {
+                            tagChartCard
+                                .frame(width: cardWidth)
+                                .id("tags")
+                        }
                     }
                     .scrollTargetLayout()
                 }
@@ -483,26 +494,32 @@ struct CategoriesTabView: View {
             }
             .frame(height: 340)
 
-            // Page indicator - dynamic count based on income mode
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(0..<carouselPageCount, id: \.self) { page in
-                    let pageId = carouselPageIds[page]
-                    Circle()
-                        .fill(
-                            chartsCarouselPosition == pageId
-                                ? Color.yalaPrimaryText.opacity(0.3)
-                                : Color.yalaSecondaryText.opacity(0.2)
-                        )
-                        .frame(width: 6, height: 6)
+            // Page indicator - hide on iPad (multiple charts already visible)
+            if !isWide {
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(0..<carouselPageCount, id: \.self) { page in
+                        let pageId = carouselPageIds[page]
+                        Circle()
+                            .fill(
+                                chartsCarouselPosition == pageId
+                                    ? Color.yalaPrimaryText.opacity(0.3)
+                                    : Color.yalaSecondaryText.opacity(0.2)
+                            )
+                            .frame(width: 6, height: 6)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
-    /// IDs for carousel pages based on income mode
+    /// IDs for carousel pages based on income mode and iPad layout
     private var carouselPageIds: [String] {
-        isIncomeMode ? ["subcategory", "tags"] : ["category", "subcategory", "tags"]
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        if isWide {
+            return isIncomeMode ? ["subcategory"] : ["category", "subcategory"]
+        }
+        return isIncomeMode ? ["subcategory", "tags"] : ["category", "subcategory", "tags"]
     }
 
     // MARK: - Category Chart Card
@@ -663,47 +680,57 @@ struct CategoriesTabView: View {
         }
     }
 
+    @ViewBuilder
     private var natureCarousel: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            GeometryReader { geo in
-                let totalWidth = geo.size.width
-                let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = totalWidth
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: spacing) {
-                        // Slide 1: Large (Chart + Legend)
-                        natureWidgetLarge
-                            .frame(width: cardWidth)
-                            .id(0)
+        if isWide {
+            // iPad: tags pie + nature large side by side, no compact nature
+            HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                tagChartCard
+                    .frame(maxWidth: .infinity)
+                natureWidgetLarge
+                    .frame(maxWidth: .infinity)
+            }
+        } else {
+            // iPhone: carousel with large/compact nature slides
+            VStack(spacing: DS.Spacing.sm) {
+                GeometryReader { geo in
+                    let totalWidth = geo.size.width
+                    let spacing: CGFloat = DS.Spacing.md
 
-                        // Slide 2: Medium (Compact Bars)
-                        natureWidgetCompact 
-                            .frame(width: cardWidth)
-                            .id(1)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(alignment: .top, spacing: spacing) {
+                            natureWidgetLarge
+                                .frame(width: totalWidth)
+                                .id(0)
+
+                            natureWidgetCompact
+                                .frame(width: totalWidth)
+                                .id(1)
+                        }
+                        .scrollTargetLayout()
                     }
-                    .scrollTargetLayout()
+                    .scrollTargetBehavior(.viewAligned)
+                    .scrollPosition(id: $natureCarouselIndex)
+                    .frame(width: totalWidth)
                 }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $natureCarouselIndex)
-                .frame(width: totalWidth)
-            }
-            .frame(height: natureCarouselHeight)
-            .dsAnimation(.easeInOut(duration: 0.3), value: natureCarouselIndex, reduceMotion: reduceMotion)
+                .frame(height: natureCarouselHeight)
+                .dsAnimation(.easeInOut(duration: 0.3), value: natureCarouselIndex, reduceMotion: reduceMotion)
 
-            // Page indicator
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(0..<2, id: \.self) { page in
-                    Circle()
-                        .fill(
-                            page == (natureCarouselIndex ?? 0)
-                                ? Color.yalaPrimaryText.opacity(0.3)
-                                : Color.yalaSecondaryText.opacity(0.2)
-                        )
-                        .frame(width: 6, height: 6)
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(0..<2, id: \.self) { page in
+                        Circle()
+                            .fill(
+                                page == (natureCarouselIndex ?? 0)
+                                    ? Color.yalaPrimaryText.opacity(0.3)
+                                    : Color.yalaSecondaryText.opacity(0.2)
+                            )
+                            .frame(width: 6, height: 6)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 

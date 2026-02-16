@@ -17,6 +17,7 @@ struct TrendsTabView: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
@@ -459,37 +460,51 @@ struct TrendsTabView: View {
 
     // MARK: - Trend Charts Carousel
 
+    @ViewBuilder
     private var trendChartsCarousel: some View {
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        let hasTwoCharts = showVariations && trendsViewModel.detailPeriod != .allTime
+
         VStack(spacing: DS.Spacing.md) {
-            TabView(selection: $trendChartsCarouselPosition) {
-                // Trends Chart Card (Page 0)
-                chartCard
-                    .tag(0)
-
-                // Period Comparison Card (Page 1) - only if not All Time AND showVariations is ON
-                if showVariations && trendsViewModel.detailPeriod != .allTime {
+            if isWide && hasTwoCharts {
+                // iPad: show both charts side by side
+                HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                    chartCard
+                        .frame(maxWidth: .infinity)
                     periodComparisonCard
-                        .tag(1)
+                        .frame(maxWidth: .infinity)
                 }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: 330)
+                .frame(height: 330)
+            } else {
+                // iPhone or single chart: paging TabView
+                TabView(selection: $trendChartsCarouselPosition) {
+                    chartCard
+                        .tag(0)
 
-            // Page indicators (centered) - only show when there are 2 pages
-            if showVariations && trendsViewModel.detailPeriod != .allTime {
-                HStack(spacing: DS.Spacing.sm) {
-                    ForEach(0..<2, id: \.self) { index in
-                        Circle()
-                            .fill(
-                                trendChartsCarouselPosition == index
-                                    ? Color.yalaPrimaryText : Color.yalaSecondaryText.opacity(0.3)
-                            )
-                            .frame(width: 6, height: 6)
-                            .animation(
-                                .easeInOut(duration: 0.2), value: trendChartsCarouselPosition)
+                    if hasTwoCharts {
+                        periodComparisonCard
+                            .tag(1)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: 330)
+
+                // Page indicators - only on compact with 2 pages
+                if hasTwoCharts {
+                    HStack(spacing: DS.Spacing.sm) {
+                        ForEach(0..<2, id: \.self) { index in
+                            Circle()
+                                .fill(
+                                    trendChartsCarouselPosition == index
+                                        ? Color.yalaPrimaryText : Color.yalaSecondaryText.opacity(0.3)
+                                )
+                                .frame(width: 6, height: 6)
+                                .animation(
+                                    .easeInOut(duration: 0.2), value: trendChartsCarouselPosition)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
             }
         }
     }
