@@ -86,7 +86,6 @@ struct RecordsStandaloneView: View {
                 refreshRecordsData()
             }
             .onChange(of: sessionState.dataVersion) { _, _ in
-                dataViewModel.loadData()
                 refreshRecordsData()
             }
     }
@@ -416,12 +415,15 @@ struct RecordsStandaloneView: View {
     // MARK: - Actions
 
     private func refreshRecordsData() {
-        recordsViewModel.applyFilters(
-            transactions: dataViewModel.allTransactions,
-            accounts: dataViewModel.accounts,
-            categories: dataViewModel.categories,
-            tags: dataViewModel.tags
-        )
+        DispatchQueue.main.async {
+            dataViewModel.loadData()
+            recordsViewModel.applyFilters(
+                transactions: dataViewModel.allTransactions,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags
+            )
+        }
     }
 
     private func handleEditAction() {
