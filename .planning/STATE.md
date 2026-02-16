@@ -13,8 +13,12 @@ Version: 1.2 (en desarrollo)
 Phase: 11 — Sistema de Temas Independientes
 Spec: `.planning/THEME-REFACTOR-PLAN.md`
 Plan: None
-Status: **V1.1 CERRADA** — Release preparado (2026-02-13)
-Last activity: 2026-02-13 — Cierre V1.1: fase 10.5 completada, merge 1.1 → 1.0
+Status: **V1.1 COMPLETADA** — Fase 10.5 cerrada oficialmente (2026-02-16)
+Last activity: 2026-02-16 — Cierre oficial Fase 10.5, documentación branching
+
+### Branch Strategy
+- **1.0** = Release (V1.0 + V1.1 mergeada)
+- **1.1** = Desarrollo activo (V1.2: Fase 11+)
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
@@ -24,6 +28,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-16] e2a69fd feat: add iPad adaptive layout — double column widgets, carousels, trends
+- [2026-02-16] 9c196e5 chore: unify deployment target (26.0) and version (1.0) across all targets
 - [2026-02-13] f586a15 fix: resolve pre-launch warnings — prints, VoiceOver, Dynamic Type, touch targets
 - [2026-02-13] 2b3677d feat: redesign image selection idle screen with hints and examples
 - [2026-02-13] f6ea01b feat: add 2s freeze between video loops and zoom into center content
@@ -448,10 +454,12 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Cierre V1.1 — merge 1.1 → 1.0 completado
-Next step: Crear branch 1.2 para Fase 11 (Sistema de Temas)
+Last session: 2026-02-16
+Stopped at: iPad adaptive layout implementado — Panel, carousels, charts, trends
+Next step: Verificar visualmente en iPad Pro 13" simulator (landscape + portrait)
 Resume context:
-- V1.1 cerrada con 524 commits sobre 1.0
-- Pre-launch checklist pasado, 260 tests OK
-- Siguiente: Fase 11 — Sistema de Temas Independientes (THEME-REFACTOR-PLAN.md)
+- DS.Adaptive helpers en DesignTokens.swift (isWideScreen, columns, horizontalPadding)
+- WidgetConfigManager empareja widgets compatibles en 2 columnas (fullWidthOnly: trend, cashFlow, expensesByNature, exchangeRate)
+- AccountsCarousel 4 cards en iPad, CategoriesTabView tags+nature lado a lado
+- TrendsTabView charts side-by-side en iPad
+- Build OK, swift-audit LIMPIO
