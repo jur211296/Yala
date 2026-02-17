@@ -14,7 +14,7 @@ Phase: 11 — Sistema de Temas Independientes
 Spec: `.planning/THEME-REFACTOR-PLAN.md`
 Plan: None
 Status: **V1.1 COMPLETADA** — Fase 10.5 cerrada oficialmente (2026-02-16)
-Last activity: 2026-02-16 — Cierre oficial Fase 10.5, documentación branching
+Last activity: 2026-02-16 — Fix BUG-26 (Share Sheet race conditions)
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,10 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-17] 7040290 fix: widget budget filters + NatureTrendWidget KPI (BUG-27, BUG-28)
+- [2026-02-16] bd9231a fix: resolve Share Sheet race conditions on repeated use (BUG-26)
+- [2026-02-16] cc565b0 fix: refresh RecordsStandalone after creating/approving transactions (BUG-25)
+- [2026-02-16] c277400 fix: correct notification deep links — scheduled payments and static reminders
 - [2026-02-16] e2a69fd feat: add iPad adaptive layout — double column widgets, carousels, trends
 - [2026-02-16] 9c196e5 chore: unify deployment target (26.0) and version (1.0) across all targets
 - [2026-02-13] f586a15 fix: resolve pre-launch warnings — prints, VoiceOver, Dynamic Type, touch targets
@@ -353,6 +357,61 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 ---
 
+### Bugs pendientes V1.0
+
+- ✅ **BUG-25: RecordsStandalone no se refresca al crear/aprobar transacciones** — Corregido en cc565b0. Causa: `loadData()` y `applyFilters()` se ejecutaban síncronamente, filters leían datos stale. Fix: `DispatchQueue.main.async` (patrón DetailContainerView).
+
+- ✅ **BUG-26: Share Sheet por imagen falla intermitentemente en uso repetido** — Corregido en bd9231a. Migrado de `hasPendingSharedImage` persistente a patrón one-shot `shouldShowSharedImage`. Eliminado double-trigger en `handleBecameActive`, reset inmediato en observer, cleanup de imágenes stale >24h.
+
+- ✅ **BUG-27: Widget WidgetKit de presupuestos no filtra por naturaleza ni tags** — Corregido en 7040290. Agregados filtros de nature y tags a `WidgetDataCache.calculateBudgetSpent()`, migrado matching de subcategory/account de nombre a ID.
+  Síntoma: Si un presupuesto está basado en naturalezas (ej: "Solo gastos fijos"), el widget iOS muestra el total de TODAS las naturalezas en vez del filtrado. La vista Planificación > Presupuestos muestra el número correcto.
+
+  Root cause: `WidgetDataCache.calculateBudgetSpent()` (líneas 422-468) es una copia simplificada de `BudgetsViewModel.getBudgetSpending()` (líneas 198-270) que no se actualizó cuando se agregaron filtros nuevos.
+
+  Filtros comparados:
+  | Filtro | Widget (`WidgetDataCache`) | Vista (`BudgetsViewModel`) |
+  |--------|---------------------------|---------------------------|
+  | Date range | ✓ | ✓ |
+  | Account | ✓ (por nombre ⚠️) | ✓ (por ID) |
+  | Subcategory | ✓ (por nombre ⚠️) | ✓ (por ID) |
+  | **Nature** | **❌ FALTA** | ✓ |
+  | **Tag** | **❌ FALTA** | ✓ |
+  | Income/Expense | ✓ | ✓ |
+
+  Problema adicional: El widget usa comparación por nombre (`$0.name == tx.subcategory?.name`) en vez de por ID (frágil si se renombra una cuenta/subcategoría).
+
+  Archivos:
+  - `Services/WidgetDataCache.swift:422-468` — `calculateBudgetSpent()` (incompleto)
+  - `App/ViewModels/BudgetsViewModel.swift:198-270` — `getBudgetSpending()` (correcto)
+
+  Fix propuesto:
+  1. Agregar filtro de nature a `calculateBudgetSpent()` (parsear `budget.natures` como en BudgetsVM línea 245-252)
+  2. Agregar filtro de tags a `calculateBudgetSpent()`
+  3. Migrar matching de nombre a matching por ID para accounts y subcategories
+
+- ✅ **BUG-28: KPI de NatureTrendWidget en Statistics no refleja filtro de naturaleza** — Corregido en 7040290. `totalAmount` y `variation` en NatureTrendWidget ahora respetan `selectedNature`, usando `amount(for:)` en NatureTrendPoint y `previousAmountByNature` para la variación.
+  Síntoma: Al seleccionar una naturaleza en Statistics > Categories, el KPI del NatureTrendWidget muestra el total de TODAS las naturalezas. En PanelView, el mismo widget muestra el total filtrado correctamente.
+
+  Root cause: `CategoriesTabView` (línea 1022) construye `natureCriteria` con `selectedNatures: []` explícitamente vacío, ignorando el filtro activo. El widget recibe transacciones sin filtrar por naturaleza y el KPI suma todo.
+
+  Flujo PanelView (correcto):
+  - `PanelViewModel.filtered` (línea 742) aplica TODOS los filtros incluyendo nature (líneas 765-772)
+  - `expenseFiltered` → `natureWidgetTxns` → `NatureTrendHelper.calculateTrend()` — datos ya filtrados
+
+  Flujo CategoriesTabView (bug):
+  - `natureCriteria` (línea 1017-1029) excluye nature filter: `selectedNatures: []`
+  - `FilterService.filterForTrends()` devuelve TODAS las naturalezas
+  - `NatureTrendWidget` KPI: `trendPoints.reduce(0) { $0 + $1.total }` — suma todo
+
+  Archivos:
+  - `App/Views/Statistics/CategoriesTabView.swift:1017-1036` — `natureCriteria` con `selectedNatures: []`
+  - `App/ViewModels/PanelViewModel.swift:765-772` — filtro de nature aplicado correctamente
+  - `Widgets/NatureTrendWidget.swift:34-36` — KPI suma todos los trendPoints
+
+  Fix propuesto:
+  - Pasar `selectedNatures` del filtro activo al `natureCriteria` en CategoriesTabView
+  - Mantener el dimming visual para naturalezas no seleccionadas, pero que el KPI refleje solo la seleccionada
+
 ### Después de 10.5: Fase 11 — Sistema de Temas Independientes (V1.2)
 
 **Plan completo:** `.planning/THEME-REFACTOR-PLAN.md`
@@ -454,12 +513,9 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-16
-Stopped at: iPad adaptive layout implementado — Panel, carousels, charts, trends
-Next step: Verificar visualmente en iPad Pro 13" simulator (landscape + portrait)
+Last session: 2026-02-17
+Stopped at: BUG-27 + BUG-28 corregidos — widget budget filters y NatureTrendWidget KPI
+Next step: Pendientes restantes en branch 1.0 (ver ROADMAP) o iniciar Fase 11
 Resume context:
-- DS.Adaptive helpers en DesignTokens.swift (isWideScreen, columns, horizontalPadding)
-- WidgetConfigManager empareja widgets compatibles en 2 columnas (fullWidthOnly: trend, cashFlow, expensesByNature, exchangeRate)
-- AccountsCarousel 4 cards en iPad, CategoriesTabView tags+nature lado a lado
-- TrendsTabView charts side-by-side en iPad
-- Build OK, swift-audit LIMPIO
+- BUG-25 a BUG-28 todos corregidos
+- Quedan cambios sin commitear: project.pbxproj (MacCatalyst off, device family), ROADMAP.md, STATE.md

@@ -18,3 +18,4 @@ fastlane/screenshots
 # Secrets (API keys)
 Secrets.xcconfig
 .claude/sessions/*.log
+.vercel

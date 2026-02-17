@@ -4,14 +4,14 @@
 
 App iOS de finanzas personales. Registrar y entender gastos, cuentas, presupuestos y reportes con claridad.
 
-### V1.0 (Release actual)
-Features completas + preparación para beta pública en TestFlight.
+### V1.0 (Release)
+Features completas + beta pública. Branch: `1.0`
 
-### V1.1 (En desarrollo)
+### V1.1 (Completada — mergeada a 1.0)
 Registro inteligente con IA, iCloud Sync, Widgets iOS, modo Solo Gastos, modelo Pro/Free.
 
-### V1.2 (App Store Release)
-Sistema de temas PRO, Watch, iPad/Mac, Smart Insights y reportes financieros.
+### V1.2 (En desarrollo)
+Sistema de temas PRO, Watch, iPad/Mac, Smart Insights y reportes financieros. Branch: `1.1`
 
 ### V2.0 (Futuro)
 Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
@@ -37,7 +37,7 @@ Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
 - [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT) ✅
-- [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría (corrección de bugs en curso)
+- [x] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría ✅
 
 ### V1.2 (App Store Release)
 - [ ] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (negro, rosa, cyan)
@@ -574,7 +574,7 @@ Ideas capturadas para evaluación posterior:
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
 | 10 | Refinamiento & Polish | ✅ Done | 2026-01-30 |
-| 10.5 | Mejoras Pre-Release | In Progress | - |
+| 10.5 | Mejoras Pre-Release | ✅ Done | 2026-02-13 |
 
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
