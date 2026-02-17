@@ -1929,6 +1929,7 @@
 "icloud.dataFoundTitle" = "Datos encontrados";
 "icloud.dataFoundMessage" = "Encontramos tus datos en iCloud. No necesitas configurar de nuevo.";
 "icloud.dataFoundAction" = "Continuar";
+"icloud.syncingBanner" = "Sincronizando datos de iCloud…";
 
 // MARK: - Feature Gate
 

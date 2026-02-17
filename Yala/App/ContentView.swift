@@ -18,19 +18,23 @@ struct ContentView: View {
     @State private var splashOpacity: Double = 1
     @State private var showICloudDataFound: Bool = false
     @State private var isWaitingForSync: Bool = false
+    @State private var showSyncBanner: Bool = false
+    @State private var syncDismissTask: Task<Void, Never>?
     @Environment(\.scenePhase) private var scenePhase
 
-    /// Query to detect existing data (for iCloud sync detection)
+    /// Queries to detect existing data (for iCloud sync detection)
     @Query private var accounts: [Account]
+    @Query private var categories: [Category]
+    @Environment(\.modelContext) private var modelContext
 
     private let authService = BiometricAuthService.shared
 
     /// Minimum splash duration (2.5 seconds to enjoy the animation)
     private let minimumSplashDuration: Double = 2.5
 
-    /// Check if there's existing data (accounts synced from iCloud or local)
+    /// Check if there's existing data (accounts or categories synced from iCloud or local)
     private var hasExistingData: Bool {
-        !accounts.isEmpty
+        !accounts.isEmpty || !categories.isEmpty
     }
 
     var body: some View {
@@ -44,6 +48,23 @@ struct ContentView: View {
             } else {
                 Color.yalaBackground
                     .ignoresSafeArea()
+            }
+
+            // Sync banner overlay
+            if showSyncBanner {
+                HStack(spacing: DS.Spacing.sm) {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text(L10n.iCloud.syncingBanner)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.sm)
+                .glassEffect()
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, DS.Spacing.xxl)
             }
 
             // Splash screen overlay
@@ -61,16 +82,28 @@ struct ContentView: View {
         .task {
             await checkInitialSyncState()
         }
-        .onChange(of: accounts.count) { _, newCount in
+        .onChange(of: accounts.count + categories.count) { _, newTotal in
             // iCloud data arrived while user is in onboarding — notify them
-            if (showOnboarding || isWaitingForSync) && newCount > 0 {
+            if (showOnboarding || isWaitingForSync) && newTotal > 0 {
                 showICloudDataFound = true
             }
+            // Activate sync banner when data arrives (not during wipe)
+            if newTotal > 0 && !SessionState.shared.isWipingData {
+                withAnimation(.easeInOut) { showSyncBanner = true }
+            }
+            // Auto-dismiss: if no changes for 5 seconds, hide banner
+            scheduleSyncBannerDismiss()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
             // React to data wipe: show onboarding when flag is reset
             if !newValue {
                 showOnboarding = true
+            }
+        }
+        .onChange(of: hasExistingData) { oldValue, newValue in
+            // Data disappeared (remote wipe from another device)
+            if oldValue && !newValue && hasCompletedOnboarding {
+                hasCompletedOnboarding = false
             }
         }
         .alert(L10n.iCloud.dataFoundTitle, isPresented: $showICloudDataFound) {
@@ -156,6 +189,19 @@ struct ContentView: View {
         }
     }
 
+    /// Schedule sync banner auto-dismiss after 5 seconds of no data changes
+    private func scheduleSyncBannerDismiss() {
+        syncDismissTask?.cancel()
+        syncDismissTask = Task {
+            do {
+                try await Task.sleep(for: .seconds(5))
+                withAnimation(.easeInOut) { showSyncBanner = false }
+            } catch {
+                // Task cancelled — a new change arrived, dismiss rescheduled
+            }
+        }
+    }
+
     /// Whether the device language needs an in-app override
     private var needsLanguageSelection: Bool {
         !LanguageManager.deviceLanguageIsSupported && LanguageManager.overrideLanguage == nil
@@ -193,9 +239,14 @@ struct ContentView: View {
                 } catch {
                     break // Task cancelled
                 }
-                if hasExistingData {
+                let txCount = (try? modelContext.fetchCount(FetchDescriptor<TransactionItem>())) ?? 0
+                if hasExistingData || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false
+                    if !SessionState.shared.isWipingData {
+                        withAnimation(.easeInOut) { showSyncBanner = true }
+                        scheduleSyncBannerDismiss()
+                    }
                     return
                 }
             }

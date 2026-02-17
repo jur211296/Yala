@@ -725,6 +725,12 @@ struct ApplePayTransactionIntent: AppIntent {
 
         let context = container.mainContext
 
+        // Guard: no accounts configured yet
+        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        guard accountCount > 0 else {
+            return .result(dialog: "shortcut.error.noAccount")
+        }
+
         // Try to find account by detected currency (if unique match)
         var matchedAccount: Account?
         var needsUserInput: [String] = ["subcategory"]
@@ -977,6 +983,12 @@ struct AutomationEntryIntent: AppIntent {
         }
 
         let context = container.mainContext
+
+        // Guard: no accounts configured yet
+        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        guard accountCount > 0 else {
+            return .result(dialog: "shortcut.error.noAccount")
+        }
 
         // Try to find account by currency (only if unique match)
         var matchedAccount: Account?

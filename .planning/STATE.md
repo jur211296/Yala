@@ -14,7 +14,7 @@ Phase: 11 — Sistema de Temas Independientes
 Spec: `.planning/THEME-REFACTOR-PLAN.md`
 Plan: None
 Status: **V1.1 COMPLETADA** — Fase 10.5 cerrada oficialmente (2026-02-16)
-Last activity: 2026-02-16 — Fix BUG-26 (Share Sheet race conditions)
+Last activity: 2026-02-17 — Guard App Intents + expand iCloud sync detection
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-17] 24c917a fix: guard App Intents without accounts + expand iCloud sync detection
+- [2026-02-17] 347e36e fix: ensure SessionState environment propagates on Designed for iPad
 - [2026-02-17] 7040290 fix: widget budget filters + NatureTrendWidget KPI (BUG-27, BUG-28)
 - [2026-02-16] bd9231a fix: resolve Share Sheet race conditions on repeated use (BUG-26)
 - [2026-02-16] cc565b0 fix: refresh RecordsStandalone after creating/approving transactions (BUG-25)
@@ -514,9 +516,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Limpieza documental — sincronizar ROADMAP con STATE (Deep Scan S.2-S.4 marcados ✅)
+Stopped at: Fix crash SessionState en "Designed for iPad" — environment propagation
 Next step: Iniciar Fase 11 — Sistema de Temas Independientes
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
 - Deep Scan S.1-S.4 todos resueltos/aceptados
-- ROADMAP sincronizado con STATE
+- Fix: .environment() movido de Scene a View level + inyección explícita en fullScreenCovers (347e36e)
