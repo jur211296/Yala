@@ -28,6 +28,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-17] 276b1a4 fix: guard iCloud sync UX for medium-severity risks (R3, R5, R6, R9)
 - [2026-02-17] fbbedde fix: guard iCloud sync + onboarding data integrity (R1, R2, R4, R7, R8)
 - [2026-02-17] 24c917a fix: guard App Intents without accounts + expand iCloud sync detection
 - [2026-02-17] 347e36e fix: ensure SessionState environment propagates on Designed for iPad
@@ -513,9 +514,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: iCloud sync + onboarding integrity — 5 risks fixed (PreferenceSyncService, CategoryDeduplicationService, seed flag guard, remote wipe grace period)
+Stopped at: iCloud sync medium-severity risks — R3 (defer alert mid-onboarding), R5 (30s timeout), R6 (documented), R9 (notification dedup)
 Next step: Iniciar Fase 11 — Sistema de Temas Independientes
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
 - Deep Scan S.1-S.4 todos resueltos/aceptados
-- Fix: .environment() movido de Scene a View level + inyección explícita en fullScreenCovers (347e36e)
+- iCloud sync: ALL 9 risks resolved (R1-R9) across fbbedde + 276b1a4
