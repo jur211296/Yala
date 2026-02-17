@@ -449,9 +449,9 @@ DoD:
 
 **10.5.S: Deep Scan Pre-Launch** (28 issues, 293 archivos escaneados)
 - [x] S.1 Críticos (5): ✅ 171a0ce — DS-1 key legacy, DS-2/DS-3 div/zero, DS-4/DS-5 force unwraps
-- [ ] S.2 Altos (7): Error silenciado en CurrencyConverter/ExchangeRateService (DS-6, DS-7), fetches sin límite (DS-8, DS-9), try? en AudioRecorderService (DS-10), force unwraps en ImportIntroSheet (DS-11) y SharedModels (DS-12)
-- [ ] S.3 Medios (10): .cornerRadius deprecated (DS-13), Calendar extension duplicada (DS-14), @MainActor faltante (DS-15), try? en regex (DS-16), Subcategory.safeCategory (DS-17), DS.Typography/DS.Spacing (DS-18, DS-19), DispatchQueue (DS-20), force unwraps en PreviousPeriodHelper (DS-21) y CSVImport (DS-22)
-- [ ] S.4 Bajos (6): @Relationship inconsistente (DS-23), prints sin #if DEBUG (DS-24), código duplicado (DS-25), @MainActor minor (DS-26), try? en Task.sleep (DS-27), InboxDraft.tags inverse (DS-28)
+- [x] S.2 Altos (7): ✅ da8309e — DS-6/DS-7 error logs, DS-8 aceptado, DS-9 fetch redundante, DS-10 try?→do/catch, DS-11/DS-12 force unwraps
+- [x] S.3 Medios (10): ✅ Resueltos/aceptados — DS-13 false positive, DS-14 Calendar ext (8d2dbce), DS-15 @MainActor (3e80433), DS-16/DS-17 aceptados, DS-18/DS-19 tokens (ba2aca0, 13cff73), DS-20 parcial (0aa5597), DS-21/DS-22 force unwraps (3e80433)
+- [x] S.4 Bajos (6): ✅ Resueltos/aceptados — DS-23 relationships (eac4749), DS-24 prints (f586a15), DS-25 duplicados (fe5b6a7), DS-26/DS-27 aceptados, DS-28 inverse (eac4749)
 
 DoD (actualizado):
 - iCloud Sync funcional con datos privados ✅
