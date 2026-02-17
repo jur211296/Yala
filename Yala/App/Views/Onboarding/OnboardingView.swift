@@ -1131,31 +1131,32 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
-        // Save user preferences
-        let defaults = UserDefaults.standard
+        // Save user preferences via PreferenceSyncService (dual-writes to UserDefaults + iCloud KV)
+        let sync = PreferenceSyncService.shared
 
         // User name
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        defaults.set(finalName.isEmpty ? "Usuario" : finalName, forKey: "userName")
+        sync.set(string: finalName.isEmpty ? "Usuario" : finalName, forKey: "userName")
 
         // Preferred currency
-        defaults.set(selectedCurrency.rawValue, forKey: "defaultCurrencyCode")
+        sync.set(string: selectedCurrency.rawValue, forKey: "defaultCurrencyCode")
 
         // Secondary currencies (store as comma-separated string)
         let secondaryArray = selectedSecondaryCurrencies.map { $0.rawValue }
-        defaults.set(secondaryArray.joined(separator: ","), forKey: "secondaryCurrencies")
+        sync.set(string: secondaryArray.joined(separator: ","), forKey: "secondaryCurrencies")
 
         // Default period
-        defaults.set(selectedPeriod.rawValue, forKey: "defaultPeriod")
+        sync.set(string: selectedPeriod.rawValue, forKey: "defaultPeriod")
 
-        // Expenses-only mode
+        // Expenses-only mode (didSet propagates to app group)
+        sync.set(bool: expensesOnlyMode, forKey: "expensesOnlyMode")
         sessionState.isExpensesOnlyMode = expensesOnlyMode
 
-        // Mark onboarding as complete
-        defaults.set(true, forKey: "hasCompletedOnboarding")
+        // Mark onboarding as complete (NOT synced — per-device)
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
         // Budget alerts preference
-        defaults.set(budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
+        sync.set(bool: budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
 
         // Apply period to SessionState immediately (since it was created before onboarding)
         sessionState.selectedPeriod = selectedPeriod

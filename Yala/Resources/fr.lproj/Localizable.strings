@@ -1785,6 +1785,10 @@
 "icloud.dataFoundMessage" = "Nous avons trouvé tes données dans iCloud. Pas besoin de tout reconfigurer.";
 "icloud.dataFoundAction" = "Continuer";
 "icloud.syncingBanner" = "Synchronisation des données iCloud…";
+"icloud.remoteWipe.title" = "Données indisponibles";
+"icloud.remoteWipe.message" = "Tes données ont été supprimées d'iCloud. Tu peux repartir à zéro ou attendre qu'elles se re-synchronisent.";
+"icloud.remoteWipe.confirm" = "Repartir à zéro";
+"icloud.remoteWipe.cancel" = "Continuer d'attendre";
 
 // MARK: - Feature Gate
 

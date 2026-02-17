@@ -1768,6 +1768,10 @@
 "icloud.dataFoundMessage" = "We found your data in iCloud. No need to set up again.";
 "icloud.dataFoundAction" = "Continue";
 "icloud.syncingBanner" = "Syncing data from iCloud…";
+"icloud.remoteWipe.title" = "Data no longer available";
+"icloud.remoteWipe.message" = "Your data was removed from iCloud. You can start fresh or wait for it to sync back.";
+"icloud.remoteWipe.confirm" = "Start Fresh";
+"icloud.remoteWipe.cancel" = "Keep Waiting";
 
 // MARK: - Feature Gate
 

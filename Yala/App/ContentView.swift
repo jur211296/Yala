@@ -20,6 +20,9 @@ struct ContentView: View {
     @State private var isWaitingForSync: Bool = false
     @State private var showSyncBanner: Bool = false
     @State private var syncDismissTask: Task<Void, Never>?
+    @State private var deduplicationTask: Task<Void, Never>?
+    @State private var wipeGraceTask: Task<Void, Never>?
+    @State private var showRemoteWipeAlert: Bool = false
     @Environment(\.scenePhase) private var scenePhase
 
     /// Queries to detect existing data (for iCloud sync detection)
@@ -101,13 +104,35 @@ struct ContentView: View {
             }
         }
         .onChange(of: hasExistingData) { oldValue, newValue in
-            // Data disappeared (remote wipe from another device)
             if oldValue && !newValue && hasCompletedOnboarding {
+                // Data disappeared — debounce 5s before acting (transient CloudKit gap)
+                wipeGraceTask?.cancel()
+                wipeGraceTask = Task {
+                    do {
+                        try await Task.sleep(for: .seconds(5))
+                        // Data still gone after 5s — ask user
+                        showRemoteWipeAlert = true
+                    } catch {
+                        // Cancelled — data reappeared
+                    }
+                }
+            } else if !oldValue && newValue {
+                // Data reappeared — cancel pending wipe grace
+                wipeGraceTask?.cancel()
+                wipeGraceTask = nil
+            }
+        }
+        .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
+            Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
                 hasCompletedOnboarding = false
             }
+            Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {}
+        } message: {
+            Text(L10n.iCloud.remoteWipeMessage)
         }
         .alert(L10n.iCloud.dataFoundTitle, isPresented: $showICloudDataFound) {
             Button(L10n.iCloud.dataFoundAction) {
+                PreferenceSyncService.shared.applyDetectedDefaultsIfNeeded()
                 showOnboarding = false
                 hasCompletedOnboarding = true
             }
@@ -189,6 +214,19 @@ struct ContentView: View {
         }
     }
 
+    /// Schedule one-shot dedup after a delay (at most once per launch)
+    private func scheduleDeduplication() {
+        guard deduplicationTask == nil else { return }
+        deduplicationTask = Task {
+            do {
+                try await Task.sleep(for: .seconds(10))
+                CategoryDeduplicationService.deduplicateSeedCategories(in: modelContext)
+            } catch {
+                // Task cancelled
+            }
+        }
+    }
+
     /// Schedule sync banner auto-dismiss after 5 seconds of no data changes
     private func scheduleSyncBannerDismiss() {
         syncDismissTask?.cancel()
@@ -243,6 +281,7 @@ struct ContentView: View {
                 if hasExistingData || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false
+                    scheduleDeduplication()
                     if !SessionState.shared.isWipingData {
                         withAnimation(.easeInOut) { showSyncBanner = true }
                         scheduleSyncBannerDismiss()
@@ -251,8 +290,9 @@ struct ContentView: View {
                 }
             }
 
-            // Timeout: proceed to onboarding
+            // Timeout: proceed to onboarding — schedule dedup for late sync arrival
             isWaitingForSync = false
+            scheduleDeduplication()
         }
 
         if needsLanguageSelection {
@@ -286,6 +326,7 @@ struct ContentView: View {
 
                 Button {
                     isWaitingForSync = false
+                    scheduleDeduplication()
                     if needsLanguageSelection {
                         showLanguageSelection = true
                     } else {

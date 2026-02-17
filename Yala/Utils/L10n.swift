@@ -2993,6 +2993,10 @@ enum L10n {
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }
         static var syncingBanner: String { ls("icloud.syncingBanner", comment: "") }
+        static var remoteWipeTitle: String { ls("icloud.remoteWipe.title", comment: "") }
+        static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
+        static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
+        static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
     }
 
     // MARK: - Shortcut Notifications

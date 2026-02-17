@@ -4489,3 +4489,47 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 - [ ] Tutoriales muestran strings en español (idioma principal)
 - [ ] Cambiar a inglés muestra strings en English
 - [ ] Los otros 4 idiomas (fr, de, it, pt) muestran placeholder en español
+
+## Sección 36: iCloud Sync + Onboarding (Integridad Multi-Dispositivo)
+
+### 36.1 PreferenceSyncService — Propagación de Preferencias (R2)
+- [ ] Dispositivo A: completar onboarding con MXN, "Este mes", modo solo gastos ON
+- [ ] Dispositivo B: instalar Yala → esperar sync → verificar que MXN, "Este mes" y modo solo gastos se aplican automáticamente
+- [ ] Dispositivo A: cambiar divisa a EUR en Settings → Dispositivo B: verificar que EUR se propaga (puede requerir reabrir app)
+- [ ] Dispositivo B: verificar que `hasCompletedOnboarding` NO se sincroniza (sigue en false hasta que el dispositivo lo marque)
+- [ ] Onboarding escribe 6 keys en iCloud KV: userName, defaultCurrencyCode, defaultPeriod, secondaryCurrencies, budgetAlertsEnabled, expensesOnlyMode
+
+### 36.2 Alerta "Datos encontrados" con Defaults Detectados (R1)
+- [ ] Fresh install con iCloud activo → esperar hasta que aparezca alerta "Datos encontrados"
+- [ ] Tocar "Continuar" → verificar que aterriza en MainTabView con divisa detectada por región (no PEN por defecto)
+- [ ] Verificar que el periodo queda en "Este mes" (no allTime)
+- [ ] Si el usuario ya tenía preferencias en iCloud KV → verificar que se aplican esas en vez de detectar por región
+- [ ] Verificar que SessionState.shared.selectedPeriod refleja el valor correcto tras la alerta
+
+### 36.3 Guardia de Semilla con Flag (R8 — TOCTOU Race)
+- [ ] Fresh install → onboarding con "Usar categorías predeterminadas" → verificar exactamente 11 categorías
+- [ ] Forzar cierre y reabrir → verificar que la semilla NO se ejecuta de nuevo (flag activo)
+- [ ] Data wipe → verificar que flag se limpia → onboarding puede resembrar categorías
+- [ ] Escenario race: instalar en dispositivo B mientras A ya tiene categorías en iCloud → B no debe generar duplicados locales gracias al flag
+
+### 36.4 Deduplicación de Categorías (R4)
+- [ ] Dispositivo A: completar onboarding con categorías semilla
+- [ ] Dispositivo B: completar onboarding con categorías semilla → iCloud entrega categorías de A
+- [ ] Esperar 10 segundos → verificar que solo quedan 11 categorías (sin duplicados)
+- [ ] Verificar que las transacciones existentes se re-parentean al keeper (categoría con más transacciones)
+- [ ] Verificar que subcategorías con iconName coincidente se fusionan correctamente
+- [ ] Verificar que subcategorías sin coincidencia se re-parentean a la categoría keeper
+- [ ] Verificar que presupuestos vinculados a categorías duplicadas se re-parentean
+
+### 36.5 Periodo de Gracia ante Wipe Remoto (R7)
+- [ ] Dispositivo A: data wipe → Dispositivo B: verificar que aparece alerta de confirmación (no onboarding directo)
+- [ ] Alerta muestra título, mensaje, botón destructivo "Empezar de cero" y botón cancelar "Seguir esperando"
+- [ ] Tocar "Seguir esperando" → la app permanece en MainTabView
+- [ ] Tocar "Empezar de cero" → la app muestra onboarding
+- [ ] Gap transitorio de iCloud (datos desaparecen <5s y reaparecen) → NO debe mostrar alerta
+- [ ] Verificar textos de alerta en los 6 idiomas (en, es, de, fr, it, pt)
+
+### 36.6 Bootstrap Order
+- [ ] PreferenceSyncService.bootstrap() se ejecuta ANTES de NotificationService en AppBootstrapper
+- [ ] Verificar con breakpoint o log que el orden es: PreferenceSync → NotificationService → ExchangeRates → ...
+- [ ] Si no hay cuenta iCloud: bootstrap() no crashea (NSUbiquitousKeyValueStore.synchronize() es no-op)

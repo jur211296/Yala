@@ -52,6 +52,9 @@ final class AppBootstrapper {
 
         let context = container.mainContext
 
+        // 0. Sync preferences from iCloud (must be FIRST — other services read these)
+        PreferenceSyncService.shared.bootstrap()
+
         // 1. Initialize notification delegate (must be early for foreground display)
         _ = NotificationService.shared
 
