@@ -149,11 +149,10 @@ struct ImageSelectionView: View {
     private func checkForSharedImage() {
         guard let imageURL = sessionState.pendingSharedImageURL else { return }
 
-        // Clear the pending state immediately to prevent double processing
+        // Clear URL immediately to prevent double processing
+        // (shouldShowSharedImage was already reset by the one-shot observer)
         sessionState.pendingSharedImageURL = nil
-        sessionState.hasPendingSharedImage = false
 
-        // Load the image
         Task {
             await loadSharedImage(from: imageURL)
         }
