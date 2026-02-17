@@ -453,13 +453,35 @@ enum WidgetDataCache {
             let txAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
             if txAmount > 0 { continue }
 
-            // Check if transaction matches budget filters
+            // Subcategory filter (by ID, not name)
             let matchesSubcategory = (budget.subcategories ?? []).isEmpty ||
-                (budget.subcategories ?? []).contains(where: { $0.name == tx.subcategory?.name })
-            let matchesAccount = (budget.accounts ?? []).isEmpty ||
-                (budget.accounts ?? []).contains(where: { $0.name == tx.account?.name })
+                (budget.subcategories ?? []).contains(where: { $0.persistentModelID == tx.subcategory?.persistentModelID })
 
-            if matchesSubcategory && matchesAccount {
+            // Account filter (by ID, not name)
+            let matchesAccount = (budget.accounts ?? []).isEmpty ||
+                (budget.accounts ?? []).contains(where: { $0.persistentModelID == tx.account?.persistentModelID })
+
+            // Nature filter
+            let matchesNature: Bool
+            if let naturesString = budget.natures, !naturesString.isEmpty {
+                let natures = naturesString.split(separator: ",")
+                    .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+                matchesNature = natures.contains(tx.effectiveNature)
+            } else {
+                matchesNature = true
+            }
+
+            // Tag filter
+            let matchesTags: Bool
+            if let budgetTags = budget.tags, !budgetTags.isEmpty {
+                let tagIDs = Set(budgetTags.map { $0.persistentModelID })
+                let txTagIDs = Set((tx.tags ?? []).map { $0.persistentModelID })
+                matchesTags = !txTagIDs.isDisjoint(with: tagIDs)
+            } else {
+                matchesTags = true
+            }
+
+            if matchesSubcategory && matchesAccount && matchesNature && matchesTags {
                 spent += abs(txAmount)
             }
         }

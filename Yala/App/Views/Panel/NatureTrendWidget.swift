@@ -32,11 +32,20 @@ struct NatureTrendWidget: View {
     var isIncomeMode: Bool = false
 
     private var totalAmount: Double {
-        trendPoints.reduce(0) { $0 + $1.total }
+        guard let nature = selectedNature else {
+            return trendPoints.reduce(0) { $0 + $1.total }
+        }
+        return trendPoints.reduce(0) { $0 + $1.amount(for: nature) }
     }
 
     private var variation: Double? {
-        guard let previous = previousTotalAmount else { return nil }
+        let previousAmount: Double?
+        if let nature = selectedNature {
+            previousAmount = previousAmountByNature[nature]
+        } else {
+            previousAmount = previousTotalAmount
+        }
+        guard let previous = previousAmount else { return nil }
         return PreviousPeriodHelper.calculateVariation(
             currentAmount: totalAmount,
             previousAmount: previous
