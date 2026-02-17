@@ -38,6 +38,7 @@ struct ContentView: View {
             // Main content only when onboarding is done; static background otherwise
             if hasCompletedOnboarding {
                 MainTabView()
+                    .environment(SessionState.shared)
             } else if isWaitingForSync {
                 iCloudSyncWaitingView
             } else {
@@ -88,11 +89,13 @@ struct ContentView: View {
                     showOnboarding = true
                 }
             }
+            .environment(SessionState.shared)
         }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 showOnboarding = false
             }
+            .environment(SessionState.shared)
         }
         // Biometric lock as fullScreenCover (covers everything including sheets)
         .fullScreenCover(isPresented: Binding(
@@ -100,6 +103,7 @@ struct ContentView: View {
             set: { _ in }  // Dismiss handled by BiometricLockOverlay.authenticate()
         )) {
             BiometricLockOverlay()
+                .environment(SessionState.shared)
         }
         // Inbox alert as fullScreenCover (appears over any sheet)
         .fullScreenCover(isPresented: Binding(
@@ -116,6 +120,7 @@ struct ContentView: View {
                 }
             )
             .background(ClearBackgroundView())
+            .environment(SessionState.shared)
         }
         .onAppear {
             // Lock on initial launch if biometric is enabled

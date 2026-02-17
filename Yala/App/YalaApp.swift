@@ -35,6 +35,15 @@ struct YalaApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
+                .environment(bootstrapper.sessionState)
+                .environment(bootstrapper.currencyConverter)
+                .environment(bootstrapper.exchangeRateService)
+                .environment(bootstrapper.imageVisionService)
+                .environment(bootstrapper.voiceTranscriptionService)
+                .environment(bootstrapper.transcriptionParserService)
+                .environment(bootstrapper.draftService)
+                .environment(bootstrapper.entityDeletionService)
+                .environment(bootstrapper.transactionService)
                 .task {
                     await bootstrapper.bootstrap(container: sharedModelContainer)
                 }
@@ -50,15 +59,6 @@ struct YalaApp: App {
                 }
         }
         .modelContainer(sharedModelContainer)
-        .environment(bootstrapper.sessionState)
-        .environment(bootstrapper.currencyConverter)
-        .environment(bootstrapper.exchangeRateService)
-        .environment(bootstrapper.imageVisionService)
-        .environment(bootstrapper.voiceTranscriptionService)
-        .environment(bootstrapper.transcriptionParserService)
-        .environment(bootstrapper.draftService)
-        .environment(bootstrapper.entityDeletionService)
-        .environment(bootstrapper.transactionService)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 bootstrapper.handleBecameActive(context: sharedModelContainer.mainContext)
