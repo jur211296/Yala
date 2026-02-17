@@ -28,6 +28,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-17] fbbedde fix: guard iCloud sync + onboarding data integrity (R1, R2, R4, R7, R8)
 - [2026-02-17] 24c917a fix: guard App Intents without accounts + expand iCloud sync detection
 - [2026-02-17] 347e36e fix: ensure SessionState environment propagates on Designed for iPad
 - [2026-02-17] 7040290 fix: widget budget filters + NatureTrendWidget KPI (BUG-27, BUG-28)
@@ -37,10 +38,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-16] e2a69fd feat: add iPad adaptive layout — double column widgets, carousels, trends
 - [2026-02-16] 9c196e5 chore: unify deployment target (26.0) and version (1.0) across all targets
 - [2026-02-13] f586a15 fix: resolve pre-launch warnings — prints, VoiceOver, Dynamic Type, touch targets
-- [2026-02-13] 2b3677d feat: redesign image selection idle screen with hints and examples
-- [2026-02-13] f6ea01b feat: add 2s freeze between video loops and zoom into center content
-- [2026-02-13] b8e3f13 feat: overhaul tutorial system with intro, completion screen and correct step alignment
-- [2026-02-13] 5b9038a fix: align X-axis labels with bar centers and data points in all charts
 - [2026-02-13] d7b2970 fix: show visible point on trend charts when period has single data point
 - [2026-02-12] ed93611 fix: initialize BudgetAlertService context so threshold notifications actually fire
 - [2026-02-12] 9e38af9 fix: preserve specific subcategory selection when opening filters sheet
@@ -516,7 +513,7 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Fix crash SessionState en "Designed for iPad" — environment propagation
+Stopped at: iCloud sync + onboarding integrity — 5 risks fixed (PreferenceSyncService, CategoryDeduplicationService, seed flag guard, remote wipe grace period)
 Next step: Iniciar Fase 11 — Sistema de Temas Independientes
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)

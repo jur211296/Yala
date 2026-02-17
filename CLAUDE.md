@@ -22,6 +22,8 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | StoreKitManager | App/Services/StoreKitManager.swift | Suscripciones StoreKit 2 |
 | MerchantMemoryService | App/Services/MerchantMemoryService.swift | Auto-categorización merchants |
 | iCloudSyncService | Services/iCloudSyncService.swift | Monitor estado sync iCloud |
+| PreferenceSyncService | App/Services/PreferenceSyncService.swift | Sync preferencias via iCloud KV |
+| CategoryDeduplicationService | App/Services/CategoryDeduplicationService.swift | Merge categorías duplicadas post-sync |
 
 ### Key ViewModels (34)
 | ViewModel | Tests |

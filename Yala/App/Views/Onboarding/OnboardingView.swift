@@ -1210,6 +1210,11 @@ struct OnboardingView: View {
     }
 
     private func createSelectedNotifications() {
+        // R9: Guard against duplicate creation if called twice or iCloud delivers mid-save
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: "notificationsSeeded") { return }
+        defaults.set(true, forKey: "notificationsSeeded")
+
         // Fetch existing notifications to check by type (avoids duplicates on reinstall with iCloud)
         let descriptor = FetchDescriptor<NotificationItem>()
         let existing: [NotificationItem]

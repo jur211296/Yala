@@ -86,8 +86,10 @@ struct ContentView: View {
             await checkInitialSyncState()
         }
         .onChange(of: accounts.count + categories.count) { _, newTotal in
-            // iCloud data arrived while user is in onboarding — notify them
-            if (showOnboarding || isWaitingForSync) && newTotal > 0 {
+            // R3: Only show "data found" alert on sync-wait screen, NOT mid-onboarding.
+            // If user is mid-onboarding, their explicit choices (currency, period) are better
+            // than auto-detected defaults. CategoryDeduplicationService handles seed overlap.
+            if isWaitingForSync && newTotal > 0 {
                 showICloudDataFound = true
             }
             // Activate sync banner when data arrives (not during wipe)
@@ -257,6 +259,9 @@ struct ContentView: View {
 
         if hasCompletedOnboarding || hasExistingData {
             // Returning user (data from iCloud or previous install)
+            // R6 mitigation: hasCompletedOnboarding is per-device (not synced).
+            // If iCloud data exists but flag is false (reinstall without backup),
+            // auto-promote here. Late arrivals handled by dedup service + onChange.
             if hasExistingData {
                 hasCompletedOnboarding = true
             }
@@ -271,7 +276,7 @@ struct ContentView: View {
         if SwiftDataConfiguration.isICloudAvailable() {
             isWaitingForSync = true
 
-            for _ in 0..<7 { // 7 × 2s = 14s max
+            for _ in 0..<15 { // 15 × 2s = 30s max (CloudKit cold sync can take 30-60s)
                 do {
                     try await Task.sleep(for: .seconds(2))
                 } catch {

@@ -370,6 +370,37 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    /// Remove duplicate NotificationItems by typeRaw, keeping the one with isActive = true preference.
+    /// R9: Guards against CloudKit delivering synced notifications between fetch and save in onboarding.
+    @MainActor
+    func deduplicateNotifications(context: ModelContext) {
+        let descriptor = FetchDescriptor<NotificationItem>()
+        guard let all = try? context.fetch(descriptor) else { return }
+
+        let grouped = Dictionary(grouping: all) { $0.typeRaw }
+        var removed = 0
+        for (_, group) in grouped where group.count > 1 {
+            // Keep the active one (or first if both same)
+            let sorted = group.sorted { ($0.isActive ? 1 : 0) > ($1.isActive ? 1 : 0) }
+            for dup in sorted.dropFirst() {
+                context.delete(dup)
+                removed += 1
+            }
+        }
+        if removed > 0 {
+            do {
+                try context.save()
+                #if DEBUG
+                print("NotificationService: Deduplicated \(removed) notification(s)")
+                #endif
+            } catch {
+                #if DEBUG
+                print("NotificationService: Error deduplicating: \(error)")
+                #endif
+            }
+        }
+    }
+
     /// Delete all notifications (used in data wipe)
     @MainActor
     func deleteAllNotifications(context: ModelContext) {

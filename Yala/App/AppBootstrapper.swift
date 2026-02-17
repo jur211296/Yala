@@ -73,6 +73,9 @@ final class AppBootstrapper {
         // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
 
+        // 6.1. Deduplicate notifications (R9: handles CloudKit race during onboarding)
+        NotificationService.shared.deduplicateNotifications(context: context)
+
         // 6.5. Cancel any old scheduled dynamic notifications (reports)
         // These use background tasks now, not iOS scheduling
         await NotificationService.shared.cancelDynamicNotifications(context: context)
