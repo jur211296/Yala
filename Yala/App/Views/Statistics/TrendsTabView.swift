@@ -809,8 +809,8 @@ struct TrendsTabView: View {
             // Icon only (compact version for TrendsTabView header)
             Image(systemName: metric.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.FormRow.paddingV)
-                .padding(.vertical, DS.Spacing.sm)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.Spacing.md)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? metric.color.opacity(0.4) : metric.color))
                 .background(
                     Group {
