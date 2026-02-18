@@ -10,7 +10,6 @@ import SwiftUI
 
 struct ScheduledPaymentsWidget: View {
     @Environment(\.modelContext) private var modelContext
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 32
 
     let payments: [ScheduledPayment]
     let currencyCode: String
@@ -86,6 +85,69 @@ struct ScheduledPaymentsWidget: View {
             return payments.filter { $0.isActive }
         }
         return payments.filter { $0.isActive && $0.paymentCategory == categoryFilter }
+    }
+
+    // MARK: - Paid Status
+
+    /// Batch load paid count for filtered payments in the display month.
+    /// Checks InboxDraft (approved) and TransactionItem (linked).
+    private var paidStatus: [String: Int] {
+        loadPaidStatus(for: filteredPayments, month: displayMonth)
+    }
+
+    private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
+        let calendar = Calendar.current
+        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [:] }
+
+        var result: [String: Int] = [:]
+        let paymentIDs = Set(payments.map { $0.id.uuidString })
+
+        // Query 1: InboxDrafts approved with sourceScheduledPaymentID
+        do {
+            var draftDescriptor = FetchDescriptor<InboxDraft>(
+                predicate: #Predicate<InboxDraft> { draft in
+                    draft.statusRaw == "approved" && draft.sourceScheduledPaymentID != nil
+                }
+            )
+            draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date]
+            let approvedDrafts = try modelContext.fetch(draftDescriptor)
+
+            for draft in approvedDrafts {
+                guard let spID = draft.sourceScheduledPaymentID, paymentIDs.contains(spID) else { continue }
+                let draftDate = draft.approvedTransaction?.date ?? draft.date ?? draft.createdAt
+                if draftDate >= monthInterval.start && draftDate < monthInterval.end {
+                    result[spID, default: 0] += 1
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsWidget: Error loading draft paid status: \(error)")
+            #endif
+        }
+
+        // Query 2: TransactionItems with scheduledPaymentID
+        do {
+            var txDescriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate<TransactionItem> { tx in
+                    tx.scheduledPaymentID != nil
+                }
+            )
+            txDescriptor.propertiesToFetch = [\.scheduledPaymentID, \.date]
+            let linkedTransactions = try modelContext.fetch(txDescriptor)
+
+            for tx in linkedTransactions {
+                guard let spID = tx.scheduledPaymentID, paymentIDs.contains(spID) else { continue }
+                if tx.date >= monthInterval.start && tx.date < monthInterval.end {
+                    result[spID, default: 0] += 1
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsWidget: Error loading tx paid status: \(error)")
+            #endif
+        }
+
+        return result
     }
 
     // MARK: - Header
@@ -186,7 +248,7 @@ struct ScheduledPaymentsWidget: View {
         return VStack(spacing: DS.Spacing.md) {
             // Amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
-                .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
+                .font(DS.Typography.amountLarge)
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.primary)
 
@@ -246,7 +308,7 @@ struct ScheduledPaymentsWidget: View {
             if upcomingPayments.isEmpty {
                 emptyListState
             } else {
-                ForEach(upcomingPayments, id: \.payment.persistentModelID) { item in
+                ForEach(upcomingPayments, id: \.id) { item in
                     paymentRow(item)
                 }
             }
@@ -293,6 +355,7 @@ struct ScheduledPaymentsWidget: View {
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
+                    .opacity(item.isPaid ? 0.6 : 1.0)
 
                 Text(item.dueDateLabel)
                     .font(DS.Typography.caption)
@@ -301,60 +364,81 @@ struct ScheduledPaymentsWidget: View {
 
             Spacer()
 
-            // Amount
-            Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+            // Amount + paid badge
+            HStack(spacing: DS.Spacing.xs) {
+                Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .opacity(item.isPaid ? 0.6 : 1.0)
+
+                if item.isPaid {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(Color.electricIndigo)
+                }
+            }
         }
     }
 
     // MARK: - Upcoming Payments Helper
 
-    private struct UpcomingPaymentItem {
+    private struct UpcomingPaymentItem: Identifiable {
         let payment: ScheduledPayment
+        let dueDate: Date
         let icon: String
         let color: String
         let dueStatus: DueStatus
         let dueDateLabel: String
+        let isPaid: Bool
+
+        var id: String {
+            "\(payment.persistentModelID)-\(dueDate.timeIntervalSince1970)"
+        }
     }
 
     private func getUpcomingPayments(limit: Int) -> [UpcomingPaymentItem] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
+        var items: [UpcomingPaymentItem] = []
 
-        return filteredPayments
-            .sorted { $0.nextDueDate < $1.nextDueDate }
-            .prefix(limit)
-            .map { payment in
-                let dueDate = calendar.startOfDay(for: payment.nextDueDate)
+        for payment in filteredPayments {
+            let dates = getPaymentDatesInMonth(payment: payment, month: displayMonth)
+            let paidCount = paidStatus[payment.id.uuidString] ?? 0
+            var remainingPaid = paidCount
+
+            let icon = payment.subcategory?.iconName
+                ?? payment.subcategory?.category?.iconName
+                ?? "creditcard.fill"
+            let color = payment.subcategory?.colorHex
+                ?? payment.subcategory?.category?.colorHex
+                ?? "#6366F1"
+
+            for date in dates.sorted() {
+                let dueDate = calendar.startOfDay(for: date)
                 let days = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+                let dueStatus: DueStatus = days < 0 ? .past : (days == 0 ? .today : .upcoming)
+                let isPaid = remainingPaid > 0
+                if isPaid { remainingPaid -= 1 }
 
-                let dueStatus: DueStatus
-                if days < 0 {
-                    dueStatus = .past
-                } else if days == 0 {
-                    dueStatus = .today
-                } else {
-                    dueStatus = .upcoming
-                }
-
-                let icon = payment.subcategory?.iconName
-                    ?? payment.subcategory?.category?.iconName
-                    ?? "creditcard.fill"
-                let color = payment.subcategory?.colorHex
-                    ?? payment.subcategory?.category?.colorHex
-                    ?? "#6366F1"
-
-                let dueDateLabel = formatDueDate(days: days, date: payment.nextDueDate)
-
-                return UpcomingPaymentItem(
+                items.append(UpcomingPaymentItem(
                     payment: payment,
+                    dueDate: dueDate,
                     icon: icon,
                     color: color,
                     dueStatus: dueStatus,
-                    dueDateLabel: dueDateLabel
-                )
+                    dueDateLabel: formatDueDate(days: days, date: date),
+                    isPaid: isPaid
+                ))
             }
+        }
+
+        // Sort: unpaid first, then by date
+        items.sort { a, b in
+            if a.isPaid != b.isPaid { return !a.isPaid }
+            return a.dueDate < b.dueDate
+        }
+
+        return Array(items.prefix(limit))
     }
 
     private func formatDueDate(days: Int, date: Date) -> String {
@@ -413,13 +497,18 @@ struct ScheduledPaymentsWidget: View {
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
 
-        // Build payment dates map
-        var paymentsByDay: [Int: [ScheduledPayment]] = [:]
+        // Build payment dates map with paid status
+        var paymentsByDay: [Int: [(payment: ScheduledPayment, isPaid: Bool)]] = [:]
         for payment in filteredPayments {
-            let dates = getPaymentDatesInMonth(payment: payment, month: displayMonth)
+            let dates = getPaymentDatesInMonth(payment: payment, month: displayMonth).sorted()
+            let paidCount = paidStatus[payment.id.uuidString] ?? 0
+            var remainingPaid = paidCount
+
             for date in dates {
                 let day = calendar.component(.day, from: date)
-                paymentsByDay[day, default: []].append(payment)
+                let isPaid = remainingPaid > 0
+                if isPaid { remainingPaid -= 1 }
+                paymentsByDay[day, default: []].append((payment: payment, isPaid: isPaid))
             }
         }
 
@@ -435,7 +524,7 @@ struct ScheduledPaymentsWidget: View {
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xxs), count: 7), spacing: DS.Spacing.xxs) {
             ForEach(Array(cellData.enumerated()), id: \.offset) { _, dayOrNil in
                 if let day = dayOrNil {
-                    calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
+                    calendarDayCell(day: day, entries: paymentsByDay[day] ?? [])
                 } else {
                     Color.clear
                         .frame(minHeight: 56)
@@ -444,9 +533,9 @@ struct ScheduledPaymentsWidget: View {
         }
     }
 
-    private func calendarDayCell(day: Int, payments: [ScheduledPayment]) -> some View {
+    private func calendarDayCell(day: Int, entries: [(payment: ScheduledPayment, isPaid: Bool)]) -> some View {
         let isToday = isCurrentDay(day)
-        let hasPayments = !payments.isEmpty
+        let hasPayments = !entries.isEmpty
 
         return VStack(alignment: .leading, spacing: 1) {
             // Day number
@@ -458,15 +547,22 @@ struct ScheduledPaymentsWidget: View {
             // Payment names (show up to 2 with truncation)
             if hasPayments {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
-                        Text(payment.name)
-                            .font(DS.Typography.captionSmall).fontWeight(.medium)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
+                    ForEach(Array(entries.prefix(2).enumerated()), id: \.offset) { _, entry in
+                        HStack(spacing: 2) {
+                            if entry.isPaid {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 6, weight: .bold))
+                                    .foregroundStyle(Color.electricIndigo)
+                            }
+                            Text(entry.payment.name)
+                                .font(DS.Typography.captionSmall).fontWeight(.medium)
+                                .foregroundStyle(entry.isPaid ? Color.electricIndigo : .primary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
                     }
-                    if payments.count > 2 {
-                        Text("+\(payments.count - 2)")
+                    if entries.count > 2 {
+                        Text("+\(entries.count - 2)")
                             .font(DS.Typography.captionSmall).fontWeight(.medium)
                             .foregroundStyle(.secondary)
                     }
@@ -475,7 +571,7 @@ struct ScheduledPaymentsWidget: View {
 
             Spacer(minLength: 0)
         }
-        .padding(3)
+        .padding(DS.Spacing.xs)
         .frame(minHeight: 56)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(

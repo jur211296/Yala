@@ -14,7 +14,7 @@ Phase: 11 — Sistema de Temas Independientes
 Spec: `.planning/THEME-REFACTOR-PLAN.md`
 Plan: None
 Status: **V1.1 COMPLETADA** — Fase 10.5 cerrada oficialmente (2026-02-16)
-Last activity: 2026-02-17 — Guard App Intents + expand iCloud sync detection
+Last activity: 2026-02-18 — Scheduled payments paid status + per-occurrence widget
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-18] 048edc2 feat: add paid status + per-occurrence rows to ScheduledPaymentsWidget
+- [2026-02-18] 599e7b1 feat: add paid status tracking + per-occurrence display for scheduled payments
 - [2026-02-17] 276b1a4 fix: guard iCloud sync UX for medium-severity risks (R3, R5, R6, R9)
 - [2026-02-17] fbbedde fix: guard iCloud sync + onboarding data integrity (R1, R2, R4, R7, R8)
 - [2026-02-17] 24c917a fix: guard App Intents without accounts + expand iCloud sync detection
@@ -513,10 +515,12 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-17
-Stopped at: iCloud sync medium-severity risks — R3 (defer alert mid-onboarding), R5 (30s timeout), R6 (documented), R9 (notification dedup)
-Next step: Iniciar Fase 11 — Sistema de Temas Independientes
+Last session: 2026-02-18
+Stopped at: Widget ScheduledPayments con paid status + per-occurrence rows implementado
+Next step: Continuar mejoras UX pagos planificados — ver `.planning/SCHEDULED-PAYMENTS-UX.md`
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
 - Deep Scan S.1-S.4 todos resueltos/aceptados
 - iCloud sync: ALL 9 risks resolved (R1-R9) across fbbedde + 276b1a4
+- Paid status tracking implementado en ViewModel + vistas Planning (599e7b1)
+- Widget PanelView actualizado con per-occurrence rows, paid badges, DS fixes (048edc2)
