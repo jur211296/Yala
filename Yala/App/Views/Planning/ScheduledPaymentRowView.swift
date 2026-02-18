@@ -57,7 +57,7 @@ struct ScheduledPaymentRowView: View {
                 x: 0,
                 y: 3
             )
-            .opacity(summary.payment.isPaidForCurrentCycle ? 0.6 : 1.0)
+            .opacity(summary.isPaidForMonth ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)
     }
@@ -83,14 +83,14 @@ struct ScheduledPaymentRowView: View {
     private var dueInfo: some View {
         HStack(spacing: DS.Spacing.xs) {
             // Paid badge (if paid for current cycle)
-            if summary.payment.isPaidForCurrentCycle {
+            if summary.isPaidForMonth {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.electricIndigo)
 
                 Text(L10n.Scheduled.paid)
                     .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.electricIndigo)
             } else {
                 // Due status indicator (only for past due)
                 if summary.dueStatus == .past {

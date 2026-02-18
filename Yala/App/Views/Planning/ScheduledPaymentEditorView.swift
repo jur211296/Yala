@@ -219,7 +219,7 @@ struct ScheduledPaymentEditorView: View {
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                            .foregroundStyle(transactionType == "income" ? Color.teal : .primary)
+                            .foregroundStyle(transactionType == "income" ? Color.electricIndigo : .primary)
                     }
                 }
                 .padding()

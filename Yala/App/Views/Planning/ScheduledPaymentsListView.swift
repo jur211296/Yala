@@ -30,6 +30,9 @@ struct ScheduledPaymentsListView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.lg) {
+            // Month navigation (visible in both list and calendar modes)
+            monthNavigationHeader
+
             // Summary card
             summaryCard
 
@@ -45,6 +48,14 @@ struct ScheduledPaymentsListView: View {
         }
         .padding(.top, DS.Spacing.sm)
         .padding(.bottom, DS.Spacing.safeBottom) // Space for FAB
+        .sheet(isPresented: $viewModel.showPeriodSelector) {
+            ScheduledPaymentPeriodSelectorSheet(
+                viewModel: viewModel,
+                payments: payments,
+                onPeriodChange: { onRefresh() }
+            )
+            .presentationDetents([.medium])
+        }
     }
 
     // MARK: - Filtered Payments
@@ -58,26 +69,67 @@ struct ScheduledPaymentsListView: View {
     private var summaryCard: some View {
         let monthlyTotal = viewModel.calculateMonthlyTotal(
             subscriptions: activePayments,
-            for: viewModel.calendarDisplayedMonth,
+            for: viewModel.selectedMonth,
             preferredCurrencyCode: currencyCode
         )
 
         return VStack(spacing: DS.Spacing.md) {
-            // Month label
-            Text(monthYearLabel)
-                .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
-
-            // Amount
+            // Total amount
             Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
                 .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.primary)
 
-            // Payment count
-            Text(paymentCountLabel)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
+            // Paid / Pending breakdown (clickable as filters)
+            HStack(spacing: DS.Spacing.lg) {
+                Button {
+                    dsWithAnimation(reduceMotion) {
+                        viewModel.paymentStatusFilter = viewModel.paymentStatusFilter == .paid ? .all : .paid
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Circle()
+                            .fill(Color.electricIndigo)
+                            .frame(width: 8, height: 8)
+                        Text(NSLocalizedString("scheduled.summary.paid", comment: ""))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                        Text(YalaFormatter.currency(value: viewModel.monthlyTotalPaid, currencyCode: currencyCode))
+                            .font(DS.Typography.label)
+                            .foregroundStyle(Color.electricIndigo)
+                    }
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(
+                        Capsule().fill(viewModel.paymentStatusFilter == .paid ? Color.electricIndigo.opacity(0.12) : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    dsWithAnimation(reduceMotion) {
+                        viewModel.paymentStatusFilter = viewModel.paymentStatusFilter == .pending ? .all : .pending
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Circle()
+                            .fill(Color.hotPink)
+                            .frame(width: 8, height: 8)
+                        Text(NSLocalizedString("scheduled.summary.pending", comment: ""))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                        Text(YalaFormatter.currency(value: viewModel.monthlyTotalPending, currencyCode: currencyCode))
+                            .font(DS.Typography.label)
+                            .foregroundStyle(Color.hotPink)
+                    }
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(
+                        Capsule().fill(viewModel.paymentStatusFilter == .pending ? Color.hotPink.opacity(0.12) : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, DS.Spacing.xl)
@@ -92,18 +144,6 @@ struct ScheduledPaymentsListView: View {
         )
         .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private var monthYearLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: viewModel.calendarDisplayedMonth).capitalized
-    }
-
-    private var paymentCountLabel: String {
-        let activeCount = activePayments.count
-        let format = NSLocalizedString("scheduled.payments.count", comment: "")
-        return String(format: format, activeCount)
     }
 
     // MARK: - View Mode Header
@@ -162,10 +202,10 @@ struct ScheduledPaymentsListView: View {
 
     private var listContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-            if viewModel.groupedPayments.isEmpty {
+            if viewModel.filteredGroupedPayments.isEmpty {
                 emptyState
             } else {
-                ForEach(viewModel.groupedPayments, id: \.status) { section in
+                ForEach(viewModel.filteredGroupedPayments, id: \.status) { section in
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {
                         // Section header
                         HStack(spacing: DS.Spacing.sm) {
@@ -199,9 +239,6 @@ struct ScheduledPaymentsListView: View {
 
     private var calendarContent: some View {
         VStack(spacing: DS.Spacing.md) {
-            // Month navigation
-            monthNavigationHeader
-
             // Calendar grid
             calendarGrid
 
@@ -217,6 +254,7 @@ struct ScheduledPaymentsListView: View {
                 dsWithAnimation(reduceMotion) {
                     selectedDay = nil
                     viewModel.previousMonth()
+                    onRefresh()
                 }
             } label: {
                 Image(systemName: "chevron.left")
@@ -228,9 +266,20 @@ struct ScheduledPaymentsListView: View {
 
             Spacer()
 
-            Text(monthYearLabel)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+            Button {
+                viewModel.showPeriodSelector = true
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(viewModel.monthYearLabel)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+
+                    Image(systemName: "chevron.down")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
 
             Spacer()
 
@@ -238,6 +287,7 @@ struct ScheduledPaymentsListView: View {
                 dsWithAnimation(reduceMotion) {
                     selectedDay = nil
                     viewModel.nextMonth()
+                    onRefresh()
                 }
             } label: {
                 Image(systemName: "chevron.right")
@@ -248,11 +298,12 @@ struct ScheduledPaymentsListView: View {
             .buttonStyle(.plain)
         }
         .padding(.vertical, DS.Spacing.sm)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var calendarGrid: some View {
         let calendar = Calendar.current
-        let month = viewModel.calendarDisplayedMonth
+        let month = viewModel.selectedMonth
         let daysInMonth = calendar.range(of: .day, in: .month, for: month)?.count ?? 30
 
         let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
@@ -287,7 +338,7 @@ struct ScheduledPaymentsListView: View {
                         calendarDayCell(day: day, payments: paymentsByDay[day] ?? [])
                     } else {
                         Color.clear
-                            .frame(minHeight: 70)
+                            .frame(minHeight: 50)
                     }
                 }
             }
@@ -326,31 +377,29 @@ struct ScheduledPaymentsListView: View {
                 }
             }
         } label: {
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            VStack(spacing: DS.Spacing.xxs) {
                 Text("\(day)")
                     .font(.caption2.weight(isToday || isSelected ? .bold : .medium))
                     .foregroundStyle(isSelected ? .white : (isToday ? Color.electricIndigo : .secondary))
-                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 if hasPayments {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        ForEach(payments.prefix(2), id: \.persistentModelID) { payment in
-                            paymentPill(payment, isSelected: isSelected)
+                    HStack(spacing: 3) {
+                        ForEach(Array(payments.prefix(3).enumerated()), id: \.offset) { _, payment in
+                            Circle()
+                                .fill(dotColor(for: payment, day: day, isSelected: isSelected))
+                                .frame(width: 6, height: 6)
                         }
-                        if payments.count > 2 {
-                            Text("+\(payments.count - 2)")
-                                .font(DS.Typography.captionSmall).fontWeight(.medium)
+                        if payments.count > 3 {
+                            Text("+\(payments.count - 3)")
+                                .font(.system(size: 8, weight: .medium))
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
-                                .padding(.leading, 2)
                         }
                     }
                 }
-
-                Spacer(minLength: 0)
             }
-            .padding(DS.Spacing.xs)
-            .frame(minHeight: 70)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Spacing.xs)
+            .frame(minHeight: 50)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
                     .fill(backgroundColor(isToday: isToday, isSelected: isSelected, hasPayments: hasPayments))
@@ -361,6 +410,23 @@ struct ScheduledPaymentsListView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// Dot color: electricIndigo if paid, hotPink if overdue, subcategory color otherwise
+    private func dotColor(for payment: ScheduledPayment, day: Int, isSelected: Bool) -> Color {
+        if isSelected { return .white }
+        let isPaid = (viewModel.paidStatusForMonth[payment.id.uuidString] ?? 0) > 0
+        if isPaid { return Color.electricIndigo }
+        // Check if overdue (this specific day is past today in the current month)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let isCurrentMonth = calendar.isDate(viewModel.selectedMonth, equalTo: today, toGranularity: .month)
+        if isCurrentMonth {
+            let todayDay = calendar.component(.day, from: today)
+            if day < todayDay { return Color.hotPink }
+        }
+        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
+        return Color(hex: color)
     }
 
     private func backgroundColor(isToday: Bool, isSelected: Bool, hasPayments: Bool) -> Color {
@@ -375,31 +441,10 @@ struct ScheduledPaymentsListView: View {
         }
     }
 
-    private func paymentPill(_ payment: ScheduledPayment, isSelected: Bool = false) -> some View {
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
-
-        return HStack(spacing: DS.Spacing.xxs) {
-            Circle()
-                .fill(isSelected ? Color.white : Color(hex: color))
-                .frame(width: 6, height: 6)
-
-            Text(payment.name)
-                .font(DS.Typography.captionSmall).fontWeight(.medium)
-                .foregroundStyle(isSelected ? .white : .primary)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, DS.Spacing.xs)
-        .padding(.vertical, DS.Spacing.xxs)
-        .background(
-            Capsule()
-                .fill(isSelected ? Color.white.opacity(0.2) : Color(hex: color).opacity(0.15))
-        )
-    }
-
     private func isCurrentDay(_ day: Int) -> Bool {
         let calendar = Calendar.current
         let today = Date()
-        let displayedMonth = viewModel.calendarDisplayedMonth
+        let displayedMonth = viewModel.selectedMonth
 
         return calendar.component(.day, from: today) == day &&
                calendar.component(.month, from: today) == calendar.component(.month, from: displayedMonth) &&
@@ -408,24 +453,59 @@ struct ScheduledPaymentsListView: View {
 
     private var monthPaymentsList: some View {
         let calendar = Calendar.current
-        let month = viewModel.calendarDisplayedMonth
+        let today = calendar.startOfDay(for: Date())
+        let month = viewModel.selectedMonth
+        let isCurrentMonth = calendar.isDate(month, equalTo: today, toGranularity: .month)
+        let isPastMonth = calendar.startOfMonth(for: month) < calendar.startOfMonth(for: today)
+        let paidStatus = viewModel.paidStatusForMonth
 
-        var paymentsToShow: [(ScheduledPayment, [Date])] = []
-
+        // Build one summary per occurrence, filtered by selectedDay
+        var summaries: [ScheduledPaymentSummary] = []
         for payment in activePayments {
             let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: month)
-
+            let relevantDates: [Date]
             if let selectedDay = selectedDay {
-                let filteredDates = dates.filter { calendar.component(.day, from: $0) == selectedDay }
-                if !filteredDates.isEmpty {
-                    paymentsToShow.append((payment, filteredDates))
-                }
+                relevantDates = dates.filter { calendar.component(.day, from: $0) == selectedDay }
             } else {
-                if !dates.isEmpty {
-                    paymentsToShow.append((payment, dates))
+                relevantDates = dates
+            }
+            guard !relevantDates.isEmpty else { continue }
+
+            let paidCount = paidStatus[payment.id.uuidString] ?? 0
+            var remainingPaid = paidCount
+            let (icon, color) = viewModel.getPaymentDisplayProperties(payment: payment)
+
+            for date in relevantDates.sorted() {
+                let dueStatus: DueStatus
+                if isPastMonth {
+                    dueStatus = .past
+                } else if isCurrentMonth {
+                    let dueDate = calendar.startOfDay(for: date)
+                    let daysUntil = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+                    if daysUntil < 0 { dueStatus = .past }
+                    else if daysUntil == 0 { dueStatus = .today }
+                    else { dueStatus = .upcoming }
+                } else {
+                    dueStatus = .upcoming
                 }
+
+                let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
+                let isPaid = remainingPaid > 0
+                if isPaid { remainingPaid -= 1 }
+
+                summaries.append(ScheduledPaymentSummary(
+                    payment: payment,
+                    dueDate: date,
+                    dueStatus: dueStatus,
+                    daysUntilDue: daysUntilDue,
+                    icon: icon,
+                    color: color,
+                    isPaidForMonth: isPaid
+                ))
             }
         }
+
+        let sorted = summaries.sorted { $0.dueDate < $1.dueDate }
 
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             if let day = selectedDay {
@@ -449,7 +529,7 @@ struct ScheduledPaymentsListView: View {
                 }
             }
 
-            if paymentsToShow.isEmpty {
+            if sorted.isEmpty {
                 Text(selectedDay != nil
                      ? NSLocalizedString("scheduled.calendar.day.empty", comment: "")
                      : NSLocalizedString("scheduled.calendar.month.empty", comment: ""))
@@ -458,8 +538,11 @@ struct ScheduledPaymentsListView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.xl)
             } else {
-                ForEach(paymentsToShow.sorted { $0.1.first ?? Date() < $1.1.first ?? Date() }, id: \.0.persistentModelID) { payment, dates in
-                    calendarPaymentRow(payment: payment, dates: dates)
+                ForEach(sorted) { summary in
+                    ScheduledPaymentRowView(
+                        summary: summary,
+                        currencyCode: summary.payment.currencyCode
+                    )
                 }
             }
         }
@@ -468,7 +551,7 @@ struct ScheduledPaymentsListView: View {
 
     private func selectedDayLabel(day: Int) -> String {
         let calendar = Calendar.current
-        let month = viewModel.calendarDisplayedMonth
+        let month = viewModel.selectedMonth
         let components = calendar.dateComponents([.year, .month], from: month)
 
         if let date = calendar.date(from: DateComponents(year: components.year, month: components.month, day: day)) {
@@ -478,52 +561,6 @@ struct ScheduledPaymentsListView: View {
             return formatter.string(from: date)
         }
         return "\(day)"
-    }
-
-    private func calendarPaymentRow(payment: ScheduledPayment, dates: [Date]) -> some View {
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
-        let icon = payment.subcategory?.iconName ?? payment.subcategory?.category?.iconName ?? "calendar.badge.clock"
-
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "d MMM"
-
-        return NavigationLink(value: payment.persistentModelID) {
-            HStack(spacing: DS.Spacing.md) {
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: color))
-                        .frame(width: 36, height: 36)
-
-                    Image(systemName: icon)
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.white)
-                }
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(payment.name)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-
-                    Text(dates.map { dateFormatter.string(from: $0) }.joined(separator: ", "))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Text(YalaFormatter.currency(value: payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(DS.Spacing.md)
-            .background(Color.yalaCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Empty State

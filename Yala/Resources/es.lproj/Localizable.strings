@@ -2075,3 +2075,16 @@
 "subcategory.accountTransfer" = "Transferencia entre cuentas";
 "subcategory.balanceAdjustment" = "Ajustes de saldo";
 "subcategory.accountTransferOther" = "Transferencia entre cuentas";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Seleccionar mes";
+"scheduled.summary.paid" = "Pagado";
+"scheduled.summary.pending" = "Pendiente";
+"scheduled.filter.all" = "Todos";
+"scheduled.filter.paid" = "Pagados";
+"scheduled.filter.pending" = "Pendientes";
+"scheduled.associate.title" = "Vincular gasto";
+"scheduled.associate.confirm" = "¿Vincular este gasto al pago planificado?";
+"scheduled.associate.success" = "Gasto vinculado";
+"scheduled.associate.empty" = "No encontramos gastos similares este mes";
+"scheduled.associate.already" = "Este gasto ya está vinculado";

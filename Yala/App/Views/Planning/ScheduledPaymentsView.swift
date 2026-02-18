@@ -67,11 +67,14 @@ struct ScheduledPaymentsView: View {
         .onChange(of: viewModel.selectedTab) { _, _ in
             refreshData()
         }
+        .onChange(of: viewModel.selectedMonth) { _, _ in
+            refreshData()
+        }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
-            ScheduledPaymentDetailDestination(paymentID: paymentID)
+            ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
         }
     }
 
@@ -141,12 +144,13 @@ struct ScheduledPaymentsView: View {
 /// Helper view that resolves PersistentIdentifier to ScheduledPayment for navigation
 private struct ScheduledPaymentDetailDestination: View {
     let paymentID: PersistentIdentifier
+    @Bindable var viewModel: ScheduledPaymentsViewModel
 
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         if let payment = modelContext.model(for: paymentID) as? ScheduledPayment {
-            ScheduledPaymentDetailView(payment: payment)
+            ScheduledPaymentDetailView(payment: payment, viewModel: viewModel)
         } else {
             ContentUnavailableView(
                 NSLocalizedString("scheduled.detail.not.found", comment: "Payment not found"),

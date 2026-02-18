@@ -2115,3 +2115,16 @@
 "subcategory.accountTransfer" = "Virement entre comptes";
 "subcategory.balanceAdjustment" = "Ajustement de solde";
 "subcategory.accountTransferOther" = "Virement entre comptes";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Sélectionner le mois";
+"scheduled.summary.paid" = "Payé";
+"scheduled.summary.pending" = "En attente";
+"scheduled.filter.all" = "Tous";
+"scheduled.filter.paid" = "Payés";
+"scheduled.filter.pending" = "En attente";
+"scheduled.associate.title" = "Lier la dépense";
+"scheduled.associate.confirm" = "Lier cette dépense au paiement planifié ?";
+"scheduled.associate.success" = "Dépense liée";
+"scheduled.associate.empty" = "Aucune dépense similaire trouvée ce mois-ci";
+"scheduled.associate.already" = "Cette dépense est déjà liée";

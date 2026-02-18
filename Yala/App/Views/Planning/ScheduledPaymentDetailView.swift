@@ -15,8 +15,10 @@ struct ScheduledPaymentDetailView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
 
     let payment: ScheduledPayment
+    @Bindable var viewModel: ScheduledPaymentsViewModel
 
     @State private var showEditor = false
+    @State private var showAssociationSheet = false
 
     // Calculate occurrences
     private var pastOccurrences: [Date] {
@@ -35,6 +37,11 @@ struct ScheduledPaymentDetailView: View {
                 VStack(spacing: DS.Spacing.xxl) {
                     // Summary Card
                     summaryCard
+
+                    // Associate transaction button (if not paid for this month)
+                    if !isPaidForSelectedMonth {
+                        associateTransactionButton
+                    }
 
                     // Upcoming Section
                     if payment.isRecurring && !upcomingOccurrences.isEmpty {
@@ -73,6 +80,14 @@ struct ScheduledPaymentDetailView: View {
                 dismiss()
             })
         }
+        .sheet(isPresented: $showAssociationSheet) {
+            TransactionAssociationSheet(
+                payment: payment,
+                selectedMonth: viewModel.selectedMonth,
+                viewModel: viewModel
+            )
+            .presentationDetents([.medium, .large])
+        }
     }
 
     // MARK: - Summary Card
@@ -88,7 +103,7 @@ struct ScheduledPaymentDetailView: View {
                 Text(formatAmount(payment.amount))
                     .font(.system(size: scaledAmountSize, weight: .bold))
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                    .foregroundStyle(payment.transactionType == "income" ? Color.teal : .primary)
+                    .foregroundStyle(payment.transactionType == "income" ? Color.electricIndigo : .primary)
             }
 
             Divider()
@@ -280,7 +295,7 @@ struct ScheduledPaymentDetailView: View {
             // Amount
             Text(formatAmount(payment.amount))
                 .font(DS.Typography.label)
-                .foregroundStyle(isPast ? .secondary : (payment.transactionType == "income" ? Color.teal : .primary))
+                .foregroundStyle(isPast ? .secondary : (payment.transactionType == "income" ? Color.electricIndigo : .primary))
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -304,6 +319,43 @@ struct ScheduledPaymentDetailView: View {
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(Color.electricIndigo.opacity(0.1))
         )
+    }
+
+    // MARK: - Transaction Association
+
+    private var isPaidForSelectedMonth: Bool {
+        let occurrences = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth).count
+        let paidCount = viewModel.paidStatusForMonth[payment.id.uuidString] ?? 0
+        return paidCount >= occurrences
+    }
+
+    private var associateTransactionButton: some View {
+        Button {
+            showAssociationSheet = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "link.badge.plus")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(Color.electricIndigo)
+
+                Text(NSLocalizedString("scheduled.associate.title", comment: ""))
+                    .font(DS.Typography.label)
+                    .foregroundStyle(Color.electricIndigo)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(DS.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .fill(Color.electricIndigo.opacity(0.1))
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers

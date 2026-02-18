@@ -2116,3 +2116,16 @@
 "subcategory.accountTransfer" = "Trasferimento tra conti";
 "subcategory.balanceAdjustment" = "Aggiustamento saldo";
 "subcategory.accountTransferOther" = "Trasferimento tra conti";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Seleziona mese";
+"scheduled.summary.paid" = "Pagato";
+"scheduled.summary.pending" = "In sospeso";
+"scheduled.filter.all" = "Tutti";
+"scheduled.filter.paid" = "Pagati";
+"scheduled.filter.pending" = "In sospeso";
+"scheduled.associate.title" = "Collega spesa";
+"scheduled.associate.confirm" = "Collegare questa spesa al pagamento pianificato?";
+"scheduled.associate.success" = "Spesa collegata";
+"scheduled.associate.empty" = "Nessuna spesa simile trovata questo mese";
+"scheduled.associate.already" = "Questa spesa è già collegata";

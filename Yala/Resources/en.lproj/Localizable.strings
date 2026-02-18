@@ -2099,3 +2099,16 @@
 "tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. Turn off the \"Show When Run\" toggle.";
 "tutorials.applePay.completion.title" = "Apple Pay connected!";
 "tutorials.applePay.completion.desc" = "With this you'll now have automatic records every time you use Apple Pay with the selected cards. Each payment will create a draft in your inbox.";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Select month";
+"scheduled.summary.paid" = "Paid";
+"scheduled.summary.pending" = "Pending";
+"scheduled.filter.all" = "All";
+"scheduled.filter.paid" = "Paid";
+"scheduled.filter.pending" = "Pending";
+"scheduled.associate.title" = "Link expense";
+"scheduled.associate.confirm" = "Link this expense to the scheduled payment?";
+"scheduled.associate.success" = "Expense linked";
+"scheduled.associate.empty" = "No similar expenses found this month";
+"scheduled.associate.already" = "This expense is already linked";

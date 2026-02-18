@@ -2114,3 +2114,16 @@
 "subcategory.accountTransfer" = "Kontoüberweisung";
 "subcategory.balanceAdjustment" = "Saldoanpassung";
 "subcategory.accountTransferOther" = "Kontoüberweisung";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Monat auswählen";
+"scheduled.summary.paid" = "Bezahlt";
+"scheduled.summary.pending" = "Ausstehend";
+"scheduled.filter.all" = "Alle";
+"scheduled.filter.paid" = "Bezahlt";
+"scheduled.filter.pending" = "Ausstehend";
+"scheduled.associate.title" = "Ausgabe verknüpfen";
+"scheduled.associate.confirm" = "Diese Ausgabe mit der geplanten Zahlung verknüpfen?";
+"scheduled.associate.success" = "Ausgabe verknüpft";
+"scheduled.associate.empty" = "Keine ähnlichen Ausgaben in diesem Monat gefunden";
+"scheduled.associate.already" = "Diese Ausgabe ist bereits verknüpft";
