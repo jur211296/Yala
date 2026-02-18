@@ -4420,7 +4420,7 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ---
 
-*Última actualización: 2026-02-11 - Sección 34 (Pantalla Privacy Onboarding)*
+*Última actualización: 2026-02-18 - Sección 37 (Skip de Ocurrencias en Pagos Planificados)*
 *Total escenarios: ~517*
 *Total verificaciones: ~960+*
 
@@ -4533,3 +4533,74 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 - [ ] PreferenceSyncService.bootstrap() se ejecuta ANTES de NotificationService en AppBootstrapper
 - [ ] Verificar con breakpoint o log que el orden es: PreferenceSync → NotificationService → ExchangeRates → ...
 - [ ] Si no hay cuenta iCloud: bootstrap() no crashea (NSUbiquitousKeyValueStore.synchronize() es no-op)
+
+---
+
+## Sección 37: Skip de Ocurrencias en Pagos Planificados
+
+**Precondición:** Al menos 1 pago planificado con frecuencia mensual o semanal, con ocurrencias pasadas y futuras visibles.
+
+### 37.1 Saltar ocurrencia futura
+1. Ir a Planning > Pagos Planificados > detalle de un pago
+2. Tocar una ocurrencia futura (upcoming)
+3. **Verificar:** Aparece confirmationDialog con opción "Saltar"
+4. Confirmar "Saltar"
+5. **Verificar:** La fila muestra badge "Saltado" con estilo dimmeado
+6. **Verificar:** El total pendiente del mes se reduce por el monto saltado
+
+### 37.2 Saltar ocurrencia pasada/vencida
+1. Tocar una ocurrencia pasada (vencida, no pagada)
+2. Confirmar "Saltar"
+3. **Verificar:** Badge "Saltado" visible, fila dimmeada
+4. **Verificar:** La ocurrencia ya no cuenta como "vencida" en totales
+
+### 37.3 Revertir skip (unskip)
+1. Tocar una ocurrencia previamente saltada
+2. **Verificar:** confirmationDialog muestra "Revertir salto"
+3. Confirmar revertir
+4. **Verificar:** Badge "Saltado" desaparece, fila vuelve a estado normal
+5. **Verificar:** Totales se actualizan (pendiente sube, o vuelve a vencido)
+
+### 37.4 Skip y drafts en Inbox
+1. Saltar una ocurrencia que tiene draft pendiente en Inbox
+2. **Verificar:** El draft se rechaza automáticamente
+3. Revertir el skip en una fecha pasada o de hoy
+4. **Verificar:** Se recrea el draft en Inbox
+
+### 37.5 Skip pre-creación de draft
+1. Saltar una ocurrencia futura antes de que llegue su fecha
+2. Esperar a que llegue la fecha (o simular con reloj)
+3. **Verificar:** DraftService NO crea draft para la fecha saltada
+4. **Verificar:** nextDueDate avanza a la siguiente ocurrencia
+
+### 37.6 Filtros y skip
+1. Filtrar por "Pendientes"
+2. **Verificar:** Ocurrencias saltadas NO aparecen en pendientes
+3. Filtrar por "Pagados"
+4. **Verificar:** Ocurrencias saltadas NO aparecen en pagados
+5. Filtrar por "Todos"
+6. **Verificar:** Ocurrencias saltadas SÍ aparecen (dimmeadas con badge)
+
+### 37.7 Widget Panel y skip
+1. Verificar ScheduledPaymentsWidget en Panel
+2. **Verificar:** Items saltados aparecen dimmeados con badge "Saltado"
+3. **Verificar:** Orden: pendientes > pagados > saltados
+
+### 37.8 Vista calendario y skip
+1. Ir a vista calendario de pagos planificados
+2. **Verificar:** Días con ocurrencias saltadas muestran indicador dimmeado
+3. **Verificar:** Lista debajo del calendario muestra badge "Saltado"
+
+### 37.9 Notificaciones y skip
+1. Saltar una ocurrencia
+2. **Verificar:** No se genera notificación para la fecha saltada
+3. Revertir el skip
+4. **Verificar:** La notificación se reprograma si la fecha es futura
+
+### 37.10 Cleanup automático
+1. (Validar con logs) skippedDates mayores a 1 año se limpian en loadPayments()
+2. **Verificar:** Fechas recientes se mantienen intactas
+
+### 37.11 Localización
+- [ ] Verificar textos de skip/unskip en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] Badge "Saltado"/"Skipped" visible y legible en cada idioma

@@ -28,6 +28,8 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-18] d1eab6b fix: widen metric selector touch targets in TrendsTabView
+- [2026-02-18] 6796274 fix: make YalaToolbarButton circular with buttonBorderShape(.circle)
 - [2026-02-18] 3d552e0 fix: complete skip/unskip with draft recreation + notification guards
 - [2026-02-18] 048edc2 feat: add paid status + per-occurrence rows to ScheduledPaymentsWidget
 - [2026-02-18] 599e7b1 feat: add paid status tracking + per-occurrence display for scheduled payments
@@ -36,9 +38,6 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 - [2026-02-17] 24c917a fix: guard App Intents without accounts + expand iCloud sync detection
 - [2026-02-17] 347e36e fix: ensure SessionState environment propagates on Designed for iPad
 - [2026-02-17] 7040290 fix: widget budget filters + NatureTrendWidget KPI (BUG-27, BUG-28)
-- [2026-02-16] bd9231a fix: resolve Share Sheet race conditions on repeated use (BUG-26)
-- [2026-02-16] cc565b0 fix: refresh RecordsStandalone after creating/approving transactions (BUG-25)
-- [2026-02-16] c277400 fix: correct notification deep links — scheduled payments and static reminders
 - [2026-02-16] e2a69fd feat: add iPad adaptive layout — double column widgets, carousels, trends
 - [2026-02-16] 9c196e5 chore: unify deployment target (26.0) and version (1.0) across all targets
 - [2026-02-13] f586a15 fix: resolve pre-launch warnings — prints, VoiceOver, Dynamic Type, touch targets
@@ -517,7 +516,7 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Skip/unskip gaps fixed — notifications respect skip, unskip recreates draft
+Stopped at: Widened metric selector touch targets in TrendsTabView (d1eab6b)
 Next step: Continuar mejoras UX pagos planificados — ver `.planning/SCHEDULED-PAYMENTS-UX.md`
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)

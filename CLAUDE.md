@@ -230,3 +230,4 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 
 ## Decisiones Recientes (TTL: hasta cierre de fase)
 [Formato: [FECHA] Decisión breve — se archiva en DECISIONS.md al cerrar fase]
+- [2026-02-18] Skip ocurrencias usa `skippedDatesRaw: String` (comma-separated ISO) en ScheduledPayment — consistente con selectedWeekdays, sin nueva entidad
