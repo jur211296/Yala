@@ -28,6 +28,7 @@ Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pend
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-18] 3d552e0 fix: complete skip/unskip with draft recreation + notification guards
 - [2026-02-18] 048edc2 feat: add paid status + per-occurrence rows to ScheduledPaymentsWidget
 - [2026-02-18] 599e7b1 feat: add paid status tracking + per-occurrence display for scheduled payments
 - [2026-02-17] 276b1a4 fix: guard iCloud sync UX for medium-severity risks (R3, R5, R6, R9)
@@ -516,7 +517,7 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Widget ScheduledPayments con paid status + per-occurrence rows implementado
+Stopped at: Skip/unskip gaps fixed — notifications respect skip, unskip recreates draft
 Next step: Continuar mejoras UX pagos planificados — ver `.planning/SCHEDULED-PAYMENTS-UX.md`
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
@@ -524,3 +525,4 @@ Resume context:
 - iCloud sync: ALL 9 risks resolved (R1-R9) across fbbedde + 276b1a4
 - Paid status tracking implementado en ViewModel + vistas Planning (599e7b1)
 - Widget PanelView actualizado con per-occurrence rows, paid badges, DS fixes (048edc2)
+- Skip/unskip: notifications respect isDateSkipped, unskip recreates draft for past/today dates (3d552e0)

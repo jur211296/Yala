@@ -25,12 +25,11 @@ struct YalaToolbarButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(DS.Typography.label)
+                .fontWeight(.medium)
                 .foregroundStyle(Color.primary)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
         }
         .accessibilityLabel(label)
+        .buttonBorderShape(.circle)
     }
 }
 
