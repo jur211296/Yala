@@ -304,6 +304,14 @@
 "scheduled.saveDescription" = "Crie um pagamento agendado para lembrar desta despesa ou receita recorrente. Você o encontrará na seção Pagamentos Agendados no seu perfil, onde poderá editá-lo, ativá-lo ou desativá-lo a qualquer momento.";
 "scheduled.paid" = "Pago";
 "scheduled.overdue" = "Vencido";
+"scheduled.skip" = "Pular";
+"scheduled.skip.undo" = "Desfazer";
+"scheduled.skip.confirm.title" = "Pular esta ocorrência?";
+"scheduled.skip.confirm.message" = "Não será registrada como despesa. Você pode desfazer depois.";
+"scheduled.skip.overdue.title" = "Pular ocorrência vencida";
+"scheduled.status.skipped" = "Pulado";
+"scheduled.status.paid" = "Pago";
+"scheduled.status.overdue" = "Vencido";
 "scheduled.draftCreatedTitle" = "Você tem pagamentos pendentes!";
 "scheduled.draftCreatedMessage" = "%d pagamentos agendados foram adicionados à sua caixa. Confira quando quiser.";
 "scheduled.viewInbox" = "Ver caixa";

@@ -127,6 +127,8 @@ struct ScheduledPaymentSummary: Identifiable {
     let color: String
     /// Whether this payment has been paid for the selected month
     var isPaidForMonth: Bool = false
+    /// Whether this occurrence has been skipped by the user
+    var isSkippedForMonth: Bool = false
 
     var id: String {
         "\(payment.persistentModelID)-\(dueDate.timeIntervalSince1970)"

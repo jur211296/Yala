@@ -304,6 +304,14 @@
 "scheduled.saveDescription" = "Crea un pagamento pianificato per ricordarti di questa spesa o entrata ricorrente. Lo troverai nella sezione Pagamenti Pianificati nel tuo profilo, dove potrai modificarlo, attivarlo o disattivarlo in qualsiasi momento.";
 "scheduled.paid" = "Pagato";
 "scheduled.overdue" = "Scaduto";
+"scheduled.skip" = "Salta";
+"scheduled.skip.undo" = "Annulla";
+"scheduled.skip.confirm.title" = "Saltare questa occorrenza?";
+"scheduled.skip.confirm.message" = "Non verrà registrata come spesa. Potrai annullare in seguito.";
+"scheduled.skip.overdue.title" = "Salta occorrenza scaduta";
+"scheduled.status.skipped" = "Saltato";
+"scheduled.status.paid" = "Pagato";
+"scheduled.status.overdue" = "Scaduto";
 "scheduled.draftCreatedTitle" = "Hai pagamenti in sospeso!";
 "scheduled.draftCreatedMessage" = "%d pagamenti pianificati sono stati aggiunti alla tua casella. Controllali quando vuoi.";
 "scheduled.viewInbox" = "Vedi casella";

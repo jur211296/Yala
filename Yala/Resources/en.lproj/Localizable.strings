@@ -306,6 +306,14 @@
 "scheduled.saveDescription" = "Create a scheduled payment to remind you of this recurring expense or income. You'll find it in the Scheduled Payments section in your profile, where you can edit, activate, or deactivate it anytime.";
 "scheduled.paid" = "Paid";
 "scheduled.overdue" = "Overdue";
+"scheduled.skip" = "Skip";
+"scheduled.skip.undo" = "Undo skip";
+"scheduled.skip.confirm.title" = "Skip this occurrence?";
+"scheduled.skip.confirm.message" = "It won't be recorded as an expense. You can undo this later.";
+"scheduled.skip.overdue.title" = "Skip overdue occurrence";
+"scheduled.status.skipped" = "Skipped";
+"scheduled.status.paid" = "Paid";
+"scheduled.status.overdue" = "Overdue";
 "scheduled.draftCreatedTitle" = "You have pending payments!";
 "scheduled.draftCreatedMessage" = "%d scheduled payments were added to your inbox. Check them when you're ready.";
 "scheduled.viewInbox" = "View inbox";

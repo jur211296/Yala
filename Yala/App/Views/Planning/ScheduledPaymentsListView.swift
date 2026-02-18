@@ -490,7 +490,8 @@ struct ScheduledPaymentsListView: View {
                 }
 
                 let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
-                let isPaid = remainingPaid > 0
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
                 if isPaid { remainingPaid -= 1 }
 
                 summaries.append(ScheduledPaymentSummary(
@@ -500,7 +501,8 @@ struct ScheduledPaymentsListView: View {
                     daysUntilDue: daysUntilDue,
                     icon: icon,
                     color: color,
-                    isPaidForMonth: isPaid
+                    isPaidForMonth: isPaid,
+                    isSkippedForMonth: isSkipped
                 ))
             }
         }

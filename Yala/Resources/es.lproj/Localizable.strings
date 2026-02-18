@@ -306,6 +306,14 @@
 "scheduled.saveDescription" = "Crea un pago planificado para recordarte de este gasto o ingreso recurrente. Lo encontrarás en la sección de Pagos Planificados desde tu perfil, donde podrás editarlo, activarlo o desactivarlo cuando quieras.";
 "scheduled.paid" = "Pagado";
 "scheduled.overdue" = "Vencido";
+"scheduled.skip" = "Saltar";
+"scheduled.skip.undo" = "Revertir";
+"scheduled.skip.confirm.title" = "¿Saltar esta ocurrencia?";
+"scheduled.skip.confirm.message" = "No se registrará como gasto. Puedes revertirlo después.";
+"scheduled.skip.overdue.title" = "Saltar ocurrencia vencida";
+"scheduled.status.skipped" = "Saltado";
+"scheduled.status.paid" = "Pagado";
+"scheduled.status.overdue" = "Vencido";
 "scheduled.draftCreatedTitle" = "¡Tienes pagos pendientes!";
 "scheduled.draftCreatedMessage" = "Se añadieron %d pagos planificados a tu bandeja. Revísalos cuando quieras.";
 "scheduled.viewInbox" = "Ver bandeja";

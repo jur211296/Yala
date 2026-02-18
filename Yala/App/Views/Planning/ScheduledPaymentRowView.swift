@@ -57,7 +57,7 @@ struct ScheduledPaymentRowView: View {
                 x: 0,
                 y: 3
             )
-            .opacity(summary.isPaidForMonth ? 0.6 : 1.0)
+            .opacity(summary.isPaidForMonth || summary.isSkippedForMonth ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)
     }
@@ -82,8 +82,18 @@ struct ScheduledPaymentRowView: View {
 
     private var dueInfo: some View {
         HStack(spacing: DS.Spacing.xs) {
+            // Skipped badge
+            if summary.isSkippedForMonth {
+                Image(systemName: "arrow.uturn.forward.circle")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+
+                Text(NSLocalizedString("scheduled.status.skipped", comment: ""))
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(.secondary)
+            }
             // Paid badge (if paid for current cycle)
-            if summary.isPaidForMonth {
+            else if summary.isPaidForMonth {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.electricIndigo)

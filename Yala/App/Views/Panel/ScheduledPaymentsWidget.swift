@@ -364,14 +364,18 @@ struct ScheduledPaymentsWidget: View {
 
             Spacer()
 
-            // Amount + paid badge
+            // Amount + status badge
             HStack(spacing: DS.Spacing.xs) {
                 Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-                    .opacity(item.isPaid ? 0.6 : 1.0)
+                    .opacity(item.isPaid || item.isSkipped ? 0.6 : 1.0)
 
-                if item.isPaid {
+                if item.isSkipped {
+                    Image(systemName: "arrow.uturn.forward.circle")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                } else if item.isPaid {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color.electricIndigo)
@@ -390,6 +394,7 @@ struct ScheduledPaymentsWidget: View {
         let dueStatus: DueStatus
         let dueDateLabel: String
         let isPaid: Bool
+        let isSkipped: Bool
 
         var id: String {
             "\(payment.persistentModelID)-\(dueDate.timeIntervalSince1970)"
@@ -417,7 +422,8 @@ struct ScheduledPaymentsWidget: View {
                 let dueDate = calendar.startOfDay(for: date)
                 let days = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
                 let dueStatus: DueStatus = days < 0 ? .past : (days == 0 ? .today : .upcoming)
-                let isPaid = remainingPaid > 0
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
                 if isPaid { remainingPaid -= 1 }
 
                 items.append(UpcomingPaymentItem(
@@ -427,14 +433,17 @@ struct ScheduledPaymentsWidget: View {
                     color: color,
                     dueStatus: dueStatus,
                     dueDateLabel: formatDueDate(days: days, date: date),
-                    isPaid: isPaid
+                    isPaid: isPaid,
+                    isSkipped: isSkipped
                 ))
             }
         }
 
-        // Sort: unpaid first, then by date
+        // Sort: unpaid first, then paid, then skipped; within each group by date
         items.sort { a, b in
-            if a.isPaid != b.isPaid { return !a.isPaid }
+            let orderA = a.isSkipped ? 2 : (a.isPaid ? 1 : 0)
+            let orderB = b.isSkipped ? 2 : (b.isPaid ? 1 : 0)
+            if orderA != orderB { return orderA < orderB }
             return a.dueDate < b.dueDate
         }
 
@@ -497,8 +506,8 @@ struct ScheduledPaymentsWidget: View {
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
 
-        // Build payment dates map with paid status
-        var paymentsByDay: [Int: [(payment: ScheduledPayment, isPaid: Bool)]] = [:]
+        // Build payment dates map with paid/skipped status
+        var paymentsByDay: [Int: [(payment: ScheduledPayment, isPaid: Bool, isSkipped: Bool)]] = [:]
         for payment in filteredPayments {
             let dates = getPaymentDatesInMonth(payment: payment, month: displayMonth).sorted()
             let paidCount = paidStatus[payment.id.uuidString] ?? 0
@@ -506,9 +515,10 @@ struct ScheduledPaymentsWidget: View {
 
             for date in dates {
                 let day = calendar.component(.day, from: date)
-                let isPaid = remainingPaid > 0
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
                 if isPaid { remainingPaid -= 1 }
-                paymentsByDay[day, default: []].append((payment: payment, isPaid: isPaid))
+                paymentsByDay[day, default: []].append((payment: payment, isPaid: isPaid, isSkipped: isSkipped))
             }
         }
 
@@ -533,7 +543,7 @@ struct ScheduledPaymentsWidget: View {
         }
     }
 
-    private func calendarDayCell(day: Int, entries: [(payment: ScheduledPayment, isPaid: Bool)]) -> some View {
+    private func calendarDayCell(day: Int, entries: [(payment: ScheduledPayment, isPaid: Bool, isSkipped: Bool)]) -> some View {
         let isToday = isCurrentDay(day)
         let hasPayments = !entries.isEmpty
 
@@ -549,14 +559,18 @@ struct ScheduledPaymentsWidget: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     ForEach(Array(entries.prefix(2).enumerated()), id: \.offset) { _, entry in
                         HStack(spacing: 2) {
-                            if entry.isPaid {
+                            if entry.isSkipped {
+                                Image(systemName: "arrow.uturn.forward")
+                                    .font(.system(size: 6, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                            } else if entry.isPaid {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 6, weight: .bold))
                                     .foregroundStyle(Color.electricIndigo)
                             }
                             Text(entry.payment.name)
                                 .font(DS.Typography.captionSmall).fontWeight(.medium)
-                                .foregroundStyle(entry.isPaid ? Color.electricIndigo : .primary)
+                                .foregroundStyle(entry.isSkipped ? .secondary : (entry.isPaid ? Color.electricIndigo : .primary))
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         }

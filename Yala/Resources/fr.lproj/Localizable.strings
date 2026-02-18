@@ -304,6 +304,14 @@
 "scheduled.saveDescription" = "Crée un paiement planifié pour te rappeler cette dépense ou revenu récurrent. Tu le trouveras dans la section Paiements Planifiés de ton profil, où tu pourras le modifier, l'activer ou le désactiver à tout moment.";
 "scheduled.paid" = "Payé";
 "scheduled.overdue" = "En retard";
+"scheduled.skip" = "Passer";
+"scheduled.skip.undo" = "Annuler";
+"scheduled.skip.confirm.title" = "Passer cette occurrence ?";
+"scheduled.skip.confirm.message" = "Elle ne sera pas enregistrée comme dépense. Tu pourras annuler plus tard.";
+"scheduled.skip.overdue.title" = "Passer l'occurrence en retard";
+"scheduled.status.skipped" = "Passé";
+"scheduled.status.paid" = "Payé";
+"scheduled.status.overdue" = "En retard";
 "scheduled.draftCreatedTitle" = "Tu as des paiements en attente !";
 "scheduled.draftCreatedMessage" = "%d paiements planifiés ont été ajoutés à ta boîte. Consulte-les quand tu veux.";
 "scheduled.viewInbox" = "Voir la boîte";

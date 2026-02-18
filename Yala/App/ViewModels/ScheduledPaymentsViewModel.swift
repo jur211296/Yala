@@ -105,15 +105,15 @@ final class ScheduledPaymentsViewModel {
         groupedPayments.flatMap(\.payments)
     }
 
-    /// Monthly total of paid payments (excluding income, matching calculateMonthlyTotal)
+    /// Monthly total of paid payments (excluding income and skipped)
     var monthlyTotalPaid: Double {
-        allSummaries.filter { $0.isPaidForMonth && $0.payment.transactionType != "income" }
+        allSummaries.filter { $0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
             .reduce(0) { $0 + $1.payment.amount }
     }
 
-    /// Monthly total of pending (unpaid) payments (excluding income)
+    /// Monthly total of pending (unpaid, non-skipped) payments (excluding income)
     var monthlyTotalPending: Double {
-        allSummaries.filter { !$0.isPaidForMonth && $0.payment.transactionType != "income" }
+        allSummaries.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
             .reduce(0) { $0 + $1.payment.amount }
     }
 
@@ -121,9 +121,16 @@ final class ScheduledPaymentsViewModel {
     var filteredGroupedPayments: [(status: DueStatus, payments: [ScheduledPaymentSummary])] {
         if paymentStatusFilter == .all { return groupedPayments }
 
-        let isPaidFilter = paymentStatusFilter == .paid
         return groupedPayments.compactMap { section in
-            let filtered = section.payments.filter { $0.isPaidForMonth == isPaidFilter }
+            let filtered: [ScheduledPaymentSummary]
+            switch paymentStatusFilter {
+            case .paid:
+                filtered = section.payments.filter { $0.isPaidForMonth }
+            case .pending:
+                filtered = section.payments.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth }
+            case .all:
+                filtered = section.payments
+            }
             guard !filtered.isEmpty else { return nil }
             return (status: section.status, payments: filtered)
         }
@@ -170,9 +177,63 @@ final class ScheduledPaymentsViewModel {
 
         do {
             allPayments = try context.fetch(descriptor)
+            // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
+            for payment in allPayments {
+                payment.cleanupOldSkippedDates()
+            }
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error loading payments: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Skip/Unskip
+
+    func skipOccurrence(payment: ScheduledPayment, date: Date) {
+        payment.skipDate(date)
+        rejectPendingDraft(for: payment)
+        do {
+            try modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving skip: \(error)")
+            #endif
+        }
+        loadPayments()
+    }
+
+    func unskipOccurrence(payment: ScheduledPayment, date: Date) {
+        payment.unskipDate(date)
+        if let context = modelContext {
+            ScheduledPaymentDraftService.recreateDraftIfNeeded(for: payment, date: date, context: context)
+        }
+        do {
+            try modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving unskip: \(error)")
+            #endif
+        }
+        loadPayments()
+    }
+
+    private func rejectPendingDraft(for payment: ScheduledPayment) {
+        guard let context = modelContext else { return }
+        let paymentID = payment.id.uuidString
+        do {
+            let descriptor = FetchDescriptor<InboxDraft>(
+                predicate: #Predicate<InboxDraft> { draft in
+                    draft.statusRaw == "pending" && draft.sourceScheduledPaymentID != nil
+                }
+            )
+            let drafts = try context.fetch(descriptor)
+            for draft in drafts where draft.sourceScheduledPaymentID == paymentID {
+                draft.statusRaw = "rejected"
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error rejecting draft: \(error)")
             #endif
         }
     }
@@ -336,7 +397,8 @@ final class ScheduledPaymentsViewModel {
 
                 let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
                 let (icon, color) = getPaymentDisplayProperties(payment: payment)
-                let isPaid = remainingPaid > 0
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
                 if isPaid { remainingPaid -= 1 }
 
                 summaries.append(ScheduledPaymentSummary(
@@ -346,7 +408,8 @@ final class ScheduledPaymentsViewModel {
                     daysUntilDue: daysUntilDue,
                     icon: icon,
                     color: color,
-                    isPaidForMonth: isPaid
+                    isPaidForMonth: isPaid,
+                    isSkippedForMonth: isSkipped
                 ))
             }
         }

@@ -304,6 +304,14 @@
 "scheduled.saveDescription" = "Erstelle eine geplante Zahlung, um dich an diese wiederkehrende Ausgabe oder Einnahme zu erinnern. Du findest sie im Bereich Geplante Zahlungen in deinem Profil, wo du sie jederzeit bearbeiten, aktivieren oder deaktivieren kannst.";
 "scheduled.paid" = "Bezahlt";
 "scheduled.overdue" = "Überfällig";
+"scheduled.skip" = "Überspringen";
+"scheduled.skip.undo" = "Rückgängig";
+"scheduled.skip.confirm.title" = "Dieses Ereignis überspringen?";
+"scheduled.skip.confirm.message" = "Es wird nicht als Ausgabe erfasst. Du kannst dies später rückgängig machen.";
+"scheduled.skip.overdue.title" = "Überfälliges Ereignis überspringen";
+"scheduled.status.skipped" = "Übersprungen";
+"scheduled.status.paid" = "Bezahlt";
+"scheduled.status.overdue" = "Überfällig";
 "scheduled.draftCreatedTitle" = "Du hast ausstehende Zahlungen!";
 "scheduled.draftCreatedMessage" = "%d geplante Zahlungen wurden zu deinem Posteingang hinzugefügt. Schau sie dir an, wenn du bereit bist.";
 "scheduled.viewInbox" = "Posteingang öffnen";
