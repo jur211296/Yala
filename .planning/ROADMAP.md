@@ -40,7 +40,7 @@ Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 - [x] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría ✅
 
 ### V1.2 (App Store Release)
-- [ ] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (negro, rosa, cyan)
+- [x] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (indigo, rosa, teal) ✅
 - [ ] **Fase 12: Plataforma Extendida** - Watch, iPad/Mac, Smart Insights, reportes
 
 ### V2.0
@@ -579,7 +579,7 @@ Ideas capturadas para evaluación posterior:
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 11 | Sistema de Temas Independientes | Not started | - |
+| 11 | Sistema de Temas Independientes | ✅ Done | 2026-02-19 |
 | 12 | Plataforma Extendida | Not started | - |
 
 ### V2.0

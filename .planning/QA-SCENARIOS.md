@@ -4611,7 +4611,7 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ### 38.1 Cambio de tema sin reinicio
 1. Ir a Ajustes → Apariencia
-2. Seleccionar cada tema (System, Light, Dark, Indigo, Rosa, Cyan)
+2. Seleccionar cada tema (System, Light, Dark, Indigo, Rosa, Teal)
 3. **Verificar:** Cambio inmediato sin reiniciar la app
 4. **Verificar:** Sin parpadeo o destrucción de jerarquía de vistas
 
@@ -4623,7 +4623,7 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ### 38.3 Temas PRO requieren suscripción
 1. Sin suscripción Pro activa, ir a Ajustes → Apariencia
-2. Intentar seleccionar Indigo, Rosa o Cyan
+2. Intentar seleccionar Indigo, Rosa o Teal
 3. **Verificar:** Se muestra sheet de upgrade (UpgradePromptSheet)
 4. **Verificar:** El tema NO se aplica sin suscripción
 5. Con suscripción Pro, seleccionar un tema PRO
@@ -4636,7 +4636,7 @@ Para cada tema verificar:
 |----------|-------|------|--------|------|------|
 | Fondo | Off-white | Negro OLED | Navy | Plum | Deep teal |
 | Cards | Blanco | #1C1C1E | Slate | Plum card | Teal card |
-| Acento | Indigo | Indigo | Indigo | HotPink | Cyan |
+| Acento | Indigo | Indigo | Indigo | HotPink | Teal |
 | Texto 1º | Dark | Light | White | White | White |
 
 ### 38.5 Sheets y modales heredan tema
@@ -4652,14 +4652,14 @@ Para cada tema verificar:
 4. **Verificar:** Se mantiene el tema Rosa
 
 ### 38.7 Data wipe resetea a System
-1. Seleccionar un tema PRO (ej: Cyan)
+1. Seleccionar un tema PRO (ej: Teal)
 2. Ir a Ajustes → Datos → Borrar todos los datos
 3. Confirmar
 4. **Verificar:** El tema se resetea a System
 
 ### 38.8 Widgets iOS NO se afectan
 1. Tener widgets de Yala en pantalla de inicio
-2. Cambiar el tema de la app a Indigo/Rosa/Cyan
+2. Cambiar el tema de la app a Indigo/Rosa/Teal
 3. **Verificar:** Los widgets mantienen sus colores originales (no cambian)
 
 ### 38.9 Sombras adaptativas
@@ -4674,10 +4674,10 @@ Para cada tema verificar:
 
 ### 38.11 ThemeSettingsView diseño
 1. Verificar que los 6 temas aparecen con swatches de colores
-2. Verificar sección "Free" (System, Light, Dark) y "Pro" (Indigo, Rosa, Cyan)
+2. Verificar sección "Free" (System, Light, Dark) y "Pro" (Indigo, Rosa, Teal)
 3. Verificar badge "PRO" en temas premium
 4. Verificar checkmark en tema seleccionado
 
 ### 38.12 Localización de temas
 - [ ] Verificar nombres de temas en los 6 idiomas (es, en, de, fr, it, pt)
-- [ ] "Indigo", "Rosa", "Cyan" como nombres en todos los idiomas
+- [ ] "Indigo", "Rosa", "Teal" como nombres en todos los idiomas

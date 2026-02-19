@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 11 — Sistema de Temas Independientes (V1.2)
+**Current focus:** Fase 12 — Plataforma Extendida (V1.2)
 
 ## Current Position
 
 Version: 1.2 (en desarrollo)
-Phase: 11 — Sistema de Temas Independientes
-Spec: `.planning/THEME-REFACTOR-PLAN.md`
+Phase: 12 — Plataforma Extendida
+Spec: None
 Plan: None
-Status: **V1.1 COMPLETADA** — Fase 10.5 cerrada oficialmente (2026-02-16)
-Last activity: 2026-02-18 — Scheduled payments paid status + per-occurrence widget
+Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
+Last activity: 2026-02-19 — Fase 11 cerrada, verificación visual OK
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -22,7 +22,7 @@ Last activity: 2026-02-18 — Scheduled payments paid status + per-occurrence wi
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
-Progress: V1.2 ████████░░░░░░░░ 50% (Fase 11 implementada, verificación visual pendiente)
+Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅, Fase 12 pendiente)
 
 ---
 
@@ -422,16 +422,11 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 - ✅ **BUG-29: Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
 - ✅ **BUG-30: Notificación de resumen del día se envía duplicada** — Resuelto (71d6e92): isSendingReports guard en ReportNotificationService
 
-### Después de 10.5: Fase 11 — Sistema de Temas Independientes (V1.2)
+### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
 
-**Plan completo:** `.planning/THEME-REFACTOR-PLAN.md`
+Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
 
-Refactorizar el sistema de colores para soportar temas completamente independientes.
-Arquitectura: YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager.
-Elimina el hack de `.id(userThemeRaw)` que reinicia la app al cambiar tema.
-~60-70 archivos a migrar, cambio mecánico (`Color.yalaBackground` → `.thBackground`).
-
-### Después de Fase 11: Fase 12 — Plataforma Extendida (V1.2)
+### Siguiente: Fase 12 — Plataforma Extendida (V1.2)
 
 Ver ROADMAP.md para detalles.
 
@@ -524,10 +519,8 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: BUG-29 + BUG-30 fixes — chevron navigation en Presupuestos + guard duplicación notificaciones
-Next step: Verificación visual de los 6 temas en simulador + QA manual BUG-29/30
+Stopped at: Fase 11 cerrada — verificación visual OK, QA scenarios corregidos (Cyan→Teal)
+Next step: Fase 12 — Plataforma Extendida (Watch, iPad/Mac, Smart Insights, reportes)
 Resume context:
-- BUG-29: periodNavigationHeader en BudgetsListView, periodLabel/previousPeriod/nextPeriod en VM
-- BUG-30: isSendingReports flag en ReportNotificationService (@MainActor safe)
-- Fase 11 en progreso: YalaTheme struct, ThemeColor ShapeStyle, @Observable ThemeManager
-- Archivos nuevos: ThemeColor.swift, ThemeManager.swift, YalaTheme.swift
+- Fase 11 completada: 6 temas, ThemeColor ShapeStyle, ThemeManager, 0 colores legacy
+- STATE.md y ROADMAP.md actualizados
