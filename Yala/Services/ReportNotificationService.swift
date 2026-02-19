@@ -24,10 +24,16 @@ final class ReportNotificationService {
 
     private init() {}
 
+    /// Guard flag to prevent concurrent sendDueReports calls (race between bootstrap and becameActive)
+    private var isSendingReports = false
+
     // MARK: - Public Methods
 
     /// Sends report notifications that are due based on their configuration
     func sendDueReports(context: ModelContext) async {
+        guard !isSendingReports else { return }
+        isSendingReports = true
+        defer { isSendingReports = false }
         guard await NotificationService.shared.isAuthorized() else { return }
 
         let reports = fetchActiveReportNotifications(context: context)

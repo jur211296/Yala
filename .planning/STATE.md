@@ -28,6 +28,7 @@ Progress: V1.2 ████████░░░░░░░░ 50% (Fase 11 imp
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-19] d744e13 chore: rename cyan theme to teal + clean up completed planning docs
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
 - [2026-02-18] d1eab6b fix: widen metric selector touch targets in TrendsTabView
 - [2026-02-18] 6796274 fix: make YalaToolbarButton circular with buttonBorderShape(.circle)
@@ -415,6 +416,12 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
   - Pasar `selectedNatures` del filtro activo al `natureCriteria` en CategoriesTabView
   - Mantener el dimming visual para naturalezas no seleccionadas, pero que el KPI refleje solo la seleccionada
 
+### Bugs Pre-Release Pendientes
+
+- **BUG-29: Selector de mes falta en Presupuestos** — En Pagos Planificados se implementó un selector de mes con chevrones a los lados (mes anterior / siguiente) que es claro y útil. Hay que replicar el mismo componente idéntico en la vista de Presupuestos.
+
+- **BUG-30: Notificación de resumen del día se envía duplicada** — A veces la notificación de resumen diario llega 2 veces al mismo tiempo. Investigar causa (posible doble scheduling o doble trigger de background task).
+
 ### Después de 10.5: Fase 11 — Sistema de Temas Independientes (V1.2)
 
 **Plan completo:** `.planning/THEME-REFACTOR-PLAN.md`
@@ -517,8 +524,8 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Fase 11 — Sistema de temas completado (ThemeManager + YalaTheme + ThemeColor + propagación accent a ~150 archivos)
-Next step: Continuar Fase 11 — verificar que todos los temas se aplican correctamente, considerar temas adicionales
+Stopped at: Fase 11 — Tema cyan renombrado a teal (#00C2CB), docs de planning limpiados
+Next step: Verificación visual de los 6 temas en simulador
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
 - Fase 11 en progreso: YalaTheme struct, ThemeColor ShapeStyle, @Observable ThemeManager

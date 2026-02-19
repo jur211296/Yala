@@ -12,6 +12,7 @@ struct BudgetsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
@@ -103,17 +104,10 @@ struct BudgetsListView: View {
                 .padding(.top, DS.Spacing.md)
                 .padding(.bottom, DS.Spacing.sm)
 
-            // Period selector button and hide inactive toggle (hidden for "Unique" mode)
             if selectedSegment != 3 {
-                HStack(spacing: DS.Spacing.md) {
-                    periodSelectorButton
-
-                    Spacer()
-
-                    hideInactiveButton
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.md)
+                // Period navigation header with chevrons
+                periodNavigationHeader
+                    .padding(.bottom, DS.Spacing.md)
             } else {
                 // For unique mode, only show the hide inactive button
                 HStack {
@@ -164,89 +158,59 @@ struct BudgetsListView: View {
         }
     }
 
-    // MARK: - Period Selector Button
+    // MARK: - Period Navigation Header
 
-    private var periodSelectorButton: some View {
-        Button {
-            showPeriodSelector = true
-        } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Text(currentPeriodText)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(DS.Typography.indicator)
+    private var periodNavigationHeader: some View {
+        HStack {
+            Button {
+                dsWithAnimation(reduceMotion) {
+                    viewModel.previousPeriod()
+                    refreshData()
+                }
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
+                    .frame(width: 36, height: 36)
             }
-            .padding(.horizontal, DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.sm)
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Button {
+                showPeriodSelector = true
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(viewModel.periodLabel)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+
+                    Image(systemName: "chevron.down")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            hideInactiveButton
+
+            Button {
+                dsWithAnimation(reduceMotion) {
+                    viewModel.nextPeriod()
+                    refreshData()
+                }
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 36, height: 36)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
-    }
-
-    private var currentPeriodText: String {
-        let calendar = Calendar.current
-        let dateFormatter = DateFormatter()
-
-        switch viewModel.selectedPeriodType {
-        case .weekly:
-            let currentWeek = calendar.startOfWeek(for: Date())
-            let selectedWeek = viewModel.selectedWeek
-
-            // Check if it's current, previous, or next week
-            if calendar.isDate(selectedWeek, equalTo: currentWeek, toGranularity: .weekOfYear) {
-                return L10n.Period.thisWeek
-            } else if let previousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeek),
-                      calendar.isDate(selectedWeek, equalTo: previousWeek, toGranularity: .weekOfYear) {
-                return L10n.Period.lastWeek
-            } else if let nextWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: currentWeek),
-                      calendar.isDate(selectedWeek, equalTo: nextWeek, toGranularity: .weekOfYear) {
-                return L10n.Period.nextWeek
-            } else {
-                dateFormatter.dateFormat = "d MMM"
-                let start = dateFormatter.string(from: selectedWeek)
-                let end = calendar.date(byAdding: .day, value: 6, to: selectedWeek) ?? selectedWeek
-                let endString = dateFormatter.string(from: end)
-                return "\(start) - \(endString)"
-            }
-
-        case .monthly:
-            let currentMonth = calendar.startOfMonth(for: Date())
-            let selectedMonth = viewModel.selectedMonth
-
-            // Check if it's current, previous, or next month
-            if calendar.isDate(selectedMonth, equalTo: currentMonth, toGranularity: .month) {
-                return L10n.Period.thisMonth
-            } else if let previousMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth),
-                      calendar.isDate(selectedMonth, equalTo: previousMonth, toGranularity: .month) {
-                return L10n.Period.lastMonth
-            } else if let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth),
-                      calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
-                return L10n.Period.nextMonth
-            } else {
-                dateFormatter.dateFormat = "MMMM yyyy"
-                return dateFormatter.string(from: selectedMonth).capitalized
-            }
-
-        case .yearly:
-            let currentYear = calendar.component(.year, from: Date())
-            let selectedYear = viewModel.selectedYear
-
-            // Check if it's current, previous, or next year
-            if selectedYear == currentYear {
-                return L10n.Period.thisYear
-            } else if selectedYear == currentYear - 1 {
-                return L10n.Period.lastYear
-            } else if selectedYear == currentYear + 1 {
-                return L10n.Period.nextYear
-            } else {
-                return "\(selectedYear)"
-            }
-
-        case .unique:
-            return ""
-        }
+        .padding(.vertical, DS.Spacing.sm)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Hide Inactive Button
