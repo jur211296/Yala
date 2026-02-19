@@ -312,6 +312,9 @@ struct NatureTrendWidget: View {
 }
 
 struct NatureTrendChartView: View {
+    @Environment(\.yalaTheme) private var theme
+    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+
     let points: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
     let currencyCode: String
@@ -394,6 +397,37 @@ struct NatureTrendChartView: View {
         )
     }
 
+    // MARK: - Average Line Logic
+
+    private var shouldShowTotalAverage: Bool {
+        averageLineMode == 1 && points.count >= 2
+    }
+
+    private var shouldShowSegmentedAverage: Bool {
+        averageLineMode == 2
+    }
+
+    private var totalAverageValue: Double {
+        guard !points.isEmpty else { return 0 }
+        if let nature = selectedNature {
+            let values = points.map { $0.amount(for: nature) }
+            return values.reduce(0, +) / Double(values.count)
+        } else {
+            let values = points.map { $0.total }
+            return values.reduce(0, +) / Double(values.count)
+        }
+    }
+
+    private var averageSegments: [AverageSegment] {
+        let values: [(date: Date, amount: Double)]
+        if let nature = selectedNature {
+            values = points.map { (date: $0.date, amount: $0.amount(for: nature)) }
+        } else {
+            values = points.map { (date: $0.date, amount: $0.total) }
+        }
+        return AverageSegment.compute(from: values, barGrouping: grouping)
+    }
+
     var body: some View {
         let chartUnit = mapGroupingToUnit(grouping)
 
@@ -418,7 +452,7 @@ struct NatureTrendChartView: View {
                         )
                         .foregroundStyle(item.nature.color.gradient)
                         .cornerRadius(DS.Radius.xs)
-                    }
+                                            }
                 } else {
                     BarMark(
                         x: .value("Fecha", item.date, unit: chartUnit),
@@ -426,8 +460,10 @@ struct NatureTrendChartView: View {
                     )
                     .foregroundStyle(item.nature.color.gradient)
                     .cornerRadius(DS.Radius.xs)
-                }
+                                    }
             }
+
+            averageLineMarks
         }
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
@@ -538,6 +574,23 @@ struct NatureTrendChartView: View {
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
                             }
+
+                            // Average line in tooltip
+                            if let avg = tooltipAverage(for: selectedData.date) {
+                                Divider()
+                                HStack {
+                                    Text(L10n.Widget.average)
+                                        .font(DS.Typography.captionSmall)
+                                        .foregroundStyle(Color.secondary)
+                                    Spacer()
+                                    Text(
+                                        YalaFormatter.currency(
+                                            value: avg, currencyCode: currencyCode)
+                                    )
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(Color.primary)
+                                }
+                            }
                         }
                     }
                     .padding(DS.Spacing.sm)
@@ -553,6 +606,74 @@ struct NatureTrendChartView: View {
                     )
                 }
             }
+        }
+    }
+
+    // MARK: - Average Line Chart Content
+
+    /// Whether bars should be dimmed (segmented average active)
+    private var isSegmentedAverageActive: Bool {
+        shouldShowSegmentedAverage && averageSegments.count >= 2
+    }
+
+    /// Returns the applicable average for a given date, or nil if off
+    private func tooltipAverage(for date: Date) -> Double? {
+        if shouldShowTotalAverage {
+            return totalAverageValue
+        }
+        if isSegmentedAverageActive {
+            return averageSegments.first(where: { date >= $0.startDate && date < $0.endDate })?.average
+        }
+        if averageLineMode == 2 && points.count >= 2 {
+            return totalAverageValue
+        }
+        return nil
+    }
+
+    @ChartContentBuilder
+    private var averageLineMarks: some ChartContent {
+        if shouldShowTotalAverage {
+            RuleMark(y: .value("Avg", totalAverageValue))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatAxisAmount(totalAverageValue))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
+        }
+
+        if shouldShowSegmentedAverage && averageSegments.count >= 2 {
+            ForEach(Array(averageSegments.enumerated()), id: \.offset) { index, segment in
+                RuleMark(
+                    xStart: .value("SegStart", segment.startDate),
+                    xEnd: .value("SegEnd", segment.endDate),
+                    y: .value("Avg", segment.average)
+                )
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 3))
+                .annotation(
+                    position: index.isMultiple(of: 2) ? .top : .bottom,
+                    alignment: .center
+                ) {
+                    Text(formatAxisAmount(segment.average))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(.thCard.opacity(0.85))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                }
+            }
+        } else if averageLineMode == 2 && points.count >= 2 {
+            RuleMark(y: .value("Avg", totalAverageValue))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatAxisAmount(totalAverageValue))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
         }
     }
 

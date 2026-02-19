@@ -10,6 +10,7 @@ import SwiftUI
 
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
+    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
     let summary: CashFlowSummary
@@ -278,6 +279,41 @@ struct CashFlowWidget: View {
         return expenseBottom...incomeTop
     }
 
+    // MARK: - Average Line Logic
+
+    /// Whether the total average line should be shown
+    private var shouldShowTotalAverage: Bool {
+        averageLineMode == 1
+            && activeChartData.count >= 2
+            && !isWaterfallMode
+            && (hasOnlyExpenses || hasOnlyIncome)
+    }
+
+    /// Whether segmented average should be shown
+    private var shouldShowSegmentedAverage: Bool {
+        averageLineMode == 2
+            && !isWaterfallMode
+            && (hasOnlyExpenses || hasOnlyIncome)
+    }
+
+    /// Average value for total mode
+    private var totalAverageValue: Double {
+        guard !activeChartData.isEmpty else { return 0 }
+        let values = activeChartData.map { hasOnlyExpenses ? $0.expense : $0.income }
+        return values.reduce(0, +) / Double(values.count)
+    }
+
+    /// Compute average segments for segmented mode
+    private var averageSegments: [AverageSegment] {
+        let values: [(date: Date, amount: Double)] = activeChartData.map {
+            (date: $0.date, amount: hasOnlyExpenses ? $0.expense : $0.income)
+        }
+        return AverageSegment.compute(
+            from: values,
+            barGrouping: grouping
+        )
+    }
+
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
             // Header with title, subtitle and value
@@ -409,7 +445,7 @@ struct CashFlowWidget: View {
                                 )
                                 .foregroundStyle(Color.expenseGraph.gradient)
                                 .cornerRadius(DS.Radius.xs)
-                            } else if hasOnlyIncome {
+                                                            } else if hasOnlyIncome {
                                 // Only income mode: show income bars upward (teal)
                                 BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
@@ -417,7 +453,7 @@ struct CashFlowWidget: View {
                                 )
                                 .foregroundStyle(Color.incomeGraph.gradient)
                                 .cornerRadius(DS.Radius.xs)
-                            } else {
+                                                            } else {
                                 // Default bidirectional mode (monthly)
                                 BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
@@ -453,6 +489,8 @@ struct CashFlowWidget: View {
                             }
                         }
                     }
+
+                    averageLineMarks
                 }  // Close Chart
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
@@ -563,6 +601,24 @@ struct CashFlowWidget: View {
                                         }
                                     }
                                 }
+
+                                // Average line in tooltip
+                                if let avg = tooltipAverage(for: selectedData.date) {
+                                    Divider()
+                                    HStack(spacing: DS.Spacing.xs) {
+                                        Text("x̄")
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.thSecondaryText)
+                                            .frame(width: 6)
+                                        Text(
+                                            YalaFormatter.currency(
+                                                value: avg,
+                                                currencyCode: summary.currencyCode)
+                                        )
+                                        .font(DS.Typography.labelTiny)
+                                        .foregroundStyle(.primary)
+                                    }
+                                }
                             }
                             .padding(DS.Spacing.sm)
                             .background(
@@ -671,6 +727,87 @@ struct CashFlowWidget: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.xl)
         }
+    }
+
+    // MARK: - Average Line Chart Content
+
+    @ChartContentBuilder
+    private var averageLineMarks: some ChartContent {
+        if shouldShowTotalAverage {
+            RuleMark(y: .value("Avg", totalAverageValue))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatK(totalAverageValue))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
+        }
+
+        if shouldShowSegmentedAverage && averageSegments.count >= 2 {
+            ForEach(Array(averageSegments.enumerated()), id: \.offset) { index, segment in
+                RuleMark(
+                    xStart: .value("SegStart", segment.startDate),
+                    xEnd: .value("SegEnd", segment.endDate),
+                    y: .value("Avg", segment.average)
+                )
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 3))
+                .annotation(
+                    position: index.isMultiple(of: 2) ? .top : .bottom,
+                    alignment: .center
+                ) {
+                    averageSegmentLabel(segment: segment, index: index)
+                }
+            }
+        } else if averageLineMode == 2 && !isWaterfallMode
+            && (hasOnlyExpenses || hasOnlyIncome) && activeChartData.count >= 2
+        {
+            // Fallback to total when < 2 segments
+            RuleMark(y: .value("Avg", totalAverageValue))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatK(totalAverageValue))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
+        }
+    }
+
+    // MARK: - Average Segment Label
+
+    @ViewBuilder
+    private func averageSegmentLabel(segment: AverageSegment, index: Int) -> some View {
+        Text(formatK(segment.average))
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.thSecondaryText)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
+            .background(.thCard.opacity(0.85))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+    }
+
+    /// Whether bars should be dimmed (segmented average active)
+    private var isSegmentedAverageActive: Bool {
+        shouldShowSegmentedAverage && averageSegments.count >= 2
+    }
+
+    /// Returns the applicable average for a given date (total or segment), or nil if off
+    private func tooltipAverage(for date: Date) -> Double? {
+        if shouldShowTotalAverage {
+            return totalAverageValue
+        }
+        if isSegmentedAverageActive {
+            return averageSegments.first(where: { date >= $0.startDate && date < $0.endDate })?.average
+        }
+        // Fallback: segmented mode but < 2 segments → total
+        if averageLineMode == 2 && !isWaterfallMode
+            && (hasOnlyExpenses || hasOnlyIncome) && activeChartData.count >= 2
+        {
+            return totalAverageValue
+        }
+        return nil
     }
 
     // Empty state view

@@ -621,6 +621,7 @@
 "widget.noRecordsForFilters" = "No records for this period and filters";
 "widget.recordsWillAppear" = "When you add transactions, they will appear here.";
 "widget.total" = "Total";
+"widget.average" = "Average";
 
 
 "common.uncategorized" = "Uncategorized";
@@ -1263,6 +1264,14 @@
 "settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
 "settings.showVariations" = "Comparisons";
 "settings.showVariationsDescription" = "Show percentage variations and comparison charts vs the previous period.";
+"settings.averageLine" = "Average line";
+"settings.averageLineDescription" = "Show an average line on bar charts.";
+"settings.averageLine.off" = "Off";
+"settings.averageLine.total" = "Total";
+"settings.averageLine.segmented" = "Segmented";
+"settings.averageLine.offDescription" = "No average line on charts.";
+"settings.averageLine.totalDescription" = "A horizontal line showing the overall average.";
+"settings.averageLine.segmentedDescription" = "Segments by period with percentage variation.";
 "settings.decimalPlaces" = "Decimal places";
 "settings.decimalPlacesDescription" = "Applies only to totals and charts. Individual records always show 2 decimals.";
 "settings.decimalsNone" = "No decimals";

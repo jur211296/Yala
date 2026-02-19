@@ -1465,6 +1465,30 @@ enum L10n {
         static var showVariationsDescription: String {
             ls("settings.showVariationsDescription", comment: "")
         }
+        static var averageLine: String {
+            ls("settings.averageLine", comment: "")
+        }
+        static var averageLineDescription: String {
+            ls("settings.averageLineDescription", comment: "")
+        }
+        static var averageLineOff: String {
+            ls("settings.averageLine.off", comment: "")
+        }
+        static var averageLineTotal: String {
+            ls("settings.averageLine.total", comment: "")
+        }
+        static var averageLineSegmented: String {
+            ls("settings.averageLine.segmented", comment: "")
+        }
+        static var averageLineOffDescription: String {
+            ls("settings.averageLine.offDescription", comment: "")
+        }
+        static var averageLineTotalDescription: String {
+            ls("settings.averageLine.totalDescription", comment: "")
+        }
+        static var averageLineSegmentedDescription: String {
+            ls("settings.averageLine.segmentedDescription", comment: "")
+        }
         static var decimalPlaces: String {
             ls("settings.decimalPlaces", comment: "")
         }
@@ -1720,6 +1744,7 @@ enum L10n {
             ls("widget.recordsWillAppear", comment: "")
         }
         static var total: String { ls("widget.total", comment: "") }
+        static var average: String { ls("widget.average", comment: "") }
 
         // Widget Hints
         enum Hint {

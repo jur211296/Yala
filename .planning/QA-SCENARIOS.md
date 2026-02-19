@@ -4657,6 +4657,67 @@ Para cada tema verificar:
 3. Confirmar
 4. **Verificar:** El tema se resetea a System
 
+## Sección 39: Línea Promedio en Gráficas de Barras
+
+### 39.1 Picker en Personalización
+1. Ir a Ajustes → Personalización → sección Indicadores
+2. **Verificar:** Aparece "Línea promedio" con picker segmentado (Desactivada / Total / Fragmentada)
+3. Cambiar entre las 3 opciones
+4. **Verificar:** La selección se persiste al cerrar y reabrir la app
+
+### 39.2 Modo Total — CashFlow solo gastos
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel con periodo que tenga solo gastos (≥2 barras)
+3. **Verificar:** Aparece una línea horizontal discontinua con "x̄ {valor}"
+4. **Verificar:** La línea está al nivel del promedio de las barras
+
+### 39.3 Modo Total — NatureTrend
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel → widget de distribución por naturaleza (modo grande con chart)
+3. **Verificar:** Aparece línea promedio horizontal con "x̄ {valor}"
+4. Filtrar por una naturaleza específica (ej: Esencial)
+5. **Verificar:** La línea se recalcula para esa naturaleza
+
+### 39.4 Modo Total — CashFlow bidireccional NO muestra línea
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel con periodo que tenga ingresos Y gastos (sin filtro de métrico)
+3. **Verificar:** NO aparece ninguna línea promedio
+4. Cambiar a modo waterfall (agrupación diaria, bidireccional)
+5. **Verificar:** NO aparece línea promedio
+
+### 39.5 Sin datos suficientes
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel con periodo que tenga solo 1 data point (ej: este mes con 1 día)
+3. **Verificar:** NO aparece línea promedio (mínimo 2 barras)
+
+### 39.6 Modo Fragmentado — CashFlow solo gastos
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con periodo 6M+ y barras mensuales (solo gastos)
+3. **Verificar:** Aparecen segmentos horizontales discontinuos por trimestre
+4. **Verificar:** Cada segmento muestra "x̄ {valor}" y variación % entre segmentos consecutivos
+5. **Verificar:** Variación positiva en color accent (indigo), negativa en accentSecondary (hotPink)
+6. **Verificar:** Labels alternan posición arriba/abajo para evitar solapamiento
+
+### 39.7 Modo Fragmentado — fallback a Total
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con periodo corto (ej: 3 meses, barras mensuales → no alcanza para trimestres)
+3. **Verificar:** Se muestra una línea total (fallback) en lugar de segmentos
+
+### 39.8 Modo Fragmentado — barras diarias agrupan por semana
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con barras diarias y al menos 2 semanas de datos
+3. **Verificar:** Se agrupan los datos por semana, mostrando un segmento por semana
+
+### 39.9 Modo Fragmentado — barras semanales agrupan por mes
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con barras semanales y al menos 2 meses de datos
+3. **Verificar:** Se agrupan los datos por mes, mostrando un segmento por mes
+
+### 39.10 Desactivada — sin línea en ninguna gráfica
+1. Seleccionar "Desactivada" en Personalización
+2. Navegar por Panel y Estadísticas
+3. **Verificar:** Ninguna gráfica de barras muestra línea promedio
+
 ### 38.8 Widgets iOS NO se afectan
 1. Tener widgets de Yala en pantalla de inicio
 2. Cambiar el tema de la app a Indigo/Rosa/Teal

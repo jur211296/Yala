@@ -511,11 +511,20 @@ DoD:
 
 Incluye:
 - [ ] Integración con Apple Watch (registro rápido, balance, widgets)
-- [ ] Refinamiento versión iPad/Mac (layouts adaptados, sidebar)
+- [x] Refinamiento versión iPad/Mac (layouts adaptados, sidebar) ✅
 - [ ] Vista de Smart Insights (patrones de gasto, alertas inteligentes)
 - [ ] Integrar Smart Insights a lo largo de la app (contextuales)
 - [ ] Vista de reporte financiero (exportable PDF/Excel)
 - [ ] Filtros avanzados: excluir/incluir en DetailContainerView
+- [ ] Línea promedio en gráficas de barras verticales (CashFlow ingreso/gasto, Naturaleza)
+- [ ] Integración Siri para registro rápido de gastos
+- [ ] Widgets para Lock Screen (WidgetFamily.accessory)
+- [ ] Vista de análisis de presupuesto (detalle, tendencias, proyección)
+- [ ] Split de transacciones (dividir en múltiples partes/personas)
+- [ ] Predicción de saldo en gráfica de tendencias
+- [ ] Perfil para Smart Insights según usuario (ahorrador, justo, sobrado)
+- [ ] Visualizador de ahorros (metas amarradas a cuentas de ahorro)
+- [ ] Tracking de flujo mensual (ingresos vs gastos recurrentes, saldo libre)
 
 DoD:
 - App funcional en Watch con registro y balance

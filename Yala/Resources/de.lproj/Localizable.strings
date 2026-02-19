@@ -619,6 +619,7 @@
 "widget.noRecordsForFilters" = "Noch keine Einträge für diesen Zeitraum und diese Filter";
 "widget.recordsWillAppear" = "Wenn du Transaktionen erfasst, erscheinen sie hier.";
 "widget.total" = "Gesamt";
+"widget.average" = "Durchschnitt";
 
 
 "common.uncategorized" = "Nicht kategorisiert";
@@ -1263,6 +1264,14 @@
 "settings.widgetHintsDescription" = "Zeigt Info-Buttons auf Widgets mit Erklärungen zu jedem Diagramm.";
 "settings.showVariations" = "Vergleiche";
 "settings.showVariationsDescription" = "Zeigt prozentuale Veränderungen und Vergleichsdiagramme vs. der Vorperiode.";
+"settings.averageLine" = "Durchschnittslinie";
+"settings.averageLineDescription" = "Zeigt eine Durchschnittslinie in Balkendiagrammen.";
+"settings.averageLine.off" = "Aus";
+"settings.averageLine.total" = "Gesamt";
+"settings.averageLine.segmented" = "Segmentiert";
+"settings.averageLine.offDescription" = "Keine Durchschnittslinie in Diagrammen.";
+"settings.averageLine.totalDescription" = "Eine horizontale Linie mit dem Gesamtdurchschnitt.";
+"settings.averageLine.segmentedDescription" = "Segmente nach Zeitraum mit prozentualer Veränderung.";
 "settings.decimalPlaces" = "Dezimalstellen";
 "settings.decimalPlacesDescription" = "Gilt nur für Summen und Grafiken. Einzelne Datensätze zeigen immer 2 Dezimalstellen.";
 "settings.decimalsNone" = "Keine Dezimalstellen";

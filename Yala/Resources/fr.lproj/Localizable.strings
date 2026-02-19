@@ -619,6 +619,7 @@
 "widget.noRecordsForFilters" = "Aucun enregistrement pour cette periode et ces filtres";
 "widget.recordsWillAppear" = "Lorsque vous enregistrerez des transactions, elles apparaitront ici.";
 "widget.total" = "Total";
+"widget.average" = "Moyenne";
 
 
 "common.uncategorized" = "Non categorise";
@@ -1263,6 +1264,14 @@
 "settings.widgetHintsDescription" = "Afficher des boutons d'info sur les widgets avec des explications sur chaque graphique.";
 "settings.showVariations" = "Comparaisons";
 "settings.showVariationsDescription" = "Affiche les variations en pourcentage et les graphiques comparatifs vs la période précédente.";
+"settings.averageLine" = "Ligne moyenne";
+"settings.averageLineDescription" = "Affiche une ligne de moyenne sur les graphiques à barres.";
+"settings.averageLine.off" = "Désactivée";
+"settings.averageLine.total" = "Total";
+"settings.averageLine.segmented" = "Segmentée";
+"settings.averageLine.offDescription" = "Pas de ligne de moyenne sur les graphiques.";
+"settings.averageLine.totalDescription" = "Une ligne horizontale montrant la moyenne générale.";
+"settings.averageLine.segmentedDescription" = "Segments par période avec variation en pourcentage.";
 "settings.decimalPlaces" = "Décimales";
 "settings.decimalPlacesDescription" = "S'applique uniquement aux totaux et graphiques. Les enregistrements individuels affichent toujours 2 décimales.";
 "settings.decimalsNone" = "Sans décimales";

@@ -20,6 +20,7 @@ struct PersonalizationSettingsView: View {
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
     @AppStorage("showVariations") private var showVariations: Bool = true
+    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
     @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
 
@@ -27,6 +28,7 @@ struct PersonalizationSettingsView: View {
     @State private var showingDecimalsPicker = false
     @State private var showingCurrencyFormatPicker = false
     @State private var showingTabBarConfig = false
+    @State private var showingAverageLinePicker = false
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
     @State private var showingExpensesOnlyConfirmation = false
@@ -44,6 +46,14 @@ struct PersonalizationSettingsView: View {
         case 0: return L10n.Settings.decimalsNone
         case 1: return L10n.Settings.decimalsOne
         default: return L10n.Settings.decimalsTwo
+        }
+    }
+
+    private var averageLineDisplayName: String {
+        switch averageLineMode {
+        case 1: return L10n.Settings.averageLineTotal
+        case 2: return L10n.Settings.averageLineSegmented
+        default: return L10n.Settings.averageLineOff
         }
     }
 
@@ -359,6 +369,43 @@ struct PersonalizationSettingsView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
+
+                        // Average Line Picker
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Button {
+                                showingAverageLinePicker = true
+                            } label: {
+                                HStack {
+                                    Text(L10n.Settings.averageLine)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    Spacer()
+
+                                    Text(averageLineDisplayName)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
+
+                                    Image(systemName: "chevron.right")
+                                        .font(DS.Typography.labelSmall.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .background(.thCard)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            Text(L10n.Settings.averageLineDescription)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, DS.Spacing.xxs)
+                        }
                     }
 
                     // MARK: - Formato Section
@@ -512,6 +559,16 @@ struct PersonalizationSettingsView: View {
                 }
             )
             .presentationDetents([.height(280)])
+        }
+        .sheet(isPresented: $showingAverageLinePicker) {
+            AverageLinePickerSheet(
+                selectedMode: averageLineMode,
+                onSelect: { mode in
+                    averageLineMode = mode
+                    showingAverageLinePicker = false
+                }
+            )
+            .presentationDetents([.height(320)])
         }
         .sheet(isPresented: $showingLanguagePicker) {
             LanguagePickerSheet(
@@ -940,6 +997,91 @@ private struct LanguagePickerSheet: View {
                 Divider()
                     .padding(.leading, DS.Spacing.lg)
             }
+        }
+    }
+}
+
+// MARK: - Average Line Picker Sheet
+
+private struct AverageLinePickerSheet: View {
+    let selectedMode: Int
+    let onSelect: (Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private let options: [(value: Int, label: String, description: String)] = [
+        (0, L10n.Settings.averageLineOff, L10n.Settings.averageLineOffDescription),
+        (1, L10n.Settings.averageLineTotal, L10n.Settings.averageLineTotalDescription),
+        (2, L10n.Settings.averageLineSegmented, L10n.Settings.averageLineSegmentedDescription),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.none) {
+                        ForEach(options, id: \.value) { option in
+                            averageLineRow(for: option)
+                        }
+                    }
+                    .background(.thCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                    .padding(DS.Spacing.lg)
+                }
+            }
+            .navigationTitle(L10n.Settings.averageLine)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func averageLineRow(for option: (value: Int, label: String, description: String)) -> some View {
+        let isSelected = selectedMode == option.value
+
+        Button {
+            onSelect(option.value)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(option.label)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thPrimaryText)
+
+                    Text(option.description)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.thAccent)
+                        .font(DS.Typography.headline)
+                }
+            }
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        if option.value != 2 {
+            Divider()
+                .padding(.leading, DS.Spacing.lg)
         }
     }
 }

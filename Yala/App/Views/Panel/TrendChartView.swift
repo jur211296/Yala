@@ -17,6 +17,7 @@ struct TrendChartView: View {
     let period: DetailPeriod
     var chartHeight: CGFloat = 220
 
+    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
     @State private var draggingDate: Date?  // For transient drag state
 
     var body: some View {
@@ -133,6 +134,9 @@ struct TrendChartView: View {
                         .shadow(radius: 1)
                 }
 
+            // Average line
+            averageLineMarks
+
             // Interaction: Scrubbing Rule Mark
             if let activeDate = draggingDate ?? focusedDate,
                 let selectedPoint = closestPoint(to: activeDate, in: data),
@@ -176,6 +180,20 @@ struct TrendChartView: View {
                         Text("\(formattedAmount(rawValue)) \(currencyCode)")
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.thPrimaryText)
+
+                        // Average in tooltip
+                        if let avg = totalAverageValue {
+                            Divider()
+                            HStack {
+                                Text("x̄")
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
+                                    .frame(width: 10)
+                                Text("\(formattedAmount(avg)) \(currencyCode)")
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.primary)
+                            }
+                        }
                     }
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xs)
@@ -365,5 +383,28 @@ struct TrendChartView: View {
             .number
                 .precision(.fractionLength(0))
         )
+    }
+
+    // MARK: - Average Line (balance only, always total — no segmented for line charts)
+
+    /// Total average of raw point values (nil when off or not balance)
+    private var totalAverageValue: Double? {
+        guard trendType == .balance, averageLineMode >= 1, rawPoints.count >= 2 else { return nil }
+        let sum = rawPoints.reduce(0.0) { $0 + $1.value }
+        return sum / Double(rawPoints.count)
+    }
+
+    @ChartContentBuilder
+    private var averageLineMarks: some ChartContent {
+        if let avg = totalAverageValue {
+            RuleMark(y: .value("Avg", avg))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatK(avg))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
+        }
     }
 }

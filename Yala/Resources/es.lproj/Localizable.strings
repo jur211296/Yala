@@ -621,6 +621,7 @@
 "widget.noRecordsForFilters" = "No hay registros para este periodo y filtros";
 "widget.recordsWillAppear" = "Cuando registres movimientos, aparecerán aquí";
 "widget.total" = "Total";
+"widget.average" = "Promedio";
 
 
 "common.uncategorized" = "Sin categoría";
@@ -1263,6 +1264,14 @@
 "settings.widgetHintsDescription" = "Muestra botones de info en los widgets con explicaciones sobre cada gráfica.";
 "settings.showVariations" = "Comparativas";
 "settings.showVariationsDescription" = "Muestra variaciones porcentuales y gráficas comparativas vs el periodo anterior.";
+"settings.averageLine" = "Línea promedio";
+"settings.averageLineDescription" = "Muestra una línea de promedio en las gráficas de barras.";
+"settings.averageLine.off" = "Desactivada";
+"settings.averageLine.total" = "Total";
+"settings.averageLine.segmented" = "Fragmentada";
+"settings.averageLine.offDescription" = "Sin línea de promedio en las gráficas.";
+"settings.averageLine.totalDescription" = "Una línea horizontal con el promedio general.";
+"settings.averageLine.segmentedDescription" = "Segmentos por periodo con variación porcentual.";
 "settings.decimalPlaces" = "Decimales";
 "settings.decimalPlacesDescription" = "Se aplica solo a totales y gráficas. Los registros individuales siempre muestran 2 decimales.";
 "settings.decimalsNone" = "Sin decimales";
