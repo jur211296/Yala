@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-19] 5cf0528 fix: localize notification names and texts dynamically
 - [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
 - [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
 - [2026-02-19] d744e13 chore: rename cyan theme to teal + clean up completed planning docs
@@ -520,7 +521,7 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Línea promedio en gráficas — bar charts (CashFlow, NatureTrend) + line chart (TrendChartView balance only)
+Stopped at: Fix localización de notificaciones — nombres/textos default se resuelven dinámicamente via L10n
 Next step: Fase 12 — Plataforma Extendida (Watch, iPad/Mac, Smart Insights, reportes)
 Resume context:
 - Average line feature complete: Off/Total/Segmented picker in Personalization
