@@ -129,7 +129,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Create content
         let content = UNMutableNotificationContent()
-        content.title = item.name
+        content.title = item.localizedName
         content.body = item.displayText
         content.sound = .default
 
@@ -432,31 +432,3 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-// MARK: - Report Content Generation
-
-extension NotificationService {
-    /// Generate report notification content with actual data
-    func generateReportContent(
-        config: ReportConfig,
-        balance: Double,
-        expenses: Double,
-        income: Double,
-        topCategory: String?,
-        currencySymbol: String
-    ) -> String {
-        switch config.dataType {
-        case .balance:
-            return "Saldo: \(currencySymbol)\(String(format: "%.2f", balance))"
-        case .expenses:
-            return "Gastos: \(currencySymbol)\(String(format: "%.2f", expenses))"
-        case .income:
-            return "Ingresos: \(currencySymbol)\(String(format: "%.2f", income))"
-        case .topCategory:
-            if let category = topCategory {
-                return "Tu mayor gasto: \(category)"
-            } else {
-                return "No hay gastos este período"
-            }
-        }
-    }
-}

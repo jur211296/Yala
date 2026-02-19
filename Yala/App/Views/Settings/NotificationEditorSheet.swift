@@ -115,7 +115,7 @@ struct NotificationEditorSheet: View {
                     )
                 }
             }
-            .navigationTitle(notification?.name ?? L10n.Notifications.addNew)
+            .navigationTitle(notification?.localizedName ?? L10n.Notifications.addNew)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -595,8 +595,8 @@ struct NotificationEditorSheet: View {
             return
         }
 
-        name = notification.name
-        text = notification.text
+        name = notification.localizedName
+        text = notification.localizedText
         scheduledTime = notification.scheduledTime
 
         // Load icon/color for custom notifications

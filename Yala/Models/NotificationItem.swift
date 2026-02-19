@@ -458,6 +458,54 @@ extension NotificationItem {
     static let maxTextLength = 100
 }
 
+// MARK: - Localized Display
+
+extension NotificationItem {
+    /// Returns the localized name for predefined types, or the stored name for custom notifications
+    var localizedName: String {
+        switch notificationType {
+        case .endOfDay: return L10n.Notifications.endOfDayName
+        case .lunchTime: return L10n.Notifications.lunchTimeName
+        case .dailyReport: return L10n.Notifications.dailyReportName
+        case .weeklyReport: return L10n.Notifications.weeklyReportName
+        case .monthlyReport: return L10n.Notifications.monthlyReportName
+        case .scheduledPayments: return L10n.Notifications.scheduledPaymentsName
+        case .announcements: return L10n.Notifications.announcementsName
+        case .custom: return name
+        }
+    }
+
+    /// Returns the localized text if it matches a known default, or the stored text if user-customized
+    var localizedText: String {
+        switch notificationType {
+        case .endOfDay:
+            return Self.defaultEndOfDayTexts.contains(text) ? L10n.Notifications.endOfDayText : text
+        case .lunchTime:
+            return Self.defaultLunchTimeTexts.contains(text) ? L10n.Notifications.lunchTimeText : text
+        case .custom:
+            return text
+        default:
+            return text
+        }
+    }
+
+    // MARK: Default text sets (all supported languages)
+
+    private static let defaultEndOfDayTexts: Set<String> = collectDefaults(for: "notifications.endOfDay.text")
+    private static let defaultLunchTimeTexts: Set<String> = collectDefaults(for: "notifications.lunchTime.text")
+
+    private static func collectDefaults(for key: String) -> Set<String> {
+        var texts = Set<String>()
+        for lang in LanguageManager.supportedLanguages {
+            if let path = Bundle.main.path(forResource: lang.code, ofType: "lproj"),
+               let bundle = Bundle(path: path) {
+                texts.insert(NSLocalizedString(key, bundle: bundle, comment: ""))
+            }
+        }
+        return texts
+    }
+}
+
 // MARK: - Display Text Generation
 
 extension NotificationItem {
@@ -477,7 +525,7 @@ extension NotificationItem {
         case .announcements:
             return L10n.Notifications.announcementsHint
         default:
-            return text
+            return localizedText
         }
     }
 }

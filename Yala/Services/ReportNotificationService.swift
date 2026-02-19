@@ -45,7 +45,7 @@ final class ReportNotificationService {
             let data = calculateReportData(config: report.reportConfig, type: report.notificationType, context: context)
 
             await NotificationService.shared.sendNotification(
-                title: report.name,
+                title: report.localizedName,
                 body: formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
                 deepLink: "statistics"
             )

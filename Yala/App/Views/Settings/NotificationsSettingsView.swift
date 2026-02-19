@@ -347,7 +347,7 @@ struct NotificationCard: View {
                 // Content
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     HStack {
-                        Text(notification.name)
+                        Text(notification.localizedName)
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
