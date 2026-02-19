@@ -22,12 +22,13 @@ Last activity: 2026-02-18 — Scheduled payments paid status + per-occurrence wi
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
-Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pendiente)
+Progress: V1.2 ████████░░░░░░░░ 50% (Fase 11 implementada, verificación visual pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
 - [2026-02-18] d1eab6b fix: widen metric selector touch targets in TrendsTabView
 - [2026-02-18] 6796274 fix: make YalaToolbarButton circular with buttonBorderShape(.circle)
 - [2026-02-18] 3d552e0 fix: complete skip/unskip with draft recreation + notification guards
@@ -515,20 +516,12 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Stopped at: Mejoras UX Pagos Planificados completadas (M1-M7 + skip feature)
-Next step: Siguiente item del roadmap — Fase 11 (Temas) o nuevas mejoras pre-release
+Last session: 2026-02-19
+Stopped at: Fase 11 — Sistema de temas completado (ThemeManager + YalaTheme + ThemeColor + propagación accent a ~150 archivos)
+Next step: Continuar Fase 11 — verificar que todos los temas se aplican correctamente, considerar temas adicionales
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
-- Deep Scan S.1-S.4 todos resueltos/aceptados
-- iCloud sync: ALL 9 risks resolved (R1-R9) across fbbedde + 276b1a4
-- Skip/unskip feature completo: modelo, VM, vistas, widget, L10n, tests, QA scenarios
-- Paid status tracking completo en ViewModel + vistas + widget
-- Mejoras UX pagos planificados (SCHEDULED-PAYMENTS-UX.md) todas completadas:
-  - M1: Selector de mes ✅
-  - M2: Estado pagado por mes ✅
-  - M3: Asociar transacción manual ✅
-  - M4: No propagar pagos hacia atrás ✅
-  - M5: Indicador pagado en calendario ✅
-  - M6: Resumen pagado/pendiente ✅
-  - M7: Rediseño calendario ✅
+- Fase 11 en progreso: YalaTheme struct, ThemeColor ShapeStyle, @Observable ThemeManager
+- Commit cbe7678: 152 archivos, migración completa de Color.yala* → .th* + Color.electricIndigo/brandPrimary → theme.accent
+- "NO tocar" preservado: income/expense semantic, onboarding branding, splash, paywall hero, selection strokes, theme definition
+- Archivos nuevos: ThemeColor.swift, ThemeManager.swift, YalaTheme.swift

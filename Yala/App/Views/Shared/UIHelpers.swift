@@ -70,7 +70,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
     case dark = 2
     case indigo = 3
     case rosa = 4
-    case cyan = 5
+    case teal = 5
 
     var id: Int { rawValue }
 
@@ -81,7 +81,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .dark: return L10n.Settings.dark
         case .indigo: return L10n.Settings.themeIndigo
         case .rosa: return L10n.Settings.themeRosa
-        case .cyan: return L10n.Settings.themeCyan
+        case .teal: return L10n.Settings.themeTeal
         }
     }
 
@@ -89,7 +89,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         switch self {
         case .system: return nil
         case .light: return .light
-        case .dark, .indigo, .rosa, .cyan: return .dark
+        case .dark, .indigo, .rosa, .teal: return .dark
         }
     }
 
@@ -100,7 +100,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .dark: return .dark
         case .indigo: return .indigo
         case .rosa: return .rosa
-        case .cyan: return .cyan
+        case .teal: return .teal
         }
     }
 
@@ -108,7 +108,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
     var isPro: Bool {
         switch self {
         case .system, .light, .dark: return false
-        case .indigo, .rosa, .cyan: return true
+        case .indigo, .rosa, .teal: return true
         }
     }
 }

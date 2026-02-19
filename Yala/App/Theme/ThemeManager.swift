@@ -36,8 +36,8 @@ final class ThemeManager {
             return .indigo
         case .rosa:
             return .rosa
-        case .cyan:
-            return .cyan
+        case .teal:
+            return .teal
         }
     }
 }

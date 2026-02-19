@@ -1,7 +1,7 @@
 # Mejoras UX Pagos Planificados (Pre-Release)
 
 **Prioridad:** Pre-release V1.0
-**Estado:** Documentado — pendiente planificación
+**Estado:** ✅ COMPLETADO (commits 048edc2, 3d552e0, b7d21ec)
 **Fecha:** 2026-02-18
 
 ## Contexto

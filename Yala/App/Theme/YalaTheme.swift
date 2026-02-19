@@ -129,19 +129,19 @@ extension YalaTheme {
         baseColorScheme: .dark
     )
 
-    static let cyan = YalaTheme(
+    static let teal = YalaTheme(
         background: Color(hex: "0A1A1A"),
-        card: Color(hex: "122B2B"),
-        cardBorder: Color.neonCyan.opacity(0.15),
+        card: Color(hex: "0F2828"),
+        cardBorder: Color.priorityNature.opacity(0.15),
         primaryText: .white,
-        secondaryText: Color(hex: "7BC8C8"),  // cyan 60%
-        accent: Color.neonCyan,
+        secondaryText: Color(hex: "7BBFBF"),  // teal 60%
+        accent: Color.priorityNature,  // #00C2CB — legible over white icons
         accentSecondary: .hotPink,
         income: .priorityNature,
         expense: .hotPink,
-        tagChip: .neonCyan,
+        tagChip: .priorityNature,
         transfer: Color(hex: "64748B"),
-        toolbarIcon: Color.neonCyan,
+        toolbarIcon: Color.priorityNature,
         destructive: .red,
         priorityNature: .priorityNature,
         essentialNature: .essentialNature,
