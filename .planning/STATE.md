@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
 - [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
 - [2026-02-19] d744e13 chore: rename cyan theme to teal + clean up completed planning docs
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
@@ -519,8 +520,12 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Fase 11 cerrada — verificación visual OK, QA scenarios corregidos (Cyan→Teal)
+Stopped at: Línea promedio en gráficas — bar charts (CashFlow, NatureTrend) + line chart (TrendChartView balance only)
 Next step: Fase 12 — Plataforma Extendida (Watch, iPad/Mac, Smart Insights, reportes)
 Resume context:
-- Fase 11 completada: 6 temas, ThemeColor ShapeStyle, ThemeManager, 0 colores legacy
-- STATE.md y ROADMAP.md actualizados
+- Average line feature complete: Off/Total/Segmented picker in Personalization
+- Bar charts: total (dashed) + segmented (solid 3pt with labels)
+- Line chart: total only, balance metric only (income/expense acumulativo no aplica)
+- Default: Total enabled for new users
+- AverageSegment.swift helper shared between widgets
+- QA scenarios added (Section 39)
