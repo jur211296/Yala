@@ -28,6 +28,7 @@ Progress: V1.2 ████████░░░░░░░░ 50% (Fase 11 imp
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
 - [2026-02-19] d744e13 chore: rename cyan theme to teal + clean up completed planning docs
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
 - [2026-02-18] d1eab6b fix: widen metric selector touch targets in TrendsTabView
@@ -418,9 +419,8 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 ### Bugs Pre-Release Pendientes
 
-- **BUG-29: Selector de mes falta en Presupuestos** — En Pagos Planificados se implementó un selector de mes con chevrones a los lados (mes anterior / siguiente) que es claro y útil. Hay que replicar el mismo componente idéntico en la vista de Presupuestos.
-
-- **BUG-30: Notificación de resumen del día se envía duplicada** — A veces la notificación de resumen diario llega 2 veces al mismo tiempo. Investigar causa (posible doble scheduling o doble trigger de background task).
+- ✅ **BUG-29: Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
+- ✅ **BUG-30: Notificación de resumen del día se envía duplicada** — Resuelto (71d6e92): isSendingReports guard en ReportNotificationService
 
 ### Después de 10.5: Fase 11 — Sistema de Temas Independientes (V1.2)
 
@@ -524,11 +524,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Fase 11 — Tema cyan renombrado a teal (#00C2CB), docs de planning limpiados
-Next step: Verificación visual de los 6 temas en simulador
+Stopped at: BUG-29 + BUG-30 fixes — chevron navigation en Presupuestos + guard duplicación notificaciones
+Next step: Verificación visual de los 6 temas en simulador + QA manual BUG-29/30
 Resume context:
-- V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
+- BUG-29: periodNavigationHeader en BudgetsListView, periodLabel/previousPeriod/nextPeriod en VM
+- BUG-30: isSendingReports flag en ReportNotificationService (@MainActor safe)
 - Fase 11 en progreso: YalaTheme struct, ThemeColor ShapeStyle, @Observable ThemeManager
-- Commit cbe7678: 152 archivos, migración completa de Color.yala* → .th* + Color.electricIndigo/brandPrimary → theme.accent
-- "NO tocar" preservado: income/expense semantic, onboarding branding, splash, paywall hero, selection strokes, theme definition
 - Archivos nuevos: ThemeColor.swift, ThemeManager.swift, YalaTheme.swift
