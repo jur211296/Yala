@@ -10,6 +10,7 @@ import SwiftData
 import SwiftUI
 
 struct ScheduledPaymentsListView: View {
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
 
     @Bindable var viewModel: ScheduledPaymentsViewModel
@@ -89,19 +90,19 @@ struct ScheduledPaymentsListView: View {
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Circle()
-                            .fill(Color.electricIndigo)
+                            .fill(theme.accent)
                             .frame(width: 8, height: 8)
                         Text(NSLocalizedString("scheduled.summary.paid", comment: ""))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
                         Text(YalaFormatter.currency(value: viewModel.monthlyTotalPaid, currencyCode: currencyCode))
                             .font(DS.Typography.label)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                     }
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
                     .background(
-                        Capsule().fill(viewModel.paymentStatusFilter == .paid ? Color.electricIndigo.opacity(0.12) : Color.clear)
+                        Capsule().fill(viewModel.paymentStatusFilter == .paid ? theme.accent.opacity(0.12) : Color.clear)
                     )
                 }
                 .buttonStyle(.plain)
@@ -136,7 +137,7 @@ struct ScheduledPaymentsListView: View {
         .padding(.horizontal, DS.Spacing.lg)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
                 .overlay(
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                         .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
@@ -168,7 +169,7 @@ struct ScheduledPaymentsListView: View {
             }
         }
         .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
+        .background(.thSecondaryText.opacity(0.08))
         .clipShape(Capsule())
     }
 
@@ -184,12 +185,12 @@ struct ScheduledPaymentsListView: View {
                 .font(DS.Typography.labelSmall)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
+                .foregroundStyle(isSelected ? .white : theme.secondaryText)
                 .background(
                     Group {
                         if isSelected {
                             Capsule()
-                                .fill(Color.electricIndigo)
+                                .fill(theme.accent)
                                 .matchedGeometryEffect(id: "viewModeSelector", in: viewModeNamespace)
                         }
                     }
@@ -344,7 +345,7 @@ struct ScheduledPaymentsListView: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
     }
 
@@ -380,7 +381,7 @@ struct ScheduledPaymentsListView: View {
             VStack(spacing: DS.Spacing.xxs) {
                 Text("\(day)")
                     .font(.caption2.weight(isToday || isSelected ? .bold : .medium))
-                    .foregroundStyle(isSelected ? .white : (isToday ? Color.electricIndigo : .secondary))
+                    .foregroundStyle(isSelected ? .white : (isToday ? theme.accent : .secondary))
 
                 if hasPayments {
                     HStack(spacing: 3) {
@@ -406,7 +407,7 @@ struct ScheduledPaymentsListView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
-                    .stroke(isSelected ? Color.electricIndigo : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? theme.accent : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)
@@ -416,7 +417,7 @@ struct ScheduledPaymentsListView: View {
     private func dotColor(for payment: ScheduledPayment, day: Int, isSelected: Bool) -> Color {
         if isSelected { return .white }
         let isPaid = (viewModel.paidStatusForMonth[payment.id.uuidString] ?? 0) > 0
-        if isPaid { return Color.electricIndigo }
+        if isPaid { return theme.accent }
         // Check if overdue (this specific day is past today in the current month)
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -431,9 +432,9 @@ struct ScheduledPaymentsListView: View {
 
     private func backgroundColor(isToday: Bool, isSelected: Bool, hasPayments: Bool) -> Color {
         if isSelected {
-            return Color.electricIndigo
+            return theme.accent
         } else if isToday {
-            return Color.electricIndigo.opacity(0.08)
+            return theme.accent.opacity(0.08)
         } else if hasPayments {
             return Color(.tertiarySystemFill).opacity(0.7)
         } else {
@@ -525,7 +526,7 @@ struct ScheduledPaymentsListView: View {
                     } label: {
                         Text(NSLocalizedString("scheduled.calendar.show.all", comment: ""))
                             .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                     }
                     .buttonStyle(.plain)
                 }

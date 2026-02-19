@@ -11,6 +11,7 @@ import SwiftUI
 struct ExportFiltersStepView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = ExportFiltersStepViewModel()
 
@@ -325,7 +326,7 @@ struct ExportFiltersStepView: View {
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                    .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
         }
         .buttonStyle(.plain)
@@ -372,7 +373,7 @@ struct ExportFiltersStepView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
         }
         .buttonStyle(.plain)
@@ -427,7 +428,7 @@ struct ExportFiltersStepView: View {
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                    .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
         }
         .buttonStyle(.plain)
@@ -482,7 +483,7 @@ struct ExportFiltersStepView: View {
 
                 Text(L10n.Export.period)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
@@ -523,6 +524,7 @@ private struct ExportPeriodPickerSheet: View {
     let onSelect: (DetailPeriod) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @State private var showCustomPicker = false
 
     /// Periods to show (exclude .custom, handled separately)
@@ -546,7 +548,7 @@ private struct ExportPeriodPickerSheet: View {
                         // Custom period section
                         customPeriodRow
                     }
-                    .background(Color.yalaCard)
+                    .background(.thCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -585,13 +587,13 @@ private struct ExportPeriodPickerSheet: View {
             HStack {
                 Text(period.displayName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(theme.accent)
                         .font(DS.Typography.headline)
                 }
             }
@@ -610,7 +612,7 @@ private struct ExportPeriodPickerSheet: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Period.custom)
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     if let range = customDateRange {
                         Text(formattedRange(range))
@@ -623,7 +625,7 @@ private struct ExportPeriodPickerSheet: View {
 
                 if selectedPeriod == .custom {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(theme.accent)
                         .font(DS.Typography.headline)
                 }
 
@@ -650,6 +652,7 @@ private struct ExportPeriodPickerSheet: View {
 
 private struct ExportCustomPeriodPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var customDateRange: DateInterval?
     let onApply: () -> Void
 
@@ -682,7 +685,7 @@ private struct ExportCustomPeriodPickerSheet: View {
                         in: ...endDate,
                         displayedComponents: .date
                     )
-                    .listRowBackground(Color.yalaCard)
+                    .listRowBackground(theme.card)
 
                     DatePicker(
                         L10n.Period.endDate,
@@ -690,12 +693,12 @@ private struct ExportCustomPeriodPickerSheet: View {
                         in: startDate...,
                         displayedComponents: .date
                     )
-                    .listRowBackground(Color.yalaCard)
+                    .listRowBackground(theme.card)
                 }
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .navigationTitle(L10n.Period.custom)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

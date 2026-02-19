@@ -159,5 +159,5 @@ extension VariationChip {
         }
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

@@ -16,7 +16,6 @@ struct PersonalizationSettingsView: View {
 
     @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
         .rawValue
-    @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
@@ -67,17 +66,17 @@ struct PersonalizationSettingsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "slider.horizontal.3")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.brandPrimary)
+                            .foregroundStyle(.thAccent)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.personalization)
                             .font(.title2.bold())
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Settings.personalizationDescription)
                             .font(DS.Typography.body)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xxxl)
@@ -90,7 +89,7 @@ struct PersonalizationSettingsView: View {
                             HStack {
                                 Text(L10n.Settings.expensesOnlyMode)
                                     .font(DS.Typography.body)
-                                    .foregroundStyle(Color.yalaPrimaryText)
+                                    .foregroundStyle(.thPrimaryText)
 
                                 Spacer()
 
@@ -99,11 +98,11 @@ struct PersonalizationSettingsView: View {
                                     set: { _ in showingExpensesOnlyConfirmation = true }
                                 ))
                                 .labelsHidden()
-                                .tint(Color.brandPrimary)
+
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(Color.yalaCard)
+                            .background(.thCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -130,7 +129,7 @@ struct PersonalizationSettingsView: View {
                                     HStack {
                                         Text(L10n.Settings.appLanguage)
                                             .font(DS.Typography.body)
-                                            .foregroundStyle(Color.yalaPrimaryText)
+                                            .foregroundStyle(.thPrimaryText)
 
                                         Spacer()
 
@@ -144,7 +143,7 @@ struct PersonalizationSettingsView: View {
                                     }
                                     .padding(.horizontal, DS.FormRow.paddingH)
                                     .padding(.vertical, DS.FormRow.paddingV)
-                                    .background(Color.yalaCard)
+                                    .background(.thCard)
                                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -168,7 +167,7 @@ struct PersonalizationSettingsView: View {
                                 HStack {
                                     Text(L10n.Settings.tabBarConfig)
                                         .font(DS.Typography.body)
-                                        .foregroundStyle(Color.yalaPrimaryText)
+                                        .foregroundStyle(.thPrimaryText)
 
                                     Spacer()
 
@@ -178,7 +177,7 @@ struct PersonalizationSettingsView: View {
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.yalaCard)
+                                .background(.thCard)
                                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -198,17 +197,17 @@ struct PersonalizationSettingsView: View {
                             HStack {
                                 Text(L10n.Settings.colorfulIcons)
                                     .font(DS.Typography.body)
-                                    .foregroundStyle(Color.yalaPrimaryText)
+                                    .foregroundStyle(.thPrimaryText)
 
                                 Spacer()
 
                                 Toggle("", isOn: $colorfulIcons)
                                     .labelsHidden()
-                                    .tint(Color.brandPrimary)
+
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(Color.yalaCard)
+                            .background(.thCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -234,7 +233,7 @@ struct PersonalizationSettingsView: View {
                                 HStack {
                                     Text(L10n.Settings.defaultPeriod)
                                         .font(DS.Typography.body)
-                                        .foregroundStyle(Color.yalaPrimaryText)
+                                        .foregroundStyle(.thPrimaryText)
 
                                     Spacer()
 
@@ -248,7 +247,7 @@ struct PersonalizationSettingsView: View {
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.yalaCard)
+                                .background(.thCard)
                                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -271,7 +270,7 @@ struct PersonalizationSettingsView: View {
                                 HStack {
                                     Text(L10n.Settings.firstWeekday)
                                         .font(DS.Typography.body)
-                                        .foregroundStyle(Color.yalaPrimaryText)
+                                        .foregroundStyle(.thPrimaryText)
 
                                     Spacer()
 
@@ -285,7 +284,7 @@ struct PersonalizationSettingsView: View {
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.yalaCard)
+                                .background(.thCard)
                                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -310,17 +309,17 @@ struct PersonalizationSettingsView: View {
                             HStack {
                                 Text(L10n.Settings.widgetHints)
                                     .font(DS.Typography.body)
-                                    .foregroundStyle(Color.yalaPrimaryText)
+                                    .foregroundStyle(.thPrimaryText)
 
                                 Spacer()
 
                                 Toggle("", isOn: $showWidgetHints)
                                     .labelsHidden()
-                                    .tint(Color.brandPrimary)
+
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(Color.yalaCard)
+                            .background(.thCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -338,17 +337,17 @@ struct PersonalizationSettingsView: View {
                             HStack {
                                 Text(L10n.Settings.showVariations)
                                     .font(DS.Typography.body)
-                                    .foregroundStyle(Color.yalaPrimaryText)
+                                    .foregroundStyle(.thPrimaryText)
 
                                 Spacer()
 
                                 Toggle("", isOn: $showVariations)
                                     .labelsHidden()
-                                    .tint(Color.brandPrimary)
+
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(Color.yalaCard)
+                            .background(.thCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -374,7 +373,7 @@ struct PersonalizationSettingsView: View {
                                 HStack {
                                     Text(L10n.Settings.decimalPlaces)
                                         .font(DS.Typography.body)
-                                        .foregroundStyle(Color.yalaPrimaryText)
+                                        .foregroundStyle(.thPrimaryText)
 
                                     Spacer()
 
@@ -388,7 +387,7 @@ struct PersonalizationSettingsView: View {
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.yalaCard)
+                                .background(.thCard)
                                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -411,7 +410,7 @@ struct PersonalizationSettingsView: View {
                                 HStack {
                                     Text(L10n.Settings.currencyFormat)
                                         .font(DS.Typography.body)
-                                        .foregroundStyle(Color.yalaPrimaryText)
+                                        .foregroundStyle(.thPrimaryText)
 
                                     Spacer()
 
@@ -425,7 +424,7 @@ struct PersonalizationSettingsView: View {
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.yalaCard)
+                                .background(.thCard)
                                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -574,7 +573,7 @@ private struct PeriodPickerSheet: View {
                             periodRow(for: period)
                         }
                     }
-                    .background(Color.yalaCard)
+                    .background(.thCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -605,13 +604,13 @@ private struct PeriodPickerSheet: View {
             HStack {
                 Text(period.displayName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                         .font(DS.Typography.headline)
                 }
             }
@@ -647,7 +646,7 @@ private struct WeekdayPickerSheet: View {
                             weekdayRow(for: weekday)
                         }
                     }
-                    .background(Color.yalaCard)
+                    .background(.thCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -678,13 +677,13 @@ private struct WeekdayPickerSheet: View {
             HStack {
                 Text(weekday.displayName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                         .font(DS.Typography.headline)
                 }
             }
@@ -726,7 +725,7 @@ private struct DecimalsPickerSheet: View {
                             decimalsRow(for: option)
                         }
                     }
-                    .background(Color.yalaCard)
+                    .background(.thCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -758,7 +757,7 @@ private struct DecimalsPickerSheet: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     Text(option.example)
                         .font(DS.Typography.caption)
@@ -769,7 +768,7 @@ private struct DecimalsPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                         .font(DS.Typography.headline)
                 }
             }
@@ -810,7 +809,7 @@ private struct CurrencyFormatPickerSheet: View {
                             formatRow(for: option)
                         }
                     }
-                    .background(Color.yalaCard)
+                    .background(.thCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -842,7 +841,7 @@ private struct CurrencyFormatPickerSheet: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     Text(option.example)
                         .font(DS.Typography.caption)
@@ -853,7 +852,7 @@ private struct CurrencyFormatPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                         .font(DS.Typography.headline)
                 }
             }
@@ -889,7 +888,7 @@ private struct LanguagePickerSheet: View {
                             languageRow(lang: lang)
                         }
                     }
-                    .background(Color.yalaCard)
+                    .background(.thCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -921,13 +920,13 @@ private struct LanguagePickerSheet: View {
 
                     Text(lang.nativeName)
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     Spacer()
 
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .foregroundStyle(Color.brandPrimary)
+                            .foregroundStyle(.thAccent)
                             .font(DS.Typography.headline)
                     }
                 }

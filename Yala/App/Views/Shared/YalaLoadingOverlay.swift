@@ -24,7 +24,7 @@ struct YalaLoadingOverlay: View {
                 VStack(spacing: DS.Spacing.lg) {
                     ProgressView()
                         .scaleEffect(1.2)
-                        .tint(Color.electricIndigo)
+
 
                     if let message {
                         Text(message)
@@ -92,7 +92,7 @@ struct YalaLoadingFullScreen: View {
         VStack(spacing: DS.Spacing.lg) {
             ProgressView()
                 .scaleEffect(1.5)
-                .tint(Color.electricIndigo)
+
 
             if let message {
                 Text(message)
@@ -101,7 +101,7 @@ struct YalaLoadingFullScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.yalaBackground)
+        .background(.thBackground)
     }
 }
 
@@ -128,12 +128,12 @@ struct YalaLoadingFullScreen: View {
                     Text("Con overlay de carga")
                 }
                 .frame(maxWidth: .infinity, maxHeight: 200)
-                .background(Color.yalaCard)
+                .background(.thCard)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .yalaLoading(isLoading, message: "Guardando...")
             }
             .padding()
-            .background(Color.yalaBackground)
+            .background(.thBackground)
         }
     }
 

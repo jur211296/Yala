@@ -17,6 +17,7 @@ struct RecordsStandaloneView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     // MARK: - ViewModels
 
@@ -144,7 +145,7 @@ struct RecordsStandaloneView: View {
                 } label: {
                     Image(systemName: "checklist")
                         .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(Color.toolbarIconColor)
+                        .foregroundStyle(.thToolbarIcon)
                 }
                 .accessibilityLabel("Seleccionar")
 
@@ -154,7 +155,7 @@ struct RecordsStandaloneView: View {
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
                         .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(Color.toolbarIconColor)
+                        .foregroundStyle(.thToolbarIcon)
                 }
                 .accessibilityLabel("Filtros")
                 .overlay(alignment: .topTrailing) {
@@ -197,7 +198,7 @@ struct RecordsStandaloneView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.5)
+        let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
         let hasMultipleInputs = voiceInputEnabled || imageInputEnabled
 
         if hasMultipleInputs && canUseVoiceInput {
@@ -397,7 +398,7 @@ struct RecordsStandaloneView: View {
                 } label: {
                     Image(systemName: "pencil")
                         .font(DS.Typography.title)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(theme.accent)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
                 .accessibilityLabel("Editar")

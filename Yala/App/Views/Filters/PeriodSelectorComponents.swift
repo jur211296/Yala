@@ -100,6 +100,7 @@ struct TrendsPeriodMenu: View, Equatable {
 struct CustomPeriodPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     /// Date range limits (from first to last transaction)
     let minDate: Date
@@ -150,7 +151,7 @@ struct CustomPeriodPickerSheet: View {
                         in: min(minDate, endDate)...max(minDate, endDate),
                         displayedComponents: .date
                     )
-                    .listRowBackground(Color.yalaCard)
+                    .listRowBackground(theme.card)
 
                     DatePicker(
                         L10n.Period.endDate,
@@ -158,12 +159,12 @@ struct CustomPeriodPickerSheet: View {
                         in: min(startDate, maxDate)...max(startDate, maxDate),
                         displayedComponents: .date
                     )
-                    .listRowBackground(Color.yalaCard)
+                    .listRowBackground(theme.card)
                 }
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .navigationTitle(L10n.Period.custom)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -40,7 +40,7 @@ struct NumericKeypadView: View {
                 }
             }
         }
-        .background(Color.yalaCard.opacity(0.95))
+        .background(.thCard.opacity(0.95))
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
@@ -106,6 +106,7 @@ struct KeypadButtonView: View {
     let action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28
     @ScaledMetric(relativeTo: .title) private var deleteSize: CGFloat = 22
     @State private var isPressed = false
@@ -117,7 +118,7 @@ struct KeypadButtonView: View {
             ZStack {
                 if isPressed {
                     RoundedRectangle(cornerRadius: DS.Radius.sm)
-                        .fill(Color.electricIndigo.opacity(0.15))
+                        .fill(theme.accent.opacity(0.15))
                 }
 
                 if let text = button.displayText {
@@ -162,5 +163,5 @@ struct KeypadButtonView: View {
             onClear: { print("clear") }
         )
     }
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

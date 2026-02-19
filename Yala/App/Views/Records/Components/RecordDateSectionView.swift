@@ -42,5 +42,5 @@ struct RecordDateSectionView: View {
         RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
         RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!)
     }
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SecondaryCurrencyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var selectedCurrencies: Set<CurrencyCode>
     let preferredCurrency: CurrencyCode
 
@@ -131,11 +132,11 @@ struct SecondaryCurrencyPickerSheet: View {
                     currencyRow(currency: currency)
                 }
             }
-            .background(Color.electricIndigo.opacity(0.08))
+            .background(theme.accent.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl)
-                    .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
+                    .stroke(theme.accent.opacity(0.15), lineWidth: 1)
             )
         }
     }
@@ -168,7 +169,7 @@ struct SecondaryCurrencyPickerSheet: View {
 
                 Image(systemName: isSelected ? "star.fill" : "star")
                     .font(DS.Typography.title)
-                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
+                    .foregroundStyle(isSelected ? theme.accent : .secondary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)

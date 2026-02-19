@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct AccountsCarouselView: View {
+    @Environment(\.yalaTheme) private var theme
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Bindable var viewModel: PanelViewModel
     let orderedAccounts: [Account]
@@ -52,8 +53,8 @@ struct AccountsCarouselView: View {
                         Circle()
                             .fill(
                                 page == currentPage
-                                    ? Color.yalaPrimaryText.opacity(0.3)
-                                    : Color.yalaSecondaryText.opacity(0.2)
+                                    ? theme.primaryText.opacity(0.3)
+                                    : theme.secondaryText.opacity(0.2)
                             )
                             .frame(width: 6, height: 6)
                     }

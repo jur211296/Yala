@@ -10,13 +10,11 @@ import SwiftUI
 // MARK: - Fondo general tipo Liquid Glass claro
 
 struct PanelBackgroundView: View {
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         Group {
-            if colorScheme == .dark {
-                Color.yalaBackground
-            } else {
+            if theme.hasGradient {
                 LinearGradient(
                     colors: [
                         Color.financeBackgroundTop,
@@ -25,6 +23,8 @@ struct PanelBackgroundView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
+            } else {
+                theme.background
             }
         }
         .ignoresSafeArea()

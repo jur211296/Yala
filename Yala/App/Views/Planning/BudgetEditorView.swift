@@ -11,6 +11,7 @@ import SwiftUI
 struct BudgetEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28
     @Environment(SessionState.self) private var sessionState
     @Environment(EntityDeletionService.self) private var deletionService
@@ -268,7 +269,7 @@ struct BudgetEditorView: View {
             Text(NSLocalizedString("common.active", comment: ""))
                 .font(DS.Typography.body)
         }
-        .tint(Color.brandPrimary)
+
     }
 
     // MARK: - Alerts Section
@@ -284,7 +285,7 @@ struct BudgetEditorView: View {
                         Text(L10n.Budgets.alertsEnable)
                     }
                 }
-                .tint(Color.brandPrimary)
+
                 .padding()
 
                 // Hint when global notifications are disabled
@@ -341,7 +342,7 @@ struct BudgetEditorView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
         }
         .buttonStyle(.plain)
@@ -480,7 +481,7 @@ struct BudgetEditorView: View {
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                    .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
         }
         .buttonStyle(.plain)
@@ -541,7 +542,7 @@ struct BudgetEditorView: View {
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                    .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
         }
         .buttonStyle(.plain)

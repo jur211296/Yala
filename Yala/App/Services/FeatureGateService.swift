@@ -16,6 +16,7 @@ enum ProFeature: String, CaseIterable {
     case voiceInput
     case imageInput
     case premiumIcons
+    case proThemes
 
     /// Free tier limit for countable features (nil = no limit in free tier)
     var freeLimit: Int? {
@@ -29,7 +30,7 @@ enum ProFeature: String, CaseIterable {
     /// Whether this feature is completely unavailable in Free tier
     var isProOnly: Bool {
         switch self {
-        case .voiceInput, .imageInput, .premiumIcons: return true
+        case .voiceInput, .imageInput, .premiumIcons, .proThemes: return true
         default: return false
         }
     }
@@ -42,6 +43,7 @@ enum ProFeature: String, CaseIterable {
         case .voiceInput: return L10n.FeatureGate.voiceInput
         case .imageInput: return L10n.FeatureGate.imageInput
         case .premiumIcons: return L10n.FeatureGate.premiumIcons
+        case .proThemes: return L10n.FeatureGate.proThemes
         }
     }
 
@@ -53,6 +55,7 @@ enum ProFeature: String, CaseIterable {
         case .voiceInput: return "waveform"
         case .imageInput: return "camera.fill"
         case .premiumIcons: return "app.fill"
+        case .proThemes: return "paintpalette.fill"
         }
     }
 }
@@ -187,6 +190,9 @@ extension L10n {
         }
         static var premiumIcons: String {
             NSLocalizedString("featureGate.premiumIcons", comment: "Premium icons feature name")
+        }
+        static var proThemes: String {
+            NSLocalizedString("featureGate.proThemes", comment: "Pro themes feature name")
         }
 
         // Titles

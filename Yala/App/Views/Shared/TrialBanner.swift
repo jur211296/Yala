@@ -9,6 +9,10 @@ import SwiftUI
 
 struct TrialBanner: View {
 
+    // MARK: - Environment
+
+    @Environment(\.yalaTheme) private var theme
+
     // MARK: - Properties
 
     let daysRemaining: Int
@@ -50,11 +54,11 @@ struct TrialBanner: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Subscription.Trial.title)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Text(daysText)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
             }
 
             Spacer()
@@ -67,7 +71,7 @@ struct TrialBanner: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)
-                    .background(Color.brandPrimary)
+                    .background(theme.accent)
                     .clipShape(Capsule())
             }
         }

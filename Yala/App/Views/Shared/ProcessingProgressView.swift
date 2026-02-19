@@ -208,7 +208,7 @@ struct ProcessingProgressView: View {
         accentColor: .teal,
         statusText: "Analizando imágenes"
     )
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }
 
 #Preview("Stepped") {
@@ -217,5 +217,5 @@ struct ProcessingProgressView: View {
         accentColor: .electricIndigo,
         statusText: "Procesando audio"
     )
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

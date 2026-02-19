@@ -50,7 +50,7 @@ struct YalaEmptyState: View {
                 Button(action: action) {
                     Text(actionTitle)
                         .font(DS.Typography.label)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
                 .padding(.top, DS.Spacing.sm)
             }
@@ -160,5 +160,5 @@ extension YalaEmptyState {
             YalaEmptyState.noTags { }
         }
     }
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

@@ -12,6 +12,7 @@ struct RecordsFiltersView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @State private var filtersViewModel = RecordsFiltersViewModel()
 
@@ -91,10 +92,10 @@ struct RecordsFiltersView: View {
                         } label: {
                             Text(L10n.Filters.clearFilters)
                                 .font(DS.Typography.headline)
-                                .foregroundStyle(Color.electricIndigo)
+                                .foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, DS.FormRow.paddingV)
-                                .background(Color.yalaCard)
+                                .background(.thCard)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -121,7 +122,7 @@ struct RecordsFiltersView: View {
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Color.brandPrimary)
+
                 }
             }
         }
@@ -284,7 +285,7 @@ struct RecordsFiltersView: View {
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                    .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
         }
         .buttonStyle(.plain)
@@ -401,7 +402,7 @@ struct RecordsFiltersView: View {
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                    .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
         }
         .buttonStyle(.plain)
@@ -460,7 +461,7 @@ struct RecordsFiltersView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.brandPrimary : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
         }
         .buttonStyle(.plain)
@@ -533,7 +534,7 @@ struct RecordsFiltersView: View {
                                             Spacer()
                                             if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
                                                 Image(systemName: "checkmark")
-                                                    .foregroundStyle(Color.brandPrimary)
+                                                    .foregroundStyle(theme.accent)
                                                     .font(DS.Typography.headline)
                                             }
                                         }
@@ -616,7 +617,7 @@ struct RecordsFiltersView: View {
 
                                             if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
                                                 Image(systemName: "checkmark")
-                                                    .foregroundStyle(Color.brandPrimary)
+                                                    .foregroundStyle(theme.accent)
                                                     .font(DS.Typography.headline)
                                             }
                                         }

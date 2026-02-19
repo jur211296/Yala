@@ -27,6 +27,7 @@ struct PanelView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
@@ -142,7 +143,7 @@ struct PanelView: View {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "tray.fill")
                     .font(DS.Typography.body).fontWeight(.medium)
-                    .foregroundStyle(Color.toolbarIconColor)
+                    .foregroundStyle(.thToolbarIcon)
 
                 // Badge with count
                 if pendingDrafts.count > 0 {
@@ -299,7 +300,7 @@ struct PanelView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+        let fabBackground = canUseVoiceInput ? theme.accent : Color.gray.opacity(0.5)
         let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
                                 (voiceInputEnabled && !imageInputEnabled) ||
                                 (!voiceInputEnabled && imageInputEnabled)
@@ -352,7 +353,7 @@ struct PanelView: View {
                         fabMenuButton(
                             icon: "square.and.pencil",
                             text: L10n.Panel.fabManual,
-                            color: .electricIndigo
+                            color: theme.accent
                         ) {
                             dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false

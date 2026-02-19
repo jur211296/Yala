@@ -11,6 +11,7 @@ import SwiftUI
 struct ScheduledPaymentEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28
     @Environment(EntityDeletionService.self) private var deletionService
     @Environment(SessionState.self) private var sessionState
@@ -254,7 +255,7 @@ struct ScheduledPaymentEditorView: View {
                         Text(NSLocalizedString("common.active", comment: ""))
                     }
                 }
-                .tint(Color.brandPrimary)
+
                 .padding()
 
                 SubsectionDivider()
@@ -268,7 +269,7 @@ struct ScheduledPaymentEditorView: View {
                         Text(NSLocalizedString("scheduled.is.subscription", comment: ""))
                     }
                 }
-                .tint(Color.electricIndigo)
+
                 .padding()
             }
         }
@@ -605,7 +606,7 @@ struct ScheduledPaymentEditorView: View {
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(isSelected ? Color.electricIndigo : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
         }
         .buttonStyle(.plain)
@@ -719,7 +720,7 @@ struct ScheduledPaymentEditorView: View {
                     Text(NSLocalizedString("scheduled.has.end.date", comment: ""))
                 }
             }
-            .tint(Color.electricIndigo)
+
             .padding()
 
             if hasEndDate {
@@ -765,7 +766,7 @@ struct ScheduledPaymentEditorView: View {
                         Text(NSLocalizedString("scheduled.notify.on.due", comment: ""))
                     }
                 }
-                .tint(Color.electricIndigo)
+
                 .padding()
 
                 SubsectionDivider()

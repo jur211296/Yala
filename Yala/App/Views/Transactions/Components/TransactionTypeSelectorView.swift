@@ -49,7 +49,7 @@ struct TransactionTypeSelectorView: View {
             }
         }
         .padding(DS.Spacing.xs)
-        .background(Capsule().fill(Color.yalaCard))
+        .background(Capsule().fill(.thCard))
         .padding(.horizontal, DS.Spacing.lg)
     }
 }

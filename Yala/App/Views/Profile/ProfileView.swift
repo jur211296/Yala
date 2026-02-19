@@ -21,6 +21,7 @@ struct ProfileView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40
 
@@ -33,7 +34,6 @@ struct ProfileView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("userTheme") private var userTheme: Int = AppTheme.system.rawValue
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -203,7 +203,9 @@ struct ProfileView: View {
                 case .tags:
                     TagsSettingsListView()
                 case .themes:
-                    ThemeSettingsView()
+                    ThemeSettingsView {
+                        dismiss()
+                    }
                 case .personalization:
                     PersonalizationSettingsView()
                 case .currency:
@@ -236,10 +238,6 @@ struct ProfileView: View {
                     iCloudSyncSettingsView()
                 }
             }
-            .onChange(of: userTheme) { _, _ in
-                // When theme changes, dismiss ProfileView so it reopens with correct theme
-                dismiss()
-            }
             .onAppear {
                 viewModel.setContext(modelContext)
             }
@@ -265,7 +263,7 @@ struct ProfileView: View {
                             LinearGradient(
                                 colors: isProUser
                                     ? DS.Gradients.proBadge
-                                    : [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
+                                    : [theme.accent, theme.accent.opacity(0.6)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -285,12 +283,12 @@ struct ProfileView: View {
                     } else {
                         // Custom icon or default
                         Circle()
-                            .fill(Color.electricIndigo.opacity(0.1))
+                            .fill(theme.accent.opacity(0.1))
                             .frame(width: 90, height: 90)
 
                         Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
                             .font(.system(size: avatarIconSize))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
 
@@ -298,7 +296,7 @@ struct ProfileView: View {
                     if isProUser {
                         ZStack {
                             Circle()
-                                .fill(Color.yalaCard)
+                                .fill(.thCard)
                             YalaSpark(size: .medium, animated: true)
                         }
                         .frame(width: 28, height: 28)
@@ -323,7 +321,7 @@ struct ProfileView: View {
                 activeSheet = .personalDetails
             }
             .font(DS.Typography.label)
-            .foregroundStyle(Color.electricIndigo)
+            .foregroundStyle(.primary)
 
             // Trial banner
             if isInTrial {
@@ -498,7 +496,7 @@ struct ProfileView: View {
                     } else {
                         Toggle("", isOn: $voiceInputEnabled)
                             .labelsHidden()
-                            .tint(Color.brandPrimary)
+
                             .onChange(of: voiceInputEnabled) { _, isEnabled in
                                 guard isEnabled else { return }
                                 let status = AVAudioApplication.shared.recordPermission
@@ -547,10 +545,10 @@ struct ProfileView: View {
                         HStack(spacing: DS.Spacing.xs) {
                             Text(VoiceLanguage(rawValue: voiceLanguageRaw)?.displayName ?? L10n.VoiceLanguage.system)
                                 .font(DS.Typography.body)
-                                .foregroundStyle(Color.brandPrimary)
+                                .foregroundStyle(.primary)
                             Image(systemName: "chevron.up.chevron.down")
                                 .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(Color.brandPrimary)
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -602,7 +600,7 @@ struct ProfileView: View {
                 } else {
                     Toggle("", isOn: $imageInputEnabled)
                         .labelsHidden()
-                        .tint(Color.brandPrimary)
+
                         .onChange(of: imageInputEnabled) { _, isEnabled in
                             guard isEnabled else { return }
                             let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
@@ -775,7 +773,7 @@ struct ProfileView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text("Simular Pro")
                             .font(DS.Typography.body)
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
                         Text("Activar para probar features Pro")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
@@ -788,7 +786,7 @@ struct ProfileView: View {
                         set: { FeatureGateService.shared.devSimulatePro = $0 }
                     ))
                     .labelsHidden()
-                    .tint(Color.brandPrimary)
+
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)

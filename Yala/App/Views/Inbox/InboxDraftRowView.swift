@@ -16,7 +16,7 @@ struct InboxDraftRowView: View {
     var isSelected: Bool = false
     let onTap: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         Button(action: onTap) {
@@ -50,7 +50,7 @@ struct InboxDraftRowView: View {
             .background(cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : DS.Opacity.faint),
+                color: Color.black.opacity(theme.shadowOpacity),
                 radius: 6,
                 x: 0,
                 y: 3
@@ -183,7 +183,7 @@ struct InboxDraftRowView: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-            .fill(Color.yalaCard)
+            .fill(.thCard)
     }
 
     // MARK: - Selection Circle
@@ -192,14 +192,14 @@ struct InboxDraftRowView: View {
         ZStack {
             Circle()
                 .stroke(
-                    isSelected ? Color.electricIndigo : Color.secondary.opacity(0.3),
+                    isSelected ? theme.accent : Color.secondary.opacity(0.3),
                     lineWidth: 2
                 )
                 .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
             if isSelected {
                 Circle()
-                    .fill(Color.electricIndigo)
+                    .fill(theme.accent)
                     .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
                 Image(systemName: "checkmark")
@@ -368,7 +368,7 @@ struct InboxDraftRowView: View {
 
 #Preview {
     ZStack {
-        Color.yalaBackground.ignoresSafeArea()
+        Color(.systemBackground).ignoresSafeArea()
 
         VStack(spacing: DS.Spacing.md) {
             Text("InboxDraftRowView Preview")

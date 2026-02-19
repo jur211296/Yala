@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.yalaTheme) private var theme
 
     /// Queries to detect existing data (for iCloud sync detection)
     @Query private var accounts: [Account]
@@ -49,7 +50,7 @@ struct ContentView: View {
             } else if isWaitingForSync {
                 iCloudSyncWaitingView
             } else {
-                Color.yalaBackground
+                theme.background
                     .ignoresSafeArea()
             }
 
@@ -310,13 +311,13 @@ struct ContentView: View {
     /// Inline view shown while waiting for iCloud sync on a new device
     private var iCloudSyncWaitingView: some View {
         ZStack {
-            Color.yalaBackground
+            theme.background
                 .ignoresSafeArea()
 
             VStack(spacing: DS.Spacing.xl) {
                 ProgressView()
                     .scaleEffect(1.5)
-                    .tint(.electricIndigo)
+
 
                 VStack(spacing: DS.Spacing.sm) {
                     Text(L10n.iCloud.syncingData)
@@ -353,6 +354,7 @@ struct ContentView: View {
 
 struct MainTabView: View {
     @Bindable private var sessionState: SessionState
+    @Environment(\.yalaTheme) private var theme
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
@@ -403,7 +405,7 @@ struct MainTabView: View {
                     GlobalSearchView()
                 }
             }
-            .tint(Color.electricIndigo)
+            .tint(theme.accent)
             .transaction { $0.animation = nil }
             .onChange(of: sessionState.shouldShowSharedImage) { _, shouldShow in
                 // Navigate to Panel when shared image arrives (from Share Extension)
@@ -516,6 +518,7 @@ enum AppTab: Hashable {
 // MARK: - More View
 
 struct MorePlaceholderView: View {
+    @Environment(\.yalaTheme) private var theme
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @State private var showProfile = false
 
@@ -572,7 +575,7 @@ struct MorePlaceholderView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -599,7 +602,7 @@ struct MorePlaceholderView: View {
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.electricIndigo)
+                            .fill(theme.accent)
                     )
 
                 Text(tab.displayName)
@@ -654,7 +657,7 @@ struct MorePlaceholderView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
         )
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
@@ -724,6 +727,7 @@ struct GlobalSearchView: View {
 // MARK: - Search Content View
 
 struct SearchContentView: View {
+    @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
@@ -892,7 +896,7 @@ struct SearchContentView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.electricIndigo : Color.clear)
+                        .fill(isSelected ? theme.accent : Color.clear)
                 )
                 .overlay(
                     Capsule()
@@ -929,7 +933,7 @@ struct SearchContentView: View {
                                 Image(systemName: "arrow.right")
                             }
                             .font(DS.Typography.label)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                         }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
@@ -1044,7 +1048,7 @@ struct SearchResultRow: View {
     let currencyCode: String
     let onTap: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         Button {
@@ -1107,9 +1111,9 @@ struct SearchResultRow: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.card)
-            .fill(Color.yalaCard)
+            .fill(.thCard)
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.06),
+                color: Color.black.opacity(theme.shadowOpacity),
                 radius: 6,
                 x: 0,
                 y: 3

@@ -4604,3 +4604,80 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 ### 37.11 Localización
 - [ ] Verificar textos de skip/unskip en los 6 idiomas (es, en, de, fr, it, pt)
 - [ ] Badge "Saltado"/"Skipped" visible y legible en cada idioma
+
+---
+
+## Sección 38: Sistema de Temas Independientes (Fase 11)
+
+### 38.1 Cambio de tema sin reinicio
+1. Ir a Ajustes → Apariencia
+2. Seleccionar cada tema (System, Light, Dark, Indigo, Rosa, Cyan)
+3. **Verificar:** Cambio inmediato sin reiniciar la app
+4. **Verificar:** Sin parpadeo o destrucción de jerarquía de vistas
+
+### 38.2 Tema System sigue esquema del iPhone
+1. Seleccionar tema "System"
+2. Cambiar modo del iPhone (Ajustes → Pantalla → Claro/Oscuro)
+3. **Verificar:** La app cambia automáticamente entre Light y Dark
+4. **Verificar:** No hace falta abrir/cerrar la app
+
+### 38.3 Temas PRO requieren suscripción
+1. Sin suscripción Pro activa, ir a Ajustes → Apariencia
+2. Intentar seleccionar Indigo, Rosa o Cyan
+3. **Verificar:** Se muestra sheet de upgrade (UpgradePromptSheet)
+4. **Verificar:** El tema NO se aplica sin suscripción
+5. Con suscripción Pro, seleccionar un tema PRO
+6. **Verificar:** Se aplica correctamente
+
+### 38.4 Colores correctos por tema
+Para cada tema verificar:
+
+| Elemento | Light | Dark | Indigo | Rosa | Cyan |
+|----------|-------|------|--------|------|------|
+| Fondo | Off-white | Negro OLED | Navy | Plum | Deep teal |
+| Cards | Blanco | #1C1C1E | Slate | Plum card | Teal card |
+| Acento | Indigo | Indigo | Indigo | HotPink | Cyan |
+| Texto 1º | Dark | Light | White | White | White |
+
+### 38.5 Sheets y modales heredan tema
+1. Seleccionar tema Indigo
+2. Abrir cualquier sheet (nuevo gasto, selector de categoría, etc.)
+3. **Verificar:** El sheet usa los colores del tema activo
+4. **Verificar:** No se ve fondo blanco fugaz al abrir/cerrar
+
+### 38.6 Persistencia entre sesiones
+1. Seleccionar tema Rosa
+2. Cerrar la app completamente (kill)
+3. Reabrir la app
+4. **Verificar:** Se mantiene el tema Rosa
+
+### 38.7 Data wipe resetea a System
+1. Seleccionar un tema PRO (ej: Cyan)
+2. Ir a Ajustes → Datos → Borrar todos los datos
+3. Confirmar
+4. **Verificar:** El tema se resetea a System
+
+### 38.8 Widgets iOS NO se afectan
+1. Tener widgets de Yala en pantalla de inicio
+2. Cambiar el tema de la app a Indigo/Rosa/Cyan
+3. **Verificar:** Los widgets mantienen sus colores originales (no cambian)
+
+### 38.9 Sombras adaptativas
+1. En tema Light: verificar sombras sutiles en cards
+2. En tema Dark: verificar sombras más pronunciadas
+3. En temas PRO: verificar sombras intermedias (0.20 opacity)
+
+### 38.10 Gradiente de fondo
+1. En tema Light: verificar gradiente sutil en PanelView
+2. En tema Dark: verificar fondo sólido (sin gradiente)
+3. En temas PRO: verificar fondo sólido (sin gradiente)
+
+### 38.11 ThemeSettingsView diseño
+1. Verificar que los 6 temas aparecen con swatches de colores
+2. Verificar sección "Free" (System, Light, Dark) y "Pro" (Indigo, Rosa, Cyan)
+3. Verificar badge "PRO" en temas premium
+4. Verificar checkmark en tema seleccionado
+
+### 38.12 Localización de temas
+- [ ] Verificar nombres de temas en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] "Indigo", "Rosa", "Cyan" como nombres en todos los idiomas

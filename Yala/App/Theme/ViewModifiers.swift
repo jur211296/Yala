@@ -12,6 +12,7 @@ import SwiftUI
 
 /// Aplica estilo de card estándar: background, radius, shadow, border
 struct YalaCardModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
     let padding: CGFloat
     let radius: CGFloat
     let hasShadow: Bool
@@ -29,22 +30,23 @@ struct YalaCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(Color.yalaCard)
+            .background(theme.card)
             .clipShape(RoundedRectangle(cornerRadius: radius))
             .overlay(
                 RoundedRectangle(cornerRadius: radius)
-                    .stroke(Color.primary.opacity(DS.Opacity.faint), lineWidth: 1)
+                    .stroke(theme.cardBorder, lineWidth: 1)
             )
-            .modifier(ConditionalShadow(hasShadow: hasShadow))
+            .modifier(ConditionalShadow(hasShadow: hasShadow, shadowOpacity: theme.shadowOpacity))
     }
 }
 
 private struct ConditionalShadow: ViewModifier {
     let hasShadow: Bool
+    var shadowOpacity: Double = DS.Opacity.faint
 
     func body(content: Content) -> some View {
         if hasShadow {
-            content.dsCardShadow()
+            content.shadow(color: .black.opacity(shadowOpacity), radius: 10, x: 0, y: 5)
         } else {
             content
         }
@@ -86,6 +88,7 @@ extension View {
 
 /// Aplica estilo de fila de formulario: padding, background, contenido alineado
 struct YalaFormRowModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
     let showChevron: Bool
     let hasBackground: Bool
 
@@ -103,7 +106,7 @@ struct YalaFormRowModifier: ViewModifier {
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
         .frame(minHeight: DS.FormRow.minHeight)
-        .background(hasBackground ? Color.yalaCard : Color.clear)
+        .background(hasBackground ? theme.card : Color.clear)
     }
 }
 
@@ -295,7 +298,7 @@ extension View {
         }
         .padding()
     }
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }
 
 #Preview("Form Row Modifiers") {
@@ -328,7 +331,7 @@ extension View {
         }
         .yalaFormRow(showChevron: true)
     }
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }
 
 #Preview("Icon Badges") {
@@ -343,5 +346,5 @@ extension View {
             .yalaIconBadgeLarge(background: .green)
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

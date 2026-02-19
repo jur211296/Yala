@@ -13,6 +13,7 @@ import SwiftUI
 struct YalaApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
 
     /// ModelContainer compartido para toda la app.
     var sharedModelContainer: ModelContainer = {
@@ -26,7 +27,7 @@ struct YalaApp: App {
         }
     }()
 
-    @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
+    @State private var themeManager = ThemeManager()
 
     /// Bootstrapper centralizado para inicialización y servicios
     private let bootstrapper = AppBootstrapper.shared
@@ -34,7 +35,10 @@ struct YalaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
+                .preferredColorScheme(themeManager.resolved.baseColorScheme)
+                .tint(themeManager.resolved.accent)
+                .environment(\.yalaTheme, themeManager.resolved)
+                .environment(themeManager)
                 .environment(bootstrapper.sessionState)
                 .environment(bootstrapper.currencyConverter)
                 .environment(bootstrapper.exchangeRateService)
@@ -56,6 +60,9 @@ struct YalaApp: App {
                 }
                 .onOpenURL { url in
                     bootstrapper.handleIncomingURL(url)
+                }
+                .onChange(of: colorScheme) { _, newScheme in
+                    themeManager.systemColorScheme = newScheme
                 }
         }
         .modelContainer(sharedModelContainer)

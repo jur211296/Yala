@@ -13,6 +13,7 @@ struct DowngradeResolutionSheet: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
 
@@ -88,14 +89,14 @@ struct DowngradeResolutionSheet: View {
                             showSubscription = true
                         }
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.lg)
                 }
                 .padding(.vertical, DS.Spacing.xxl)
             }
-            .background(Color.yalaBackground)
+            .background(.thBackground)
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled()  // Cannot dismiss without resolving
         }
@@ -132,12 +133,12 @@ struct DowngradeResolutionSheet: View {
 
             Text(L10n.Subscription.Downgrade.title)
                 .font(.title2.bold())
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
                 .multilineTextAlignment(.center)
 
             Text(L10n.Subscription.Downgrade.subtitle)
                 .font(DS.Typography.body)
-                .foregroundStyle(Color.yalaSecondaryText)
+                .foregroundStyle(.thSecondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xl)
         }
@@ -147,7 +148,7 @@ struct DowngradeResolutionSheet: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Subscription.Downgrade.selectAccounts(accountsToKeep))
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
                 .padding(.horizontal, DS.Spacing.lg)
 
             VStack(spacing: DS.Spacing.none) {
@@ -160,7 +161,7 @@ struct DowngradeResolutionSheet: View {
                     }
                 }
             }
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .padding(.horizontal, DS.Spacing.lg)
 
@@ -191,11 +192,11 @@ struct DowngradeResolutionSheet: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(account.name)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     Text(account.currencyCode)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                 }
 
                 Spacer()
@@ -203,7 +204,7 @@ struct DowngradeResolutionSheet: View {
                 // Selection indicator
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.title)
-                    .foregroundStyle(isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.3))
+                    .foregroundStyle(isSelected ? theme.accent : theme.secondaryText.opacity(0.3))
             }
             .padding(DS.Spacing.md)
             .contentShape(Rectangle())
@@ -215,7 +216,7 @@ struct DowngradeResolutionSheet: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Subscription.Downgrade.selectBudgets(budgetsToKeep))
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
                 .padding(.horizontal, DS.Spacing.lg)
 
             VStack(spacing: DS.Spacing.none) {
@@ -228,7 +229,7 @@ struct DowngradeResolutionSheet: View {
                     }
                 }
             }
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .padding(.horizontal, DS.Spacing.lg)
 
@@ -249,7 +250,7 @@ struct DowngradeResolutionSheet: View {
             HStack(spacing: DS.Spacing.md) {
                 // Budget icon
                 Circle()
-                    .fill(Color.electricIndigo)
+                    .fill(theme.accent)
                     .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                     .overlay(
                         Image(systemName: "chart.pie.fill")
@@ -259,11 +260,11 @@ struct DowngradeResolutionSheet: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(budget.name)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     Text(formatCurrency(budget.limitAmount, code: budget.currencyCode))
                         .font(DS.Typography.caption)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                 }
 
                 Spacer()
@@ -271,7 +272,7 @@ struct DowngradeResolutionSheet: View {
                 // Selection indicator
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.title)
-                    .foregroundStyle(isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.3))
+                    .foregroundStyle(isSelected ? theme.accent : theme.secondaryText.opacity(0.3))
             }
             .padding(DS.Spacing.md)
             .contentShape(Rectangle())

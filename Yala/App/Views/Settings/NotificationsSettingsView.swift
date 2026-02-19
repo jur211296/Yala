@@ -294,10 +294,10 @@ struct NotificationsSettingsView: View {
             // Toggle
             Toggle("", isOn: $budgetAlertsEnabled)
                 .labelsHidden()
-                .tint(Color.electricIndigo)
+
         }
         .padding(DS.Spacing.lg)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
@@ -368,13 +368,13 @@ struct NotificationCard: View {
                 // Toggle (stops propagation)
                 Toggle("", isOn: $isActive)
                     .labelsHidden()
-                    .tint(Color.electricIndigo)
+
                     .onChange(of: isActive) { _, newValue in
                         onToggle(newValue)
                     }
             }
             .padding(DS.Spacing.lg)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl)

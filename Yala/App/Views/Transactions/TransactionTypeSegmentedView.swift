@@ -34,7 +34,7 @@ struct TransactionTypeSegmentedView: View {
         .padding(DS.Spacing.xs)
         .background(
             Capsule()
-                .fill(Color.yalaCard)
+                .fill(.thCard)
         )
         .overlay(
             Capsule()
@@ -79,5 +79,5 @@ struct TransactionTypeButton: View {
         TransactionTypeSegmentedView(selectedType: .constant(.transfer))
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

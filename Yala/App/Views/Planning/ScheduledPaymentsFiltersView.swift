@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ScheduledPaymentsFiltersView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Bindable var viewModel: ScheduledPaymentsViewModel
 
     let accounts: [Account]
@@ -146,7 +147,7 @@ struct ScheduledPaymentsFiltersView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.electricIndigo : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
         }
         .buttonStyle(.plain)

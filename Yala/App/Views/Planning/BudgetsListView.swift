@@ -11,6 +11,7 @@ import SwiftUI
 struct BudgetsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
@@ -328,7 +329,7 @@ struct BudgetsListView: View {
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(Color.electricIndigo)
+                        .background(theme.accent)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)

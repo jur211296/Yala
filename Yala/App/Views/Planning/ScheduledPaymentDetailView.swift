@@ -12,6 +12,7 @@ import SwiftUI
 struct ScheduledPaymentDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
 
     let payment: ScheduledPayment
@@ -209,7 +210,7 @@ struct ScheduledPaymentDetailView: View {
         .padding(DS.Spacing.xl)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -242,7 +243,7 @@ struct ScheduledPaymentDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "arrow.forward.circle.fill")
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.thAccent)
                 Text(NSLocalizedString("scheduled.detail.upcoming", comment: ""))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
@@ -260,7 +261,7 @@ struct ScheduledPaymentDetailView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -293,7 +294,7 @@ struct ScheduledPaymentDetailView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -357,7 +358,7 @@ struct ScheduledPaymentDetailView: View {
                             Text(NSLocalizedString("scheduled.status.paid", comment: ""))
                                 .font(DS.Typography.captionSmall)
                         }
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(theme.accent)
                     } else if isPast {
                         HStack(spacing: DS.Spacing.xxs) {
                             Image(systemName: "exclamationmark.circle")
@@ -429,7 +430,7 @@ struct ScheduledPaymentDetailView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle")
                 .font(DS.Typography.body)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(.thAccent)
 
             Text(NSLocalizedString("scheduled.detail.info.note", comment: ""))
                 .font(DS.Typography.caption)
@@ -439,7 +440,7 @@ struct ScheduledPaymentDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(Color.electricIndigo.opacity(0.1))
+                .fill(theme.accent.opacity(0.1))
         )
     }
 
@@ -460,11 +461,11 @@ struct ScheduledPaymentDetailView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "link.badge.plus")
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.thAccent)
 
                 Text(NSLocalizedString("scheduled.associate.title", comment: ""))
                     .font(DS.Typography.label)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.thAccent)
 
                 Spacer()
 
@@ -475,7 +476,7 @@ struct ScheduledPaymentDetailView: View {
             .padding(DS.Spacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                    .fill(Color.electricIndigo.opacity(0.1))
+                    .fill(theme.accent.opacity(0.1))
             )
             .contentShape(Rectangle())
         }

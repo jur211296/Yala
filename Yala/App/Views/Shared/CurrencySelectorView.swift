@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CurrencySelectorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var selectedCurrency: CurrencyCode
 
     // MARK: - Recommended Currencies
@@ -94,11 +95,11 @@ struct CurrencySelectorView: View {
                     currencyRow(currency: currency)
                 }
             }
-            .background(Color.electricIndigo.opacity(0.08))
+            .background(theme.accent.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl)
-                    .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
+                    .stroke(theme.accent.opacity(0.15), lineWidth: 1)
             )
         }
     }
@@ -130,7 +131,7 @@ struct CurrencySelectorView: View {
 
                 if currency == selectedCurrency {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                         .font(DS.Typography.headline)
                 }
             }

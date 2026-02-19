@@ -34,7 +34,7 @@ struct TransactionAmountInputView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, DS.FormRow.paddingV)
                 .padding(.vertical, DS.Spacing.sm)
-                .background(Capsule().fill(Color.yalaCard))
+                .background(Capsule().fill(.thCard))
             }
             .buttonStyle(.plain)
 

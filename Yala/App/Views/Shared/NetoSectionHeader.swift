@@ -44,7 +44,7 @@ struct YalaSectionHeader: View {
                             .font(DS.Typography.labelSmall)
                     }
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.thAccent)
                 }
             }
         }
@@ -108,5 +108,5 @@ struct YalaSectionHeaderCompact: View {
         YalaSectionHeaderCompact("Archivadas")
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

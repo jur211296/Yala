@@ -11,6 +11,7 @@ import SwiftUI
 struct TabBarConfigView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
     @State private var localConfig: TabBarConfiguration = .default
@@ -67,7 +68,7 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(.thAccent)
 
             Text(L10n.Settings.tabBarConfigInfo)
                 .font(DS.Typography.subheadline)
@@ -77,7 +78,7 @@ struct TabBarConfigView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(Color.electricIndigo.opacity(0.1))
+                .fill(theme.accent.opacity(0.1))
         )
     }
 
@@ -102,7 +103,7 @@ struct TabBarConfigView: View {
                 ForEach(Array(localConfig.activeTabs.enumerated()), id: \.element) { index, tab in
                     activeTabRow(tab, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.yalaCard)
+                        .listRowBackground(theme.card)
                         .listRowSeparator(index == localConfig.activeTabs.count - 1 ? .hidden : .visible)
                 }
                 .onMove(perform: moveTab)
@@ -113,7 +114,7 @@ struct TabBarConfigView: View {
             .frame(height: CGFloat(localConfig.activeTabs.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -135,13 +136,13 @@ struct TabBarConfigView: View {
             // Position indicator
             Text("\(position)")
                 .font(DS.Typography.captionMonoBold)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(.thAccent)
                 .frame(width: 20)
 
             // Tab icon
             Image(systemName: tab.iconName)
                 .font(DS.Typography.body)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(.thAccent)
                 .frame(width: 28, height: 28)
 
             // Tab name
@@ -194,7 +195,7 @@ struct TabBarConfigView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -232,7 +233,7 @@ struct TabBarConfigView: View {
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(DS.Typography.title)
-                    .foregroundStyle(canActivate ? Color.electricIndigo : Color.secondary.opacity(0.5))
+                    .foregroundStyle(canActivate ? theme.accent : Color.secondary.opacity(0.5))
             }
             .buttonStyle(.plain)
             .disabled(!canActivate)

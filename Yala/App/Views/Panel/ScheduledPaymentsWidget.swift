@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ScheduledPaymentsWidget: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
 
     let payments: [ScheduledPayment]
     let currencyCode: String
@@ -69,7 +70,7 @@ struct ScheduledPaymentsWidget: View {
         }
         .padding(DS.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -209,7 +210,7 @@ struct ScheduledPaymentsWidget: View {
             }
         }
         .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
+        .background(.thSecondaryText.opacity(0.08))
         .clipShape(Capsule())
     }
 
@@ -225,12 +226,12 @@ struct ScheduledPaymentsWidget: View {
                 .font(DS.Typography.labelSmall)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
+                .foregroundStyle(isSelected ? .white : theme.secondaryText)
                 .background(
                     Group {
                         if isSelected {
                             Capsule()
-                                .fill(Color.electricIndigo)
+                                .fill(theme.accent)
                                 .matchedGeometryEffect(id: "filterSelector", in: filterNamespace)
                         }
                     }
@@ -378,7 +379,7 @@ struct ScheduledPaymentsWidget: View {
                 } else if item.isPaid {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.captionSmall)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(theme.accent)
                 }
             }
         }
@@ -551,7 +552,7 @@ struct ScheduledPaymentsWidget: View {
             // Day number
             Text("\(day)")
                 .font(.caption2.weight(isToday ? .bold : .medium))
-                .foregroundStyle(isToday ? Color.electricIndigo : .secondary)
+                .foregroundStyle(isToday ? theme.accent : .secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             // Payment names (show up to 2 with truncation)
@@ -566,11 +567,11 @@ struct ScheduledPaymentsWidget: View {
                             } else if entry.isPaid {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 6, weight: .bold))
-                                    .foregroundStyle(Color.electricIndigo)
+                                    .foregroundStyle(theme.accent)
                             }
                             Text(entry.payment.name)
                                 .font(DS.Typography.captionSmall).fontWeight(.medium)
-                                .foregroundStyle(entry.isSkipped ? .secondary : (entry.isPaid ? Color.electricIndigo : .primary))
+                                .foregroundStyle(entry.isSkipped ? .secondary : (entry.isPaid ? theme.accent : .primary))
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         }
@@ -596,7 +597,7 @@ struct ScheduledPaymentsWidget: View {
 
     private func backgroundColor(isToday: Bool, hasPayments: Bool) -> Color {
         if isToday {
-            return Color.electricIndigo.opacity(0.12)
+            return theme.accent.opacity(0.12)
         } else if hasPayments {
             return Color(.tertiarySystemFill).opacity(0.7)
         } else {

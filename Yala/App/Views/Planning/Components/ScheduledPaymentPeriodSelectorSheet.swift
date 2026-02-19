@@ -10,6 +10,7 @@ import SwiftUI
 struct ScheduledPaymentPeriodSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36
     @Bindable var viewModel: ScheduledPaymentsViewModel
     var payments: [ScheduledPayment]
@@ -26,13 +27,13 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
             VStack(spacing: DS.Spacing.lg) {
                 ZStack {
                     Circle()
-                        .fill(Color.electricIndigo.opacity(0.15))
+                        .fill(theme.accent.opacity(0.15))
                         .frame(width: 80, height: 80)
 
                     Image(systemName: "calendar")
                         .font(.system(size: scaledIconSize, weight: .medium))
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
                 .padding(.top, DS.Spacing.xxl)
 
@@ -46,7 +47,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
             ZStack {
                 // Selection highlight
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .strokeBorder(Color.electricIndigo.opacity(0.3), lineWidth: 1.5)
+                    .strokeBorder(theme.accent.opacity(0.3), lineWidth: 1.5)
                     .frame(height: 50)
                     .padding(.horizontal, DS.Spacing.xl)
                     .allowsHitTesting(false)
@@ -115,7 +116,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
                 // Fade overlays
                 VStack {
                     LinearGradient(
-                        colors: [Color.yalaBackground, Color.yalaBackground.opacity(0)],
+                        colors: [theme.background, theme.background.opacity(0)],
                         startPoint: .top, endPoint: .bottom
                     )
                     .frame(height: 60)
@@ -124,7 +125,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
                     Spacer()
 
                     LinearGradient(
-                        colors: [Color.yalaBackground.opacity(0), Color.yalaBackground],
+                        colors: [theme.background.opacity(0), theme.background],
                         startPoint: .top, endPoint: .bottom
                     )
                     .frame(height: 60)
@@ -144,14 +145,14 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .background(Color.electricIndigo)
+                    .background(theme.accent)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
-        .background(Color.yalaBackground)
+        .background(theme.background)
         .onAppear {
             generatePeriods()
         }

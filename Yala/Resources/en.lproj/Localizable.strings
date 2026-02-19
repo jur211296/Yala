@@ -366,6 +366,9 @@
 "settings.light" = "Light";
 "settings.dark" = "Dark";
 "settings.system" = "System";
+"settings.theme.indigo" = "Indigo";
+"settings.theme.rosa" = "Rose";
+"settings.theme.cyan" = "Cyan";
 "settings.defaultCurrency" = "Default Currency";
 "settings.currentIcon" = "Current Icon";
 "settings.resetAllData" = "Reset all your data";
@@ -1789,6 +1792,7 @@
 "featureGate.voiceInput" = "Voice input";
 "featureGate.imageInput" = "Image input";
 "featureGate.premiumIcons" = "Premium icons";
+"featureGate.proThemes" = "Pro Themes";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limit reached";

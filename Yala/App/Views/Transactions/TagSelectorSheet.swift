@@ -57,7 +57,7 @@ struct TagSelectorSheet: View {
                 TagFormView(existingTags: viewModel.tags)
             }
         }
-        .tint(Color.electricIndigo)
+
         .onAppear {
             viewModel.setContext(modelContext)
         }
@@ -129,7 +129,7 @@ struct TagSelectorSheet: View {
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                     Text(L10n.Tag.newTag)
                         .foregroundStyle(.primary)
                     Spacer()
@@ -186,7 +186,7 @@ struct TagSelectorRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

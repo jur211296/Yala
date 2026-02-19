@@ -9,6 +9,10 @@ import SwiftUI
 
 struct LimitReachedBanner: View {
 
+    // MARK: - Environment
+
+    @Environment(\.yalaTheme) private var theme
+
     // MARK: - Properties
 
     let feature: ProFeature
@@ -26,12 +30,12 @@ struct LimitReachedBanner: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.FeatureGate.limitReachedTitle)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 if let limit = feature.freeLimit {
                     Text(L10n.FeatureGate.limitInfo(currentCount, limit))
                         .font(DS.Typography.caption)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                 }
             }
 
@@ -48,7 +52,7 @@ struct LimitReachedBanner: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
-                .background(Color.brandPrimary)
+                .background(theme.accent)
                 .clipShape(Capsule())
             }
         }

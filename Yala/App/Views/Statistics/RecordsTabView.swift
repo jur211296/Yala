@@ -15,6 +15,7 @@ import SwiftUI
 /// Extracted from DetailContainerView to reduce complexity.
 struct RecordsTabView: View {
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
@@ -404,7 +405,7 @@ struct RecordsTabView: View {
                 } label: {
                     Text(L10n.Filters.clearFilters)
                         .font(DS.Typography.label)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
                 .padding(.top, DS.Spacing.sm)
             }

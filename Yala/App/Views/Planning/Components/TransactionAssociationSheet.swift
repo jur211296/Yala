@@ -111,7 +111,7 @@ struct TransactionAssociationSheet: View {
             Spacer()
         }
         .padding(DS.Spacing.md)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
         .padding(.bottom, DS.Spacing.sm)
     }
@@ -190,7 +190,7 @@ struct TransactionAssociationSheet: View {
                     .foregroundStyle(.primary)
             }
             .padding(DS.Spacing.md)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .contentShape(Rectangle())
         }

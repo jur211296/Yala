@@ -71,7 +71,7 @@ struct ExchangeRateInputView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(Color.yalaCard)
+            .background(.thCard)
 
             SubsectionDivider()
 
@@ -111,7 +111,7 @@ struct ExchangeRateInputView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(Color.yalaCard)
+            .background(.thCard)
         }
         .onAppear {
             updateTextFields()
@@ -162,6 +162,6 @@ struct ExchangeRateInputView: View {
             onDestinationAmountChanged: {}
         )
     }
-    .background(Color.yalaBackground)
+    .background(.thBackground)
     .padding()
 }

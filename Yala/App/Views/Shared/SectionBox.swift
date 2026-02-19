@@ -17,7 +17,7 @@ struct SectionBox<Content: View>: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaSecondaryText)
+                .foregroundStyle(.thSecondaryText)
                 .padding(.leading, DS.Spacing.sm)
 
             VStack(spacing: DS.Spacing.none) {
@@ -25,7 +25,7 @@ struct SectionBox<Content: View>: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)

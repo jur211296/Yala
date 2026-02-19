@@ -19,7 +19,7 @@ struct RecordRowView: View {
     let onTap: () -> Void
     let onToggleSelection: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -100,7 +100,7 @@ struct RecordRowView: View {
             .background(cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : DS.Opacity.faint),
+                color: Color.black.opacity(theme.shadowOpacity),
                 radius: 6,
                 x: 0,
                 y: 3
@@ -113,7 +113,7 @@ struct RecordRowView: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-            .fill(Color.yalaCard)
+            .fill(.thCard)
     }
 
     // MARK: - Selection Circle
@@ -122,13 +122,13 @@ struct RecordRowView: View {
         ZStack {
             Circle()
                 .stroke(
-                    isSelected ? Color.electricIndigo : Color.secondary.opacity(0.3), lineWidth: 2
+                    isSelected ? theme.accent : Color.secondary.opacity(0.3), lineWidth: 2
                 )
                 .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
             if isSelected {
                 Circle()
-                    .fill(Color.electricIndigo)
+                    .fill(theme.accent)
                     .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
                     .transition(.scale.combined(with: .opacity))
 

@@ -68,7 +68,7 @@ struct SubcategoryTransferSheet: View {
                 Text(L10n.Subcategory.deleteTransactionsConfirmMessage(transactionCount))
             }
         }
-        .tint(Color.electricIndigo)
+
         .onAppear {
             viewModel.setContext(modelContext)
         }
@@ -250,7 +250,7 @@ struct SubcategoryTransferSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
     }
 
     // MARK: - Transfer Logic

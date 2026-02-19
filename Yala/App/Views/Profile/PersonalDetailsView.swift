@@ -11,6 +11,7 @@ import SwiftUI
 /// View for editing personal user details
 struct PersonalDetailsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
 
     @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 44
 
@@ -158,28 +159,28 @@ struct PersonalDetailsView: View {
             } else if !selectedIcon.isEmpty {
                 // Custom icon
                 Circle()
-                    .fill(Color.electricIndigo.opacity(0.15))
+                    .fill(theme.accent.opacity(0.15))
                     .frame(width: 100, height: 100)
 
                 Image(systemName: selectedIcon)
                     .font(.system(size: avatarSize))
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(theme.accent)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             } else {
                 // Default
                 Circle()
-                    .fill(Color.electricIndigo.opacity(0.15))
+                    .fill(theme.accent.opacity(0.15))
                     .frame(width: 100, height: 100)
 
                 Image(systemName: "person.fill")
                     .font(.system(size: avatarSize))
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(theme.accent)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
 
             // Edit badge overlay
             Circle()
-                .fill(Color.electricIndigo)
+                .fill(theme.accent)
                 .frame(width: 32, height: 32)
                 .overlay {
                     Image(systemName: "pencil")
@@ -373,6 +374,7 @@ struct PersonalDetailsView: View {
 
 struct IconPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var selectedIcon: String
     var onSelect: () -> Void
 
@@ -428,15 +430,15 @@ struct IconPickerSheet: View {
                 ZStack {
                     Circle()
                         .fill(selectedIcon == icon.symbol
-                              ? Color.electricIndigo
-                              : Color.electricIndigo.opacity(0.15))
+                              ? theme.accent
+                              : theme.accent.opacity(0.15))
                         .frame(width: 60, height: 60)
 
                     Image(systemName: icon.symbol)
                         .font(DS.Typography.largeTitle)
                         .foregroundStyle(selectedIcon == icon.symbol
                                          ? .white
-                                         : Color.electricIndigo)
+                                         : theme.accent)
                 }
 
                 Text(icon.name)

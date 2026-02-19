@@ -10,6 +10,7 @@ import SwiftUI
 
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = TopSubcategoriesWidgetViewModel()
 
@@ -77,7 +78,7 @@ struct TopSubcategoriesWidget: View {
         }
         .padding(size == .small ? DS.Spacing.lg : DS.Spacing.xl)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -121,7 +122,7 @@ struct TopSubcategoriesWidget: View {
                                 if let prevAmount = previousTotalAmount {
                                     Text("vs \(YalaFormatter.number(value: prevAmount))")
                                         .font(DS.Typography.caption)
-                                        .foregroundStyle(Color.yalaSecondaryText)
+                                        .foregroundStyle(.thSecondaryText)
                                         .lineLimit(1)
                                         .minimumScaleFactor(0.7)
                                 }
@@ -219,7 +220,7 @@ struct TopSubcategoriesWidget: View {
                                 Capsule()
                                     .fill(
                                         localCategoryFilterID == nil
-                                            ? Color.electricIndigo : DS.Semantic.neutralBackground)
+                                            ? theme.accent : DS.Semantic.neutralBackground)
                             )
                         }
 

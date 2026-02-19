@@ -109,7 +109,7 @@ struct CategoriesSettingsListView: View {
                 } label: {
                     Text(viewModel.isEditing ? L10n.Action.done : L10n.Action.edit)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.primary)
                 }
             }
             .padding(.horizontal, DS.Chip.paddingV)
@@ -154,7 +154,7 @@ struct CategoriesSettingsListView: View {
             .padding(.vertical, DS.Chip.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -214,7 +214,7 @@ struct CategoriesSettingsListView: View {
             .padding(.vertical, DS.Chip.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -252,7 +252,7 @@ struct CategoriesSettingsListView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
-                    .background(Color.yalaSecondaryText.opacity(0.1))
+                    .background(.thSecondaryText.opacity(0.1))
                     .clipShape(Capsule())
             }
 

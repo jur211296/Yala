@@ -24,6 +24,7 @@ struct PeriodComparisonChartView: View {
     var showPreviousPeriod: Bool = true
 
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.yalaTheme) private var theme
     @State private var draggingDate: Date?  // For transient drag state
 
     // Filter points to only include those with actual data (non-zero values)
@@ -69,7 +70,7 @@ struct PeriodComparisonChartView: View {
     var body: some View {
         Chart {
             let primaryLineColor = trendType.color
-            let previousLineColor = Color.yalaSecondaryText
+            let previousLineColor = theme.secondaryText
 
             // Previous period line - separate series (using clipped points) - only show when showPreviousPeriod is true
             if showPreviousPeriod {
@@ -120,7 +121,7 @@ struct PeriodComparisonChartView: View {
             // Zero baseline (for balance metric)
             if trendType == .balance {
                 RuleMark(y: .value("Zero", 0))
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.2))
+                    .foregroundStyle(.thSecondaryText.opacity(0.2))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
             }
 
@@ -134,7 +135,7 @@ struct PeriodComparisonChartView: View {
                 // Vertical dashed line
                 RuleMark(x: .value("Selected Date", activeDate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
 
                 // Ring Border (Background) on data point
                 PointMark(
@@ -150,7 +151,7 @@ struct PeriodComparisonChartView: View {
                     y: .value("Selected Value", selectedCurrentPoint.value)
                 )
                 .symbolSize(100)
-                .foregroundStyle(Color.yalaCard)
+                .foregroundStyle(.thCard)
 
                 // Invisible anchor point at top of chart for tooltip
                 PointMark(
@@ -170,7 +171,7 @@ struct PeriodComparisonChartView: View {
                                 .frame(width: 6, height: 6)
                             Text("\(periodLabel(for: selectedCurrentPoint.date)): \(formattedAmount(selectedCurrentPoint.value))")
                                 .font(DS.Typography.labelSmall)
-                                .foregroundStyle(Color.yalaPrimaryText)
+                                .foregroundStyle(.thPrimaryText)
                         }
 
                         // Previous period value with original date (if exists)
@@ -178,11 +179,11 @@ struct PeriodComparisonChartView: View {
                             let originalPrevDate = getOriginalPreviousDate(for: previousPoint.date)
                             HStack(spacing: DS.Spacing.xs) {
                                 Circle()
-                                    .fill(Color.yalaSecondaryText.opacity(0.5))
+                                    .fill(.thSecondaryText.opacity(0.5))
                                     .frame(width: 6, height: 6)
                                 Text("\(periodLabel(for: originalPrevDate)): \(formattedAmount(previousPoint.value))")
                                     .font(DS.Typography.caption)
-                                    .foregroundStyle(Color.yalaSecondaryText)
+                                    .foregroundStyle(.thSecondaryText)
                             }
                         }
                     }
@@ -190,7 +191,7 @@ struct PeriodComparisonChartView: View {
                     .padding(.vertical, DS.Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
-                            .fill(Color.yalaCard.opacity(0.95))
+                            .fill(.thCard.opacity(0.95))
                             .shadow(radius: 2)
                     )
                 }
@@ -201,7 +202,7 @@ struct PeriodComparisonChartView: View {
         .chartXAxis {
             AxisMarks(values: smartAxisDates) { value in
                 AxisGridLine()
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(0.1))
 
                 if let date = value.as(Date.self) {
                     let isLast = date == smartAxisDates.last
@@ -212,7 +213,7 @@ struct PeriodComparisonChartView: View {
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
@@ -220,13 +221,13 @@ struct PeriodComparisonChartView: View {
         .chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(0.1))
 
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatCurrencyShort(value: doubleValue))
                             .font(DS.Typography.captionSmall)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
@@ -242,18 +243,18 @@ struct PeriodComparisonChartView: View {
                         .frame(width: 20, height: 3)
                     Text(L10n.Statistics.currentPeriod)
                         .font(DS.Typography.captionSmall)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                 }
 
                 // Previous period legend (only show when showPreviousPeriod is true)
                 if showPreviousPeriod {
                     HStack(spacing: DS.Spacing.xs) {
                         Rectangle()
-                            .fill(Color.yalaSecondaryText.opacity(0.5))
+                            .fill(.thSecondaryText.opacity(0.5))
                             .frame(width: 20, height: 3)
                         Text(L10n.Statistics.previousPeriod)
                             .font(DS.Typography.captionSmall)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }

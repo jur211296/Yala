@@ -14,7 +14,7 @@ struct InboxAlertModal: View {
     let onDismiss: () -> Void
 
     @State private var isVisible = false
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var title: String {
@@ -63,12 +63,12 @@ struct InboxAlertModal: View {
                 // Icono
                 ZStack {
                     Circle()
-                        .fill(Color.electricIndigo.opacity(0.15))
+                        .fill(theme.accent.opacity(0.15))
                         .frame(width: 72, height: 72)
 
                     Image(systemName: icon)
                         .font(DS.Typography.amountLarge)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(theme.accent)
                 }
                 .padding(.top, DS.Spacing.sm)
 
@@ -99,7 +99,7 @@ struct InboxAlertModal: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, DS.Spacing.md)
-                            .background(Color.electricIndigo)
+                            .background(theme.accent)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     }
                     .buttonStyle(.plain)
@@ -118,10 +118,10 @@ struct InboxAlertModal: View {
                 }
             }
             .padding(DS.Spacing.xxl)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.5 : 0.15),
+                color: Color.black.opacity(theme.baseColorScheme == .dark ? 0.5 : 0.15),
                 radius: 24,
                 x: 0,
                 y: 12

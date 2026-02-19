@@ -10,6 +10,7 @@ import SwiftUI
 struct WidgetPreferencesView: View {
     @Bindable var viewModel: PanelViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         NavigationStack {
@@ -43,7 +44,7 @@ struct WidgetPreferencesView: View {
                             }
                         )
                         .listRowSeparator(.hidden)
-                        .listRowBackground(Color.yalaCard)  // Adapts to Light/Dark mode
+                        .listRowBackground(theme.card)  // Adapts to Light/Dark mode
                     }
                     .onMove { source, destination in
                         viewModel.moveWidget(from: source, to: destination)
@@ -62,7 +63,7 @@ struct WidgetPreferencesView: View {
                         Text(L10n.Widget.resetLayout)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .listRowBackground(Color.yalaCard)  // Adapts to Light/Dark mode
+                    .listRowBackground(theme.card)  // Adapts to Light/Dark mode
                 }
             }
             .listStyle(.insetGrouped)
@@ -75,7 +76,7 @@ struct WidgetPreferencesView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.yalaBackground.ignoresSafeArea())  // Uses app's adaptive background
+            .background(theme.background.ignoresSafeArea())  // Uses app's adaptive background
         }
     }
 }
@@ -83,6 +84,7 @@ struct WidgetPreferencesView: View {
 // MARK: - Row Component
 
 private struct WidgetRow: View {
+    @Environment(\.yalaTheme) private var theme
     let config: WidgetConfig
     let onToggle: () -> Void
     let onSizeChange: (WidgetSize) -> Void
@@ -94,10 +96,10 @@ private struct WidgetRow: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: config.type.iconName)
                     .font(DS.Typography.title)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.thAccent)
                     .frame(width: 32, height: 32)
                     .background(
-                        Circle().fill(Color.electricIndigo.opacity(0.1))
+                        Circle().fill(theme.accent.opacity(0.1))
                     )
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -139,7 +141,7 @@ private struct WidgetRow: View {
                 .disabled(config.isLocked)
                 .accessibilityHint(config.isLocked ? "Widget fijo, siempre visible" : "")
                 .opacity(config.isLocked ? 0.6 : 1.0)
-                .tint(Color.electricIndigo)
+
             }
 
             // Mode picker for scheduled payments widget

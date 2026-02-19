@@ -208,16 +208,16 @@ struct SubcategoryDetailView: View {
 
                     // Pencil edit indicator
                     Circle()
-                        .fill(Color.yalaCard)
+                        .fill(.thCard)
                         .frame(width: 24, height: 24)
                         .overlay(
                             Image(systemName: "pencil")
                                 .font(DS.Typography.labelSmall)
-                                .foregroundStyle(Color.electricIndigo)
+                                .foregroundStyle(Color(hex: selectedColorHex))
                         )
                         .overlay(
                             Circle()
-                                .stroke(Color.yalaBackground, lineWidth: 2)
+                                .stroke(.thBackground, lineWidth: 2)
                         )
                         .offset(x: 4, y: 4)
                 }
@@ -287,7 +287,7 @@ struct SubcategoryDetailView: View {
                     Toggle(isOn: $isVisible) {
                         Text(L10n.Category.show)
                     }
-                    .tint(Color.electricIndigo)
+
                     .padding()
                 }
             }

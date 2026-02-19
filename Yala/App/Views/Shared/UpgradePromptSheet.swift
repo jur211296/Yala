@@ -50,6 +50,7 @@ struct UpgradePromptSheet: View {
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
 
     // MARK: - Properties
 
@@ -83,13 +84,13 @@ struct UpgradePromptSheet: View {
                 // Title
                 Text(context.title)
                     .font(.title2.bold())
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
                     .multilineTextAlignment(.center)
 
                 // Contextual message
                 Text(messageForFeature)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
 
@@ -108,12 +109,12 @@ struct UpgradePromptSheet: View {
                         dismiss()
                     }
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxl)
             }
-            .background(Color.yalaBackground)
+            .background(.thBackground)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -140,19 +141,19 @@ struct UpgradePromptSheet: View {
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background(
                     RoundedRectangle(cornerRadius: DS.Radius.sm)
-                        .fill(Color.brandPrimary)
+                        .fill(theme.accent)
                 )
 
             Text(feature.localizedName)
                 .font(DS.Typography.bodyBold)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             Spacer()
 
             ProBadge(size: .medium)
         }
         .padding(DS.Spacing.lg)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.lg)

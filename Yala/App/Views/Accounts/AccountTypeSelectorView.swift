@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AccountTypeSelectorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var selectedType: AccountType
 
     var body: some View {
@@ -42,7 +43,7 @@ struct AccountTypeSelectorView: View {
 
                                         if type == selectedType {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(Color.electricIndigo)
+                                                .foregroundStyle(.thAccent)
                                                 .font(DS.Typography.headline)
                                         }
                                     }

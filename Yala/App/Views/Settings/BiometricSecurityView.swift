@@ -28,16 +28,16 @@ struct BiometricSecurityView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: authService.biometricType.icon)
                             .font(DS.Typography.amountLarge)
-                            .foregroundStyle(Color.brandPrimary)
+                            .foregroundStyle(.thAccent)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Biometric.title)
                             .font(.title2.bold())
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Biometric.description)
                             .font(DS.Typography.body)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xxxl)
@@ -47,17 +47,17 @@ struct BiometricSecurityView: View {
                         HStack {
                             Text(L10n.Biometric.enableLock)
                                 .font(DS.Typography.body)
-                                .foregroundStyle(Color.yalaPrimaryText)
+                                .foregroundStyle(.thPrimaryText)
 
                             Spacer()
 
                             Toggle("", isOn: $isEnabled)
                                 .labelsHidden()
-                                .tint(Color.brandPrimary)
+
                         }
                         .padding(.horizontal, DS.FormRow.paddingH)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(Color.yalaCard)
+                        .background(.thCard)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                         .overlay(
                             RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -83,7 +83,7 @@ struct BiometricSecurityView: View {
                                     }
                                 }
                             }
-                            .background(Color.yalaCard)
+                            .background(.thCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -159,13 +159,13 @@ struct BiometricSecurityView: View {
             HStack {
                 Text(timeout.label)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                         .font(DS.Typography.headline)
                 }
             }

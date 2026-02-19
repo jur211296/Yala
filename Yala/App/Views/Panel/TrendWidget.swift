@@ -60,7 +60,7 @@ struct TrendWidget: View {
             }
         }
         .padding(DS.Card.padding)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Card.radius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Card.radius, style: .continuous)
@@ -76,13 +76,13 @@ struct TrendWidget: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(chartTitle)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 // Prominent KPI Value - only show when we have data
                 if !hasNoData {
                     Text(currentKPIValue)
                         .font(DS.Typography.title)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
                         .padding(.top, DS.Spacing.xs)
                 }
             }
@@ -125,7 +125,7 @@ struct TrendWidget: View {
             }
         }
         .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
+        .background(.thSecondaryText.opacity(0.08))
         .clipShape(Capsule())
         .filterBlockedPopover(
             isPresented: $showFilterBlockedMessage,

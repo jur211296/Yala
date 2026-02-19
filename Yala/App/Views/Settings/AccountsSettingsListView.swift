@@ -15,6 +15,7 @@ struct AccountsSettingsListView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = AccountsSettingsListViewModel()
     @State private var showUpgradeSheet = false
@@ -158,7 +159,7 @@ struct AccountsSettingsListView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -189,7 +190,7 @@ struct AccountsSettingsListView: View {
                     }
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                    .listRowBackground(Color.yalaCard)
+                    .listRowBackground(theme.card)
                     .listRowSeparator(
                         index == 0 || index == viewModel.orderedActiveAccounts.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
@@ -202,7 +203,7 @@ struct AccountsSettingsListView: View {
             .frame(height: CGFloat(viewModel.orderedActiveAccounts.count) * 84)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(

@@ -14,6 +14,7 @@ struct BudgetsFavoritesSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = BudgetsFavoritesSettingsViewModel()
 
@@ -82,7 +83,7 @@ struct BudgetsFavoritesSettingsView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(.thAccent)
 
             Text(L10n.Settings.budgetsFavoritesInfo)
                 .font(DS.Typography.subheadline)
@@ -92,7 +93,7 @@ struct BudgetsFavoritesSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(Color.electricIndigo.opacity(0.1))
+                .fill(theme.accent.opacity(0.1))
         )
     }
 
@@ -138,7 +139,7 @@ struct BudgetsFavoritesSettingsView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -205,7 +206,7 @@ struct BudgetsFavoritesSettingsView: View {
                 ForEach(Array(viewModel.favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in
                     reorderRow(budget, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                        .listRowBackground(Color.yalaCard)
+                        .listRowBackground(theme.card)
                         .listRowSeparator(
                             index == 0 || index == viewModel.favoriteBudgets.count - 1 ? .hidden : .visible,
                             edges: index == 0 ? .top : .bottom
@@ -219,7 +220,7 @@ struct BudgetsFavoritesSettingsView: View {
             .frame(height: CGFloat(viewModel.favoriteBudgets.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -235,7 +236,7 @@ struct BudgetsFavoritesSettingsView: View {
         HStack(spacing: DS.Spacing.md) {
             Text("#\(position)")
                 .font(DS.Typography.captionMonoBold)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(.thAccent)
                 .frame(width: 28)
 
             Text(budget.name)

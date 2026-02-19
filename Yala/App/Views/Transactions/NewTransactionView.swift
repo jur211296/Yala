@@ -16,6 +16,7 @@ struct NewTransactionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = CurrencyCode.pen.rawValue
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
@@ -96,7 +97,7 @@ struct NewTransactionView: View {
     private var transactionFormView: some View {
         NavigationStack {
             ZStack {
-                Color.yalaBackground
+                theme.background
                     .ignoresSafeArea()
                     .dismissKeyboardOnTap()
 
@@ -294,7 +295,7 @@ struct NewTransactionView: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
         .onAppear {
             viewModel.setContext(modelContext)
             prefillFromContext()
@@ -591,11 +592,11 @@ struct NewTransactionView: View {
 
         return Text("≈ \(currencyDisplay) \(formattedAmount) (TC: \(formattedRate))")
             .font(DS.Typography.labelSmall)
-            .foregroundStyle(Color.yalaSecondaryText)
+            .foregroundStyle(.thSecondaryText)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.xs)
             .background(
-                Capsule().fill(Color.yalaSecondaryText.opacity(0.1))
+                Capsule().fill(.thSecondaryText.opacity(0.1))
             )
             .padding(.top, DS.Spacing.sm)
     }
@@ -655,7 +656,7 @@ struct NewTransactionView: View {
                     .frame(width: 48, height: 48)
                     .background(
                         Circle()
-                            .fill(Color.yalaCard)
+                            .fill(.thCard)
                             .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                     )
                 Text(label)
@@ -799,15 +800,15 @@ struct NewTransactionView: View {
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Eliminar etiqueta")
                             }
-                            .foregroundStyle(Color.tagChipColor)
+                            .foregroundStyle(.thTagChip)
                             .padding(.horizontal, DS.FormRow.paddingV)
                             .padding(.vertical, DS.Spacing.sm)
                             .background(
-                                Capsule().fill(Color.tagChipColor.opacity(0.12))
+                                Capsule().fill(.thTagChip.opacity(0.12))
                             )
                             .overlay(
                                 Capsule()
-                                    .stroke(Color.tagChipColor.opacity(0.3), lineWidth: 1)
+                                    .stroke(.thTagChip.opacity(0.3), lineWidth: 1)
                             )
                         }
                     }
@@ -929,7 +930,7 @@ struct NewTransactionView: View {
         }
         .padding(.vertical, DS.Spacing.sm)
         .frame(width: 220)
-        .background(Color.yalaCard)
+        .background(.thCard)
     }
 
     /// Title for current mention type
@@ -1008,7 +1009,7 @@ struct NewTransactionView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .tint(viewModel.canSave ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.4))
+        .tint(viewModel.canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
         .accessibilityHint(!viewModel.canSave ? "Para guardar, completa monto, cuenta y categoría" : "")

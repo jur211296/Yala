@@ -364,6 +364,9 @@
 "settings.light" = "Clair";
 "settings.dark" = "Sombre";
 "settings.system" = "Systeme";
+"settings.theme.indigo" = "Indigo";
+"settings.theme.rosa" = "Rose";
+"settings.theme.cyan" = "Cyan";
 "settings.defaultCurrency" = "Devise par defaut";
 "settings.currentIcon" = "Icone actuelle";
 "settings.resetAllData" = "Reinitialiser toutes vos donnees";
@@ -1806,6 +1809,7 @@
 "featureGate.voiceInput" = "Saisie vocale";
 "featureGate.imageInput" = "Saisie par image";
 "featureGate.premiumIcons" = "Icônes premium";
+"featureGate.proThemes" = "Thèmes Pro";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite atteinte";

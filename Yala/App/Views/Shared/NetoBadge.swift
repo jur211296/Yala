@@ -80,6 +80,7 @@ struct YalaBadge: View {
 
 /// Badge numérico para contadores
 struct YalaCountBadge: View {
+    @Environment(\.yalaTheme) private var theme
     let count: Int
     let maxDisplay: Int
 
@@ -94,7 +95,7 @@ struct YalaCountBadge: View {
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xxs)
             .foregroundStyle(.white)
-            .background(Color.electricIndigo)
+            .background(theme.accent)
             .clipShape(Capsule())
     }
 }
@@ -180,7 +181,7 @@ struct YalaTagBadge: View {
         }
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
-        .foregroundStyle(Color.tagChipColor)
+        .foregroundStyle(.thTagChip)
         .background(Color(hex: colorHex).opacity(0.2))
         .clipShape(Capsule())
     }
@@ -237,5 +238,5 @@ struct YalaTagBadge: View {
         }
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

@@ -12,6 +12,7 @@ import SwiftUI
 /// Used by both RecordsFiltersView and ExportFiltersStepView.
 struct CategorySelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
 
     // MARK: - Data
 
@@ -105,7 +106,7 @@ struct CategorySelectorSheet: View {
                 Image(systemName: isEverythingSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(
                         isEverythingSelected
-                            ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.4)
+                            ? theme.accent : theme.secondaryText.opacity(0.4)
                     )
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -146,8 +147,8 @@ struct CategorySelectorSheet: View {
                 Image(systemName: selectionIcon(for: category))
                     .foregroundStyle(
                         isNoneSelected(for: category)
-                            ? Color.yalaSecondaryText.opacity(0.4)
-                            : Color.brandPrimary
+                            ? theme.secondaryText.opacity(0.4)
+                            : theme.accent
                     )
             }
             .buttonStyle(.plain)
@@ -199,7 +200,7 @@ struct CategorySelectorSheet: View {
                 let isSelected = selectedSubcategories.contains(subcategory.persistentModelID)
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(
-                        isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.4)
+                        isSelected ? theme.accent : theme.secondaryText.opacity(0.4)
                     )
             }
             .padding(.horizontal, DS.Spacing.lg)

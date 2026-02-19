@@ -91,7 +91,7 @@ struct TutorialCompletionView: View {
                     // Completion title
                     Text(tutorial.completionTitle)
                         .font(DS.Typography.largeTitle)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
                         .multilineTextAlignment(.center)
                         .opacity(showTitle ? 1.0 : 0.0)
                         .offset(y: showTitle ? 0 : 10)
@@ -99,7 +99,7 @@ struct TutorialCompletionView: View {
                     // Tips / description
                     Text(tutorial.completionDescription)
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, DS.Spacing.xl)
@@ -117,7 +117,7 @@ struct TutorialCompletionView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.electricIndigo)
+
                     .controlSize(.large)
 
                     if let next = tutorial.nextTutorial, let onNext = onNextTutorial {
@@ -128,7 +128,7 @@ struct TutorialCompletionView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        .tint(.electricIndigo)
+
                         .controlSize(.large)
                     }
                 }

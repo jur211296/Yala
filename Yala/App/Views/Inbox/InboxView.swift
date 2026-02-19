@@ -18,6 +18,7 @@ struct InboxView: View {
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
     @AppStorage("defaultCurrencyCode") private var preferredCurrency: String = "PEN"
 
     /// Callback for navigating to Records tab (bulk approve success)
@@ -231,7 +232,7 @@ struct InboxView: View {
             } label: {
                 Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.title)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(theme.accent)
                     .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? "Deseleccionar todos" : "Seleccionar todos")
@@ -254,7 +255,7 @@ struct InboxView: View {
                     .frame(minHeight: 44)
                     .background(
                         Capsule()
-                            .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : Color.electricIndigo)
+                            .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : theme.accent)
                     )
             }
             .disabled(selectedDraftIDs.isEmpty)
@@ -321,7 +322,7 @@ struct InboxView: View {
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.electricIndigo : Color.clear)
+                    .fill(isSelected ? theme.accent : Color.clear)
             )
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
@@ -413,7 +414,7 @@ struct InboxView: View {
                 } label: {
                     Label(L10n.Inbox.approve, systemImage: "checkmark.circle")
                 }
-                .tint(Color.electricIndigo)
+
             }
         }
     }

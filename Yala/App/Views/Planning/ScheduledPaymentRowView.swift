@@ -12,7 +12,7 @@ struct ScheduledPaymentRowView: View {
     let summary: ScheduledPaymentSummary
     let currencyCode: String
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         NavigationLink(value: summary.payment.persistentModelID) {
@@ -52,7 +52,7 @@ struct ScheduledPaymentRowView: View {
                     .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
             )
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : DS.Opacity.faint),
+                color: Color.black.opacity(theme.shadowOpacity),
                 radius: 6,
                 x: 0,
                 y: 3
@@ -65,7 +65,7 @@ struct ScheduledPaymentRowView: View {
     // MARK: - Components
 
     private var cardBackground: some View {
-        Color.yalaCard
+        theme.card
     }
 
     private var paymentIcon: some View {
@@ -96,11 +96,11 @@ struct ScheduledPaymentRowView: View {
             else if summary.isPaidForMonth {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DS.Typography.captionSmall)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(theme.accent)
 
                 Text(L10n.Scheduled.paid)
                     .font(DS.Typography.labelTiny)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(theme.accent)
             } else {
                 // Due status indicator (only for past due)
                 if summary.dueStatus == .past {

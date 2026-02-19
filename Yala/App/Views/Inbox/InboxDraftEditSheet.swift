@@ -17,6 +17,7 @@ struct InboxDraftEditSheet: View {
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @Bindable var draft: InboxDraft
 
@@ -149,7 +150,7 @@ struct InboxDraftEditSheet: View {
             }
         }
         .id(draft.persistentModelID)  // Force new view when draft changes
-        .tint(Color.electricIndigo)
+
         .onAppear {
             viewModel.setContext(modelContext)
             // Reset success view state when appearing
@@ -243,7 +244,7 @@ struct InboxDraftEditSheet: View {
 
     private var mainContent: some View {
         ZStack {
-            Color.yalaBackground
+            theme.background
                 .ignoresSafeArea()
                 .dismissKeyboardOnTap()
 
@@ -307,7 +308,7 @@ struct InboxDraftEditSheet: View {
             }
         }
         .padding(DS.Spacing.xs)
-        .background(Capsule().fill(Color.yalaCard))
+        .background(Capsule().fill(.thCard))
         .padding(.horizontal, DS.Spacing.lg)
     }
 
@@ -620,7 +621,7 @@ struct InboxDraftEditSheet: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, DS.Spacing.xs)
                             .padding(.vertical, DS.Spacing.xxs)
-                            .background(Capsule().fill(Color.electricIndigo))
+                            .background(Capsule().fill(theme.accent))
                     }
                 }
             }
@@ -636,15 +637,15 @@ struct InboxDraftEditSheet: View {
             }
             .buttonStyle(.plain)
         }
-        .foregroundStyle(Color.tagChipColor)
+        .foregroundStyle(.thTagChip)
         .padding(.horizontal, DS.FormRow.paddingV)
         .padding(.vertical, DS.Spacing.sm)
         .background(
-            Capsule().fill(Color.tagChipColor.opacity(0.12))
+            Capsule().fill(.thTagChip.opacity(0.12))
         )
         .overlay(
             Capsule()
-                .stroke(Color.tagChipColor.opacity(0.3), lineWidth: 1)
+                .stroke(.thTagChip.opacity(0.3), lineWidth: 1)
         )
     }
 
@@ -673,12 +674,12 @@ struct InboxDraftEditSheet: View {
                     } label: {
                         Text(L10n.Inbox.saveLater)
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, DS.Spacing.lg)
                             .background(
                                 Capsule()
-                                    .fill(Color.electricIndigo.opacity(0.12))
+                                    .fill(theme.accent.opacity(0.12))
                             )
                     }
                     .buttonStyle(.plain)
@@ -695,7 +696,7 @@ struct InboxDraftEditSheet: View {
                         .padding(.vertical, DS.Spacing.lg)
                         .background(
                             Capsule()
-                                .fill(isReadyToApprove ? Color.electricIndigo : DS.Semantic.disabledForeground)
+                                .fill(isReadyToApprove ? theme.accent : DS.Semantic.disabledForeground)
                         )
                 }
                 .buttonStyle(.plain)

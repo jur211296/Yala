@@ -11,6 +11,7 @@ import SwiftUI
 struct SaveAsFavoriteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = SaveAsFavoriteViewModel()
 
@@ -239,7 +240,7 @@ struct SaveAsFavoriteSheet: View {
             } else {
                 Button(action: onTap) {
                     Text(L10n.Common.select)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
                 .buttonStyle(.plain)
             }
@@ -262,7 +263,7 @@ struct SaveAsFavoriteSheet: View {
             if selectedTags.isEmpty {
                 Button { showTagSelector = true } label: {
                     Text(L10n.Common.select)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -306,7 +307,7 @@ struct SaveAsFavoriteSheet: View {
             } else {
                 Toggle("", isOn: $includeAmount)
                     .labelsHidden()
-                    .tint(Color.electricIndigo)
+
             }
         }
         .padding()
@@ -386,7 +387,7 @@ struct SaveAsFavoriteSheet: View {
                                                 if selectedTags.contains(tag.persistentModelID) {
                                                     Image(systemName: "checkmark")
                                                         .font(DS.Typography.headline)
-                                                        .foregroundStyle(Color.electricIndigo)
+                                                        .foregroundStyle(.thAccent)
                                                 }
                                             }
                                             .padding(.horizontal, DS.Spacing.lg)
@@ -416,7 +417,7 @@ struct SaveAsFavoriteSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
         .presentationDetents([.medium, .large])
     }
 

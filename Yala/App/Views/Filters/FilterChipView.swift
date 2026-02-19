@@ -276,5 +276,5 @@ extension FilterChipView {
         FilterChipView(noteText: "compra de supermercado", onClear: {})
     }
     .padding()
-    .background(Color.yalaCard)
+    .background(.thCard)
 }

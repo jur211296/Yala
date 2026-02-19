@@ -238,7 +238,7 @@ struct TagFormView: View {
             Toggle(isOn: $viewModel.isActive) {
                 Text(L10n.Common.active)
             }
-            .tint(Color.electricIndigo)
+
             .padding()
         }
     }

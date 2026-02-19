@@ -48,7 +48,7 @@ struct YalaSaveButton: View {
         }
         .disabled(isDisabled)
         .buttonStyle(.borderedProminent)
-        .tint(Color.electricIndigo)
+
         .buttonBorderShape(.circle)
         .accessibilityLabel("Guardar")
     }
@@ -59,6 +59,7 @@ struct YalaSaveButton: View {
 /// Botón primario de acción principal (full-width, Electric Indigo)
 /// Uso: Confirmar acciones, submit forms, CTAs
 struct YalaPrimaryButton: View {
+    @Environment(\.yalaTheme) private var theme
     let title: String
     let icon: String?
     let action: () -> Void
@@ -90,7 +91,7 @@ struct YalaPrimaryButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 50)
             .foregroundStyle(.white)
-            .background(isDisabled ? DS.Semantic.disabledForeground : Color.electricIndigo)
+            .background(isDisabled ? DS.Semantic.disabledForeground : theme.accent)
             .clipShape(Capsule())
         }
         .disabled(isDisabled || isLoading)
@@ -151,6 +152,7 @@ struct YalaSecondaryButton: View {
 /// Botón de texto simple (sin fondo ni borde)
 /// Uso: Links, acciones terciarias, "Ver más"
 struct YalaTextButton: View {
+    @Environment(\.yalaTheme) private var theme
     let title: String
     let icon: String?
     let action: () -> Void
@@ -174,7 +176,7 @@ struct YalaTextButton: View {
                 Text(title)
                     .font(DS.Typography.label)
             }
-            .foregroundStyle(destructive ? .red : Color.electricIndigo)
+            .foregroundStyle(destructive ? .red : theme.accent)
         }
     }
 }
@@ -218,5 +220,5 @@ struct YalaTextButton: View {
         }
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

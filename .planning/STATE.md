@@ -516,12 +516,19 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Widened metric selector touch targets in TrendsTabView (d1eab6b)
-Next step: Continuar mejoras UX pagos planificados — ver `.planning/SCHEDULED-PAYMENTS-UX.md`
+Stopped at: Mejoras UX Pagos Planificados completadas (M1-M7 + skip feature)
+Next step: Siguiente item del roadmap — Fase 11 (Temas) o nuevas mejoras pre-release
 Resume context:
 - V1.1 completamente cerrada, todos los bugs resueltos (BUG-1 a BUG-28)
 - Deep Scan S.1-S.4 todos resueltos/aceptados
 - iCloud sync: ALL 9 risks resolved (R1-R9) across fbbedde + 276b1a4
-- Paid status tracking implementado en ViewModel + vistas Planning (599e7b1)
-- Widget PanelView actualizado con per-occurrence rows, paid badges, DS fixes (048edc2)
-- Skip/unskip: notifications respect isDateSkipped, unskip recreates draft for past/today dates (3d552e0)
+- Skip/unskip feature completo: modelo, VM, vistas, widget, L10n, tests, QA scenarios
+- Paid status tracking completo en ViewModel + vistas + widget
+- Mejoras UX pagos planificados (SCHEDULED-PAYMENTS-UX.md) todas completadas:
+  - M1: Selector de mes ✅
+  - M2: Estado pagado por mes ✅
+  - M3: Asociar transacción manual ✅
+  - M4: No propagar pagos hacia atrás ✅
+  - M5: Indicador pagado en calendario ✅
+  - M6: Resumen pagado/pendiente ✅
+  - M7: Rediseño calendario ✅

@@ -67,7 +67,7 @@ struct AccountSelectorSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
         .onAppear {
             viewModel.setContext(modelContext)
         }
@@ -113,7 +113,7 @@ struct AccountSelectorRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

@@ -19,6 +19,7 @@ struct CategoriesTabView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 48
 
     // MARK: - Settings
@@ -412,7 +413,7 @@ struct CategoriesTabView: View {
             }
         }
         .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
+        .background(.thSecondaryText.opacity(0.08))
         .clipShape(Capsule())
     }
 
@@ -428,12 +429,12 @@ struct CategoriesTabView: View {
                 .font(DS.Typography.indicator)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
+                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
                 .background(
                     Group {
                         if isSelected {
                             Capsule()
-                                .fill(Color.electricIndigo)
+                                .fill(theme.accent)
                                 .matchedGeometryEffect(
                                     id: "comparisonSelector", in: comparisonSelectorNamespace)
                         }
@@ -502,8 +503,8 @@ struct CategoriesTabView: View {
                         Circle()
                             .fill(
                                 chartsCarouselPosition == pageId
-                                    ? Color.yalaPrimaryText.opacity(0.3)
-                                    : Color.yalaSecondaryText.opacity(0.2)
+                                    ? theme.primaryText.opacity(0.3)
+                                    : theme.secondaryText.opacity(0.2)
                             )
                             .frame(width: 6, height: 6)
                     }
@@ -555,7 +556,7 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -599,7 +600,7 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -640,7 +641,7 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -723,8 +724,8 @@ struct CategoriesTabView: View {
                         Circle()
                             .fill(
                                 page == (natureCarouselIndex ?? 0)
-                                    ? Color.yalaPrimaryText.opacity(0.3)
-                                    : Color.yalaSecondaryText.opacity(0.2)
+                                    ? theme.primaryText.opacity(0.3)
+                                    : theme.secondaryText.opacity(0.2)
                             )
                             .frame(width: 6, height: 6)
                     }
@@ -879,7 +880,7 @@ struct CategoriesTabView: View {
                 }
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -895,7 +896,7 @@ struct CategoriesTabView: View {
             }
         }
         .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
+        .background(.thSecondaryText.opacity(0.08))
         .clipShape(Capsule())
     }
 
@@ -916,12 +917,12 @@ struct CategoriesTabView: View {
                 .font(DS.Typography.labelSmall)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
+                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
                 .background(
                     Group {
                         if isSelected {
                             Capsule()
-                                .fill(Color.electricIndigo)
+                                .fill(theme.accent)
                                 .matchedGeometryEffect(
                                     id: "listSelector", in: listSelectorNamespace)
                         }
@@ -1289,7 +1290,7 @@ struct CategoriesTabView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             if viewModel.recentRecords.isEmpty {
                 emptyRecordsState
@@ -1311,14 +1312,14 @@ struct CategoriesTabView: View {
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
-                .foregroundStyle(Color.electricIndigo)
-                .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
+                .foregroundStyle(theme.accent)
+                .background(theme.accent.opacity(DS.Opacity.subtle))
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .buttonStyle(.plain)
         }
         .padding(DS.Card.padding)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -1469,6 +1470,7 @@ private struct AllCategoriesListContent: View {
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
+    @Environment(\.yalaTheme) private var theme
 
     private var displayedCategories: [CategorySpendingSummary] {
         isExpanded ? categories : Array(categories.prefix(10))
@@ -1512,8 +1514,8 @@ private struct AllCategoriesListContent: View {
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
-                        .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
+                        .foregroundStyle(theme.accent)
+                        .background((theme.accent).opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -1538,6 +1540,7 @@ private struct AllSubcategoriesListContent: View {
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
+    @Environment(\.yalaTheme) private var theme
 
     private var displayedSubcategories: [SubcategorySpendingSummary] {
         isExpanded ? subcategories : Array(subcategories.prefix(10))
@@ -1592,8 +1595,8 @@ private struct AllSubcategoriesListContent: View {
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
-                        .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
+                        .foregroundStyle(theme.accent)
+                        .background((theme.accent).opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)

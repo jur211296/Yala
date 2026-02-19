@@ -156,7 +156,7 @@ struct YalaSpark: View {
         }
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }
 
 #Preview("In Context") {
@@ -182,11 +182,11 @@ struct YalaSpark: View {
         // Hero spark
         ZStack {
             Circle()
-                .fill(Color.yalaCard)
+                .fill(.thCard)
                 .frame(width: 40, height: 40)
             YalaSpark(size: .large, animated: true)
         }
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }
