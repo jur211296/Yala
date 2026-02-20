@@ -112,6 +112,7 @@ struct PieChartVariationHeader: View {
                         .foregroundStyle(Color.gray.opacity(0.7))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Ver detalles")
                 .padding(.leading, DS.Spacing.sm)
             }
         }

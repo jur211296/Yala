@@ -132,27 +132,6 @@ struct SubcategoriesPieWidget: View {
         }
     }
 
-    // MARK: - Header
-
-    private var headerSection: some View {
-        HStack {
-            Text(L10n.Widget.subcategories)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            InfoHintButton(
-                title: L10n.WidgetType.subcategoriesPie,
-                message: L10n.Widget.Hint.subcategoriesPie
-            )
-
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-        }
-    }
-
     // MARK: - Layouts
 
     private var largeLayout: some View {
@@ -496,6 +475,7 @@ struct SubcategoriesPieWidget: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Ver detalles")
                     }
                 }
             }

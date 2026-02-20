@@ -1533,6 +1533,9 @@
 "tips.export.detail" = "Lade deine Ausgaben als CSV oder Excel unter Einstellungen > Exportieren herunter. Ideal für Tabellenanalysen oder deine Unterlagen.";
 "tips.faceID.title" = "Schütze mit Face ID";
 "tips.faceID.detail" = "Aktiviere die biometrische Sperre unter Einstellungen > Sicherheit. Du kannst wählen, ob sie beim Verlassen der App oder nach einer Zeit aktiviert wird.";
+"tips.siri.title" = "Neu: Eintrag mit Siri";
+"tips.siri.detail" = "Sage: \"Erstelle einen Eintrag in Yala\"";
+"tips.siri.close" = "Siri-Vorschlag schließen";
 
 // MARK: - FAQ
 "faq.subtitle" = "Antworten auf die häufigsten Fragen";

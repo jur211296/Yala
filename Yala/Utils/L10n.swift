@@ -3055,6 +3055,64 @@ enum L10n {
         }
     }
 
+    // MARK: - Tips
+
+    enum Tips {
+        static var subtitle: String { ls("tips.subtitle", comment: "") }
+
+        enum Section {
+            static var quickEntry: String { ls("tips.section.quickEntry", comment: "") }
+            static var organize: String { ls("tips.section.organize", comment: "") }
+            static var advanced: String { ls("tips.section.advanced", comment: "") }
+        }
+
+        enum Voice {
+            static var title: String { ls("tips.voice.title", comment: "") }
+            static var detail: String { ls("tips.voice.detail", comment: "") }
+        }
+
+        enum Camera {
+            static var title: String { ls("tips.camera.title", comment: "") }
+            static var detail: String { ls("tips.camera.detail", comment: "") }
+        }
+
+        enum Favorites {
+            static var title: String { ls("tips.favorites.title", comment: "") }
+            static var detail: String { ls("tips.favorites.detail", comment: "") }
+        }
+
+        enum Budgets {
+            static var title: String { ls("tips.budgets.title", comment: "") }
+            static var detail: String { ls("tips.budgets.detail", comment: "") }
+        }
+
+        enum Tags {
+            static var title: String { ls("tips.tags.title", comment: "") }
+            static var detail: String { ls("tips.tags.detail", comment: "") }
+        }
+
+        enum Filters {
+            static var title: String { ls("tips.filters.title", comment: "") }
+            static var detail: String { ls("tips.filters.detail", comment: "") }
+        }
+
+        enum Export {
+            static var title: String { ls("tips.export.title", comment: "") }
+            static var detail: String { ls("tips.export.detail", comment: "") }
+        }
+
+        enum FaceID {
+            static var title: String { ls("tips.faceID.title", comment: "") }
+            static var detail: String { ls("tips.faceID.detail", comment: "") }
+        }
+
+        enum Siri {
+            static var title: String { ls("tips.siri.title", comment: "") }
+            static var detail: String { ls("tips.siri.detail", comment: "") }
+            static var close: String { ls("tips.siri.close", comment: "") }
+        }
+    }
+
 }
 
 // MARK: - App Locale

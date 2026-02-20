@@ -420,6 +420,7 @@ struct TagsPieWidget: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Ver detalles")
                     }
                 }
             }

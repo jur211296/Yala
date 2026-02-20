@@ -1428,10 +1428,10 @@ private struct SiriTipCard: View {
                 .frame(width: 36, height: 36)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text("Nuevo: registro con Siri")
+                Text(L10n.Tips.Siri.title)
                     .font(DS.Typography.headline)
 
-                Text("Di: \"Crea un registro en Yala\"")
+                Text(L10n.Tips.Siri.detail)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1448,7 +1448,7 @@ private struct SiriTipCard: View {
                     .foregroundStyle(.tertiary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Cerrar sugerencia de Siri")
+            .accessibilityLabel(L10n.Tips.Siri.close)
         }
         .padding(DS.Spacing.lg)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))

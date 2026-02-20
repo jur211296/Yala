@@ -170,6 +170,7 @@ struct TopCategoriesWidget: View {
                         .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Ver todas las categorías")
             }
         }
     }
