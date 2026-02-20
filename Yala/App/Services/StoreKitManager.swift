@@ -89,9 +89,22 @@ final class StoreKitManager {
 
     private var transactionListener: Task<Void, Never>?
 
+    #if DEBUG
+    private static let devForceFreeTierKey = "dev.forceFreeTier"
+
+    /// Dev-only flag: when true, forces free tier regardless of StoreKit entitlements.
+    /// Persisted to UserDefaults so it survives app restart. Only works with dev bundle.
+    private(set) var devForceFreeTier: Bool = false
+    #endif
+
     // MARK: - Init
 
     private init() {
+        #if DEBUG
+        if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
+            devForceFreeTier = UserDefaults.standard.bool(forKey: Self.devForceFreeTierKey)
+        }
+        #endif
         transactionListener = listenForTransactions()
     }
 
@@ -146,6 +159,10 @@ final class StoreKitManager {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
+                #if DEBUG
+                devForceFreeTier = false
+                UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
+                #endif
                 await updateSubscriptionStatus()
                 didJustSubscribe = true
                 return true
@@ -183,6 +200,12 @@ final class StoreKitManager {
     /// Check current entitlements and update subscription state
     @MainActor
     func updateSubscriptionStatus() async {
+        #if DEBUG
+        if devForceFreeTier {
+            return
+        }
+        #endif
+
         var foundActive: StoreKit.Transaction?
 
         for await result in StoreKit.Transaction.currentEntitlements {
@@ -240,6 +263,11 @@ final class StoreKitManager {
 
     /// Check if the user is eligible for any introductory offer (free trial)
     func isEligibleForIntroOffer() async -> Bool {
+        #if DEBUG
+        if devForceFreeTier {
+            return true
+        }
+        #endif
         // Ensure products are loaded
         if products.isEmpty {
             await loadProducts()
@@ -304,6 +332,41 @@ final class StoreKitManager {
             }
         }
     }
+
+    // MARK: - Dev Reset
+
+    #if DEBUG
+    /// Resets all subscription state for development testing.
+    /// Only works with the `.dev` bundle — production bundle is rejected.
+    /// After calling this, the app behaves as a new free user until restart.
+    @MainActor
+    func resetForDevelopment() {
+        guard Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true else {
+            print("StoreKitManager: resetForDevelopment rejected — not dev bundle")
+            return
+        }
+
+        // Stop transaction listener to prevent re-activation
+        transactionListener?.cancel()
+        transactionListener = nil
+
+        // Clear all subscription state
+        isProUser = false
+        isInTrial = false
+        activeSubscription = nil
+        trialEndDate = nil
+        subscriptionExpirationDate = nil
+        wasProUser = false
+        didJustSubscribe = false
+        devForceFreeTier = true
+        UserDefaults.standard.set(true, forKey: Self.devForceFreeTierKey)
+
+        // Sync cleared state to app group
+        syncToAppGroup()
+
+        print("StoreKitManager: Dev reset complete — forced free tier (persisted)")
+    }
+    #endif
 }
 
 // MARK: - Errors
